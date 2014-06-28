@@ -1,0 +1,71 @@
+#######################################
+# An example parameter file for SLUG2 #
+#######################################
+
+# Name of the model
+model_name        SLUG_EXAMPLE
+
+# Directory into which to write output
+out_dir           ../output/
+
+# Number of model galaxies to run (default = 1)
+n_trials          1
+
+# Length of time step (in yr, for linear time; in dex for log time)
+time_step    	  2.0e7
+
+# Maximum evolution time (in yr; must be < 10^9)
+end_time	  1.0e8
+
+# Use logarithmic time steps (0 = no, 1 = yes)?
+log_time	  0
+
+# Star formation rate (Msun/yr; give a negative value for a SFHist file)
+sfr    		  0.1
+
+# Star formation history file (only used if sfr < 0; can be omitted otherwise)
+#sfh              sfh.txt
+
+# IMF file name
+imf   	          lib/imf/chabrier.imf
+
+# CMF file name
+cmf               lib/cmf/slug_default.cmf
+
+# Stellar tracks to use
+tracks	  	  ../lib/tracks/parsed/sb99/modp020.dat
+
+# Stellar atmospheres to use
+sed	  	  ../lib/sed/parsed/sb99/kurucz_p00.dat
+
+# Fraction of stars born in clusters (must be 0 - 1)
+clust_frac        1.0
+
+# Age at which cluster disruption begins (yr; must be > 0)
+clust_immune_time 1.0e6
+
+# Slope of cluster age distribution for constant SFR (must be <= 0)
+slope_age         -0.9
+
+# Write out cluster physical properties? (0 = no, 1 = yes, default = 1)
+out_cluster       1
+
+# Write out cluster photometry? (0 = no, 1 = yes, default = 1)
+out_cluster_phot  1
+
+# Write out cluster spectra? (0 = no, 1 = yes, default = 0)
+out_cluster_spec  0
+
+# Write out integrated physical properties of galaxy (0 = no, 1 = yes, default = 0)
+
+# Write out integrated photometry? (0 = no, 1 = yes, default = 1)
+out_integrated_phot  1
+
+# Write out integrated spectra? (0 = no, 1 = yes, default = 0)
+out_integrated_spec  0
+
+# Photometric bands to be used; can be comma- or whitespace-separated
+phot_bands         UVIS1_F225W, UVIS1_F336W, UVIS1_F438W, UVIS1_F555W, UVIS1_F814W
+
+# Write output in binary format? (0 = no (ASCII format), 1 = yes, default = 0)
+out_binary       0
