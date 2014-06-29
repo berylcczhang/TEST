@@ -78,16 +78,19 @@ slug_PDF_lognormal::initializer(double sMean, double sDisp,
 		      boost::lognormal_distribution<> >(rng, lndist1);
 
   // Set the segMinVal and segMaxVal so that integral under function
-  // is unity
+  // is unity; also compute expectation value
   double segIntegral = sqrt(M_PI/2.0) * sDisp * 
     ( erf(log(segMax/sMean)/(sqrt(2.0)*sDisp)) -
       erf(log(segMin/sMean)/(sqrt(2.0)*sDisp)) );
   segMinVal = exp( -log(segMin/sMean)*log(segMin/sMean) /
-		       (2.0*sDisp*sDisp) ) /
-    segIntegral;
+		       (2.0*sDisp*sDisp) ) / segIntegral;
   segMaxVal = exp( -log(segMax/sMean)*log(segMax/sMean) /
-		       (2.0*sDisp*sDisp) ) /
-    segIntegral;
+		       (2.0*sDisp*sDisp) ) / segIntegral;
+  expectVal = exp(log(sMean)+sDisp*sDisp/2.0) *
+    (erf( (log(sMean/segMax)+sDisp*sDisp) / (sqrt(2.0)*sDisp) ) -
+     erf( (log(sMean/segMin)+sDisp*sDisp) / (sqrt(2.0)*sDisp) )) /
+    (erf( log(sMean/segMax) / (sqrt(2.0)*sDisp) ) -
+     erf( log(sMean/segMin) / (sqrt(2.0)*sDisp) ));
 }
 
 // Draw a value from a lognormal with minimum and maximum
@@ -228,16 +231,22 @@ slug_PDF_normal::initializer(double sMean, double sDisp,
 		      boost::normal_distribution<> >(rng, ndist1);
 
   // Set the segMinVal and segMaxVal so that integral under function
-  // is unity
+  // is unity; also set expectation value
   double segIntegral = sqrt(M_PI/2.0) * sDisp * 
     ( erf((segMax-sMean)/(sqrt(2.0)*sDisp)) -
       erf((segMin-sMean)/(sqrt(2.0)*sDisp)) );
   segMinVal = exp( -(segMax-sMean)*(segMax-sMean) /
-		   (2.0*sDisp*sDisp) ) /
-    segIntegral;
+		   (2.0*sDisp*sDisp) ) / segIntegral;
   segMaxVal = exp( -(segMin-sMean)*(segMin-sMean) /
-		   (2.0*sDisp*sDisp) ) /
-    segIntegral;
+		   (2.0*sDisp*sDisp) ) / segIntegral;
+  expectVal = 
+    ( 2.0*sDisp*(segMinVal-segMaxVal)*segIntegral +
+      sqrt(2.0*M_PI)*sMean*
+      (erf( (segMax-sMean)/(sqrt(2.0)*sDisp) ) -
+       erf( (segMin-sMean)/(sqrt(2.0)*sDisp) )) ) /
+    ( sqrt(2.0*M_PI) *
+      (erf( (segMax-sMean)/(sqrt(2.0)*sDisp) ) -
+       erf( (segMin-sMean)/(sqrt(2.0)*sDisp) )) );
 }
 
 // Draw a value from a normal with minimum and maximum
@@ -380,7 +389,7 @@ slug_PDF_powerlaw::initializer(double sSlope, rng_type& rng) {
   unidist =
     new variate_generator<rng_type&, uniform_01<> >(rng, uni01);
 
-  // Set the min, max, integral values
+  // Set the min, max, expectation values
   double segIntegral;
   if (segSlope != -1.0) {
     segIntegral = 1.0 / (segSlope - 1.0) *
@@ -390,6 +399,15 @@ slug_PDF_powerlaw::initializer(double sSlope, rng_type& rng) {
   }
   segMinVal = pow(segMin, segSlope) / segIntegral;
   segMaxVal = pow(segMax, segSlope) / segIntegral;
+  if ((segSlope != -1.0) && (segSlope != -2.0)) {
+    expectVal = (segSlope+1.0) / (segSlope+2.0) * 
+      (pow(segMax, 2.0+segSlope) - pow(segMin, 2.0+segSlope)) /
+      (pow(segMax, 1.0+segSlope) - pow(segMin, 1.0+segSlope));
+  } else if (segSlope == -1.0) {
+    expectVal = (segMax - segMin) / log(segMax/segMin);
+  } else {
+    expectVal = (segMax + segMin) / 2.0;
+  }
 }
 
 // Draw a mass from a powerlaw with minimum and maximum
@@ -534,7 +552,7 @@ slug_PDF_schechter::initializer(double sSlope, double sStar,
   unidist =
     new variate_generator<rng_type&, uniform_01<> >(rng, uni01);
 
-  // Set the min, max, integral values
+  // Set the min, max, expectation values
   double segIntegral;
   if (segSlope != -1.0) {
     segIntegral = segStar * (tgamma(1.0+segSlope, segMin/segStar) - 
@@ -545,6 +563,21 @@ slug_PDF_schechter::initializer(double sSlope, double sStar,
   }
   segMinVal = pow( segMin/segStar, segSlope ) * exp(-segMin/segSlope);
   segMaxVal = pow( segMax/segStar, segSlope ) * exp(-segMax/segSlope);
+  if ((segSlope != -1.0) && (segSlope != -2.0)) {
+    expectVal = segStar * (tgamma(2.0+segSlope, segMax/segStar) -
+			   tgamma(2.0+segSlope, segMin/segStar)) /
+      (tgamma(1.0+segSlope, segMax/segStar) -
+       tgamma(1.0+segSlope, segMin/segStar));
+  } else if (segSlope == -1.0) {
+    expectVal = segStar * (exp(-segMax/segStar) - exp(-segMin/segStar)) /
+      ( expint(-segMax/segStar) - expint(-segMin/segStar) );
+  } else {
+    expectVal = segStar * 
+      (expint(-segMax/segStar) - expint(-segMin/segStar)) /
+      ( expint(-segMin/segStar) - expint(-segMax/segStar) +
+	segStar/segMin * exp(-segMin/segStar) -
+	segStar/segMax * exp(-segMax/segStar) );
+  }
 }
 
 // Draw a mass from a schechter with minimum and maximum. Note that

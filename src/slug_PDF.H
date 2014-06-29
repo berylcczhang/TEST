@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_IMF_H_
 
 #include <boost/random/discrete_distribution.hpp>
+#include <boost/random/uniform_smallint.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <iostream>
 #include <fstream>
@@ -39,8 +40,16 @@ public:
   // Destructor
   ~slug_PDF();
 
-  // Function to draw a stellar mass
+  // Expectation value
+  double expectationVal() { return expectVal; }
+
+  // Function to draw a single value
   double draw();
+
+  // Function to draw a population; return value is the actual mass
+  // value drawn, and the population drawn is returned in pop
+  double drawPopulation(double target, vector<double>& pop,
+			samplingMethod method = STOP_NEAREST);
 
 private:
   // Functions to parse basic and advanced mode PDF files
@@ -56,6 +65,10 @@ private:
   boost::variate_generator<rng_type&, 
 			   boost::random::discrete_distribution<> > *disc;
 
+  // A 50/50 coin toss generator; used for the STOP_50 sampling method
+  boost::variate_generator<rng_type&, 
+			   boost::random::uniform_smallint<> > *coin;
+
   // Function invoked if parser fails to parse a file
   void parseError(int lineCount, string line = "", 
 		  string message = "");
@@ -69,6 +82,9 @@ private:
 
   // Weights of the various segments
   vector<double> weights;
+
+  // Expectation value
+  double expectVal;
 };
 
 #endif

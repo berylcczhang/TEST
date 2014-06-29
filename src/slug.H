@@ -42,5 +42,9 @@ typedef struct { double mass, age; } slug_star;
 // Random number generator type
 typedef boost::random::mt19937 rng_type;
 
+// Enum for sampling methods
+enum samplingMethod { STOP_NEAREST, STOP_BEFORE, STOP_AFTER, 
+		      STOP_50, NUMBER };
+
 #endif
 // _slug_H_

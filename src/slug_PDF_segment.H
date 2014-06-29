@@ -18,11 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // This file defines the slug_PDF_segment class. This class represents
 // a portion of a PDF defined by a particular functional form; it has
-// a lower limit and an upper limit, and knows the value of the
+// a lower limit and an upper limit, knows the value of the
 // function evaluated at those limits (normalized so that the area
-// under the entire function is 1). It also defines two pure virtual
-// methods, one which reads data describing the segment from a file,
-// and one which draws from the specified PDF.
+// under the entire function is 1), and knows its expectation value.
+// It also defines two pure virtual methods, one which reads data
+// describing the segment from a file, and one which draws from the
+// specified PDF.
 // 
 // slug_PDF_segment is an abstract base class, and particular
 // functional forms (e.g. powerlaws, lognormals, Schecter functions,
@@ -76,6 +77,7 @@ public:
   double sMax() { return segMax; }     // Upper range limit
   double sMinVal() { return segMinVal; } // Value at lower range limit
   double sMaxVal() { return segMaxVal; } // Value at upper range limit
+  double expectationVal() { return expectVal; } // Expectation value
 
   // Function to draw a star from this IMF segment; pure virtual
   virtual double draw() = 0; 
@@ -93,6 +95,7 @@ protected:
 			  // before normalization is applied
   double segMaxVal;       // Value of segment evaluated at segMax,
 			  // before normalization is applied
+  double expectVal;       // Expectation value
 };
 
 

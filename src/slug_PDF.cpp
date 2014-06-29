@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cstdlib>
+#include <cmath>
 
 using namespace boost;
 using namespace boost::algorithm;
@@ -105,10 +106,21 @@ slug_PDF::slug_PDF(const char *PDF, rng_type &rng) {
   // Set up the discrete distribution picker
   if (segments.size() > 1) {
     discrete_distribution<> dist(weights.begin(), weights.end());
-    variate_generator<rng_type&, discrete_distribution <> >  
-      var_disc(rng, dist);
-    disc = &var_disc;
+    disc = new variate_generator<rng_type&,
+				 discrete_distribution <> >(rng, dist);
+  } else {
+    disc = NULL;
   }
+
+  // Set up the 50-50 generator
+  uniform_smallint<> udist(0, 1);
+  coin = new variate_generator<rng_type&,
+			       uniform_smallint <> >(rng, udist);
+
+  // Compute the expectation value
+  expectVal = 0.0;
+  for (int i=0; i<segments.size(); i++)
+    expectVal += weights[i]*segments[i]->expectationVal();
 }
 
 
@@ -118,6 +130,9 @@ slug_PDF::slug_PDF(const char *PDF, rng_type &rng) {
 slug_PDF::~slug_PDF() { 
   for (int i=0; i<segments.size(); i++)
     delete segments[i];
+  if (disc != NULL)
+    delete disc;
+  delete coin;
 }
 
 
@@ -139,6 +154,67 @@ slug_PDF::draw() {
   return(segments[segNum]->draw());
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Draw population function
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF::drawPopulation(double target, vector<double>& pop,
+			 samplingMethod method) {
+  double sum = 0.0;
+
+  if ((method == STOP_NEAREST) || (method == STOP_BEFORE) ||
+      (method == STOP_AFTER) || (method == STOP_50)) {
+
+    // Sampling methods based on mass instead of number
+
+    // Draw stars until we exceed target
+    while (sum < target) {
+      pop.push_back(draw());
+      sum += pop[pop.size()-1];
+    }
+
+    // Decide what to do based on sampling method
+    if (method == STOP_BEFORE) {
+
+      // Stop before: always drop last element
+      pop.pop_back();
+
+    } else if (method == STOP_NEAREST) {
+
+      // Stop nearest: drop last element if that reduces the error
+      double sum_minus = target - pop.back();
+      if (sum - target > target - sum_minus) {
+	pop.pop_back();
+	sum = sum_minus;
+      }
+
+    } else if (method == STOP_50) {
+
+      // Stop 50: flip a coin to decide whether to keep or not
+      if ((*coin)() == 0) {
+	sum -= pop[pop.size()-1];
+	pop.pop_back();
+      }
+
+    }
+
+  } else {
+
+    // Sampling methods based on number
+    int nExpect = (int) round(target/expectVal);
+
+    if (method == NUMBER) {
+      for (int i=0; i<nExpect; i++) {
+	pop.push_back(draw());
+	sum += pop[pop.size()-1];
+      }
+    }
+
+  }
+
+  return(sum);
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Basic parser
