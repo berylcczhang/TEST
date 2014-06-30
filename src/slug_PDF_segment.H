@@ -67,10 +67,10 @@ public:
   slug_PDF_segment(double sMin, double sMax);
 
   // Construct an empty segment
-  slug_PDF_segment();
+  slug_PDF_segment() { };
 
   // Destructor
-  virtual ~slug_PDF_segment();
+  virtual ~slug_PDF_segment() { };
 
   // Functions that return various internals
   double sMin() { return segMin; }     // Lower range limit
@@ -106,7 +106,11 @@ class slug_PDF_lognormal : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_lognormal();
+  slug_PDF_lognormal() {};
+
+  // Construct a segment with just min and max values
+  slug_PDF_lognormal(double sMin, double sMax) : 
+    slug_PDF_segment(sMin, sMax) {};
 
   // Construct a segment with a specified min and max range, and a
   // specfied center and dispersion; note that sMean is the mean mass,
@@ -141,7 +145,11 @@ class slug_PDF_normal : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_normal();
+  slug_PDF_normal() {};
+
+  // Construct a segment with just min and max values
+  slug_PDF_normal(double sMin, double sMax) : 
+    slug_PDF_segment(sMin, sMax) {};
 
   // Construct a segment with a specified min and max range, and a
   // specfied center and dispersion; note that sMean is the mean mass,
@@ -176,7 +184,11 @@ class slug_PDF_powerlaw : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_powerlaw();
+  slug_PDF_powerlaw() {};
+
+  // Construct a segment with just min and max values
+  slug_PDF_powerlaw(double sMin, double sMax) : 
+    slug_PDF_segment(sMin, sMax) {};
 
   // Construct a segment with a specified min and max range, and a
   // specfied slope
@@ -211,7 +223,11 @@ class slug_PDF_schechter : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_schechter();
+  slug_PDF_schechter() {};
+
+  // Construct a segment with just min and max values
+  slug_PDF_schechter(double sMin, double sMax) : 
+    slug_PDF_segment(sMin, sMax) {};
 
   // Construct a segment with a specified min and max range, and a
   // specfied slope

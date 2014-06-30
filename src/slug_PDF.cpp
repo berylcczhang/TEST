@@ -32,6 +32,9 @@ using namespace boost::random;
 ////////////////////////////////////////////////////////////////////////
 slug_PDF::slug_PDF(const char *PDF, rng_type &rng) {
 
+  // Set the sampling method to its default value
+  method = STOP_NEAREST;
+
   // Try to open the PDF file; search for it relative to SLUG_DIR
   // environment variable first if that is set, and then search
   // relative to current directory
@@ -147,7 +150,7 @@ slug_PDF::draw() {
   if (segments.size() > 1) {
     segNum = (*disc)();
   } else {
-    segNum = 1;
+    segNum = 0;
   }
 
   // Draw from that segment and return
@@ -159,8 +162,7 @@ slug_PDF::draw() {
 // Draw population function
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::drawPopulation(double target, vector<double>& pop,
-			 samplingMethod method) {
+slug_PDF::drawPopulation(double target, vector<double>& pop) {
   double sum = 0.0;
 
   if ((method == STOP_NEAREST) || (method == STOP_BEFORE) ||
@@ -178,12 +180,13 @@ slug_PDF::drawPopulation(double target, vector<double>& pop,
     if (method == STOP_BEFORE) {
 
       // Stop before: always drop last element
+      sum -= pop.back();
       pop.pop_back();
 
     } else if (method == STOP_NEAREST) {
 
       // Stop nearest: drop last element if that reduces the error
-      double sum_minus = target - pop.back();
+      double sum_minus = sum - pop.back();
       if (sum - target > target - sum_minus) {
 	pop.pop_back();
 	sum = sum_minus;
@@ -202,12 +205,33 @@ slug_PDF::drawPopulation(double target, vector<double>& pop,
   } else {
 
     // Sampling methods based on number
-    int nExpect = (int) round(target/expectVal);
 
     if (method == NUMBER) {
+      int nExpect = (int) round(target/expectVal);
       for (int i=0; i<nExpect; i++) {
 	pop.push_back(draw());
 	sum += pop[pop.size()-1];
+      }
+    } else if (method == SORTED_SAMPLING) {
+
+      // Step 1: draw expected number of stars repeatedly until target
+      // mass is exceeded
+      while (sum < target) {
+	int nExpect = (int) round((target-sum)/expectVal);
+	if (nExpect == 0) nExpect = 1;
+	for (int i=0; i<nExpect; i++) {
+	  pop.push_back(draw());
+	  sum += pop[pop.size()-1];
+	}
+      }
+
+      // Step 2: remove the most massive star using a stop_nearest
+      // policy
+      sort(pop.begin(), pop.end());
+      double sum_minus = sum - pop.back();
+      if (sum - target > target - sum_minus) {
+	pop.pop_back();
+	sum = sum_minus;
       }
     }
 
@@ -249,7 +273,11 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
   // var1 VALUE
   // var2 VALUE
   // ...
-  // Where the names of var1, var2, etc. depend on the type of segment
+  // Where the names of var1, var2, etc. depend on the type of
+  // segment. Lines of the form
+  // method METHOD
+  // are also allowed.
+  int bptr = 0;
   bool inSegment = false;
   string line, linecopy;
   vector<string> tokens;
@@ -272,7 +300,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
     // Action depends on whether we're in a segment
     if (inSegment) {
 
-      // We are reading a segment, so figure out what kind
+      // We are reading a segment
 
       // Make sure this is a type specification
       if (tokens[0].compare("type") != 0)
@@ -289,16 +317,20 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       to_lower(tokens[1]);
       slug_PDF_segment *seg = NULL;
       if (tokens[1].compare("lognormal")==0) {
-	slug_PDF_lognormal *new_seg = new slug_PDF_lognormal;
+	slug_PDF_lognormal *new_seg = 
+	  new slug_PDF_lognormal(breakpoints[bptr], breakpoints[bptr+1]);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("normal")==0) {
-	slug_PDF_normal *new_seg = new slug_PDF_normal;
+	slug_PDF_normal *new_seg = 
+	  new slug_PDF_normal(breakpoints[bptr], breakpoints[bptr+1]);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("powerlaw")==0) {
-	slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw;
+	slug_PDF_powerlaw *new_seg = 
+	  new slug_PDF_powerlaw(breakpoints[bptr], breakpoints[bptr+1]);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("schechter")==0) {
-	slug_PDF_schechter *new_seg = new slug_PDF_schechter;
+	slug_PDF_schechter *new_seg = 
+	  new slug_PDF_schechter(breakpoints[bptr], breakpoints[bptr+1]);
 	seg = (slug_PDF_segment *) new_seg;
       } else {
 	string errStr("Unknown segment type ");
@@ -318,25 +350,71 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       // Push this segment onto the segment vector
       segments.push_back(seg);
       weights.push_back(1.0);   // We'll fix the weights below
+      bptr++;
 
       // We're done with this segment
       inSegment = false;
 
     } else {
 
-      // If we're not in the middle of a segment, the first token
-      // should be "segment" and no other non-comment tokens should be
-      // present. Check that this is the case.
-      if (tokens[0].compare("segment") != 0)
-	parseError(lineCount, linecopy, "Expected: 'segment'");
-      if (tokens.size() > 1) {
-	if (tokens[1].compare(0, 1, "#") != 0) {
-	  parseError(lineCount, linecopy, "Expected: 'segment'");
-	}
-      }
+      // If we're not in the middle of a segment, two things are
+      // acceptable:
+      //    segment
+      // and 
+      //    method METHOD
+      // Check that we got one of these.
+      if (tokens[0].compare("method") == 0) {
 
-      // We've found a valid segment line, so set a flag
-      inSegment = true;
+	// This is a method line, so make sure we have exactly 1
+	// more non-comment token, and then read the method
+	if (tokens.size() > 2) {
+	  if (tokens[2].compare(0, 1, "#") != 0) {
+	    parseError(lineCount, linecopy, "Expected: 'method METHOD'");
+	  }
+	}
+	to_lower(tokens[1]);
+	if (tokens[1] == "stop_nearest") {
+	  method = STOP_NEAREST;
+	} else if (tokens[1] == "stop_before") {
+	  method = STOP_BEFORE;
+	} else if (tokens[1] == "stop_after") {
+	  method = STOP_AFTER;
+	} else if (tokens[1] == "stop_50") {
+	  method = STOP_50;
+	} else if (tokens[1] == "number") {
+	  method = NUMBER;
+	} else if (tokens[1] == "sorted_sampling") {
+	  method = SORTED_SAMPLING;
+	} else {
+	  string errStr("Unknown sampling method ");
+	  errStr += tokens[1];
+	  parseError(lineCount, linecopy, errStr);
+	}
+
+      } else if (tokens[0].compare("segment") == 0) {
+
+	// This is the start of a segment. Make sure there's no extra
+	// junk on the line
+	if (tokens.size() > 1) {
+	  if (tokens[1].compare(0, 1, "#") != 0) {
+	    parseError(lineCount, linecopy, "Expected: 'segment'");
+	  }
+	}
+
+	// We've found a valid segment line, so set a flag
+	inSegment = true;
+
+	// Make sure we aren't trying to read too many segments
+	if (bptr >= nsegment)
+	  parseError(lineCount, linecopy,
+		     "number of segments must equal number of breakpoints - 1");
+      } else {
+
+	// This is not a valid line
+	parseError(lineCount, linecopy, 
+		   "Expected 'segment' or 'method METHOD'");
+
+      }
     }
   }
 
@@ -450,19 +528,60 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount,
 
     } else {
 
-      // If we're not in the middle of a segment, the first token
-      // should be "segment" and no other non-comment tokens should be
-      // present. Check that this is the case.
-      if (tokens[0].compare("segment") != 0)
-	parseError(lineCount, linecopy, "Expected: 'segment'");
-      if (tokens.size() > 1) {
-	if (tokens[1].compare(0, 1, "#") != 0) {
-	  parseError(lineCount, linecopy, "Expected: 'segment'");
-	}
-      }
+      // If we're not in the middle of a segment, two things are
+      // acceptable:
+      //    segment
+      // and 
+      //    method METHOD
+      // Check that we got one of these.
+      if (tokens[0].compare("method") == 0) {
 
-      // We've found a valid segment line, so set a flag
-      inSegment = true;
+	// This is a method line, so make sure we have exactly 1
+	// more non-comment token, and then read the method
+	if (tokens.size() > 2) {
+	  if (tokens[2].compare(0, 1, "#") != 0) {
+	    parseError(lineCount, linecopy, "Expected: 'method METHOD'");
+	  }
+	}
+	to_lower(tokens[1]);
+	if (tokens[1] == "stop_nearest") {
+	  method = STOP_NEAREST;
+	} else if (tokens[1] == "stop_before") {
+	  method = STOP_BEFORE;
+	} else if (tokens[1] == "stop_after") {
+	  method = STOP_AFTER;
+	} else if (tokens[1] == "stop_50") {
+	  method = STOP_50;
+	} else if (tokens[1] == "number") {
+	  method = NUMBER;
+	} else if (tokens[1] == "sorted_sampling") {
+	  method = SORTED_SAMPLING;
+	} else {
+	  string errStr("Unknown sampling method ");
+	  errStr += tokens[1];
+	  parseError(lineCount, linecopy, errStr);
+	}
+
+      } else if (tokens[0].compare("segment") == 0) {
+
+	// This is the start of a segment. Make sure there's no extra
+	// junk on the line
+	if (tokens.size() > 1) {
+	  if (tokens[1].compare(0, 1, "#") != 0) {
+	    parseError(lineCount, linecopy, "Expected: 'segment'");
+	  }
+	}
+
+	// We've found a valid segment line, so set a flag
+	inSegment = true;
+
+      } else {
+
+	// This is not a valid line
+	parseError(lineCount, linecopy, 
+		   "Expected 'segment' or 'method METHOD'");
+
+      }
     }
   }
 

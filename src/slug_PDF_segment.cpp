@@ -32,25 +32,15 @@ using namespace boost::random;
 // class slug_PDF_segment
 ////////////////////////////////////////////////////////////////////////
 
-// Constructor with no initialization
-slug_PDF_segment::slug_PDF_segment() { };
-
 // Constructor with specified ata
 slug_PDF_segment::slug_PDF_segment(double sMin, double sMax) {
   segMin = sMin;
   segMax = sMax;
 }
 
-// Destructor
-slug_PDF_segment::~slug_PDF_segment() { };
-
-
 ////////////////////////////////////////////////////////////////////////
 // class slug_PDF_lognormal
 ////////////////////////////////////////////////////////////////////////
-
-// Constructor with no initialization
-slug_PDF_lognormal::slug_PDF_lognormal() { };
 
 // Constructor
 slug_PDF_lognormal::
@@ -201,9 +191,6 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
 ////////////////////////////////////////////////////////////////////////
 // class slug_PDF_normal
 ////////////////////////////////////////////////////////////////////////
-
-// Constructor with no initialization
-slug_PDF_normal::slug_PDF_normal() { };
 
 // Constructor
 slug_PDF_normal::
@@ -358,10 +345,6 @@ slug_PDF_normal::parse(ifstream& file, int& lineCount, string &errMsg,
 ////////////////////////////////////////////////////////////////////////
 // class slug_PDF_powerlaw
 ////////////////////////////////////////////////////////////////////////
-
-// Construct a segment with no initialization
-slug_PDF_powerlaw::
-slug_PDF_powerlaw() { }
 
 // Constructor
 slug_PDF_powerlaw::
@@ -519,10 +502,6 @@ slug_PDF_powerlaw::parse(ifstream& file, int& lineCount, string& errMsg,
 ////////////////////////////////////////////////////////////////////////
 // class slug_PDF_schechter
 ////////////////////////////////////////////////////////////////////////
-
-// Construct a segment with no initialization
-slug_PDF_schechter::
-slug_PDF_schechter() { }
 
 // Constructor
 slug_PDF_schechter::

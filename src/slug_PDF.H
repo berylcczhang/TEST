@@ -30,6 +30,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include "slug_PDF_segment.H"
 
+// Enum for sampling methods
+enum samplingMethod { STOP_NEAREST, STOP_BEFORE, STOP_AFTER, 
+		      STOP_50, NUMBER, SORTED_SAMPLING };
+
 class slug_PDF {
 
 public:
@@ -40,6 +44,9 @@ public:
   // Destructor
   ~slug_PDF();
 
+  // Change sampling method
+  void setMethod(samplingMethod new_method) { method = new_method; }
+
   // Expectation value
   double expectationVal() { return expectVal; }
 
@@ -48,8 +55,7 @@ public:
 
   // Function to draw a population; return value is the actual mass
   // value drawn, and the population drawn is returned in pop
-  double drawPopulation(double target, vector<double>& pop,
-			samplingMethod method = STOP_NEAREST);
+  double drawPopulation(double target, vector<double>& pop);
 
 private:
   // Functions to parse basic and advanced mode PDF files
@@ -85,6 +91,9 @@ private:
 
   // Expectation value
   double expectVal;
+
+  // Sampling method
+  samplingMethod method;
 };
 
 #endif
