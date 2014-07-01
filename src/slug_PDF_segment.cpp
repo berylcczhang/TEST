@@ -61,26 +61,29 @@ void
 slug_PDF_lognormal::initializer(double sMean, double sDisp, 
 				rng_type& rng) {
 
+  // Get dispersion in base e
+  double disp10 = sDisp/log(10.0);
+
   // Build a lognormal distribution object with the specified parameters
-  boost::lognormal_distribution<> lndist1(log(sMean), sDisp);
+  boost::random::lognormal_distribution<> lndist1(log(sMean), disp10);
   lndist = new 
     variate_generator<rng_type&, 
-		      boost::lognormal_distribution<> >(rng, lndist1);
+		      boost::random::lognormal_distribution<> >(rng, lndist1);
 
   // Set the segMinVal and segMaxVal so that integral under function
   // is unity; also compute expectation value
-  double segIntegral = sqrt(M_PI/2.0) * sDisp * 
-    ( erf(log(segMax/sMean)/(sqrt(2.0)*sDisp)) -
-      erf(log(segMin/sMean)/(sqrt(2.0)*sDisp)) );
+  double segIntegral = sqrt(M_PI/2.0) * disp10 * 
+    ( erf(log(segMax/sMean)/(sqrt(2.0)*disp10)) -
+      erf(log(segMin/sMean)/(sqrt(2.0)*disp10)) );
   segMinVal = exp( -log(segMin/sMean)*log(segMin/sMean) /
-		       (2.0*sDisp*sDisp) ) / segIntegral;
+		       (2.0*disp10*disp10) ) / segIntegral;
   segMaxVal = exp( -log(segMax/sMean)*log(segMax/sMean) /
-		       (2.0*sDisp*sDisp) ) / segIntegral;
-  expectVal = exp(log(sMean)+sDisp*sDisp/2.0) *
-    (erf( (log(sMean/segMax)+sDisp*sDisp) / (sqrt(2.0)*sDisp) ) -
-     erf( (log(sMean/segMin)+sDisp*sDisp) / (sqrt(2.0)*sDisp) )) /
-    (erf( log(sMean/segMax) / (sqrt(2.0)*sDisp) ) -
-     erf( log(sMean/segMin) / (sqrt(2.0)*sDisp) ));
+		       (2.0*disp10*disp10) ) / segIntegral;
+  expectVal = exp(log(sMean)+disp10*disp10/2.0) *
+    (erf( (log(sMean/segMax)+disp10*disp10) / (sqrt(2.0)*disp10) ) -
+     erf( (log(sMean/segMin)+disp10*disp10) / (sqrt(2.0)*disp10) )) /
+    (erf( log(sMean/segMax) / (sqrt(2.0)*disp10) ) -
+     erf( log(sMean/segMin) / (sqrt(2.0)*disp10) ));
 }
 
 // Draw a value from a lognormal with minimum and maximum

@@ -134,7 +134,7 @@ private:
 
   // The class that will generate lognormal deviates for us
   boost::variate_generator<rng_type&, 
-			   boost::lognormal_distribution<> > *lndist;
+			   boost::random::lognormal_distribution<> > *lndist;
 };
 
 
