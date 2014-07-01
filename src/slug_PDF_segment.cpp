@@ -62,28 +62,28 @@ slug_PDF_lognormal::initializer(double sMean, double sDisp,
 				rng_type& rng) {
 
   // Get dispersion in base e
-  double disp10 = sDisp/log(10.0);
+  double disp = sDisp*log(10.0);
 
   // Build a lognormal distribution object with the specified parameters
-  boost::random::lognormal_distribution<> lndist1(log(sMean), disp10);
+  boost::random::lognormal_distribution<> lndist1(log(sMean), disp);
   lndist = new 
     variate_generator<rng_type&, 
 		      boost::random::lognormal_distribution<> >(rng, lndist1);
 
   // Set the segMinVal and segMaxVal so that integral under function
   // is unity; also compute expectation value
-  double segIntegral = sqrt(M_PI/2.0) * disp10 * 
-    ( erf(log(segMax/sMean)/(sqrt(2.0)*disp10)) -
-      erf(log(segMin/sMean)/(sqrt(2.0)*disp10)) );
+  double segIntegral = sqrt(M_PI/2.0) * disp * 
+    ( erf(-log(segMin/sMean)/(sqrt(2.0)*disp)) -
+      erf(-log(segMax/sMean)/(sqrt(2.0)*disp)) );
   segMinVal = exp( -log(segMin/sMean)*log(segMin/sMean) /
-		       (2.0*disp10*disp10) ) / segIntegral;
+		   (2.0*disp*disp) ) / (segMin*segIntegral);
   segMaxVal = exp( -log(segMax/sMean)*log(segMax/sMean) /
-		       (2.0*disp10*disp10) ) / segIntegral;
-  expectVal = exp(log(sMean)+disp10*disp10/2.0) *
-    (erf( (log(sMean/segMax)+disp10*disp10) / (sqrt(2.0)*disp10) ) -
-     erf( (log(sMean/segMin)+disp10*disp10) / (sqrt(2.0)*disp10) )) /
-    (erf( log(sMean/segMax) / (sqrt(2.0)*disp10) ) -
-     erf( log(sMean/segMin) / (sqrt(2.0)*disp10) ));
+		   (2.0*disp*disp) ) / (segMax*segIntegral);
+  expectVal = exp(log(sMean)+disp*disp/2.0) *
+    (erf( (log(sMean/segMax)+disp*disp) / (sqrt(2.0)*disp) ) -
+     erf( (log(sMean/segMin)+disp*disp) / (sqrt(2.0)*disp) )) /
+    (erf( log(sMean/segMax) / (sqrt(2.0)*disp) ) -
+     erf( log(sMean/segMin) / (sqrt(2.0)*disp) ));
 }
 
 // Draw a value from a lognormal with minimum and maximum
@@ -378,8 +378,8 @@ slug_PDF_powerlaw::initializer(double sSlope, rng_type& rng) {
   // Set the min, max, expectation values
   double segIntegral;
   if (segSlope != -1.0) {
-    segIntegral = 1.0 / (segSlope - 1.0) *
-      (pow(segMax, segSlope-1.0) - pow(segMin, segSlope-1.0));
+    segIntegral = 1.0 / (segSlope + 1.0) *
+      (pow(segMax, segSlope+1.0) - pow(segMin, segSlope+1.0));
   } else {
     segIntegral = log(segMax/segMin);
   }
