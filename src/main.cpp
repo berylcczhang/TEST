@@ -20,9 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <ctime>
 #include "slug.H"
-//#include "slug_galaxy.H"
-#include "slug_PDF.H"
+#include "slug_cluster.H"
+#include "slug_galaxy.H"
 #include "slug_parmParser.H"
+#include "slug_PDF.H"
+#include "slug_tracks.H"
 
 int main(int argc, char *argv[]) {
 
@@ -30,6 +32,7 @@ int main(int argc, char *argv[]) {
   slug_parmParser pp(argc, argv);
 
   // Read the tracks
+  slug_tracks tracks(pp.get_trackFile());
 
   // Read the atmospheres
 
@@ -51,10 +54,12 @@ int main(int argc, char *argv[]) {
   // Loop over number of trials
   for (int i=0; i<pp.get_nTrials(); i++) {
 
+#if 0
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
       std::cout << "slug: starting trial " << i+1 << " of "
 		<< pp.get_nTrials() << endl;
+#endif
 
     // Initalize the galaxy
     //galaxy.init();

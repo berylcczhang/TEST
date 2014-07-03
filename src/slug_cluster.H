@@ -22,35 +22,46 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // stars from an IMF, how to evolve the star list in time, and how to
 // write its proprties to a file.
 ////////////////////////////////////////////////////////////////////////
-
 #ifndef _slug_cluster_H_
 #define _slug_cluster_H_
+
+#include "slug.H"
+#include "slug_PDF.H"
+#include "slug_tracks.H"
 
 class slug_cluster {
 
 public:
-  // Construct a cluster with specified target mass and a pointer to a
-  // random number generator
-  slug_cluster(double targetMass, 
-	       base_generator_type &generator);   
-  // Destructor
-  ~slug_cluster();
+  // Construct a cluster with specified target mass, birth time, IMF
+  slug_cluster(long my_id, double my_mass, double time, 
+	       slug_PDF *my_imf, slug_tracks *my_tracks);
 
-  // Evolution routine
-  void advance();
+  // Destructor
+  ~slug_cluster() { };
+
+  // Routine to advance to a specified time
+  void advance(double time);
+
+  // Routine to report most mass still-living star
+  double get_most_massive_star() { 
+    if (stars.size() > 0) return stars[stars.size()-1];
+    else return 0.0;
+  }
+
+  // Routine to report currently alive star mass
+  double get_alive_mass() { return aliveMass; }
 
 private:
 
-  // Populate with stars
-  void populateStars();
-
   // Data
-  double targetMass, mass;            // Target mass, actual mass
+  long id;                            // Unique ID
+  double targetMass, birthMass;       // Target mass, actual mass at birth
+  double aliveMass;                   // Initial mass of still-living stars
   double formationTime;               // Cluster birth time
-  vector<double> starMasses;          // List of stellar masses
-  slug_IMF &imf;                      // Pointer to the IMF for this cluster
-  base_generator_type &ranGenerator;  // Random number generator
-}
+  vector<double> stars;               // List of stellar masses
+  slug_PDF *imf;                      // IMF for this cluster
+  slug_tracks *tracks;                // Evolutionary track set
+};
 
 #endif
 // _slug_cluster_H_

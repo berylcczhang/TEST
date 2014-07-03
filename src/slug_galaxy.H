@@ -27,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 
 #if 0
-
 #ifndef _slug_galaxy_H_
 #define _slug_galaxy_H_
 
@@ -37,7 +36,8 @@ class slug_galaxy {
 
 public:
   // Creation, destruction, setup
-  slug_galaxy(slug_parmParser& pp, slug_IMF &imf, rng_type& rng);
+  slug_galaxy(slug_parmParser& pp, slug_PDF& my_imf, slug_PDF& my_cmf, 
+	      rng_type& my_rng);
   ~slug_galaxy();
   void init();                        // Initialize a new galaxy
 
@@ -56,6 +56,10 @@ private:
   void disruptClusters();             // Remove clusters
   void drawClusterMass();             // Draw a new cluster from the CMF
 
+  // Classes we know about
+  slug_PDF imf;                       // IMF
+  slug_PDF cmf;                       // CMF
+
   // Data
   int stepPtr;                        // Pointer to current time step
   vector<double> timeSteps;           // Output times
@@ -63,10 +67,8 @@ private:
   double targetMass;                  // Target mass at this time   
   vector<slug_star> fieldStars;       // Field star list
   vector<slug_cluster> clusters;      // Cluster list
-  base_generator_type ranGenerator;   // Random number generator
 }
 
 #endif
 // _slug_galaxy_H_
-
 #endif

@@ -33,7 +33,7 @@ imf   	          lib/imf/chabrier.imf
 cmf               lib/cmf/slug_default.cmf
 
 # Stellar tracks to use
-tracks	  	  ../lib/tracks/parsed/sb99/modp020.dat
+tracks	  	  lib/tracks/sb99/modp020.dat
 
 # Stellar atmospheres to use
 sed	  	  ../lib/sed/parsed/sb99/kurucz_p00.dat
