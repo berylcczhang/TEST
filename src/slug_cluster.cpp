@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 #include "slug_cluster.H"
+#include <cassert>
 
 // The constructor
 slug_cluster::slug_cluster(long my_id, double my_mass, double time, 
@@ -22,7 +23,7 @@ slug_cluster::slug_cluster(long my_id, double my_mass, double time,
   // Save ID, target mass, formation time, IMF, tracks
   id = my_id;
   targetMass = my_mass;
-  formationTime = time;
+  formationTime = curTime = time;
   imf = my_imf;
   tracks = my_tracks;
 
@@ -37,6 +38,9 @@ slug_cluster::slug_cluster(long my_id, double my_mass, double time,
 // is less than the current time
 void
 slug_cluster::advance(double time) {
+
+  // Make sure we're not trying to go back into the past
+  assert(time >= curTime);
 
   // Get current age
   double clusterAge = time - formationTime;
@@ -55,3 +59,12 @@ slug_cluster::advance(double time) {
   }
 }
 
+// Get isochrone of log L, log Teff, log g values for all the stars in
+// the cluster. Stars with masses above or below the limit of the
+// tracks are omitted.
+void 
+slug_cluster::get_isochrone(vector<double> &logL, 
+			    vector<double> &logTeff,
+			    vector<double> &logg) {
+  tracks->get_isochrone(curTime, stars, logL, logTeff, logg);
+}

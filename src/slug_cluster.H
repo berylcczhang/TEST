@@ -51,6 +51,13 @@ public:
   // Routine to report currently alive star mass
   double get_alive_mass() { return aliveMass; }
 
+  // Return the vector of stars
+  vector<double> get_stars() { return stars; }
+
+  // Get an isochrone of log L, log Teff, log g for the cluster
+  void get_isochrone(vector<double> &logL, vector<double> &logTeff,
+		     vector<double> &logg);
+
 private:
 
   // Data
@@ -58,6 +65,7 @@ private:
   double targetMass, birthMass;       // Target mass, actual mass at birth
   double aliveMass;                   // Initial mass of still-living stars
   double formationTime;               // Cluster birth time
+  double curTime;                     // Current time
   vector<double> stars;               // List of stellar masses
   slug_PDF *imf;                      // IMF for this cluster
   slug_tracks *tracks;                // Evolutionary track set

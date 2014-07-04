@@ -17,7 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 // class slug_tracks
 //
-// This class holds a set of evolutionary tracks for stars.
+// This class holds a set of evolutionary tracks for stars, and
+// provides methods to build isocrhones from them usng the isocrhone
+// synthesis method. Note that data are stored in flat 1D arrays that
+// are indexed with index arithmetic to provide high performance.
 ////////////////////////////////////////////////////////////////////////
 
 #ifndef _slug_tracks_H_
@@ -35,31 +38,46 @@ public:
   ~slug_tracks();
 
   // Maximum and minimum mass in the tracks
-  double maxMass() { return mass[0]; }
-  double minMass() { return mass[ntrack-1]; }
+  double maxMass() { return logmass[0]; }
+  double minMass() { return logmass[ntrack-1]; }
 
   // Age of star dying at a particular time
   double deathMass(double time);
 
+  // Method to produce vector of log L, log Teff, log g for stars with a
+  // specified set of initial masses on a particular isocrhone
+  void get_isochrone(double t, vector<double> &m, 
+		     vector<double> &logL_out,
+		     vector<double> &logTeff_out,
+		     vector<double> &logg_out);
+
 private:
+
+  // Method to get isochrone weights and indices
+  void isochrone_wgts(double logt, double *logm, int nstars,
+		      int *timeidx, int *trackidx, double *timewgt,
+		      double *trackwgt);
 
   // Private data
   string trackfileName;         // Name of the track file
   string trackDesc;             // Descriptor string on 1st line of file
   int ntrack;                   // Number of tracks
   int ntime;                    // Number of times per track
-  double *mass;                 // Initial masses [Msun]
-  double *times;                // Times [yr]
-  double *cur_mass;             // Current stellar masses [Msun]
-  double *logL;                 // Log luminosity [Lsun]
-  double *logTeff;              // Log effective temperature [K]
+  vector<string> tracktype;     // Type of track (WR, RO, ML)
+  double *logmass;              // Log base e initial masses [Msun]
+  double *logtimes;             // Log base e of times [yr]
+  double *logcur_mass;          // Log base e of current stellar masses [Msun]
+  double *logL;                 // Log base 10 of luminosity [Lsun]
+  double *logTeff;              // Log base 10 of effective temperature [K]
   double *h_surf;               // Surface abundance of H
   double *he_surf;              // Surface abundance of He
   double *c_surf;               // Surface abundance of C
   double *n_surf;               // Surface abundance of N
   double *o_surf;               // Surface abundance of O
-  double *logTstar;             // Log T_* [K]
-  double *logmDot;              // Log wind mass flux [Msun/yr]
+  double *logTstar;             // Log base 10 of T_* [K]
+  double *logmDot;              // Log base 10 of wind mass flux [Msun/yr]
+  double *slopes;               // Slopes connectiong points in (log
+				// t, logm)
 };
 
 #endif
