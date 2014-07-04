@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace boost::algorithm;
 using namespace boost::filesystem;
 
+#define BIG (numeric_limits<double>::max())
+
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
@@ -95,8 +97,7 @@ void
 slug_parmParser::setDefaults() {
   verbosity = 1;
   nTrials = 1;
-  timeStep = endTime = fClust = clDisruptMinTime = clAgeSlope =
-    -numeric_limits<double>::max();
+  timeStep = endTime = fClust = -BIG;
   logTime = constantSFR = writeClusterSpec = 
     writeIntegratedSpec = writeBinary = false;
   constantSFR = writeClusterProp = writeClusterPhot = 
@@ -158,6 +159,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	imf = tokens[1];
       } else if (!(tokens[0].compare("cmf"))) {
 	cmf = tokens[1];
+      } else if (!(tokens[0].compare("clf"))) {
+	clf = tokens[1];
       } else if (!(tokens[0].compare("tracks"))) {
 	track = tokens[1];
       } else if (!(tokens[0].compare("sed"))) {
@@ -168,10 +171,6 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	outDir = tokens[1];
       } else if (!(tokens[0].compare("clust_frac"))) {
 	fClust = stod(tokens[1]);
-      } else if (!(tokens[0].compare("clust_immune_time"))) {
-	clDisruptMinTime = stod(tokens[1]);
-      } else if (!(tokens[0].compare("slope_age"))) {
-	clAgeSlope = stod(tokens[1]);
       } else if (!(tokens[0].compare("out_cluster"))) {
 	writeClusterProp = stoi(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_phot"))) {
@@ -263,7 +262,7 @@ slug_parmParser::checkParams() {
     exit(1);
   }
   if (timeStep <= 0) {
-    if (timeStep == -numeric_limits<double>::max()) {
+    if (timeStep == -BIG) {
       cerr << "slug error: parameter timeStep must be set" 
 		<< endl;
     } else {
@@ -272,7 +271,7 @@ slug_parmParser::checkParams() {
     exit(1);
   }
   if (endTime <= 0) {
-    if (endTime == -numeric_limits<double>::max()) {
+    if (endTime == -BIG) {
       cerr << "slug error: parameter endTime must be set" 
 		<< endl;
     } else {
@@ -291,6 +290,14 @@ slug_parmParser::checkParams() {
     cerr << "slug error: must set IMF" << endl;
     exit(1);
   }
+  if (cmf.length() == 0) {
+    cerr << "slug error: must set CMF" << endl;
+    exit(1);
+  }
+  if (clf.length() == 0) {
+    cerr << "slug error: must set CLF" << endl;
+    exit(1);
+  }
   if (track.length() == 0) {
     cerr << "slug error: must set track" << endl;
     exit(1);
@@ -299,26 +306,13 @@ slug_parmParser::checkParams() {
     cerr << "slug error: must set SED" << endl;
     exit(1);
   }
-  if (fClust == -numeric_limits<double>::max()) {
+  if (fClust == -BIG) {
     cerr << "slug error: must set clust_frac" << endl;
     exit(1);
   } else if (fClust < 0 || fClust > 1) {
     cerr << "slug error: clust_frac must be in the range [0,1]"
 	 << endl;
     exit(1);
-  }
-  if (clDisruptMinTime == -numeric_limits<double>::max()) {
-    cerr << "slug error: must set clust_immune_time" << endl;
-    exit(1);
-  } else if (clDisruptMinTime <= 0) {
-    cerr << "slug error: clust_immune_time must be > 0" << endl;
-    exit(1);
-  }
-  if (clAgeSlope == -numeric_limits<double>::max()) {
-    cerr << "slug error: must set slope_age" << endl;
-    exit(1);
-  } else if (clAgeSlope  > 0) {
-    cerr << "slug error: slope_age must be <= 0" << endl;
   }
   if (!writeClusterProp && !writeClusterPhot 
       && !writeClusterSpec && !writeIntegratedPhot
@@ -369,11 +363,10 @@ slug_parmParser::writeParams() {
     paramFile << "SFH                  " << sfHist << endl;
   paramFile << "IMF                  " << imf << endl;
   paramFile << "CMF                  " << cmf << endl;
+  paramFile << "CLF                  " << clf << endl;
   paramFile << "track                " << track << endl;
   paramFile << "SED                  " << sed << endl;
   paramFile << "clust_frac           " << fClust << endl;
-  paramFile << "clust_immune_time    " << clDisruptMinTime << endl;
-  paramFile << "slope_age            " << clAgeSlope << endl;
   paramFile << "out_cluster          " << writeClusterProp << endl;
   paramFile << "out_cluster_phot     " << writeClusterPhot << endl;
   paramFile << "out_cluster_spec     " << writeClusterSpec << endl;
@@ -409,15 +402,13 @@ const char *slug_parmParser::get_sfHistFile()
 { return sfHist.c_str(); }
 const char *slug_parmParser::get_IMF() { return imf.c_str(); }
 const char *slug_parmParser::get_CMF() { return cmf.c_str(); }
+const char *slug_parmParser::get_CLF() { return clf.c_str(); }
 const char *slug_parmParser::get_trackFile() { return track.c_str(); }
 const char *slug_parmParser::get_sedFile() { return sed.c_str(); }
 const char *slug_parmParser::get_modelName() { return model.c_str(); }
 const char *slug_parmParser::get_outDir() 
 { return outDir.string().c_str(); }
 double slug_parmParser::get_fClust() { return fClust; }
-double slug_parmParser::get_clDisruptMinTime()
-{ return clDisruptMinTime; }
-double slug_parmParser::get_clAgeSlope() { return clAgeSlope; }
 vector<string>::size_type slug_parmParser::get_nPhot()
 { return photBand.size(); }
 const char *slug_parmParser::get_photBand(int n)

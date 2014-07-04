@@ -34,7 +34,8 @@ class slug_cluster {
 public:
   // Construct a cluster with specified target mass, birth time, IMF
   slug_cluster(long my_id, double my_mass, double time, 
-	       slug_PDF *my_imf, slug_tracks *my_tracks);
+	       slug_PDF *imf, slug_tracks *my_tracks,
+	       slug_PDF *clf=NULL);
 
   // Destructor
   ~slug_cluster() { };
@@ -51,6 +52,12 @@ public:
   // Routine to report currently alive star mass
   double get_alive_mass() { return aliveMass; }
 
+  // Routine to report if this cluster is disrupted
+  bool disrupted() { return is_disrupted; }
+
+  // Routine to return lifetime of cluster against disruption
+  double get_lifetime() { return lifetime; }
+
   // Return the vector of stars
   vector<double> get_stars() { return stars; }
 
@@ -66,9 +73,10 @@ private:
   double aliveMass;                   // Initial mass of still-living stars
   double formationTime;               // Cluster birth time
   double curTime;                     // Current time
+  double lifetime;                    // Time at which this cluster disrupts
   vector<double> stars;               // List of stellar masses
-  slug_PDF *imf;                      // IMF for this cluster
   slug_tracks *tracks;                // Evolutionary track set
+  bool is_disrupted;                  // Is this cluster disrupted?
 };
 
 #endif

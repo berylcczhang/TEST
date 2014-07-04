@@ -53,8 +53,9 @@ public:
   // Function to draw a single value
   double draw();
 
-  // Function to draw a population; return value is the actual mass
-  // value drawn, and the population drawn is returned in pop
+  // Function to draw a population with the goal of reaching a certain
+  // sum; return value is the sum of the actual population drawn, and
+  // the population drawn is returned in pop
   double drawPopulation(double target, vector<double>& pop);
 
 private:

@@ -26,26 +26,23 @@ sfr    		  0.1
 # Star formation history file (only used if sfr < 0; can be omitted otherwise)
 #sfh              sfh.txt
 
-# IMF file name
+# IMF (initial mass function) file name
 imf   	          lib/imf/chabrier.imf
 
-# CMF file name
+# CMF (cluster mass function) file name
 cmf               lib/cmf/slug_default.cmf
+
+# CLF (cluster lifetime function) file name
+clf               lib/clf/slug_default.clf
+
+# Fraction of stars born in clusters (must be 0 - 1)
+clust_frac        1.0
 
 # Stellar tracks to use
 tracks	  	  lib/tracks/sb99/modp020.dat
 
 # Stellar atmospheres to use
 sed	  	  ../lib/sed/parsed/sb99/kurucz_p00.dat
-
-# Fraction of stars born in clusters (must be 0 - 1)
-clust_frac        1.0
-
-# Age at which cluster disruption begins (yr; must be > 0)
-clust_immune_time 1.0e6
-
-# Slope of cluster age distribution for constant SFR (must be <= 0)
-slope_age         -0.9
 
 # Write out cluster physical properties? (0 = no, 1 = yes, default = 1)
 out_cluster       1

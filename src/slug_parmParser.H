@@ -44,6 +44,7 @@ public:
   const char *get_sfHistFile();           // SF history file name
   const char *get_IMF();                  // IMF file name
   const char *get_CMF();                  // CMF file name
+  const char *get_CLF();                  // CLF file name
   const char *get_trackFile();            // File containing stellar tracks
   const char *get_sedFile();              // File containing atmospheres/SEDs
   const char *get_modelName();            // Name of this model
@@ -76,13 +77,12 @@ private:
   string sfHist;                          // SF history file name
   string imf;                             // IMF file name
   string cmf;                             // CMF file name
+  string clf;                             // CLF file name
   string track;                           // File containing stellar tracks
   string sed;                             // File containing atmospheres/SEDs
   string model;                           // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   double fClust;                          // Fraction of stars formed in clusters
-  double clDisruptMinTime;                // Minimum time for cluster disruption
-  double clAgeSlope;                      // Slope of cluster age distribution
   vector<string> photBand;                // Named of photometric bands
   bool writeClusterProp;                  // Write out cluster properties?
   bool writeClusterPhot;                  // Write out cluster photometry?
