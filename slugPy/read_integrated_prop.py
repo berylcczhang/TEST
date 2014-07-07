@@ -8,7 +8,8 @@ import struct
 import os
 import os.path as osp
 
-def read_integrated_prop(model_name, output_dir=None, verbose=False):
+def read_integrated_prop(model_name, output_dir=None, asciionly=False,
+                         binonly=False, verbose=False):
     """
     Function to read a SLUG2 integrated_prop file.
 
@@ -20,6 +21,10 @@ def read_integrated_prop(model_name, output_dir=None, verbose=False):
        The directory where the SLUG2 output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
+    asciionly : bool
+       If True, only look for ASCII versions of outputs, ending in .txt
+    binonly : bool
+       If True, only look for binary versions of outputs, ending in .bin
     verbose : bool
        If True, verbose output is printed as code runs
 
@@ -54,30 +59,37 @@ def read_integrated_prop(model_name, output_dir=None, verbose=False):
         outdir = output_dir
 
     # See if we have a text file
-    fname = osp.join(outdir, model_name+'_integrated_prop.txt')
-    try:
-        fp = open(fname, 'r')
-    except IOError:
+    if not binonly:
+        fname = osp.join(outdir, model_name+'_integrated_prop.txt')
+        try:
+            fp = open(fname, 'r')
+        except IOError:
+            fp = None
+    else:
         fp = None
 
     # If that failed, look for a binary file
     if fp is None:
-        fname = osp.join(outdir, model_name+'_integrated_prop.bin')
-        try:
-            fp = open(fname, 'rb')
-        except IOError:
-            pass
+        if not asciionly:
+            fname = osp.join(outdir, model_name+'_integrated_prop.bin')
+            try:
+                fp = open(fname, 'rb')
+            except IOError:
+                pass
 
     # If that failed, and we didn't get an explicit directory
     # specification, try looking in SLUG_DIR/output
     if (fp is None) and (output_dir is None) and \
        ('SLUG_DIR' in os.environ):
         outdir = osp.join(os.environ['SLUG_DIR'], 'output')
-        fname = osp.join(outdir,
-                         model_name+'_integrated_prop.txt')
-        try:
-            fp = open(fname, 'r')
-        except IOError:
+        if not binonly:
+            fname = osp.join(outdir,
+                             model_name+'_integrated_prop.txt')
+            try:
+                fp = open(fname, 'r')
+            except IOError:
+                pass
+        if not asciionly and fp is None:
             fname = osp.join(outdir, 
                              model_name+'_integrated_prop.bin')
             try:
@@ -129,7 +141,23 @@ def read_integrated_prop(model_name, output_dir=None, verbose=False):
     else:
 
         # Binary mode
-        pass
+
+        # Suck file into memory
+        data = fp.read()
+
+        # Interpret data
+        nentry = len(data)/64
+        data_list = struct.unpack('dddddQQQ'*nentry, data)
+
+        # Stick data into correctly-named lists
+        time = data_list[0::8]
+        target_mass = data_list[1::8]
+        actual_mass = data_list[2::8]
+        live_mass = data_list[3::8]
+        cluster_mass = data_list[4::8]
+        num_clusters = data_list[5::8]
+        num_dis_clusters = data_list[6::8]
+        num_fld_stars = data_list[7::8]
 
     # Close file
     fp.close()
