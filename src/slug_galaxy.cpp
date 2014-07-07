@@ -336,6 +336,7 @@ slug_galaxy::write_integrated_prop() {
 		  << endl;
   } else {
     int_prop_file.write((char *) &curTime, sizeof curTime);
+    int_prop_file.write((char *) &targetMass, sizeof targetMass);
     int_prop_file.write((char *) &mass, sizeof mass);
     int_prop_file.write((char *) &aliveMass, sizeof aliveMass);
     int_prop_file.write((char *) &clusterMass, sizeof clusterMass);
