@@ -16,8 +16,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "slug_PDF_lognormal.H"
 #include <cmath>
+#include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
+using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::random;
 
@@ -149,7 +152,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
     // Make sure we got the right tokens
     if (tokens[0].compare("mean") == 0) {
       try {
-	mean = stod(tokens[1]);
+	mean = lexical_cast<double>(tokens[1]);
 	have_mean = true;
       } catch (const invalid_argument& ia) {
 	// If we're here, a type conversion failed
@@ -158,7 +161,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
       }
     } else if (tokens[0].compare("disp") == 0) {
       try {
-	disp = stod(tokens[1]);
+	disp = lexical_cast<double>(tokens[1]);
 	have_disp = true;
       } catch (const invalid_argument& ia) {
 	// If we're here, a type conversion failed
@@ -167,7 +170,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
       }
     } else if ((tokens[0].compare("weight") == 0) && !have_weight) {
       try {
-	*weight = stod(tokens[1]);
+	*weight = lexical_cast<double>(tokens[1]);
 	have_weight = true;
       } catch (const invalid_argument& ia) {
 	// If we're here, a type conversion failed

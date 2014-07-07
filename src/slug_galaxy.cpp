@@ -26,7 +26,8 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // A trivial little helper function, used below
 ////////////////////////////////////////////////////////////////////////
-bool sort_death_time_decreasing(slug_star& star1, slug_star& star2) {
+bool sort_death_time_decreasing(const slug_star star1, 
+				const slug_star star2) {
   return (star1.death_time > star2.death_time);
 }
 
@@ -69,11 +70,11 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
     if (out_mode == ASCII) {
       fname += ".txt";
       full_path /= fname;
-      int_prop_file.open(full_path.string(), ios::out);
+      int_prop_file.open(full_path.c_str(), ios::out);
     } else if (out_mode == BINARY) {
       fname += ".bin";
       full_path /= fname;
-      int_prop_file.open(full_path.string(), ios::out | ios::binary);
+      int_prop_file.open(full_path.c_str(), ios::out | ios::binary);
     }
     if (!int_prop_file.is_open()) {
       cerr << "slug error: unable to open intergrated properties file " 
@@ -117,11 +118,11 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
     if (out_mode == ASCII) {
       fname += ".txt";
       full_path /= fname;
-      cluster_prop_file.open(full_path.string(), ios::out);
+      cluster_prop_file.open(full_path.c_str(), ios::out);
     } else if (out_mode == BINARY) {
       fname += ".bin";
       full_path /= fname;
-      cluster_prop_file.open(full_path.string(), ios::out | ios::binary);
+      cluster_prop_file.open(full_path.c_str(), ios::out | ios::binary);
     }
     if (!cluster_prop_file.is_open()) {
       cerr << "slug error: unable to open cluster properties file " 
@@ -228,7 +229,7 @@ slug_galaxy::advance(double time) {
     // Create clusters of chosen masses; for each one, generate a
     // random birth time, create the cluster, and push it onto the
     // master cluster list
-    for (int i=0; i<new_cluster_masses.size(); i++) {
+    for (unsigned int i=0; i<new_cluster_masses.size(); i++) {
       double birth_time = sfh->draw(curTime, time);
       slug_cluster *new_cluster = 
 	new slug_cluster(cluster_id++, new_cluster_masses[i],
@@ -249,7 +250,7 @@ slug_galaxy::advance(double time) {
 
     // Push stars onto field star list; in the process, set the birth
     // time and death time for each of them
-    for (int i=0; i<new_star_masses.size(); i++) {
+    for (unsigned int i=0; i<new_star_masses.size(); i++) {
       slug_star new_star;
       new_star.mass = new_star_masses[i];
       new_star.birth_time = sfh->draw(curTime, time);
@@ -331,15 +332,22 @@ slug_galaxy::write_integrated_prop() {
 		  << endl;
   } else {
     int_prop_file.write((char *) &curTime, sizeof curTime);
+    //cout << "wrote " << sizeof curTime << " bytes" << endl;
     int_prop_file.write((char *) &mass, sizeof mass);
+    //cout << "wrote " << sizeof mass << " bytes" << endl;
     int_prop_file.write((char *) &aliveMass, sizeof aliveMass);
+    //cout << "wrote " << sizeof aliveMass << " bytes" << endl;
     int_prop_file.write((char *) &clusterMass, sizeof clusterMass);
+    //cout << "wrote " << sizeof clusterMass << " bytes" << endl;
     vector<slug_cluster *>::size_type n = clusters.size();
     int_prop_file.write((char *) &n, sizeof n);
+    //cout << "wrote " << sizeof n << " bytes" << endl;
     n = disrupted_clusters.size();
     int_prop_file.write((char *) &n, sizeof n);
+    //cout << "wrote " << sizeof n << " bytes" << endl;
     n = field_stars.size();
     int_prop_file.write((char *) &n, sizeof n);
+    //cout << "wrote " << sizeof n << " bytes" << endl;
   }
 }
 

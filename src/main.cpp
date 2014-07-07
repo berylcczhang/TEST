@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     galaxy.reset();
 
     // Loop over time steps
-    for (int j=0; j<outTimes.size(); j++) {
+    for (unsigned int j=0; j<outTimes.size(); j++) {
 
       // If sufficiently verbose, print status
       if (pp.get_verbosity() > 1)

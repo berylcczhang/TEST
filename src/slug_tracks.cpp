@@ -21,9 +21,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <limits>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 #include "slug_tracks.H"
 
 using namespace std;
+using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
 
@@ -48,13 +50,13 @@ slug_tracks::slug_tracks(const char *fname) {
   if (slug_dir != NULL) {
     // Try opening relative to SLUG_DIR
     trackfullPath = path(slug_dir) / trackpath;
-    trackfile.open(trackfullPath.string());
+    trackfile.open(trackfullPath.c_str());
   }
   if (trackfile.is_open()) {
     trackpath = trackfullPath;
   } else {
     // Try opening relative to current path
-    trackfile.open(trackpath.string());
+    trackfile.open(trackpath.c_str());
   }
   if (!trackfile.is_open()) {
     // Couldn't open file, so bail out
@@ -87,8 +89,8 @@ slug_tracks::slug_tracks(const char *fname) {
     vector<string> tokens;
     split(tokens, line, is_any_of("\t "), token_compress_on);
     try {
-      ntrack = stoi(tokens[0]);
-      ntime = stoi(tokens[1]) + 1;  // Add a dummy entry at time = 0
+      ntrack = lexical_cast<int>(tokens[0]);
+      ntime = lexical_cast<int>(tokens[1]) + 1;  // Add a dummy entry at time = 0
     } catch (const invalid_argument& ia) {
       cerr << "Error reading track file " << trackfileName << endl;
       exit(1);
@@ -120,7 +122,7 @@ slug_tracks::slug_tracks(const char *fname) {
       trim_left(line);
       split(tokens, line, is_any_of("\t "), token_compress_on);
       try {
-	logmass[i] = log(stod(tokens[0]));
+	logmass[i] = log(lexical_cast<double>(tokens[0]));
       } catch (const invalid_argument& ia) {
 	cerr << "Error reading track file " << trackfileName << endl;
 	exit(1);
@@ -172,33 +174,45 @@ slug_tracks::slug_tracks(const char *fname) {
 	// Assign entries to arrays
 	try {
 	  logtimes[i*ntime+j] = 
-	    log(stod(line.substr(breaks[1], breaks[2]-breaks[1])));
+	    log(lexical_cast<double>(line.substr(breaks[1], 
+						 breaks[2]-breaks[1])));
 	  logcur_mass[i*ntime+j] = 
-	    log(stod(line.substr(breaks[2], breaks[3]-breaks[2])));
+	    log(lexical_cast<double>(line.substr(breaks[2], 
+						 breaks[3]-breaks[2])));
 	  logL[i*ntime+j] = 
-	    stod(line.substr(breaks[3], breaks[4]-breaks[3]));
+	    lexical_cast<double>(line.substr(breaks[3], 
+					     breaks[4]-breaks[3]));
 	  logTeff[i*ntime+j] = 
-	    stod(line.substr(breaks[4], breaks[5]-breaks[4]));
+	    lexical_cast<double>(line.substr(breaks[4], 
+					     breaks[5]-breaks[4]));
 	  h_surf[i*ntime+j] = 
-	    stod(line.substr(breaks[5], breaks[6]-breaks[5]));
+	    lexical_cast<double>(line.substr(breaks[5], 
+					     breaks[6]-breaks[5]));
 	  he_surf[i*ntime+j] = 
-	    stod(line.substr(breaks[6], breaks[7]-breaks[6]));
+	    lexical_cast<double>(line.substr(breaks[6], 
+					     breaks[7]-breaks[6]));
 	  c_surf[i*ntime+j] = 
-	    stod(line.substr(breaks[7], breaks[8]-breaks[7]));
+	    lexical_cast<double>(line.substr(breaks[7], 
+					     breaks[8]-breaks[7]));
 	  n_surf[i*ntime+j] = 
-	    stod(line.substr(breaks[8], breaks[9]-breaks[8]));
+	    lexical_cast<double>(line.substr(breaks[8], 
+					     breaks[9]-breaks[8]));
 	  o_surf[i*ntime+j] = 
-	    stod(line.substr(breaks[9], breaks[10]-breaks[9]));
+	    lexical_cast<double>(line.substr(breaks[9], 
+					     breaks[10]-breaks[9]));
 	  if ((tracktype.back().compare("WR") == 0) || 
 	      (tracktype.back().compare("RO") == 0)) {
 	    logTstar[i*ntime+j] = 
-	      stod(line.substr(breaks[10], breaks[11]-breaks[10]));
+	      lexical_cast<double>(line.substr(breaks[10], 
+					       breaks[11]-breaks[10]));
 	    logmDot[i*ntime+j] = 
-	      stod(line.substr(breaks[11], breaks[12]-breaks[11]));
+	      lexical_cast<double>(line.substr(breaks[11], 
+					       breaks[12]-breaks[11]));
 	  } else if (tracktype.back().compare("ML") == 0) {
 	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
 	    logmDot[i*ntime+j] = 
-	      stod(line.substr(breaks[10], breaks[11]-breaks[10]));
+	      lexical_cast<double>(line.substr(breaks[10], 
+					       breaks[11]-breaks[10]));
 	  } else {
 	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
 	    logmDot[i*ntime+j] = 1.0e-30;

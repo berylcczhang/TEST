@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <cmath>
 #include <limits>
+#include <string>
 #include "slug_PDF.H"
 #include "slug_PDF_lognormal.H"
 #include "slug_PDF_normal.H"
@@ -93,13 +94,13 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   if (slug_dir != NULL) {
     // Try opening relative to SLUG_DIR
     PDFfullPath = path(slug_dir) / PDFpath;
-    PDFFile.open(PDFfullPath.string());
+    PDFFile.open(PDFfullPath.c_str());
   }
   if (PDFFile.is_open()) {
     PDFpath = PDFfullPath;
   } else {
     // Try opening relative to current path
-    PDFFile.open(PDFpath.string());
+    PDFFile.open(PDFpath.c_str());
   }
   if (!PDFFile.is_open()) {
     // Couldn't open file, so bail out
@@ -171,14 +172,14 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
 
   // Compute the expectation value
   expectVal = 0.0;
-  for (int i=0; i<segments.size(); i++)
+  for (unsigned int i=0; i<segments.size(); i++)
     expectVal += weights[i]*segments[i]->expectationVal();
   expectVal = expectVal / PDFintegral;
 
   // Get the lower and upper limits of the PDF
   xMin = BIG;
   xMax = -BIG;
-  for (int i=0; i<segments.size(); i++) {
+  for (unsigned int i=0; i<segments.size(); i++) {
     xMin = xMin < segments[i]->sMin() ? xMin : segments[i]->sMin();
     xMax = xMax < segments[i]->sMax() ? xMax : segments[i]->sMax();
   }
@@ -189,7 +190,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
 // Destructor
 ////////////////////////////////////////////////////////////////////////
 slug_PDF::~slug_PDF() { 
-  for (int i=0; i<segments.size(); i++)
+  for (unsigned int i=0; i<segments.size(); i++)
     delete segments[i];
   if (disc != NULL)
     delete disc;
@@ -202,7 +203,7 @@ slug_PDF::~slug_PDF() {
 double
 slug_PDF::integral(double a, double b) {
   double val = 0.0;
-  for (int i=0; i<segments.size(); i++) {
+  for (unsigned int i=0; i<segments.size(); i++) {
     if (a >= segments[i]->sMax()) continue;
     if (b <= segments[i]->sMin()) continue;
     val += weights[i] * segments[i]->integral(a, b);
@@ -217,7 +218,7 @@ double
 slug_PDF::expectationVal(double a, double b) {
   double num = 0.0;
   double denom = 0.0;
-  for (int i=0; i<segments.size(); i++) {
+  for (unsigned int i=0; i<segments.size(); i++) {
     if (a >= segments[i]->sMax()) continue;
     if (b <= segments[i]->sMin()) continue;
     double segInt = segments[i]->integral(a, b);
@@ -263,7 +264,7 @@ slug_PDF::draw(double a, double b) {
   // and weights with the restricted range we've been given
   vector<slug_PDF_segment *> seg_temp;
   vector<double> wgt_temp;
-  for (int i=0; i<segments.size(); i++) {
+  for (unsigned int i=0; i<segments.size(); i++) {
     if (a >= segments[i]->sMax()) continue; // Segment is out of range
     if (b <= segments[i]->sMin()) continue; // Segment is out of range
     if (a <= segments[i]->sMin() && b >= segments[i]->sMax()) {
@@ -405,12 +406,12 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
     parseError(lineCount, "", "Need at least two breakpoints");
 
   // Read the breakpoints
-  int nbreak = firstline.size() - 1;
-  int nsegment = nbreak - 1;
+  unsigned int nbreak = firstline.size() - 1;
+  unsigned int nsegment = nbreak - 1;
   double *breakpoints = new double[nbreak];
-  for (int i=0; i<nbreak; i++) {
+  for (unsigned int i=0; i<nbreak; i++) {
     try {
-      breakpoints[i] = stod(firstline[i+1]);
+      breakpoints[i] = lexical_cast<double>(firstline[i+1]);
     } catch (const invalid_argument& ia) {
       // If we're here, a type conversion failed
       parseError(lineCount, "", 
@@ -429,7 +430,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
   // segment. Lines of the form
   // method METHOD
   // are also allowed.
-  int bptr = 0;
+  unsigned int bptr = 0;
   bool inSegment = false;
   string line, linecopy;
   vector<string> tokens;
@@ -583,7 +584,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
   // Now figure out the correct weights on all segments in order to
   // make them continuous across the breakpoints
   double cumWeight = weights[0];
-  for (int i=1; i<nsegment; i++) {
+  for (unsigned int i=1; i<nsegment; i++) {
     weights[i] = weights[i-1] * 
       segments[i-1]->sMaxVal() / segments[i]->sMinVal();
     cumWeight += weights[i];
@@ -592,7 +593,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
   // If normalizing to unity, normalize; if not, store integral under
   // function
   if (normalized) {
-    for (int i=0; i<nsegment; i++)
+    for (unsigned int i=0; i<nsegment; i++)
       weights[i] /= cumWeight;
     PDFintegral = 1.0;
   } else {
@@ -753,11 +754,11 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
   // Normalize segment weights if this is a normalized PDF; store
   // integrated value if not
   double cumWeight = weights[0];
-  for (int i=1; i<segments.size(); i++) {
+  for (unsigned int i=1; i<segments.size(); i++) {
     cumWeight += weights[i];
   }
   if (normalized) {
-    for (int i=0; i<segments.size(); i++)
+    for (unsigned int i=0; i<segments.size(); i++)
       weights[i] /= cumWeight;
     PDFintegral = 1.0;
   } else {

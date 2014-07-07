@@ -18,8 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <limits>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include "slug_parmParser.H"
 
+using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
 
@@ -53,7 +55,7 @@ slug_parmParser::slug_parmParser(int argc, char **argv) {
   // Try to open parameter file, and exit with error message if we
   // can't
   ifstream paramFile;
-  paramFile.open(paramFileName, ios::in);
+  paramFile.open(paramFileName.c_str(), ios::in);
   if (!paramFile.is_open()) {
     cerr << "slug error: unable to open file " 
 	      << paramFileName << endl;
@@ -137,19 +139,19 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 
     // If we're here, line is in valid format, so read the value of
     // the token and check it against known tokens to find the match
-    int nTokExpected = 2;
+    unsigned int nTokExpected = 2;
     to_lower(tokens[0]);
     try {
       if (!(tokens[0].compare("verbosity"))) {
-	verbosity = stoi(tokens[1]);
+	verbosity = lexical_cast<int>(tokens[1]);
       } else if (!(tokens[0].compare("n_trials"))) {
-	nTrials = stoi(tokens[1]);
+	nTrials = lexical_cast<int>(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
-	timeStep = stod(tokens[1]);
+	timeStep = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("end_time"))) {
-	endTime = stod(tokens[1]);
+	endTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("sfr"))) {
-	sfr = stod(tokens[1]);
+	sfr = lexical_cast<double>(tokens[1]);
 	if (sfr <= 0) constantSFR = false;
       } else if (!(tokens[0].compare("sfh"))) {
 	sfh = tokens[1];
@@ -168,19 +170,19 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       } else if (!(tokens[0].compare("out_dir"))) {
 	outDir = tokens[1];
       } else if (!(tokens[0].compare("clust_frac"))) {
-	fClust = stod(tokens[1]);
+	fClust = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("out_cluster"))) {
-	writeClusterProp = stoi(tokens[1]) != 0;
+	writeClusterProp = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_phot"))) {
-	writeClusterPhot = stoi(tokens[1]) != 0;
+	writeClusterPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_spec"))) {
-	writeClusterSpec = stoi(tokens[1]) != 0;
+	writeClusterSpec = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated"))) {
-	writeIntegratedProp = stoi(tokens[1]) != 0;
+	writeIntegratedProp = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_phot"))) {
-	writeIntegratedPhot = stoi(tokens[1]) != 0;
+	writeIntegratedPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_spec"))) {
-	writeIntegratedSpec = stoi(tokens[1]) != 0;
+	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("output_mode"))) {
 	to_lower(tokens[1]);
 	if (tokens[1].compare("ascii") == 0)
@@ -199,7 +201,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 
 	// For this key, we don't know in advance how many bands to
 	// expect, so parse them one at a time
-	for (int tokPtr = 1; tokPtr < tokens.size(); tokPtr++) {
+	for (unsigned int tokPtr = 1; tokPtr < tokens.size(); tokPtr++) {
 
 	  // Check if this is a comment; if so, stop iterating; if
 	  // not, increment the number of tokens expected
@@ -212,7 +214,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 		token_compress_on);
 
 	  // Push onto photometric band list
-	  for (int i = 0; i < photBandTmp.size(); i++) {
+	  for (unsigned int i = 0; i < photBandTmp.size(); i++) {
 	    if (photBandTmp[i].length() == 0) continue;
 	    photBand.push_back(photBandTmp[i]);
 	  }
@@ -350,7 +352,7 @@ slug_parmParser::writeParams() {
 
   // Open file for output
   ofstream paramFile;
-  paramFile.open(full_path.string(), ios::out);
+  paramFile.open(full_path.c_str(), ios::out);
   if (!paramFile.is_open()) {
     cerr << "slug error: unable to open parameter summmary file " 
 	 << full_path.string() << endl;
@@ -381,7 +383,7 @@ slug_parmParser::writeParams() {
   paramFile << "out_integrated_spec  " << writeIntegratedSpec << endl;
   if (photBand.size() > 0) {
     paramFile << "phot_bands           ";
-    for (int i=0; i<photBand.size(); i++) {
+    for (unsigned int i=0; i<photBand.size(); i++) {
       paramFile << photBand[i];
       if (i < photBand.size()-1) paramFile << ", ";
     }
