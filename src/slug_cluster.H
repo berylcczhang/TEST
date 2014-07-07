@@ -28,6 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug.H"
 #include "slug_PDF.H"
 #include "slug_tracks.H"
+#include <iostream>
+#include <fstream>
 
 class slug_cluster {
 
@@ -49,7 +51,9 @@ public:
     else return 0.0;
   }
 
-  // Routine to report currently alive star mass
+  // Routine to report various masses
+  double get_target_mass() { return targetMass; }
+  double get_birth_mass() { return birthMass; }
   double get_alive_mass() { return aliveMass; }
 
   // Routine to report if this cluster is disrupted
@@ -64,6 +68,9 @@ public:
   // Get an isochrone of log L, log Teff, log g for the cluster
   void get_isochrone(vector<double> &logL, vector<double> &logTeff,
 		     vector<double> &logg);
+
+  // Output routine
+  void write_prop(ofstream& outfile, outputMode out_mode);
 
 private:
 

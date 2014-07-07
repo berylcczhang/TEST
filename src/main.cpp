@@ -24,9 +24,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_galaxy.H"
 #include "slug_parmParser.H"
 #include "slug_PDF.H"
+#include "slug_PDF_powerlaw.H"
 #include "slug_tracks.H"
 
 int main(int argc, char *argv[]) {
+
+  //////////////////////////////////////////////////////////////////////
+  // Initialization steps
+  //////////////////////////////////////////////////////////////////////
 
   // Parse the parameter file
   slug_parmParser pp(argc, argv);
@@ -36,49 +41,77 @@ int main(int argc, char *argv[]) {
 
   // Read the atmospheres
 
+  // Set up the time stepping
+  vector<double> outTimes;
+  double t = pp.get_timeStep();
+  while (t <= pp.get_endTime()) {
+    outTimes.push_back(t);
+    t += pp.get_timeStep();
+  }
+
   // Initialize the random number generator we'll use throughout this
-  // simulation.
+  // simulation
   rng_type rng(static_cast<unsigned int>(time(0)));
 
-  // Set up the IMF and the CMF
-  slug_PDF imf(pp.get_IMF(), rng);
-  slug_PDF cmf(pp.get_CMF(), rng);
+  // Set up the IMF, the CMF, and the cluster lifetime function (CLF)
+  slug_PDF imf(pp.get_IMF(), &rng);
+  slug_PDF cmf(pp.get_CMF(), &rng);
+  slug_PDF clf(pp.get_CLF(), &rng);
+
+  // Set up the star formation rate / star formation history; requires
+  // special handling because we give the user an option to specify
+  // the SFH by just giving us a constant SFR
+  slug_PDF *sfh;
+  if (pp.get_constantSFR()) {
+    // SFR is constant, so create a powerlaw segment of slope 0 with
+    // the correct normalization
+    slug_PDF_powerlaw *sfh_segment = 
+      new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng);
+    sfh = new slug_PDF(sfh_segment, &rng, 
+		       outTimes.back()*pp.get_SFR());
+  } else {
+    // SFR is not constant, so read SFH from file
+    sfh = new slug_PDF(pp.get_SFH(), &rng);
+  }
 
   // Initialize a galaxy
-  //slug_galaxy galaxy(pp, imf, cmf, rng);
+  slug_galaxy galaxy(pp, &imf, &cmf, sfh, &tracks, &clf);
 
   // Initialization completed successfully, so write out the parameter
   // summary file
   pp.writeParams();
 
+  //////////////////////////////////////////////////////////////////////
+  // Main simulation loop
+  //////////////////////////////////////////////////////////////////////
+
   // Loop over number of trials
   for (int i=0; i<pp.get_nTrials(); i++) {
 
-#if 0
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
       std::cout << "slug: starting trial " << i+1 << " of "
 		<< pp.get_nTrials() << endl;
-#endif
 
-    // Initalize the galaxy
-    //galaxy.init();
+    // Reset the galaxy
+    galaxy.reset();
 
-    // Loop over the evolution of this galaxy
-    //while (!galaxy.done()) {
+    // Loop over time steps
+    for (int j=0; j<outTimes.size(); j++) {
 
       // If sufficiently verbose, print status
-      //if (pp.get_verbosity() > 1)
-    //std::cout << "  trial " << i << ", advance to time " 
-    //		  << galaxy.nextTime() << endl;
+      if (pp.get_verbosity() > 1)
+	std::cout << "  trial " << i+1 << ", advance to time " 
+	  	  << outTimes[j] << endl;
 
       // Advance to next time
-    //      galaxy.advance();
+      galaxy.advance(outTimes[j]);
 
-      // Write current output
-      //galaxy.write();
+      // Write requested forms of output
+      if (pp.get_writeIntegratedProp()) galaxy.write_integrated_prop();
+      if (pp.get_writeClusterProp()) galaxy.write_cluster_prop();
 
-    //}
+    }
 
   }
 

@@ -38,11 +38,14 @@ public:
   ~slug_tracks();
 
   // Maximum and minimum mass in the tracks
-  double maxMass() { return logmass[0]; }
-  double minMass() { return logmass[ntrack-1]; }
+  double max_mass() { return logmass[0]; }
+  double min_mass() { return logmass[ntrack-1]; }
 
   // Age of star dying at a particular time
-  double deathMass(double time);
+  double death_mass(double time);
+
+  // Lifetime of a star of a specified mass
+  double star_lifetime(double mass);
 
   // Method to produce vector of log L, log Teff, log g for stars with a
   // specified set of initial masses on a particular isocrhone

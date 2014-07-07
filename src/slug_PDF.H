@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // continuous segments
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef _slug_IMF_H_
-#define _slug_IMF_H_
+#ifndef _slug_PDF_H_
+#define _slug_PDF_H_
 
 #include <boost/random/discrete_distribution.hpp>
 #include <boost/random/uniform_smallint.hpp>
@@ -32,14 +32,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Enum for sampling methods
 enum samplingMethod { STOP_NEAREST, STOP_BEFORE, STOP_AFTER, 
-		      STOP_50, NUMBER, SORTED_SAMPLING };
+		      STOP_50, NUMBER, POISSON, SORTED_SAMPLING };
 
 class slug_PDF {
 
 public:
   // Create from PDF descriptor file and using specified random number
-  // generator
-  slug_PDF(const char *fname, rng_type &rng);
+  // generator. The optional parameter normalized specifies whether
+  // this PDF is normalized to have an integral of unity or not.
+  slug_PDF(const char *fname, rng_type *my_rng, bool is_normalized=true);
+
+  // Create a PDF that wraps a single segment
+  slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
+	   double normalization = 1.0);
 
   // Destructor
   ~slug_PDF();
@@ -47,11 +52,16 @@ public:
   // Change sampling method
   void setMethod(samplingMethod new_method) { method = new_method; }
 
-  // Expectation value
+  // Expectation value and integral
   double expectationVal() { return expectVal; }
+  double expectationVal(double a, double b);
+  double integral() { return PDFintegral; }
+  double integral(double a, double b);
 
-  // Function to draw a single value
+  // Functions to draw a single value, either over full PDF or a
+  // limited range
   double draw();
+  double draw(double a, double b);
 
   // Function to draw a population with the goal of reaching a certain
   // sum; return value is the sum of the actual population drawn, and
@@ -61,12 +71,15 @@ public:
 private:
   // Functions to parse basic and advanced mode PDF files
   void parseBasic(ifstream& PDFFile, vector<string> firstline,
-		  int& lineCount, rng_type &rng);
-  void parseAdvanced(ifstream& PDFFile, int& lineCount, rng_type &rng);
+		  int& lineCount);
+  void parseAdvanced(ifstream& PDFFile, int& lineCount);
 
   // Data
   // Vector of segments in the PDF
   vector<slug_PDF_segment *> segments;  // Segments in the PDF
+
+  // Copy of the rng
+  rng_type rng;
 
   // The distribution that will decide which segment to draw from
   boost::variate_generator<rng_type&, 
@@ -87,11 +100,18 @@ private:
   // Name of the PDF file
   string PDFFileName;
 
+  // Flag for whether this is a normalized PDF
+  bool normalized;
+
   // Weights of the various segments
   vector<double> weights;
 
-  // Expectation value
+  // Lower and upper limits of the PDF
+  double xMin, xMax;
+
+  // Expectation value and integral under PDF
   double expectVal;
+  double PDFintegral;
 
   // Sampling method
   samplingMethod method;

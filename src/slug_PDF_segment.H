@@ -67,11 +67,16 @@ public:
   // pure virtual
   virtual double expectationVal(double a, double b) = 0;
 
-  // Function to compute the integral over a finite interval; pure virual
+  // Function to compute the integral over a finite interval; pure
+  // virual. Note that we do not have a corresponding function to
+  // compute the integral over the full range, because PDF segments
+  // are always normalized so that value is unity.
   virtual double integral(double a, double b) = 0;
 
-  // Function to draw a star from this IMF segment; pure virtual
-  virtual double draw() = 0; 
+  // Function to draw a star from this IMF segment, and to draw over a
+  // finite interval. The latter is pure virtual.
+  double draw() { return draw(segMin, segMax); } 
+  virtual double draw(double a, double b) = 0;
 
   // Function to read data for a particular segment from a file; pure
   // virtual. Returns true on successful read, false on failure.

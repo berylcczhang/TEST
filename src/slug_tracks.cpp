@@ -270,7 +270,7 @@ slug_tracks::~slug_tracks() {
 // Age of star dying at a particular time
 ////////////////////////////////////////////////////////////////////////
 double
-slug_tracks::deathMass(double time) {
+slug_tracks::death_mass(double time) {
 
   // Work with log of time
   double logt;
@@ -300,6 +300,35 @@ slug_tracks::deathMass(double time) {
   return(exp(logm));
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Lifetime of a star of a specified mass
+////////////////////////////////////////////////////////////////////////
+double
+slug_tracks::star_lifetime(double mass) {
+
+  // If mass out above highest mass we have, return lifetime of the
+  // most massive star in the tracks
+  double logm = log(mass);
+  if (logm > logmass[0]) return exp(logtimes[ntime-1]);
+
+  // Find the pair of tracks that bounds this entry
+  int trackptr = 0;
+  while (logm < logmass[trackptr+1]) {
+    trackptr++;
+    if (trackptr == ntrack-1) {
+      // We're less massive that the least mssive star in the tracks,
+      // so return the lifetime of that star
+      return exp(logtimes[(ntrack-1)*ntime + ntime-1]);
+    }
+  }
+
+  // Get lifetime by linearly interpolating between death times for
+  // two bounding tracks
+  return exp( logtimes[trackptr*ntime + ntime-1] +
+	      (logm - logmass[trackptr]) / 
+	      slopes[trackptr*ntime + ntime-1] );
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Method to get an isochrone -- log L, log Teff, log g -- for a
@@ -437,8 +466,10 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
 			    int *timeidx, int *trackidx, double *timewgt,
 			    double *trackwgt) {
 
-  // Start a mass pointer at the bottom of the grid
+  // Start a mass pointer at the track that is the largest one below
+  // the smallest input mass
   int trackptr = ntrack - 1;
+  while (logmass[trackptr-1] < logm[0]) trackptr--;
   double logmptr = logmass[trackptr];
 
   // Get index in the time direction at starting point
@@ -505,6 +536,9 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
       trackptr--;
       logmptr = logmass[trackptr];
 
+      // Safety assertion
+      assert(trackptr >= 0);
+
     } else if (dlogm_time_right < dlogm_time_left) {
 
       // We hit the next time track on the right side of the
@@ -515,6 +549,9 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
 	(logt - logtimes[trackptr*ntime + timeptr+1]);
       timeptr++;
 
+      // Safety assertion
+      assert(timeptr < ntime);
+
     } else {
 
       // We hit the next time track on the left side of the
@@ -524,6 +561,9 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
 	slopes[(trackptr-1)*ntime + timeptr] * 
 	(logt - logtimes[trackptr*ntime + timeptr]);
       timeptr--;
+
+      // Safety assertion
+      assert(timeptr >= 0);
 
     }
   }

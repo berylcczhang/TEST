@@ -110,7 +110,9 @@ slug_PDF_schechter::integral(double a, double b) {
 // slope such that the rejection probability isn't too large, or this
 // will be VERY slow.
 double
-slug_PDF_schechter::draw() {
+slug_PDF_schechter::draw(double a, double b) {
+  double a1 = a < segMin ? segMin : a;
+  double b1 = b > segMax ? segMax : b;
   double val, udev;
 
   // Loop for rejection sampling
@@ -121,11 +123,11 @@ slug_PDF_schechter::draw() {
 
     // Transform to power distribution
     if (segSlope != -1.0) {
-      val = pow(udev*pow(segMax, segSlope+1.0) + 
-		(1.0-udev)*pow(segMin, segSlope+1.0), 
+      val = pow(udev*pow(b1, segSlope+1.0) + 
+		(1.0-udev)*pow(a1, segSlope+1.0), 
 		1.0/(segSlope+1.0));
     } else {
-      val = pow(segMax, udev) / pow(segMin, udev-1.0);
+      val = pow(b1, udev) / pow(a1, udev-1.0);
     }
 
     // Accept or reject? Acceptance probability = exp(-val/segStar).

@@ -37,11 +37,11 @@ public:
   int get_verbosity();                    // Level of verbosity
   int get_nTrials();                      // How many trials to run
   double get_timeStep();                  // Size of timestep
-  bool get_logTime();                     // Are timesteps logarithmic?
+  double get_startTime();                 // Starting time
   double get_endTime();                   // Final time
   bool get_constantSFR();                 // Is SFR constant?
-  double get_sfr();                       // SFR value for constant SFR
-  const char *get_sfHistFile();           // SF history file name
+  double get_SFR();                       // SFR value for constant SFR
+  const char *get_SFH();                  // SF history file name
   const char *get_IMF();                  // IMF file name
   const char *get_CMF();                  // CMF file name
   const char *get_CLF();                  // CLF file name
@@ -50,8 +50,6 @@ public:
   const char *get_modelName();            // Name of this model
   const char *get_outDir();               // Dir into which to dump output
   double get_fClust();                    // Fraction of stars formed in clusters
-  double get_clDisruptMinTime();          // Minimum time for cluster disruption
-  double get_clAgeSlope();                // Slope of cluster age distribution
   vector<string>::size_type get_nPhot();  // Number of photometric bands
   const char *get_photBand(int n);        // Name of nth photometric band
   bool get_writeClusterProp();            // Write out cluster physial properties?
@@ -60,7 +58,7 @@ public:
   bool get_writeIntegratedProp();         // Write out integrated physical properties?
   bool get_writeIntegratedPhot();         // Write out integrated photometry?
   bool get_writeIntegratedSpec();         // Write out integrated spectra?
-  bool get_writeBinary();                 // Write ASCII text or binary?
+  outputMode get_outputMode();            // Output mode
 
   // Function to write out the parameters being used to a file
   void writeParams();
@@ -70,11 +68,10 @@ private:
   int verbosity;                          // Level of verbosity
   int nTrials;                            // How many trials to run
   double timeStep;                        // Size of timestep
-  bool logTime;                           // Are timesteps logarithmic?
   double endTime;                         // Final time
   bool constantSFR;                       // Is SFR constant?
   double sfr;                             // SFR value for constant SFR
-  string sfHist;                          // SF history file name
+  string sfh;                             // SF history file name
   string imf;                             // IMF file name
   string cmf;                             // CMF file name
   string clf;                             // CLF file name
@@ -90,7 +87,7 @@ private:
   bool writeIntegratedProp;               // Write out integrated properties?
   bool writeIntegratedPhot;               // Write out integrated photometry?
   bool writeIntegratedSpec;               // Write out integrated spectra?
-  bool writeBinary;                       // Write ASCII text or binary?
+  outputMode out_mode;                    // Output mode
 
   // Internal functions
   void printUsage();                      // Print a usage message and exit

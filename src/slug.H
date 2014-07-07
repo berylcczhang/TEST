@@ -23,24 +23,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _slug_H_
 #define _slug_H_
 
-#include <cstdio>
-#include <iostream>
-#include <string>
-#include <vector>
 #include <boost/random/mersenne_twister.hpp>
 
 using namespace std;
 
-//class slug_galaxy;
+// Declare all classes here
 class slug_PDF;
+class slug_PDF_lognormal;
+class slug_PDF_normal;
+class slug_PDF_powerlaw;
+class slug_PDF_schechter;
 class slug_PDF_segment;
+class slug_cluster;
+class slug_galaxy;
 class slug_parmParser;
+class slug_tracks;
 
 // Struct to represent single stars
-typedef struct { double mass, age; } slug_star;
+typedef struct { double mass, birth_time, death_time; } slug_star;
 
 // Random number generator type
 typedef boost::random::mt19937 rng_type;
+
+// Enum for output modes
+enum outputMode { ASCII, BINARY };
+
 
 #endif
 // _slug_H_

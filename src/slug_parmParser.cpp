@@ -98,10 +98,10 @@ slug_parmParser::setDefaults() {
   verbosity = 1;
   nTrials = 1;
   timeStep = endTime = fClust = -BIG;
-  logTime = constantSFR = writeClusterSpec = 
-    writeIntegratedSpec = writeBinary = false;
+  writeClusterSpec = writeIntegratedSpec = false;
   constantSFR = writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = true;
+  out_mode = ASCII;
   model = "SLUG_DEF";
 }
 
@@ -146,15 +146,13 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	nTrials = stoi(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
 	timeStep = stod(tokens[1]);
-      } else if (!(tokens[0].compare("log_time"))) {
-	logTime = stoi(tokens[1]) != 0;
       } else if (!(tokens[0].compare("end_time"))) {
 	endTime = stod(tokens[1]);
       } else if (!(tokens[0].compare("sfr"))) {
 	sfr = stod(tokens[1]);
 	if (sfr <= 0) constantSFR = false;
       } else if (!(tokens[0].compare("sfh"))) {
-	sfHist = tokens[1];
+	sfh = tokens[1];
       } else if (!(tokens[0].compare("imf"))) {
 	imf = tokens[1];
       } else if (!(tokens[0].compare("cmf"))) {
@@ -183,8 +181,17 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	writeIntegratedPhot = stoi(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_spec"))) {
 	writeIntegratedSpec = stoi(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_binary"))) {
-	writeBinary = stoi(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("output_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("ascii") == 0)
+	  out_mode = ASCII;
+	else if (tokens[1].compare("binary") == 0)
+	  out_mode = BINARY;
+	else {
+	  cerr << "slug error: unknown output_mode: " << endl
+	       << line << endl;
+	  exit(1);
+	}
       } else if (!(tokens[0].compare("phot_bands"))) {
 
 	// Count tokens
@@ -280,7 +287,7 @@ slug_parmParser::checkParams() {
     exit(1);
   }
   if (!constantSFR) {
-    if (sfHist.length() == 0) {
+    if (sfh.length() == 0) {
       cerr << "slug error: for non-constant SFR, must set SFH" 
 		<< endl;
       exit(1);
@@ -345,8 +352,8 @@ slug_parmParser::writeParams() {
   ofstream paramFile;
   paramFile.open(full_path.string(), ios::out);
   if (!paramFile.is_open()) {
-    cerr << "slug error: unable to open file " 
-	      << full_path << endl;
+    cerr << "slug error: unable to open parameter summmary file " 
+	 << full_path.string() << endl;
     exit(1);
   }
 
@@ -356,11 +363,10 @@ slug_parmParser::writeParams() {
   paramFile << "out_dir              " << outDir.string() << endl;
   paramFile << "n_trials             " << nTrials << endl;
   paramFile << "time_step            " << timeStep << endl;
-  paramFile << "log_time             " << logTime << endl;
   paramFile << "end_time             " << endTime << endl;
   paramFile << "SFR                  " << sfr << endl;
-  if (sfHist.length() > 0)
-    paramFile << "SFH                  " << sfHist << endl;
+  if (sfh.length() > 0)
+    paramFile << "SFH                  " << sfh << endl;
   paramFile << "IMF                  " << imf << endl;
   paramFile << "CMF                  " << cmf << endl;
   paramFile << "CLF                  " << clf << endl;
@@ -381,7 +387,10 @@ slug_parmParser::writeParams() {
     }
     paramFile << endl;
   }
-  paramFile << "out_binary           " << writeBinary << endl;
+  if (out_mode == BINARY)
+    paramFile << "output_mode          binary" << endl;
+  else if (out_mode == ASCII)
+    paramFile << "output_mode          ASCII" << endl;
 
   // Close
   paramFile.close();
@@ -394,12 +403,10 @@ slug_parmParser::writeParams() {
 int slug_parmParser::get_verbosity() { return verbosity; }
 int slug_parmParser::get_nTrials() { return nTrials; }
 double slug_parmParser::get_timeStep() { return timeStep; }
-bool slug_parmParser::get_logTime() { return logTime; }
 double slug_parmParser::get_endTime() { return endTime; }
 bool slug_parmParser::get_constantSFR() { return constantSFR; }
-double slug_parmParser::get_sfr() { return sfr; }
-const char *slug_parmParser::get_sfHistFile()
-{ return sfHist.c_str(); }
+double slug_parmParser::get_SFR() { return sfr; }
+const char *slug_parmParser::get_SFH() { return sfh.c_str(); }
 const char *slug_parmParser::get_IMF() { return imf.c_str(); }
 const char *slug_parmParser::get_CMF() { return cmf.c_str(); }
 const char *slug_parmParser::get_CLF() { return clf.c_str(); }
@@ -419,8 +426,10 @@ bool slug_parmParser::get_writeClusterPhot()
 { return writeClusterPhot; }
 bool slug_parmParser::get_writeClusterSpec()
 { return writeClusterSpec; }
+bool slug_parmParser::get_writeIntegratedProp()
+{ return writeIntegratedProp; }
 bool slug_parmParser::get_writeIntegratedPhot()
 { return writeIntegratedPhot; }
 bool slug_parmParser::get_writeIntegratedSpec()
 { return writeIntegratedSpec; }
-bool slug_parmParser::get_writeBinary() { return writeBinary; }
+outputMode slug_parmParser::get_outputMode() { return out_mode; }

@@ -9,16 +9,13 @@ model_name        SLUG_EXAMPLE
 out_dir           ../output/
 
 # Number of model galaxies to run (default = 1)
-n_trials          1
+n_trials          2
 
-# Length of time step (in yr, for linear time; in dex for log time)
+# Length of time step (in yr)
 time_step    	  2.0e7
 
 # Maximum evolution time (in yr; must be < 10^9)
 end_time	  1.0e8
-
-# Use logarithmic time steps (0 = no, 1 = yes)?
-log_time	  0
 
 # Star formation rate (Msun/yr; give a negative value for a SFHist file)
 sfr    		  0.1
@@ -45,24 +42,28 @@ tracks	  	  lib/tracks/sb99/modp020.dat
 sed	  	  ../lib/sed/parsed/sb99/kurucz_p00.dat
 
 # Write out cluster physical properties? (0 = no, 1 = yes, default = 1)
-out_cluster       1
+#out_cluster       1
 
 # Write out cluster photometry? (0 = no, 1 = yes, default = 1)
-out_cluster_phot  1
+#out_cluster_phot  1
 
 # Write out cluster spectra? (0 = no, 1 = yes, default = 0)
-out_cluster_spec  0
+#out_cluster_spec  0
 
 # Write out integrated physical properties of galaxy (0 = no, 1 = yes, default = 0)
+out_integrated     1
 
 # Write out integrated photometry? (0 = no, 1 = yes, default = 1)
-out_integrated_phot  1
+#out_integrated_phot  1
 
 # Write out integrated spectra? (0 = no, 1 = yes, default = 0)
-out_integrated_spec  0
+#out_integrated_spec  0
 
 # Photometric bands to be used; can be comma- or whitespace-separated
 phot_bands         UVIS1_F225W, UVIS1_F336W, UVIS1_F438W, UVIS1_F555W, UVIS1_F814W
 
-# Write output in binary format? (0 = no (ASCII format), 1 = yes, default = 0)
-out_binary       0
+# Write output as binary or ASCII (allowed values are "binary" and "ascii"; default = "ascii")
+output_mode     ascii
+
+# Level of verbosity while running (0 = silent, 1 = minimal output, 2 = lots of output; default = 1)
+verbosity       2

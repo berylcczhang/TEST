@@ -90,7 +90,9 @@ slug_PDF_powerlaw::integral(double a, double b) {
 
 // Draw a mass from a powerlaw with minimum and maximum
 double
-slug_PDF_powerlaw::draw() {
+slug_PDF_powerlaw::draw(double a, double b) {
+  double a1 = a < segMin ? segMin : a;
+  double b1 = b > segMax ? segMax : b;
   double val, udev;
 
   // Draw a uniform deviate
@@ -98,11 +100,11 @@ slug_PDF_powerlaw::draw() {
 
   // Transform to powerlaw distribution
   if (segSlope != -1.0) {
-    val = pow(udev*pow(segMax, segSlope+1.0) + 
-	      (1.0-udev)*pow(segMin, segSlope+1.0), 
+    val = pow(udev*pow(b1, segSlope+1.0) + 
+	      (1.0-udev)*pow(a1, segSlope+1.0), 
 	      1.0/(segSlope+1.0));
   } else {
-    val = pow(segMax, udev) / pow(segMin, udev-1.0);
+    val = pow(b1, udev) / pow(a1, udev-1.0);
   }
   return val;
 }

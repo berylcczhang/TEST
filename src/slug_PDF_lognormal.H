@@ -52,7 +52,7 @@ public:
   double integral(double a, double b);
 
   // Draw function
-  double draw();
+  double draw(double a, double b);
 
   // Parser
   parseStatus parse(ifstream& file, int& lineCount, string &errMsg, 

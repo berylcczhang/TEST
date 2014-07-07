@@ -88,11 +88,13 @@ slug_PDF_lognormal::integral(double a, double b) {
 
 // Draw a value from a lognormal with minimum and maximum
 double
-slug_PDF_lognormal::draw() {
+slug_PDF_lognormal::draw(double a, double b) {
+  double a1 = a < segMin ? segMin : a;
+  double b1 = b > segMax ? segMax : b;
   double val;
   while (1) {
     val = (*lndist)();
-    if ((val >= segMin) && (val <= segMax)) break;
+    if ((val >= a1) && (val <= b1)) break;
   }
   return(val);
 }

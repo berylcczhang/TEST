@@ -21,54 +21,66 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // galaxy, and it knows how to evolve those lists in time. It also
 // knows how to call the routines that take these lists as input and
 // return spectra and photometry as outputs. It knows how to write its
-// physical properties. Finally, it has a random number generator
-// associated with it, which is then shared with all the sub-classes
-// it contains.
+// physical properties.
 ////////////////////////////////////////////////////////////////////////
 
-#if 0
 #ifndef _slug_galaxy_H_
 #define _slug_galaxy_H_
 
 #include "slug.H"
+#include <list>
+#include <iostream>
+#include <fstream>
+
+using namespace std;
 
 class slug_galaxy {
 
 public:
-  // Creation, destruction, setup
-  slug_galaxy(slug_parmParser& pp, slug_PDF& my_imf, slug_PDF& my_cmf, 
-	      rng_type& my_rng);
+  // Creation, destruction
+  slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf, slug_PDF* my_cmf, 
+	      slug_PDF* my_sfh, slug_tracks* tracks, 
+	      slug_PDF* my_clf=NULL);
   ~slug_galaxy();
-  void init();                        // Initialize a new galaxy
 
-  // Evolution
-  void advance();                     // Advance to next time step
-  bool done();                        // Evolution done?
-  double curTime(), nextTime();       // Current time, next time
+  // Set galaxy back to its initial state
+  void reset(bool reset_cluster_id=false);  
 
-  // Output
-  void write();                       // Write output to file
+  // Advance to specified time
+  void advance(double time);
+
+  // Output functions
+  void write_integrated_prop();       // Integrated galaxy properties
+  void write_cluster_prop();          // Cluster properties
 
 private:
 
-  // Routines needed to evolve
-  void formClusters();                // Make new clusters
-  void disruptClusters();             // Remove clusters
-  void drawClusterMass();             // Draw a new cluster from the CMF
+  // Distributions and physical models used in simulation
+  slug_PDF *imf;                      // IMF
+  slug_PDF *cmf;                      // CMF
+  slug_PDF *sfh;                      // SFH
+  slug_PDF *clf;                      // CLF
+  slug_tracks *tracks;                // Evolutionary track set
 
-  // Classes we know about
-  slug_PDF imf;                       // IMF
-  slug_PDF cmf;                       // CMF
-
-  // Data
-  int stepPtr;                        // Pointer to current time step
-  vector<double> timeSteps;           // Output times
+  // Simulation data
+  double curTime;                     // Current time
   double mass;                        // Mass of stars created so far
-  double targetMass;                  // Target mass at this time   
-  vector<slug_star> fieldStars;       // Field star list
-  vector<slug_cluster> clusters;      // Cluster list
-}
+  double targetMass;                  // Target mass at this time
+  double aliveMass;                   // Mass of currently alive stars
+  double clusterMass;                 // Mass in non-disrupted clusters
+  double fc;                          // Fraction of stars in clusters
+  vector<slug_star> field_stars;      // Field stars
+  list<slug_cluster *> disrupted_clusters; // Disrupted clusters
+  list<slug_cluster *> clusters;      // Cluster list
+  long cluster_id;                    // Cluster ID counter
+
+  // Output information
+  ofstream int_prop_file;             // Integrated properties file
+  ofstream cluster_prop_file;         // Cluster properties file
+  outputMode out_mode;                // Output mode
+  
+};
 
 #endif
 // _slug_galaxy_H_
-#endif
+

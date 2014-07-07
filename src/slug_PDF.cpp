@@ -14,26 +14,75 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
+#include <cstdlib>
+#include <cmath>
+#include <limits>
 #include "slug_PDF.H"
+#include "slug_PDF_lognormal.H"
+#include "slug_PDF_normal.H"
+#include "slug_PDF_powerlaw.H"
+#include "slug_PDF_schechter.H"
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
-#include <cstdlib>
-#include <cmath>
+#include <boost/random/poisson_distribution.hpp>
 
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
 using namespace boost::random;
 
+#define BIG (numeric_limits<double>::max())
 
 ////////////////////////////////////////////////////////////////////////
-// Constructor
+// Constructor from a single segment
 ////////////////////////////////////////////////////////////////////////
-slug_PDF::slug_PDF(const char *PDF, rng_type &rng) {
+slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
+		   double normalization) {
+
+  // Record the rng
+  rng = *my_rng;
+
+  // Set the sampling method to its default
+  method = STOP_NEAREST;
+
+  // Set up the normalization
+  if (normalization==1.0) {
+    normalized = true;
+    PDFintegral = 1.0;
+  } else {
+    normalized = false;
+    PDFintegral = normalization;
+  }
+
+  // Set the weights
+  weights.push_back(PDFintegral);
+
+  // Set the expectation value
+  expectVal = new_seg->expectationVal();
+
+  // Store the limits
+  xMin = new_seg->sMin();
+  xMax = new_seg->sMax();
+
+  // Store the segment
+  segments.push_back(new_seg);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Constructor from file
+////////////////////////////////////////////////////////////////////////
+slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
+		   bool is_normalized) {
+
+  // Copy the rng
+  rng = *my_rng;
 
   // Set the sampling method to its default value
   method = STOP_NEAREST;
+
+  // Record if this PDF is assumed to be normalized to unity or not
+  normalized = is_normalized;
 
   // Try to open the PDF file; search for it relative to SLUG_DIR
   // environment variable first if that is set, and then search
@@ -86,7 +135,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type &rng) {
   to_lower(tokens[0]);
   if (tokens[0].compare("breakpoints")==0) {
     // First token is "breakpoints", so pass to basic mode parser
-    parseBasic(PDFFile, tokens, lineCount, rng);
+    parseBasic(PDFFile, tokens, lineCount);
   } else if (tokens[0].compare("advanced")==0) {
     // First token is "advanced". Make sure there's no extraneous junk
     // on this line, and then call advanced mode parser
@@ -96,7 +145,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type &rng) {
 		   "Expected: 'breakpoints' or 'advanced'");
       }
     }
-    parseAdvanced(PDFFile, lineCount, rng);
+    parseAdvanced(PDFFile, lineCount);
   } else {
     // First word is not breakpoints or advanced, so bail out
     parseError(lineCount, linecopy, 
@@ -124,6 +173,15 @@ slug_PDF::slug_PDF(const char *PDF, rng_type &rng) {
   expectVal = 0.0;
   for (int i=0; i<segments.size(); i++)
     expectVal += weights[i]*segments[i]->expectationVal();
+  expectVal = expectVal / PDFintegral;
+
+  // Get the lower and upper limits of the PDF
+  xMin = BIG;
+  xMax = -BIG;
+  for (int i=0; i<segments.size(); i++) {
+    xMin = xMin < segments[i]->sMin() ? xMin : segments[i]->sMin();
+    xMax = xMax < segments[i]->sMax() ? xMax : segments[i]->sMax();
+  }
 }
 
 
@@ -136,6 +194,37 @@ slug_PDF::~slug_PDF() {
   if (disc != NULL)
     delete disc;
   delete coin;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Function to return integral over a finite range
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF::integral(double a, double b) {
+  double val = 0.0;
+  for (int i=0; i<segments.size(); i++) {
+    if (a >= segments[i]->sMax()) continue;
+    if (b <= segments[i]->sMin()) continue;
+    val += weights[i] * segments[i]->integral(a, b);
+  }
+  return val;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Function to return expectation value over a finite range
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF::expectationVal(double a, double b) {
+  double num = 0.0;
+  double denom = 0.0;
+  for (int i=0; i<segments.size(); i++) {
+    if (a >= segments[i]->sMax()) continue;
+    if (b <= segments[i]->sMin()) continue;
+    double segInt = segments[i]->integral(a, b);
+    num += weights[i] * segments[i]->expectationVal(a,b) * segInt;
+    denom += weights[i] * segInt;
+  }
+  return num/denom;
 }
 
 
@@ -157,6 +246,53 @@ slug_PDF::draw() {
   return(segments[segNum]->draw());
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Draw function over limited range
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF::draw(double a, double b) {
+
+  // If there's just one segment, this is trival: just draw from it
+  // with a restricted range and return the result
+  if (segments.size() == 1) {
+    return segments[0]->draw(a, b);
+  }
+
+  // If we're here, we need to construct temporary list of segments
+  // and weights with the restricted range we've been given
+  vector<slug_PDF_segment *> seg_temp;
+  vector<double> wgt_temp;
+  for (int i=0; i<segments.size(); i++) {
+    if (a >= segments[i]->sMax()) continue; // Segment is out of range
+    if (b <= segments[i]->sMin()) continue; // Segment is out of range
+    if (a <= segments[i]->sMin() && b >= segments[i]->sMax()) {
+      // Segment entirely in range, just copy weight
+      seg_temp.push_back(segments[i]);
+      wgt_temp.push_back(weights[i]);
+    } else {
+      // Segment partly in range; store segment and compute new weight
+      seg_temp.push_back(segments[i]);
+      wgt_temp.push_back(weights[i] * segments[i]->integral(a, b));
+    }
+  }
+
+  // Create a new discrete distribution generator from the new weights
+  discrete_distribution<> dist(wgt_temp.begin(), wgt_temp.end());
+  variate_generator<rng_type&,
+		    discrete_distribution <> > disc_temp(rng, dist);
+
+  // Draw from discrete generator
+  int segNum;
+  if (seg_temp.size() > 1) {
+    segNum = disc_temp();
+  } else {
+    segNum = 0;
+  }
+
+  // Draw from that segment and return
+  return seg_temp[segNum]->draw(a, b);
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Draw population function
@@ -207,11 +343,27 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) {
     // Sampling methods based on number
 
     if (method == NUMBER) {
+
+      // Draw exactly the expected number of stars
       int nExpect = (int) round(target/expectVal);
       for (int i=0; i<nExpect; i++) {
 	pop.push_back(draw());
 	sum += pop[pop.size()-1];
       }
+
+    } else if (method == POISSON) {
+
+      // Draw from a Poisson distribution to get number of stars
+      double nExpect = target/expectVal;
+      poisson_distribution<> pdist(nExpect);
+      variate_generator<rng_type&,
+			poisson_distribution <> > poisson(rng, pdist);
+      int nStar = poisson();
+      for (int i=0; i<nStar; i++) {
+	pop.push_back(draw());
+	sum += pop[pop.size()-1];
+      }
+
     } else if (method == SORTED_SAMPLING) {
 
       // Step 1: draw expected number of stars repeatedly until target
@@ -245,7 +397,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
-		     int& lineCount, rng_type &rng) {
+		     int& lineCount) {
 
   // First token of first line is breakpoints; make sure that we have
   // at least tokens total on that line
@@ -383,6 +535,8 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
 	  method = STOP_50;
 	} else if (tokens[1] == "number") {
 	  method = NUMBER;
+	} else if (tokens[1] == "poisson") {
+	  method = POISSON;
 	} else if (tokens[1] == "sorted_sampling") {
 	  method = SORTED_SAMPLING;
 	} else {
@@ -434,8 +588,16 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       segments[i-1]->sMaxVal() / segments[i]->sMinVal();
     cumWeight += weights[i];
   }
-  for (int i=0; i<nsegment; i++)
-    weights[i] /= cumWeight;
+
+  // If normalizing to unity, normalize; if not, store integral under
+  // function
+  if (normalized) {
+    for (int i=0; i<nsegment; i++)
+      weights[i] /= cumWeight;
+    PDFintegral = 1.0;
+  } else {
+    PDFintegral = cumWeight;
+  }
 }
 
 
@@ -443,8 +605,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
 // Advanced parser
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount, 
-			rng_type &rng) {
+slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
 
   // Advanced files are formatted as a series of segments, each of
   // which follows the format
@@ -589,13 +750,19 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount,
   if (segments.size()==0)
     eofError("Expected to find at least 1 segment.");
 
-  // Normalize segment weights
+  // Normalize segment weights if this is a normalized PDF; store
+  // integrated value if not
   double cumWeight = weights[0];
   for (int i=1; i<segments.size(); i++) {
     cumWeight += weights[i];
   }
-  for (int i=0; i<segments.size(); i++)
-    weights[i] /= cumWeight;
+  if (normalized) {
+    for (int i=0; i<segments.size(); i++)
+      weights[i] /= cumWeight;
+    PDFintegral = 1.0;
+  } else {
+    PDFintegral = cumWeight;
+  }
 }
 
 

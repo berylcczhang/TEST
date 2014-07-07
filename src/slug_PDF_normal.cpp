@@ -87,11 +87,13 @@ slug_PDF_normal::integral(double a, double b) {
 
 // Draw a value from a normal with minimum and maximum
 double
-slug_PDF_normal::draw() {
+slug_PDF_normal::draw(double a, double b) {
+  double a1 = a < segMin ? segMin : a;
+  double b1 = b > segMax ? segMax : b;
   double val;
   while (1) {
     val = (*ndist)();
-    if ((val >= segMin) && (val <= segMax)) break;
+    if ((val >= a1) && (val <= b1)) break;
   }
   return(val);
 }
