@@ -270,8 +270,10 @@ slug_galaxy::advance(double time) {
   list<slug_cluster *>::iterator it;
   for (it = clusters.begin(); it != clusters.end(); it++) {
     aliveMass -= (*it)->get_alive_mass();
+    clusterMass -= (*it)->get_alive_mass();
     (*it)->advance(time);
     aliveMass += (*it)->get_alive_mass();
+    clusterMass += (*it)->get_alive_mass();
   }
   for (it = disrupted_clusters.begin(); 
        it != disrupted_clusters.end(); it++) {
@@ -286,7 +288,7 @@ slug_galaxy::advance(double time) {
   while (it != clusters.end()) {
     if ((*it)->disrupted()) {
       disrupted_clusters.push_back(*it);
-      clusterMass -= (*it)->get_birth_mass();
+      clusterMass -= (*it)->get_alive_mass();
       it = clusters.erase(it);
     } else {
       ++it;
