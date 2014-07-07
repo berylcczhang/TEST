@@ -81,33 +81,35 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
 	   << full_path.string() << endl;
       exit(1);
     }
-    int_prop_file << setw(14) << left << "Time"
-		  << setw(14) << left << "TargetMass"
-		  << setw(14) << left << "ActualMass"
-		  << setw(14) << left << "LiveMass"
-		  << setw(14) << left << "ClusterMass"
-		  << setw(14) << left << "NumClusters"
-		  << setw(14) << left << "NumDisClust"
-		  << setw(14) << left << "NumFldStar"
-		  << endl;
-    int_prop_file << setw(14) << left << "(yr)"
-		  << setw(14) << left << "(Msun)"
-		  << setw(14) << left << "(Msun)"
-		  << setw(14) << left << "(Msun)"
-		  << setw(14) << left << "(Msun)"
-		  << setw(14) << left << ""
-		  << setw(14) << left << ""
-		  << setw(14) << left << ""
-		  << endl;
-    int_prop_file << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << endl;
+    if (out_mode == ASCII) {
+      int_prop_file << setw(14) << left << "Time"
+		    << setw(14) << left << "TargetMass"
+		    << setw(14) << left << "ActualMass"
+		    << setw(14) << left << "LiveMass"
+		    << setw(14) << left << "ClusterMass"
+		    << setw(14) << left << "NumClusters"
+		    << setw(14) << left << "NumDisClust"
+		    << setw(14) << left << "NumFldStar"
+		    << endl;
+      int_prop_file << setw(14) << left << "(yr)"
+		    << setw(14) << left << "(Msun)"
+		    << setw(14) << left << "(Msun)"
+		    << setw(14) << left << "(Msun)"
+		    << setw(14) << left << "(Msun)"
+		    << setw(14) << left << ""
+		    << setw(14) << left << ""
+		    << setw(14) << left << ""
+		    << endl;
+      int_prop_file << setw(14) << left << "-----------"
+		    << setw(14) << left << "-----------"
+		    << setw(14) << left << "-----------"
+		    << setw(14) << left << "-----------"
+		    << setw(14) << left << "-----------"
+		    << setw(14) << left << "-----------"
+		    << setw(14) << left << "-----------"
+		    << setw(14) << left << "-----------"
+		    << endl;
+    }
   }
 
   // Open cluster properties file and write its header
@@ -129,36 +131,38 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
 	   << full_path.string() << endl;
       exit(1);
     }
-    cluster_prop_file << setw(14) << left << "UniqueID"
-		      << setw(14) << left << "Time"
-		      << setw(14) << left << "FormTime"
-		      << setw(14) << left << "Lifetime"
-		      << setw(14) << left << "TargetMass"
-		      << setw(14) << left << "BirthMass"
-		      << setw(14) << left << "LiveMass"
-		      << setw(14) << left << "NumStar"
-		      << setw(14) << left << "MaxStarMass"
-		      << endl;
-    cluster_prop_file << setw(14) << left << ""
-		      << setw(14) << left << "(yr)"
-		      << setw(14) << left << "(yr)"
-		      << setw(14) << left << "(yr)"
-		      << setw(14) << left << "(Msun)"
-		      << setw(14) << left << "(Msun)"
-		      << setw(14) << left << "(Msun)"
-		      << setw(14) << left << ""
-		      << setw(14) << left << "(Msun)"
-		      << endl;
-    cluster_prop_file << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << endl;
+    if (out_mode == ASCII) {
+      cluster_prop_file << setw(14) << left << "UniqueID"
+			<< setw(14) << left << "Time"
+			<< setw(14) << left << "FormTime"
+			<< setw(14) << left << "Lifetime"
+			<< setw(14) << left << "TargetMass"
+			<< setw(14) << left << "BirthMass"
+			<< setw(14) << left << "LiveMass"
+			<< setw(14) << left << "NumStar"
+			<< setw(14) << left << "MaxStarMass"
+			<< endl;
+      cluster_prop_file << setw(14) << left << ""
+			<< setw(14) << left << "(yr)"
+			<< setw(14) << left << "(yr)"
+			<< setw(14) << left << "(yr)"
+			<< setw(14) << left << "(Msun)"
+			<< setw(14) << left << "(Msun)"
+			<< setw(14) << left << "(Msun)"
+			<< setw(14) << left << ""
+			<< setw(14) << left << "(Msun)"
+			<< endl;
+      cluster_prop_file << setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< setw(14) << left << "-----------"
+			<< endl;
+    }
   }
 }
 
@@ -332,22 +336,15 @@ slug_galaxy::write_integrated_prop() {
 		  << endl;
   } else {
     int_prop_file.write((char *) &curTime, sizeof curTime);
-    cout << "wrote " << sizeof curTime << " bytes" << endl;
     int_prop_file.write((char *) &mass, sizeof mass);
-    cout << "wrote " << sizeof mass << " bytes" << endl;
     int_prop_file.write((char *) &aliveMass, sizeof aliveMass);
-    cout << "wrote " << sizeof aliveMass << " bytes" << endl;
     int_prop_file.write((char *) &clusterMass, sizeof clusterMass);
-    cout << "wrote " << sizeof clusterMass << " bytes" << endl;
     vector<slug_cluster *>::size_type n = clusters.size();
     int_prop_file.write((char *) &n, sizeof n);
-    cout << "wrote " << sizeof n << " bytes" << endl;
     n = disrupted_clusters.size();
     int_prop_file.write((char *) &n, sizeof n);
-    cout << "wrote " << sizeof n << " bytes" << endl;
     n = field_stars.size();
     int_prop_file.write((char *) &n, sizeof n);
-    cout << "wrote " << sizeof n << " bytes" << endl;
   }
 }
 
