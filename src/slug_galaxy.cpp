@@ -332,22 +332,22 @@ slug_galaxy::write_integrated_prop() {
 		  << endl;
   } else {
     int_prop_file.write((char *) &curTime, sizeof curTime);
-    //cout << "wrote " << sizeof curTime << " bytes" << endl;
+    cout << "wrote " << sizeof curTime << " bytes" << endl;
     int_prop_file.write((char *) &mass, sizeof mass);
-    //cout << "wrote " << sizeof mass << " bytes" << endl;
+    cout << "wrote " << sizeof mass << " bytes" << endl;
     int_prop_file.write((char *) &aliveMass, sizeof aliveMass);
-    //cout << "wrote " << sizeof aliveMass << " bytes" << endl;
+    cout << "wrote " << sizeof aliveMass << " bytes" << endl;
     int_prop_file.write((char *) &clusterMass, sizeof clusterMass);
-    //cout << "wrote " << sizeof clusterMass << " bytes" << endl;
+    cout << "wrote " << sizeof clusterMass << " bytes" << endl;
     vector<slug_cluster *>::size_type n = clusters.size();
     int_prop_file.write((char *) &n, sizeof n);
-    //cout << "wrote " << sizeof n << " bytes" << endl;
+    cout << "wrote " << sizeof n << " bytes" << endl;
     n = disrupted_clusters.size();
     int_prop_file.write((char *) &n, sizeof n);
-    //cout << "wrote " << sizeof n << " bytes" << endl;
+    cout << "wrote " << sizeof n << " bytes" << endl;
     n = field_stars.size();
     int_prop_file.write((char *) &n, sizeof n);
-    //cout << "wrote " << sizeof n << " bytes" << endl;
+    cout << "wrote " << sizeof n << " bytes" << endl;
   }
 }
 

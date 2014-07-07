@@ -85,13 +85,13 @@ slug_tracks::slug_tracks(const char *fname) {
 
     // Line containing number of masses and number of times
     getline(trackfile, line);
-    trim_left(line);
+    trim(line);
     vector<string> tokens;
     split(tokens, line, is_any_of("\t "), token_compress_on);
     try {
       ntrack = lexical_cast<int>(tokens[0]);
       ntime = lexical_cast<int>(tokens[1]) + 1;  // Add a dummy entry at time = 0
-    } catch (const invalid_argument& ia) {
+    } catch (const bad_lexical_cast& ia) {
       cerr << "Error reading track file " << trackfileName << endl;
       exit(1);
     }
@@ -119,11 +119,11 @@ slug_tracks::slug_tracks(const char *fname) {
 
       // Read mass and type for track
       getline(trackfile, line);
-      trim_left(line);
+      trim(line);
       split(tokens, line, is_any_of("\t "), token_compress_on);
       try {
 	logmass[i] = log(lexical_cast<double>(tokens[0]));
-      } catch (const invalid_argument& ia) {
+      } catch (const bad_lexical_cast& ia) {
 	cerr << "Error reading track file " << trackfileName << endl;
 	exit(1);
       }
@@ -173,51 +173,66 @@ slug_tracks::slug_tracks(const char *fname) {
 
 	// Assign entries to arrays
 	try {
-	  logtimes[i*ntime+j] = 
-	    log(lexical_cast<double>(line.substr(breaks[1], 
-						 breaks[2]-breaks[1])));
-	  logcur_mass[i*ntime+j] = 
-	    log(lexical_cast<double>(line.substr(breaks[2], 
-						 breaks[3]-breaks[2])));
-	  logL[i*ntime+j] = 
-	    lexical_cast<double>(line.substr(breaks[3], 
-					     breaks[4]-breaks[3]));
-	  logTeff[i*ntime+j] = 
-	    lexical_cast<double>(line.substr(breaks[4], 
-					     breaks[5]-breaks[4]));
-	  h_surf[i*ntime+j] = 
-	    lexical_cast<double>(line.substr(breaks[5], 
-					     breaks[6]-breaks[5]));
-	  he_surf[i*ntime+j] = 
-	    lexical_cast<double>(line.substr(breaks[6], 
-					     breaks[7]-breaks[6]));
-	  c_surf[i*ntime+j] = 
-	    lexical_cast<double>(line.substr(breaks[7], 
-					     breaks[8]-breaks[7]));
-	  n_surf[i*ntime+j] = 
-	    lexical_cast<double>(line.substr(breaks[8], 
-					     breaks[9]-breaks[8]));
-	  o_surf[i*ntime+j] = 
-	    lexical_cast<double>(line.substr(breaks[9], 
-					     breaks[10]-breaks[9]));
+
+	  string dummy = line.substr(breaks[1], breaks[2]-breaks[1]);
+	  trim(dummy);
+	  logtimes[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[2], breaks[3]-breaks[2]);
+	  trim(dummy);
+	  logcur_mass[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[3], breaks[4]-breaks[3]);
+	  trim(dummy);
+	  logL[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[4], breaks[5]-breaks[4]);
+	  trim(dummy);
+	  logTeff[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[5], breaks[6]-breaks[5]);
+	  trim(dummy);
+	  h_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[6], breaks[7]-breaks[6]);
+	  trim(dummy);
+	  he_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[7], breaks[8]-breaks[7]);
+	  trim(dummy);
+	  c_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[8], breaks[9]-breaks[8]);
+	  trim(dummy);
+	  n_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	  dummy = line.substr(breaks[9], breaks[10]-breaks[9]);
+	  trim(dummy);
+	  o_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+
 	  if ((tracktype.back().compare("WR") == 0) || 
 	      (tracktype.back().compare("RO") == 0)) {
-	    logTstar[i*ntime+j] = 
-	      lexical_cast<double>(line.substr(breaks[10], 
-					       breaks[11]-breaks[10]));
-	    logmDot[i*ntime+j] = 
-	      lexical_cast<double>(line.substr(breaks[11], 
-					       breaks[12]-breaks[11]));
+
+	    dummy = line.substr(breaks[10], breaks[11]-breaks[10]);
+	    trim(dummy);
+	    logTstar[i*ntime+j] = log(lexical_cast<double>(dummy));
+
+	    dummy = line.substr(breaks[11], breaks[12]-breaks[11]);
+	    trim(dummy);
+	    logmDot[i*ntime+j] = log(lexical_cast<double>(dummy));
+
 	  } else if (tracktype.back().compare("ML") == 0) {
 	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
-	    logmDot[i*ntime+j] = 
-	      lexical_cast<double>(line.substr(breaks[10], 
-					       breaks[11]-breaks[10]));
+
+	    dummy = line.substr(breaks[10], breaks[11]-breaks[10]);
+	    trim(dummy);
+	    logmDot[i*ntime+j] = log(lexical_cast<double>(dummy));
+
 	  } else {
 	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
 	    logmDot[i*ntime+j] = 1.0e-30;
 	  }
-	} catch (const invalid_argument& ia) {
+	} catch (const bad_lexical_cast& ia) {
 	  cerr << "Error reading track file " << trackfileName << endl;
 	  exit(1);
 	}

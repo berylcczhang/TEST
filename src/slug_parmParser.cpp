@@ -119,8 +119,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
     // Read a line
     getline(paramFile, line);
 
-    // Trim leading whitespace
-    trim_left(line);
+    // Trim whitespace
+    trim(line);
 
     // If there is nothing left after trimming, or the first remaining
     // character is #, then continue to next line
@@ -227,7 +227,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	     << line << endl;
 	exit(1);
       }
-    } catch (const invalid_argument& ia) {
+    } catch (const bad_lexical_cast& ia) {
       // If we're here, a type conversion failed
       parseError(line);
     }

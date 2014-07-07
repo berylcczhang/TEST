@@ -125,7 +125,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
     getline(file, line);
     linecopy = line;
     lineCount++;
-    trim_left(line);
+    trim(line);
 
     // Skip comment and blank lines
     if (line.length() == 0) continue;
@@ -154,7 +154,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
       try {
 	mean = lexical_cast<double>(tokens[1]);
 	have_mean = true;
-      } catch (const invalid_argument& ia) {
+      } catch (const bad_lexical_cast& ia) {
 	// If we're here, a type conversion failed
 	errMsg = errStr;
 	return PARSE_ERROR;
@@ -163,7 +163,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
       try {
 	disp = lexical_cast<double>(tokens[1]);
 	have_disp = true;
-      } catch (const invalid_argument& ia) {
+      } catch (const bad_lexical_cast& ia) {
 	// If we're here, a type conversion failed
 	errMsg = errStr;
 	return PARSE_ERROR;
@@ -172,7 +172,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
       try {
 	*weight = lexical_cast<double>(tokens[1]);
 	have_weight = true;
-      } catch (const invalid_argument& ia) {
+      } catch (const bad_lexical_cast& ia) {
 	// If we're here, a type conversion failed
 	errMsg = errStr;
 	return PARSE_ERROR;

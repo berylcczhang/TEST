@@ -123,7 +123,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
     getline(PDFFile, line);
     linecopy = line;
     lineCount++;
-    trim_left(line);
+    trim(line);
     if ((line.compare(0, 1, "#") != 0) && 
 	(line.length() != 0)) break;
   }
@@ -412,7 +412,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
   for (unsigned int i=0; i<nbreak; i++) {
     try {
       breakpoints[i] = lexical_cast<double>(firstline[i+1]);
-    } catch (const invalid_argument& ia) {
+    } catch (const bad_lexical_cast& ia) {
       // If we're here, a type conversion failed
       parseError(lineCount, "", 
 		 "Expected: 'breakpoints M1 M2 M3 ... MN'");
@@ -440,7 +440,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
     getline(PDFFile, line);
     lineCount++;
     linecopy = line;
-    trim_left(line);
+    trim(line);
 
     // Skip comment and blank lines
     if (line.length() == 0) continue;
@@ -626,7 +626,7 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
     getline(PDFFile, line);
     lineCount++;
     linecopy = line;
-    trim_left(line);
+    trim(line);
 
     // Skip comment and blank lines
     if (line.length() == 0) continue;
