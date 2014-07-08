@@ -289,6 +289,7 @@ slug_galaxy::advance(double time) {
 
   // See if any clusters were disrupted over the last time step, and,
   // if so, move them to the disrupted list
+#if 0
   it=clusters.begin();
   while (it != clusters.end()) {
     if ((*it)->disrupted()) {
@@ -299,6 +300,7 @@ slug_galaxy::advance(double time) {
       ++it;
     }
   }
+#endif
 
   // Go through the field star list and remove any field stars that
   // have died

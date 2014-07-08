@@ -78,8 +78,8 @@ private:
   // Vector of segments in the PDF
   vector<slug_PDF_segment *> segments;  // Segments in the PDF
 
-  // Copy of the rng
-  rng_type rng;
+  // Pointer to the rng
+  rng_type *rng;
 
   // The distribution that will decide which segment to draw from
   boost::variate_generator<rng_type&, 

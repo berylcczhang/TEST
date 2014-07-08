@@ -75,7 +75,7 @@ public:
 private:
 
   // Data
-  long id;                            // Unique ID
+  unsigned long id;                   // Unique ID
   double targetMass, birthMass;       // Target mass, actual mass at birth
   double aliveMass;                   // Initial mass of still-living stars
   double formationTime;               // Cluster birth time

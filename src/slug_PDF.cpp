@@ -41,8 +41,8 @@ using namespace boost::random;
 slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
 		   double normalization) {
 
-  // Record the rng
-  rng = *my_rng;
+  // Set pointer to the rng
+  rng = my_rng;
 
   // Set the sampling method to its default
   method = STOP_NEAREST;
@@ -76,8 +76,8 @@ slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
 slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
 		   bool is_normalized) {
 
-  // Copy the rng
-  rng = *my_rng;
+  // Set pointer to the rng
+  rng = my_rng;
 
   // Set the sampling method to its default value
   method = STOP_NEAREST;
@@ -160,7 +160,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   if (segments.size() > 1) {
     discrete_distribution<> dist(weights.begin(), weights.end());
     disc = new variate_generator<rng_type&,
-				 discrete_distribution <> >(rng, dist);
+				 discrete_distribution <> >(*rng, dist);
   } else {
     disc = NULL;
   }
@@ -168,7 +168,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   // Set up the 50-50 generator
   uniform_smallint<> udist(0, 1);
   coin = new variate_generator<rng_type&,
-			       uniform_smallint <> >(rng, udist);
+			       uniform_smallint <> >(*rng, udist);
 
   // Compute the expectation value
   expectVal = 0.0;
@@ -281,7 +281,7 @@ slug_PDF::draw(double a, double b) {
   // Create a new discrete distribution generator from the new weights
   discrete_distribution<> dist(wgt_temp.begin(), wgt_temp.end());
   variate_generator<rng_type&,
-		    discrete_distribution <> > disc_temp(rng, dist);
+		    discrete_distribution <> > disc_temp(*rng, dist);
 
   // Draw from discrete generator
   int segNum;
@@ -358,7 +358,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) {
       double nExpect = target/expectVal;
       poisson_distribution<> pdist(nExpect);
       variate_generator<rng_type&,
-			poisson_distribution <> > poisson(rng, pdist);
+			poisson_distribution <> > poisson(*rng, pdist);
       int nStar = poisson();
       for (int i=0; i<nStar; i++) {
 	pop.push_back(draw());
@@ -494,7 +494,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       // Call the parser for the segment we just created to get
       // whatever data it needs
       string errMsg;
-      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg, rng);
+      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg, *rng);
       if (stat == PARSE_ERROR)
 	parseError(lineCount, "", errMsg);
       else if (stat == EOF_ERROR)
@@ -677,7 +677,7 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
       // whatever data it needs
       string errMsg;
       double wgt;
-      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg, rng,
+      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg, *rng,
 				    &wgt);
       if (stat == PARSE_ERROR)
 	parseError(lineCount, "", errMsg);
