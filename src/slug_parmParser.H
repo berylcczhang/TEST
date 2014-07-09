@@ -41,12 +41,13 @@ public:
   double get_endTime();                   // Final time
   bool get_constantSFR();                 // Is SFR constant?
   double get_SFR();                       // SFR value for constant SFR
+  double get_z();                         // Return the redshift
   const char *get_SFH();                  // SF history file name
   const char *get_IMF();                  // IMF file name
   const char *get_CMF();                  // CMF file name
   const char *get_CLF();                  // CLF file name
   const char *get_trackFile();            // File containing stellar tracks
-  const char *get_sedFile();              // File containing atmospheres/SEDs
+  const char *get_atmos_dir();            // Directory containing atmospehre library
   const char *get_modelName();            // Name of this model
   const char *get_outDir();               // Dir into which to dump output
   double get_fClust();                    // Fraction of stars formed in clusters
@@ -59,6 +60,7 @@ public:
   bool get_writeIntegratedPhot();         // Write out integrated photometry?
   bool get_writeIntegratedSpec();         // Write out integrated spectra?
   outputMode get_outputMode();            // Output mode
+  specsynMode get_specsynMode();          // Spectral synthesis mode
 
   // Function to write out the parameters being used to a file
   void writeParams();
@@ -71,12 +73,13 @@ private:
   double endTime;                         // Final time
   bool constantSFR;                       // Is SFR constant?
   double sfr;                             // SFR value for constant SFR
+  double z;                               // Redshift
   string sfh;                             // SF history file name
   string imf;                             // IMF file name
   string cmf;                             // CMF file name
   string clf;                             // CLF file name
   string track;                           // File containing stellar tracks
-  string sed;                             // File containing atmospheres/SEDs
+  string atmos_dir;                       // Directory containing atmosphere library
   string model;                           // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   double fClust;                          // Fraction of stars formed in clusters
@@ -88,6 +91,7 @@ private:
   bool writeIntegratedPhot;               // Write out integrated photometry?
   bool writeIntegratedSpec;               // Write out integrated spectra?
   outputMode out_mode;                    // Output mode
+  specsynMode specsyn_mode;               // Spectral synthesis mode
 
   // Internal functions
   void printUsage();                      // Print a usage message and exit

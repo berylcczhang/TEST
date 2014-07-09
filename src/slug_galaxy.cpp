@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_cluster.H"
 #include "slug_galaxy.H"
 #include "slug_parmParser.H"
+#include "slug_specsyn.H"
 #include "slug_tracks.H"
 #include <cassert>
 #include <iomanip>
@@ -35,16 +36,15 @@ bool sort_death_time_decreasing(const slug_star star1,
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
-			 slug_PDF* my_cmf, slug_PDF* my_sfh,
-			 slug_tracks* my_tracks, 
-			 slug_PDF* my_clf) {
-
-  // Record distributions and tracks to be used in this problem
-  imf = my_imf;
-  cmf = my_cmf;
-  sfh = my_sfh;
-  clf = my_clf;
-  tracks = my_tracks;
+			 slug_PDF* my_cmf, slug_PDF* my_clf, 
+			 slug_PDF* my_sfh, slug_tracks* my_tracks, 
+			 slug_specsyn* my_specsyn) :
+  imf(my_imf), 
+  cmf(my_cmf), 
+  sfh(my_sfh),
+  tracks(my_tracks),
+  specsyn(my_specsyn)
+ {
 
   // Initialize mass and time
   curTime = 0.0;
@@ -58,6 +58,9 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
 
   // Initialize the cluster ID pointer
   cluster_id = 0;
+
+  // Initialize status flags
+  Lbol_set = spec_set = false;
 
   // Store output mode
   out_mode = pp.get_outputMode();
@@ -197,6 +200,7 @@ slug_galaxy::reset(bool reset_cluster_id) {
   // because if we're doing multiple trials, we want the cluster IDs
   // for different trials to be distinct.
   curTime = mass = targetMass = aliveMass = clusterMass = 0.0;
+  Lbol_set = spec_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
     delete disrupted_clusters.back();
@@ -312,8 +316,156 @@ slug_galaxy::advance(double time) {
     }
   }
 
+  // Flag that spectrum and L_bol are no longer up to date
+  Lbol_set = spec_set = false;
+
   // Store new time
   curTime = time;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Return currently stored spectrum
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::get_spectrum(vector<double>& lambda_out, 
+			  vector<double>& L_lambda_out) {
+  if (!spec_set) set_spectrum();
+  lambda_out = lambda;
+  L_lambda_out = L_lambda;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Return currently stored Lbol
+////////////////////////////////////////////////////////////////////////
+double
+slug_galaxy::get_Lbol() {
+  if (!Lbol_set) set_Lbol();
+  return Lbol;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Compute Lbol
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::set_Lbol() {
+
+  // Do nothing if already set
+  if (Lbol_set) return;
+
+  // Prepare to iterate
+  list<slug_cluster *>::iterator it;
+  Lbol = 0.0;
+  cluster_Lbol.resize(0);
+
+  // First loop over non-disrupted clusters
+  for (it = clusters.begin(); it != clusters.end(); it++) {
+
+    // Get isochrone for this cluster
+    vector<double> logL, logTeff, logg, logR;
+    (*it)->get_isochrone(logL, logTeff, logg, logR);
+
+    // Get bolometric luminosity for this cluster
+    cluster_Lbol.push_back(0);
+    for (unsigned int i=0; i<logL.size(); i++)
+      cluster_Lbol[cluster_Lbol.size()-1] += pow(10.0, logL[i]);
+    Lbol += cluster_Lbol[cluster_Lbol.size()-1];
+
+  }
+
+  // Now do disrupted clusters
+  for (it = disrupted_clusters.begin(); it != disrupted_clusters.end(); 
+       it++) {
+    vector<double> logL, logTeff, logg, logR;
+    (*it)->get_isochrone(logL, logTeff, logg, logR);
+    for (unsigned int i=0; i<logL.size(); i++) Lbol += pow(10.0, logL[i]);
+  }
+
+  // Now do field stars
+  for (unsigned int i=0; i<field_stars.size(); i++) {
+    vector<double> logL, logTeff, logg, logR;
+    double logt = log(curTime-field_stars[i].birth_time);
+    vector<double> logm(1, log(field_stars[i].mass));
+    tracks->get_isochrone(logt, logm,
+			  logL, logTeff, logg, logR);
+    Lbol += logL[0];
+  }
+
+  // Set flag
+  Lbol_set = true;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Compute spectrum, getting Lbol in the process
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::set_spectrum() {
+
+  // Do nothing if already set
+  if (spec_set) return;
+
+  // Prepare to iterate
+  list<slug_cluster *>::iterator it;
+  Lbol = 0.0;
+  bool initialized = false;
+  cluster_Lbol.resize(0);
+  cluster_L_lambda.resize(0);
+
+  // Loop over non-disrupted clusters
+  for (it = clusters.begin(); it != clusters.end(); it++) {
+
+    // Get isochrone for this cluster
+    vector<double> logL, logTeff, logg, logR;
+    (*it)->get_isochrone(logL, logTeff, logg, logR);
+
+    // Get spectrum for this cluster
+    cluster_L_lambda.push_back(vector<double>());
+    specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, 
+			  cluster_L_lambda.back());
+
+    // Add spectrum to global sum
+    L_lambda.resize(cluster_L_lambda.back().size());
+    for (unsigned int i=0; i<lambda.size(); i++)
+      L_lambda[i] += cluster_L_lambda.back()[i];
+
+    // Get bolometric luminosity for this cluster
+    cluster_Lbol.push_back(0);
+    for (unsigned int i=0; i<logL.size(); i++)
+      cluster_Lbol[cluster_Lbol.size()-1] += pow(10.0, logL[i]);
+    Lbol += cluster_Lbol[cluster_Lbol.size()-1];
+  }
+  // Flag if we've initialized the lambda and spectrum arrays
+  if (clusters.size() > 0) initialized = true;
+
+  // Now do disrupted clusters
+  for (it = disrupted_clusters.begin(); it != disrupted_clusters.end(); 
+       it++) {
+    vector<double> logL, logTeff, logg, logR;
+    (*it)->get_isochrone(logL, logTeff, logg, logR);
+    specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, L_lambda,
+			  !initialized);
+    initialized = true;
+    for (unsigned int i=0; i<logL.size(); i++) Lbol += pow(10.0, logL[i]);
+  }
+
+  // Now do field stars
+  for (unsigned int i=0; i<field_stars.size(); i++) {
+    vector<double> logL, logTeff, logg, logR;
+    double logt = log(curTime-field_stars[i].birth_time);
+    vector<double> logm(1, log(field_stars[i].mass));
+    tracks->get_isochrone(logt, logm,
+			  logL, logTeff, logg, logR);
+    specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, L_lambda,
+			  !initialized);
+    initialized = true;
+    Lbol += pow(10.0, logL[0]);
+  }
+
+  // Set flags
+  Lbol_set = spec_set = true;
 }
 
 

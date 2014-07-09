@@ -181,7 +181,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   xMax = -BIG;
   for (unsigned int i=0; i<segments.size(); i++) {
     xMin = xMin < segments[i]->sMin() ? xMin : segments[i]->sMin();
-    xMax = xMax < segments[i]->sMax() ? xMax : segments[i]->sMax();
+    xMax = xMax > segments[i]->sMax() ? xMax : segments[i]->sMax();
   }
 }
 
@@ -302,6 +302,7 @@ double
 slug_PDF::drawPopulation(double target, vector<double>& pop) {
   double sum = 0.0;
 
+  // Procedure depends on sampling method
   if ((method == STOP_NEAREST) || (method == STOP_BEFORE) ||
       (method == STOP_AFTER) || (method == STOP_50)) {
 

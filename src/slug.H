@@ -37,6 +37,7 @@ class slug_PDF_segment;
 class slug_cluster;
 class slug_galaxy;
 class slug_parmParser;
+class slug_specsyn;
 class slug_tracks;
 
 // Struct to represent single stars
@@ -47,6 +48,9 @@ typedef boost::random::mt19937 rng_type;
 
 // Enum for output modes
 enum outputMode { ASCII, BINARY };
+
+// Enum for spectral synthesis modes
+enum specsynMode { PLANCK, SB99 };
 
 
 #endif

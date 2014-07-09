@@ -47,12 +47,15 @@ public:
   // Lifetime of a star of a specified mass
   double star_lifetime(double mass);
 
-  // Method to produce vector of log L, log Teff, log g for stars with a
-  // specified set of initial masses on a particular isocrhone
+  // Method to produce vector of log L, log Teff, log g, log R for
+  // stars with a specified set of initial masses on a particular
+  // isochrone. Output quantities are log base 10. Log L is in Solar
+  // luminosities, all other quantities are CGS.
   void get_isochrone(double t, vector<double> &m, 
 		     vector<double> &logL_out,
 		     vector<double> &logTeff_out,
-		     vector<double> &logg_out);
+		     vector<double> &logg_out,
+		     vector<double> &logR_out);
 
 private:
 

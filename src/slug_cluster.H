@@ -35,7 +35,7 @@ class slug_cluster {
 
 public:
   // Construct a cluster with specified target mass, birth time, IMF
-  slug_cluster(long my_id, double my_mass, double time, 
+  slug_cluster(const long my_id, const double my_mass, const double time, 
 	       slug_PDF *imf, slug_tracks *my_tracks,
 	       slug_PDF *clf=NULL);
 
@@ -65,19 +65,22 @@ public:
   // Return the vector of stars
   vector<double> get_stars() { return stars; }
 
-  // Get an isochrone of log L, log Teff, log g for the cluster
+  // Get an isochrone of log L, log Teff, log g, log R for the
+  // cluster. Output quantities are log base 10. Log L is in solar
+  // luminosities; all other quantities are in CGS units.
   void get_isochrone(vector<double> &logL, vector<double> &logTeff,
-		     vector<double> &logg);
+		     vector<double> &logg, vector<double> &logR);
 
   // Output routine
-  void write_prop(ofstream& outfile, outputMode out_mode);
+  void write_prop(ofstream& outfile, const outputMode out_mode);
 
 private:
 
   // Data
-  unsigned long id;                   // Unique ID
-  double targetMass, birthMass;       // Target mass, actual mass at birth
-  double aliveMass;                   // Initial mass of still-living stars
+  const unsigned long id;             // Unique ID
+  const double targetMass;            // Target mass
+  double birthMass;                   // Actual mass at birth
+  double aliveMass;                   // Mass of still-living stars
   double formationTime;               // Cluster birth time
   double curTime;                     // Current time
   double lifetime;                    // Time at which this cluster disrupts

@@ -52,6 +52,9 @@ public:
   // Change sampling method
   void setMethod(samplingMethod new_method) { method = new_method; }
 
+  // Set a minimum value for stochastic sampling
+  void set_min_stoch_val(double min_val);
+
   // Expectation value and integral
   double expectationVal() { return expectVal; }
   double expectationVal(double a, double b);

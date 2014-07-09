@@ -32,11 +32,16 @@ using namespace boost::filesystem;
 #define BIG (numeric_limits<double>::max())
 #define SMALL (numeric_limits<double>::min())
 
-// Physical constants in CGS; 2010 CODATA values were available
-#define SIGMASB 5.670373e-5
-#define G       6.67384e-8
-#define MSUN    1.9891e33
-#define LSUN    3.846e33
+// Log base 10 of constants in CGS; 2010 CODATA values were available
+#define LOGSIGMASB -4.2463884
+#define LOGG       -7.1756242
+#define LOGMSUN    33.2986566
+#define LOGLSUN    33.5850093
+#define LOGRSUN     8.8422971
+
+// Log base 10 of e; used for converting natural and base 10
+// logarithms
+#define LOGE        0.43429448190325182
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -377,7 +382,8 @@ void
 slug_tracks::get_isochrone(double t, vector<double> &m, 
 			   vector<double> &logL_out,
 			   vector<double> &logTeff_out,
-			   vector<double> &logg_out) {
+			   vector<double> &logg_out,
+			   vector<double> &logR_out) {
 
   // Throw out any stars that are below our lowest mass track, or
   // above our highest mass track
@@ -407,8 +413,10 @@ slug_tracks::get_isochrone(double t, vector<double> &m,
   logL_out.resize(nstar);
   logTeff_out.resize(nstar);
   logg_out.resize(nstar);
+  logR_out.resize(nstar);
 
-  // Interpolate to get logL and logTeff values
+  // Interpolate to get logL and logTeff, and mass values; then get R from them,
+  // and get log g by interpolating to get M as well
   for (int i=0; i<nstar; i++) {
     logL_out[i] = 
       (1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
@@ -428,23 +436,20 @@ slug_tracks::get_isochrone(double t, vector<double> &m,
       logTeff[(trackidx[i]-1)*ntime + timeidx[i]] +
       trackwgt[i] * timewgt[i] * 
       logTeff[(trackidx[i]-1)*ntime + timeidx[i]+1];
-  }
-
-  // Get log g by using L and T to get R, and interpolating to get the
-  // current mass
-  for (int i=0; i<nstar; i++) {
-    double L = pow(10.0, logL_out[i])*LSUN;
-    double T4 = pow(10.0, 4.0*logTeff_out[i]);
-    double Rsqr = L / (4.0*M_PI*SIGMASB*T4);
-    double cur_mass = exp((1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
-			  logcur_mass[trackidx[i]*ntime + timeidx[i]] +
-			  (1.0-trackwgt[i]) * timewgt[i] *
-			  logcur_mass[trackidx[i]*ntime + timeidx[i]+1] +
-			  trackwgt[i] * (1.0-timewgt[i]) *
-			  logcur_mass[(trackidx[i]-1)*ntime + timeidx[i]] +
-			  trackwgt[i] * timewgt[i] * 
-			  logcur_mass[(trackidx[i]-1)*ntime + timeidx[i]+1]);
-    logg_out[i] = log10(G*MSUN*cur_mass / (4.0*M_PI*Rsqr));
+    double log10_mass = 
+      ((1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
+       logcur_mass[trackidx[i]*ntime + timeidx[i]] +
+       (1.0-trackwgt[i]) * timewgt[i] *
+       logcur_mass[trackidx[i]*ntime + timeidx[i]+1] +
+       trackwgt[i] * (1.0-timewgt[i]) *
+       logcur_mass[(trackidx[i]-1)*ntime + timeidx[i]] +
+       trackwgt[i] * timewgt[i] * 
+       logcur_mass[(trackidx[i]-1)*ntime + timeidx[i]+1]) /
+      LOGE;
+    logR_out[i] = 0.5*(logL_out[i]+LOGLSUN) -0.5*log10(4.0*M_PI) 
+      - 0.5*LOGSIGMASB - 2.0*logTeff_out[i] - LOGRSUN;
+    logg_out[i] = LOGG + log10_mass + LOGMSUN - 2.0*logR_out[i] 
+      - 2.0*LOGRSUN;
   }
 
   // Clean up
@@ -465,7 +470,7 @@ slug_tracks::get_isochrone(double t, vector<double> &m,
 // plane. The sides of the quadrilaterals are parallel in the log m
 // direction, but not in the the log t direction. The goal of this
 // routine is to take an input age and a set of input masses, and for
-// each one to identify which quadrilateral they fall into, and to
+// each one to identify which quadrilateral it falls into, and to
 // compute weights that describe the position of the point within the
 // quadrilateral.
 //

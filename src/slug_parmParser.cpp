@@ -100,6 +100,7 @@ slug_parmParser::setDefaults() {
   verbosity = 1;
   nTrials = 1;
   timeStep = endTime = fClust = -BIG;
+  z = 0;
   writeClusterSpec = writeIntegratedSpec = false;
   constantSFR = writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = true;
@@ -163,12 +164,14 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	clf = tokens[1];
       } else if (!(tokens[0].compare("tracks"))) {
 	track = tokens[1];
-      } else if (!(tokens[0].compare("sed"))) {
-	sed = tokens[1];
+      } else if (!(tokens[0].compare("atmospheres"))) {
+	atmos_dir = tokens[1];
       } else if (!(tokens[0].compare("model_name"))) {
 	model = tokens[1];
       } else if (!(tokens[0].compare("out_dir"))) {
 	outDir = tokens[1];
+      } else if (!(tokens[0].compare("z"))) {
+	z = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("clust_frac"))) {
 	fClust = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("out_cluster"))) {
@@ -189,6 +192,17 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	  out_mode = ASCII;
 	else if (tokens[1].compare("binary") == 0)
 	  out_mode = BINARY;
+	else {
+	  cerr << "slug error: unknown output_mode: " << endl
+	       << line << endl;
+	  exit(1);
+	}
+      } else if (!(tokens[0].compare("specsyn_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("planck") == 0)
+	  specsyn_mode = PLANCK;
+	else if (tokens[1].compare("sb99") == 0)
+	  specsyn_mode = SB99;
 	else {
 	  cerr << "slug error: unknown output_mode: " << endl
 	       << line << endl;
@@ -311,8 +325,8 @@ slug_parmParser::checkParams() {
     cerr << "slug error: must set track" << endl;
     exit(1);
   }
-  if (sed.length() == 0) {
-    cerr << "slug error: must set SED" << endl;
+  if (atmos_dir.length() == 0) {
+    cerr << "slug error: must set atmos_dir" << endl;
     exit(1);
   }
   if (fClust == -BIG) {
@@ -373,7 +387,13 @@ slug_parmParser::writeParams() {
   paramFile << "CMF                  " << cmf << endl;
   paramFile << "CLF                  " << clf << endl;
   paramFile << "track                " << track << endl;
-  paramFile << "SED                  " << sed << endl;
+  paramFile << "atmos_dir            " << atmos_dir << endl;
+  paramFile << "specsyn_mode         ";
+  if (specsyn_mode == PLANCK) {
+    paramFile << "planck" << endl;
+  } else if (specsyn_mode == SB99) {
+    paramFile << "sb99" << endl;
+  }
   paramFile << "clust_frac           " << fClust << endl;
   paramFile << "out_cluster          " << writeClusterProp << endl;
   paramFile << "out_cluster_phot     " << writeClusterPhot << endl;
@@ -408,12 +428,13 @@ double slug_parmParser::get_timeStep() { return timeStep; }
 double slug_parmParser::get_endTime() { return endTime; }
 bool slug_parmParser::get_constantSFR() { return constantSFR; }
 double slug_parmParser::get_SFR() { return sfr; }
+double slug_parmParser::get_z() { return z; }
 const char *slug_parmParser::get_SFH() { return sfh.c_str(); }
 const char *slug_parmParser::get_IMF() { return imf.c_str(); }
 const char *slug_parmParser::get_CMF() { return cmf.c_str(); }
 const char *slug_parmParser::get_CLF() { return clf.c_str(); }
 const char *slug_parmParser::get_trackFile() { return track.c_str(); }
-const char *slug_parmParser::get_sedFile() { return sed.c_str(); }
+const char *slug_parmParser::get_atmos_dir() { return atmos_dir.c_str(); }
 const char *slug_parmParser::get_modelName() { return model.c_str(); }
 const char *slug_parmParser::get_outDir() 
 { return outDir.string().c_str(); }
@@ -435,3 +456,4 @@ bool slug_parmParser::get_writeIntegratedPhot()
 bool slug_parmParser::get_writeIntegratedSpec()
 { return writeIntegratedSpec; }
 outputMode slug_parmParser::get_outputMode() { return out_mode; }
+specsynMode slug_parmParser::get_specsynMode() { return specsyn_mode; }

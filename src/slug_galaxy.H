@@ -38,9 +38,9 @@ class slug_galaxy {
 
 public:
   // Creation, destruction
-  slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf, slug_PDF* my_cmf, 
-	      slug_PDF* my_sfh, slug_tracks* tracks, 
-	      slug_PDF* my_clf=NULL);
+  slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf, slug_PDF* my_cmf,
+	      slug_PDF* my_clf, slug_PDF* my_sfh, slug_tracks* tracks, 
+	      slug_specsyn* my_specsyn);
   ~slug_galaxy();
 
   // Set galaxy back to its initial state
@@ -48,6 +48,17 @@ public:
 
   // Advance to specified time
   void advance(double time);
+
+  // Bolometric luminosity; set function computes but does not return,
+  // get function computes if necessary, then returns value
+  void set_Lbol();
+  double get_Lbol();
+
+  // Spectrum; set function computes but does not return,
+  // get function computes if necessary, then returns value
+  void set_spectrum();
+  void get_spectrum(vector<double>& lambda_out, 
+		    vector<double>& L_lambda_out);
 
   // Output functions
   void write_integrated_prop();       // Integrated galaxy properties
@@ -61,6 +72,7 @@ private:
   slug_PDF *sfh;                      // SFH
   slug_PDF *clf;                      // CLF
   slug_tracks *tracks;                // Evolutionary track set
+  slug_specsyn *specsyn;               // Spectral synthesizer
 
   // Simulation data
   double curTime;                     // Current time
@@ -73,6 +85,15 @@ private:
   list<slug_cluster *> disrupted_clusters; // Disrupted clusters
   list<slug_cluster *> clusters;      // Cluster list
   long cluster_id;                    // Cluster ID counter
+  double Lbol;                        // Bolometric luminosity
+  vector<double> lambda;              // Wavelengths
+  vector<double> L_lambda;            // Luminosities
+  vector<double> cluster_Lbol;        // Luminosities of individual clusters
+  list<vector<double> > cluster_L_lambda;  // Spectra of individual clusters
+
+  // Status indicators
+  bool Lbol_set;                      // Is bolometric luminosity current?
+  bool spec_set;                      // Is the spectrum current?
 
   // Output information
   ofstream int_prop_file;             // Integrated properties file

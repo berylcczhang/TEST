@@ -24,15 +24,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
-slug_cluster::slug_cluster(long my_id, double my_mass, double time, 
-			   slug_PDF *imf, slug_tracks *my_tracks,
-			   slug_PDF *clf) {
+slug_cluster::slug_cluster(const long my_id, const double my_mass, 
+			   const double time, slug_PDF *imf, 
+			   slug_tracks *my_tracks, slug_PDF *clf) :
+  id(my_id), targetMass(my_mass), formationTime(time), curTime(time),
+  tracks(my_tracks)
+{
 
-  // Save ID, target mass, formation time, IMF, tracks
-  id = my_id;
-  targetMass = my_mass;
-  formationTime = curTime = time;
-  tracks = my_tracks;
+  // Initialize to non-disrupted
   is_disrupted = false;
 
   // Populate with stars
@@ -93,15 +92,16 @@ slug_cluster::advance(double time) {
 void 
 slug_cluster::get_isochrone(vector<double> &logL, 
 			    vector<double> &logTeff,
-			    vector<double> &logg) {
-  tracks->get_isochrone(curTime, stars, logL, logTeff, logg);
+			    vector<double> &logg,
+			    vector<double> &logR) {
+  tracks->get_isochrone(curTime, stars, logL, logTeff, logg, logR);
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Output routine
 ////////////////////////////////////////////////////////////////////////
 void
-slug_cluster::write_prop(ofstream& outfile, outputMode out_mode) {
+slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode) {
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific
 	    << setw(11) << right << id << "   "
