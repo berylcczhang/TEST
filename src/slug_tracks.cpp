@@ -37,7 +37,7 @@ using namespace boost::filesystem;
 #define LOGG       -7.1756242
 #define LOGMSUN    33.2986566
 #define LOGLSUN    33.5850093
-#define LOGRSUN     8.8422971
+#define LOGRSUN    10.8422971
 
 // Log base 10 of e; used for converting natural and base 10
 // logarithms
