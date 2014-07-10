@@ -51,7 +51,7 @@ public:
   // stars with a specified set of initial masses on a particular
   // isochrone. Output quantities are log base 10. Log L is in Solar
   // luminosities, all other quantities are CGS.
-  void get_isochrone(double t, vector<double> &m, 
+  void get_isochrone(const double t, const vector<double> &m, 
 		     vector<double> &logL_out,
 		     vector<double> &logTeff_out,
 		     vector<double> &logg_out,

@@ -189,53 +189,53 @@ slug_tracks::slug_tracks(const char *fname) {
 
 	  dummy = line.substr(breaks[3], breaks[4]-breaks[3]);
 	  trim(dummy);
-	  logL[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  logL[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[4], breaks[5]-breaks[4]);
 	  trim(dummy);
-	  logTeff[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  logTeff[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[5], breaks[6]-breaks[5]);
 	  trim(dummy);
-	  h_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  h_surf[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[6], breaks[7]-breaks[6]);
 	  trim(dummy);
-	  he_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  he_surf[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[7], breaks[8]-breaks[7]);
 	  trim(dummy);
-	  c_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  c_surf[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[8], breaks[9]-breaks[8]);
 	  trim(dummy);
-	  n_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  n_surf[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[9], breaks[10]-breaks[9]);
 	  trim(dummy);
-	  o_surf[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  o_surf[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  if ((tracktype.back().compare("WR") == 0) || 
 	      (tracktype.back().compare("RO") == 0)) {
 
 	    dummy = line.substr(breaks[10], breaks[11]-breaks[10]);
 	    trim(dummy);
-	    logTstar[i*ntime+j] = log(lexical_cast<double>(dummy));
+	    logTstar[i*ntime+j] = lexical_cast<double>(dummy);
 
 	    dummy = line.substr(breaks[11], breaks[12]-breaks[11]);
 	    trim(dummy);
-	    logmDot[i*ntime+j] = log(lexical_cast<double>(dummy));
+	    logmDot[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  } else if (tracktype.back().compare("ML") == 0) {
 	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
 
 	    dummy = line.substr(breaks[10], breaks[11]-breaks[10]);
 	    trim(dummy);
-	    logmDot[i*ntime+j] = log(lexical_cast<double>(dummy));
+	    logmDot[i*ntime+j] = lexical_cast<double>(dummy);
 
 	  } else {
 	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
-	    logmDot[i*ntime+j] = 1.0e-30;
+	    logmDot[i*ntime+j] = -30;
 	  }
 	} catch (const bad_lexical_cast& ia) {
 	  cerr << "Error reading track file " << trackfileName << endl;
@@ -379,7 +379,7 @@ slug_tracks::star_lifetime(double mass) {
 // than the input mass vector.
 
 void
-slug_tracks::get_isochrone(double t, vector<double> &m, 
+slug_tracks::get_isochrone(const double t, const vector<double> &m, 
 			   vector<double> &logL_out,
 			   vector<double> &logTeff_out,
 			   vector<double> &logg_out,
