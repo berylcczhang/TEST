@@ -28,7 +28,9 @@ using namespace boost::algorithm;
 using namespace boost::math;
 using namespace boost::random;
 
+////////////////////////////////////////////////////////////////////////
 // Constructor
+////////////////////////////////////////////////////////////////////////
 slug_PDF_schechter::
 slug_PDF_schechter(double sMin, double sMax, double sSlope, 
 		   double sStar, rng_type &rng)
@@ -37,12 +39,18 @@ slug_PDF_schechter(double sMin, double sMax, double sSlope,
   initializer(sSlope, sStar, rng);
 }
 
+
+////////////////////////////////////////////////////////////////////////
 // Destructor
+////////////////////////////////////////////////////////////////////////
 slug_PDF_schechter::~slug_PDF_schechter() { 
   delete unidist;
 }
 
+
+////////////////////////////////////////////////////////////////////////
 // Initializer
+////////////////////////////////////////////////////////////////////////
 void
 slug_PDF_schechter::initializer(double sSlope, double sStar, 
 				rng_type& rng) {
@@ -66,12 +74,25 @@ slug_PDF_schechter::initializer(double sSlope, double sStar,
       (segStar * (expint(-segMax/segStar) - 
 		  expint(-segMin/segStar)));
   }
-  segMinVal = pow( segMin/segStar, segSlope ) * exp(-segMin/segSlope);
-  segMaxVal = pow( segMax/segStar, segSlope ) * exp(-segMax/segSlope);
+  segMinVal = norm * pow( segMin/segStar, segSlope ) * exp(-segMin/segSlope);
+  segMaxVal = norm * pow( segMax/segStar, segSlope ) * exp(-segMax/segSlope);
   expectVal = expectationVal(segMin, segMax);
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Value evaluated at a point
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF_schechter::operator() (double x) {
+  if ((x < segMin) || (x > segMax)) return 0.0;
+  return norm * pow( x/segStar, segSlope ) * exp(-x/segSlope);
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Expectation value over a finite interval
+////////////////////////////////////////////////////////////////////////
 double 
 slug_PDF_schechter::expectationVal(double a, double b) {
   double a1 = a < segMin ? segMin : a;
@@ -93,7 +114,10 @@ slug_PDF_schechter::expectationVal(double a, double b) {
   }
 }
 
+
+////////////////////////////////////////////////////////////////////////
 // Integral over a finite interval
+////////////////////////////////////////////////////////////////////////
 double 
 slug_PDF_schechter::integral(double a, double b) {
   double a1 = a < segMin ? segMin : a;
@@ -140,7 +164,10 @@ slug_PDF_schechter::draw(double a, double b) {
   return val;
 }
 
+
+////////////////////////////////////////////////////////////////////////
 // File parser
+////////////////////////////////////////////////////////////////////////
 parseStatus
 slug_PDF_schechter::parse(ifstream& file, int& lineCount, string& errMsg, 
 			 rng_type& rng, double *weight) {

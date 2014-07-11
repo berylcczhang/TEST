@@ -42,6 +42,7 @@ public:
   bool get_constantSFR();                 // Is SFR constant?
   double get_SFR();                       // SFR value for constant SFR
   double get_z();                         // Return the redshift
+  double get_min_stoch_mass();            // Minimum stellar mass to treat stochstically
   const char *get_SFH();                  // SF history file name
   const char *get_IMF();                  // IMF file name
   const char *get_CMF();                  // CMF file name
@@ -74,6 +75,7 @@ private:
   bool constantSFR;                       // Is SFR constant?
   double sfr;                             // SFR value for constant SFR
   double z;                               // Redshift
+  double min_stoch_mass;                  // Minimum stellar mass to treat stochastically
   string sfh;                             // SF history file name
   string imf;                             // IMF file name
   string cmf;                             // CMF file name

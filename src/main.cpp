@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_parmParser.H"
 #include "slug_PDF.H"
 #include "slug_PDF_powerlaw.H"
+#include "slug_specsyn_planck.H"
 #include "slug_tracks.H"
 
 int main(int argc, char *argv[]) {
@@ -38,8 +39,6 @@ int main(int argc, char *argv[]) {
 
   // Read the tracks
   slug_tracks tracks(pp.get_trackFile());
-
-  // Read the atmospheres
 
   // Set up the time stepping
   vector<double> outTimes;
@@ -58,6 +57,9 @@ int main(int argc, char *argv[]) {
   slug_PDF cmf(pp.get_CMF(), &rng);
   slug_PDF clf(pp.get_CLF(), &rng);
 
+  // Set the minimum stellar mass to be treated stochastically
+  imf.set_stoch_lim(pp.get_min_stoch_mass());
+
   // Set up the star formation rate / star formation history; requires
   // special handling because we give the user an option to specify
   // the SFH by just giving us a constant SFR
@@ -74,8 +76,17 @@ int main(int argc, char *argv[]) {
     sfh = new slug_PDF(pp.get_SFH(), &rng);
   }
 
+  // Initialize the spectral synthesizer
+  slug_specsyn *specsyn = NULL;
+  if (pp.get_specsynMode() == PLANCK) {
+    specsyn = (slug_specsyn *) 
+      new slug_specsyn_planck(&tracks, &imf, pp.get_z());
+    //  } else if (pp.get_specsynMoe() == SB99) {
+    //specsyn = (slug_specsyn *) new slug_specsyn_sb99(pp);
+  }
+
   // Initialize a galaxy
-  slug_galaxy galaxy(pp, &imf, &cmf, sfh, &tracks, &clf);
+  slug_galaxy galaxy(pp, &imf, &cmf, &clf, sfh, &tracks, specsyn);
 
   // Initialization completed successfully, so write out the parameter
   // summary file
@@ -107,10 +118,12 @@ int main(int argc, char *argv[]) {
       // Advance to next time
       galaxy.advance(outTimes[j]);
 
-      // Write requested forms of output
+      // Write physical properties if requested
       if (pp.get_writeIntegratedProp()) galaxy.write_integrated_prop();
       if (pp.get_writeClusterProp()) galaxy.write_cluster_prop();
 
+      // Write spectra if requested
+      if (pp.get_writeIntegratedSpec()) galaxy.write_integrated_spec();
     }
 
   }

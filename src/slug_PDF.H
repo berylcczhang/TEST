@@ -49,27 +49,56 @@ public:
   // Destructor
   ~slug_PDF();
 
+  // Return the min, max, and stochstic limit min and max of the PDF
+  double get_xMin() { return xMin; }
+  double get_xMax() { return xMax; }
+  double get_xStochMin() { return xStochMin; }
+  double get_xStochMax() { return xStochMax; }
+
   // Change sampling method
   void setMethod(samplingMethod new_method) { method = new_method; }
 
-  // Set a minimum value for stochastic sampling
-  void set_min_stoch_val(double min_val);
+  // Set limits on the PDF range to be treated stochastically
+  void remove_stoch_lim();
+  void set_stoch_lim(double x_stoch_min);
+  void set_stoch_lim(double x_stoch_min, double x_stoch_max);
 
-  // Expectation value and integral
+  // Expectation value and integral; both defined for the full PDF,
+  // for a specified range within the PDF, and only over the part of
+  // the PDF that is being treated stochastically
   double expectationVal() { return expectVal; }
+  double expectationVal_restricted() { return expectVal_restrict; }
   double expectationVal(double a, double b);
   double integral() { return PDFintegral; }
+  double integral_restricted() { return PDFintegral_restrict; }
   double integral(double a, double b);
+
+  // Fraction of the PDF by number and by mass that is in the
+  // restricted range that we're treating stochstically
+  double num_frac_restrict() { 
+    return PDFintegral_restrict / PDFintegral;
+  }
+  double mass_frac_restrict() {
+    return expectVal_restrict * PDFintegral_restrict / 
+      (expectVal * PDFintegral);
+  }
 
   // Functions to draw a single value, either over full PDF or a
   // limited range
-  double draw();
-  double draw(double a, double b);
+  double draw();                   // Draw from full range
+  double draw_restricted();        // Draw from stochastically-limited range
+  double draw(double a, double b); // Draw from specified range
 
   // Function to draw a population with the goal of reaching a certain
   // sum; return value is the sum of the actual population drawn, and
-  // the population drawn is returned in pop
+  // the population drawn is returned in pop. Note that the population
+  // returned will only be drawn from the stochastically-limited
+  // range, and any input target will be adjusted down by the mass
+  // fraction that is in the stochastic range
   double drawPopulation(double target, vector<double>& pop);
+
+  // Operator to return the PDF evaluated at a particular x
+  double operator()(const double x);
 
 private:
   // Functions to parse basic and advanced mode PDF files
@@ -80,13 +109,17 @@ private:
   // Data
   // Vector of segments in the PDF
   vector<slug_PDF_segment *> segments;  // Segments in the PDF
+  vector<slug_PDF_segment *> seg_restricted; // Segments for
+					     // restricted draws
 
   // Pointer to the rng
   rng_type *rng;
 
-  // The distribution that will decide which segment to draw from
+  // The distributions that will decide which segment to draw from
   boost::variate_generator<rng_type&, 
 			   boost::random::discrete_distribution<> > *disc;
+  boost::variate_generator<rng_type&, 
+			   boost::random::discrete_distribution<> > *disc_restricted;
 
   // A 50/50 coin toss generator; used for the STOP_50 sampling method
   boost::variate_generator<rng_type&, 
@@ -108,13 +141,20 @@ private:
 
   // Weights of the various segments
   vector<double> weights;
+  vector<double> weights_restricted;
 
   // Lower and upper limits of the PDF
   double xMin, xMax;
 
-  // Expectation value and integral under PDF
-  double expectVal;
-  double PDFintegral;
+  // Lower and upper limits for the stochstic treatment, and flag to
+  // indicate if they are set
+  double xStochMin, xStochMax;
+  bool range_restrict;
+
+  // Expectation value and integral under PDF, and under the
+  // stochastically-treated part of it only
+  double expectVal, expectVal_restrict;
+  double PDFintegral, PDFintegral_restrict;
 
   // Sampling method
   samplingMethod method;

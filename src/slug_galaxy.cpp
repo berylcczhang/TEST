@@ -41,6 +41,7 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
 			 slug_specsyn* my_specsyn) :
   imf(my_imf), 
   cmf(my_cmf), 
+  clf(my_clf),
   sfh(my_sfh),
   tracks(my_tracks),
   specsyn(my_specsyn)
@@ -65,108 +66,10 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
   // Store output mode
   out_mode = pp.get_outputMode();
 
-  // Open integrated properties file and write its header
-  if (pp.get_writeIntegratedProp()) {
-    string fname(pp.get_modelName());
-    fname += "_integrated_prop";
-    path full_path(pp.get_outDir());
-    if (out_mode == ASCII) {
-      fname += ".txt";
-      full_path /= fname;
-      int_prop_file.open(full_path.c_str(), ios::out);
-    } else if (out_mode == BINARY) {
-      fname += ".bin";
-      full_path /= fname;
-      int_prop_file.open(full_path.c_str(), ios::out | ios::binary);
-    }
-    if (!int_prop_file.is_open()) {
-      cerr << "slug error: unable to open intergrated properties file " 
-	   << full_path.string() << endl;
-      exit(1);
-    }
-    if (out_mode == ASCII) {
-      int_prop_file << setw(14) << left << "Time"
-		    << setw(14) << left << "TargetMass"
-		    << setw(14) << left << "ActualMass"
-		    << setw(14) << left << "LiveMass"
-		    << setw(14) << left << "ClusterMass"
-		    << setw(14) << left << "NumClusters"
-		    << setw(14) << left << "NumDisClust"
-		    << setw(14) << left << "NumFldStar"
-		    << endl;
-      int_prop_file << setw(14) << left << "(yr)"
-		    << setw(14) << left << "(Msun)"
-		    << setw(14) << left << "(Msun)"
-		    << setw(14) << left << "(Msun)"
-		    << setw(14) << left << "(Msun)"
-		    << setw(14) << left << ""
-		    << setw(14) << left << ""
-		    << setw(14) << left << ""
-		    << endl;
-      int_prop_file << setw(14) << left << "-----------"
-		    << setw(14) << left << "-----------"
-		    << setw(14) << left << "-----------"
-		    << setw(14) << left << "-----------"
-		    << setw(14) << left << "-----------"
-		    << setw(14) << left << "-----------"
-		    << setw(14) << left << "-----------"
-		    << setw(14) << left << "-----------"
-		    << endl;
-    }
-  }
-
-  // Open cluster properties file and write its header
-  if (pp.get_writeClusterProp()) {
-    string fname(pp.get_modelName());
-    fname += "_cluster_prop";
-    path full_path(pp.get_outDir());
-    if (out_mode == ASCII) {
-      fname += ".txt";
-      full_path /= fname;
-      cluster_prop_file.open(full_path.c_str(), ios::out);
-    } else if (out_mode == BINARY) {
-      fname += ".bin";
-      full_path /= fname;
-      cluster_prop_file.open(full_path.c_str(), ios::out | ios::binary);
-    }
-    if (!cluster_prop_file.is_open()) {
-      cerr << "slug error: unable to open cluster properties file " 
-	   << full_path.string() << endl;
-      exit(1);
-    }
-    if (out_mode == ASCII) {
-      cluster_prop_file << setw(14) << left << "UniqueID"
-			<< setw(14) << left << "Time"
-			<< setw(14) << left << "FormTime"
-			<< setw(14) << left << "Lifetime"
-			<< setw(14) << left << "TargetMass"
-			<< setw(14) << left << "BirthMass"
-			<< setw(14) << left << "LiveMass"
-			<< setw(14) << left << "NumStar"
-			<< setw(14) << left << "MaxStarMass"
-			<< endl;
-      cluster_prop_file << setw(14) << left << ""
-			<< setw(14) << left << "(yr)"
-			<< setw(14) << left << "(yr)"
-			<< setw(14) << left << "(yr)"
-			<< setw(14) << left << "(Msun)"
-			<< setw(14) << left << "(Msun)"
-			<< setw(14) << left << "(Msun)"
-			<< setw(14) << left << ""
-			<< setw(14) << left << "(Msun)"
-			<< endl;
-      cluster_prop_file << setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< setw(14) << left << "-----------"
-			<< endl;
-    }
-  }
+  // Open files we're going to need and write their headers
+  if (pp.get_writeIntegratedProp()) open_integrated_prop(pp);
+  if (pp.get_writeClusterProp()) open_cluster_prop(pp);
+  if (pp.get_writeIntegratedSpec()) open_integrated_spec(pp);
 }
 
 
@@ -415,7 +318,12 @@ slug_galaxy::set_spectrum() {
   cluster_L_lambda.resize(0);
 
   // Loop over non-disrupted clusters
+  cout << clusters.size() << " clusters " << endl;
+  int ctr = 0;
   for (it = clusters.begin(); it != clusters.end(); it++) {
+
+    cout << "cluster " << ctr << " of " << clusters.size() << ": " << (*it)->get_stars().size() << " stars" << endl;
+    ctr++;
 
     // Get isochrone for this cluster
     vector<double> logL, logTeff, logg, logR;
@@ -425,6 +333,13 @@ slug_galaxy::set_spectrum() {
     cluster_L_lambda.push_back(vector<double>());
     specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, 
 			  cluster_L_lambda.back());
+
+    // Now add contribution from part being treated non-stochastically
+    if (imf->get_xStochMin() != imf->get_xMin()) {
+      specsyn->get_spectrum_cts(imf->get_xMin(), imf->get_xStochMin(),
+				(*it)->get_non_stoch_mass(), (*it)->get_age(),
+				lambda, cluster_L_lambda.back(), true, 1e-3);
+    }
 
     // Add spectrum to global sum
     L_lambda.resize(cluster_L_lambda.back().size());
@@ -447,6 +362,11 @@ slug_galaxy::set_spectrum() {
     (*it)->get_isochrone(logL, logTeff, logg, logR);
     specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, L_lambda,
 			  !initialized);
+    if (imf->get_xStochMin() != imf->get_xMin()) {
+      specsyn->get_spectrum_cts(imf->get_xMin(), imf->get_xStochMin(),
+				(*it)->get_non_stoch_mass(), (*it)->get_age(),
+				lambda, cluster_L_lambda.back(), true, 1e-3);
+    }
     initialized = true;
     for (unsigned int i=0; i<logL.size(); i++) Lbol += pow(10.0, logL[i]);
   }
@@ -466,6 +386,174 @@ slug_galaxy::set_spectrum() {
 
   // Set flags
   Lbol_set = spec_set = true;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open integrated properties file and write its header
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::open_integrated_prop(slug_parmParser& pp) {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_integrated_prop";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    int_prop_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+      full_path /= fname;
+      int_prop_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+
+  // Make sure file is open
+  if (!int_prop_file.is_open()) {
+    cerr << "slug error: unable to open intergrated properties file " 
+	 << full_path.string() << endl;
+    exit(1);
+  }
+
+  // Write header
+  if (out_mode == ASCII) {
+    int_prop_file << setw(14) << left << "Time"
+		  << setw(14) << left << "TargetMass"
+		  << setw(14) << left << "ActualMass"
+		  << setw(14) << left << "LiveMass"
+		  << setw(14) << left << "ClusterMass"
+		  << setw(14) << left << "NumClusters"
+		  << setw(14) << left << "NumDisClust"
+		  << setw(14) << left << "NumFldStar"
+		  << endl;
+    int_prop_file << setw(14) << left << "(yr)"
+		  << setw(14) << left << "(Msun)"
+		  << setw(14) << left << "(Msun)"
+		  << setw(14) << left << "(Msun)"
+		  << setw(14) << left << "(Msun)"
+		  << setw(14) << left << ""
+		  << setw(14) << left << ""
+		  << setw(14) << left << ""
+		  << endl;
+    int_prop_file << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open cluster properties file and write its header
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::open_cluster_prop(slug_parmParser& pp) {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_cluster_prop";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    cluster_prop_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+    full_path /= fname;
+    cluster_prop_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+
+  // Make sure file is open
+  if (!cluster_prop_file.is_open()) {
+    cerr << "slug error: unable to open cluster properties file " 
+	 << full_path.string() << endl;
+    exit(1);
+  }
+
+  // Write header
+  if (out_mode == ASCII) {
+    cluster_prop_file << setw(14) << left << "UniqueID"
+		      << setw(14) << left << "Time"
+		      << setw(14) << left << "FormTime"
+		      << setw(14) << left << "Lifetime"
+		      << setw(14) << left << "TargetMass"
+		      << setw(14) << left << "BirthMass"
+		      << setw(14) << left << "LiveMass"
+		      << setw(14) << left << "NumStar"
+		      << setw(14) << left << "MaxStarMass"
+		      << endl;
+    cluster_prop_file << setw(14) << left << ""
+		      << setw(14) << left << "(yr)"
+		      << setw(14) << left << "(yr)"
+		      << setw(14) << left << "(yr)"
+		      << setw(14) << left << "(Msun)"
+		      << setw(14) << left << "(Msun)"
+		      << setw(14) << left << "(Msun)"
+		      << setw(14) << left << ""
+		      << setw(14) << left << "(Msun)"
+		      << endl;
+    cluster_prop_file << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open integrated spectra file and write its header
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::open_integrated_spec(slug_parmParser& pp) {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_integrated_spec";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    int_spec_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+      full_path /= fname;
+      int_spec_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+
+  // Make sure file is open
+  if (!int_spec_file.is_open()) {
+    cerr << "slug error: unable to open intergrated spectrum file " 
+	 << full_path.string() << endl;
+    exit(1);
+  }
+
+  // Write header
+  if (out_mode == ASCII) {
+    int_spec_file << setw(14) << left << "Time"
+		  << setw(14) << left << "Wavelength"
+		  << setw(14) << left << "L_lambda"
+		  << endl;
+    int_spec_file << setw(14) << left << "(yr)"
+		  << setw(14) << left << "(Angstrom)"
+		  << setw(14) << left << "(erg/s/Angstrom)"
+		  << endl;
+    int_spec_file << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
+		  << endl;
+  }
 }
 
 
@@ -503,11 +591,42 @@ slug_galaxy::write_integrated_prop() {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Output cluster properties properties
+// Output cluster properties
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_prop() {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_prop(cluster_prop_file, out_mode);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Output integrated spectra
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_integrated_spec() {
+
+  // Make sure spectrum information is current. If not, compute it.
+  if (!spec_set) set_spectrum();
+
+  if (out_mode == ASCII) {
+    for (unsigned int i=0; i<lambda.size(); i++) {
+      int_spec_file << setprecision(5) << scientific 
+		    << setw(11) << right << curTime << "   "
+		    << setw(11) << right << lambda[i] << "   "
+		    << setw(11) << right << L_lambda[i]
+		    << endl;
+    }
+  } else {
+    vector<double>::size_type n = lambda.size();
+    int_spec_file.write((char *) &curTime, sizeof curTime);
+    int_prop_file.write((char *) &n, sizeof n);
+    if (lambda.size() > 0) {
+      int_spec_file.write((char *) lambda.data(), 
+			  sizeof(double)*lambda.size());
+      int_spec_file.write((char *) L_lambda.data(), 
+			  sizeof(double)*L_lambda.size());
+    }
+  }
 }

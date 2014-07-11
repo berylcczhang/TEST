@@ -100,10 +100,11 @@ slug_parmParser::setDefaults() {
   verbosity = 1;
   nTrials = 1;
   timeStep = endTime = fClust = -BIG;
-  z = 0;
-  writeClusterSpec = writeIntegratedSpec = false;
+  z = 0.0;
+  min_stoch_mass = 1.0;
   constantSFR = writeClusterProp = writeClusterPhot = 
-    writeIntegratedProp = writeIntegratedPhot = true;
+    writeIntegratedProp = writeIntegratedPhot = 
+    writeClusterSpec = writeIntegratedSpec = true;
   out_mode = ASCII;
   model = "SLUG_DEF";
 }
@@ -166,6 +167,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	track = tokens[1];
       } else if (!(tokens[0].compare("atmospheres"))) {
 	atmos_dir = tokens[1];
+      } else if (!(tokens[0].compare("min_stoch_mass"))) {
+	min_stoch_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("model_name"))) {
 	model = tokens[1];
       } else if (!(tokens[0].compare("out_dir"))) {
@@ -388,6 +391,8 @@ slug_parmParser::writeParams() {
   paramFile << "CLF                  " << clf << endl;
   paramFile << "track                " << track << endl;
   paramFile << "atmos_dir            " << atmos_dir << endl;
+  paramFile << "min_stoch_mass       " << min_stoch_mass << endl;
+  paramFile << "redshift             " << z << endl;
   paramFile << "specsyn_mode         ";
   if (specsyn_mode == PLANCK) {
     paramFile << "planck" << endl;
@@ -429,6 +434,7 @@ double slug_parmParser::get_endTime() { return endTime; }
 bool slug_parmParser::get_constantSFR() { return constantSFR; }
 double slug_parmParser::get_SFR() { return sfr; }
 double slug_parmParser::get_z() { return z; }
+double slug_parmParser::get_min_stoch_mass() { return min_stoch_mass; }
 const char *slug_parmParser::get_SFH() { return sfh.c_str(); }
 const char *slug_parmParser::get_IMF() { return imf.c_str(); }
 const char *slug_parmParser::get_CMF() { return cmf.c_str(); }

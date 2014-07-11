@@ -26,6 +26,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _slug_tracks_H_
 #define _slug_tracks_H_
 
+#include <vector>
+#include <string>
+#include <cmath>
+
 using namespace std;
 
 class slug_tracks {
@@ -38,8 +42,8 @@ public:
   ~slug_tracks();
 
   // Maximum and minimum mass in the tracks
-  double max_mass() { return logmass[0]; }
-  double min_mass() { return logmass[ntrack-1]; }
+  double max_mass() { return exp(logmass[0]); }
+  double min_mass() { return exp(logmass[ntrack-1]); }
 
   // Age of star dying at a particular time
   double death_mass(double time);

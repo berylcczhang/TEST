@@ -54,6 +54,10 @@ public:
   // Draw function
   double draw(double a, double b);
 
+  // Operator to return the value of the segment evaluated at a specified
+  // point
+  double operator()(const double x);
+
   // Parser
   parseStatus parse(ifstream& file, int& lineCount, string &errMsg, 
 		    rng_type& rng, double *weight = NULL);

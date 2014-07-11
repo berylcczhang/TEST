@@ -35,7 +35,16 @@ slug_cluster::slug_cluster(const long my_id, const double my_mass,
   is_disrupted = false;
 
   // Populate with stars
-  birthMass = aliveMass = imf->drawPopulation(targetMass, stars);
+  birthMass = imf->drawPopulation(targetMass, stars);
+
+  // If the population only represents part of the mass range due to
+  // restrictions on what range is being treated stochastically, be
+  // sure to account for that
+  nonStochMass = targetMass * (1.0 - imf->mass_frac_restrict());
+  birthMass += nonStochMass;
+
+  // Initialize the living star mass
+  aliveMass = birthMass;
 
   // Sort the stars
   sort(stars.begin(), stars.end());

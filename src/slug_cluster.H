@@ -51,10 +51,12 @@ public:
     else return 0.0;
   }
 
-  // Routine to report various masses
+  // Routine to report various masses and similar data
   double get_target_mass() { return targetMass; }
   double get_birth_mass() { return birthMass; }
   double get_alive_mass() { return aliveMass; }
+  double get_non_stoch_mass() { return nonStochMass; }
+  double get_age() { return curTime - formationTime; }
 
   // Routine to report if this cluster is disrupted
   bool disrupted() { return is_disrupted; }
@@ -81,6 +83,7 @@ private:
   const double targetMass;            // Target mass
   double birthMass;                   // Actual mass at birth
   double aliveMass;                   // Mass of still-living stars
+  double nonStochMass;                // Mass not being treated stochastically
   double formationTime;               // Cluster birth time
   double curTime;                     // Current time
   double lifetime;                    // Time at which this cluster disrupts

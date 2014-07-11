@@ -24,7 +24,9 @@ using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::random;
 
+////////////////////////////////////////////////////////////////////////
 // Constructor
+////////////////////////////////////////////////////////////////////////
 slug_PDF_lognormal::
 slug_PDF_lognormal(double sMin, double sMax, double sMean, 
 		   double sDisp, rng_type &rng)
@@ -33,12 +35,16 @@ slug_PDF_lognormal(double sMin, double sMax, double sMean,
   initializer(sMean, sDisp, rng);
 }
 
+////////////////////////////////////////////////////////////////////////
 // Destructor
+////////////////////////////////////////////////////////////////////////
 slug_PDF_lognormal::~slug_PDF_lognormal() {
   delete lndist;
 }
 
+////////////////////////////////////////////////////////////////////////
 // Initializer
+////////////////////////////////////////////////////////////////////////
 void
 slug_PDF_lognormal::initializer(double sMean, double sDisp, 
 				rng_type& rng) {
@@ -60,14 +66,27 @@ slug_PDF_lognormal::initializer(double sMean, double sDisp,
   norm = sqrt(2.0/M_PI) / disp /
     ( erf(-log(segMin/sMean)/(sqrt(2.0)*disp)) -
       erf(-log(segMax/sMean)/(sqrt(2.0)*disp)) );
-  segMinVal = norm * exp( -log(segMin/sMean)*log(segMin/sMean) /
-		   (2.0*disp*disp) ) / segMin;
-  segMaxVal = norm * exp( -log(segMax/sMean)*log(segMax/sMean) /
-		   (2.0*disp*disp) ) / segMax;
+  segMinVal = norm * exp( -pow(log(segMin/sMean),2) /
+			  (2.0*disp*disp) ) / segMin;
+  segMaxVal = norm * exp( -pow(log(segMax/sMean),2) /
+			  (2.0*disp*disp) ) / segMax;
   expectVal = expectationVal(segMin, segMax);
 }
 
+////////////////////////////////////////////////////////////////////////
+// Value evaluated at a point
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF_lognormal::operator() (double x) {
+  if ((x < segMin) || (x > segMax)) return 0.0;
+  return norm * exp( -pow(log(x/segMean),2) /
+		     (2.0*disp*disp) ) / x;
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Expectation value over a finite interval
+////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_lognormal::expectationVal(double a, double b) {
   double a1 = a < segMin ? segMin : a;
@@ -79,7 +98,9 @@ slug_PDF_lognormal::expectationVal(double a, double b) {
      erf( log(segMean/a1) / (sqrt(2.0)*disp) ));
 }
 
+////////////////////////////////////////////////////////////////////////
 // Integral over a finite interval
+////////////////////////////////////////////////////////////////////////
 double 
 slug_PDF_lognormal::integral(double a, double b) {
   double a1 = a < segMin ? segMin : a;
@@ -89,7 +110,9 @@ slug_PDF_lognormal::integral(double a, double b) {
       erf(-log(b1/segMean)/(sqrt(2.0)*disp)) );
 }
 
+////////////////////////////////////////////////////////////////////////
 // Draw a value from a lognormal with minimum and maximum
+////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_lognormal::draw(double a, double b) {
   double a1 = a < segMin ? segMin : a;
@@ -102,7 +125,9 @@ slug_PDF_lognormal::draw(double a, double b) {
   return(val);
 }
 
+////////////////////////////////////////////////////////////////////////
 // File parser
+////////////////////////////////////////////////////////////////////////
 parseStatus
 slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg, 
 			  rng_type& rng, double *weight) {

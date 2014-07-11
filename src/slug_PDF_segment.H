@@ -78,6 +78,10 @@ public:
   double draw() { return draw(segMin, segMax); } 
   virtual double draw(double a, double b) = 0;
 
+  // Operator to return the value of the segment evaluated at a specified
+  // point; pure virtual
+  virtual double operator()(const double x) = 0;
+
   // Function to read data for a particular segment from a file; pure
   // virtual. Returns true on successful read, false on failure.
   virtual parseStatus parse(ifstream& file, int& lineCount,

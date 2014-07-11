@@ -60,17 +60,23 @@ public:
   void get_spectrum(vector<double>& lambda_out, 
 		    vector<double>& L_lambda_out);
 
+  // Functions to open output files and write headers
+  void open_integrated_prop(slug_parmParser& pp);  
+  void open_cluster_prop(slug_parmParser& pp);
+  void open_integrated_spec(slug_parmParser& pp);
+
   // Output functions
   void write_integrated_prop();       // Integrated galaxy properties
   void write_cluster_prop();          // Cluster properties
+  void write_integrated_spec();       // Integrated galaxy spectrum
 
 private:
 
   // Distributions and physical models used in simulation
   slug_PDF *imf;                      // IMF
   slug_PDF *cmf;                      // CMF
-  slug_PDF *sfh;                      // SFH
   slug_PDF *clf;                      // CLF
+  slug_PDF *sfh;                      // SFH
   slug_tracks *tracks;                // Evolutionary track set
   slug_specsyn *specsyn;               // Spectral synthesizer
 
@@ -89,7 +95,7 @@ private:
   vector<double> lambda;              // Wavelengths
   vector<double> L_lambda;            // Luminosities
   vector<double> cluster_Lbol;        // Luminosities of individual clusters
-  list<vector<double> > cluster_L_lambda;  // Spectra of individual clusters
+  list<vector<double> > cluster_L_lambda; // Spectra of individual clusters
 
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?
@@ -98,6 +104,7 @@ private:
   // Output information
   ofstream int_prop_file;             // Integrated properties file
   ofstream cluster_prop_file;         // Cluster properties file
+  ofstream int_spec_file;             // Integrated spectrum file
   outputMode out_mode;                // Output mode
   
 };

@@ -50,21 +50,22 @@ slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
   // Set up the normalization
   if (normalization==1.0) {
     normalized = true;
-    PDFintegral = 1.0;
+    PDFintegral = PDFintegral_restrict = 1.0;
   } else {
     normalized = false;
-    PDFintegral = normalization;
+    PDFintegral = PDFintegral_restrict = normalization;
   }
 
   // Set the weights
   weights.push_back(PDFintegral);
 
   // Set the expectation value
-  expectVal = new_seg->expectationVal();
+  expectVal = expectVal_restrict = new_seg->expectationVal();
 
   // Store the limits
-  xMin = new_seg->sMin();
-  xMax = new_seg->sMax();
+  xMin = xStochMin = new_seg->sMin();
+  xMax = xStochMax = new_seg->sMax();
+  range_restrict = false;
 
   // Store the segment
   segments.push_back(new_seg);
@@ -183,6 +184,13 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
     xMin = xMin < segments[i]->sMin() ? xMin : segments[i]->sMin();
     xMax = xMax > segments[i]->sMax() ? xMax : segments[i]->sMax();
   }
+
+  // Initialize range restriction parameters
+  xStochMin = xMin;
+  xStochMax = xMax;
+  range_restrict = false;
+  expectVal_restrict = expectVal;
+  PDFintegral_restrict = PDFintegral;
 }
 
 
@@ -194,6 +202,8 @@ slug_PDF::~slug_PDF() {
     delete segments[i];
   if (disc != NULL)
     delete disc;
+  if (disc_restricted != NULL)
+    delete disc_restricted;
   delete coin;
 }
 
@@ -230,6 +240,105 @@ slug_PDF::expectationVal(double a, double b) {
 
 
 ////////////////////////////////////////////////////////////////////////
+// Operator to return the PDF evaluated at a particular value x
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF::operator() (const double x) {
+  double val = 0.0;
+  for (unsigned int i=0; i<segments.size(); i++)
+    val += weights[i] * (*segments[i])(x);
+  return val;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Method to restrict the range of the PDF from which we sample when
+// producing populations
+////////////////////////////////////////////////////////////////////////
+void
+slug_PDF::set_stoch_lim(double x_stoch_min) {
+  set_stoch_lim(x_stoch_min, xMax);
+}
+
+void
+slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
+
+  // Step 1: if we currently have a different range restriction set,
+  // clear it
+  if (range_restrict) {
+    seg_restricted.resize(0);
+    weights_restricted.resize(0);
+    delete disc_restricted;
+  }
+  
+  // Step 2: set flags and store data for new range restriction
+  xStochMin = x_stoch_min;
+  xStochMax = x_stoch_max;
+  range_restrict = true;
+
+  // Step 3: generate a restricted segment list
+  vector<double> wgt_temp;
+  for (unsigned int i=0; i<segments.size(); i++) {
+    if (xStochMin >= segments[i]->sMax()) continue; // Segment is out of range
+    if (xStochMax <= segments[i]->sMin()) continue; // Segment is out of range
+    if (xStochMin <= segments[i]->sMin() && xStochMax >= segments[i]->sMax()) {
+      // Segment entirely in range, so just copy it into the
+      // restricted segment list
+      seg_restricted.push_back(segments[i]);
+      weights_restricted.push_back(weights[i]);
+    } else {
+      // Segment partly in range; push onto segment list, and compute
+      // reduced weight
+      seg_restricted.push_back(segments[i]);
+      weights_restricted.
+	push_back(weights[i] * 
+		  segments[i]->integral(xStochMin, xStochMax));
+    }
+  }
+
+  // Step 4: set up a new discrete picker with the new weights
+  if (seg_restricted.size() > 1) {
+    discrete_distribution<> dist(weights_restricted.begin(), 
+				 weights_restricted.end());
+    disc_restricted = new 
+      variate_generator<rng_type&,
+			discrete_distribution <> >(*rng, dist);
+  } else {
+    disc_restricted = NULL;
+  }
+
+  // Step 5: get the integral and expection value for the resticted
+  // region
+  PDFintegral_restrict = 0.0;
+  for (unsigned int i=0; i<weights_restricted.size(); i++)
+    PDFintegral_restrict += weights_restricted[i];
+  expectVal_restrict = 0.0;
+  for (unsigned int i=0; i<seg_restricted.size(); i++)
+    expectVal_restrict += weights_restricted[i] * 
+      seg_restricted[i]->expectationVal(xStochMin, xStochMax);
+  expectVal_restrict = expectVal_restrict / PDFintegral_restrict;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Method to remove stochastic range restrictions
+////////////////////////////////////////////////////////////////////////
+void
+slug_PDF::remove_stoch_lim() {
+  if (range_restrict) {
+    seg_restricted.resize(0);
+    weights_restricted.resize(0);
+    delete disc_restricted;
+    xStochMin = xMin;
+    xStochMax = xMax;
+    PDFintegral_restrict = PDFintegral;
+    expectVal_restrict = expectVal;
+  }
+  range_restrict = false;
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Draw function
 ////////////////////////////////////////////////////////////////////////
 double
@@ -245,6 +354,28 @@ slug_PDF::draw() {
 
   // Draw from that segment and return
   return(segments[segNum]->draw());
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Draw function with stochastic range restriction
+////////////////////////////////////////////////////////////////////////
+double
+slug_PDF::draw_restricted() {
+
+  // If we have no restrictions, just call the regular draw function
+  if (!range_restrict) return draw();
+
+  // First decide which segment to draw from
+  int segNum;
+  if (seg_restricted.size() > 1) {
+    segNum = (*disc_restricted)();
+  } else {
+    segNum = 0;
+  }
+
+  // Draw from that segment and return
+  return(seg_restricted[segNum]->draw(xStochMin, xStochMax));
 }
 
 
@@ -302,15 +433,20 @@ double
 slug_PDF::drawPopulation(double target, vector<double>& pop) {
   double sum = 0.0;
 
+  // If we're only using stochasticity over a limited range, reduce
+  // the target value by the fraction of the PDF that is being treated
+  // stochastically
+  if (range_restrict) target *= mass_frac_restrict();
+
   // Procedure depends on sampling method
   if ((method == STOP_NEAREST) || (method == STOP_BEFORE) ||
       (method == STOP_AFTER) || (method == STOP_50)) {
 
     // Sampling methods based on mass instead of number
 
-    // Draw stars until we exceed target
+    // Draw until we exceed target
     while (sum < target) {
-      pop.push_back(draw());
+      pop.push_back(draw_restricted());
       sum += pop[pop.size()-1];
     }
 
@@ -349,7 +485,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) {
       // Draw exactly the expected number of stars
       int nExpect = (int) round(target/expectVal);
       for (int i=0; i<nExpect; i++) {
-	pop.push_back(draw());
+	pop.push_back(draw_restricted());
 	sum += pop[pop.size()-1];
       }
 
@@ -362,7 +498,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) {
 			poisson_distribution <> > poisson(*rng, pdist);
       int nStar = poisson();
       for (int i=0; i<nStar; i++) {
-	pop.push_back(draw());
+	pop.push_back(draw_restricted());
 	sum += pop[pop.size()-1];
       }
 
@@ -374,7 +510,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) {
 	int nExpect = (int) round((target-sum)/expectVal);
 	if (nExpect == 0) nExpect = 1;
 	for (int i=0; i<nExpect; i++) {
-	  pop.push_back(draw());
+	  pop.push_back(draw_restricted());
 	  sum += pop[pop.size()-1];
 	}
       }

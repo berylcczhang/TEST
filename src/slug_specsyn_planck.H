@@ -34,29 +34,58 @@ class slug_specsyn_planck : public slug_specsyn {
 
 public:
 
-  // The constructor; can use default wavelength table, or specify one
-  // in a couple of ways
-  slug_specsyn_planck();
+  // Constructors; can use default wavelength table, or specify one
+  // in a couple of ways. Wavelengths are assumed to be in Angstrom.
+  slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
+		      double z_in = 0);
   slug_specsyn_planck(const double lambda_min, const double lambda_max, 
-		      const unsigned int nlambda);
-  slug_specsyn_planck(const vector<double>& labmda_in);
+		      const unsigned int nlambda, slug_tracks *my_tracks,
+		      slug_PDF *my_imf, double z_in = 0);
+  slug_specsyn_planck(const vector<double>& labmda_in, 
+		      slug_tracks *my_tracks, slug_PDF *my_imf,
+		      double z_in = 0);
 
   // The destructor; this is a no-op, since the member vector will
   // auto-desctruct when this class does
   ~slug_specsyn_planck() {};
 
-  // The spectral synthesis function
+  // The spectral synthesis function; units are as follows:
+  // logL : log base 10 of luminosity, in Lsun
+  // logTeff : log base 10 of effective temperature in K
+  // log g : not used
+  // log R : not used
+  // lambda : wavelength in Angstrom
+  // L_lambda : luminosity in erg/s/Angstrom
   void get_spectrum(const vector<double>& logL, 
 		    const vector<double>& logTeff,
 		    const vector<double>& logg,
 		    const vector<double>& logR,
-		    vector<double> lambda,
-		    vector<double> L_lambda,
+		    vector<double>& lambda,
+		    vector<double>& L_lambda,
+		    const bool no_reset = false);
+
+  // Same as previous function, but with a weight vector to be applied
+  // to the stars
+  void get_spectrum(const vector<double>& logL, 
+		    const vector<double>& logTeff,
+		    const vector<double>& logg,
+		    const vector<double>& logR,
+		    const vector<double>& weights,
+		    vector<double>& lambda,
+		    vector<double>& L_lambda,
+		    const bool no_reset = false);
+
+  // Same as previous function two functions, but no operating on a
+  // single star rather than a vector of them
+  void get_spectrum(const double logL, const double logTeff,
+		    const double logg, const double logR,
+		    vector<double>& lambda,
+		    vector<double>& L_lambda,
 		    const bool no_reset = false);
 
 private:
 
-  vector<double> lambda_table;      // Table of wavelengths
+  double z;                         // Redshift
 };
 
 #endif
