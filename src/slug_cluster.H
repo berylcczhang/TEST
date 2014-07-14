@@ -36,7 +36,7 @@ class slug_cluster {
 public:
   // Construct a cluster with specified target mass, birth time, IMF
   slug_cluster(const long my_id, const double my_mass, const double time, 
-	       slug_PDF *imf, slug_tracks *my_tracks,
+	       slug_PDF *my_imf, slug_tracks *my_tracks,
 	       slug_PDF *clf=NULL);
 
   // Destructor
@@ -55,8 +55,9 @@ public:
   double get_target_mass() { return targetMass; }
   double get_birth_mass() { return birthMass; }
   double get_alive_mass() { return aliveMass; }
-  double get_non_stoch_mass() { return nonStochMass; }
+  double get_non_stoch_alive_mass() { return nonStochAliveMass; }
   double get_age() { return curTime - formationTime; }
+  double get_stellar_death_mass() { return stellarDeathMass; }
 
   // Routine to report if this cluster is disrupted
   bool disrupted() { return is_disrupted; }
@@ -84,10 +85,13 @@ private:
   double birthMass;                   // Actual mass at birth
   double aliveMass;                   // Mass of still-living stars
   double nonStochMass;                // Mass not being treated stochastically
+  double nonStochAliveMass;           // Mass of still-living stars w/out stochasticity
   double formationTime;               // Cluster birth time
   double curTime;                     // Current time
   double lifetime;                    // Time at which this cluster disrupts
+  double stellarDeathMass;            // Mass of star dying at current age
   vector<double> stars;               // List of stellar masses
+  slug_PDF *imf;                      // IMF
   slug_tracks *tracks;                // Evolutionary track set
   bool is_disrupted;                  // Is this cluster disrupted?
 };

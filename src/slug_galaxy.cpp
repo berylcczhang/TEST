@@ -336,8 +336,11 @@ slug_galaxy::set_spectrum() {
 
     // Now add contribution from part being treated non-stochastically
     if (imf->get_xStochMin() != imf->get_xMin()) {
-      specsyn->get_spectrum_cts(imf->get_xMin(), imf->get_xStochMin(),
-				(*it)->get_non_stoch_mass(), (*it)->get_age(),
+      // Set upper limit to the minimum mass for stochastic treatment
+      // or to the maximum surviving stellar mass, whichver is smaller
+      double m_max = min(imf->get_xStochMin(), (*it)->get_stellar_death_mass());
+      specsyn->get_spectrum_cts(imf->get_xMin(), m_max,
+				(*it)->get_non_stoch_alive_mass(), (*it)->get_age(),
 				lambda, cluster_L_lambda.back(), true, 1e-3);
     }
 
@@ -363,8 +366,11 @@ slug_galaxy::set_spectrum() {
     specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, L_lambda,
 			  !initialized);
     if (imf->get_xStochMin() != imf->get_xMin()) {
-      specsyn->get_spectrum_cts(imf->get_xMin(), imf->get_xStochMin(),
-				(*it)->get_non_stoch_mass(), (*it)->get_age(),
+      // Set upper limit to the minimum mass for stochastic treatment
+      // or to the maximum surviving stellar mass, whichver is smaller
+      double m_max = min(imf->get_xStochMin(), (*it)->get_stellar_death_mass());
+      specsyn->get_spectrum_cts(imf->get_xMin(), m_max,
+				(*it)->get_non_stoch_alive_mass(), (*it)->get_age(),
 				lambda, cluster_L_lambda.back(), true, 1e-3);
     }
     initialized = true;

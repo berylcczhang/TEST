@@ -25,10 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_cluster::slug_cluster(const long my_id, const double my_mass, 
-			   const double time, slug_PDF *imf, 
+			   const double time, slug_PDF *my_imf, 
 			   slug_tracks *my_tracks, slug_PDF *clf) :
   id(my_id), targetMass(my_mass), formationTime(time), curTime(time),
-  tracks(my_tracks)
+  imf(my_imf), tracks(my_tracks)
 {
 
   // Initialize to non-disrupted
@@ -40,7 +40,8 @@ slug_cluster::slug_cluster(const long my_id, const double my_mass,
   // If the population only represents part of the mass range due to
   // restrictions on what range is being treated stochastically, be
   // sure to account for that
-  nonStochMass = targetMass * (1.0 - imf->mass_frac_restrict());
+  nonStochMass = nonStochAliveMass = 
+     targetMass * (1.0 - imf->mass_frac_restrict());
   birthMass += nonStochMass;
 
   // Initialize the living star mass
@@ -71,19 +72,29 @@ slug_cluster::advance(double time) {
   // Get current age
   double clusterAge = time - formationTime;
 
-  // Get stellar death mass corresponding to this age
-  double death_mass = tracks->death_mass(clusterAge);
+  // Get stellar death mass corresponding to this age; save the
+  // current one as a temporary in case we need it below
+  stellarDeathMass = tracks->death_mass(clusterAge);
 
   // Traverse the list, popping off stars that have died, and
   // correcting the mass downward as we go
   int i = stars.size() - 1;
   if (i >= 0) {
-    while (stars[i] > death_mass) {
+    while (stars[i] > stellarDeathMass) {
       aliveMass -= stars.back();
       stars.pop_back();
       i--;
       if (i<0) break;
     }
+  }
+
+  // If the maximum mass for non-stochastic treatment is smaller than
+  // the stellar death mass, decrease the mass in the non-stochstic
+  // bin
+  if (stellarDeathMass < imf->get_xStochMin()) {
+    nonStochAliveMass = nonStochMass * 
+      imf->integral(imf->get_xStochMin(), stellarDeathMass) /
+      imf->integral_restricted();
   }
 
   // Flag if we're disrupted

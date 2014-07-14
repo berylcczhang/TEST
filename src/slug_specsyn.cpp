@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include "slug_specsyn.H"
 
-#define MAX_ITER 10
+#define MAX_ITER 20
 
 // The get_spectrum function defined here takes as arguments a maximum
 // mass, minimum mass, total mass, and age, and returns the integrated
