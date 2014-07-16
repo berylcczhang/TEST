@@ -18,31 +18,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
-#include <limits>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 #include "slug_tracks.H"
+#include "constants.H"
 
 using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
-
-#define BIG (numeric_limits<double>::max())
-#define SMALL (numeric_limits<double>::min())
-
-// Log base 10 of constants in CGS; 2010 CODATA values were available
-#define LOGSIGMASB -4.2463884
-#define LOGG       -7.1756242
-#define LOGMSUN    33.2986566
-#define LOGLSUN    33.5850093
-#define LOGRSUN    10.8422971
-
-// Log base 10 of e; used for converting natural and base 10
-// logarithms
-#define LOGE        0.43429448190325182
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor
@@ -363,7 +349,7 @@ slug_tracks::death_mass(double time) {
   // Is this time less than the smallest death time we have? If so,
   // return a big number.
   if (logt < logtimes[ntime-1]) 
-    return(numeric_limits<double>::max());
+    return(BIG);
 
   // Is this time bigger than the biggest death time we have? If so,
   // return 0.

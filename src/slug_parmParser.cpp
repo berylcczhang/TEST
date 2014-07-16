@@ -16,10 +16,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
 #include <fstream>
-#include <limits>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include "slug_parmParser.H"
+#include "constants.H"
 
 using namespace boost;
 using namespace boost::algorithm;

@@ -16,8 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cstdlib>
 #include <cmath>
-#include <limits>
 #include <string>
+#include "constants.H"
 #include "slug_PDF.H"
 #include "slug_PDF_lognormal.H"
 #include "slug_PDF_normal.H"
@@ -32,8 +32,6 @@ using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
 using namespace boost::random;
-
-#define BIG (numeric_limits<double>::max())
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor from a single segment

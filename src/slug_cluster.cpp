@@ -13,13 +13,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
+
+#include "constants.H"
 #include "slug_cluster.H"
 #include <algorithm>
 #include <cassert>
-#include <limits>
 #include <iomanip>
-
-#define BIG (numeric_limits<double>::max())
 
 ////////////////////////////////////////////////////////////////////////
 // The constructor

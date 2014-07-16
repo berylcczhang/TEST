@@ -64,12 +64,9 @@ class slug_specsyn {
 
 public:
 
-  // Constructors
+  // Constructor
   slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf, 
-	       slug_PDF *my_sfh);
-  slug_specsyn(vector<double> lambda_in, slug_tracks *my_tracks, 
-	       slug_PDF *my_imf, slug_PDF *my_sfh);
-
+	       slug_PDF *my_sfh, double z_in = 0.0);
 
   // Return the wavelengths used by the synthesizer
   unsigned int n_lambda() { return lambda_table.size(); }
@@ -77,8 +74,7 @@ public:
 
   // Inputs are log base 10 luminosity in Lsun, log base 10
   // effective temperature in K, log base 10 g in CGS, log base 10 R
-  // in CGS. Outputs are wavelength and L_lambda. If no_reset is set
-  // to true, then the L_lambda array will not be 
+  // in CGS. Outputs are wavelength and L_lambda.
   virtual void get_spectrum(const vector<double>& logL, 
 			    const vector<double>& logTeff,
 			    const vector<double>& logg,
@@ -114,6 +110,7 @@ public:
 protected:
 
   vector<double> lambda_table;      // Table of wavelengths, in Angstrom
+  double z;                         // Redshift
 
 private:
 
@@ -135,7 +132,7 @@ private:
   // Private data
   slug_tracks *tracks;              // Stellar tracks
   slug_PDF *imf;                    // IMF
-  slug_PDF *sfh;
+  slug_PDF *sfh;                    // Star formation history
 
 };
 

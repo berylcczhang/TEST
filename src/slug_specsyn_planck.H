@@ -77,9 +77,6 @@ public:
 		    const double logg, const double logR,
 		    vector<double>& L_lambda);
 
-private:
-
-  double z;                         // Redshift
 };
 
 #endif

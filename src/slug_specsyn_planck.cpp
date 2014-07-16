@@ -17,16 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cassert>
 #include "slug_specsyn_planck.H"
-
-// Physical constants -- 2010 CODATA values
-#define C       2.99792458e10
-#define H       6.62606957e-27
-#define KB      1.3806488e-16
-#define SIGMASB 5.670373e-5
-
-// Unit conversions
-#define LSUN     3.846e33
-#define ANGSTROM 1.0e-8
+#include "constants.H"
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor with default wavelengths. Default is 1001 wavelengths,
@@ -36,8 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 slug_specsyn_planck::
 slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
 		    slug_PDF *my_sfh, double z_in) : 
-  slug_specsyn(my_tracks, my_imf, my_sfh), 
-  z(z_in) 
+  slug_specsyn(my_tracks, my_imf, my_sfh, z_in)
 {
   for (int i=0; i<1001; i++) {
     lambda_table.push_back(91.0 * 
@@ -53,8 +43,7 @@ slug_specsyn_planck::
 slug_specsyn_planck(const double lambda_min, const double lambda_max, 
 		    const unsigned int nlambda, slug_tracks *my_tracks, 
 		    slug_PDF *my_imf, slug_PDF *my_sfh, double z_in) : 
-  slug_specsyn(my_tracks, my_imf, my_sfh),
-  z(z_in)
+  slug_specsyn(my_tracks, my_imf, my_sfh, z_in)
 {
   for (unsigned int i=0; i<nlambda; i++) {
     lambda_table.push_back(lambda_min * 
@@ -71,8 +60,9 @@ slug_specsyn_planck::
 slug_specsyn_planck(const vector<double>& lambda_in,
 		    slug_tracks *my_tracks, slug_PDF *my_imf, 
 		    slug_PDF *my_sfh, double z_in) :
-  slug_specsyn(lambda_in, my_tracks, my_imf, my_sfh),
-  z(z_in) {}
+  slug_specsyn(my_tracks, my_imf, my_sfh, z_in) {
+  lambda_table = lambda_in;
+}
 
 
 ////////////////////////////////////////////////////////////////////////

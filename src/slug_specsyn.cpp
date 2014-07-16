@@ -223,21 +223,15 @@ static const double wgk[11] =   /* weights of the 21-point kronrod rule */
 qag_wksp::qag_wksp(int n) : 
   x_k(gknum), gaussQuad(n), L_tmp1(n), L_tmp2(n), L_out1(n), L_out2(n), 
   errsum(n), err1(n), err2(n)
-{ };
-
-
-////////////////////////////////////////////////////////////////////////
-// Constructors
-////////////////////////////////////////////////////////////////////////
-slug_specsyn::slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf,
-			   slug_PDF *my_sfh) :
-  tracks(my_tracks), imf(my_imf), sfh(my_sfh) 
 { }
 
-slug_specsyn::slug_specsyn(vector<double> lambda_in, 
-			   slug_tracks *my_tracks, slug_PDF *my_imf,
-			   slug_PDF *my_sfh) :
-  lambda_table(lambda_in), tracks(my_tracks), imf(my_imf), sfh(my_sfh)
+
+////////////////////////////////////////////////////////////////////////
+// Constructor
+////////////////////////////////////////////////////////////////////////
+slug_specsyn::slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf,
+			   slug_PDF *my_sfh, double z_in) :
+  z(z_in), tracks(my_tracks), imf(my_imf), sfh(my_sfh)
 { }
 
 
