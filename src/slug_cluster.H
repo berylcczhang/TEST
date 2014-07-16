@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "slug.H"
 #include "slug_PDF.H"
+#include "slug_specsyn.H"
 #include "slug_tracks.H"
 #include <iostream>
 #include <fstream>
@@ -36,11 +37,14 @@ class slug_cluster {
 public:
   // Construct a cluster with specified target mass, birth time, IMF
   slug_cluster(const long my_id, const double my_mass, const double time, 
-	       slug_PDF *my_imf, slug_tracks *my_tracks,
-	       slug_PDF *clf=NULL);
+	       slug_PDF *my_imf, slug_tracks *my_tracks, 
+	       slug_specsyn *my_specsyn, slug_PDF *clf=NULL);
 
   // Destructor
   ~slug_cluster() { };
+
+  // Routine to return the id
+  unsigned long get_id() { return id; }
 
   // Routine to advance to a specified time
   void advance(double time);
@@ -65,8 +69,9 @@ public:
   // Routine to return lifetime of cluster against disruption
   double get_lifetime() { return lifetime; }
 
-  // Return the vector of stars
+  // Return the vector of stars and number of stars
   vector<double> get_stars() { return stars; }
+  unsigned int get_nstars() { return stars.size(); }
 
   // Get an isochrone of log L, log Teff, log g, log R for the
   // cluster. Output quantities are log base 10. Log L is in solar
@@ -74,8 +79,21 @@ public:
   void get_isochrone(vector<double> &logL, vector<double> &logTeff,
 		     vector<double> &logg, vector<double> &logR);
 
-  // Output routine
+  // Get the spectrum; can either return or not return the vector of
+  // wavelengths as well
+  vector<double> get_spectrum();
+  void get_spectrum(vector<double>& lambda_out, 
+		    vector<double>& L_lambda_out);
+
+  // Get the bolometric luminoisty
+  double get_Lbol();
+
+  // Spectral synthesis routine
+  void set_spectrum();
+
+  // Output routines
   void write_prop(ofstream& outfile, const outputMode out_mode);
+  void write_spectrum(ofstream& outfile, const outputMode out_mode);
 
 private:
 
@@ -93,7 +111,11 @@ private:
   vector<double> stars;               // List of stellar masses
   slug_PDF *imf;                      // IMF
   slug_tracks *tracks;                // Evolutionary track set
+  slug_specsyn *specsyn;              // Spectral synthesizer
   bool is_disrupted;                  // Is this cluster disrupted?
+  vector<double> L_lambda;            // Spectrum
+  double Lbol;                        // Bolometric luminosity
+  bool Lbol_set, spec_set;            // Status indicators
 };
 
 #endif

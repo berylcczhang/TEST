@@ -58,7 +58,8 @@ public:
   // Change sampling method
   void setMethod(samplingMethod new_method) { method = new_method; }
 
-  // Set limits on the PDF range to be treated stochastically
+  // Methods to intereact with the limits for stochasticity
+  bool has_stoch_lim() { return range_restrict; }
   void remove_stoch_lim();
   void set_stoch_lim(double x_stoch_min);
   void set_stoch_lim(double x_stoch_min, double x_stoch_max);

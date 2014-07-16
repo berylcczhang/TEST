@@ -133,7 +133,7 @@ slug_PDF_lognormal::parse(ifstream& file, int& lineCount, string &errMsg,
 			  rng_type& rng, double *weight) {
 
   // Local variables
-  double mean, disp;
+  double mean=0.0, disp=0.0;
   bool have_mean=false, have_disp=false;
   bool have_weight = (weight == NULL);
 

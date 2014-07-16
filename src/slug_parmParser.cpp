@@ -101,7 +101,7 @@ slug_parmParser::setDefaults() {
   nTrials = 1;
   timeStep = endTime = fClust = -BIG;
   z = 0.0;
-  min_stoch_mass = 1.0;
+  min_stoch_mass = 2.0;
   constantSFR = writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
     writeClusterSpec = writeIntegratedSpec = true;

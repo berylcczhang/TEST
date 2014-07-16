@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   slug_specsyn *specsyn = NULL;
   if (pp.get_specsynMode() == PLANCK) {
     specsyn = (slug_specsyn *) 
-      new slug_specsyn_planck(&tracks, &imf, pp.get_z());
+      new slug_specsyn_planck(&tracks, &imf, sfh, pp.get_z());
     //  } else if (pp.get_specsynMoe() == SB99) {
     //specsyn = (slug_specsyn *) new slug_specsyn_sb99(pp);
   }
@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
 
       // Write spectra if requested
       if (pp.get_writeIntegratedSpec()) galaxy.write_integrated_spec();
+      if (pp.get_writeClusterSpec()) galaxy.write_cluster_spec();
     }
 
   }

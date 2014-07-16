@@ -5,8 +5,7 @@ Function to read a SLUG2 cluster_prop file.
 import numpy as np
 from collections import namedtuple
 import struct
-import os
-import os.path as osp
+from slug_open import slug_open
 
 def read_cluster_prop(model_name, output_dir=None, asciionly=False,
                       binonly=False, verbose=False):
@@ -51,60 +50,13 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
        mass of most massive living star in cluster
     """
 
-    # Did we get a specific directory in which to look? If not, try
-    # current directory
-    if output_dir is None:
-        outdir = "."
-    else:
-        outdir = output_dir
-
-    # See if we have a text file
-    if not binonly:
-        fname = osp.join(outdir, model_name+'_cluster_prop.txt')
-        try:
-            fp = open(fname, 'r')
-        except IOError:
-            fp = None
-    else:
-        fp = None
-
-    # If that failed, look for a binary file
-    if fp is None:
-        if not asciionly:
-            fname = osp.join(outdir, model_name+'_cluster_prop.bin')
-            try:
-                fp = open(fname, 'rb')
-            except IOError:
-                pass
-
-    # If that failed, and we didn't get an explicit directory
-    # specification, try looking in SLUG_DIR/output
-    if (fp is None) and (output_dir is None) and \
-       ('SLUG_DIR' in os.environ):
-        outdir = osp.join(os.environ['SLUG_DIR'], 'output')
-        if not binonly:
-            fname = osp.join(outdir,
-                             model_name+'_cluster_prop.txt')
-            try:
-                fp = open(fname, 'r')
-            except IOError:
-                pass
-        if not asciionly and fp is None:
-            fname = osp.join(outdir, 
-                             model_name+'_cluster_prop.bin')
-            try:
-                fp = open(fname, 'rb')
-            except IOError:
-                pass
-
-    # If we're here and fp is None, all attempt to open the file have
-    # failed, so throw an IOError
-    if fp is None:
-        raise IOError("unable to open cluster_prop file")
+    # Open file
+    fp = slug_open(model_name+"_cluster_prop", output_dir=output_dir,
+                   asciionly=asciionly, binonly=binonly)
 
     # Print status
     if verbose:
-        print("Reading file "+fname)
+        print("Reading "+model_name)
 
     # Prepare lists to hold data
     cluster_id = []
@@ -144,23 +96,30 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
 
         # Binary mode
 
-        # Suck file into memory
-        data = fp.read()
+        # Go through file
+        while True:
 
-        # Interpret data
-        nentry = len(data)/struct.calcsize('LddddddQd')
-        data_list = struct.unpack('LddddddQd'*nentry, data)
+            # Read number of clusters and time in next block, checking
+            # if we've hit eof
+            data = fp.read(struct.calcsize('dL'))
+            if len(data) < struct.calcsize('dL'):
+                break
+            t, ncluster = struct.unpack('dL', data)
 
-        # Stick data into correctly-named lists
-        cluster_id = data_list[0::9]
-        time = data_list[1::9]
-        form_time = data_list[2::9]
-        lifetime = data_list[3::9]
-        target_mass = data_list[4::9]
-        actual_mass = data_list[5::9]
-        live_mass = data_list[6::9]
-        num_star = data_list[7::9]
-        max_star_mass = data_list[8::9]
+            # Read the next block of clusters
+            data = fp.read(struct.calcsize('LdddddQd')*ncluster)
+            data_list = struct.unpack('LdddddQd'*ncluster, data)
+
+            # Pack these clusters into the data list
+            cluster_id.extend(data_list[0::8])
+            time.extend([t]*ncluster)
+            form_time.extend(data_list[1::8])
+            lifetime.extend(data_list[2::8])
+            target_mass.extend(data_list[3::8])
+            actual_mass.extend(data_list[4::8])
+            live_mass.extend(data_list[5::8])
+            num_star.extend(data_list[6::8])
+            max_star_mass.extend(data_list[7::8])
 
     # Close file
     fp.close()

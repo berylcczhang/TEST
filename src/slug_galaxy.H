@@ -64,11 +64,13 @@ public:
   void open_integrated_prop(slug_parmParser& pp);  
   void open_cluster_prop(slug_parmParser& pp);
   void open_integrated_spec(slug_parmParser& pp);
+  void open_cluster_spec(slug_parmParser& pp);
 
   // Output functions
   void write_integrated_prop();       // Integrated galaxy properties
   void write_cluster_prop();          // Cluster properties
   void write_integrated_spec();       // Integrated galaxy spectrum
+  void write_cluster_spec();          // Cluster spectra
 
 private:
 
@@ -88,14 +90,12 @@ private:
   double clusterMass;                 // Mass in non-disrupted clusters
   double fc;                          // Fraction of stars in clusters
   vector<slug_star> field_stars;      // Field stars
+  double nonStochFieldMass;        // Mass of field stars w/out stochasticity
   list<slug_cluster *> disrupted_clusters; // Disrupted clusters
   list<slug_cluster *> clusters;      // Cluster list
   long cluster_id;                    // Cluster ID counter
-  double Lbol;                        // Bolometric luminosity
-  vector<double> lambda;              // Wavelengths
-  vector<double> L_lambda;            // Luminosities
-  vector<double> cluster_Lbol;        // Luminosities of individual clusters
-  list<vector<double> > cluster_L_lambda; // Spectra of individual clusters
+  double Lbol;                        // Bolometric luminosity of galaxy
+  vector<double> L_lambda;            // Specific luminosity of galaxy
 
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?
@@ -104,7 +104,8 @@ private:
   // Output information
   ofstream int_prop_file;             // Integrated properties file
   ofstream cluster_prop_file;         // Cluster properties file
-  ofstream int_spec_file;             // Integrated spectrum file
+  ofstream int_spec_file;             // Integrated spectra file
+  ofstream cluster_spec_file;         // Cluster spectra file
   outputMode out_mode;                // Output mode
   
 };

@@ -37,13 +37,13 @@ public:
   // Constructors; can use default wavelength table, or specify one
   // in a couple of ways. Wavelengths are assumed to be in Angstrom.
   slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
-		      double z_in = 0);
+		      slug_PDF *my_sfh, double z_in = 0);
   slug_specsyn_planck(const double lambda_min, const double lambda_max, 
 		      const unsigned int nlambda, slug_tracks *my_tracks,
-		      slug_PDF *my_imf, double z_in = 0);
+		      slug_PDF *my_imf, slug_PDF *my_sfh, double z_in = 0);
   slug_specsyn_planck(const vector<double>& labmda_in, 
 		      slug_tracks *my_tracks, slug_PDF *my_imf,
-		      double z_in = 0);
+		      slug_PDF *my_sfh, double z_in = 0);
 
   // The destructor; this is a no-op, since the member vector will
   // auto-desctruct when this class does
@@ -60,9 +60,7 @@ public:
 		    const vector<double>& logTeff,
 		    const vector<double>& logg,
 		    const vector<double>& logR,
-		    vector<double>& lambda,
-		    vector<double>& L_lambda,
-		    const bool no_reset = false);
+		    vector<double>& L_lambda);
 
   // Same as previous function, but with a weight vector to be applied
   // to the stars
@@ -71,17 +69,13 @@ public:
 		    const vector<double>& logg,
 		    const vector<double>& logR,
 		    const vector<double>& weights,
-		    vector<double>& lambda,
-		    vector<double>& L_lambda,
-		    const bool no_reset = false);
+		    vector<double>& L_lambda);
 
   // Same as previous function two functions, but no operating on a
   // single star rather than a vector of them
   void get_spectrum(const double logL, const double logTeff,
 		    const double logg, const double logR,
-		    vector<double>& lambda,
-		    vector<double>& L_lambda,
-		    const bool no_reset = false);
+		    vector<double>& L_lambda);
 
 private:
 

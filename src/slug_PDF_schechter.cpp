@@ -173,7 +173,7 @@ slug_PDF_schechter::parse(ifstream& file, int& lineCount, string& errMsg,
 			 rng_type& rng, double *weight) {
 
   // Local variables
-  double slope, xstar;
+  double slope=0.0, xstar=0.0;
   bool have_slope=false, have_xstar=false;
   bool have_weight = (weight == NULL);
 

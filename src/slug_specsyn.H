@@ -35,14 +35,45 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using namespace std;
 
+
+////////////////////////////////////////////////////////////////////////
+// Helper class that just holds workspace data for doing numerical
+// integrations
+////////////////////////////////////////////////////////////////////////
+class qag_wksp {
+public:
+
+  // Constructor; just allocated vectors
+  qag_wksp(int n);
+
+  // Destructor
+  ~qag_wksp() {};
+
+  // A bunch of workspace data
+  vector<double> x_k, gaussQuad, L_tmp1, L_tmp2, L_out1, L_out2, 
+    errsum, err1, err2;
+  vector<double> a, b, me, rbol, ebol;
+  vector<vector<double> > r, e;
+};
+
+
+////////////////////////////////////////////////////////////////////////
+// Main specsyn class
+////////////////////////////////////////////////////////////////////////
 class slug_specsyn {
 
 public:
 
   // Constructors
-  slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf);
+  slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf, 
+	       slug_PDF *my_sfh);
   slug_specsyn(vector<double> lambda_in, slug_tracks *my_tracks, 
-	       slug_PDF *my_imf);
+	       slug_PDF *my_imf, slug_PDF *my_sfh);
+
+
+  // Return the wavelengths used by the synthesizer
+  unsigned int n_lambda() { return lambda_table.size(); }
+  vector<double> lambda() { return lambda_table; }
 
   // Inputs are log base 10 luminosity in Lsun, log base 10
   // effective temperature in K, log base 10 g in CGS, log base 10 R
@@ -52,40 +83,32 @@ public:
 			    const vector<double>& logTeff,
 			    const vector<double>& logg,
 			    const vector<double>& logR,
-			    vector<double>& lambda,
-			    vector<double>& L_lambda,
-			    const bool no_reset = false) = 0;
+			    vector<double>& L_lambda) = 0;
 
-  // Same as previous function, but with an array specifying a
-  // weighting to be applied to each input star. The weights should
-  // generally sum to unity, though this is not required.
-  virtual void get_spectrum(const vector<double>& logL, 
-			    const vector<double>& logTeff,
-			    const vector<double>& logg,
-			    const vector<double>& logR,
-			    const vector<double>& weights,
-			    vector<double>& lambda,
-			    vector<double>& L_lambda,
-			    const bool no_reset = false) = 0;
-
-  // Same as previous function two functions, but no operating on a
+  // Same as previous function function, but operating on a
   // single star rather than a vector of them
   virtual void get_spectrum(const double logL, const double logTeff,
 			    const double logg, const double logR,
-			    vector<double>& lambda,
-			    vector<double>& L_lambda,
-			    const bool no_reset = false) = 0;
+			    vector<double>& L_lambda) = 0;
 
-  // This is a get spectrum routine that handles the non-stochastic
-  // case. It does what non-stochastic SPS codes do: it takes as an
-  // argument a mass in stars and an age, and it returns the spectrum
-  // for the associated set of stellar tracks and IMF.
-  void get_spectrum_cts(const double m_min, const double m_max,
-			const double m_tot, const double age,
-			vector<double>& lambda,
+  // This is a get spectrum routine that handles the non-stochastic,
+  // single-age case. It does what non-stochastic SPS codes do: it
+  // takes as an argument a total mass and an age, and it returns
+  // the spectrum and bolometric luminosity for the associated set of
+  // stellar tracks and IMF.
+  void get_spectrum_cts(const double m_tot, const double age,
 			vector<double>& L_lambda,
-			const bool no_reset = false,
+			double &L_bol,
 			const double tol = 1e-3);
+
+  // This is a get spectrum routine that handled the case of
+  // non-stochastic star formation with a particular star formation
+  // history. It takes as input a time and returns the spectrum and
+  // bolometric luminosity for all the stars formed up to that time
+  // using the stored IMF, stellar track set, and star formation
+  // history.
+  void get_spectrum_cts_sfh(const double t, vector<double>& L_lambda, 
+			    double& L_bol, const double tol = 1e-3);
 
 
 protected:
@@ -96,19 +119,26 @@ private:
 
   // Helper function to do Gauss-Konrod integration on a particular
   // mass interval
-  void get_spectrum_gk(const double m_min, const double m_max,
-		       const double age, vector<double>& lambda,
-		       vector<double>& L_lambda, vector<double>& err);
+  void get_spectrum_cts_gk(const double m_min, const double m_max,
+			   const double age, vector<double>& L_lambda, 
+			   double& L_bol, vector<double>& err, 
+			   double& err_bol, qag_wksp& q);
+
+  // Helper function to do Gauss-Konrod integration on a particular
+  // time interval
+  void get_spectrum_cts_sfh_gk(const double t_min, const double t_max, 
+			       const double t, vector<double>& L_lambda, 
+			       double &L_bol, vector<double>& err, 
+			       double& err_bol, qag_wksp& q, 
+			       const double tol);
 
   // Private data
   slug_tracks *tracks;              // Stellar tracks
   slug_PDF *imf;                    // IMF
-
-  // Workspace for Gauss-Konrad quadrature calculations
-  vector<double> m_k, gaussQuad;
-  vector<double> L_tmp1, L_tmp2, L_out1, L_out2, errsum, err1, err2;
+  slug_PDF *sfh;
 
 };
+
 
 #endif
 // _slug_specsyn_H_

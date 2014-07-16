@@ -500,6 +500,9 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
 			    int *timeidx, int *trackidx, double *timewgt,
 			    double *trackwgt) {
 
+  // Safety check
+  assert(nstars > 0);
+
   // Start a mass pointer at the track that is the largest one below
   // the smallest input mass
   int trackptr = ntrack - 1;

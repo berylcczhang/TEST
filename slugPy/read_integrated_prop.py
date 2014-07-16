@@ -5,8 +5,7 @@ Function to read a SLUG2 integrated_prop file.
 import numpy as np
 from collections import namedtuple
 import struct
-import os
-import os.path as osp
+from slug_open import slug_open
 
 def read_integrated_prop(model_name, output_dir=None, asciionly=False,
                          binonly=False, verbose=False):
@@ -42,69 +41,22 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
        Mass of currently-alive stars at each time
     cluster_mass : array, shape (N_trials, N_times)
        Mass of living stars in non-disrupted clusters at each time
-    num_clusters : array, shape (N_trials, N_times)
+    num_clusters : array, shape (N_trials, N_times), dtype ulonglong
        Number of non-disrupted clusters present at each time
-    num_dis_clusters : array, shape (N_trials, N_times)
+    num_dis_clusters : array, shape (N_trials, N_times), dtype ulonglong
        Number of disrupted clusters present at each time
-    num_fld_stars : array, shape (N_trials, N_times)
+    num_fld_stars : array, shape (N_trials, N_times), dtype ulonglong
        Number of living field stars (excluding those in disrupted 
        clusters) present at each time
     """
 
-    # Did we get a specific directory in which to look? If not, try
-    # current directory
-    if output_dir is None:
-        outdir = "."
-    else:
-        outdir = output_dir
-
-    # See if we have a text file
-    if not binonly:
-        fname = osp.join(outdir, model_name+'_integrated_prop.txt')
-        try:
-            fp = open(fname, 'r')
-        except IOError:
-            fp = None
-    else:
-        fp = None
-
-    # If that failed, look for a binary file
-    if fp is None:
-        if not asciionly:
-            fname = osp.join(outdir, model_name+'_integrated_prop.bin')
-            try:
-                fp = open(fname, 'rb')
-            except IOError:
-                pass
-
-    # If that failed, and we didn't get an explicit directory
-    # specification, try looking in SLUG_DIR/output
-    if (fp is None) and (output_dir is None) and \
-       ('SLUG_DIR' in os.environ):
-        outdir = osp.join(os.environ['SLUG_DIR'], 'output')
-        if not binonly:
-            fname = osp.join(outdir,
-                             model_name+'_integrated_prop.txt')
-            try:
-                fp = open(fname, 'r')
-            except IOError:
-                pass
-        if not asciionly and fp is None:
-            fname = osp.join(outdir, 
-                             model_name+'_integrated_prop.bin')
-            try:
-                fp = open(fname, 'rb')
-            except IOError:
-                pass
-
-    # If we're here and fp is None, all attempt to open the file have
-    # failed, so throw an IOError
-    if fp is None:
-        raise IOError("unable to open integrated_prop file")
+    # Open file
+    fp = slug_open(model_name+"_integrated_prop", output_dir=output_dir,
+                   asciionly=asciionly, binonly=binonly)
 
     # Print status
     if verbose:
-        print("Reading file "+fname)
+        print("Reading "+model_name)
 
     # Prepare lists to hold data
     time = []
@@ -146,7 +98,7 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
         data = fp.read()
 
         # Interpret data
-        nentry = len(data)/64
+        nentry = len(data)/struct.calcsize('dddddQQQ')
         data_list = struct.unpack('dddddQQQ'*nentry, data)
 
         # Stick data into correctly-named lists
@@ -168,9 +120,9 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
     actual_mass = np.array(actual_mass)
     live_mass = np.array(live_mass)
     cluster_mass = np.array(cluster_mass)
-    num_clusters = np.array(num_clusters, dtype='int')
-    num_dis_clusters = np.array(num_dis_clusters, dtype='int')
-    num_fld_stars = np.array(num_fld_stars, dtype='int')
+    num_clusters = np.array(num_clusters, dtype='ulonglong')
+    num_dis_clusters = np.array(num_dis_clusters, dtype='ulonglong')
+    num_fld_stars = np.array(num_fld_stars, dtype='ulonglong')
 
     # Deduce number of times and trials by finding the first repeated
     # entry in the time data

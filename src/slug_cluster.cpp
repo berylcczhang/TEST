@@ -26,9 +26,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 slug_cluster::slug_cluster(const long my_id, const double my_mass, 
 			   const double time, slug_PDF *my_imf, 
-			   slug_tracks *my_tracks, slug_PDF *clf) :
+			   slug_tracks *my_tracks, 
+			   slug_specsyn *my_specsyn, slug_PDF *clf) :
   id(my_id), targetMass(my_mass), formationTime(time), curTime(time),
-  imf(my_imf), tracks(my_tracks)
+  imf(my_imf), tracks(my_tracks), specsyn(my_specsyn)
 {
 
   // Initialize to non-disrupted
@@ -56,6 +57,9 @@ slug_cluster::slug_cluster(const long my_id, const double my_mass,
   } else {
     lifetime = BIG;
   }
+
+  // Initialize flags for the spectrum and Lbol
+  spec_set = Lbol_set = false;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -68,6 +72,9 @@ slug_cluster::advance(double time) {
 
   // Make sure we're not trying to go back into the past
   assert(time >= curTime);
+
+  // Do nothing if the time hasn't changed
+  if (time == curTime) return;
 
   // Get current age
   double clusterAge = time - formationTime;
@@ -102,6 +109,9 @@ slug_cluster::advance(double time) {
 
   // Set current time
   curTime = time;
+
+  // Mark that the spectrum and bolometric luminosity are not current
+  spec_set = Lbol_set = false;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -114,11 +124,81 @@ slug_cluster::get_isochrone(vector<double> &logL,
 			    vector<double> &logTeff,
 			    vector<double> &logg,
 			    vector<double> &logR) {
-  tracks->get_isochrone(curTime, stars, logL, logTeff, logg, logR);
+  tracks->get_isochrone(curTime-formationTime, stars, logL, logTeff, 
+			logg, logR);
 }
 
+
 ////////////////////////////////////////////////////////////////////////
-// Output routine
+// Routines to return the stored spectrum and bolometric luminosity
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_cluster::get_spectrum() {
+  if (!spec_set) set_spectrum();
+  return L_lambda;
+}
+
+void
+slug_cluster::get_spectrum(vector<double>& lambda_out, 
+			   vector<double>& L_lambda_out) {
+  if (!spec_set) set_spectrum();
+  lambda_out = specsyn->lambda();
+  L_lambda_out = L_lambda;
+}
+
+double
+slug_cluster::get_Lbol() {
+  //if (!Lbol_set) set_Lbol();
+  return Lbol;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Spectral synthesis routine
+////////////////////////////////////////////////////////////////////////
+void
+slug_cluster::set_spectrum() {
+
+  // Do nothing if already set
+  if (spec_set) return;
+
+  // Initialize
+  unsigned int nl = specsyn->n_lambda();
+  L_lambda.assign(nl, 0.0);
+  Lbol = 0.0;
+
+  // Stochastic stars part
+  if (stars.size() > 0) {
+
+    // Do isochrone synthesis for stochastic stars
+    vector<double> logL, logTeff, logg, logR;
+    get_isochrone(logL, logTeff, logg, logR);
+
+    // Get spectrum for stochastic stars
+    specsyn->get_spectrum(logL, logTeff, logg, logR, L_lambda);
+
+    // Add bolometric luminosity from stochastic stars
+    for (unsigned int i=0; i<logL.size(); i++)
+      Lbol += pow(10.0, logL[i]);
+  }
+
+  // Non-stochastic part
+  if (imf->has_stoch_lim()) {
+    double Lbol_tmp;
+    vector<double> spec;
+    specsyn->get_spectrum_cts(birthMass, curTime-formationTime, spec, 
+			      Lbol_tmp);
+    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    Lbol += Lbol_tmp;
+  }
+
+  // Flag that things are set
+  spec_set = Lbol_set = true;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Output physical properties
 ////////////////////////////////////////////////////////////////////////
 void
 slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode) {
@@ -139,7 +219,6 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode) {
     outfile << endl;
   } else if (out_mode == BINARY) {
     outfile.write((char *) &id, sizeof id);
-    outfile.write((char *) &curTime, sizeof curTime);
     outfile.write((char *) &formationTime, sizeof formationTime);
     outfile.write((char *) &lifetime, sizeof lifetime);
     outfile.write((char *) &targetMass, sizeof targetMass);
@@ -154,5 +233,33 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode) {
       double mstar = 0.0;
       outfile.write((char *) &mstar, sizeof mstar);
     }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Output spectrum properties
+////////////////////////////////////////////////////////////////////////
+void
+slug_cluster::
+write_spectrum(ofstream& outfile, const outputMode out_mode) {
+
+  // Make sure information is current
+  if (!spec_set) set_spectrum();
+
+  if (out_mode == ASCII) {
+    vector<double> lambda = specsyn->lambda();
+    for (unsigned int i=0; i<lambda.size(); i++) {
+      outfile << setprecision(5) << scientific 
+	      << setw(11) << right << id << "   "
+	      << setw(11) << right << curTime << "   "
+	      << setw(11) << right << lambda[i] << "   "
+	      << setw(11) << right << L_lambda[i]
+	      << endl;
+    }
+  } else {
+    outfile.write((char *) &id, sizeof id);
+    outfile.write((char *) L_lambda.data(), 
+		  L_lambda.size()*sizeof(double));
   }
 }

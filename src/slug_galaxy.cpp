@@ -53,6 +53,7 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
   targetMass = 0.0;
   aliveMass = 0.0;
   clusterMass = 0.0;
+  nonStochFieldMass = 0.0;
 
   // Get fc
   fc = pp.get_fClust();
@@ -70,6 +71,7 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
   if (pp.get_writeIntegratedProp()) open_integrated_prop(pp);
   if (pp.get_writeClusterProp()) open_cluster_prop(pp);
   if (pp.get_writeIntegratedSpec()) open_integrated_spec(pp);
+  if (pp.get_writeClusterSpec()) open_cluster_spec(pp);
 }
 
 
@@ -91,6 +93,7 @@ slug_galaxy::~slug_galaxy() {
   // Close open files
   if (int_prop_file.is_open()) int_prop_file.close();
   if (cluster_prop_file.is_open()) cluster_prop_file.close();
+  if (int_spec_file.is_open()) int_spec_file.close();
 }
 
 
@@ -102,7 +105,8 @@ slug_galaxy::reset(bool reset_cluster_id) {
   // N.B. By default we do NOT reset the cluster_id pointer here,
   // because if we're doing multiple trials, we want the cluster IDs
   // for different trials to be distinct.
-  curTime = mass = targetMass = aliveMass = clusterMass = 0.0;
+  curTime = mass = targetMass = aliveMass = clusterMass 
+    = nonStochFieldMass = 0.0;
   Lbol_set = spec_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
@@ -113,6 +117,7 @@ slug_galaxy::reset(bool reset_cluster_id) {
     delete clusters.back();
     clusters.pop_back();
   }
+  L_lambda.resize(0);
   if (reset_cluster_id) cluster_id = 0;
 }
 
@@ -144,7 +149,7 @@ slug_galaxy::advance(double time) {
       double birth_time = sfh->draw(curTime, time);
       slug_cluster *new_cluster = 
 	new slug_cluster(cluster_id++, new_cluster_masses[i],
-			 birth_time, imf, tracks, clf);
+			 birth_time, imf, tracks, specsyn, clf);
       clusters.push_back(new_cluster);
       mass += new_cluster->get_birth_mass();
       aliveMass += new_cluster->get_birth_mass();
@@ -175,6 +180,12 @@ slug_galaxy::advance(double time) {
     // Sort field star list by death time, from largest to smallest
     sort(field_stars.begin(), field_stars.end(), 
 	 sort_death_time_decreasing);
+
+    // Increase the non-stochastic field star mass by the mass of
+    // field stars that should have formed below the stochstic limit
+    if (imf->has_stoch_lim())
+      nonStochFieldMass += 
+	(1.0-fc)*new_mass*imf->integral_restricted();
   }
 
   // Advance all clusters to current time; track how the currently
@@ -234,7 +245,7 @@ void
 slug_galaxy::get_spectrum(vector<double>& lambda_out, 
 			  vector<double>& L_lambda_out) {
   if (!spec_set) set_spectrum();
-  lambda_out = lambda;
+  lambda_out = specsyn->lambda();
   L_lambda_out = L_lambda;
 }
 
@@ -255,6 +266,7 @@ slug_galaxy::get_Lbol() {
 void
 slug_galaxy::set_Lbol() {
 
+#if 0
   // Do nothing if already set
   if (Lbol_set) return;
 
@@ -298,6 +310,7 @@ slug_galaxy::set_Lbol() {
 
   // Set flag
   Lbol_set = true;
+#endif
 }
 
 
@@ -310,84 +323,51 @@ slug_galaxy::set_spectrum() {
   // Do nothing if already set
   if (spec_set) return;
 
-  // Prepare to iterate
-  list<slug_cluster *>::iterator it;
+  // Initialize
+  unsigned int nl = specsyn->n_lambda();
+  L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
-  bool initialized = false;
-  cluster_Lbol.resize(0);
-  cluster_L_lambda.resize(0);
+
+  // Set up temporary storage
+  vector<double> spec(nl);
+  double Lbol_tmp;
 
   // Loop over non-disrupted clusters
-  cout << clusters.size() << " clusters " << endl;
-  int ctr = 0;
+  list<slug_cluster *>::iterator it;
   for (it = clusters.begin(); it != clusters.end(); it++) {
 
-    cout << "cluster " << ctr << " of " << clusters.size() << ": " << (*it)->get_stars().size() << " stars" << endl;
-    ctr++;
+    // Get spectrum
+    spec = (*it)->get_spectrum();
 
-    // Get isochrone for this cluster
-    vector<double> logL, logTeff, logg, logR;
-    (*it)->get_isochrone(logL, logTeff, logg, logR);
-
-    // Get spectrum for this cluster
-    cluster_L_lambda.push_back(vector<double>());
-    specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, 
-			  cluster_L_lambda.back());
-
-    // Now add contribution from part being treated non-stochastically
-    if (imf->get_xStochMin() != imf->get_xMin()) {
-      // Set upper limit to the minimum mass for stochastic treatment
-      // or to the maximum surviving stellar mass, whichver is smaller
-      double m_max = min(imf->get_xStochMin(), (*it)->get_stellar_death_mass());
-      specsyn->get_spectrum_cts(imf->get_xMin(), m_max,
-				(*it)->get_non_stoch_alive_mass(), (*it)->get_age(),
-				lambda, cluster_L_lambda.back(), true, 1e-3);
-    }
-
-    // Add spectrum to global sum
-    L_lambda.resize(cluster_L_lambda.back().size());
-    for (unsigned int i=0; i<lambda.size(); i++)
-      L_lambda[i] += cluster_L_lambda.back()[i];
-
-    // Get bolometric luminosity for this cluster
-    cluster_Lbol.push_back(0);
-    for (unsigned int i=0; i<logL.size(); i++)
-      cluster_Lbol[cluster_Lbol.size()-1] += pow(10.0, logL[i]);
-    Lbol += cluster_Lbol[cluster_Lbol.size()-1];
+    // Add spectrum and Lbol to global sum
+    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    Lbol += (*it)->get_Lbol();
   }
-  // Flag if we've initialized the lambda and spectrum arrays
-  if (clusters.size() > 0) initialized = true;
 
-  // Now do disrupted clusters
+  // Now do exactly the same thing for disrupted clusters
   for (it = disrupted_clusters.begin(); it != disrupted_clusters.end(); 
        it++) {
-    vector<double> logL, logTeff, logg, logR;
-    (*it)->get_isochrone(logL, logTeff, logg, logR);
-    specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, L_lambda,
-			  !initialized);
-    if (imf->get_xStochMin() != imf->get_xMin()) {
-      // Set upper limit to the minimum mass for stochastic treatment
-      // or to the maximum surviving stellar mass, whichver is smaller
-      double m_max = min(imf->get_xStochMin(), (*it)->get_stellar_death_mass());
-      specsyn->get_spectrum_cts(imf->get_xMin(), m_max,
-				(*it)->get_non_stoch_alive_mass(), (*it)->get_age(),
-				lambda, cluster_L_lambda.back(), true, 1e-3);
-    }
-    initialized = true;
-    for (unsigned int i=0; i<logL.size(); i++) Lbol += pow(10.0, logL[i]);
+    spec = (*it)->get_spectrum();
+    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    Lbol += (*it)->get_Lbol();
   }
 
-  // Now do field stars
+  // Now do stochastic field stars
   for (unsigned int i=0; i<field_stars.size(); i++) {
     vector<double> logL, logTeff, logg, logR;
     double logt = log(curTime-field_stars[i].birth_time);
     vector<double> logm(1, log(field_stars[i].mass));
-    tracks->get_isochrone(logt, logm,
-			  logL, logTeff, logg, logR);
-    specsyn->get_spectrum(logL, logTeff, logg, logR, lambda, L_lambda,
-			  !initialized);
-    initialized = true;
+    tracks->get_isochrone(logt, logm, logL, logTeff, logg, logR);
+    specsyn->get_spectrum(logL, logTeff, logg, logR, spec);
+    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
     Lbol += pow(10.0, logL[0]);
+  }
+
+  // Finally do non-stochastic field stars
+  if (nonStochFieldMass > 0) {
+    specsyn->get_spectrum_cts_sfh(curTime, spec, Lbol_tmp);
+    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    Lbol += Lbol_tmp;
   }
 
   // Set flags
@@ -553,12 +533,72 @@ slug_galaxy::open_integrated_spec(slug_parmParser& pp) {
 		  << endl;
     int_spec_file << setw(14) << left << "(yr)"
 		  << setw(14) << left << "(Angstrom)"
-		  << setw(14) << left << "(erg/s/Angstrom)"
+		  << setw(14) << left << "(erg/s/A)"
 		  << endl;
     int_spec_file << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << endl;
+  } else {
+    // File starts with the list of wavelengths
+    vector<double> lambda = specsyn->lambda();
+    vector<double>::size_type nl = lambda.size();
+    int_spec_file.write((char *) &nl, sizeof nl);
+    int_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open cluster spectra file and write its header
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::open_cluster_spec(slug_parmParser& pp) {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_cluster_spec";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    cluster_spec_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+      full_path /= fname;
+      cluster_spec_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+
+  // Make sure file is open
+  if (!cluster_spec_file.is_open()) {
+    cerr << "slug error: unable to open cluster spectrum file " 
+	 << full_path.string() << endl;
+    exit(1);
+  }
+
+  // Write header
+  if (out_mode == ASCII) {
+    cluster_spec_file << setw(14) << left << "UniqueID"
+		      << setw(14) << left << "Time"
+		      << setw(14) << left << "Wavelength"
+		      << setw(14) << left << "L_lambda"
+		      << endl;
+    cluster_spec_file << setw(14) << left << ""
+		      << setw(14) << left << "(yr)"
+		      << setw(14) << left << "(Angstrom)"
+		      << setw(14) << left << "(erg/s/A)"
+		      << endl;
+    cluster_spec_file << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
+		      << endl;
+  } else {
+    // File starts with the list of wavelengths
+    vector<double> lambda = specsyn->lambda();
+    vector<double>::size_type nl = lambda.size();
+    cluster_spec_file.write((char *) &nl, sizeof nl);
+    cluster_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
   }
 }
 
@@ -601,6 +641,16 @@ slug_galaxy::write_integrated_prop() {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_prop() {
+
+  // In binary mode, write out the time and the number of clusters
+  // first, because individual clusters won't write this data
+  if (out_mode == BINARY) {
+    cluster_prop_file.write((char *) &curTime, sizeof curTime);
+    vector<double>::size_type n = clusters.size();
+    cluster_prop_file.write((char *) &n, sizeof n);
+  }
+
+  // Now write out each cluster
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_prop(cluster_prop_file, out_mode);
@@ -617,6 +667,7 @@ slug_galaxy::write_integrated_spec() {
   if (!spec_set) set_spectrum();
 
   if (out_mode == ASCII) {
+    vector<double> lambda = specsyn->lambda();
     for (unsigned int i=0; i<lambda.size(); i++) {
       int_spec_file << setprecision(5) << scientific 
 		    << setw(11) << right << curTime << "   "
@@ -625,14 +676,28 @@ slug_galaxy::write_integrated_spec() {
 		    << endl;
     }
   } else {
-    vector<double>::size_type n = lambda.size();
     int_spec_file.write((char *) &curTime, sizeof curTime);
-    int_prop_file.write((char *) &n, sizeof n);
-    if (lambda.size() > 0) {
-      int_spec_file.write((char *) lambda.data(), 
-			  sizeof(double)*lambda.size());
-      int_spec_file.write((char *) L_lambda.data(), 
-			  sizeof(double)*L_lambda.size());
-    }
+    int_spec_file.write((char *) L_lambda.data(), 
+			sizeof(double)*L_lambda.size());
   }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster spectra
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_cluster_spec() {
+
+  // In binary mode, write out the time and the number of clusters
+  // first, because individual clusters won't write this data
+  if (out_mode == BINARY) {
+    cluster_spec_file.write((char *) &curTime, sizeof curTime);
+    vector<double>::size_type n = clusters.size();
+    cluster_spec_file.write((char *) &n, sizeof n);
+  }
+
+  // Now have each cluster write
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_spectrum(cluster_spec_file, out_mode);
 }

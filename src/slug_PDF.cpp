@@ -39,7 +39,8 @@ using namespace boost::random;
 // Constructor from a single segment
 ////////////////////////////////////////////////////////////////////////
 slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
-		   double normalization) {
+		   double normalization) :
+  disc(NULL), disc_restricted(NULL) {
 
   // Set pointer to the rng
   rng = my_rng;
@@ -75,7 +76,8 @@ slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
 // Constructor from file
 ////////////////////////////////////////////////////////////////////////
 slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
-		   bool is_normalized) {
+		   bool is_normalized) :
+  disc(NULL), disc_restricted(NULL) {
 
   // Set pointer to the rng
   rng = my_rng;
@@ -200,10 +202,10 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
 slug_PDF::~slug_PDF() { 
   for (unsigned int i=0; i<segments.size(); i++)
     delete segments[i];
-  if (disc != NULL)
-    delete disc;
   if (disc_restricted != NULL)
     delete disc_restricted;
+  if (disc != NULL)
+    delete disc;
   delete coin;
 }
 
@@ -329,6 +331,7 @@ slug_PDF::remove_stoch_lim() {
     seg_restricted.resize(0);
     weights_restricted.resize(0);
     delete disc_restricted;
+    disc_restricted = NULL;
     xStochMin = xMin;
     xStochMax = xMax;
     PDFintegral_restrict = PDFintegral;

@@ -148,7 +148,7 @@ slug_PDF_powerlaw::parse(ifstream& file, int& lineCount, string& errMsg,
 			 rng_type& rng, double *weight) {
 
   // Local variables
-  double slope;
+  double slope=0.0;
   bool have_slope=false;
   bool have_weight = (weight == NULL);
 

@@ -35,8 +35,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 slug_specsyn_planck::
 slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
-		    double z_in) : 
-  slug_specsyn(my_tracks, my_imf), 
+		    slug_PDF *my_sfh, double z_in) : 
+  slug_specsyn(my_tracks, my_imf, my_sfh), 
   z(z_in) 
 {
   for (int i=0; i<1001; i++) {
@@ -52,8 +52,8 @@ slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
 slug_specsyn_planck::
 slug_specsyn_planck(const double lambda_min, const double lambda_max, 
 		    const unsigned int nlambda, slug_tracks *my_tracks, 
-		    slug_PDF *my_imf, double z_in) : 
-  slug_specsyn(my_tracks, my_imf),
+		    slug_PDF *my_imf, slug_PDF *my_sfh, double z_in) : 
+  slug_specsyn(my_tracks, my_imf, my_sfh),
   z(z_in)
 {
   for (unsigned int i=0; i<nlambda; i++) {
@@ -67,10 +67,11 @@ slug_specsyn_planck(const double lambda_min, const double lambda_max,
 // Constructor from specified wavelength vector
 ////////////////////////////////////////////////////////////////////////
 
-slug_specsyn_planck::slug_specsyn_planck(const vector<double>& lambda_in,
-					 slug_tracks *my_tracks, 
-					 slug_PDF *my_imf, double z_in) :
-  slug_specsyn(lambda_in, my_tracks, my_imf),
+slug_specsyn_planck::
+slug_specsyn_planck(const vector<double>& lambda_in,
+		    slug_tracks *my_tracks, slug_PDF *my_imf, 
+		    slug_PDF *my_sfh, double z_in) :
+  slug_specsyn(lambda_in, my_tracks, my_imf, my_sfh),
   z(z_in) {}
 
 
@@ -83,22 +84,15 @@ slug_specsyn_planck::get_spectrum(const vector<double>& logL,
 				  const vector<double>& logTeff,
 				  const vector<double>& logg,
 				  const vector<double>& logR,
-				  vector<double>& lambda,
-				  vector<double>& L_lambda,
-				  const bool no_reset) {
+				  vector<double>& L_lambda) {
 
   // Make sure input arrays match in size
   assert(logL.size() == logTeff.size());
   assert((logL.size() == logg.size()) || (logg.size() == 0));
   assert((logL.size() == logR.size()) || (logR.size() == 0));
 
-  // Initialize lambda and L_lambda
-  if (no_reset) {
-    assert(lambda.size() == L_lambda.size());
-  } else {
-    lambda = lambda_table;
-    L_lambda.assign(lambda_table.size(), 0.0);
-  }
+  // Initialize L_lambda
+  L_lambda.assign(lambda_table.size(), 0.0);
 
   // Loop over stars
   for (unsigned int i=0; i<logL.size(); i++) {
@@ -111,59 +105,13 @@ slug_specsyn_planck::get_spectrum(const vector<double>& logL,
     for (unsigned int j=0; j<lambda_table.size(); j++) {
       L_lambda[j] += pow(10.0, logL[i]) * LSUN * ANGSTROM 
 	* 2.0*H*C*C / 
-	(pow(lambda[j]/(1.0+z)*ANGSTROM, 5)*
-	 exp(H*C/(lambda[j]/(1.0+z)*ANGSTROM*KB*pow(10.0, logTeff[i])))) /
+	(pow(lambda_table[j]/(1.0+z)*ANGSTROM, 5)*
+	 exp(H*C/(lambda_table[j]/(1.0+z)*ANGSTROM*KB*pow(10.0, logTeff[i])))) /
 	b_norm;
     }
   }
 }
 
-
-////////////////////////////////////////////////////////////////////////
-// The spectral synthesizer with weighting. Same as the above, but now
-// each star is multiplied by a weight.
-////////////////////////////////////////////////////////////////////////
-void
-slug_specsyn_planck::get_spectrum(const vector<double>& logL, 
-				  const vector<double>& logTeff,
-				  const vector<double>& logg,
-				  const vector<double>& logR,
-				  const vector<double>& weights,
-				  vector<double>& lambda,
-				  vector<double>& L_lambda,
-				  const bool no_reset) {
-
-  // Make sure input arrays match in size
-  assert(logL.size() == logTeff.size());
-  assert((logL.size() == logg.size()) || (logg.size() == 0));
-  assert((logL.size() == logR.size()) || (logR.size() == 0));
-
-  // Initialize lambda and L_lambda
-  if (no_reset) {
-    assert(lambda.size() == L_lambda.size());
-  } else {
-    lambda = lambda_table;
-    L_lambda.assign(lambda_table.size(), 0.0);
-  }
-
-  // Loop over stars
-  for (unsigned int i=0; i<logL.size(); i++) {
-
-    // Normalization of Planck function for this star
-    double b_norm = SIGMASB/M_PI * pow(10.0, 4.0*logTeff[i]);
-
-    // Add normalized Planck function scaled by stellar luminosity;
-    // put result in units of erg/s/Angstrom
-    for (unsigned int j=0; j<lambda_table.size(); j++) {
-      L_lambda[j] += weights[i] *
-	pow(10.0, logL[i]) * LSUN * ANGSTROM 
-	* 2.0*H*C*C / 
-	(pow(lambda[j]/(1.0+z)*ANGSTROM, 5)*
-	 exp(H*C/(lambda[j]/(1.0+z)*ANGSTROM*KB*pow(10.0, logTeff[i])))) /
-	b_norm;
-    }
-  }
-}
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -173,17 +121,10 @@ void
 slug_specsyn_planck::
 get_spectrum(const double logL, const double logTeff,
 	     const double logg, const double logR,
-	     vector<double>& lambda,
-	     vector<double>& L_lambda,
-	     const bool no_reset) {
+	     vector<double>& L_lambda) {
 
-  // Initialize lambda and L_lambda
-  if (no_reset) {
-    assert(lambda.size() == L_lambda.size());
-  } else {
-    lambda = lambda_table;
-    L_lambda.assign(lambda_table.size(), 0.0);
-  }
+  // Set L_lambda to correct size
+  L_lambda.resize(lambda_table.size());
 
   // Normalization of Planck function
   double b_norm = SIGMASB/M_PI * pow(10.0, 4.0*logTeff);
@@ -191,10 +132,10 @@ get_spectrum(const double logL, const double logTeff,
   // Add normalized Planck function scaled by stellar luminosity;
   // put result in units of erg/s/Angstrom
   for (unsigned int j=0; j<lambda_table.size(); j++) {
-    L_lambda[j] += pow(10.0, logL) * LSUN * ANGSTROM 
+    L_lambda[j] = pow(10.0, logL) * LSUN * ANGSTROM 
       * 2.0*H*C*C / 
-      (pow(lambda[j]/(1.0+z)*ANGSTROM, 5)*
-       exp(H*C/(lambda[j]/(1.0+z)*ANGSTROM*KB*pow(10.0, logTeff)))) /
+      (pow(lambda_table[j]/(1.0+z)*ANGSTROM, 5)*
+       exp(H*C/(lambda_table[j]/(1.0+z)*ANGSTROM*KB*pow(10.0, logTeff)))) /
       b_norm;
   }
 }
