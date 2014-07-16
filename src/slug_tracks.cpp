@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 #include "slug_tracks.H"
 
 using namespace std;
@@ -46,7 +47,7 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
-slug_tracks::slug_tracks(const char *fname) {
+slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
 
   // Try to open file
   ifstream trackfile;
@@ -277,6 +278,54 @@ slug_tracks::slug_tracks(const char *fname) {
 	(logtimes[(i+1)*ntime+j] - logtimes[i*ntime+j] + SMALL);
     }
   }
+
+  // Last step: set the metallicity. This can be done manually, or by
+  // guessing based on the file name.
+  if (my_metallicity < 0) {
+    // Default value, not specified, so guess from file name
+
+    // File names of the form modCXXX.dat or modCXXXX.dat, where C is
+    // a letter and the X's are digits; metallicity is 0.XXX or 0.XXXX
+    static const regex pattern1("mod[A-z][0-9]{3}.dat");
+    static const regex pattern2("mod[A-z][0-9]{4}.dat");
+
+    // File names of the form ZXXXXvYY.txt, where the X's and Y's are
+    // digits; metallicity is 0.02 if XXXX = 0140, and is 1/7 solar if
+    // XXXX = 0020
+    static const regex pattern3("Z0140v[0-9]{2}.txt");
+    static const regex pattern4("Z0020v[0-9]{2}.txt");
+
+    // Check for matches
+    match_results<std::basic_string<char>::iterator> name_match;
+    if (regex_search(trackfileName.begin(), trackfileName.end(), 
+		     name_match, pattern1, match_posix)) {
+      string fname(name_match[0].first, name_match[0].second);
+      string metalstring = fname.substr(4, 3);
+      metalstring.insert(0, "0.");    // Add the decimal point
+      metallicity = lexical_cast<double>(metalstring);
+    } else if (regex_search(trackfileName.begin(), trackfileName.end(), 
+			    name_match, pattern2, match_posix)) {
+      string fname(name_match[0].first, name_match[0].second);
+      string metalstring = fname.substr(4, 4);
+      metalstring.insert(0, "0.");    // Add the decimal point
+      metallicity = lexical_cast<double>(metalstring);
+    } else if (regex_search(trackfileName.begin(), trackfileName.end(), 
+			    name_match, pattern3, match_posix)) {
+      metallicity = 0.02;
+    } else if  (regex_search(trackfileName.begin(), trackfileName.end(), 
+			    name_match, pattern4, match_posix)) {
+      metallicity = 0.02/7.0;
+    } else {
+      cerr << "Error: could not guess metallicity from file name "
+	   << trackfileName << "; "
+	   << "please set metallicity manually in parameter file"
+	   << endl;
+      exit(1);
+    }
+  } else {
+    // Metallicity manually set
+    metallicity = my_metallicity;
+  }
 }
 
 
@@ -365,7 +414,7 @@ slug_tracks::star_lifetime(double mass) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Method to get an isochrone -- log L, log Teff, log g -- for a
+// Method to get an isochrone -- log L, log Teff, log g, log R -- for a
 // vector of stars
 ////////////////////////////////////////////////////////////////////////
 

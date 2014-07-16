@@ -36,7 +36,7 @@ class slug_tracks {
 
 public:
   // Construct a set of tracks from a file containing them
-  slug_tracks(const char *fname);
+  slug_tracks(const char *fname, double my_metallicity = -1.0);
 
   // Destructor
   ~slug_tracks();
@@ -50,6 +50,9 @@ public:
 
   // Lifetime of a star of a specified mass
   double star_lifetime(double mass);
+
+  // Method to return the metallicity
+  double get_metallicity() { return metallicity; }
 
   // Method to produce vector of log L, log Teff, log g, log R for
   // stars with a specified set of initial masses on a particular
@@ -71,6 +74,7 @@ private:
   // Private data
   string trackfileName;         // Name of the track file
   string trackDesc;             // Descriptor string on 1st line of file
+  double metallicity;           // Metallicity for these tracks
   int ntrack;                   // Number of tracks
   int ntime;                    // Number of times per track
   vector<string> tracktype;     // Type of track (WR, RO, ML)

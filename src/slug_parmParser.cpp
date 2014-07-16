@@ -101,6 +101,7 @@ slug_parmParser::setDefaults() {
   nTrials = 1;
   timeStep = endTime = fClust = -BIG;
   z = 0.0;
+  metallicity = -1.0;    // Flag for not set
   min_stoch_mass = 2.0;
   constantSFR = writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
@@ -175,6 +176,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	outDir = tokens[1];
       } else if (!(tokens[0].compare("z"))) {
 	z = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("metallicity"))) {
+	metallicity = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("clust_frac"))) {
 	fClust = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("out_cluster"))) {
@@ -434,6 +437,7 @@ double slug_parmParser::get_endTime() { return endTime; }
 bool slug_parmParser::get_constantSFR() { return constantSFR; }
 double slug_parmParser::get_SFR() { return sfr; }
 double slug_parmParser::get_z() { return z; }
+double slug_parmParser::get_metallicity() { return metallicity; }
 double slug_parmParser::get_min_stoch_mass() { return min_stoch_mass; }
 const char *slug_parmParser::get_SFH() { return sfh.c_str(); }
 const char *slug_parmParser::get_IMF() { return imf.c_str(); }
