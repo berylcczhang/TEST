@@ -178,8 +178,8 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   expectVal = expectVal / PDFintegral;
 
   // Get the lower and upper limits of the PDF
-  xMin = BIG;
-  xMax = -BIG;
+  xMin = constants::big;
+  xMax = -constants::big;
   for (unsigned int i=0; i<segments.size(); i++) {
     xMin = xMin < segments[i]->sMin() ? xMin : segments[i]->sMin();
     xMax = xMax > segments[i]->sMax() ? xMax : segments[i]->sMax();
@@ -270,13 +270,17 @@ slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
     weights_restricted.resize(0);
     delete disc_restricted;
   }
-  
-  // Step 2: set flags and store data for new range restriction
+
+  // Step 2: does the stochastic limit cover the full limit of the
+  // PDF? If so, that's no limit at all, so just return.
+  if ((x_stoch_min <= xMin) && (x_stoch_max >= xMax)) return;
+
+  // Step 3: set flags and store data for new range restriction
   xStochMin = x_stoch_min;
   xStochMax = x_stoch_max;
   range_restrict = true;
 
-  // Step 3: generate a restricted segment list
+  // Step 4: generate a restricted segment list
   vector<double> wgt_temp;
   for (unsigned int i=0; i<segments.size(); i++) {
     if (xStochMin >= segments[i]->sMax()) continue; // Segment is out of range
@@ -296,7 +300,7 @@ slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
     }
   }
 
-  // Step 4: set up a new discrete picker with the new weights
+  // Step 5: set up a new discrete picker with the new weights
   if (seg_restricted.size() > 1) {
     discrete_distribution<> dist(weights_restricted.begin(), 
 				 weights_restricted.end());
@@ -307,7 +311,7 @@ slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
     disc_restricted = NULL;
   }
 
-  // Step 5: get the integral and expection value for the resticted
+  // Step 6: get the integral and expection value for the resticted
   // region
   PDFintegral_restrict = 0.0;
   for (unsigned int i=0; i<weights_restricted.size(); i++)

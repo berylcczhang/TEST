@@ -30,8 +30,9 @@ slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in)
 {
   for (int i=0; i<1001; i++) {
-    lambda_table.push_back(91.0 * 
-			   pow(10., i/1000.0*4));
+    lambda_rest.push_back(91.0 * 
+			  pow(10., i/1000.0*4));
+    lambda_obs.push_back(lambda_rest[i]*(1.0+z));
   }
 }
 
@@ -42,62 +43,95 @@ slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
 slug_specsyn_planck::
 slug_specsyn_planck(const double lambda_min, const double lambda_max, 
 		    const unsigned int nlambda, slug_tracks *my_tracks, 
-		    slug_PDF *my_imf, slug_PDF *my_sfh, double z_in) : 
-  slug_specsyn(my_tracks, my_imf, my_sfh, z_in)
-{
-  for (unsigned int i=0; i<nlambda; i++) {
-    lambda_table.push_back(lambda_min * 
-			   pow(lambda_max/lambda_min, 
-			       ((double) i)/(nlambda - 1)));
+		    slug_PDF *my_imf, slug_PDF *my_sfh, double z_in,
+		    bool rest) : 
+  slug_specsyn(my_tracks, my_imf, my_sfh, z_in) {
+  if (rest) {
+    for (unsigned int i=0; i<nlambda; i++) {
+      lambda_rest.push_back(lambda_min * 
+			    pow(lambda_max/lambda_min, 
+				((double) i)/(nlambda - 1)));
+      lambda_obs.push_back(lambda_rest[i]*(1.0+z));
+    }
+  } else {
+    for (unsigned int i=0; i<nlambda; i++) {
+      lambda_obs.push_back(lambda_min * 
+			    pow(lambda_max/lambda_min, 
+				((double) i)/(nlambda - 1)));
+      lambda_rest.push_back(lambda_obs[i]/(1.0+z));
+    }
   }
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor from specified wavelength vector
 ////////////////////////////////////////////////////////////////////////
-
 slug_specsyn_planck::
 slug_specsyn_planck(const vector<double>& lambda_in,
 		    slug_tracks *my_tracks, slug_PDF *my_imf, 
-		    slug_PDF *my_sfh, double z_in) :
+		    slug_PDF *my_sfh, double z_in, bool rest) :
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in) {
-  lambda_table = lambda_in;
+  if (rest) {
+    lambda_rest = lambda_in;
+    lambda_obs.resize(lambda_rest.size());
+    for (unsigned int i=0; i<lambda_rest.size(); i++)
+      lambda_obs[i] = lambda_rest[i] * (1.0+z);
+  } else {
+    lambda_obs = lambda_in;
+    lambda_rest.resize(lambda_obs.size());
+    for (unsigned int i=0; i<lambda_rest.size(); i++)
+      lambda_rest[i] = lambda_obs[i] / (1.0+z);
+  }
 }
 
+////////////////////////////////////////////////////////////////////////
+// Method to change the wavelenght table
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn_planck::
+set_lambda(const vector<double>& lambda_in, bool rest) {
+  if (rest) {
+    lambda_rest = lambda_in;
+    lambda_obs.resize(lambda_rest.size());
+    for (unsigned int i=0; i<lambda_rest.size(); i++)
+      lambda_obs[i] = lambda_rest[i] * (1.0+z);
+  } else {
+    lambda_obs = lambda_in;
+    lambda_rest.resize(lambda_obs.size());
+    for (unsigned int i=0; i<lambda_rest.size(); i++)
+      lambda_rest[i] = lambda_obs[i] / (1.0+z);
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // The spectral synthesizer. This just evaluates the Planck function
 // to get the spectrum for each star, then sums.
 ////////////////////////////////////////////////////////////////////////
 void
-slug_specsyn_planck::get_spectrum(const vector<double>& logL, 
+slug_specsyn_planck::get_spectrum(const vector<double>& logR, 
 				  const vector<double>& logTeff,
 				  const vector<double>& logg,
-				  const vector<double>& logR,
 				  vector<double>& L_lambda) {
 
   // Make sure input arrays match in size
-  assert(logL.size() == logTeff.size());
-  assert((logL.size() == logg.size()) || (logg.size() == 0));
-  assert((logL.size() == logR.size()) || (logR.size() == 0));
+  assert(logR.size() == logTeff.size());
 
   // Initialize L_lambda
-  L_lambda.assign(lambda_table.size(), 0.0);
+  L_lambda.assign(lambda_rest.size(), 0.0);
 
   // Loop over stars
-  for (unsigned int i=0; i<logL.size(); i++) {
+  for (unsigned int i=0; i<logR.size(); i++) {
 
-    // Normalization of Planck function for this star
-    double b_norm = SIGMASB/M_PI * pow(10.0, 4.0*logTeff[i]);
-
-    // Add normalized Planck function scaled by stellar luminosity;
-    // put result in units of erg/s/Angstrom
-    for (unsigned int j=0; j<lambda_table.size(); j++) {
-      L_lambda[j] += pow(10.0, logL[i]) * LSUN * ANGSTROM 
-	* 2.0*H*C*C / 
-	(pow(lambda_table[j]/(1.0+z)*ANGSTROM, 5)*
-	 exp(H*C/(lambda_table[j]/(1.0+z)*ANGSTROM*KB*pow(10.0, logTeff[i])))) /
-	b_norm;
+    // Add 4 pi R^2 B_lambda(T), in units of erg/s/Angstrom
+    double surf_area = 4.0 * M_PI * 
+      pow(10.0, 2.0*(logR[i]+constants::logRsun));
+    double Teff = pow(10.0, logTeff[i]);
+    for (unsigned int j=0; j<lambda_rest.size(); j++) {
+      double lcgs = lambda_rest[j] * constants::Angstrom;
+      double x = constants::hcOverkB / (lcgs * Teff);
+      double b_lambda = 2.0 * constants::hc2 /
+	(pow(lcgs, 5.0) * (exp(x) - 1));
+      L_lambda[j] += surf_area * b_lambda * constants::Angstrom;
     }
   }
 }
@@ -109,23 +143,23 @@ slug_specsyn_planck::get_spectrum(const vector<double>& logL,
 ////////////////////////////////////////////////////////////////////////
 void 
 slug_specsyn_planck::
-get_spectrum(const double logL, const double logTeff,
-	     const double logg, const double logR,
-	     vector<double>& L_lambda) {
+get_spectrum(const double logR, const double logTeff,
+	     const double logg, vector<double>& L_lambda) {
 
   // Set L_lambda to correct size
-  L_lambda.resize(lambda_table.size());
+  L_lambda.resize(lambda_rest.size());
 
-  // Normalization of Planck function
-  double b_norm = SIGMASB/M_PI * pow(10.0, 4.0*logTeff);
+  // Surface area, Teff
+  double surf_area = 4.0 * M_PI * 
+    pow(10.0, 2.0*(logR+constants::logRsun));
+  double Teff = pow(10.0, logTeff);
 
-  // Add normalized Planck function scaled by stellar luminosity;
-  // put result in units of erg/s/Angstrom
-  for (unsigned int j=0; j<lambda_table.size(); j++) {
-    L_lambda[j] = pow(10.0, logL) * LSUN * ANGSTROM 
-      * 2.0*H*C*C / 
-      (pow(lambda_table[j]/(1.0+z)*ANGSTROM, 5)*
-       exp(H*C/(lambda_table[j]/(1.0+z)*ANGSTROM*KB*pow(10.0, logTeff)))) /
-      b_norm;
+  // Add 4 pi R^2 B_lambda(T), in units of erg/s/Angstrom
+  for (unsigned int j=0; j<lambda_rest.size(); j++) {
+    double lcgs = lambda_rest[j] * constants::Angstrom;
+    double x = constants::hcOverkB / (lcgs * Teff);
+    double b_lambda = 2.0 * constants::hc2 /
+      (pow(lcgs, 5.0) * (exp(x) - 1));
+    L_lambda[j] += surf_area * b_lambda * constants::Angstrom;
   }
 }

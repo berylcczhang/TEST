@@ -1,0 +1,390 @@
+/*********************************************************************
+Copyright (C) 2014 Robert da Silva, Michele Fumagalli, Mark Krumholz
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*********************************************************************/
+
+#include "constants.H"
+#include "slug_specsyn_kurucz.H"
+#include <cassert>
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+
+using namespace boost;
+using namespace boost::algorithm;
+using namespace boost::filesystem;
+
+////////////////////////////////////////////////////////////////////////
+// Convenient struct and comparator, used below
+////////////////////////////////////////////////////////////////////////
+struct stardata { double Teff, logg, surf_area, Twgt; };
+bool starsort (stardata star1, stardata star2) {
+  if (star1.Teff != star2.Teff)
+    return (star1.Teff < star2.Teff);
+  else
+    return (star1.logg < star2.logg);
+}
+
+////////////////////////////////////////////////////////////////////////
+// The constructor
+////////////////////////////////////////////////////////////////////////
+slug_specsyn_kurucz::
+slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks, 
+		    slug_PDF *my_imf, slug_PDF *my_sfh,
+		    double z_in, bool use_Teff_check) :
+  slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
+  planck(my_tracks, my_imf, my_sfh, z_in),
+  check_Teff(use_Teff_check)
+{
+
+  // Choose the atmosphere file closest in metallicity to the
+  // metallicity we are using for the tracks
+  const string extensions[] = {"m13", "m07", "m04", "p00", "p03"};
+  const double zrel[] = { -1.3, -0.7, -0.4, 0.0, 0.3 }; // Z relative to Solar
+  const int nfile = 5;
+  double zdiff = constants::big;
+  int idx = -1;
+  for (int i=0; i<nfile; i++) {
+    double zdiff1 = abs(zrel[i] - log10(my_tracks->get_metallicity()));
+    if (zdiff > zdiff1) {
+      idx = i;
+      zdiff = zdiff1;
+    }
+  }
+
+  // Print warning if this is a big extrapolation in metallicity
+  if (zdiff > 0.1) {
+    cerr << "Warning: stellar track metallicity is [Z/H] = "
+	 << log10(my_tracks->get_metallicity())
+	 << ", closest atmospheric metallicity available is [Z/H] = "
+	 << zrel[idx]
+	 << "; calculation will proceed" << endl;
+  }
+
+  // Construct the file name and try to open the file
+  string fname = "lcb97_"+extensions[idx]+".flu";
+  ifstream atmos_file;
+  char *slug_dir = getenv("SLUG_DIR");
+  path dname(dirname);
+  path atmos_path, atmos_fullPath;
+  atmos_path = dname / path(fname.c_str());
+  if (slug_dir != NULL) {
+    // Try opening relative to SLUG_DIR
+    atmos_fullPath = path(slug_dir) / atmos_path;
+    atmos_file.open(atmos_fullPath.c_str());
+  }
+  if (atmos_file.is_open()) {
+    atmos_path = atmos_fullPath;
+  } else {
+    // Try opening relative to current path
+    atmos_file.open(atmos_path.c_str());
+  }
+  if (!atmos_file.is_open()) {
+    // Couldn't open file, so bail out
+    cerr << "slug error: unable to open atmosphere file " 
+	 << atmos_path.string();
+    if (slug_dir != NULL)
+      cerr << " or " << atmos_fullPath.string();
+    cerr << endl;
+    exit(1);
+  }
+
+  // Save file name
+  atmos_file_name = atmos_path.string();
+
+  // Read the wavelengths
+  lambda_rest.resize(1221);
+  for (int i=0; i<1221; i++) atmos_file >> lambda_rest[i];
+
+  // Read the models
+  string modelhdr;
+  vector<string> tokens;
+  int Tptr = -1, gptr = -1, ngmax = 1;
+  getline(atmos_file, modelhdr);  // Burn newline
+  while (getline(atmos_file, modelhdr)) {
+
+    // Split the header into tokens, and read Teff and log g
+    trim(modelhdr);
+    split(tokens, modelhdr, is_any_of("\t "), token_compress_on);
+    double Teff = lexical_cast<double>(tokens[1]);
+    double logg = lexical_cast<double>(tokens[2]);
+
+    // Is this a new temperature, so that we need to start a new row?
+    bool new_row = false;
+    if (Teff_mod.size() == 0) new_row = true;
+    else if (Teff_mod.back() != Teff) new_row = true;
+
+    // If this is a new temperature, record it, resize the log g and
+    // F_lambda arrays appropriately, and move the pointers
+    if (new_row) {
+      if (Teff_mod.size() > 0) ng.push_back(gptr+1);
+      Teff_mod.push_back(Teff);
+      Tptr++;     // Increment Teff pointer
+      gptr = 0;   // Reset log g pointer
+      array2d::extent_gen extent2;
+      logg_mod.resize(extent2[Tptr+1][ngmax]);
+      array3d::extent_gen extent3;
+      F_lambda.resize(extent3[Tptr+1][ngmax][1221]);
+    } else {
+      // Same temperature, so this is a new log g value. Increment the
+      // log g pointer, and expand in the logg direction if necessary.
+      gptr++;
+      if (gptr >= ngmax) {
+	ngmax++;
+	array2d::extent_gen extent2;
+	logg_mod.resize(extent2[Tptr+1][ngmax]);
+	array3d::extent_gen extent3;
+	F_lambda.resize(extent3[Tptr+1][ngmax][1221]);
+      }
+    }
+
+    // Store value of log g we just read
+    logg_mod[Tptr][gptr] = logg;
+
+    // Read F_lambda
+    for (int i=0; i<1221; i++) atmos_file >> F_lambda[Tptr][gptr][i];
+
+    // Burn the newline character
+    getline(atmos_file, modelhdr);
+  }
+  ng.push_back(gptr+1);
+
+  // Close the file
+  atmos_file.close();
+
+  // Store min and max Teff
+  Teff_min = Teff_mod.front();
+  Teff_max = Teff_mod.back();
+
+  // Compute observed frame wavelengths
+  lambda_obs.resize(lambda_rest.size());
+  for (int i=0; i<1221; i++) 
+    lambda_obs[i] = (1.0+z)*lambda_rest[i];
+
+  // Pass wavelengths to Planck synthesizer
+  planck.set_lambda(lambda_obs);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Wrapper function to get stellar spectra including cases where not
+// all the input Teff values are within our model grid
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn_kurucz::
+get_spectrum(const vector<double>& logR, const vector<double>& logTeff,
+	     const vector<double>& logg, vector<double>& L_lambda) {
+
+  // Initialize
+  assert(logR.size() == logTeff.size());
+  assert(logTeff.size() == logg.size());
+  L_lambda.assign(lambda_rest.size(), 0.0);
+
+  // If not doing any safety checking, just call the function that
+  // operates on the full list of stars, then return
+  if (!check_Teff) {
+    get_spectrum_clean(logR, logTeff, logg, L_lambda);
+    return;
+  }
+
+  // Separate list into those outside the temperature
+  // range we allow and those inside it, and use the Planck
+  // synthesizer for temperatures outside the model range
+  vector<double> logR_ku, logTeff_ku, logg_ku;
+  vector<double> logR_pl, logTeff_pl;
+  for (unsigned int i=0; i<logR.size(); i++) {
+    if ((logTeff[i] < log10(Teff_min)) || 
+	(logTeff[i] > log10(Teff_max))) {
+      logR_pl.push_back(logR[i]);
+      logTeff_pl.push_back(logTeff[i]);
+    } else {
+      logR_ku.push_back(logR[i]);
+      logTeff_ku.push_back(logTeff[i]);
+      logg_ku.push_back(logg[i]);
+    }
+  }
+
+  // For Teff outside the temperature range, pass to Planck
+  // synthesizer; note that logg is ignored for Planck, so
+  // we can pass anything in it
+  if (logR_pl.size() > 0)
+    planck.get_spectrum(logR_pl, logTeff_pl, logg, L_lambda);
+
+  // Call routine to handle the rest of the list
+  if (logR_ku.size() > 0)
+    get_spectrum_clean(logR_ku, logTeff_ku, logg_ku, L_lambda);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Function to return stellar spectra from a list of stars where all
+// Teff values are guaranteed to be within the range defined by the
+// models
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn_kurucz::
+get_spectrum_clean(const vector<double>& logR, 
+		   const vector<double>& logTeff,
+		   const vector<double>& logg, 
+		   vector<double>& L_lambda) {
+
+  // Sort stars by Teff and log g
+  vector<stardata> stars(logR.size());
+  for (unsigned int i=0; i<logR.size(); i++) {
+    stars[i].Teff = pow(10.0, logTeff[i]);
+    stars[i].logg = logg[i];
+    stars[i].surf_area = 4.0 * M_PI * 
+      pow(10.0, 2.0*(logR[i]+constants::logRsun));
+  }
+  sort(stars.begin(), stars.end(), starsort);
+
+  // Now that stars are sorted, find those between each pair of Teff
+  // values
+  unsigned int ptr1 = 0, ptr2 = 0, Tptr = 0;
+  while (ptr2 < stars.size()) {
+
+    // Move pointer 2 until it hits the next Teff value or the end of
+    // the star list
+    while (1) {
+      if (ptr2 == stars.size()) break;
+      if (stars[ptr2].Teff >= Teff_mod[Tptr+1]) break;
+      ptr2++;
+    }
+
+    // We now have ptr1 pointing at the beginning of a block of stars
+    // and ptr2 at the end of a block of stars bounded between two
+    // values of Teff. For each of these stars, figure out the
+    // weighting between the two Teff values.
+    for (int i=ptr1; i<ptr2; i++)
+      stars[i].Twgt = (Teff_mod[Tptr+1] - stars[i].Teff) /
+	  (Teff_mod[Tptr+1] - Teff_mod[Tptr]);
+
+    // Now we need to assign logg values to each star for both the
+    // lower and upper Teff tracks. Start with the lower one. 
+    unsigned int ptr3 = ptr1;
+    unsigned int ptr4 = ptr1;
+    unsigned int gptr = 0;
+    while (ptr4 < ptr2) {
+
+      // If we're already at the highest possible value of logg for
+      // this Teff, just move pointer 4 to the end
+      if (gptr == ng[Tptr]-1) ptr4 = ptr2;
+
+      // Move pointer 4 until it hits the next boundary between logg
+      // values, or the end of this block of stars.
+      while (1) {
+	if (ptr4 == ptr2) break;
+	if (stars[ptr4].logg >= 
+	    0.5*(logg_mod[Tptr][gptr]+logg_mod[Tptr][gptr+1])) break;
+	ptr4++;
+      }
+
+      // Now we have ptr3 pointing at the start of a block in logg,
+      // and ptr4 pointing at the end of it, so add the contribution
+      // from this point in the model grid.
+      for (int i=ptr3; i<ptr4; i++)
+	for (unsigned int j=0; j<L_lambda.size(); j++)
+	  L_lambda[j] += stars[i].surf_area *
+	    stars[i].Twgt * F_lambda[Tptr][gptr][j];
+
+      // Move to next value of logg
+      ptr3 = ptr4;
+      gptr++;
+    }
+
+    // Now do exact same thing for the upper Teff track
+    ptr3 = ptr1;
+    ptr4 = ptr1;
+    gptr = 0;
+    while (ptr4 < ptr2) {
+      if (gptr == ng[Tptr+1]-1) ptr4 = ptr2;
+      while (1) {
+	if (ptr4 == ptr2) break;
+	if (stars[ptr4].logg >= 
+	    0.5*(logg_mod[Tptr+1][gptr]+logg_mod[Tptr+1][gptr+1])) break;
+	ptr4++;
+      }
+      for (int i=ptr3; i<ptr4; i++)
+	for (unsigned int j=0; j<L_lambda.size(); j++)
+	  L_lambda[j] += stars[i].surf_area *
+	    (1.0-stars[i].Twgt) * F_lambda[Tptr+1][gptr][j];
+      ptr3 = ptr4;
+      gptr++;
+    }
+
+    // We're now done with this Teff, so point to the next Teff value,
+    // and move the pointer
+    ptr1 = ptr2;
+    Tptr++;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Function to return spectrum from a single star
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn_kurucz::
+get_spectrum(const double logR, const double logTeff,
+	     const double logg, vector<double>& L_lambda) {
+
+  // Safety check if requested; note that, if safety is off and Teff
+  // is not in the valid range, this routine will crash. Since we're
+  // checking if safety is on anyway, preventing this crash would be
+  // free here (unlike in the vector case, where the cost of the
+  // safety check may be non-negligible), but we don't want to call
+  // the Planck routine when the user has told us not to
+  // explicitly. Thus we allow the crash to occur if the safety check
+  // is off and we get bad data.
+  double Teff = pow(10.0, logTeff);
+  if (check_Teff && ((Teff < Teff_min) || (Teff > Teff_max))) {
+    planck.get_spectrum(logR, logTeff, logg, L_lambda);
+    return;
+  }
+
+  // If we're here, we assume that the temperature between Teff_min
+  // and Teff_max
+  int Tptr = 0;
+  while (Teff < Teff_mod[Tptr+1]) Tptr++;
+  double wgt = (Teff - Teff_mod[Tptr]) / 
+    (Teff_mod[Tptr+1] - Teff_mod[Tptr]);
+
+  // Find closest log g value in each of the two Teff rows
+  int gptr1 = 0;
+  while (1) {
+    if (gptr1 == ng[Tptr]-1) break;
+    if (logg < 0.5*(logg_mod[Tptr][gptr1] + logg_mod[Tptr][gptr1+1]))
+      break;
+    gptr1++;
+  }
+  int gptr2 = 0;
+  while (1) {
+    if (gptr2 == ng[Tptr+1]-1) break;
+    if (logg < 0.5*(logg_mod[Tptr][gptr2] + logg_mod[Tptr][gptr2+1]))
+      break;
+    gptr2++;
+  }
+
+  // Compute weighted flux, scaled by surface area to get luminosity
+  L_lambda.resize(lambda_rest.size());
+  double surf_area = 4.0 * M_PI * 
+    pow(10.0, 2.0*(logR+constants::logRsun));
+  for (unsigned int i=0; i<L_lambda.size(); i++)
+    L_lambda[i] =  surf_area *
+      ((1.0-wgt) * F_lambda[Tptr][gptr1][i] +
+       wgt * F_lambda[Tptr+1][gptr2][i]);
+
+}

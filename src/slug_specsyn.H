@@ -69,22 +69,21 @@ public:
 	       slug_PDF *my_sfh, double z_in = 0.0);
 
   // Return the wavelengths used by the synthesizer
-  unsigned int n_lambda() { return lambda_table.size(); }
-  vector<double> lambda() { return lambda_table; }
+  unsigned int n_lambda() { return lambda_obs.size(); }
+  vector<double> lambda() { return lambda_obs; }
 
-  // Inputs are log base 10 luminosity in Lsun, log base 10
-  // effective temperature in K, log base 10 g in CGS, log base 10 R
-  // in CGS. Outputs are wavelength and L_lambda.
-  virtual void get_spectrum(const vector<double>& logL, 
+  // Inputs are log base 10 radius in Rsun, log base 10
+  // effective temperature in K, log base 10 g in CGS.
+  // Outputs is L_lambda.
+  virtual void get_spectrum(const vector<double>& logR, 
 			    const vector<double>& logTeff,
 			    const vector<double>& logg,
-			    const vector<double>& logR,
 			    vector<double>& L_lambda) = 0;
 
   // Same as previous function function, but operating on a
   // single star rather than a vector of them
-  virtual void get_spectrum(const double logL, const double logTeff,
-			    const double logg, const double logR,
+  virtual void get_spectrum(const double logR, const double logTeff,
+			    const double logg,
 			    vector<double>& L_lambda) = 0;
 
   // This is a get spectrum routine that handles the non-stochastic,
@@ -109,8 +108,9 @@ public:
 
 protected:
 
-  vector<double> lambda_table;      // Table of wavelengths, in Angstrom
-  double z;                         // Redshift
+  vector<double> lambda_rest;   // Rest wavelengths, in Angstrom
+  vector<double> lambda_obs;    // Observed wavelenghts, in Angstrom
+  double z;                     // Redshift
 
 private:
 

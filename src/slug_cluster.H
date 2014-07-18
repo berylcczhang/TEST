@@ -76,8 +76,8 @@ public:
   // Get an isochrone of log L, log Teff, log g, log R for the
   // cluster. Output quantities are log base 10. Log L is in solar
   // luminosities; all other quantities are in CGS units.
-  void get_isochrone(vector<double> &logL, vector<double> &logTeff,
-		     vector<double> &logg, vector<double> &logR);
+  void get_isochrone(vector<double> &logR, vector<double> &logTeff,
+		     vector<double> &logg);
 
   // Get the spectrum; can either return or not return the vector of
   // wavelengths as well

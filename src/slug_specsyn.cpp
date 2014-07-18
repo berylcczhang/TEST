@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <iterator>
 #include <iostream>
+#include "constants.H"
 #include "slug_specsyn.H"
 
 #define GK_MAX_ITER 50
@@ -272,11 +273,11 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 			       const double tol) {
 
   // Initialize L_lambda and L_bol
-  L_lambda.assign(lambda_table.size(), 0.0);
+  L_lambda.assign(lambda_rest.size(), 0.0);
   L_bol = 0.0;
 
   // Allocate workspace
-  qag_wksp q(lambda_table.size());
+  qag_wksp q(lambda_rest.size());
 
   // Get the range of integration from the IMF and the stellar tracks:
   // minimum mass is the larger of the smallest mass in the IMF and
@@ -327,7 +328,7 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 			  q.err2, bol_err2, q);
 
       // Update result and the error estimate
-      for (unsigned int j=0; j<lambda_table.size(); j++) {
+      for (unsigned int j=0; j<lambda_rest.size(); j++) {
 	L_lambda[j] += q.L_out1[j] + q.L_out2[j] - q.r[intervalptr][j];
 	q.errsum[j] += q.err1[j] + q.err2[j] - q.e[intervalptr][j];
       }
@@ -376,7 +377,7 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
   }
 
   // Apply final normalization
-  for (unsigned int j=0; j<lambda_table.size(); j++) {
+  for (unsigned int j=0; j<lambda_rest.size(); j++) {
     L_lambda[j] *= m_tot / imf->expectationVal();
   }
   L_bol *= m_tot / imf->expectationVal();
@@ -419,10 +420,10 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
 		     double& L_bol, const double tol) {
 
   // Initialize L_lambda
-  L_lambda.assign(lambda_table.size(), 0.0);
+  L_lambda.assign(lambda_rest.size(), 0.0);
 
   // Allocate workspace
-  qag_wksp q(lambda_table.size());
+  qag_wksp q(lambda_rest.size());
 
   // Do initial integration with Gauss-Konrod
   double err_bol;
@@ -464,7 +465,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
 			      q.err2, err_bol2, q, tol);
 
       // Update result and the error estimate
-      for (unsigned int j=0; j<lambda_table.size(); j++) {
+      for (unsigned int j=0; j<lambda_rest.size(); j++) {
 	L_lambda[j] += q.L_out1[j] + q.L_out2[j] - q.r[intervalptr][j];
 	q.errsum[j] += q.err1[j] + q.err2[j] - q.e[intervalptr][j];
       }
@@ -513,7 +514,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
   }
 
   // Apply final normalization
-  for (unsigned int j=0; j<lambda_table.size(); j++) {
+  for (unsigned int j=0; j<lambda_rest.size(); j++) {
     L_lambda[j] /= imf->expectationVal();
   }
   L_bol /= imf->expectationVal();
@@ -533,7 +534,7 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
 
   // Initialize the Gauss sum accumulators zero
   double L_bol_gauss = 0.0;
-  q.gaussQuad.assign(lambda_table.size(), 0.0);
+  q.gaussQuad.assign(lambda_rest.size(), 0.0);
 
   // Construct grid of mass points
   double m_cen = 0.5 * (m_min + m_max);
@@ -544,12 +545,14 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
   }
   q.x_k[gknum/2] = m_cen;
 
-  // Get the isochrone for the mass grid
-  vector<double> logL, logTeff, logg, logR;
-  tracks->get_isochrone(age, q.x_k, logL, logTeff, logg, logR);
-  vector<double> L(logL.size());
-  for (unsigned int i=0; i<logL.size(); i++) 
-    L[i] = pow(10.0, logL[i]);
+  // Get the isochrone and bolometric luminosity for the mass grid
+  vector<double> logTeff, logg, logR;
+  tracks->get_isochrone(age, q.x_k, logR, logTeff, logg);
+  vector<double> L(logR.size());
+  for (unsigned int i=0; i<L.size(); i++) 
+    L[i] = 4.0 * M_PI
+      * pow(10.0, 2.0*(logR[i]+constants::logRsun))
+      * pow(10.0, 4.0*logTeff[i]);
 
   // Now form the Gauss and Konrod sums
 
@@ -558,8 +561,7 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
   int ptr2;
 
   // Get spectrum at this mass
-  get_spectrum(logL[ptr1], logTeff[ptr1], logg[ptr1], logR[ptr1],
-	       q.L_tmp1);
+  get_spectrum(logR[ptr1], logTeff[ptr1], logg[ptr1], q.L_tmp1);
 
   // Get IMF at this mass
   double imf_val1 = (*imf)(q.x_k[ptr1]);
@@ -567,11 +569,11 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
 
   // Add to Konrod sum, and to Gauss sum if central point appears in
   // it
-  for (unsigned int j=0; j<lambda_table.size(); j++)
+  for (unsigned int j=0; j<lambda_rest.size(); j++)
     L_lambda[j] = q.L_tmp1[j] * imf_val1 * wgk[gknum1-1];
   L_bol = L[ptr1] * imf_val1 * wgk[gknum1-1];
   if (gknum1 % 2 == 0) {
-    for (unsigned int j=0; j<lambda_table.size(); j++)
+    for (unsigned int j=0; j<lambda_rest.size(); j++)
       q.gaussQuad[j] = q.L_tmp1[j] * imf_val1 * wg[gknum1 / 2 - 1];
     L_bol_gauss = L[ptr1] * imf_val1 * wg[gknum1 / 2 - 1];
   }
@@ -581,18 +583,16 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
 
     // Point on the left side of the mass interval
     ptr1 = 2*i+1;
-    get_spectrum(logL[ptr1], logTeff[ptr1], logg[ptr1], logR[ptr1],
-		 q.L_tmp1);
+    get_spectrum(logR[ptr1], logTeff[ptr1], logg[ptr1], q.L_tmp1);
     imf_val1 = (*imf)(q.x_k[ptr1]);
 
     // Point on the right side of the mass interval
     ptr2 = gknum - 2*i - 2;
-    get_spectrum(logL[ptr2], logTeff[ptr2], logg[ptr2], logR[ptr2],
-		 q.L_tmp2);
+    get_spectrum(logR[ptr2], logTeff[ptr2], logg[ptr2], q.L_tmp2);
     imf_val2 = (*imf)(q.x_k[ptr2]);
 
     // Compute the contribution to the Gaussian and Konrod quadratures
-    for (unsigned int j=0; j<lambda_table.size(); j++) {
+    for (unsigned int j=0; j<lambda_rest.size(); j++) {
       q.gaussQuad[j] += wg[i] * 
 	(q.L_tmp1[j]*imf_val1 + q.L_tmp2[j]*imf_val2);
       L_lambda[j] += wgk[ptr1] * 
@@ -607,25 +607,23 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
 
     // Point on left half of interval
     ptr1 = 2*i;
-    get_spectrum(logL[ptr1], logTeff[ptr1], logg[ptr1], logR[ptr1],
-		 q.L_tmp1);
+    get_spectrum(logR[ptr1], logTeff[ptr1], logg[ptr1], q.L_tmp1);
     imf_val1 = (*imf)(q.x_k[ptr1]);
 
     // Point on right half of interval
     ptr2 = gknum - 2*i - 1;
-    get_spectrum(logL[ptr2], logTeff[ptr2], logg[ptr2], logR[ptr2],
-		 q.L_tmp2);
+    get_spectrum(logR[ptr2], logTeff[ptr2], logg[ptr2], q.L_tmp2);
     imf_val2 = (*imf)(q.x_k[ptr2]);
 
     // Add to Konrod sum
-    for (unsigned int j=0; j<lambda_table.size(); j++)
+    for (unsigned int j=0; j<lambda_rest.size(); j++)
       L_lambda[j] += wgk[ptr1] * 
 	(q.L_tmp1[j]*imf_val1 + q.L_tmp2[j]*imf_val2);
     L_bol += wgk[ptr1] * (L[ptr1]*imf_val1 + L[ptr2]*imf_val2);
   }
 
   // Scale results by length of mass interval to properly normalize
-  for (unsigned int j=0; j<lambda_table.size(); j++) {
+  for (unsigned int j=0; j<lambda_rest.size(); j++) {
     L_lambda[j] *= half_length;
     q.gaussQuad[j] *= half_length;
   }
@@ -633,7 +631,7 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
   L_bol_gauss *= half_length;
 
   // Compute error
-  for (unsigned int j=0; j<lambda_table.size(); j++) {
+  for (unsigned int j=0; j<lambda_rest.size(); j++) {
     err[j] = abs(L_lambda[j] - q.gaussQuad[j]);
   }
   err_bol = abs(L_bol - L_bol_gauss);
@@ -654,7 +652,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
 
   // Initialize the accumulator for the Gauss sum to zero
   double L_bol_gauss = 0.0;
-  q.gaussQuad.assign(lambda_table.size(), 0.0);
+  q.gaussQuad.assign(lambda_rest.size(), 0.0);
 
   // Construct grid of time points
   double t_cen = 0.5 * (t_min + t_max);
@@ -683,11 +681,11 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
 
   // Add to Konrod sum, and to Gauss sum if central point appears in
   // it
-  for (unsigned int j=0; j<lambda_table.size(); j++)
+  for (unsigned int j=0; j<lambda_rest.size(); j++)
     L_lambda[j] = q.L_tmp1[j] * sfh_val1 * wgk[gknum1-1];
   L_bol = L_bol1 * sfh_val1 * wgk[gknum1-1];
   if (gknum1 % 2 == 0) {
-    for (unsigned int j=0; j<lambda_table.size(); j++)
+    for (unsigned int j=0; j<lambda_rest.size(); j++)
       q.gaussQuad[j] = q.L_tmp1[j] * sfh_val1 * wg[gknum1 / 2 - 1];
     L_bol_gauss = L_bol1 * sfh_val1 * wg[gknum1 / 2 - 1];
   }
@@ -706,7 +704,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
     sfh_val2 = (*sfh)(q.x_k[ptr2]);
 
     // Compute the contribution to the Gaussian and Konrod quadratures
-    for (unsigned int j=0; j<lambda_table.size(); j++) {
+    for (unsigned int j=0; j<lambda_rest.size(); j++) {
       q.gaussQuad[j] += wg[i] * 
 	(q.L_tmp1[j]*sfh_val1 + q.L_tmp2[j]*sfh_val2);
       L_lambda[j] += wgk[ptr1] * 
@@ -730,14 +728,14 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
     sfh_val2 = (*sfh)(q.x_k[ptr2]);
 
     // Add to Konrod sum
-    for (unsigned int j=0; j<lambda_table.size(); j++)
+    for (unsigned int j=0; j<lambda_rest.size(); j++)
       L_lambda[j] += wgk[ptr1] * 
 	(q.L_tmp1[j]*sfh_val1 + q.L_tmp2[j]*sfh_val2);
     L_bol += wgk[ptr1] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
   }
 
   // Scale results by length of mass interval to properly normalize
-  for (unsigned int j=0; j<lambda_table.size(); j++) {
+  for (unsigned int j=0; j<lambda_rest.size(); j++) {
     L_lambda[j] *= half_length;
     q.gaussQuad[j] *= half_length;
   }
@@ -745,7 +743,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
   L_bol_gauss *= half_length;
 
   // Compute error
-  for (unsigned int j=0; j<lambda_table.size(); j++) {
+  for (unsigned int j=0; j<lambda_rest.size(); j++) {
     err[j] = abs(L_lambda[j] - q.gaussQuad[j]);
   }
   err_bol = abs(L_bol - L_bol_gauss);

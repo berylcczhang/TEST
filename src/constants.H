@@ -17,31 +17,43 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Constants, unit conversions, and related stuff used in various places
 // throughout the code.
 
+#ifndef _constants_H_
+#define _constants_H_
+
 #include <limits>
 
-// Constants -- all 2010 CODATA values
-#define G          6.67384e-8
-#define C          2.99792458e10
-#define H          6.62606957e-27
-#define KB         1.3806488e-16
-#define SIGMASB    5.670373e-5
+namespace constants {
 
-// Unit conversions to CGS
-#define MSUN       1.989e33
-#define RSUN       6.955e10
-#define LSUN       3.846e33
-#define ANGSTROM   1.0e-8
+  // Constants -- all 2010 CODATA values
+  const double G = 6.67384e-8;
+  const double c = 2.99792458e10;
+  const double h = 6.62606957e-27;
+  const double kB = 1.3806488e-16;
+  const double sigmaSB = 5.670373e-5;
+  const double hcOverkB = 1.4387769599838156;
+  const double hc2 = 5.955214340707938e-06;
 
-// Log base 10 of constants and conversions
-#define LOGSIGMASB -4.2463884
-#define LOGG       -7.1756242
-#define LOGMSUN    33.2986566
-#define LOGLSUN    33.5850093
-#define LOGRSUN    10.8422971
+  // Unit conversions to CGS
+  const double Msun = 1.989e33;
+  const double Rsun = 6.955e10;
+  const double Lsun = 3.846e33;
+  const double Angstrom = 1.0e-8;
 
-// Log base 10 of e
-#define LOGE       0.43429448190325182
+  // Log base 10 of constants and conversions
+  const double logsigmaSB = -4.2463884;
+  const double logG = -7.1756242;
+  const double logMsun = 33.2986566;
+  const double logLsun = 33.5850093;
+  const double logRsun = 10.8422971;
 
-// Numeric limits
-#define BIG (numeric_limits<double>::max())
-#define SMALL (numeric_limits<double>::min())
+  // Log base 10 of e
+  const double loge = 0.43429448190325182;
+
+  // Numeric limits
+  const double big = std::numeric_limits<double>::max();
+  const double small = std::numeric_limits<double>::min();
+
+}
+
+#endif
+// _constants_H_

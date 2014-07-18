@@ -50,7 +50,7 @@ typedef boost::random::mt19937 rng_type;
 enum outputMode { ASCII, BINARY };
 
 // Enum for spectral synthesis modes
-enum specsynMode { PLANCK, SB99 };
+enum specsynMode { PLANCK, KURUCZ, SB99 };
 
 
 #endif

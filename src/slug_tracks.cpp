@@ -89,19 +89,20 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
     }
 
     // Allocate memory
-    logmass = new double [ntrack];
-    logtimes = new double [ntrack*ntime];
-    logcur_mass = new double [ntrack*ntime];
-    logL = new double [ntrack*ntime];
-    logTeff = new double [ntrack*ntime];
-    h_surf = new double [ntrack*ntime];
-    he_surf = new double [ntrack*ntime];
-    c_surf = new double [ntrack*ntime];
-    n_surf = new double [ntrack*ntime];
-    o_surf = new double [ntrack*ntime];
-    logTstar = new double [ntrack*ntime];
-    logmDot = new double [ntrack*ntime];
-    slopes = new double [(ntrack-1)*ntime];
+    array2d::extent_gen extent;
+    logmass.resize(ntrack);
+    logtimes.resize(extent[ntrack][ntime]);
+    logcur_mass.resize(extent[ntrack][ntime]);
+    logL.resize(extent[ntrack][ntime]);
+    logTeff.resize(extent[ntrack][ntime]);
+    h_surf.resize(extent[ntrack][ntime]);
+    he_surf.resize(extent[ntrack][ntime]);
+    c_surf.resize(extent[ntrack][ntime]);
+    n_surf.resize(extent[ntrack][ntime]);
+    o_surf.resize(extent[ntrack][ntime]);
+    logTstar.resize(extent[ntrack][ntime]);
+    logmDot.resize(extent[ntrack][ntime]);
+    slopes.resize(extent[ntrack-1][ntime]);
 
     // Loop over tracks
     for (int i=0; i<ntrack; i++) {
@@ -168,61 +169,61 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
 
 	  string dummy = line.substr(breaks[1], breaks[2]-breaks[1]);
 	  trim(dummy);
-	  logtimes[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  logtimes[i][j] = log(lexical_cast<double>(dummy));
 
 	  dummy = line.substr(breaks[2], breaks[3]-breaks[2]);
 	  trim(dummy);
-	  logcur_mass[i*ntime+j] = log(lexical_cast<double>(dummy));
+	  logcur_mass[i][j] = log(lexical_cast<double>(dummy));
 
 	  dummy = line.substr(breaks[3], breaks[4]-breaks[3]);
 	  trim(dummy);
-	  logL[i*ntime+j] = lexical_cast<double>(dummy);
+	  logL[i][j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[4], breaks[5]-breaks[4]);
 	  trim(dummy);
-	  logTeff[i*ntime+j] = lexical_cast<double>(dummy);
+	  logTeff[i][j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[5], breaks[6]-breaks[5]);
 	  trim(dummy);
-	  h_surf[i*ntime+j] = lexical_cast<double>(dummy);
+	  h_surf[i][j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[6], breaks[7]-breaks[6]);
 	  trim(dummy);
-	  he_surf[i*ntime+j] = lexical_cast<double>(dummy);
+	  he_surf[i][j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[7], breaks[8]-breaks[7]);
 	  trim(dummy);
-	  c_surf[i*ntime+j] = lexical_cast<double>(dummy);
+	  c_surf[i][j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[8], breaks[9]-breaks[8]);
 	  trim(dummy);
-	  n_surf[i*ntime+j] = lexical_cast<double>(dummy);
+	  n_surf[i][j] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[9], breaks[10]-breaks[9]);
 	  trim(dummy);
-	  o_surf[i*ntime+j] = lexical_cast<double>(dummy);
+	  o_surf[i][j] = lexical_cast<double>(dummy);
 
 	  if ((tracktype.back().compare("WR") == 0) || 
 	      (tracktype.back().compare("RO") == 0)) {
 
 	    dummy = line.substr(breaks[10], breaks[11]-breaks[10]);
 	    trim(dummy);
-	    logTstar[i*ntime+j] = lexical_cast<double>(dummy);
+	    logTstar[i][j] = lexical_cast<double>(dummy);
 
 	    dummy = line.substr(breaks[11], breaks[12]-breaks[11]);
 	    trim(dummy);
-	    logmDot[i*ntime+j] = lexical_cast<double>(dummy);
+	    logmDot[i][j] = lexical_cast<double>(dummy);
 
 	  } else if (tracktype.back().compare("ML") == 0) {
-	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
+	    logTstar[i][j] = logTeff[i][j];
 
 	    dummy = line.substr(breaks[10], breaks[11]-breaks[10]);
 	    trim(dummy);
-	    logmDot[i*ntime+j] = lexical_cast<double>(dummy);
+	    logmDot[i][j] = lexical_cast<double>(dummy);
 
 	  } else {
-	    logTstar[i*ntime+j] = logTeff[i*ntime+j];
-	    logmDot[i*ntime+j] = -30;
+	    logTstar[i][j] = logTeff[i][j];
+	    logmDot[i][j] = -30;
 	  }
 	} catch (const bad_lexical_cast& ia) {
 	  cerr << "Error reading track file " << trackfileName << endl;
@@ -242,17 +243,17 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
   // running into problems if we try to interpolate to very young
   // ages.
   for (int i=0; i<ntrack; i++) {
-    logtimes[i*ntime] = -BIG;
-    logcur_mass[i*ntime] = logmass[i];
-    logL[i*ntime] = logL[i*ntime+1];
-    logTeff[i*ntime] = logTeff[i*ntime+1];
-    h_surf[i*ntime] = h_surf[i*ntime+1];
-    he_surf[i*ntime] = he_surf[i*ntime+1];
-    c_surf[i*ntime] = c_surf[i*ntime+1];
-    n_surf[i*ntime] = n_surf[i*ntime+1];
-    o_surf[i*ntime] = o_surf[i*ntime+1];
-    logTstar[i*ntime] = logTstar[i*ntime+1];
-    logmDot[i*ntime] = logmDot[i*ntime+1];
+    logtimes[i][0] = -constants::big;
+    logcur_mass[i][0] = logmass[i];
+    logL[i][0] = logL[i][1];
+    logTeff[i][0] = logTeff[i][1];
+    h_surf[i][0] = h_surf[i][1];
+    he_surf[i][0] = he_surf[i][1];
+    c_surf[i][0] = c_surf[i][1];
+    n_surf[i][0] = n_surf[i][1];
+    o_surf[i][0] = o_surf[i][1];
+    logTstar[i][0] = logTstar[i][1];
+    logmDot[i][0] = logmDot[i][1];
   }
 
   // Construct the slopes in the (log t, log m) plane; slopes[i, j] =
@@ -260,8 +261,9 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
   // time[i+1,j] at mass[i+1]
   for (int i=0; i<ntrack-1; i++) {
     for (int j=0; j<ntime; j++) {
-      slopes[i*ntime+j] = (logmass[i+1]-logmass[i]) /
-	(logtimes[(i+1)*ntime+j] - logtimes[i*ntime+j] + SMALL);
+      slopes[i][j] = (logmass[i+1]-logmass[i]) /
+	(logtimes[i+1][j] - logtimes[i][j] + 
+	 constants::small);
     }
   }
 
@@ -288,19 +290,19 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
       string fname(name_match[0].first, name_match[0].second);
       string metalstring = fname.substr(4, 3);
       metalstring.insert(0, "0.");    // Add the decimal point
-      metallicity = lexical_cast<double>(metalstring);
+      metallicity = lexical_cast<double>(metalstring)/0.02;
     } else if (regex_search(trackfileName.begin(), trackfileName.end(), 
 			    name_match, pattern2, match_posix)) {
       string fname(name_match[0].first, name_match[0].second);
       string metalstring = fname.substr(4, 4);
       metalstring.insert(0, "0.");    // Add the decimal point
-      metallicity = lexical_cast<double>(metalstring);
+      metallicity = lexical_cast<double>(metalstring)/0.02;
     } else if (regex_search(trackfileName.begin(), trackfileName.end(), 
 			    name_match, pattern3, match_posix)) {
-      metallicity = 0.02;
+      metallicity = 1.0;
     } else if  (regex_search(trackfileName.begin(), trackfileName.end(), 
 			    name_match, pattern4, match_posix)) {
-      metallicity = 0.02/7.0;
+      metallicity = 1.0/7.0;
     } else {
       cerr << "Error: could not guess metallicity from file name "
 	   << trackfileName << "; "
@@ -316,26 +318,6 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Destructor
-////////////////////////////////////////////////////////////////////////
-slug_tracks::~slug_tracks() {
-  delete [] logmass;
-  delete [] logtimes;
-  delete [] logcur_mass;
-  delete [] logL;
-  delete [] logTeff;
-  delete [] h_surf;
-  delete [] he_surf;
-  delete [] c_surf;
-  delete [] n_surf;
-  delete [] o_surf;
-  delete [] logTstar;
-  delete [] logmDot;
-  delete [] slopes;
-}
-
-
-////////////////////////////////////////////////////////////////////////
 // Age of star dying at a particular time
 ////////////////////////////////////////////////////////////////////////
 double
@@ -344,26 +326,26 @@ slug_tracks::death_mass(double time) {
   // Work with log of time
   double logt;
   if (time > 0) logt = log(time);
-  else logt = -BIG;
+  else logt = -constants::big;
 
   // Is this time less than the smallest death time we have? If so,
   // return a big number.
-  if (logt < logtimes[ntime-1]) 
-    return(BIG);
+  if (logt < logtimes[0][ntime-1]) 
+    return(constants::big);
 
   // Is this time bigger than the biggest death time we have? If so,
   // return 0.
-  if (logt > logtimes[(ntrack-1)*ntime+ntime-1])
+  if (logt > logtimes[ntrack-1][ntime-1])
     return(0.0);
 
   // We're here, so this age is in the grid. Figure out which two
   // tracks it is between.
   int i=0;
-  while (logtimes[i*ntime+ntime-1] < logt) i++;
+  while (logtimes[i][ntime-1] < logt) i++;
 
   // Get death mass
-  double logm = logmass[i-1] + slopes[(i-1)*ntime + ntime-1] *
-    (logt - logtimes[(i-1)*ntime + ntime-1]);
+  double logm = logmass[i-1] + slopes[i-1][ntime-1] *
+    (logt - logtimes[i-1][ntime-1]);
 
   // Return
   return(exp(logm));
@@ -376,10 +358,10 @@ slug_tracks::death_mass(double time) {
 double
 slug_tracks::star_lifetime(double mass) {
 
-  // If mass out above highest mass we have, return lifetime of the
+  // If mass is above highest mass we have, return lifetime of the
   // most massive star in the tracks
   double logm = log(mass);
-  if (logm > logmass[0]) return exp(logtimes[ntime-1]);
+  if (logm > logmass[0]) return exp(logtimes[0][ntime-1]);
 
   // Find the pair of tracks that bounds this entry
   int trackptr = 0;
@@ -388,15 +370,15 @@ slug_tracks::star_lifetime(double mass) {
     if (trackptr == ntrack-1) {
       // We're less massive that the least mssive star in the tracks,
       // so return the lifetime of that star
-      return exp(logtimes[(ntrack-1)*ntime + ntime-1]);
+      return exp(logtimes[ntrack-1][ntime-1]);
     }
   }
 
   // Get lifetime by linearly interpolating between death times for
   // two bounding tracks
-  return exp( logtimes[trackptr*ntime + ntime-1] +
+  return exp( logtimes[trackptr][ntime-1] +
 	      (logm - logmass[trackptr]) / 
-	      slopes[trackptr*ntime + ntime-1] );
+	      slopes[trackptr][ntime-1] );
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -415,10 +397,9 @@ slug_tracks::star_lifetime(double mass) {
 
 void
 slug_tracks::get_isochrone(const double t, const vector<double> &m, 
-			   vector<double> &logL_out,
+			   vector<double> &logR_out,
 			   vector<double> &logTeff_out,
-			   vector<double> &logg_out,
-			   vector<double> &logR_out) {
+			   vector<double> &logg_out) {
 
   // Throw out any stars that are below our lowest mass track, or
   // above our highest mass track
@@ -431,21 +412,17 @@ slug_tracks::get_isochrone(const double t, const vector<double> &m,
   int nstar = endptr - startptr + 1;
 
   // Construct array of log masses, and get the indices and weights
-  double *logm = new double[nstar];
-  int *timeidx = new int[nstar];
-  int *trackidx = new int[nstar];
-  double *timewgt = new double[nstar];
-  double *trackwgt = new double[nstar];
+  vector<double> logm(nstar), timewgt(nstar), trackwgt(nstar);
+  vector<int> timeidx(nstar), trackidx(nstar);
   for (int i=startptr; i<=endptr; i++) logm[i-startptr] = log(m[i]);
 
   // Populate index and weight arrays
   double logt;
   if (t > 0) logt = log(t);
-  else logt = -BIG;
-  isochrone_wgts(logt, logm, nstar, timeidx, trackidx, timewgt, trackwgt);
+  else logt = -constants::big;
+  isochrone_wgts(logt, logm, timeidx, trackidx, timewgt, trackwgt);
 
   // Set output array sizes to the right value
-  logL_out.resize(nstar);
   logTeff_out.resize(nstar);
   logg_out.resize(nstar);
   logR_out.resize(nstar);
@@ -453,46 +430,31 @@ slug_tracks::get_isochrone(const double t, const vector<double> &m,
   // Interpolate to get logL and logTeff, and mass values; then get R from them,
   // and get log g by interpolating to get M as well
   for (int i=0; i<nstar; i++) {
-    logL_out[i] = 
-      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
-      logL[trackidx[i]*ntime + timeidx[i]] +
-      (1.0-trackwgt[i]) * timewgt[i] *
-      logL[trackidx[i]*ntime + timeidx[i]+1] +
-      trackwgt[i] * (1.0-timewgt[i]) *
-      logL[(trackidx[i]-1)*ntime + timeidx[i]] +
-      trackwgt[i] * timewgt[i] * 
-      logL[(trackidx[i]-1)*ntime + timeidx[i]+1];
+    double logL_out = 
+      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * logL[trackidx[i]][timeidx[i]] +
+      (1.0-trackwgt[i]) * timewgt[i] * logL[trackidx[i]][timeidx[i]+1] +
+      trackwgt[i] * (1.0-timewgt[i]) * logL[trackidx[i]-1][timeidx[i]] +
+      trackwgt[i] * timewgt[i] * logL[trackidx[i]-1][timeidx[i]+1];
     logTeff_out[i] = 
-      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
-      logTeff[trackidx[i]*ntime + timeidx[i]] +
-      (1.0-trackwgt[i]) * timewgt[i] *
-      logTeff[trackidx[i]*ntime + timeidx[i]+1] +
-      trackwgt[i] * (1.0-timewgt[i]) *
-      logTeff[(trackidx[i]-1)*ntime + timeidx[i]] +
-      trackwgt[i] * timewgt[i] * 
-      logTeff[(trackidx[i]-1)*ntime + timeidx[i]+1];
+      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * logTeff[trackidx[i]][timeidx[i]] +
+      (1.0-trackwgt[i]) * timewgt[i] * logTeff[trackidx[i]][timeidx[i]+1] +
+      trackwgt[i] * (1.0-timewgt[i]) * logTeff[trackidx[i]-1][timeidx[i]] +
+      trackwgt[i] * timewgt[i] * logTeff[trackidx[i]-1][timeidx[i]+1];
     double log10_mass = 
       ((1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
-       logcur_mass[trackidx[i]*ntime + timeidx[i]] +
+       logcur_mass[trackidx[i]][timeidx[i]] +
        (1.0-trackwgt[i]) * timewgt[i] *
-       logcur_mass[trackidx[i]*ntime + timeidx[i]+1] +
+       logcur_mass[trackidx[i]][timeidx[i]+1] +
        trackwgt[i] * (1.0-timewgt[i]) *
-       logcur_mass[(trackidx[i]-1)*ntime + timeidx[i]] +
+       logcur_mass[trackidx[i]-1][timeidx[i]] +
        trackwgt[i] * timewgt[i] * 
-       logcur_mass[(trackidx[i]-1)*ntime + timeidx[i]+1]) /
-      LOGE;
-    logR_out[i] = 0.5*(logL_out[i]+LOGLSUN) -0.5*log10(4.0*M_PI) 
-      - 0.5*LOGSIGMASB - 2.0*logTeff_out[i] - LOGRSUN;
-    logg_out[i] = LOGG + log10_mass + LOGMSUN - 2.0*logR_out[i] 
-      - 2.0*LOGRSUN;
+       logcur_mass[trackidx[i]-1][timeidx[i]+1]) *
+      constants::loge;
+    logR_out[i] = 0.5*(logL_out+constants::logLsun) -0.5*log10(4.0*M_PI) 
+      - 0.5*constants::logsigmaSB - 2.0*logTeff_out[i] - constants::logRsun;
+    logg_out[i] = constants::logG + log10_mass + constants::logMsun 
+      - 2.0*logR_out[i] - 2.0*constants::logRsun;
   }
-
-  // Clean up
-  delete [] logm;
-  delete [] timeidx;
-  delete [] trackidx;
-  delete [] timewgt;
-  delete [] trackwgt;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -531,12 +493,13 @@ slug_tracks::get_isochrone(const double t, const vector<double> &m,
 // trackwgt = array of nstar elements. Same as timewgt, but meusuring
 //    the position in the vertical (mass) direction.
 void
-slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
-			    int *timeidx, int *trackidx, double *timewgt,
-			    double *trackwgt) {
+slug_tracks::isochrone_wgts(double logt, vector<double> &logm, 
+			    vector<int> &timeidx, vector<int> &trackidx, 
+			    vector<double> &timewgt,
+			    vector<double> &trackwgt) {
 
-  // Safety check
-  assert(nstars > 0);
+  // Shorthand
+  unsigned int nstars = logm.size();
 
   // Start a mass pointer at the track that is the largest one below
   // the smallest input mass
@@ -546,12 +509,12 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
 
   // Get index in the time direction at starting point
   int timeptr = 0;
-  while (logtimes[trackptr*ntime + timeptr+1] < logt) timeptr++;
+  while (logtimes[trackptr][timeptr+1] < logt) timeptr++;
 
   // Now march upward through the grid. At each step, stop when we
   // reach the next star's mass or the horizontal or vertical edge of
   // a cell
-  int starptr = 0;
+  unsigned int starptr = 0;
   while (starptr < nstars) {
 
     // From our current position, get the distance to the next star
@@ -564,13 +527,13 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
     // to check both the left and right walls of the cell, because the
     // slope is usually negative, but can be positive in rare cases
     double dlogm_time_left = logmass[trackptr] + 
-      slopes[(trackptr-1)*ntime + timeptr] * 
-      (logt - logtimes[trackptr*ntime + timeptr]) - logmptr;
-    if (dlogm_time_left <= 0) dlogm_time_left = BIG;
+      slopes[trackptr-1][timeptr] * 
+      (logt - logtimes[trackptr][timeptr]) - logmptr;
+    if (dlogm_time_left <= 0) dlogm_time_left = constants::big;
     double dlogm_time_right = logmass[trackptr] + 
-      slopes[(trackptr-1)*ntime + timeptr+1] * 
-      (logt - logtimes[trackptr*ntime + timeptr+1]) - logmptr;
-    if (dlogm_time_right <= 0) dlogm_time_right = BIG;
+      slopes[trackptr-1][timeptr+1] * 
+      (logt - logtimes[trackptr][timeptr+1]) - logmptr;
+    if (dlogm_time_right <= 0) dlogm_time_right = constants::big;
 
     // Move logmptr upward to the next stopping point; if we have hit
     // a cell edge, increment the appropriate index counter; if we
@@ -590,11 +553,11 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
       trackwgt[starptr] = (logm[starptr] - logmass[trackptr]) / 
 	(logmass[trackptr-1] - logmass[trackptr]);
       double logtleft = (logm[starptr] - logmass[trackptr]) /
-	slopes[(trackptr-1)*ntime + timeptr] +
-	logtimes[trackptr*ntime + timeptr];
+	slopes[trackptr-1][timeptr] +
+	logtimes[trackptr][timeptr];
       double logtright = (logm[starptr] - logmass[trackptr]) /
-	slopes[(trackptr-1)*ntime + timeptr+1] +
-	logtimes[trackptr*ntime + timeptr+1];
+	slopes[trackptr-1][timeptr+1] +
+	logtimes[trackptr][timeptr+1];
       timewgt[starptr] = (logt - logtleft) / (logtright - logtleft);
 
       // Increment to the next star
@@ -617,8 +580,7 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
       // cell. Move the mass pointer to it, and increment the time
       // pointer.
       logmptr = logmass[trackptr] + 
-	slopes[(trackptr-1)*ntime + timeptr+1] * 
-	(logt - logtimes[trackptr*ntime + timeptr+1]);
+	slopes[trackptr-1][timeptr+1] * (logt - logtimes[trackptr][timeptr+1]);
       timeptr++;
 
       // Safety assertion
@@ -630,8 +592,7 @@ slug_tracks::isochrone_wgts(double logt, double *logm, int nstars,
       // cell. Move the mass pointer to it, and increment the time
       // pointer.
       logmptr = logmass[trackptr] + 
-	slopes[(trackptr-1)*ntime + timeptr] * 
-	(logt - logtimes[trackptr*ntime + timeptr]);
+	slopes[trackptr-1][timeptr] * (logt - logtimes[trackptr][timeptr]);
       timeptr--;
 
       // Safety assertion

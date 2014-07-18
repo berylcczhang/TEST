@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
+#include "constants.H"
 #include "slug_cluster.H"
 #include "slug_galaxy.H"
 #include "slug_parmParser.H"
@@ -279,8 +280,8 @@ slug_galaxy::set_Lbol() {
   for (it = clusters.begin(); it != clusters.end(); it++) {
 
     // Get isochrone for this cluster
-    vector<double> logL, logTeff, logg, logR;
-    (*it)->get_isochrone(logL, logTeff, logg, logR);
+    vector<double> logR, logTeff, logg;
+    (*it)->get_isochrone(logR, logTeff, logg);
 
     // Get bolometric luminosity for this cluster
     cluster_Lbol.push_back(0);
@@ -293,8 +294,8 @@ slug_galaxy::set_Lbol() {
   // Now do disrupted clusters
   for (it = disrupted_clusters.begin(); it != disrupted_clusters.end(); 
        it++) {
-    vector<double> logL, logTeff, logg, logR;
-    (*it)->get_isochrone(logL, logTeff, logg, logR);
+    vector<double> logR, logTeff, logg;
+    (*it)->get_isochrone(logR, logTeff, logg);
     for (unsigned int i=0; i<logL.size(); i++) Lbol += pow(10.0, logL[i]);
   }
 
@@ -354,13 +355,15 @@ slug_galaxy::set_spectrum() {
 
   // Now do stochastic field stars
   for (unsigned int i=0; i<field_stars.size(); i++) {
-    vector<double> logL, logTeff, logg, logR;
+    vector<double> logR, logTeff, logg;
     double logt = log(curTime-field_stars[i].birth_time);
     vector<double> logm(1, log(field_stars[i].mass));
-    tracks->get_isochrone(logt, logm, logL, logTeff, logg, logR);
-    specsyn->get_spectrum(logL, logTeff, logg, logR, spec);
+    tracks->get_isochrone(logt, logm, logR, logTeff, logg);
+    specsyn->get_spectrum(logR, logTeff, logg, spec);
     for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
-    Lbol += pow(10.0, logL[0]);
+    Lbol += 4.0 * M_PI 
+      * pow(10.0, 2.0*(logR[0]+constants::logRsun))
+      * pow(10.0, 4.0*logTeff[0]);
   }
 
   // Finally do non-stochastic field stars

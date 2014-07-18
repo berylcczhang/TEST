@@ -17,14 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include "constants.H"
+#include "slug_parmParser.H"
 
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
-
-#define BIG (numeric_limits<double>::max())
 
 ////////////////////////////////////////////////////////////////////////
 // The constructor
@@ -98,7 +98,7 @@ void
 slug_parmParser::setDefaults() {
   verbosity = 1;
   nTrials = 1;
-  timeStep = endTime = fClust = -BIG;
+  timeStep = endTime = fClust = -constants::big;
   z = 0.0;
   metallicity = -1.0;    // Flag for not set
   min_stoch_mass = 2.0;
@@ -206,6 +206,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	to_lower(tokens[1]);
 	if (tokens[1].compare("planck") == 0)
 	  specsyn_mode = PLANCK;
+	else if (tokens[1].compare("kurucz") == 0)
+	  specsyn_mode = KURUCZ;
 	else if (tokens[1].compare("sb99") == 0)
 	  specsyn_mode = SB99;
 	else {
@@ -290,7 +292,7 @@ slug_parmParser::checkParams() {
     exit(1);
   }
   if (timeStep <= 0) {
-    if (timeStep == -BIG) {
+    if (timeStep == -constants::big) {
       cerr << "slug error: parameter timeStep must be set" 
 		<< endl;
     } else {
@@ -299,7 +301,7 @@ slug_parmParser::checkParams() {
     exit(1);
   }
   if (endTime <= 0) {
-    if (endTime == -BIG) {
+    if (endTime == -constants::big) {
       cerr << "slug error: parameter endTime must be set" 
 		<< endl;
     } else {
@@ -334,7 +336,7 @@ slug_parmParser::checkParams() {
     cerr << "slug error: must set atmos_dir" << endl;
     exit(1);
   }
-  if (fClust == -BIG) {
+  if (fClust == -constants::big) {
     cerr << "slug error: must set clust_frac" << endl;
     exit(1);
   } else if (fClust < 0 || fClust > 1) {

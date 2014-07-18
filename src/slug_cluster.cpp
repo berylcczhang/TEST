@@ -54,7 +54,7 @@ slug_cluster::slug_cluster(const long my_id, const double my_mass,
   if (clf != NULL) {
     lifetime = clf->draw();
   } else {
-    lifetime = BIG;
+    lifetime = constants::big;
   }
 
   // Initialize flags for the spectrum and Lbol
@@ -119,12 +119,11 @@ slug_cluster::advance(double time) {
 // tracks are omitted.
 ////////////////////////////////////////////////////////////////////////
 void 
-slug_cluster::get_isochrone(vector<double> &logL, 
+slug_cluster::get_isochrone(vector<double> &logR, 
 			    vector<double> &logTeff,
-			    vector<double> &logg,
-			    vector<double> &logR) {
-  tracks->get_isochrone(curTime-formationTime, stars, logL, logTeff, 
-			logg, logR);
+			    vector<double> &logg) {
+  tracks->get_isochrone(curTime-formationTime, stars, logR, logTeff, 
+			logg);
 }
 
 
@@ -171,10 +170,10 @@ slug_cluster::set_spectrum() {
 
     // Do isochrone synthesis for stochastic stars
     vector<double> logL, logTeff, logg, logR;
-    get_isochrone(logL, logTeff, logg, logR);
+    get_isochrone(logR, logTeff, logg);
 
     // Get spectrum for stochastic stars
-    specsyn->get_spectrum(logL, logTeff, logg, logR, L_lambda);
+    specsyn->get_spectrum(logR, logTeff, logg, L_lambda);
 
     // Add bolometric luminosity from stochastic stars
     for (unsigned int i=0; i<logL.size(); i++)

@@ -35,47 +35,41 @@ class slug_specsyn_planck : public slug_specsyn {
 public:
 
   // Constructors; can use default wavelength table, or specify one
-  // in a couple of ways. Wavelengths are assumed to be in Angstrom.
+  // in a couple of ways. Wavelengths are assumed to be in
+  // Angstrom. The argument rest specifies whether we're suppyling the
+  // rest or observed frame wavelength. Default is observed.
   slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
 		      slug_PDF *my_sfh, double z_in = 0);
   slug_specsyn_planck(const double lambda_min, const double lambda_max, 
 		      const unsigned int nlambda, slug_tracks *my_tracks,
-		      slug_PDF *my_imf, slug_PDF *my_sfh, double z_in = 0);
+		      slug_PDF *my_imf, slug_PDF *my_sfh, double z_in = 0,
+		      bool rest = false);
   slug_specsyn_planck(const vector<double>& labmda_in, 
 		      slug_tracks *my_tracks, slug_PDF *my_imf,
-		      slug_PDF *my_sfh, double z_in = 0);
+		      slug_PDF *my_sfh, double z_in = 0,
+		      bool rest = false);
 
   // The destructor; this is a no-op, since the member vector will
   // auto-desctruct when this class does
   ~slug_specsyn_planck() {};
 
+  // Set the wavelength table
+  void set_lambda(const vector<double>& lambda_in, bool rest = false);
+
   // The spectral synthesis function; units are as follows:
-  // logL : log base 10 of luminosity, in Lsun
+  // logR : log base 10 of radius, in Rsun
   // logTeff : log base 10 of effective temperature in K
   // log g : not used
-  // log R : not used
-  // lambda : wavelength in Angstrom
   // L_lambda : luminosity in erg/s/Angstrom
-  void get_spectrum(const vector<double>& logL, 
+  void get_spectrum(const vector<double>& logR, 
 		    const vector<double>& logTeff,
 		    const vector<double>& logg,
-		    const vector<double>& logR,
 		    vector<double>& L_lambda);
 
-  // Same as previous function, but with a weight vector to be applied
-  // to the stars
-  void get_spectrum(const vector<double>& logL, 
-		    const vector<double>& logTeff,
-		    const vector<double>& logg,
-		    const vector<double>& logR,
-		    const vector<double>& weights,
-		    vector<double>& L_lambda);
-
-  // Same as previous function two functions, but no operating on a
+  // Same as previous function function, but operating on a
   // single star rather than a vector of them
-  void get_spectrum(const double logL, const double logTeff,
-		    const double logg, const double logR,
-		    vector<double>& L_lambda);
+  void get_spectrum(const double logR, const double logTeff,
+		    const double logg, vector<double>& L_lambda);
 
 };
 
