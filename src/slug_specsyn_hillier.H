@@ -22,12 +22,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // that are outside its model grid.
 //
 ////////////////////////////////////////////////////////////////////////
-#if 0
 #ifndef _slug_specsyn_hillier_H_
 #define _slug_specsyn_hillier_H_
 
 #include "slug_specsyn.H"
 #include "slug_specsyn_kurucz.H"
+#include "slug_specsyn_planck.H"
 #include <boost/multi_array.hpp>
 
 using namespace std;
@@ -42,50 +42,45 @@ public:
   slug_specsyn_hillier(const char *dirname, slug_tracks *my_tracks, 
 		       slug_PDF *my_imf, slug_PDF *my_sfh,
 		       double z_in = 0.0, 
-		       bool my_check_range = true);
+		       bool check_data_in = true);
 
   // Destructor
-  slug_specsyn_hillier() { };
+  ~slug_specsyn_hillier() { };
 
   // Set the flag that specifies whether we check input lists of
-  // stellar data for being outside the range of the models, and go to
-  // Kurucz atmospheres for those that are. If this is set to false
-  // and invalid data are passed in, the code will crash.
-  void set_check_range(bool val) { check_range = val; }
+  // stellar data before deciding whether to use this synthesizer or
+  // fall back to the Kurucz one. This should be set to true unless
+  // this synthesizer is going to be called by another synthesizer,
+  // which will take care of doing the list sorting for us.
+  void set_check_data(bool val) { check_data = val; }
 
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for a
   // description of the argument list.
-  void get_spectrum(const vector<double>& logR, 
-		    const vector<double>& logTeff,
-		    const vector<double>& logg,
-		    const vector<slug_comp>& comp,
-		    vector<double>& L_lambda);
-  void get_spectrum(const double logR, const double logTeff,
-		    const double logg, const slug_comp& comp,
-		    vector<double>& L_lambda);
+  vector<double> get_spectrum(vector<slug_stardata>& stars);
+  vector<double> get_spectrum(const slug_stardata& stardata);
 
 private:
 
-  // Private get_spectrum routine that operatures on data guaranteed
-  // to be within the allowed range of temperature and composition. 
-  void get_spectrum_clean(const vector<double>& logR, 
-			  const vector<double>& logTeff,
-			  const vector<double>& logg,
-			  bool use_wn, vector<double>& L_lambda);
+  // Private get_spectrum routine that operates on a list of stars
+  // that are all known to be WR stars already
+  vector<double> 
+  get_spectrum_clean(vector<slug_stardata>& stars);
 
   // Data
-  string wc_file_name, wn_file_name;          // Names of file we read
-  vector<double> Teff_wn(12);                 // T_eff for WN models
-  vector<double> Teff_wc(12);                 // T_eff for WC models
-  array2d F_lam_wn(boost::extents[12][1221]); // Models for WC stars
-  array2d F_lam_wc(boost::extents[12][1221]); // Models for WN stars
-  slug_specsyn_kurucz kurucz;                 // Kurucz synthesizer
-  bool check_range;                           // Range checking on or off
+  string wc_file_name, wn_file_name;  // Names of file we read
+  vector<double> Teff_wn;             // T_eff for WN models
+  vector<double> Teff_wc;             // T_eff for WC models
+  vector<double> logT_break_wn;       // Log_10 T_eff halfway
+  vector<double> logT_break_wc;       // between WN/WC models
+  array2d F_lam_wn;                   // Models for WC stars
+  array2d F_lam_wc;                   // Models for WN stars
+  slug_specsyn_kurucz kurucz;         // Kurucz synthesizer
+  slug_specsyn_planck planck;         // Planck synthesizer
+  bool check_data;                    // Should be check inputs?
 
 };
 
 #endif
 // _slug_specsyn_hillier_H_
 
-#endif

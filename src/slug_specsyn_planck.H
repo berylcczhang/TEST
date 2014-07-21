@@ -56,9 +56,20 @@ public:
   // Set the wavelength table
   void set_lambda(const vector<double>& lambda_in, bool rest = false);
 
-  // The spectral synthesis functions; see slug_specsyn.H for details
-  vector<double> get_spectrum(const vector<slug_stardata> &stardata);
+  // The spectral synthesis functions; see slug_specsyn.H for
+  // details. The only trickiness here is that get_spectrum with a
+  // vector argument is required to be non-const to match the
+  // signature in slug_specsyn. However, we don't need to change it,
+  // and we want to tell the compiler it is const to allow
+  // optimization. To accomplish this, we just make get_spectrum wrap
+  // a private function where the vector is declared const.
+  vector<double> get_spectrum(vector<slug_stardata> &stardata)
+  { return get_spectrum_const(stardata); }
   vector<double> get_spectrum(const slug_stardata &stardata);
+
+private:
+  vector<double> 
+  get_spectrum_const(const vector<slug_stardata> &stardata);
 
 };
 

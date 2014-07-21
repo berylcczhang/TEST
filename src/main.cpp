@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_parmParser.H"
 #include "slug_PDF.H"
 #include "slug_PDF_powerlaw.H"
+#include "slug_specsyn_hillier.H"
 #include "slug_specsyn_kurucz.H"
 #include "slug_specsyn_planck.H"
 #include "slug_tracks.H"
@@ -87,7 +88,11 @@ int main(int argc, char *argv[]) {
     specsyn = (slug_specsyn *) 
       new slug_specsyn_kurucz(pp.get_atmos_dir(), &tracks, 
 			      &imf, sfh, pp.get_z());
-    //  } else if (pp.get_specsynMoe() == SB99) {
+  } else if (pp.get_specsynMode() == KURUCZ_HILLIER) {
+    specsyn = (slug_specsyn *) 
+      new slug_specsyn_hillier(pp.get_atmos_dir(), &tracks, 
+			       &imf, sfh, pp.get_z());
+    //  } else if (pp.get_specsynMode() == SB99) {
     //specsyn = (slug_specsyn *) new slug_specsyn_sb99(pp);
   }
 

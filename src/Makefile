@@ -8,7 +8,7 @@ LDDEBFLAGS      = -g -lm -lboost_system-mt -lboost_filesystem-mt -lboost_regex-m
 CXXFLAGS	= $(CXXOPTFLAGS)
 LDFLAGS		= $(LDOPTFLAGS)
 
-# Name for standalone executable output
+# Name for executable
 EXENAME		= slug
 
 # Default target
@@ -26,8 +26,6 @@ DEPS		= $(SOURCES:%.cpp=%.d)
 debug: CXXFLAGS = $(CXXDEBFLAGS)
 debug: LDFLAGS = $(LDDEBFLAGS)
 debug: exec
-
-exec:	$(EXENAME)
 
 $(EXENAME):	$(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(EXENAME) $^

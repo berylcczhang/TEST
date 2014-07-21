@@ -109,10 +109,10 @@ set_lambda(const vector<double>& lambda_in, bool rest) {
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_planck::
-get_spectrum(const vector<slug_stardata>& stardata) {
+get_spectrum_const(const vector<slug_stardata>& stardata) {
 
   // Build output vector
-  vector<double> L_lambda(lambda_rest.size());
+  vector<double> L_lambda(lambda_rest.size(), 0.0);
 
   // Loop over stars
   for (unsigned int i=0; i<stardata.size(); i++) {
@@ -157,7 +157,7 @@ get_spectrum(const slug_stardata& stardata) {
     double x = constants::hcOverkB / (lcgs * Teff);
     double b_lambda = 2.0 * constants::hc2 /
       (pow(lcgs, 5.0) * (exp(x) - 1));
-    L_lambda[j] += surf_area * b_lambda * constants::Angstrom;
+    L_lambda[j] = surf_area * b_lambda * constants::Angstrom;
   }
 
   // Return

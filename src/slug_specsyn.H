@@ -76,9 +76,13 @@ public:
   // properties are described by the input vector of stellar data, or
   // by the data for a single star. The returned vector gives the
   // specific luminosity in erg/s/Ang. These are pure virtual
-  // functions here, and must be implemented in a derived class.
+  // functions here, and must be implemented in a derived class. Note
+  // that, in the vector version, the data are not passed as const
+  // because we want to allow the spectral synthesizer to modify the
+  // list (e.g. by sorting to allow more efficient assignment to a
+  // model grid).
   virtual vector<double> 
-  get_spectrum(const vector<slug_stardata> &stardata) = 0;
+  get_spectrum(vector<slug_stardata> &stardata) = 0;
   virtual vector<double> 
   get_spectrum(const slug_stardata &stardata) = 0;
 

@@ -211,6 +211,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	  specsyn_mode = PLANCK;
 	else if (tokens[1].compare("kurucz") == 0)
 	  specsyn_mode = KURUCZ;
+	else if (tokens[1].compare("kurucz+hillier") == 0)
+	  specsyn_mode = KURUCZ_HILLIER;
 	else if (tokens[1].compare("sb99") == 0)
 	  specsyn_mode = SB99;
 	else {
@@ -409,6 +411,8 @@ slug_parmParser::writeParams() {
     paramFile << "planck" << endl;
   } else if (specsyn_mode == KURUCZ) {
     paramFile << "kurucz" << endl;
+  } else if (specsyn_mode == KURUCZ_HILLIER) {
+    paramFile << "kurucz+hillier" << endl;
   } else if (specsyn_mode == SB99) {
     paramFile << "sb99" << endl;
   }

@@ -342,8 +342,8 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	"mods0004.dat", "mods004.dat", "mods008.dat", "mods020.dat", 
 	"mods050.dat", 
 	// Padova w/AGB stars
-	"mods0004.dat", "mods004.dat", "mods008.dat", "mods020.dat",
-	"mods050.dat"
+	"modp0004.dat", "modp004.dat", "modp008.dat", "modp020.dat",
+	"modp050.dat"
 	// Geneva (2013) non-rotating
 	"Z0020v00.txt", "Z0140v00.txt",
 	// Geneva (2013) rotating at 40% of breakup
@@ -484,24 +484,30 @@ get_isochrone(const double t, const vector<double> &m) {
   // Build an object of the correct size to return
   vector<slug_stardata> stars(nstar);
 
-  // Interpolate to get logL, logTeff, current mass, and surface mass
-  // fractions of H, He, C, N, and O. Set log R and log g from L and
-  // Teff. Finally, flag if this star could become a WR star
+  // Interpolate to get desired quantities
   for (int i=0; i<nstar; i++) {
+
+    // L_bol
     stars[i].logL = 
       (1.0-trackwgt[i]) * (1.0-timewgt[i]) * logL[trackidx[i]][timeidx[i]] +
       (1.0-trackwgt[i]) * timewgt[i] * logL[trackidx[i]][timeidx[i]+1] +
       trackwgt[i] * (1.0-timewgt[i]) * logL[trackidx[i]-1][timeidx[i]] +
       trackwgt[i] * timewgt[i] * logL[trackidx[i]-1][timeidx[i]+1];
+
+    // T_eff
     stars[i].logTeff = 
       (1.0-trackwgt[i]) * (1.0-timewgt[i]) * logTeff[trackidx[i]][timeidx[i]] +
       (1.0-trackwgt[i]) * timewgt[i] * logTeff[trackidx[i]][timeidx[i]+1] +
       trackwgt[i] * (1.0-timewgt[i]) * logTeff[trackidx[i]-1][timeidx[i]] +
       trackwgt[i] * timewgt[i] * logTeff[trackidx[i]-1][timeidx[i]+1];
+
+    // R from L_bol and T
     stars[i].logR = 0.5*(stars[i].logL+constants::logLsun) 
       - 0.5*log10(4.0*M_PI) 
       - 0.5*constants::logsigmaSB - 2.0*stars[i].logTeff
       - constants::logRsun;
+
+    // Current mass; used to get log g
     double log10_cur_mass = 
       ((1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
        logcur_mass[trackidx[i]][timeidx[i]] +
@@ -512,34 +518,65 @@ get_isochrone(const double t, const vector<double> &m) {
        trackwgt[i] * timewgt[i] * 
        logcur_mass[trackidx[i]-1][timeidx[i]+1]) *
       constants::loge;
+
+    // log g
     stars[i].logg = constants::logG + log10_cur_mass + constants::logMsun 
       - 2.0*stars[i].logR - 2.0*constants::logRsun;
-    stars[i].H_frac =
-      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * h_surf[trackidx[i]][timeidx[i]] +
-      (1.0-trackwgt[i]) * timewgt[i] * h_surf[trackidx[i]][timeidx[i]+1] +
-      trackwgt[i] * (1.0-timewgt[i]) * h_surf[trackidx[i]-1][timeidx[i]] +
-      trackwgt[i] * timewgt[i] * h_surf[trackidx[i]-1][timeidx[i]+1];
-    stars[i].He_frac =
-      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * he_surf[trackidx[i]][timeidx[i]] +
-      (1.0-trackwgt[i]) * timewgt[i] * he_surf[trackidx[i]][timeidx[i]+1] +
-      trackwgt[i] * (1.0-timewgt[i]) * he_surf[trackidx[i]-1][timeidx[i]] +
-      trackwgt[i] * timewgt[i] * he_surf[trackidx[i]-1][timeidx[i]+1];
-    stars[i].C_frac =
-      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * c_surf[trackidx[i]][timeidx[i]] +
-      (1.0-trackwgt[i]) * timewgt[i] * c_surf[trackidx[i]][timeidx[i]+1] +
-      trackwgt[i] * (1.0-timewgt[i]) * c_surf[trackidx[i]-1][timeidx[i]] +
-      trackwgt[i] * timewgt[i] * c_surf[trackidx[i]-1][timeidx[i]+1];
-    stars[i].N_frac =
-      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * n_surf[trackidx[i]][timeidx[i]] +
-      (1.0-trackwgt[i]) * timewgt[i] * n_surf[trackidx[i]][timeidx[i]+1] +
-      trackwgt[i] * (1.0-timewgt[i]) * n_surf[trackidx[i]-1][timeidx[i]] +
-      trackwgt[i] * timewgt[i] * n_surf[trackidx[i]-1][timeidx[i]+1];
-    stars[i].O_frac =
-      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * o_surf[trackidx[i]][timeidx[i]] +
-      (1.0-trackwgt[i]) * timewgt[i] * o_surf[trackidx[i]][timeidx[i]+1] +
-      trackwgt[i] * (1.0-timewgt[i]) * o_surf[trackidx[i]-1][timeidx[i]] +
-      trackwgt[i] * timewgt[i] * o_surf[trackidx[i]-1][timeidx[i]+1];
-    stars[i].WR = (m[startptr+i] >= WR_mass);
+
+    // Check if this star is massive and hot enough to be a WR star
+    if ((m[i] < WR_mass) || (stars[i].logTeff <= 4.4)) {
+      // Too cool or too low mass, so not a WR star
+      stars[i].WR = NONE;
+    } else {
+
+      // Star is massive and hot enough, so now check surface H fraction
+      double H_frac =
+	(1.0-trackwgt[i]) * (1.0-timewgt[i]) * h_surf[trackidx[i]][timeidx[i]] +
+	(1.0-trackwgt[i]) * timewgt[i] * h_surf[trackidx[i]][timeidx[i]+1] +
+	trackwgt[i] * (1.0-timewgt[i]) * h_surf[trackidx[i]-1][timeidx[i]] +
+	trackwgt[i] * timewgt[i] * h_surf[trackidx[i]-1][timeidx[i]+1];
+      if (H_frac > 0.4) {
+	// H fraction too high to be a WR star
+	stars[i].WR = NONE;
+      } else {
+
+	// Star is massive enough, hot enough, and has a low enough
+	// surface H fraction, so it is a WR star. Now figure out what
+	// type of WR star it is.
+	if (H_frac > 0.1) {
+	  // H fraction > 0.1 ==> WN
+	  stars[i].WR = WN;
+	} else {
+
+	  // If we're here, we need to examine the C/N ratio
+	  double C_frac =
+	    (1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
+	    c_surf[trackidx[i]][timeidx[i]] +
+	    (1.0-trackwgt[i]) * timewgt[i] * 
+	    c_surf[trackidx[i]][timeidx[i]+1] +
+	    trackwgt[i] * (1.0-timewgt[i]) * 
+	    c_surf[trackidx[i]-1][timeidx[i]] +
+	    trackwgt[i] * timewgt[i] * 
+	    c_surf[trackidx[i]-1][timeidx[i]+1];
+	  double N_frac =
+	    (1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
+	    n_surf[trackidx[i]][timeidx[i]] +
+	    (1.0-trackwgt[i]) * timewgt[i] * 
+	    n_surf[trackidx[i]][timeidx[i]+1] +
+	    trackwgt[i] * (1.0-timewgt[i]) * 
+	    n_surf[trackidx[i]-1][timeidx[i]] +
+	    trackwgt[i] * timewgt[i] * 
+	    n_surf[trackidx[i]-1][timeidx[i]+1];
+
+	  // Star is a WN if C/N < 10, a WC otherwise
+	  if (C_frac/(N_frac+constants::small) < 10.0) {
+	    stars[i].WR = WN;
+	  } else {
+	    stars[i].WR = WC;
+	  }
+	}
+      }
+    }
   }
 
   // Return

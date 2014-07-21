@@ -29,14 +29,20 @@ using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
 
+
 ////////////////////////////////////////////////////////////////////////
-// Convenient comparator to sort stars by Teff and log g, used below
+// Convenient comparator to sort stars by Teff and log g. Note that we
+// stick this in its own namesapce rather than attaching it to the
+// class because std::sort requires that sorting functions be static.
 ////////////////////////////////////////////////////////////////////////
-bool starsort (const slug_stardata star1, const slug_stardata star2) {
-  if (star1.logTeff != star2.logTeff)
-    return (star1.logTeff < star2.logTeff);
-  else
-    return (star1.logg < star2.logg);
+namespace kurucz {
+  bool starsort(const slug_stardata& star1, 
+		const slug_stardata& star2) {
+    if (star1.logTeff != star2.logTeff)
+      return (star1.logTeff < star2.logTeff);
+    else
+      return (star1.logg < star2.logg);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -45,10 +51,10 @@ bool starsort (const slug_stardata star1, const slug_stardata star2) {
 slug_specsyn_kurucz::
 slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks, 
 		    slug_PDF *my_imf, slug_PDF *my_sfh,
-		    double z_in, bool use_Teff_check) :
+		    double z_in, bool check_data_in) :
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
   planck(my_tracks, my_imf, my_sfh, z_in),
-  check_Teff(use_Teff_check)
+  check_data(check_data_in)
 {
 
   // Choose the atmosphere file closest in metallicity to the
@@ -191,20 +197,14 @@ slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks,
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_kurucz::
-get_spectrum(const vector<slug_stardata>& stars) {
+get_spectrum(vector<slug_stardata>& stars) {
 
   // If not doing any safety checking, just call the function that
-  // operates on the full list of stars, then return. Note that we
-  // need to make a copy of the stardata list, because we're going to
-  // change its order, and thus we can't pass the const given as an
-  // argument
-  if (!check_Teff) {
-    vector<slug_stardata> stars_tmp = stars;
-    return get_spectrum_clean(stars_tmp);
-  }
+  // operates on the full list of stars, then return.
+  if (!check_data) return get_spectrum_clean(stars);
 
   // Initialize
-  vector<double> L_lambda(lambda_rest.size());
+  vector<double> L_lambda(lambda_rest.size(), 0.0);
 
   // Separate list into those outside the temperature
   // range we allow and those inside it, and use the Planck
@@ -247,10 +247,10 @@ slug_specsyn_kurucz::
 get_spectrum_clean(vector<slug_stardata>& stars) {
 
   // Initialize
-  vector<double> L_lambda(lambda_rest.size());
+  vector<double> L_lambda(lambda_rest.size(), 0.0);
 
   // Sort stars by Teff and log g
-  sort(stars.begin(), stars.end(), starsort);
+  sort(stars.begin(), stars.end(), kurucz::starsort);
 
   // Compute surface areas of stars
   vector<double> surf_area(stars.size());
@@ -374,13 +374,13 @@ get_spectrum(const slug_stardata& stardata) {
   // the Planck routine when the user has told us not to
   // explicitly. Thus we allow the crash to occur if the safety check
   // is off and we get bad data.
-  if (check_Teff && ((stardata.logTeff < log_Teff_min) || 
+  if (check_data && ((stardata.logTeff < log_Teff_min) || 
 		     (stardata.logTeff > log_Teff_max))) {
     return planck.get_spectrum(stardata);
   }
 
   // Initialize
-  vector<double> L_lambda(lambda_rest.size());
+  vector<double> L_lambda(lambda_rest.size(), 0.0);
 
   // If we're here, we assume that the temperature between Teff_min
   // and Teff_max
@@ -418,3 +418,5 @@ get_spectrum(const slug_stardata& stardata) {
   // Return
   return L_lambda;
 }
+
+

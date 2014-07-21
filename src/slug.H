@@ -38,7 +38,19 @@ class slug_cluster;
 class slug_galaxy;
 class slug_parmParser;
 class slug_specsyn;
+// class slug_specsyn_hillier;
+class slug_specsyn_kurucz;
+class slug_specsyn_planck;
 class slug_tracks;
+
+// Enum for WR star types
+enum WRtype { NONE, WC, WN };
+
+// Enum for output modes
+enum outputMode { ASCII, BINARY };
+
+// Enum for spectral synthesis modes
+enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, SB99 };
 
 // Struct to represent basic data on stars
 typedef struct { 
@@ -47,28 +59,19 @@ typedef struct {
   double death_time; // Time when star dies
 } slug_star;
 
+
 // Struct to hold a lot of data about a star
 typedef struct { 
   double logL;       // Log_10 luminoisty in Lsun
   double logR;       // Log_10 radius in Rsun
   double logTeff;    // Log_10 Teff in K
   double logg;       // Log_10 g in cm/s^2
-  double H_frac;     // H mass fraction at surface
-  double He_frac;    // He mass fraction at surface
-  double C_frac;     // C mass fraction at surface
-  double N_frac;     // N mass fraction at surface
-  double O_frac;     // O mass fraction at surface
-  bool WR;           // Is star massive enough to have WR phase?
+  WRtype WR;         // Type of WR star
 } slug_stardata;
 
 // Random number generator type
 typedef boost::random::mt19937 rng_type;
 
-// Enum for output modes
-enum outputMode { ASCII, BINARY };
-
-// Enum for spectral synthesis modes
-enum specsynMode { PLANCK, KURUCZ, SB99 };
 
 
 #endif

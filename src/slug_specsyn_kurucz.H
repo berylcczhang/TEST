@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // This is a class derived from slug_specsyn which implements Kurucz
 // atmospheres. The implementation closely follows that in
 // starburst99. Note that the interpolation scheme used here and in
-// SB99 is just plain odd: we use linear interpolation in the
+// SB99 is a bit odd: we use linear interpolation in the
 // temperature, but at each temperature to use nearest neighbor
 // interpolation in the log g direction. We implement the same
 // strategy to maintain compatibility.
@@ -46,7 +46,7 @@ public:
   // Constructor
   slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks, 
 		      slug_PDF *my_imf, slug_PDF *my_sfh,
-		      double z_in = 0.0, bool use_Teff_check = true);
+		      double z_in = 0.0, bool check_data_in = true);
 
   // Destructor
   ~slug_specsyn_kurucz() { };
@@ -58,7 +58,7 @@ public:
   // always be between Tmin and Tmax. If they are not, the code will
   // crash when you attempt to generate spectra. We allow safety
   // checking to be disabled for speed.
-  void set_check_Teff(bool val) { check_Teff = val; }
+  void set_check_data(bool val) { check_data = val; }
 
   // Return the min and max temperatures in the temperature grid
   double get_logTeff_min() { return log_Teff_min; }
@@ -66,7 +66,7 @@ public:
 
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for details.
-  vector<double> get_spectrum(const vector<slug_stardata>& stars);
+  vector<double> get_spectrum(vector<slug_stardata>& stars);
   vector<double> get_spectrum(const slug_stardata& stardata);
 
 private:
@@ -87,7 +87,7 @@ private:
   // results in some wasted space, since for values of Teff where
   // there are fewer values of log g than the maximum, there is unused
   // space, but the higher memory cost is worth it to keep the data
-  // stored in a compact form so that only a single pointer
+  // stored in a contiguous block so that only a single pointer
   // dereference is needed to access any given element.
 
   vector<double> Teff_mod;           // T_eff values for models
@@ -98,7 +98,7 @@ private:
   string atmos_file_name;            // Atmosphere file name
   slug_specsyn_planck planck;        // Planck spectral synthesizer
   double log_Teff_min, log_Teff_max; // Min and max Teff for models
-  bool check_Teff;                   // Check if temperatures are valid?
+  bool check_data;                   // Check if temperatures are valid?
 
 };
 
