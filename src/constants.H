@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace constants {
 
-  // Constants -- all 2010 CODATA values
+  // Physical constants -- 2010 CODATA values, or derived therefrom
   const double G = 6.67384e-8;
   const double c = 2.99792458e10;
   const double h = 6.62606957e-27;
@@ -38,6 +38,8 @@ namespace constants {
   const double Rsun = 6.955e10;
   const double Lsun = 3.846e33;
   const double Angstrom = 1.0e-8;
+  const double pc = 3.0856775814671918e18;
+  const double kpc = 3.0856775814671918e21;
 
   // Log base 10 of constants and conversions
   const double logsigmaSB = -4.2463884;

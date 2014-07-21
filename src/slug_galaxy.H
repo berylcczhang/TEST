@@ -28,9 +28,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_galaxy_H_
 
 #include "slug.H"
+#include "slug_specsyn.H"
 #include <list>
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 using namespace std;
 
@@ -49,16 +51,17 @@ public:
   // Advance to specified time
   void advance(double time);
 
-  // Bolometric luminosity; set function computes but does not return,
-  // get function computes if necessary, then returns value
-  void set_Lbol();
-  double get_Lbol();
-
-  // Spectrum; set function computes but does not return,
-  // get function computes if necessary, then returns value
-  void set_spectrum();
+  // Routines to return the bolometric luminosity and the
+  // spectrum. These just invoke the corresponding set method and
+  // return.
+  double get_Lbol() { set_Lbol(); return Lbol; }
+  const vector<double> &get_spectrum()
+  { set_spectrum(); return L_lambda; }
   void get_spectrum(vector<double>& lambda_out, 
-		    vector<double>& L_lambda_out);
+		    vector<double>& L_lambda_out)
+  { set_spectrum();
+    lambda_out = specsyn->lambda();
+    L_lambda_out = L_lambda; }
 
   // Functions to open output files and write headers
   void open_integrated_prop(slug_parmParser& pp);  
@@ -74,13 +77,18 @@ public:
 
 private:
 
+  // Routines to set stellar data, bolometric luminosity, spectrum
+  void set_field_data();
+  void set_Lbol();
+  void set_spectrum();
+
   // Distributions and physical models used in simulation
   slug_PDF *imf;                      // IMF
   slug_PDF *cmf;                      // CMF
   slug_PDF *clf;                      // CLF
   slug_PDF *sfh;                      // SFH
   slug_tracks *tracks;                // Evolutionary track set
-  slug_specsyn *specsyn;               // Spectral synthesizer
+  slug_specsyn *specsyn;              // Spectral synthesizer
 
   // Simulation data
   double curTime;                     // Current time
@@ -90,6 +98,7 @@ private:
   double clusterMass;                 // Mass in non-disrupted clusters
   double fc;                          // Fraction of stars in clusters
   vector<slug_star> field_stars;      // Field stars
+  vector<slug_stardata> field_data;   // Field star data
   double nonStochFieldMass;        // Mass of field stars w/out stochasticity
   list<slug_cluster *> disrupted_clusters; // Disrupted clusters
   list<slug_cluster *> clusters;      // Cluster list
@@ -100,6 +109,7 @@ private:
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?
   bool spec_set;                      // Is the spectrum current?
+  bool field_data_set;                // Is the field star data current?
 
   // Output information
   ofstream int_prop_file;             // Integrated properties file

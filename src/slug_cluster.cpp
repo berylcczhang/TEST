@@ -57,8 +57,8 @@ slug_cluster::slug_cluster(const long my_id, const double my_mass,
     lifetime = constants::big;
   }
 
-  // Initialize flags for the spectrum and Lbol
-  spec_set = Lbol_set = false;
+  // Initialize status flags for what data has been stored
+  spec_set = Lbol_set = data_set = false;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -109,50 +109,58 @@ slug_cluster::advance(double time) {
   // Set current time
   curTime = time;
 
-  // Mark that the spectrum and bolometric luminosity are not current
-  spec_set = Lbol_set = false;
-}
-
-////////////////////////////////////////////////////////////////////////
-// Get isochrone of log L, log Teff, log g values for all the stars in
-// the cluster. Stars with masses above or below the limit of the
-// tracks are omitted.
-////////////////////////////////////////////////////////////////////////
-void 
-slug_cluster::get_isochrone(vector<double> &logR, 
-			    vector<double> &logTeff,
-			    vector<double> &logg) {
-  tracks->get_isochrone(curTime-formationTime, stars, logR, logTeff, 
-			logg);
+  // Mark that data are not current
+  data_set = spec_set = Lbol_set = false;
 }
 
 
 ////////////////////////////////////////////////////////////////////////
-// Routines to return the stored spectrum and bolometric luminosity
+// Routine to get stellar data at this time
 ////////////////////////////////////////////////////////////////////////
-vector<double>
-slug_cluster::get_spectrum() {
-  if (!spec_set) set_spectrum();
-  return L_lambda;
-}
+void slug_cluster::set_isochrone() {
 
-void
-slug_cluster::get_spectrum(vector<double>& lambda_out, 
-			   vector<double>& L_lambda_out) {
-  if (!spec_set) set_spectrum();
-  lambda_out = specsyn->lambda();
-  L_lambda_out = L_lambda;
-}
-
-double
-slug_cluster::get_Lbol() {
-  //if (!Lbol_set) set_Lbol();
-  return Lbol;
+  // Do nothing if already set; if not set, refresh stellar data and
+  // flag that it is now current
+  if (data_set) return;
+  stardata = tracks->get_isochrone(curTime-formationTime, stars);
+  data_set = true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////
-// Spectral synthesis routine
+// Routine to get bolometric luminosity at this time
+////////////////////////////////////////////////////////////////////////
+void slug_cluster::set_Lbol() {
+
+  // Do nothing if already set
+  if (Lbol_set) return;
+
+  // Initialize
+  Lbol = 0.0;
+
+  // Stochastic stars part
+  if (stars.size() > 0) {
+
+    // Refresh the stellar data
+    set_isochrone();
+
+    // Add bolometric luminosity from stochastic stars
+    for (unsigned int i=0; i<stardata.size(); i++)
+      Lbol += pow(10.0, stardata[i].logL);
+  }
+
+  // Non-stochastic part
+  if (imf->has_stoch_lim())
+    Lbol += specsyn->get_Lbol_cts(birthMass, curTime-formationTime);
+
+  // Flag that things are set
+  Lbol_set = true;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Spectral synthesis routine. Note that this routine also sets Lbol
+// in the process because the extra cost of computing it is negligible.
 ////////////////////////////////////////////////////////////////////////
 void
 slug_cluster::set_spectrum() {
@@ -168,16 +176,15 @@ slug_cluster::set_spectrum() {
   // Stochastic stars part
   if (stars.size() > 0) {
 
-    // Do isochrone synthesis for stochastic stars
-    vector<double> logL, logTeff, logg, logR;
-    get_isochrone(logR, logTeff, logg);
+    // Refresh the stellar data
+    set_isochrone();
 
     // Get spectrum for stochastic stars
-    specsyn->get_spectrum(logR, logTeff, logg, L_lambda);
+    L_lambda = specsyn->get_spectrum(stardata);
 
     // Add bolometric luminosity from stochastic stars
-    for (unsigned int i=0; i<logL.size(); i++)
-      Lbol += pow(10.0, logL[i]);
+    for (unsigned int i=0; i<stardata.size(); i++)
+      Lbol += pow(10.0, stardata[i].logL);
   }
 
   // Non-stochastic part

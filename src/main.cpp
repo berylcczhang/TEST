@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
   slug_parmParser pp(argc, argv);
 
   // Read the tracks
-  slug_tracks tracks(pp.get_trackFile(), pp.get_metallicity());
+  slug_tracks tracks(pp.get_trackFile(), pp.get_metallicity(),
+		     pp.get_WR_mass());
 
   // Set up the time stepping
   vector<double> outTimes;

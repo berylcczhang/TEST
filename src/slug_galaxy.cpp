@@ -63,7 +63,7 @@ slug_galaxy::slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf,
   cluster_id = 0;
 
   // Initialize status flags
-  Lbol_set = spec_set = false;
+  Lbol_set = spec_set = field_data_set = false;
 
   // Store output mode
   out_mode = pp.get_outputMode();
@@ -108,7 +108,7 @@ slug_galaxy::reset(bool reset_cluster_id) {
   // for different trials to be distinct.
   curTime = mass = targetMass = aliveMass = clusterMass 
     = nonStochFieldMass = 0.0;
-  Lbol_set = spec_set = false;
+  Lbol_set = spec_set = field_data_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
     delete disrupted_clusters.back();
@@ -231,8 +231,8 @@ slug_galaxy::advance(double time) {
     }
   }
 
-  // Flag that spectrum and L_bol are no longer up to date
-  Lbol_set = spec_set = false;
+  // Flag that computed quantities are now out of data
+  Lbol_set = spec_set = field_data_set = false;
 
   // Store new time
   curTime = time;
@@ -240,24 +240,27 @@ slug_galaxy::advance(double time) {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Return currently stored spectrum
+// Get stellar data on all field stars
 ////////////////////////////////////////////////////////////////////////
 void
-slug_galaxy::get_spectrum(vector<double>& lambda_out, 
-			  vector<double>& L_lambda_out) {
-  if (!spec_set) set_spectrum();
-  lambda_out = specsyn->lambda();
-  L_lambda_out = L_lambda;
-}
+slug_galaxy::set_field_data() {
 
+  // Do nothing if data is current
+  if (field_data_set) return;
 
-////////////////////////////////////////////////////////////////////////
-// Return currently stored Lbol
-////////////////////////////////////////////////////////////////////////
-double
-slug_galaxy::get_Lbol() {
-  if (!Lbol_set) set_Lbol();
-  return Lbol;
+  // Initialize
+  field_data.resize(0);
+
+  // Get field star data
+  for (unsigned int i=0; i<field_stars.size(); i++) {
+    vector<double> m(1, field_stars[i].mass);
+    const vector<slug_stardata> &stardata = 
+      tracks->get_isochrone(curTime - field_stars[i].birth_time, m);
+    field_data.push_back(stardata[0]);
+  }
+
+  // Set status flag
+  field_data_set = true;
 }
 
 
@@ -267,51 +270,35 @@ slug_galaxy::get_Lbol() {
 void
 slug_galaxy::set_Lbol() {
 
-#if 0
   // Do nothing if already set
   if (Lbol_set) return;
 
-  // Prepare to iterate
-  list<slug_cluster *>::iterator it;
+  // Initialize
   Lbol = 0.0;
-  cluster_Lbol.resize(0);
 
   // First loop over non-disrupted clusters
-  for (it = clusters.begin(); it != clusters.end(); it++) {
-
-    // Get isochrone for this cluster
-    vector<double> logR, logTeff, logg;
-    (*it)->get_isochrone(logR, logTeff, logg);
-
-    // Get bolometric luminosity for this cluster
-    cluster_Lbol.push_back(0);
-    for (unsigned int i=0; i<logL.size(); i++)
-      cluster_Lbol[cluster_Lbol.size()-1] += pow(10.0, logL[i]);
-    Lbol += cluster_Lbol[cluster_Lbol.size()-1];
-
-  }
+  list<slug_cluster *>::iterator it;
+  for (it = clusters.begin(); it != clusters.end(); it++)
+    Lbol += (*it)->get_Lbol();
 
   // Now do disrupted clusters
-  for (it = disrupted_clusters.begin(); it != disrupted_clusters.end(); 
-       it++) {
-    vector<double> logR, logTeff, logg;
-    (*it)->get_isochrone(logR, logTeff, logg);
-    for (unsigned int i=0; i<logL.size(); i++) Lbol += pow(10.0, logL[i]);
+  for (it = disrupted_clusters.begin(); 
+       it != disrupted_clusters.end(); 
+       it++)
+    Lbol += (*it)->get_Lbol();
+
+  // Now do stochastic field stars
+  if (!field_data_set) set_field_data();
+  for (unsigned int i=0; i<field_data.size(); i++) {
+    Lbol += pow(10.0, field_data[0].logL);
   }
 
-  // Now do field stars
-  for (unsigned int i=0; i<field_stars.size(); i++) {
-    vector<double> logL, logTeff, logg, logR;
-    double logt = log(curTime-field_stars[i].birth_time);
-    vector<double> logm(1, log(field_stars[i].mass));
-    tracks->get_isochrone(logt, logm,
-			  logL, logTeff, logg, logR);
-    Lbol += logL[0];
-  }
+  // Now do non-stochastic field stars
+  if (imf->has_stoch_lim())
+    Lbol += specsyn->get_Lbol_cts_sfh(curTime);
 
   // Set flag
   Lbol_set = true;
-#endif
 }
 
 
@@ -329,18 +316,11 @@ slug_galaxy::set_spectrum() {
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
 
-  // Set up temporary storage
-  vector<double> spec(nl);
-  double Lbol_tmp;
-
-  // Loop over non-disrupted clusters
+  // Loop over non-disrupted clusters; for each one, get spectrum and
+  // bolometric luminosity and add both to global sum
   list<slug_cluster *>::iterator it;
   for (it = clusters.begin(); it != clusters.end(); it++) {
-
-    // Get spectrum
-    spec = (*it)->get_spectrum();
-
-    // Add spectrum and Lbol to global sum
+    const vector<double>& spec = (*it)->get_spectrum();
     for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
   }
@@ -348,26 +328,23 @@ slug_galaxy::set_spectrum() {
   // Now do exactly the same thing for disrupted clusters
   for (it = disrupted_clusters.begin(); it != disrupted_clusters.end(); 
        it++) {
-    spec = (*it)->get_spectrum();
+    const vector<double>& spec = (*it)->get_spectrum();
     for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
   }
 
   // Now do stochastic field stars
-  for (unsigned int i=0; i<field_stars.size(); i++) {
-    vector<double> logR, logTeff, logg;
-    double logt = log(curTime-field_stars[i].birth_time);
-    vector<double> logm(1, log(field_stars[i].mass));
-    tracks->get_isochrone(logt, logm, logR, logTeff, logg);
-    specsyn->get_spectrum(logR, logTeff, logg, spec);
+  if (!field_data_set) set_field_data();
+  for (unsigned int i=0; i<field_data.size(); i++) {
+    const vector<double> &spec = specsyn->get_spectrum(field_data[i]);
     for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
-    Lbol += 4.0 * M_PI 
-      * pow(10.0, 2.0*(logR[0]+constants::logRsun))
-      * pow(10.0, 4.0*logTeff[0]);
+    Lbol += pow(10.0, field_data[i].logL);
   }
 
   // Finally do non-stochastic field stars
-  if (nonStochFieldMass > 0) {
+  if (imf->has_stoch_lim()) {
+    double Lbol_tmp;
+    vector<double> spec;
     specsyn->get_spectrum_cts_sfh(curTime, spec, Lbol_tmp);
     for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
     Lbol += Lbol_tmp;

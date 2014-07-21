@@ -101,6 +101,7 @@ slug_parmParser::setDefaults() {
   timeStep = endTime = fClust = -constants::big;
   z = 0.0;
   metallicity = -1.0;    // Flag for not set
+  WR_mass = -1.0;        // flag for not set
   min_stoch_mass = 2.0;
   constantSFR = writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
@@ -177,6 +178,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	z = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("metallicity"))) {
 	metallicity = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("WR_mass"))) {
+	WR_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("clust_frac"))) {
 	fClust = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("out_cluster"))) {
@@ -393,13 +396,19 @@ slug_parmParser::writeParams() {
   paramFile << "IMF                  " << imf << endl;
   paramFile << "CMF                  " << cmf << endl;
   paramFile << "CLF                  " << clf << endl;
-  paramFile << "track                " << track << endl;
+  paramFile << "tracks               " << track << endl;
   paramFile << "atmos_dir            " << atmos_dir << endl;
   paramFile << "min_stoch_mass       " << min_stoch_mass << endl;
   paramFile << "redshift             " << z << endl;
+  if (metallicity > 0)
+    paramFile << "metallicity          " << metallicity << endl;
+  if (WR_mass > 0)
+    paramFile << "WR_mass              " << WR_mass << endl;
   paramFile << "specsyn_mode         ";
   if (specsyn_mode == PLANCK) {
     paramFile << "planck" << endl;
+  } else if (specsyn_mode == KURUCZ) {
+    paramFile << "kurucz" << endl;
   } else if (specsyn_mode == SB99) {
     paramFile << "sb99" << endl;
   }
@@ -428,7 +437,7 @@ slug_parmParser::writeParams() {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Functions that provide access to internal data
+// Functions that just return copies of internal data
 ////////////////////////////////////////////////////////////////////////
 
 int slug_parmParser::get_verbosity() { return verbosity; }
@@ -438,6 +447,7 @@ double slug_parmParser::get_endTime() { return endTime; }
 bool slug_parmParser::get_constantSFR() { return constantSFR; }
 double slug_parmParser::get_SFR() { return sfr; }
 double slug_parmParser::get_z() { return z; }
+double slug_parmParser::get_WR_mass() { return WR_mass; }
 double slug_parmParser::get_metallicity() { return metallicity; }
 double slug_parmParser::get_min_stoch_mass() { return min_stoch_mass; }
 const char *slug_parmParser::get_SFH() { return sfh.c_str(); }

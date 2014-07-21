@@ -43,7 +43,7 @@ using namespace std;
 class qag_wksp {
 public:
 
-  // Constructor; just allocated vectors
+  // Constructor; just allocates vectors
   qag_wksp(int n);
 
   // Destructor
@@ -70,40 +70,44 @@ public:
 
   // Return the wavelengths used by the synthesizer
   unsigned int n_lambda() { return lambda_obs.size(); }
-  vector<double> lambda() { return lambda_obs; }
+  const vector<double> &lambda() { return lambda_obs; }
 
-  // Inputs are log base 10 radius in Rsun, log base 10
-  // effective temperature in K, log base 10 g in CGS.
-  // Outputs is L_lambda.
-  virtual void get_spectrum(const vector<double>& logR, 
-			    const vector<double>& logTeff,
-			    const vector<double>& logg,
-			    vector<double>& L_lambda) = 0;
+  // Methods to return the summed spectrum from a set of stars whose
+  // properties are described by the input vector of stellar data, or
+  // by the data for a single star. The returned vector gives the
+  // specific luminosity in erg/s/Ang. These are pure virtual
+  // functions here, and must be implemented in a derived class.
+  virtual vector<double> 
+  get_spectrum(const vector<slug_stardata> &stardata) = 0;
+  virtual vector<double> 
+  get_spectrum(const slug_stardata &stardata) = 0;
 
-  // Same as previous function function, but operating on a
-  // single star rather than a vector of them
-  virtual void get_spectrum(const double logR, const double logTeff,
-			    const double logg,
-			    vector<double>& L_lambda) = 0;
-
-  // This is a get spectrum routine that handles the non-stochastic,
-  // single-age case. It does what non-stochastic SPS codes do: it
-  // takes as an argument a total mass and an age, and it returns
-  // the spectrum and bolometric luminosity for the associated set of
-  // stellar tracks and IMF.
+  // Routines to compute the spectrum and the bolometric luminosity for a
+  // non-stochastic simple stellar population, using the IMF and
+  // stellar tracks that are stored as part of this class. Input
+  // values are the total mass of the population (in Msun) and its age
+  // (in yr). The spectrum L_lambda is in units of erg/s/Ang, and
+  // the bolometric luminosity Lbol in units of Lsun. The optional
+  // parameter tol specified the error tolerance in the numerical
+  // integration.
   void get_spectrum_cts(const double m_tot, const double age,
 			vector<double>& L_lambda,
-			double &L_bol,
-			const double tol = 1e-3);
+			double &L_bol, const double tol = 1e-3);
+  double get_Lbol_cts(const double m_tot, const double age,
+		      const double tol = 1e-3);
 
-  // This is a get spectrum routine that handled the case of
-  // non-stochastic star formation with a particular star formation
-  // history. It takes as input a time and returns the spectrum and
-  // bolometric luminosity for all the stars formed up to that time
-  // using the stored IMF, stellar track set, and star formation
-  // history.
+  // Routines to compute the spectrum and the bolometric luminosity
+  // for a stellar population that has been forming continuously since
+  // time 0 with the IMF and SFH that are stored as part of this
+  // class, uisng the stellar tracks that are also stored as part of
+  // the class. The only input is the duration of star formation t (in
+  // yr). The spectrum L_lambda is in units of erg/s/Ang, and
+  // the bolometric luminosity Lbol in units of Lsun. The optional
+  // parameter tol specified the error tolerance in the numerical
+  // integration.
   void get_spectrum_cts_sfh(const double t, vector<double>& L_lambda, 
 			    double& L_bol, const double tol = 1e-3);
+  double get_Lbol_cts_sfh(const double t, const double tol = 1e-3);
 
 
 protected:
@@ -120,6 +124,8 @@ private:
 			   const double age, vector<double>& L_lambda, 
 			   double& L_bol, vector<double>& err, 
 			   double& err_bol, qag_wksp& q);
+  void get_Lbol_cts_gk(const double m_min, const double m_max,
+		       const double age, double& L_bol, double& err_bol);
 
   // Helper function to do Gauss-Konrod integration on a particular
   // time interval
@@ -128,6 +134,9 @@ private:
 			       double &L_bol, vector<double>& err, 
 			       double& err_bol, qag_wksp& q, 
 			       const double tol);
+  void get_Lbol_cts_sfh_gk(const double t_min, const double t_max, 
+			   const double t, double &L_bol, 
+			   double& err_bol, const double tol);
 
   // Private data
   slug_tracks *tracks;              // Stellar tracks

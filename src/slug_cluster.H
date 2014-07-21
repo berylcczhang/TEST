@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_cluster_H_
 
 #include "slug.H"
+#include "slug_galaxy.H"
 #include "slug_PDF.H"
 #include "slug_specsyn.H"
 #include "slug_tracks.H"
@@ -36,9 +37,10 @@ class slug_cluster {
 
 public:
   // Construct a cluster with specified target mass, birth time, IMF
-  slug_cluster(const long my_id, const double my_mass, const double time, 
-	       slug_PDF *my_imf, slug_tracks *my_tracks, 
-	       slug_specsyn *my_specsyn, slug_PDF *clf=NULL);
+  slug_cluster(const long my_id, const double my_mass, 
+	       const double time, slug_PDF *my_imf, 
+	       slug_tracks *my_tracks, slug_specsyn *my_specsyn, 
+	       slug_PDF *clf=NULL);
 
   // Destructor
   ~slug_cluster() { };
@@ -69,33 +71,36 @@ public:
   // Routine to return lifetime of cluster against disruption
   double get_lifetime() { return lifetime; }
 
-  // Return the vector of stars and number of stars
-  vector<double> get_stars() { return stars; }
+  // Routine to return the number of stochastic stars
   unsigned int get_nstars() { return stars.size(); }
 
-  // Get an isochrone of log L, log Teff, log g, log R for the
-  // cluster. Output quantities are log base 10. Log L is in solar
-  // luminosities; all other quantities are in CGS units.
-  void get_isochrone(vector<double> &logR, vector<double> &logTeff,
-		     vector<double> &logg);
-
-  // Get the spectrum; can either return or not return the vector of
-  // wavelengths as well
-  vector<double> get_spectrum();
-  void get_spectrum(vector<double>& lambda_out, 
-		    vector<double>& L_lambda_out);
-
-  // Get the bolometric luminoisty
-  double get_Lbol();
-
-  // Spectral synthesis routine
-  void set_spectrum();
+  // Routines to return the stellar masses, other stellar data, the
+  // bolometric luminosity, the spectrum, and the wavelength data to
+  // go with the spectrum. These functions just invoke the
+  // corresponding set method and then return.
+  const vector<double> &get_stars() { return stars; }
+  const vector<slug_stardata> &get_isochrone()
+  { set_isochrone(); return stardata; }
+  double get_Lbol() 
+  { set_Lbol(); return Lbol; }
+  const vector<double> &get_spectrum()
+  { set_spectrum(); return L_lambda; }
+  void get_spectrum(vector<double> &lambda_out, 
+		    vector<double> &L_lambda_out)
+  { set_spectrum(); 
+    lambda_out = specsyn->lambda(); 
+    L_lambda_out = L_lambda; }
 
   // Output routines
   void write_prop(ofstream& outfile, const outputMode out_mode);
   void write_spectrum(ofstream& outfile, const outputMode out_mode);
 
 private:
+
+  // Routines to compute stellar data, bolometric luminosity, spectrum
+  void set_isochrone();
+  void set_Lbol();
+  void set_spectrum();
 
   // Data
   const unsigned long id;             // Unique ID
@@ -109,13 +114,14 @@ private:
   double lifetime;                    // Time at which this cluster disrupts
   double stellarDeathMass;            // Mass of star dying at current age
   vector<double> stars;               // List of stellar masses
+  vector<slug_stardata> stardata;     // Data on stellar properties
   slug_PDF *imf;                      // IMF
   slug_tracks *tracks;                // Evolutionary track set
   slug_specsyn *specsyn;              // Spectral synthesizer
   bool is_disrupted;                  // Is this cluster disrupted?
   vector<double> L_lambda;            // Spectrum
   double Lbol;                        // Bolometric luminosity
-  bool Lbol_set, spec_set;            // Status indicators
+  bool data_set, Lbol_set, spec_set;  // Status indicators
 };
 
 #endif

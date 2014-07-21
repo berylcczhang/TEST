@@ -56,20 +56,9 @@ public:
   // Set the wavelength table
   void set_lambda(const vector<double>& lambda_in, bool rest = false);
 
-  // The spectral synthesis function; units are as follows:
-  // logR : log base 10 of radius, in Rsun
-  // logTeff : log base 10 of effective temperature in K
-  // log g : not used
-  // L_lambda : luminosity in erg/s/Angstrom
-  void get_spectrum(const vector<double>& logR, 
-		    const vector<double>& logTeff,
-		    const vector<double>& logg,
-		    vector<double>& L_lambda);
-
-  // Same as previous function function, but operating on a
-  // single star rather than a vector of them
-  void get_spectrum(const double logR, const double logTeff,
-		    const double logg, vector<double>& L_lambda);
+  // The spectral synthesis functions; see slug_specsyn.H for details
+  vector<double> get_spectrum(const vector<slug_stardata> &stardata);
+  vector<double> get_spectrum(const slug_stardata &stardata);
 
 };
 

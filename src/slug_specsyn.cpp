@@ -385,6 +385,99 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 
 
 ////////////////////////////////////////////////////////////////////////
+// Exactly the same as the previous function, except that this one
+// only computes L_bol
+////////////////////////////////////////////////////////////////////////
+double
+slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
+			   const double tol) {
+
+  // Initialize L_bol
+  double L_bol = 0.0;
+
+  // Allocate workspace
+  qag_wksp q(1);
+
+  // Get the range of integration from the IMF and the stellar tracks:
+  // minimum mass is the larger of the smallest mass in the IMF and
+  // the lowest mass track
+  // maximum mass is the smallest of the edge of the non-stochastic
+  // range, the largest mass track, and the death mass at this age
+  double m_min = max(imf->get_xMin(), tracks->min_mass());
+  double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+		     tracks->death_mass(age));
+
+  // Do initial integration with Gauss-Konrod
+  double bol_err;
+  get_Lbol_cts_gk(m_min, m_max, age, L_bol, bol_err);
+
+  // Get error estimate
+  double err = bol_err/L_bol;
+
+  // If error is not below tolerance, begin recursive bisection
+  if (err > tol) {
+
+    // Initialize the interval, result, and error pointers
+    q.a.assign(1, m_min);
+    q.b.assign(1, m_max);
+    q.rbol.assign(1, L_bol);
+    q.ebol.assign(1, bol_err);
+    unsigned int intervalptr = 0;
+    unsigned int itCounter = 1;
+
+    // Begin iterating
+    while (1) {
+
+      // Figure out which interval to work on
+      double m_left = q.a[intervalptr];
+      double m_right = q.b[intervalptr];
+      double m_cen = 0.5 * (m_left + m_right);
+
+      // Compute integrals on two bisected sub-sections
+      double L_bol1, L_bol2, bol_err1, bol_err2;
+      get_Lbol_cts_gk(m_left, m_cen, age, L_bol1, bol_err1);
+      get_Lbol_cts_gk(m_cen, m_right, age, L_bol2, bol_err2);
+
+      // Update result and the error estimate
+      L_bol += L_bol1 + L_bol2 - q.rbol[intervalptr];
+      bol_err += bol_err1 + bol_err2 - q.ebol[intervalptr];
+
+      // Have we converged? If so, stop iterating
+      err = bol_err/L_bol;
+      if (err < tol) break;
+
+      // If we're here, we haven't converged. Replace the current
+      // interval with the left half, then push the right half onto
+      // the list.
+      q.b[intervalptr] = m_cen;
+      q.rbol[intervalptr] = L_bol1;
+      q.ebol[intervalptr] = bol_err1;
+      q.a.push_back(m_cen);
+      q.b.push_back(m_right);
+      q.rbol.push_back(L_bol2);
+      q.ebol.push_back(bol_err2);
+
+      // Traverse the list of intervals to decide which to work on next
+      intervalptr = distance(q.ebol.begin(), 
+			     max_element(q.ebol.begin(), q.ebol.end()));
+
+      // Update the iteration counter, and check against maximum
+      itCounter++;
+      if (itCounter > GK_MAX_ITER) {
+	cerr << "Error: non-convergence in non-stochastic "
+	     << "spectral integration!" << endl;
+	exit(1);
+      }
+    }
+  }
+
+  // Apply final normalization
+  L_bol *= m_tot / imf->expectationVal();
+  return L_bol;
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Spectral synthesis function for a continuous IMF and continuous SFH
 ////////////////////////////////////////////////////////////////////////
 
@@ -522,6 +615,87 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
 
 
 ////////////////////////////////////////////////////////////////////////
+// Exactly the same as the previous function, except that this one
+// only computes L_bol
+////////////////////////////////////////////////////////////////////////
+double
+slug_specsyn::
+get_Lbol_cts_sfh(const double t, const double tol) {
+
+  // Allocate workspace
+  double L_bol, err_bol;
+  qag_wksp q(1);
+
+  // Do initial integration with Gauss-Konrod
+  get_Lbol_cts_sfh_gk(0, t, t, L_bol, err_bol, tol);
+
+  // Get error estimate
+  double err = err_bol/L_bol;
+
+  // If error is not below tolerance, begin recursive bisection
+  if (err > tol) {
+
+    // Initialize the interval, result, and error pointers
+    q.a.assign(1, 0);
+    q.b.assign(1, t);
+    q.rbol.assign(1, L_bol);
+    q.ebol.assign(1, err_bol);
+    unsigned int intervalptr = 0;
+    unsigned int itCounter = 1;
+
+    // Begin iterating
+    while (1) {
+
+      // Figure out which interval to work on
+      double t_left = q.a[intervalptr];
+      double t_right = q.b[intervalptr];
+      double t_cen = 0.5 * (t_left + t_right);
+
+      // Compute integrals on two bisected sub-sections
+      double L_bol1, L_bol2, err_bol1, err_bol2;
+      get_Lbol_cts_sfh_gk(t_left, t_cen, t, L_bol1, err_bol1, tol);
+      get_Lbol_cts_sfh_gk(t_cen, t_right, t, L_bol2, err_bol2, tol);
+
+      // Update result and the error estimate
+      L_bol += L_bol1 + L_bol2 - q.rbol[intervalptr];
+      err_bol += err_bol1 + err_bol2 - q.ebol[intervalptr];
+
+      // Have we converged? If so, stop iterating
+      err = err_bol/L_bol;
+      if (err < tol) break;
+
+      // If we're here, we haven't converged. Replace the current
+      // interval with the left half, then push the right half onto
+      // the list.
+      q.b[intervalptr] = t_cen;
+      q.rbol[intervalptr] = L_bol1;
+      q.ebol[intervalptr] = err_bol1;
+      q.a.push_back(t_cen);
+      q.b.push_back(t_right);
+      q.rbol.push_back(L_bol2);
+      q.ebol.push_back(err_bol2);
+
+      // Traverse the list of intervals to decide which to work on next
+      intervalptr = distance(q.ebol.begin(), 
+			     max_element(q.ebol.begin(), q.ebol.end()));
+
+      // Update the iteration counter, and check against maximum
+      itCounter++;
+      if (itCounter > GK_MAX_ITER) {
+	cerr << "Error: non-convergence in non-stochastic "
+	     << "spectral integration!" << endl;
+	exit(1);
+      }
+    }
+  }
+
+  // Apply final normalization
+  L_bol /= imf->expectationVal();
+  return L_bol;
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Helper function to evaluate GK rule on a mass interval. This
 // structure of this code closely follows the GSL qk routine.
 ////////////////////////////////////////////////////////////////////////
@@ -545,14 +719,9 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
   }
   q.x_k[gknum/2] = m_cen;
 
-  // Get the isochrone and bolometric luminosity for the mass grid
-  vector<double> logTeff, logg, logR;
-  tracks->get_isochrone(age, q.x_k, logR, logTeff, logg);
-  vector<double> L(logR.size());
-  for (unsigned int i=0; i<L.size(); i++) 
-    L[i] = 4.0 * M_PI
-      * pow(10.0, 2.0*(logR[i]+constants::logRsun))
-      * pow(10.0, 4.0*logTeff[i]);
+  // Get stellar data for the mass grid
+  const vector<slug_stardata> &stardata = 
+    tracks->get_isochrone(age, q.x_k);
 
   // Now form the Gauss and Konrod sums
 
@@ -561,21 +730,25 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
   int ptr2;
 
   // Get spectrum at this mass
-  get_spectrum(logR[ptr1], logTeff[ptr1], logg[ptr1], q.L_tmp1);
+  q.L_tmp1 = get_spectrum(stardata[ptr1]);
 
   // Get IMF at this mass
   double imf_val1 = (*imf)(q.x_k[ptr1]);
   double imf_val2;
 
+  // Get bolometric luminosity at this mass
+  double L1 = pow(10.0, stardata[ptr1].logL);
+  double L2;
+
   // Add to Konrod sum, and to Gauss sum if central point appears in
   // it
   for (unsigned int j=0; j<lambda_rest.size(); j++)
     L_lambda[j] = q.L_tmp1[j] * imf_val1 * wgk[gknum1-1];
-  L_bol = L[ptr1] * imf_val1 * wgk[gknum1-1];
+  L_bol = L1 * imf_val1 * wgk[gknum1-1];
   if (gknum1 % 2 == 0) {
     for (unsigned int j=0; j<lambda_rest.size(); j++)
       q.gaussQuad[j] = q.L_tmp1[j] * imf_val1 * wg[gknum1 / 2 - 1];
-    L_bol_gauss = L[ptr1] * imf_val1 * wg[gknum1 / 2 - 1];
+    L_bol_gauss = L1 * imf_val1 * wg[gknum1 / 2 - 1];
   }
   
   // Compute terms that are common to both Gauss and Konrod sum
@@ -583,13 +756,15 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
 
     // Point on the left side of the mass interval
     ptr1 = 2*i+1;
-    get_spectrum(logR[ptr1], logTeff[ptr1], logg[ptr1], q.L_tmp1);
+    q.L_tmp1 = get_spectrum(stardata[ptr1]);
     imf_val1 = (*imf)(q.x_k[ptr1]);
+    L1 = pow(10.0, stardata[ptr1].logL);
 
     // Point on the right side of the mass interval
     ptr2 = gknum - 2*i - 2;
-    get_spectrum(logR[ptr2], logTeff[ptr2], logg[ptr2], q.L_tmp2);
+    q.L_tmp2 = get_spectrum(stardata[ptr2]);
     imf_val2 = (*imf)(q.x_k[ptr2]);
+    L2 = pow(10.0, stardata[ptr2].logL);
 
     // Compute the contribution to the Gaussian and Konrod quadratures
     for (unsigned int j=0; j<lambda_rest.size(); j++) {
@@ -598,8 +773,8 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
       L_lambda[j] += wgk[ptr1] * 
 	(q.L_tmp1[j]*imf_val1 + q.L_tmp2[j]*imf_val2);
     }
-    L_bol += wgk[ptr1] * (L[ptr1]*imf_val1 + L[ptr2]*imf_val2);
-    L_bol_gauss += wg[i] * (L[ptr1]*imf_val1 + L[ptr2]*imf_val2);
+    L_bol += wgk[ptr1] * (L1*imf_val1 + L2*imf_val2);
+    L_bol_gauss += wg[i] * (L1*imf_val1 + L2*imf_val2);
   }
 
   // Compute terms that appear only in the Konrod sum
@@ -607,19 +782,21 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
 
     // Point on left half of interval
     ptr1 = 2*i;
-    get_spectrum(logR[ptr1], logTeff[ptr1], logg[ptr1], q.L_tmp1);
+    q.L_tmp1 = get_spectrum(stardata[ptr1]);
     imf_val1 = (*imf)(q.x_k[ptr1]);
+    L1 = pow(10.0, stardata[ptr1].logL);
 
     // Point on right half of interval
     ptr2 = gknum - 2*i - 1;
-    get_spectrum(logR[ptr2], logTeff[ptr2], logg[ptr2], q.L_tmp2);
+    q.L_tmp2 = get_spectrum(stardata[ptr2]);
     imf_val2 = (*imf)(q.x_k[ptr2]);
+    L2 = pow(10.0, stardata[ptr2].logL);
 
     // Add to Konrod sum
     for (unsigned int j=0; j<lambda_rest.size(); j++)
       L_lambda[j] += wgk[ptr1] * 
 	(q.L_tmp1[j]*imf_val1 + q.L_tmp2[j]*imf_val2);
-    L_bol += wgk[ptr1] * (L[ptr1]*imf_val1 + L[ptr2]*imf_val2);
+    L_bol += wgk[ptr1] * (L1*imf_val1 + L2*imf_val2);
   }
 
   // Scale results by length of mass interval to properly normalize
@@ -634,6 +811,96 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
   for (unsigned int j=0; j<lambda_rest.size(); j++) {
     err[j] = abs(L_lambda[j] - q.gaussQuad[j]);
   }
+  err_bol = abs(L_bol - L_bol_gauss);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Same as previous function, but only for Lbol; all steps related to
+// the spectrum are omitted
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn::
+get_Lbol_cts_gk(const double m_min, const double m_max,
+		const double age, double& L_bol, double& err_bol) {
+
+  // Initialize the Gauss sum accumulator zero
+  double L_bol_gauss = 0.0;
+
+  // Construct grid of mass points
+  vector<double> x_k(gknum);
+  double m_cen = 0.5 * (m_min + m_max);
+  double half_length = 0.5 * (m_max - m_min);
+  for (unsigned int i=0; i<gknum/2; i++) {
+    x_k[i] = m_cen - half_length * xgk[i];
+    x_k[gknum-i-1] = m_cen + half_length * xgk[i];
+  }
+  x_k[gknum/2] = m_cen;
+
+  // Get stellar data for the mass grid
+  const vector<slug_stardata> &stardata = 
+    tracks->get_isochrone(age, x_k);
+
+  // Now form the Gauss and Konrod sums
+
+  // Central mass point
+  int ptr1 = gknum/2;
+  int ptr2;
+
+  // Get IMF at this mass
+  double imf_val1 = (*imf)(x_k[ptr1]);
+  double imf_val2;
+
+  // Get bolometric luminosity at this mass
+  double L1 = pow(10.0, stardata[ptr1].logL);
+  double L2;
+
+  // Add to Konrod sum, and to Gauss sum if central point appears in
+  // it
+  L_bol = L1 * imf_val1 * wgk[gknum1-1];
+  if (gknum1 % 2 == 0) {
+    L_bol_gauss = L1 * imf_val1 * wg[gknum1 / 2 - 1];
+  }
+  
+  // Compute terms that are common to both Gauss and Konrod sum
+  for (unsigned int i=0; i<(gknum1-1)/2; i++) {
+
+    // Point on the left side of the mass interval
+    ptr1 = 2*i+1;
+    imf_val1 = (*imf)(x_k[ptr1]);
+    L1 = pow(10.0, stardata[ptr1].logL);
+
+    // Point on the right side of the mass interval
+    ptr2 = gknum - 2*i - 2;
+    imf_val2 = (*imf)(x_k[ptr2]);
+    L2 = pow(10.0, stardata[ptr2].logL);
+
+    // Compute the contribution to the Gauss and Konrod quadratures
+    L_bol += wgk[ptr1] * (L1*imf_val1 + L2*imf_val2);
+    L_bol_gauss += wg[i] * (L1*imf_val1 + L2*imf_val2);
+  }
+
+  // Compute terms that appear only in the Konrod sum
+  for (unsigned int i=0; i<gknum1/2; i++) {
+
+    // Point on left half of interval
+    ptr1 = 2*i;
+    imf_val1 = (*imf)(x_k[ptr1]);
+    L1 = pow(10.0, stardata[ptr1].logL);
+
+    // Point on right half of interval
+    ptr2 = gknum - 2*i - 1;
+    imf_val2 = (*imf)(x_k[ptr2]);
+    L2 = pow(10.0, stardata[ptr2].logL);
+
+    // Add to Konrod sum
+    L_bol += wgk[ptr1] * (L1*imf_val1 + L2*imf_val2);
+  }
+
+  // Scale results by length of mass interval to properly normalize
+  L_bol *= half_length;
+  L_bol_gauss *= half_length;
+
+  // Compute error
   err_bol = abs(L_bol - L_bol_gauss);
 }
 
@@ -746,5 +1013,95 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
   for (unsigned int j=0; j<lambda_rest.size(); j++) {
     err[j] = abs(L_lambda[j] - q.gaussQuad[j]);
   }
+  err_bol = abs(L_bol - L_bol_gauss);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Same as previous function, but only for Lbol; all steps related to
+// the spectrum are omitted
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn::
+get_Lbol_cts_sfh_gk(const double t_min, const double t_max, 
+		    const double t, double& L_bol, double& err_bol,
+		    const double tol) {
+
+  // Initialize the accumulator for the Gauss sum to zero
+  double L_bol_gauss = 0.0;
+
+  // Construct grid of time points
+  vector<double> x_k(gknum);
+  double t_cen = 0.5 * (t_min + t_max);
+  double half_length = 0.5 * (t_max - t_min);
+  for (unsigned int i=0; i<gknum/2; i++) {
+    x_k[i] = t_cen - half_length * xgk[i];
+    x_k[gknum-i-1] = t_cen + half_length * xgk[i];
+  }
+  x_k[gknum/2] = t_cen;
+
+  // Now form the Gauss and Konrod sums
+
+  // Central mass point
+  int ptr1 = gknum/2;
+  int ptr2;
+
+  // Get Lbol at the central time, leaving a fair margin of error
+  // in the tolerance; note that we normalize to 1 Msun here, and fix
+  // the normalization later
+  double L_bol1 = get_Lbol_cts(1.0, t-x_k[gknum/2], tol/10.0);
+  double L_bol2;
+
+  // Get SFR at central time
+  double sfh_val1 = (*sfh)(x_k[ptr1]);
+  double sfh_val2;
+
+  // Add to Konrod sum, and to Gauss sum if central point appears in
+  // it
+  L_bol = L_bol1 * sfh_val1 * wgk[gknum1-1];
+  if (gknum1 % 2 == 0) {
+    L_bol_gauss = L_bol1 * sfh_val1 * wg[gknum1 / 2 - 1];
+  }
+  
+  // Compute terms that are common to both Gauss and Konrod sum
+  for (unsigned int i=0; i<(gknum1-1)/2; i++) {
+
+    // Point on the left side of the mass interval
+    ptr1 = 2*i+1;
+    L_bol1 = get_Lbol_cts(1.0, t-x_k[ptr1], tol/10.0);
+    sfh_val1 = (*sfh)(x_k[ptr1]);
+
+    // Point on the right side of the mass interval
+    ptr2 = gknum - 2*i - 2;
+    L_bol2 = get_Lbol_cts(1.0, t-x_k[ptr2], tol/10.0);
+    sfh_val2 = (*sfh)(x_k[ptr2]);
+
+    // Compute the contribution to the Gaussian and Konrod quadratures
+    L_bol += wgk[ptr1] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
+    L_bol_gauss += wg[i] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
+  }
+
+  // Compute terms that appear only in the Konrod sum
+  for (unsigned int i=0; i<gknum1/2; i++) {
+
+    // Point on left half of interval
+    ptr1 = 2*i;
+    L_bol1 = get_Lbol_cts(1.0, t-x_k[ptr1], tol/10.0);
+    sfh_val1 = (*sfh)(x_k[ptr1]);
+
+    // Point on right half of interval
+    ptr2 = gknum - 2*i - 1;
+    L_bol2 = get_Lbol_cts(1.0, t-x_k[ptr2], tol/10.0);
+    sfh_val2 = (*sfh)(x_k[ptr2]);
+
+    // Add to Konrod sum
+    L_bol += wgk[ptr1] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
+  }
+
+  // Scale results by length of mass interval to properly normalize
+  L_bol *= half_length;
+  L_bol_gauss *= half_length;
+
+  // Compute error
   err_bol = abs(L_bol - L_bol_gauss);
 }

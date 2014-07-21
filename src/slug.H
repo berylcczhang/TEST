@@ -40,8 +40,26 @@ class slug_parmParser;
 class slug_specsyn;
 class slug_tracks;
 
-// Struct to represent single stars
-typedef struct { double mass, birth_time, death_time; } slug_star;
+// Struct to represent basic data on stars
+typedef struct { 
+  double mass;       // Mass at birth
+  double birth_time; // Formation time
+  double death_time; // Time when star dies
+} slug_star;
+
+// Struct to hold a lot of data about a star
+typedef struct { 
+  double logL;       // Log_10 luminoisty in Lsun
+  double logR;       // Log_10 radius in Rsun
+  double logTeff;    // Log_10 Teff in K
+  double logg;       // Log_10 g in cm/s^2
+  double H_frac;     // H mass fraction at surface
+  double He_frac;    // He mass fraction at surface
+  double C_frac;     // C mass fraction at surface
+  double N_frac;     // N mass fraction at surface
+  double O_frac;     // O mass fraction at surface
+  bool WR;           // Is star massive enough to have WR phase?
+} slug_stardata;
 
 // Random number generator type
 typedef boost::random::mt19937 rng_type;

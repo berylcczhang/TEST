@@ -33,7 +33,23 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
-slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
+
+// This routine reads in the tracks and sets various parameters that
+// depend on them. Unfortunately it has to be compatible with
+// starburst99, which means that a ton of stuff is done by
+// hardcoding. For example, the mininum mass for WR formation isn't
+// actually recorded in the data files, and as it stuck in the source
+// code. Ditto for the metallacity. To make this slightly less
+// horrible, the constructor provides a method for users to specify
+// the metallicity and WR mass manually. While this is a less
+// satisfactory solution than actually writing all the data that is
+// needed to run the models into the data files, it's the best we can
+// do without making an entirely new file format and breaking
+// compatibility with SB99.
+
+slug_tracks::slug_tracks(const char *fname, double my_metallicity,
+			 double my_WR_mass) :
+  metallicity(my_metallicity), WR_mass(my_WR_mass) {
 
   // Try to open file
   ifstream trackfile;
@@ -267,9 +283,9 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
     }
   }
 
-  // Last step: set the metallicity. This can be done manually, or by
-  // guessing based on the file name.
-  if (my_metallicity < 0) {
+  // If not already set, try to guess the metallicity from the file
+  // name
+  if (metallicity < 0) {
     // Default value, not specified, so guess from file name
 
     // File names of the form modCXXX.dat or modCXXXX.dat, where C is
@@ -306,13 +322,59 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity) {
     } else {
       cerr << "Error: could not guess metallicity from file name "
 	   << trackfileName << "; "
-	   << "please set metallicity manually in parameter file"
+	   << "please set manually in parameter file"
 	   << endl;
       exit(1);
     }
-  } else {
-    // Metallicity manually set
-    metallicity = my_metallicity;
+  }
+
+  // If not already set, try to set the minimum mass for a Wolf-Rayet
+  // phase from the file name
+  if (WR_mass < 0) {
+    vector<string> fnames = 
+      { // Geneva w/standard mass loss
+	"modc001.dat", "modc004.dat", "modc008.dat", "modc020.dat",
+	"modc040.dat",
+	// Geneva w/high mass loss
+	"mode001.dat", "mode004.dat", "mode008.dat", "mode020.dat", 
+	"mode040.dat", 
+	// Padova
+	"mods0004.dat", "mods004.dat", "mods008.dat", "mods020.dat", 
+	"mods050.dat", 
+	// Padova w/AGB stars
+	"mods0004.dat", "mods004.dat", "mods008.dat", "mods020.dat",
+	"mods050.dat"
+	// Geneva (2013) non-rotating
+	"Z0020v00.txt", "Z0140v00.txt",
+	// Geneva (2013) rotating at 40% of breakup
+	"Z0020v40.txt", "Z0140v40.txt" };
+    vector<double> wrm =
+      { // Geneva w/standard mass loss
+	80, 52, 42, 32, 25,
+	// Geneva w/high mass loss
+	61, 42, 35, 25, 21,
+	// Padova
+	61, 42, 35, 25, 21,
+	// Padova w/AGB stars
+	61, 42, 35, 25, 21,
+	// Geneva (2013) non-rotating
+	84, 25,
+	// Geneva (2013) rotating at 40% of breakup
+	55, 20 };
+    for (unsigned int i = 0; i<wrm.size(); i++) {
+      if (trackpath.filename().string() == fnames[i]) {
+	WR_mass = wrm[i];
+	break;
+      }
+    }
+    // Make sure we found a match
+    if (WR_mass < 0) {
+      cerr << "Error: could not guess WR mass from file name "
+	   << trackfileName << "; "
+	   << "please set manually in parameter file"
+	   << endl;
+      exit(1);
+    }
   }
 }
 
@@ -382,8 +444,7 @@ slug_tracks::star_lifetime(double mass) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Method to get an isochrone -- log L, log Teff, log g, log R -- for a
-// vector of stars
+// Method to get data for a set of stars on an isochrone.
 ////////////////////////////////////////////////////////////////////////
 
 // Notes: 
@@ -395,11 +456,9 @@ slug_tracks::star_lifetime(double mass) {
 // the output vectors, so that these vectors may have fewer elements
 // than the input mass vector.
 
-void
-slug_tracks::get_isochrone(const double t, const vector<double> &m, 
-			   vector<double> &logR_out,
-			   vector<double> &logTeff_out,
-			   vector<double> &logg_out) {
+vector<slug_stardata>
+slug_tracks::
+get_isochrone(const double t, const vector<double> &m) {
 
   // Throw out any stars that are below our lowest mass track, or
   // above our highest mass track
@@ -422,25 +481,28 @@ slug_tracks::get_isochrone(const double t, const vector<double> &m,
   else logt = -constants::big;
   isochrone_wgts(logt, logm, timeidx, trackidx, timewgt, trackwgt);
 
-  // Set output array sizes to the right value
-  logTeff_out.resize(nstar);
-  logg_out.resize(nstar);
-  logR_out.resize(nstar);
+  // Build an object of the correct size to return
+  vector<slug_stardata> stars(nstar);
 
-  // Interpolate to get logL and logTeff, and mass values; then get R from them,
-  // and get log g by interpolating to get M as well
+  // Interpolate to get logL, logTeff, current mass, and surface mass
+  // fractions of H, He, C, N, and O. Set log R and log g from L and
+  // Teff. Finally, flag if this star could become a WR star
   for (int i=0; i<nstar; i++) {
-    double logL_out = 
+    stars[i].logL = 
       (1.0-trackwgt[i]) * (1.0-timewgt[i]) * logL[trackidx[i]][timeidx[i]] +
       (1.0-trackwgt[i]) * timewgt[i] * logL[trackidx[i]][timeidx[i]+1] +
       trackwgt[i] * (1.0-timewgt[i]) * logL[trackidx[i]-1][timeidx[i]] +
       trackwgt[i] * timewgt[i] * logL[trackidx[i]-1][timeidx[i]+1];
-    logTeff_out[i] = 
+    stars[i].logTeff = 
       (1.0-trackwgt[i]) * (1.0-timewgt[i]) * logTeff[trackidx[i]][timeidx[i]] +
       (1.0-trackwgt[i]) * timewgt[i] * logTeff[trackidx[i]][timeidx[i]+1] +
       trackwgt[i] * (1.0-timewgt[i]) * logTeff[trackidx[i]-1][timeidx[i]] +
       trackwgt[i] * timewgt[i] * logTeff[trackidx[i]-1][timeidx[i]+1];
-    double log10_mass = 
+    stars[i].logR = 0.5*(stars[i].logL+constants::logLsun) 
+      - 0.5*log10(4.0*M_PI) 
+      - 0.5*constants::logsigmaSB - 2.0*stars[i].logTeff
+      - constants::logRsun;
+    double log10_cur_mass = 
       ((1.0-trackwgt[i]) * (1.0-timewgt[i]) * 
        logcur_mass[trackidx[i]][timeidx[i]] +
        (1.0-trackwgt[i]) * timewgt[i] *
@@ -450,11 +512,38 @@ slug_tracks::get_isochrone(const double t, const vector<double> &m,
        trackwgt[i] * timewgt[i] * 
        logcur_mass[trackidx[i]-1][timeidx[i]+1]) *
       constants::loge;
-    logR_out[i] = 0.5*(logL_out+constants::logLsun) -0.5*log10(4.0*M_PI) 
-      - 0.5*constants::logsigmaSB - 2.0*logTeff_out[i] - constants::logRsun;
-    logg_out[i] = constants::logG + log10_mass + constants::logMsun 
-      - 2.0*logR_out[i] - 2.0*constants::logRsun;
+    stars[i].logg = constants::logG + log10_cur_mass + constants::logMsun 
+      - 2.0*stars[i].logR - 2.0*constants::logRsun;
+    stars[i].H_frac =
+      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * h_surf[trackidx[i]][timeidx[i]] +
+      (1.0-trackwgt[i]) * timewgt[i] * h_surf[trackidx[i]][timeidx[i]+1] +
+      trackwgt[i] * (1.0-timewgt[i]) * h_surf[trackidx[i]-1][timeidx[i]] +
+      trackwgt[i] * timewgt[i] * h_surf[trackidx[i]-1][timeidx[i]+1];
+    stars[i].He_frac =
+      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * he_surf[trackidx[i]][timeidx[i]] +
+      (1.0-trackwgt[i]) * timewgt[i] * he_surf[trackidx[i]][timeidx[i]+1] +
+      trackwgt[i] * (1.0-timewgt[i]) * he_surf[trackidx[i]-1][timeidx[i]] +
+      trackwgt[i] * timewgt[i] * he_surf[trackidx[i]-1][timeidx[i]+1];
+    stars[i].C_frac =
+      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * c_surf[trackidx[i]][timeidx[i]] +
+      (1.0-trackwgt[i]) * timewgt[i] * c_surf[trackidx[i]][timeidx[i]+1] +
+      trackwgt[i] * (1.0-timewgt[i]) * c_surf[trackidx[i]-1][timeidx[i]] +
+      trackwgt[i] * timewgt[i] * c_surf[trackidx[i]-1][timeidx[i]+1];
+    stars[i].N_frac =
+      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * n_surf[trackidx[i]][timeidx[i]] +
+      (1.0-trackwgt[i]) * timewgt[i] * n_surf[trackidx[i]][timeidx[i]+1] +
+      trackwgt[i] * (1.0-timewgt[i]) * n_surf[trackidx[i]-1][timeidx[i]] +
+      trackwgt[i] * timewgt[i] * n_surf[trackidx[i]-1][timeidx[i]+1];
+    stars[i].O_frac =
+      (1.0-trackwgt[i]) * (1.0-timewgt[i]) * o_surf[trackidx[i]][timeidx[i]] +
+      (1.0-trackwgt[i]) * timewgt[i] * o_surf[trackidx[i]][timeidx[i]+1] +
+      trackwgt[i] * (1.0-timewgt[i]) * o_surf[trackidx[i]-1][timeidx[i]] +
+      trackwgt[i] * timewgt[i] * o_surf[trackidx[i]-1][timeidx[i]+1];
+    stars[i].WR = (m[startptr+i] >= WR_mass);
   }
+
+  // Return
+  return stars;
 }
 
 ////////////////////////////////////////////////////////////////////////

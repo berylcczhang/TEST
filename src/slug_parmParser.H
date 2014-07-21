@@ -43,6 +43,7 @@ public:
   double get_SFR();                       // SFR value for constant SFR
   double get_z();                         // Return the redshift
   double get_metallicity();               // Metallicity
+  double get_WR_mass();                   // Mass at which WR stars appear
   double get_min_stoch_mass();            // Minimum stellar mass to treat stochstically
   const char *get_SFH();                  // SF history file name
   const char *get_IMF();                  // IMF file name
@@ -77,6 +78,7 @@ private:
   double sfr;                             // SFR value for constant SFR
   double z;                               // Redshift
   double metallicity;                     // Metallicity
+  double WR_mass;                         // Mass at which WR stars appear
   double min_stoch_mass;                  // Minimum stellar mass to treat stochastically
   string sfh;                             // SF history file name
   string imf;                             // IMF file name

@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <cmath>
 #include <boost/multi_array.hpp>
+#include "slug.H"
 
 typedef boost::multi_array<double, 2> array2d;
 
@@ -39,7 +40,8 @@ class slug_tracks {
 
 public:
   // Construct a set of tracks from a file containing them
-  slug_tracks(const char *fname, double my_metallicity = -1.0);
+  slug_tracks(const char *fname, double my_metallicity = -1.0,
+	      double my_WR_mass = -1.0);
 
   // Destructor
   ~slug_tracks() { };
@@ -57,14 +59,14 @@ public:
   // Method to return the metallicity (normalized to Solar)
   double get_metallicity() { return metallicity; }
 
-  // Method to produce vector of log R, log Teff, log g for
-  // stars with a specified set of initial masses on a particular
-  // isochrone. Output quantities are log base 10. Log L is in Solar
-  // luminosities, all other quantities are CGS.
-  void get_isochrone(const double t, const vector<double> &m, 
-		     vector<double> &logR_out,
-		     vector<double> &logTeff_out,
-		     vector<double> &logg_out);
+  // Method to return the minimum mass for the star to have a WR phase
+  double get_WR_mass() { return WR_mass; }
+
+  // Method to produce vector of stellar data from input vector of
+  // mass and fixed time. Input mass m is in Msun, and the time t is
+  // in yr.
+  vector<slug_stardata> 
+  get_isochrone(const double t, const vector<double> &m);
 
 private:
 
@@ -78,6 +80,7 @@ private:
   string trackfileName;         // Name of the track file
   string trackDesc;             // Descriptor string on 1st line of file
   double metallicity;           // Metallicity normalized to solar
+  double WR_mass;               // Mass at which WR stars form
   int ntrack;                   // Number of tracks
   int ntime;                    // Number of times per track
   vector<string> tracktype;     // Type of track (WR, RO, ML)

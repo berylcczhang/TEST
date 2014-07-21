@@ -107,25 +107,20 @@ set_lambda(const vector<double>& lambda_in, bool rest) {
 // The spectral synthesizer. This just evaluates the Planck function
 // to get the spectrum for each star, then sums.
 ////////////////////////////////////////////////////////////////////////
-void
-slug_specsyn_planck::get_spectrum(const vector<double>& logR, 
-				  const vector<double>& logTeff,
-				  const vector<double>& logg,
-				  vector<double>& L_lambda) {
+vector<double>
+slug_specsyn_planck::
+get_spectrum(const vector<slug_stardata>& stardata) {
 
-  // Make sure input arrays match in size
-  assert(logR.size() == logTeff.size());
-
-  // Initialize L_lambda
-  L_lambda.assign(lambda_rest.size(), 0.0);
+  // Build output vector
+  vector<double> L_lambda(lambda_rest.size());
 
   // Loop over stars
-  for (unsigned int i=0; i<logR.size(); i++) {
+  for (unsigned int i=0; i<stardata.size(); i++) {
 
     // Add 4 pi R^2 B_lambda(T), in units of erg/s/Angstrom
     double surf_area = 4.0 * M_PI * 
-      pow(10.0, 2.0*(logR[i]+constants::logRsun));
-    double Teff = pow(10.0, logTeff[i]);
+      pow(10.0, 2.0*(stardata[i].logR+constants::logRsun));
+    double Teff = pow(10.0, stardata[i].logTeff);
     for (unsigned int j=0; j<lambda_rest.size(); j++) {
       double lcgs = lambda_rest[j] * constants::Angstrom;
       double x = constants::hcOverkB / (lcgs * Teff);
@@ -134,6 +129,9 @@ slug_specsyn_planck::get_spectrum(const vector<double>& logR,
       L_lambda[j] += surf_area * b_lambda * constants::Angstrom;
     }
   }
+
+  // Return
+  return L_lambda;
 }
 
 
@@ -141,18 +139,17 @@ slug_specsyn_planck::get_spectrum(const vector<double>& logR,
 ////////////////////////////////////////////////////////////////////////
 // Spectral synthesizer for a single star
 ////////////////////////////////////////////////////////////////////////
-void 
+vector<double>
 slug_specsyn_planck::
-get_spectrum(const double logR, const double logTeff,
-	     const double logg, vector<double>& L_lambda) {
+get_spectrum(const slug_stardata& stardata) {
 
-  // Set L_lambda to correct size
-  L_lambda.resize(lambda_rest.size());
+  // Build output bector
+  vector<double> L_lambda(lambda_rest.size());
 
   // Surface area, Teff
   double surf_area = 4.0 * M_PI * 
-    pow(10.0, 2.0*(logR+constants::logRsun));
-  double Teff = pow(10.0, logTeff);
+    pow(10.0, 2.0*(stardata.logR+constants::logRsun));
+  double Teff = pow(10.0, stardata.logTeff);
 
   // Add 4 pi R^2 B_lambda(T), in units of erg/s/Angstrom
   for (unsigned int j=0; j<lambda_rest.size(); j++) {
@@ -162,4 +159,7 @@ get_spectrum(const double logR, const double logTeff,
       (pow(lcgs, 5.0) * (exp(x) - 1));
     L_lambda[j] += surf_area * b_lambda * constants::Angstrom;
   }
+
+  // Return
+  return L_lambda;
 }
