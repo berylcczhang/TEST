@@ -31,7 +31,7 @@ end_time	  4.0e7
 imf   	          lib/imf/chabrier.imf
 
 # CLF (cluster lifetime function) file name
-clf               lib/clf/slug_default.clf
+clf               lib/clf/nodisrupt.clf
 
 # Minimum stellar mass for full stochastic treatment; lower mass stars are 
 # handled assuming that they are continuously-distributed (Default: 2.0)
