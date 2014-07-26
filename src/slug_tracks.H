@@ -47,34 +47,34 @@ public:
   ~slug_tracks() { };
 
   // Maximum and minimum mass in the tracks
-  double max_mass() { return exp(logmass[0]); }
-  double min_mass() { return exp(logmass[ntrack-1]); }
+  double max_mass() const { return exp(logmass[0]); }
+  double min_mass() const { return exp(logmass[ntrack-1]); }
 
   // Age of star dying at a particular time
-  double death_mass(double time);
+  double death_mass(const double time) const;
 
   // Lifetime of a star of a specified mass
-  double star_lifetime(double mass);
+  double star_lifetime(const double mass) const;
 
   // Method to return the metallicity (normalized to Solar)
-  double get_metallicity() { return metallicity; }
+  double get_metallicity() const { return metallicity; }
 
   // Method to return the minimum mass for the star to have a WR phase
-  double get_WR_mass() { return WR_mass; }
+  double get_WR_mass() const { return WR_mass; }
 
   // Method to produce vector of stellar data from input vector of
   // mass and fixed time. Input mass m is in Msun, and the time t is
   // in yr.
-  vector<slug_stardata> 
-  get_isochrone(const double t, const vector<double> &m);
+  vector<slug_stardata>
+  get_isochrone(const double t, const vector<double> &m) const;
 
 private:
 
   // Method to get isochrone weights and indices
-  void isochrone_wgts(double logt, vector<double> &logm,
+  void isochrone_wgts(const double logt, const vector<double> &logm,
 		      vector<int> &timeidx, vector<int> &trackidx, 
 		      vector<double> &timewgt,
-		      vector<double> &trackwgt);
+		      vector<double> &trackwgt) const;
 
   // Private data
   string trackfileName;         // Name of the track file

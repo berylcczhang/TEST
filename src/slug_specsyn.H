@@ -65,12 +65,15 @@ class slug_specsyn {
 public:
 
   // Constructor
-  slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf, 
-	       slug_PDF *my_sfh, double z_in = 0.0);
+  slug_specsyn(const slug_tracks *my_tracks, const slug_PDF *my_imf, 
+	       const slug_PDF *my_sfh, const double z_in = 0.0);
+
+  // Virtual destructor
+  virtual ~slug_specsyn() {};
 
   // Return the wavelengths used by the synthesizer
-  unsigned int n_lambda() { return lambda_obs.size(); }
-  const vector<double> &lambda() { return lambda_obs; }
+  unsigned int n_lambda() const { return lambda_obs.size(); }
+  const vector<double> &lambda() const { return lambda_obs; }
 
   // Methods to return the summed spectrum from a set of stars whose
   // properties are described by the input vector of stellar data, or
@@ -82,9 +85,9 @@ public:
   // list (e.g. by sorting to allow more efficient assignment to a
   // model grid).
   virtual vector<double> 
-  get_spectrum(vector<slug_stardata> &stardata) = 0;
+  get_spectrum(vector<slug_stardata> &stardata) const = 0;
   virtual vector<double> 
-  get_spectrum(const slug_stardata &stardata) = 0;
+  get_spectrum(const slug_stardata &stardata) const = 0;
 
   // Routines to compute the spectrum and the bolometric luminosity for a
   // non-stochastic simple stellar population, using the IMF and
@@ -96,9 +99,9 @@ public:
   // integration.
   void get_spectrum_cts(const double m_tot, const double age,
 			vector<double>& L_lambda,
-			double &L_bol, const double tol = 1e-3);
+			double &L_bol, const double tol = 1e-3) const;
   double get_Lbol_cts(const double m_tot, const double age,
-		      const double tol = 1e-3);
+		      const double tol = 1e-3) const;
 
   // Routines to compute the spectrum and the bolometric luminosity
   // for a stellar population that has been forming continuously since
@@ -110,15 +113,18 @@ public:
   // parameter tol specified the error tolerance in the numerical
   // integration.
   void get_spectrum_cts_sfh(const double t, vector<double>& L_lambda, 
-			    double& L_bol, const double tol = 1e-3);
-  double get_Lbol_cts_sfh(const double t, const double tol = 1e-3);
+			    double& L_bol, const double tol = 1e-3) const;
+  double get_Lbol_cts_sfh(const double t, const double tol = 1e-3) const;
 
 
 protected:
 
   vector<double> lambda_rest;   // Rest wavelengths, in Angstrom
   vector<double> lambda_obs;    // Observed wavelenghts, in Angstrom
-  double z;                     // Redshift
+  const double z;               // Redshift
+  const slug_tracks *tracks;    // Stellar tracks
+  const slug_PDF *imf;          // IMF
+  const slug_PDF *sfh;          // Star formation history
 
 private:
 
@@ -127,9 +133,10 @@ private:
   void get_spectrum_cts_gk(const double m_min, const double m_max,
 			   const double age, vector<double>& L_lambda, 
 			   double& L_bol, vector<double>& err, 
-			   double& err_bol, qag_wksp& q);
+			   double& err_bol, qag_wksp& q) const;
   void get_Lbol_cts_gk(const double m_min, const double m_max,
-		       const double age, double& L_bol, double& err_bol);
+		       const double age, double& L_bol,
+		       double& err_bol) const;
 
   // Helper function to do Gauss-Konrod integration on a particular
   // time interval
@@ -137,15 +144,10 @@ private:
 			       const double t, vector<double>& L_lambda, 
 			       double &L_bol, vector<double>& err, 
 			       double& err_bol, qag_wksp& q, 
-			       const double tol);
+			       const double tol) const;
   void get_Lbol_cts_sfh_gk(const double t_min, const double t_max, 
 			   const double t, double &L_bol, 
-			   double& err_bol, const double tol);
-
-  // Private data
-  slug_tracks *tracks;              // Stellar tracks
-  slug_PDF *imf;                    // IMF
-  slug_PDF *sfh;                    // Star formation history
+			   double& err_bol, const double tol) const;
 
 };
 

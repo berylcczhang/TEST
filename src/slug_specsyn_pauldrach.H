@@ -13,17 +13,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
-
+#if 0
 ////////////////////////////////////////////////////////////////////////
-// class slug_specsyn_hillier
+// class slug_specsyn_Pauldrach
 //
-// This is a class derived from slug_specsyn which implements Hillier
-// models atmospheres for WN and WC stars; it uses Kurucz for stars
-// that are outside its model grid.
+// This is a class derived from slug_specsyn which implements Pauldrach
+// model atmospheres for O stars; it uses Kurucz for stars that are
+// outside its model grid.
 //
 ////////////////////////////////////////////////////////////////////////
-#ifndef _slug_specsyn_hillier_H_
-#define _slug_specsyn_hillier_H_
+#ifndef _slug_specsyn_pauldrach_H_
+#define _slug_specsyn_pauldrach_H_
 
 #include "slug_specsyn.H"
 #include "slug_specsyn_kurucz.H"
@@ -34,18 +34,18 @@ using namespace std;
 
 typedef boost::multi_array<double, 2> array2d;
 
-class slug_specsyn_hillier : public slug_specsyn {
+class slug_specsyn_pauldrach : public slug_specsyn {
 
 public:
 
   // Constructor
-  slug_specsyn_hillier(const char *dirname, slug_tracks *my_tracks, 
+  slug_specsyn_pauldrach(const char *dirname, slug_tracks *my_tracks, 
 		       slug_PDF *my_imf, slug_PDF *my_sfh,
 		       double z_in = 0.0, 
 		       bool check_data_in = true);
 
   // Destructor
-  ~slug_specsyn_hillier();
+  ~slug_specsyn_pauldrach();
 
   // Set the flag that specifies whether we check input lists of
   // stellar data before deciding whether to use this synthesizer or
@@ -57,15 +57,15 @@ public:
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for a
   // description of the argument list.
-  vector<double> get_spectrum(vector<slug_stardata>& stars) const;
-  vector<double> get_spectrum(const slug_stardata& stardata) const;
+  vector<double> get_spectrum(vector<slug_stardata>& stars);
+  vector<double> get_spectrum(const slug_stardata& stardata);
 
 private:
 
   // Private get_spectrum routine that operates on a list of stars
   // that are all known to be WR stars already
   vector<double> 
-  get_spectrum_clean(vector<slug_stardata>& stars) const;
+  get_spectrum_clean(vector<slug_stardata>& stars);
 
   // Data
   string wc_file_name, wn_file_name;  // Names of file we read
@@ -82,5 +82,6 @@ private:
 };
 
 #endif
-// _slug_specsyn_hillier_H_
+// _slug_specsyn_pauldrach_H_
 
+#endif

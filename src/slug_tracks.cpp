@@ -383,7 +383,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 // Age of star dying at a particular time
 ////////////////////////////////////////////////////////////////////////
 double
-slug_tracks::death_mass(double time) {
+slug_tracks::death_mass(const double time) const {
 
   // Work with log of time
   double logt;
@@ -418,7 +418,7 @@ slug_tracks::death_mass(double time) {
 // Lifetime of a star of a specified mass
 ////////////////////////////////////////////////////////////////////////
 double
-slug_tracks::star_lifetime(double mass) {
+slug_tracks::star_lifetime(const double mass) const {
 
   // If mass is above highest mass we have, return lifetime of the
   // most massive star in the tracks
@@ -458,7 +458,7 @@ slug_tracks::star_lifetime(double mass) {
 
 vector<slug_stardata>
 slug_tracks::
-get_isochrone(const double t, const vector<double> &m) {
+get_isochrone(const double t, const vector<double> &m) const {
 
   // Throw out any stars that are below our lowest mass track, or
   // above our highest mass track
@@ -619,10 +619,11 @@ get_isochrone(const double t, const vector<double> &m) {
 // trackwgt = array of nstar elements. Same as timewgt, but meusuring
 //    the position in the vertical (mass) direction.
 void
-slug_tracks::isochrone_wgts(double logt, vector<double> &logm, 
+slug_tracks::isochrone_wgts(const double logt, const 
+			    vector<double> &logm, 
 			    vector<int> &timeidx, vector<int> &trackidx, 
 			    vector<double> &timewgt,
-			    vector<double> &trackwgt) {
+			    vector<double> &trackwgt) const {
 
   // Shorthand
   unsigned int nstars = logm.size();

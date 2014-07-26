@@ -40,9 +40,10 @@ class slug_galaxy {
 
 public:
   // Creation, destruction
-  slug_galaxy(slug_parmParser& pp, slug_PDF* my_imf, slug_PDF* my_cmf,
-	      slug_PDF* my_clf, slug_PDF* my_sfh, slug_tracks* tracks, 
-	      slug_specsyn* my_specsyn);
+  slug_galaxy(const slug_parmParser& pp, const slug_PDF* my_imf, 
+	      const slug_PDF* my_cmf, const slug_PDF* my_clf, 
+	      const slug_PDF* my_sfh, const slug_tracks* tracks, 
+	      const slug_specsyn* my_specsyn);
   ~slug_galaxy();
 
   // Set galaxy back to its initial state
@@ -60,20 +61,20 @@ public:
   void get_spectrum(vector<double>& lambda_out, 
 		    vector<double>& L_lambda_out)
   { set_spectrum();
-    lambda_out = specsyn->lambda();
-    L_lambda_out = L_lambda; }
-
-  // Functions to open output files and write headers
-  void open_integrated_prop(slug_parmParser& pp);  
-  void open_cluster_prop(slug_parmParser& pp);
-  void open_integrated_spec(slug_parmParser& pp);
-  void open_cluster_spec(slug_parmParser& pp);
+    vector<double> lambda_tmp(specsyn->lambda());
+    vector<double> L_lambda_tmp = L_lambda;
+    lambda_out = lambda_tmp;
+    L_lambda_out = L_lambda_tmp; }
 
   // Output functions
-  void write_integrated_prop();       // Integrated galaxy properties
-  void write_cluster_prop();          // Cluster properties
-  void write_integrated_spec();       // Integrated galaxy spectrum
-  void write_cluster_spec();          // Cluster spectra
+  void write_integrated_prop(ofstream& int_prop_file, 
+			     const outputMode out_mode);
+  void write_cluster_prop(ofstream& cluster_prop_file,
+			  const outputMode out_mode);
+  void write_integrated_spec(ofstream& int_spec_file,
+			     const outputMode out_mode);
+  void write_cluster_spec(ofstream& cluster_spec_file,
+			  const outputMode out_mode);
 
 private:
 
@@ -83,12 +84,12 @@ private:
   void set_spectrum();
 
   // Distributions and physical models used in simulation
-  slug_PDF *imf;                      // IMF
-  slug_PDF *cmf;                      // CMF
-  slug_PDF *clf;                      // CLF
-  slug_PDF *sfh;                      // SFH
-  slug_tracks *tracks;                // Evolutionary track set
-  slug_specsyn *specsyn;              // Spectral synthesizer
+  const slug_PDF *imf;                      // IMF
+  const slug_PDF *cmf;                      // CMF
+  const slug_PDF *clf;                      // CLF
+  const slug_PDF *sfh;                      // SFH
+  const slug_tracks *tracks;                // Evolutionary track set
+  const slug_specsyn *specsyn;              // Spectral synthesizer
 
   // Simulation data
   double curTime;                     // Current time
@@ -110,13 +111,6 @@ private:
   bool Lbol_set;                      // Is bolometric luminosity current?
   bool spec_set;                      // Is the spectrum current?
   bool field_data_set;                // Is the field star data current?
-
-  // Output information
-  ofstream int_prop_file;             // Integrated properties file
-  ofstream cluster_prop_file;         // Cluster properties file
-  ofstream int_spec_file;             // Integrated spectra file
-  ofstream cluster_spec_file;         // Cluster spectra file
-  outputMode out_mode;                // Output mode
   
 };
 

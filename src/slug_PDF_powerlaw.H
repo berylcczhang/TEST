@@ -32,23 +32,28 @@ class slug_PDF_powerlaw : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_powerlaw() {};
+  slug_PDF_powerlaw(rng_type* rng_) : slug_PDF_segment(rng_) {};
 
   // Construct a segment with just min and max values
-  slug_PDF_powerlaw(double sMin, double sMax) : 
-    slug_PDF_segment(sMin, sMax) {};
+  slug_PDF_powerlaw(double sMin_, double sMax_, rng_type *rng_) : 
+    slug_PDF_segment(sMin_, sMax_, rng_) {};
 
   // Construct a segment with a specified min and max range, and a
   // specfied slope
-  slug_PDF_powerlaw(double sMin, double sMax, double sSlope,
-		    rng_type &rng);
+  slug_PDF_powerlaw(double sMin_, double sMax_, double sSlope_,
+		    rng_type *rng_);
 
   // Destructor
   ~slug_PDF_powerlaw();
 
   // Functions to return integral and expectation value over finite segments
+  double expectationVal() { return expectVal; }
   double expectationVal(double a, double b);
   double integral(double a, double b);
+
+  // Functions to return the segment values evaluated at the endpoints
+  double sMinVal() { return segMinVal; }
+  double sMaxVal() { return segMaxVal; }
 
   // Draw function
   double draw(double a, double b);
@@ -57,20 +62,29 @@ public:
   // point
   double operator()(const double x);
 
-  // Parser
-  parseStatus parse(ifstream& file, int& lineCount, string &errMsg, 
-		    rng_type& rng, double *weight = NULL);
+protected:
+
+  // Initializer
+  virtual void initialize(const vector<double>& tokenVal);
+
+  // Token list return function
+  virtual const vector<string>& tokenList() { return tokList; }
 
 private:
-  void initializer(double sSlope, rng_type& rng);
 
   // The class that will draw uniform deviates for us
   boost::variate_generator<rng_type&, 
 			   boost::uniform_01<> > *unidist;
 
+  // This list of tokens we expect to read
+  const vector<string> tokList = { "slope" };
+
   // Private data
-  double segSlope;              // Powerlaw slope
-  double norm;                  // Normalization
+  double segSlope;        // Powerlaw slope
+  double norm;            // Normalization
+  double segMinVal;       // Value of segment evaluated at segMin
+  double segMaxVal;       // Value of segment evaluated at segMax
+  double expectVal;       // Expectation value
 
 };
 

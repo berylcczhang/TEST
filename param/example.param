@@ -2,6 +2,10 @@
 # An example parameter file for SLUG2 #
 #######################################
 
+# Note: all parameters are explained below. For some of them, a
+# default value is given, and these parameters are optional. Some are
+# also optional under other circumstances, as noted below.
+
 # Name of the model
 model_name        SLUG_EXAMPLE
 
@@ -9,18 +13,19 @@ model_name        SLUG_EXAMPLE
 out_dir           ../output/
 
 # Number of model galaxies to run (default = 1)
-n_trials          2
+n_trials          1
 
 # Length of time step (in yr)
 time_step    	  2.0e7
 
 # Maximum evolution time (in yr; must be < 10^9)
-end_time	  1.0e8
+end_time	  4.0e7
 
 # Star formation rate (Msun/yr; give a negative value for a SFHist file)
-sfr    		  0.1
+sfr    		  0.01
 
-# Star formation history file (only used if sfr < 0; can be omitted otherwise)
+# Star formation history file (only used if sfr < 0; can be omitted
+# otherwise)
 #sfh              sfh.txt
 
 # IMF (initial mass function) file name
@@ -32,38 +37,75 @@ cmf               lib/cmf/slug_default.cmf
 # CLF (cluster lifetime function) file name
 clf               lib/clf/slug_default.clf
 
+# Minimum stellar mass for full stochastic treatment; lower mass stars are 
+# handled assuming that they are continuously-distributed (Default: 2.0)
+min_stoch_mass    2.0
+
 # Fraction of stars born in clusters (must be 0 - 1)
 clust_frac        1.0
 
 # Stellar tracks to use
-tracks	  	  lib/tracks/sb99/modp020.dat
+tracks	  	  lib/tracks/modp020.dat
 
-# Stellar atmospheres to use
-sed	  	  ../lib/sed/parsed/sb99/kurucz_p00.dat
+# Stellar atmospheres set to use
+atmospheres 	  lib/atmospheres
 
-# Write out cluster physical properties? (0 = no, 1 = yes, default = 1)
-#out_cluster       1
+# Write out cluster physical properties? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster       1
 
-# Write out cluster photometry? (0 = no, 1 = yes, default = 1)
-#out_cluster_phot  1
+# Write out cluster photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_phot  1
 
-# Write out cluster spectra? (0 = no, 1 = yes, default = 0)
-#out_cluster_spec  0
+# Write out cluster spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_spec  1
 
-# Write out integrated physical properties of galaxy (0 = no, 1 = yes, default = 0)
+# Write out integrated physical properties of galaxy?  Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
 out_integrated     1
 
-# Write out integrated photometry? (0 = no, 1 = yes, default = 1)
-#out_integrated_phot  1
+# Write out integrated photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_phot  1
 
-# Write out integrated spectra? (0 = no, 1 = yes, default = 0)
-#out_integrated_spec  0
+# Write out integrated spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_spec  1
 
-# Photometric bands to be used; can be comma- or whitespace-separated
+# Spectral synthesis mode; currently allowed values are 
+# -- planck (treat stars as blackbodies)
+# -- kurucz (use Kurucz atmospheres, as compiled by Lejeune+ 1997)
+# -- kurucz+hillier (use Hillier models for WR stars, kurucz for all others)
+# -- sb99 (emulate starburst99)
+# Default: sb99
+specsyn_mode	   kurucz+hillier
+
+# Photometric filters to be used; can be comma- or whitespace-separated
 phot_bands         UVIS1_F225W, UVIS1_F336W, UVIS1_F438W, UVIS1_F555W, UVIS1_F814W
 
-# Write output as binary or ASCII (allowed values are "binary" and "ascii"; default = "ascii")
-output_mode     ascii
+# Write output as binary or ASCII; allowed values:
+# -- binary
+# -- ascii
+# Default: ascii
+output_mode      ascii
 
-# Level of verbosity while running (0 = silent, 1 = minimal output, 2 = lots of output; default = 1)
-verbosity       2
+# Level of verbosity while running; allowed values:
+# -- 0 (run silently)
+# -- 1 (some basic output)
+# -- 2 (lots of output)
+# Default: 1
+verbosity        2

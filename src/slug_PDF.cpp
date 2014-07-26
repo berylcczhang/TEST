@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "constants.H"
 #include "slug_PDF.H"
+#include "slug_PDF_exponential.H"
 #include "slug_PDF_lognormal.H"
 #include "slug_PDF_normal.H"
 #include "slug_PDF_powerlaw.H"
@@ -68,6 +69,9 @@ slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
 
   // Store the segment
   segments.push_back(new_seg);
+
+  // We won't need the random coin, so set it to NULL
+  coin = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -204,14 +208,15 @@ slug_PDF::~slug_PDF() {
     delete disc_restricted;
   if (disc != NULL)
     delete disc;
-  delete coin;
+  if (coin != NULL)
+    delete coin;
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Function to return integral over a finite range
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::integral(double a, double b) {
+slug_PDF::integral(double a, double b) const {
   double val = 0.0;
   for (unsigned int i=0; i<segments.size(); i++) {
     if (a >= segments[i]->sMax()) continue;
@@ -225,7 +230,7 @@ slug_PDF::integral(double a, double b) {
 // Function to return expectation value over a finite range
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::expectationVal(double a, double b) {
+slug_PDF::expectationVal(double a, double b) const {
   double num = 0.0;
   double denom = 0.0;
   for (unsigned int i=0; i<segments.size(); i++) {
@@ -243,7 +248,7 @@ slug_PDF::expectationVal(double a, double b) {
 // Operator to return the PDF evaluated at a particular value x
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::operator() (const double x) {
+slug_PDF::operator() (const double x) const {
   double val = 0.0;
   for (unsigned int i=0; i<segments.size(); i++)
     val += weights[i] * (*segments[i])(x);
@@ -347,7 +352,7 @@ slug_PDF::remove_stoch_lim() {
 // Draw function
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::draw() {
+slug_PDF::draw() const {
 
   // First decide which segment to draw from
   int segNum;
@@ -366,7 +371,7 @@ slug_PDF::draw() {
 // Draw function with stochastic range restriction
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::draw_restricted() {
+slug_PDF::draw_restricted() const {
 
   // If we have no restrictions, just call the regular draw function
   if (!range_restrict) return draw();
@@ -388,7 +393,7 @@ slug_PDF::draw_restricted() {
 // Draw function over limited range
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::draw(double a, double b) {
+slug_PDF::draw(double a, double b) const {
 
   // If there's just one segment, this is trival: just draw from it
   // with a restricted range and return the result
@@ -435,7 +440,7 @@ slug_PDF::draw(double a, double b) {
 // Draw population function
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::drawPopulation(double target, vector<double>& pop) {
+slug_PDF::drawPopulation(double target, vector<double>& pop) const {
   double sum = 0.0;
 
   // If we're only using stochasticity over a limited range, reduce
@@ -611,21 +616,25 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       // Read the segment type, and call the appropriate constructor
       to_lower(tokens[1]);
       slug_PDF_segment *seg = NULL;
-      if (tokens[1].compare("lognormal")==0) {
+      if (tokens[1].compare("exponential")==0) {
+	slug_PDF_exponential *new_seg = 
+	  new slug_PDF_exponential(breakpoints[bptr], breakpoints[bptr+1], rng);
+	seg = (slug_PDF_segment *) new_seg;
+      } else if (tokens[1].compare("lognormal")==0) {
 	slug_PDF_lognormal *new_seg = 
-	  new slug_PDF_lognormal(breakpoints[bptr], breakpoints[bptr+1]);
+	  new slug_PDF_lognormal(breakpoints[bptr], breakpoints[bptr+1], rng);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("normal")==0) {
 	slug_PDF_normal *new_seg = 
-	  new slug_PDF_normal(breakpoints[bptr], breakpoints[bptr+1]);
+	  new slug_PDF_normal(breakpoints[bptr], breakpoints[bptr+1], rng);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("powerlaw")==0) {
 	slug_PDF_powerlaw *new_seg = 
-	  new slug_PDF_powerlaw(breakpoints[bptr], breakpoints[bptr+1]);
+	  new slug_PDF_powerlaw(breakpoints[bptr], breakpoints[bptr+1], rng);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("schechter")==0) {
 	slug_PDF_schechter *new_seg = 
-	  new slug_PDF_schechter(breakpoints[bptr], breakpoints[bptr+1]);
+	  new slug_PDF_schechter(breakpoints[bptr], breakpoints[bptr+1], rng);
 	seg = (slug_PDF_segment *) new_seg;
       } else {
 	string errStr("Unknown segment type ");
@@ -636,7 +645,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       // Call the parser for the segment we just created to get
       // whatever data it needs
       string errMsg;
-      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg, *rng);
+      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg);
       if (stat == PARSE_ERROR)
 	parseError(lineCount, "", errMsg);
       else if (stat == EOF_ERROR)
@@ -754,6 +763,8 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
   // which follows the format
   // segment
   // type TYPE
+  // min MIN
+  // max MAX
   // weight WEIGHT
   // var1 VALUE
   // var2 VALUE
@@ -797,17 +808,20 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
       // Read the segment type, and call the appropriate constructor
       to_lower(tokens[1]);
       slug_PDF_segment *seg = NULL;
-      if (tokens[1].compare("lognormal")==0) {
-	slug_PDF_lognormal *new_seg = new slug_PDF_lognormal;
+      if (tokens[1].compare("exponential")==0) {
+	slug_PDF_exponential *new_seg = new slug_PDF_exponential(rng);
+	seg = (slug_PDF_segment *) &new_seg;
+      } else if (tokens[1].compare("lognormal")==0) {
+	slug_PDF_lognormal *new_seg = new slug_PDF_lognormal(rng);
 	seg = (slug_PDF_segment *) &new_seg;
       } else if (tokens[1].compare("normal")==0) {
-	slug_PDF_normal *new_seg = new slug_PDF_normal;
+	slug_PDF_normal *new_seg = new slug_PDF_normal(rng);
 	seg = (slug_PDF_segment *) &new_seg;
       } else if (tokens[1].compare("powerlaw")==0) {
-	slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw;
+	slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw(rng);
 	seg = (slug_PDF_segment *) &new_seg;
       } else if (tokens[1].compare("schechter")==0) {
-	slug_PDF_schechter *new_seg = new slug_PDF_schechter;
+	slug_PDF_schechter *new_seg = new slug_PDF_schechter(rng);
 	seg = (slug_PDF_segment *) &new_seg;
       } else {
 	string errStr("Unknown segment type ");
@@ -819,7 +833,7 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
       // whatever data it needs
       string errMsg;
       double wgt;
-      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg, *rng,
+      parseStatus stat = seg->parse(PDFFile, lineCount, errMsg,
 				    &wgt);
       if (stat == PARSE_ERROR)
 	parseError(lineCount, "", errMsg);

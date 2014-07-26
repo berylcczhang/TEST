@@ -230,8 +230,9 @@ qag_wksp::qag_wksp(int n) :
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
-slug_specsyn::slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf,
-			   slug_PDF *my_sfh, double z_in) :
+slug_specsyn::slug_specsyn(const slug_tracks *my_tracks, 
+			   const slug_PDF *my_imf,
+			   const slug_PDF *my_sfh, const double z_in) :
   z(z_in), tracks(my_tracks), imf(my_imf), sfh(my_sfh)
 { }
 
@@ -270,7 +271,7 @@ slug_specsyn::slug_specsyn(slug_tracks *my_tracks, slug_PDF *my_imf,
 void
 slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 			       vector<double>& L_lambda, double& L_bol,
-			       const double tol) {
+			       const double tol) const {
 
   // Initialize L_lambda and L_bol
   L_lambda.assign(lambda_rest.size(), 0.0);
@@ -390,7 +391,7 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 ////////////////////////////////////////////////////////////////////////
 double
 slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
-			   const double tol) {
+			   const double tol) const {
 
   // Initialize L_bol
   double L_bol = 0.0;
@@ -510,7 +511,7 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
 void
 slug_specsyn::
 get_spectrum_cts_sfh(const double t, vector<double>& L_lambda, 
-		     double& L_bol, const double tol) {
+		     double& L_bol, const double tol) const {
 
   // Initialize L_lambda
   L_lambda.assign(lambda_rest.size(), 0.0);
@@ -620,7 +621,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
 ////////////////////////////////////////////////////////////////////////
 double
 slug_specsyn::
-get_Lbol_cts_sfh(const double t, const double tol) {
+get_Lbol_cts_sfh(const double t, const double tol) const {
 
   // Allocate workspace
   double L_bol, err_bol;
@@ -704,7 +705,7 @@ slug_specsyn::
 get_spectrum_cts_gk(const double m_min, const double m_max,
 		    const double age, vector<double>& L_lambda, 
 		    double& L_bol, vector<double>& err,
-		    double& err_bol, qag_wksp& q) {
+		    double& err_bol, qag_wksp& q) const {
 
   // Initialize the Gauss sum accumulators zero
   double L_bol_gauss = 0.0;
@@ -821,7 +822,8 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
 void
 slug_specsyn::
 get_Lbol_cts_gk(const double m_min, const double m_max,
-		const double age, double& L_bol, double& err_bol) {
+		const double age, double& L_bol, 
+		double& err_bol) const {
 
   // Initialize the Gauss sum accumulator zero
   double L_bol_gauss = 0.0;
@@ -915,7 +917,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
 			const double t, vector<double>& L_lambda, 
 			double& L_bol, vector<double>& err, 
 			double& err_bol, qag_wksp& q,
-			const double tol) {
+			const double tol) const {
 
   // Initialize the accumulator for the Gauss sum to zero
   double L_bol_gauss = 0.0;
@@ -1025,7 +1027,7 @@ void
 slug_specsyn::
 get_Lbol_cts_sfh_gk(const double t_min, const double t_max, 
 		    const double t, double& L_bol, double& err_bol,
-		    const double tol) {
+		    const double tol) const {
 
   // Initialize the accumulator for the Gauss sum to zero
   double L_bol_gauss = 0.0;

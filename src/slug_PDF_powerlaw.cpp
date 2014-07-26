@@ -28,11 +28,12 @@ using namespace boost::random;
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_powerlaw::
-slug_PDF_powerlaw(double sMin, double sMax, double sSlope, 
-		  rng_type &rng)
-  : slug_PDF_segment(sMin, sMax) 
+slug_PDF_powerlaw(double sMin_, double sMax_, double sSlope_, 
+		  rng_type *rng_)
+  : slug_PDF_segment(sMin_, sMax_, rng_) 
 {
-  initializer(sSlope, rng);
+  vector<double> tokenVals(1, sSlope_);
+  initialize(tokenVals);
 }
 
 
@@ -48,15 +49,15 @@ slug_PDF_powerlaw::~slug_PDF_powerlaw() {
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_powerlaw::initializer(double sSlope, rng_type& rng) {
+slug_PDF_powerlaw::initialize(const vector<double> &tokenVals) {
 
   // Save the slope
-  segSlope = sSlope;
+  segSlope = tokenVals[0];
 
   // Build a uniform distribution object with the specified parameters
   uniform_01<> uni01;
   unidist =
-    new variate_generator<rng_type&, uniform_01<> >(rng, uni01);
+    new variate_generator<rng_type&, uniform_01<> >(*rng, uni01);
 
   // Set the norm, min, max, and expectation values
   if (segSlope != -1.0) {
@@ -140,90 +141,4 @@ slug_PDF_powerlaw::draw(double a, double b) {
 }
 
 
-////////////////////////////////////////////////////////////////////////
-// File parser
-////////////////////////////////////////////////////////////////////////
-parseStatus
-slug_PDF_powerlaw::parse(ifstream& file, int& lineCount, string& errMsg, 
-			 rng_type& rng, double *weight) {
-
-  // Local variables
-  double slope=0.0;
-  bool have_slope=false;
-  bool have_weight = (weight == NULL);
-
-  // Set the error string, in case we need it
-  string errStr = "Expected: 'slope S'";
-  if (!have_weight) errStr += " or 'weight W'";
-
-  // Read from file
-  vector<string> tokens;
-  string line, linecopy;
-  while (!file.eof()) {
-
-    // Get a line and trim leading whitespace
-    getline(file, line);
-    linecopy = line;
-    lineCount++;
-    trim(line);
-
-    // Skip comment and blank lines
-    if (line.length() == 0) continue;
-    if (line.compare(0, 1, "#") == 0) continue;
-
-    // Split line into tokens, and lowercase the first one
-    split(tokens, line, is_any_of("\t ,"), token_compress_on);
-    to_lower(tokens[0]);
-
-    // Make sure there's no extraneous junk; if there is, bail out
-    if (tokens.size() > 2) {
-      if (tokens[1].compare(0, 1, "#") != 0) {
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    }
-
-    // Make sure we got two tokens
-    if (tokens.size() == 1) {
-      errMsg = errStr;
-      return PARSE_ERROR;
-    }
-
-    // Make sure we got the right tokens
-    if (tokens[0].compare("slope") == 0) {
-      try {
-	slope = lexical_cast<double>(tokens[1]);
-	have_slope = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else if ((tokens[0].compare("weight") == 0) && !have_weight) {
-      try {
-	*weight = lexical_cast<double>(tokens[1]);
-	have_weight = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else {
-      errMsg = errStr;
-      return PARSE_ERROR;
-    }
-
-    // If we're read everything we need, initialize all values, then
-    // exit
-    if (have_slope && have_weight) {
-      initializer(slope, rng);
-      return OK;
-    }
-  }
-
-  // If we got here, we've reached EOF without having the data we
-  // need, so throw an error
-  errMsg = "Incomplete data on powerlaw segment";
-  return EOF_ERROR;
-}
 

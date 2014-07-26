@@ -38,47 +38,54 @@ class slug_cluster {
 public:
   // Construct a cluster with specified target mass, birth time, IMF
   slug_cluster(const long my_id, const double my_mass, 
-	       const double time, slug_PDF *my_imf, 
-	       slug_tracks *my_tracks, slug_specsyn *my_specsyn, 
-	       slug_PDF *clf=NULL);
+	       const double time, const slug_PDF *my_imf, 
+	       const slug_tracks *my_tracks, const 
+	       slug_specsyn *my_specsyn, 
+	       const slug_PDF *my_clf=NULL);
 
   // Destructor
   ~slug_cluster() { };
 
   // Routine to return the id
-  unsigned long get_id() { return id; }
+  unsigned long get_id() const { return id; }
+
+  // Set the cluster back to its initial state; this involves
+  // re-drawing all the stars. If keep_id is false, the new ID will be
+  // set to the old ID plus 1.
+  void reset(bool keep_id = false);
 
   // Routine to advance to a specified time
   void advance(double time);
 
   // Routine to report most mass still-living star
-  double get_most_massive_star() { 
+  double get_most_massive_star() const { 
     if (stars.size() > 0) return stars[stars.size()-1];
     else return 0.0;
   }
 
   // Routine to report various masses and similar data
-  double get_target_mass() { return targetMass; }
-  double get_birth_mass() { return birthMass; }
-  double get_alive_mass() { return aliveMass; }
-  double get_non_stoch_alive_mass() { return nonStochAliveMass; }
-  double get_age() { return curTime - formationTime; }
-  double get_stellar_death_mass() { return stellarDeathMass; }
+  double get_target_mass() const { return targetMass; }
+  double get_birth_mass() const { return birthMass; }
+  double get_alive_mass() const { return aliveMass; }
+  double get_non_stoch_alive_mass() const { return nonStochAliveMass; }
+  double get_age() const { return curTime - formationTime; }
+  double get_stellar_death_mass() const { return stellarDeathMass; }
 
   // Routine to report if this cluster is disrupted
-  bool disrupted() { return is_disrupted; }
+  bool disrupted() const { return is_disrupted; }
 
   // Routine to return lifetime of cluster against disruption
-  double get_lifetime() { return lifetime; }
+  double get_lifetime() const { return lifetime; }
 
   // Routine to return the number of stochastic stars
-  unsigned int get_nstars() { return stars.size(); }
+  unsigned int get_nstars() const { return stars.size(); }
 
   // Routines to return the stellar masses, other stellar data, the
   // bolometric luminosity, the spectrum, and the wavelength data to
-  // go with the spectrum. These functions just invoke the
-  // corresponding set method and then return.
-  const vector<double> &get_stars() { return stars; }
+  // go with the spectrum. Where something must be computed, these
+  // functions just invoke the corresponding set method and then
+  // return.
+  const vector<double> &get_stars() const { return stars; }
   const vector<slug_stardata> &get_isochrone()
   { set_isochrone(); return stardata; }
   double get_Lbol() 
@@ -91,9 +98,15 @@ public:
     lambda_out = specsyn->lambda(); 
     L_lambda_out = L_lambda; }
 
-  // Output routines
-  void write_prop(ofstream& outfile, const outputMode out_mode);
-  void write_spectrum(ofstream& outfile, const outputMode out_mode);
+  // Output routines. The optional arguemnt cluster_only is used to
+  // flag that only this cluster is being written, rather than a
+  // collection of them, and that this cluster should therefore write
+  // out its time and the number 1, indicating that it is the only
+  // cluster. This only makes a difference if out_mode == BINARY.
+  void write_prop(ofstream& outfile, const outputMode out_mode, 
+		  const bool cluster_only = false) const;
+  void write_spectrum(ofstream& outfile, const outputMode out_mode,
+		      const bool cluster_only = false);
 
 private:
 
@@ -102,9 +115,15 @@ private:
   void set_Lbol();
   void set_spectrum();
 
-  // Data
-  const unsigned long id;             // Unique ID
+  // Invariant data
   const double targetMass;            // Target mass
+  const slug_PDF *imf;                // IMF
+  const slug_PDF *clf;                // CLF
+  const slug_tracks *tracks;          // Evolutionary track set
+  const slug_specsyn *specsyn;        // Spectral synthesizer
+
+  // Malleable data
+  unsigned long id;                   // Unique ID
   double birthMass;                   // Actual mass at birth
   double aliveMass;                   // Mass of still-living stars
   double nonStochMass;                // Mass not being treated stochastically
@@ -115,9 +134,6 @@ private:
   double stellarDeathMass;            // Mass of star dying at current age
   vector<double> stars;               // List of stellar masses
   vector<slug_stardata> stardata;     // Data on stellar properties
-  slug_PDF *imf;                      // IMF
-  slug_tracks *tracks;                // Evolutionary track set
-  slug_specsyn *specsyn;              // Spectral synthesizer
   bool is_disrupted;                  // Is this cluster disrupted?
   vector<double> L_lambda;            // Spectrum
   double Lbol;                        // Bolometric luminosity

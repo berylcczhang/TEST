@@ -50,16 +50,16 @@ public:
   ~slug_PDF();
 
   // Return the min, max, and stochstic limit min and max of the PDF
-  double get_xMin() { return xMin; }
-  double get_xMax() { return xMax; }
-  double get_xStochMin() { return xStochMin; }
-  double get_xStochMax() { return xStochMax; }
+  double get_xMin() const { return xMin; }
+  double get_xMax() const { return xMax; }
+  double get_xStochMin() const { return xStochMin; }
+  double get_xStochMax() const { return xStochMax; }
 
   // Change sampling method
   void setMethod(samplingMethod new_method) { method = new_method; }
 
   // Methods to intereact with the limits for stochasticity
-  bool has_stoch_lim() { return range_restrict; }
+  bool has_stoch_lim() const { return range_restrict; }
   void remove_stoch_lim();
   void set_stoch_lim(double x_stoch_min);
   void set_stoch_lim(double x_stoch_min, double x_stoch_max);
@@ -67,28 +67,29 @@ public:
   // Expectation value and integral; both defined for the full PDF,
   // for a specified range within the PDF, and only over the part of
   // the PDF that is being treated stochastically
-  double expectationVal() { return expectVal; }
-  double expectationVal_restricted() { return expectVal_restrict; }
-  double expectationVal(double a, double b);
-  double integral() { return PDFintegral; }
-  double integral_restricted() { return PDFintegral_restrict; }
-  double integral(double a, double b);
+  double expectationVal() const { return expectVal; }
+  double expectationVal_restricted() const 
+  { return expectVal_restrict; }
+  double expectationVal(double a, double b) const;
+  double integral() const { return PDFintegral; }
+  double integral_restricted() const { return PDFintegral_restrict; }
+  double integral(double a, double b) const;
 
   // Fraction of the PDF by number and by mass that is in the
   // restricted range that we're treating stochstically
-  double num_frac_restrict() { 
+  double num_frac_restrict() const { 
     return PDFintegral_restrict / PDFintegral;
   }
-  double mass_frac_restrict() {
+  double mass_frac_restrict() const {
     return expectVal_restrict * PDFintegral_restrict / 
       (expectVal * PDFintegral);
   }
 
   // Functions to draw a single value, either over full PDF or a
   // limited range
-  double draw();                   // Draw from full range
-  double draw_restricted();        // Draw from stochastically-limited range
-  double draw(double a, double b); // Draw from specified range
+  double draw() const;             // Draw from full range
+  double draw_restricted() const;  // Draw from stochastically-limited range
+  double draw(double a, double b) const; // Draw from specified range
 
   // Function to draw a population with the goal of reaching a certain
   // sum; return value is the sum of the actual population drawn, and
@@ -96,10 +97,10 @@ public:
   // returned will only be drawn from the stochastically-limited
   // range, and any input target will be adjusted down by the mass
   // fraction that is in the stochastic range
-  double drawPopulation(double target, vector<double>& pop);
+  double drawPopulation(double target, vector<double>& pop) const;
 
   // Operator to return the PDF evaluated at a particular x
-  double operator()(const double x);
+  double operator()(const double x) const;
 
 private:
   // Functions to parse basic and advanced mode PDF files

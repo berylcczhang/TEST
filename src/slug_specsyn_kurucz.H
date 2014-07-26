@@ -44,12 +44,13 @@ class slug_specsyn_kurucz : public slug_specsyn {
 public:
   
   // Constructor
-  slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks, 
-		      slug_PDF *my_imf, slug_PDF *my_sfh,
-		      double z_in = 0.0, bool check_data_in = true);
+  slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks, 
+		      const slug_PDF *my_imf, const slug_PDF *my_sfh,
+		      const double z_in = 0.0, 
+		      const bool check_data_in = true);
 
   // Destructor
-  ~slug_specsyn_kurucz() { };
+  ~slug_specsyn_kurucz();
 
   // Set the flag that specifies whether we check input lists of
   // temperatures for being outisde the specified temperature range,
@@ -58,23 +59,23 @@ public:
   // always be between Tmin and Tmax. If they are not, the code will
   // crash when you attempt to generate spectra. We allow safety
   // checking to be disabled for speed.
-  void set_check_data(bool val) { check_data = val; }
+  void set_check_data(bool val);
 
   // Return the min and max temperatures in the temperature grid
-  double get_logTeff_min() { return log_Teff_min; }
-  double get_logTeff_max() { return log_Teff_max; }
+  double get_logTeff_min() const { return log_Teff_min; }
+  double get_logTeff_max() const { return log_Teff_max; }
 
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for details.
-  vector<double> get_spectrum(vector<slug_stardata>& stars);
-  vector<double> get_spectrum(const slug_stardata& stardata);
+  vector<double> get_spectrum(vector<slug_stardata>& stars) const;
+  vector<double> get_spectrum(const slug_stardata& stardata) const;
 
 private:
 
   // Private get_spectrum routine that operates on temperature lists
   // that are guaranteed to be valid
   vector<double> 
-  get_spectrum_clean(vector<slug_stardata>& stars);
+  get_spectrum_clean(vector<slug_stardata>& stars) const;
 
   // Note on data structures: the model grid consists of a series of
   // Teff values, each with one or more corresponding log g
@@ -96,7 +97,7 @@ private:
   array3d F_lambda;                  // Flux of models
   vector<int> ng;                    // Size of model grid rows
   string atmos_file_name;            // Atmosphere file name
-  slug_specsyn_planck planck;        // Planck spectral synthesizer
+  slug_specsyn_planck *planck;       // Planck spectral synthesizer
   double log_Teff_min, log_Teff_max; // Min and max Teff for models
   bool check_data;                   // Check if temperatures are valid?
 

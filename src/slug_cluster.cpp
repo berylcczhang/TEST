@@ -24,11 +24,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_cluster::slug_cluster(const long my_id, const double my_mass, 
-			   const double time, slug_PDF *my_imf, 
-			   slug_tracks *my_tracks, 
-			   slug_specsyn *my_specsyn, slug_PDF *clf) :
-  id(my_id), targetMass(my_mass), formationTime(time), curTime(time),
-  imf(my_imf), tracks(my_tracks), specsyn(my_specsyn)
+			   const double time, const slug_PDF *my_imf, 
+			   const slug_tracks *my_tracks, 
+			   const slug_specsyn *my_specsyn, 
+			   const slug_PDF *my_clf) :
+  targetMass(my_mass), imf(my_imf), clf(my_clf), tracks(my_tracks), 
+  specsyn(my_specsyn), id(my_id), formationTime(time), curTime(time)
 {
 
   // Initialize to non-disrupted
@@ -60,6 +61,49 @@ slug_cluster::slug_cluster(const long my_id, const double my_mass,
   // Initialize status flags for what data has been stored
   spec_set = Lbol_set = data_set = false;
 }
+
+////////////////////////////////////////////////////////////////////////
+// Routine to reset the cluster
+////////////////////////////////////////////////////////////////////////
+void
+slug_cluster::reset(bool keep_id) {
+
+  // Get new ID
+  if (!keep_id) id++;
+
+  // Reset the time, the disruption state, and all flags
+  curTime = 0.0;
+  is_disrupted = false;
+  data_set = Lbol_set = spec_set = false;
+
+  // Delete current stellar masses and data
+  stars.resize(0);
+  stardata.resize(0);
+
+  // Re-populate with stars
+  birthMass = imf->drawPopulation(targetMass, stars);
+
+  // If the population only represents part of the mass range due to
+  // restrictions on what range is being treated stochastically, be
+  // sure to account for that
+  nonStochMass = nonStochAliveMass = 
+     targetMass * (1.0 - imf->mass_frac_restrict());
+  birthMass += nonStochMass;
+
+  // Initialize the living star mass
+  aliveMass = birthMass;
+
+  // Sort the stars
+  sort(stars.begin(), stars.end());
+
+  // If we were given a lifetime function, use it to draw a lifetime
+  if (clf != NULL) {
+    lifetime = clf->draw();
+  } else {
+    lifetime = constants::big;
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 // Advance routine. All we do is destroy all the stars whose lifetime
@@ -158,6 +202,7 @@ void slug_cluster::set_Lbol() {
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////
 // Spectral synthesis routine. Note that this routine also sets Lbol
 // in the process because the extra cost of computing it is negligible.
@@ -206,7 +251,8 @@ slug_cluster::set_spectrum() {
 // Output physical properties
 ////////////////////////////////////////////////////////////////////////
 void
-slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode) {
+slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
+			 bool cluster_only) const {
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific
 	    << setw(11) << right << id << "   "
@@ -223,6 +269,11 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode) {
       outfile << setw(11) << right << 0.0;
     outfile << endl;
   } else if (out_mode == BINARY) {
+    if (cluster_only) {
+      outfile.write((char *) &curTime, sizeof curTime);
+      vector<double>::size_type n = 1;
+      outfile.write((char *) &n, sizeof n);
+    }
     outfile.write((char *) &id, sizeof id);
     outfile.write((char *) &formationTime, sizeof formationTime);
     outfile.write((char *) &lifetime, sizeof lifetime);
@@ -247,7 +298,8 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode) {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_cluster::
-write_spectrum(ofstream& outfile, const outputMode out_mode) {
+write_spectrum(ofstream& outfile, const outputMode out_mode,
+	       bool cluster_only) {
 
   // Make sure information is current
   if (!spec_set) set_spectrum();
@@ -263,6 +315,11 @@ write_spectrum(ofstream& outfile, const outputMode out_mode) {
 	      << endl;
     }
   } else {
+    if (cluster_only) {
+      outfile.write((char *) &curTime, sizeof curTime);
+      vector<double>::size_type n = 1;
+      outfile.write((char *) &n, sizeof n);
+    }
     outfile.write((char *) &id, sizeof id);
     outfile.write((char *) L_lambda.data(), 
 		  L_lambda.size()*sizeof(double));

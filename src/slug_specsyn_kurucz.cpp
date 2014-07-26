@@ -49,11 +49,10 @@ namespace kurucz {
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_specsyn_kurucz::
-slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks, 
-		    slug_PDF *my_imf, slug_PDF *my_sfh,
-		    double z_in, bool check_data_in) :
+slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks, 
+		    const slug_PDF *my_imf, const slug_PDF *my_sfh,
+		    const double z_in, const bool check_data_in) :
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
-  planck(my_tracks, my_imf, my_sfh, z_in),
   check_data(check_data_in)
 {
 
@@ -186,8 +185,31 @@ slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks,
   for (int i=0; i<1221; i++) 
     lambda_obs[i] = (1.0+z)*lambda_rest[i];
 
-  // Pass wavelengths to Planck synthesizer
-  planck.set_lambda(lambda_obs);
+  // If we're checking the data and using Planck as a backup, set it
+  // up now
+  if (check_data) {
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+  } else {
+    planck = NULL;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// The destructor
+////////////////////////////////////////////////////////////////////////
+slug_specsyn_kurucz::~slug_specsyn_kurucz() {
+  if (planck != NULL) delete planck;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Function to turn data checking on or off
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn_kurucz::set_check_data(bool val) {
+  if ((planck == NULL) && (val == true)) 
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+  check_data = val;
 }
 
 
@@ -197,7 +219,7 @@ slug_specsyn_kurucz(const char *dirname, slug_tracks *my_tracks,
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_kurucz::
-get_spectrum(vector<slug_stardata>& stars) {
+get_spectrum(vector<slug_stardata>& stars) const {
 
   // If not doing any safety checking, just call the function that
   // operates on the full list of stars, then return.
@@ -227,7 +249,7 @@ get_spectrum(vector<slug_stardata>& stars) {
   // synthesizer, then add result
   if (stars_pl.size() > 0) {
     const vector<double> & L_lambda_tmp = 
-      planck.get_spectrum(stars_pl);
+      planck->get_spectrum(stars_pl);
     for (unsigned int i=0; i<L_lambda.size(); i++)
       L_lambda[i] += L_lambda_tmp[i];
   }
@@ -244,7 +266,7 @@ get_spectrum(vector<slug_stardata>& stars) {
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_kurucz::
-get_spectrum_clean(vector<slug_stardata>& stars) {
+get_spectrum_clean(vector<slug_stardata>& stars) const {
 
   // Initialize
   vector<double> L_lambda(lambda_rest.size(), 0.0);
@@ -364,7 +386,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) {
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_kurucz::
-get_spectrum(const slug_stardata& stardata) {
+get_spectrum(const slug_stardata& stardata) const {
 
   // Safety check if requested; note that, if safety is off and Teff
   // is not in the valid range, this routine will crash. Since we're
@@ -376,7 +398,7 @@ get_spectrum(const slug_stardata& stardata) {
   // is off and we get bad data.
   if (check_data && ((stardata.logTeff < log_Teff_min) || 
 		     (stardata.logTeff > log_Teff_max))) {
-    return planck.get_spectrum(stardata);
+    return planck->get_spectrum(stardata);
   }
 
   // Initialize

@@ -56,8 +56,6 @@ slug_specsyn_hillier(const char *dirname, slug_tracks *my_tracks,
 		     double z_in, bool check_data_in) :
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
   Teff_wn(12), Teff_wc(12), logT_break_wn(11), logT_break_wc(11),
-  kurucz(dirname, my_tracks, my_imf, my_sfh, z_in, false),
-  planck(my_tracks, my_imf, my_sfh, z_in),
   check_data(check_data_in)
 {
 
@@ -200,6 +198,42 @@ slug_specsyn_hillier(const char *dirname, slug_tracks *my_tracks,
     logT_break_wn[i] = log10(0.5*(Teff_wn[i]+Teff_wn[i+1]));
     logT_break_wc[i] = log10(0.5*(Teff_wc[i]+Teff_wc[i+1]));
   }
+
+  // If using data range checking, set up the Kurucz and Planck
+  // synthesizers to fall back on
+  if (check_data) {
+    kurucz = new slug_specsyn_kurucz(dirname, tracks, imf, sfh, z, 
+				     false);
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+  } else {
+    kurucz = NULL;
+    planck = NULL;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// The destructor
+////////////////////////////////////////////////////////////////////////
+slug_specsyn_hillier::~slug_specsyn_hillier() {
+  if (planck != NULL) delete planck;
+  if (kurucz != NULL) delete kurucz;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Function to turn data checking on or off
+////////////////////////////////////////////////////////////////////////
+void
+slug_specsyn_hillier::set_check_data(bool val) {
+  if ((planck == NULL) && (val == true)) 
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+  if ((kurucz == NULL) && (val == true)) {
+    path filename(wc_file_name);
+    path dirname = filename.parent_path();
+    kurucz = new slug_specsyn_kurucz(dirname.string().c_str(), 
+				     tracks, imf, sfh, z, false);
+  }
+  check_data = val;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -210,7 +244,7 @@ slug_specsyn_hillier(const char *dirname, slug_tracks *my_tracks,
 
 vector<double>
 slug_specsyn_hillier::
-get_spectrum(vector<slug_stardata>& stars) {
+get_spectrum(vector<slug_stardata>& stars) const {
 
   // If not doing any safety checking, just call the function that
   // operates on the full list of stars, then return. This will
@@ -228,8 +262,8 @@ get_spectrum(vector<slug_stardata>& stars) {
   for (unsigned int i=0; i<stars.size(); i++) {
     if (stars[i].WR != NONE) {
       stars_WR.push_back(stars[i]);
-    } else if ((stars[i].logTeff >= kurucz.get_logTeff_min()) &&
-	       (stars[i].logTeff <= kurucz.get_logTeff_max())) {
+    } else if ((stars[i].logTeff >= kurucz->get_logTeff_min()) &&
+	       (stars[i].logTeff <= kurucz->get_logTeff_max())) {
       stars_ku.push_back(stars[i]);
     } else {
       stars_pl.push_back(stars[i]);
@@ -243,7 +277,7 @@ get_spectrum(vector<slug_stardata>& stars) {
   // Call Kurucz synthesizer for stars it can handle
   if (stars_ku.size() > 0) {
     const vector<double> & L_lambda_tmp = 
-      kurucz.get_spectrum(stars_ku);
+      kurucz->get_spectrum(stars_ku);
     for (unsigned int i=0; i<L_lambda.size(); i++)
       L_lambda[i] += L_lambda_tmp[i];
   }
@@ -251,7 +285,7 @@ get_spectrum(vector<slug_stardata>& stars) {
   // Call Planck synthesizer for remaining stars
   if (stars_pl.size() > 0) {
     const vector<double> & L_lambda_tmp = 
-      planck.get_spectrum(stars_pl);
+      planck->get_spectrum(stars_pl);
     for (unsigned int i=0; i<L_lambda.size(); i++)
       L_lambda[i] += L_lambda_tmp[i];
   }
@@ -267,7 +301,7 @@ get_spectrum(vector<slug_stardata>& stars) {
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_hillier::
-get_spectrum_clean(vector<slug_stardata>& stars) {
+get_spectrum_clean(vector<slug_stardata>& stars) const {
 
   // Initialize
   vector<double> L_lambda(lambda_rest.size(), 0.0);
@@ -370,15 +404,15 @@ get_spectrum_clean(vector<slug_stardata>& stars) {
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_hillier::
-get_spectrum(const slug_stardata& stardata) {
+get_spectrum(const slug_stardata& stardata) const {
 
   // Safety check if requested
   if (check_data && (stardata.WR == NONE)) {
-    if ((stardata.logTeff >= kurucz.get_logTeff_min()) &&
-	(stardata.logTeff <= kurucz.get_logTeff_max()))
-      return kurucz.get_spectrum(stardata);
+    if ((stardata.logTeff >= kurucz->get_logTeff_min()) &&
+	(stardata.logTeff <= kurucz->get_logTeff_max()))
+      return kurucz->get_spectrum(stardata);
     else
-      return planck.get_spectrum(stardata);
+      return planck->get_spectrum(stardata);
   }
 
   // Initialize

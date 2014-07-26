@@ -32,24 +32,28 @@ class slug_PDF_normal : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_normal() {};
+  slug_PDF_normal(rng_type* rng_) : slug_PDF_segment(rng_) {};
 
   // Construct a segment with just min and max values
-  slug_PDF_normal(double sMin, double sMax) : 
-    slug_PDF_segment(sMin, sMax) {};
+  slug_PDF_normal(double sMin_, double sMax_, rng_type* rng_) : 
+    slug_PDF_segment(sMin_, sMax_, rng_) {};
 
   // Construct a segment with a specified min and max range, and a
-  // specfied center and dispersion; note that sMean is the mean mass,
-  // not the mean log mass.
-  slug_PDF_normal(double sMin, double sMax, double sMean, 
-		  double sDisp, rng_type &rng);
+  // specfied center and dispersion
+  slug_PDF_normal(double sMin_, double sMax_, double sMean_, 
+		  double sDisp_, rng_type *rng_);
 
   // Destructor
   ~slug_PDF_normal();
 
-  // Functions to return integral and expectation value over finite intervals
+  // Functions to return integral and expectation value
+  double expectationVal() { return expectVal; }
   double expectationVal(double a, double b);
   double integral(double a, double b);
+
+  // Functions to return the segment values evaluated at the endpoints
+  double sMinVal() { return segMinVal; }
+  double sMaxVal() { return segMaxVal; }
 
   // Draw function
   double draw(double a, double b);
@@ -58,20 +62,31 @@ public:
   // point
   double operator()(const double x);
 
-  // Parser
-  parseStatus parse(ifstream& file, int& lineCount, string &errMsg, 
-		    rng_type& rng, double *weight = NULL);
+protected:
+
+  // Initializer
+  void initialize(const vector<double>& tokenVal);
+
+  // Token list return function
+  virtual const vector<string>& tokenList() { return tokList; }
 
 private:
-  // Initializer
-  void initializer(double sMean, double sDisp, rng_type& rng);
 
   // The class that will generate normal deviates for us
   boost::variate_generator<rng_type&, 
 			   boost::normal_distribution<> > *ndist;
 
+  // This list of tokens we expect to read
+  const vector<string> tokList = { "mean", "disp" };
+
   // Internal data
-  double segMean, segDisp, norm;
+  double segMean;          // Mean of normal
+  double segDisp;          // Dispersion of normal
+  double norm;             // Normalization
+  double segMinVal;       // Value of segment evaluated at segMin
+  double segMaxVal;       // Value of segment evaluated at segMax
+  double expectVal;       // Expectation value
+
 };
 
 #endif

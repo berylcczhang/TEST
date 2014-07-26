@@ -16,37 +16,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ////////////////////////////////////////////////////////////////////////
 //
-// This file defines the slug_PDF_schechter class. This is a sub-class
-// of slug_PDF_segment, and it defines a segment with a Schechter
-// function form.
+// This file defines the slug_PDF_exponential class. This is a sub-class
+// of slug_PDF_segment, and it defines a segment with an exponential
+// functional form.
 //
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef _slug_PDF_schechter_H_
-#define _slug_PDF_schechter_H_
+#ifndef _slug_PDF_exponential_H_
+#define _slug_PDF_exponential_H_
 
 #include "slug_PDF_segment.H"
-#include <boost/random/uniform_01.hpp>
+#include <boost/random/exponential_distribution.hpp>
 
-class slug_PDF_schechter : public slug_PDF_segment {
+class slug_PDF_exponential : public slug_PDF_segment {
 
 public:
-  // Construct a segment with no initialization
-  slug_PDF_schechter(rng_type* rng_) : slug_PDF_segment(rng_) {};
+  // Uninitialized constructor
+  slug_PDF_exponential(rng_type *rng_) : slug_PDF_segment(rng_) { };
 
-  // Construct a segment with just min and max values
-  slug_PDF_schechter(double sMin_, double sMax_, rng_type* rng_) : 
-    slug_PDF_segment(sMin_, sMax_, rng_) {};
+  // Constructor with just min and max values
+  slug_PDF_exponential(double sMin_, double sMax_, rng_type *rng_) : 
+    slug_PDF_segment(sMin_, sMax_, rng_) { };
 
   // Construct a segment with a specified min and max range, and a
-  // specfied slope
-  slug_PDF_schechter(double sMin_, double sMax_, double sSlope_,
-		     double sStar_, rng_type *rng_);
+  // specfied exponential scale value
+  slug_PDF_exponential(double sMin_, double sMax_, double sScale,
+		       rng_type *rng_);
 
   // Destructor
-  ~slug_PDF_schechter();
+  ~slug_PDF_exponential();
 
-  // Functions to return integral and expectation value over finite intervals
+  // Functions to return integral and expectation value
   double expectationVal() { return expectVal; }
   double expectationVal(double a, double b);
   double integral(double a, double b);
@@ -72,22 +72,23 @@ protected:
 
 private:
 
-  // The class that will draw uniform deviates for us
+
+  // The class that will generate normal deviates for us
   boost::variate_generator<rng_type&, 
-			   boost::uniform_01<> > *unidist;
+			   boost::exponential_distribution<> > *expdist;
 
   // This list of tokens we expect to read
-  const vector<string> tokList = { "slope", "xstar" };
+  const vector<string> tokList = { "scale" };
 
-  // Private data
-  double segSlope;        // Schechter function slope
-  double segStar;         // Turnover value
-  double norm;            // Normalization constant
+  // Internal data
+  double segScale;        // The exponential scale length
+  double norm;            // Normalization
   double segMinVal;       // Value of segment evaluated at segMin
   double segMaxVal;       // Value of segment evaluated at segMax
   double expectVal;       // Expectation value
+
 };
 
 
 #endif
-// _slug_PDF_schechter_H_
+// _slug_PDF_segment_H_

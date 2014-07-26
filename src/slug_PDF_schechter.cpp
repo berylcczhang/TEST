@@ -32,11 +32,14 @@ using namespace boost::random;
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_schechter::
-slug_PDF_schechter(double sMin, double sMax, double sSlope, 
-		   double sStar, rng_type &rng)
-  : slug_PDF_segment(sMin, sMax) 
+slug_PDF_schechter(double sMin_, double sMax_, double sSlope_, 
+		   double sStar_, rng_type *rng_)
+  : slug_PDF_segment(sMin_, sMax_, rng_) 
 {
-  initializer(sSlope, sStar, rng);
+  vector<double> tokenVals(2);
+  tokenVals[0] = sSlope_;
+  tokenVals[1] = sStar_;
+  initialize(tokenVals);
 }
 
 
@@ -52,17 +55,16 @@ slug_PDF_schechter::~slug_PDF_schechter() {
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_schechter::initializer(double sSlope, double sStar, 
-				rng_type& rng) {
+slug_PDF_schechter::initialize(const vector<double>& tokenVal) {
 
   // Save the slope and M* value
-  segSlope = sSlope;
-  segStar = sStar;
+  segSlope = tokenVal[0];
+  segStar = tokenVal[1];
 
   // Build a uniform distribution object with the specified parameters
   uniform_01<> uni01;
   unidist =
-    new variate_generator<rng_type&, uniform_01<> >(rng, uni01);
+    new variate_generator<rng_type&, uniform_01<> >(*rng, uni01);
 
   // Set the normalization, min, max, expectation values
   if (segSlope != -1.0) {
@@ -135,7 +137,10 @@ slug_PDF_schechter::integral(double a, double b) {
 // this is implemented as drawing from a powerlaw with rejection
 // sampling, so the user is strongly advised to choose limits and
 // slope such that the rejection probability isn't too large, or this
-// will be VERY slow.
+// will be VERY slow. Unfortunately doing this with a transformation
+// method requires numerical inversion of the Gamma function, would
+// probably also be obnoxiously slow. There may be a more clever way
+// to do it, but I don't know of one.
 double
 slug_PDF_schechter::draw(double a, double b) {
   double a1 = a < segMin ? segMin : a;
@@ -164,99 +169,3 @@ slug_PDF_schechter::draw(double a, double b) {
   return val;
 }
 
-
-////////////////////////////////////////////////////////////////////////
-// File parser
-////////////////////////////////////////////////////////////////////////
-parseStatus
-slug_PDF_schechter::parse(ifstream& file, int& lineCount, string& errMsg, 
-			 rng_type& rng, double *weight) {
-
-  // Local variables
-  double slope=0.0, xstar=0.0;
-  bool have_slope=false, have_xstar=false;
-  bool have_weight = (weight == NULL);
-
-  // Set the error string, in case we need it
-  string errStr = "Expected: 'slope S'";
-  if (!have_weight) errStr += " or 'weight W'";
-
-  // Read from file
-  vector<string> tokens;
-  string line, linecopy;
-  while (!file.eof()) {
-
-    // Get a line and trim leading whitespace
-    getline(file, line);
-    linecopy = line;
-    lineCount++;
-    trim(line);
-
-    // Skip comment and blank lines
-    if (line.length() == 0) continue;
-    if (line.compare(0, 1, "#") == 0) continue;
-
-    // Split line into tokens, and lowercase the first one
-    split(tokens, line, is_any_of("\t ,"), token_compress_on);
-    to_lower(tokens[0]);
-
-    // Make sure there's no extraneous junk; if there is, bail out
-    if (tokens.size() > 2) {
-      if (tokens[1].compare(0, 1, "#") != 0) {
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    }
-
-    // Make sure we got two tokens
-    if (tokens.size() == 1) {
-      errMsg = errStr;
-      return PARSE_ERROR;
-    }
-
-    // Make sure we got the right tokens
-    if (tokens[0].compare("slope") == 0) {
-      try {
-	slope = lexical_cast<double>(tokens[1]);
-	have_slope = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else if (tokens[0].compare("xstar") == 0) {
-      try {
-	xstar = lexical_cast<double>(tokens[1]);
-	have_xstar = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else if ((tokens[0].compare("weight") == 0) && !have_weight) {
-      try {
-	*weight = lexical_cast<double>(tokens[1]);
-	have_weight = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else {
-      errMsg = errStr;
-      return PARSE_ERROR;
-    }
-
-    // If we're read everything we need, initialize all values, then
-    // exit
-    if (have_slope && have_xstar && have_weight) {
-      initializer(slope, xstar, rng);
-      return OK;
-    }
-  }
-
-  // If we got here, we've reached EOF without having the data we
-  // need, so throw an error
-  errMsg = "Incomplete data on schechter segment";
-  return EOF_ERROR;
-}

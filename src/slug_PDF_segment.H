@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/random/variate_generator.hpp>
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include "slug.H"
 
 enum parseStatus { OK, PARSE_ERROR, EOF_ERROR };
@@ -44,34 +45,31 @@ enum parseStatus { OK, PARSE_ERROR, EOF_ERROR };
 class slug_PDF_segment {
 
 public:
+
   // Construct a segment with a specified min and max range
-  slug_PDF_segment(double sMin, double sMax) {
-    segMin = sMin;
-    segMax = sMax;
-  }
+  slug_PDF_segment(double sMin_, double sMax_, rng_type *rng_) :
+    segMin(sMin_), segMax(sMax_), rng(rng_) { }
 
   // Construct an empty segment
-  slug_PDF_segment() { };
+  slug_PDF_segment(rng_type* rng_) : rng(rng_) { }
 
   // Destructor
-  virtual ~slug_PDF_segment() { };
+  virtual ~slug_PDF_segment() { }
 
-  // Functions that return pre-computed quantities for this segment
+  // Functions that return various quantities about the segment. Some
+  // are pure virtual, and must be implemented in the derived
+  // class. Note that the expectation value function has two forms,
+  // one that gives the value over the full range and one over a
+  // limited range, but the integral function only has the latter
+  // form. That is because all PDF segments are normalized to have
+  // integral unity over their full ranges.
   double sMin() { return segMin; }     // Lower range limit
   double sMax() { return segMax; }     // Upper range limit
-  double sMinVal() { return segMinVal; } // Value at lower range limit
-  double sMaxVal() { return segMaxVal; } // Value at upper range limit
-  double expectationVal() { return expectVal; } // Expectation value
-
-  // Function to compute the expectation value over a finite interval;
-  // pure virtual
+  virtual double sMinVal() = 0;        // Value at lower range limit
+  virtual double sMaxVal() = 0;        // Value at upper range limit
+  virtual double expectationVal() = 0; // Expectation value
   virtual double expectationVal(double a, double b) = 0;
-
-  // Function to compute the integral over a finite interval; pure
-  // virual. Note that we do not have a corresponding function to
-  // compute the integral over the full range, because PDF segments
-  // are always normalized so that value is unity.
-  virtual double integral(double a, double b) = 0;
+  virtual double integral(double a, double b) = 0; // Integral
 
   // Function to draw a star from this IMF segment, and to draw over a
   // finite interval. The latter is pure virtual.
@@ -82,20 +80,39 @@ public:
   // point; pure virtual
   virtual double operator()(const double x) = 0;
 
-  // Function to read data for a particular segment from a file; pure
-  // virtual. Returns true on successful read, false on failure.
+  // Function to read data for a particular segment from a file.
+  // Returns true on successful read, false on failure. Note that this
+  // is not pure virtual, and we provide an implementation in this
+  // class, but we allow derived classes to override it. The default
+  // implementation calls tokenList to figure out which tokens should
+  // be read from the file and tries to read them. If it does so
+  // successfully, it passes them to the initialize function, which
+  // must be implemented to process them appropriately.
   virtual parseStatus parse(ifstream& file, int& lineCount,
-			    string &errMsg, rng_type& rng,
-			    double *weight = NULL) = 0;
+			    string &errMsg, double *weight = NULL);
 
 protected:
-  // Data on segment
+
+  // Function to take as input the token values read by the parse
+  // routine and use it to initialize the segment. This is defined as
+  // vitual and a no-op so that derived classes that don't want to use
+  // this mechansim don't have to, but they can override it if they
+  // want.
+  virtual void initialize(const vector<double>& tokenVal) { }
+
+  // Method to return the list of tokens we expect to get out of the
+  // parser. This returns an empty vector unless the derived class
+  // overrides this behavior.
+  virtual const vector<string>& tokenList()
+  { return _empty_string; }
+
+  // An empty string to return by default
+  vector<string> _empty_string;
+
+  // Data
   double segMin, segMax;  // Lower and upper limits of segment
-  double segMinVal;       // Value of segment evaluated at segMin,
-			  // before normalization is applied
-  double segMaxVal;       // Value of segment evaluated at segMax,
-			  // before normalization is applied
-  double expectVal;       // Expectation value
+  rng_type *rng;          // Pointer to random number generator
+
 };
 
 #endif

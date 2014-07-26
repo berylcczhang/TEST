@@ -98,16 +98,18 @@ void
 slug_parmParser::setDefaults() {
   verbosity = 1;
   nTrials = 1;
-  timeStep = endTime = fClust = -constants::big;
+  timeStep = endTime = fClust = cluster_mass = -constants::big;
   z = 0.0;
   metallicity = -1.0;    // Flag for not set
   WR_mass = -1.0;        // flag for not set
   min_stoch_mass = 2.0;
-  constantSFR = writeClusterProp = writeClusterPhot = 
+  constantSFR = false;
+  writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
     writeClusterSpec = writeIntegratedSpec = true;
   out_mode = ASCII;
   model = "SLUG_DEF";
+  run_galaxy_sim = true;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -147,6 +149,17 @@ slug_parmParser::parseFile(ifstream &paramFile) {
     try {
       if (!(tokens[0].compare("verbosity"))) {
 	verbosity = lexical_cast<int>(tokens[1]);
+      } else if (!(tokens[0].compare("sim_type"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("cluster") == 0)
+	  run_galaxy_sim = false;
+	else if (tokens[1].compare("galaxy") == 0)
+	  run_galaxy_sim = true;
+	else {
+	  cerr << "slug error: unknown sim_type: " << endl
+	       << line << endl;
+	  exit(1);
+	}
       } else if (!(tokens[0].compare("n_trials"))) {
 	nTrials = lexical_cast<int>(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
@@ -156,6 +169,9 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       } else if (!(tokens[0].compare("sfr"))) {
 	sfr = lexical_cast<double>(tokens[1]);
 	if (sfr <= 0) constantSFR = false;
+	else constantSFR = true;
+      } else if (!(tokens[0].compare("cluster_mass"))) {
+	cluster_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("sfh"))) {
 	sfh = tokens[1];
       } else if (!(tokens[0].compare("imf"))) {
@@ -314,19 +330,24 @@ slug_parmParser::checkParams() {
     }
     exit(1);
   }
-  if (!constantSFR) {
+  if (!constantSFR && run_galaxy_sim) {
     if (sfh.length() == 0) {
       cerr << "slug error: for non-constant SFR, must set SFH" 
 		<< endl;
       exit(1);
     }    
   }
+  if (!run_galaxy_sim && cluster_mass < 0) {
+    cerr << "slug error: cluster mass must be set to > 0 for cluster sim"
+	 << endl;
+    exit(1);
+  }
   if (imf.length() == 0) {
     cerr << "slug error: must set IMF" << endl;
     exit(1);
   }
-  if (cmf.length() == 0) {
-    cerr << "slug error: must set CMF" << endl;
+  if (cmf.length() == 0 && run_galaxy_sim) {
+    cerr << "slug error: for sim_type galaxy, must set CMF" << endl;
     exit(1);
   }
   if (clf.length() == 0) {
@@ -341,10 +362,10 @@ slug_parmParser::checkParams() {
     cerr << "slug error: must set atmos_dir" << endl;
     exit(1);
   }
-  if (fClust == -constants::big) {
-    cerr << "slug error: must set clust_frac" << endl;
+  if (fClust == -constants::big && run_galaxy_sim) {
+    cerr << "slug error: for sim_type galaxy, must set clust_frac" << endl;
     exit(1);
-  } else if (fClust < 0 || fClust > 1) {
+  } else if ((fClust < 0 || fClust > 1) && run_galaxy_sim) {
     cerr << "slug error: clust_frac must be in the range [0,1]"
 	 << endl;
     exit(1);
@@ -369,7 +390,7 @@ slug_parmParser::checkParams() {
 ////////////////////////////////////////////////////////////////////////
 
 void
-slug_parmParser::writeParams() {
+slug_parmParser::writeParams() const {
 
   // Form output file name
   string fname(model + "_summary.txt");
@@ -389,14 +410,22 @@ slug_parmParser::writeParams() {
   paramFile << "SLUG WAS RUN WITH THE FOLLOWING PARAMETERS" << endl;
   paramFile << "model_name           " << model << endl;
   paramFile << "out_dir              " << outDir.string() << endl;
+  paramFile << "sim_type             ";
+  if (run_galaxy_sim)
+    paramFile << "galaxy" << endl;
+  else
+    paramFile << "cluster" << endl;
   paramFile << "n_trials             " << nTrials << endl;
   paramFile << "time_step            " << timeStep << endl;
   paramFile << "end_time             " << endTime << endl;
-  paramFile << "SFR                  " << sfr << endl;
-  if (sfh.length() > 0)
-    paramFile << "SFH                  " << sfh << endl;
+  if (run_galaxy_sim) {
+    paramFile << "SFR                  " << sfr << endl;
+    if (sfh.length() > 0)
+      paramFile << "SFH                  " << sfh << endl;
+  }
   paramFile << "IMF                  " << imf << endl;
-  paramFile << "CMF                  " << cmf << endl;
+  if (run_galaxy_sim)
+    paramFile << "CMF                  " << cmf << endl;
   paramFile << "CLF                  " << clf << endl;
   paramFile << "tracks               " << track << endl;
   paramFile << "atmos_dir            " << atmos_dir << endl;
@@ -416,13 +445,16 @@ slug_parmParser::writeParams() {
   } else if (specsyn_mode == SB99) {
     paramFile << "sb99" << endl;
   }
-  paramFile << "clust_frac           " << fClust << endl;
+  if (run_galaxy_sim)
+    paramFile << "clust_frac           " << fClust << endl;
   paramFile << "out_cluster          " << writeClusterProp << endl;
   paramFile << "out_cluster_phot     " << writeClusterPhot << endl;
   paramFile << "out_cluster_spec     " << writeClusterSpec << endl;
-  paramFile << "out_integrated       " << writeIntegratedProp << endl;
-  paramFile << "out_integrated_phot  " << writeIntegratedPhot << endl;
-  paramFile << "out_integrated_spec  " << writeIntegratedSpec << endl;
+  if (run_galaxy_sim) {
+    paramFile << "out_integrated       " << writeIntegratedProp << endl;
+    paramFile << "out_integrated_phot  " << writeIntegratedPhot << endl;
+    paramFile << "out_integrated_spec  " << writeIntegratedSpec << endl;
+  }
   if (photBand.size() > 0) {
     paramFile << "phot_bands           ";
     for (unsigned int i=0; i<photBand.size(); i++) {
@@ -444,41 +476,43 @@ slug_parmParser::writeParams() {
 // Functions that just return copies of internal data
 ////////////////////////////////////////////////////////////////////////
 
-int slug_parmParser::get_verbosity() { return verbosity; }
-int slug_parmParser::get_nTrials() { return nTrials; }
-double slug_parmParser::get_timeStep() { return timeStep; }
-double slug_parmParser::get_endTime() { return endTime; }
-bool slug_parmParser::get_constantSFR() { return constantSFR; }
-double slug_parmParser::get_SFR() { return sfr; }
-double slug_parmParser::get_z() { return z; }
-double slug_parmParser::get_WR_mass() { return WR_mass; }
-double slug_parmParser::get_metallicity() { return metallicity; }
-double slug_parmParser::get_min_stoch_mass() { return min_stoch_mass; }
-const char *slug_parmParser::get_SFH() { return sfh.c_str(); }
-const char *slug_parmParser::get_IMF() { return imf.c_str(); }
-const char *slug_parmParser::get_CMF() { return cmf.c_str(); }
-const char *slug_parmParser::get_CLF() { return clf.c_str(); }
-const char *slug_parmParser::get_trackFile() { return track.c_str(); }
-const char *slug_parmParser::get_atmos_dir() { return atmos_dir.c_str(); }
-const char *slug_parmParser::get_modelName() { return model.c_str(); }
+int slug_parmParser::get_verbosity() const { return verbosity; }
+int slug_parmParser::get_nTrials() const { return nTrials; }
+double slug_parmParser::get_timeStep() const { return timeStep; }
+double slug_parmParser::get_endTime() const { return endTime; }
+bool slug_parmParser::get_constantSFR() const { return constantSFR; }
+double slug_parmParser::get_SFR() const { return sfr; }
+double slug_parmParser::get_z() const { return z; }
+double slug_parmParser::get_WR_mass() const { return WR_mass; }
+double slug_parmParser::get_metallicity() const { return metallicity; }
+double slug_parmParser::get_min_stoch_mass() const { return min_stoch_mass; }
+const char *slug_parmParser::get_SFH() const { return sfh.c_str(); }
+const char *slug_parmParser::get_IMF() const { return imf.c_str(); }
+const char *slug_parmParser::get_CMF() const { return cmf.c_str(); }
+const char *slug_parmParser::get_CLF() const { return clf.c_str(); }
+const char *slug_parmParser::get_trackFile() const { return track.c_str(); }
+const char *slug_parmParser::get_atmos_dir() const { return atmos_dir.c_str(); }
+const char *slug_parmParser::get_modelName() const { return model.c_str(); }
 const char *slug_parmParser::get_outDir() 
-{ return outDir.string().c_str(); }
-double slug_parmParser::get_fClust() { return fClust; }
+const { return outDir.string().c_str(); }
+double slug_parmParser::get_fClust() const { return fClust; }
 vector<string>::size_type slug_parmParser::get_nPhot()
-{ return photBand.size(); }
+const { return photBand.size(); }
 const char *slug_parmParser::get_photBand(int n)
-{ return photBand[n].c_str(); }
+const { return photBand[n].c_str(); }
 bool slug_parmParser::get_writeClusterProp()
-{ return writeClusterProp; }
+const { return writeClusterProp; }
 bool slug_parmParser::get_writeClusterPhot()
-{ return writeClusterPhot; }
+const { return writeClusterPhot; }
 bool slug_parmParser::get_writeClusterSpec()
-{ return writeClusterSpec; }
+const { return writeClusterSpec; }
 bool slug_parmParser::get_writeIntegratedProp()
-{ return writeIntegratedProp; }
+const { return writeIntegratedProp; }
 bool slug_parmParser::get_writeIntegratedPhot()
-{ return writeIntegratedPhot; }
+const { return writeIntegratedPhot; }
 bool slug_parmParser::get_writeIntegratedSpec()
-{ return writeIntegratedSpec; }
-outputMode slug_parmParser::get_outputMode() { return out_mode; }
-specsynMode slug_parmParser::get_specsynMode() { return specsyn_mode; }
+const { return writeIntegratedSpec; }
+outputMode slug_parmParser::get_outputMode() const { return out_mode; }
+specsynMode slug_parmParser::get_specsynMode() const { return specsyn_mode; }
+bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
+double slug_parmParser::get_cluster_mass() const { return cluster_mass; }

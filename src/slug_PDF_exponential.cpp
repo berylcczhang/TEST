@@ -14,115 +14,106 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
-#include "slug_PDF_lognormal.H"
+#include "slug_PDF_exponential.H"
 #include <cmath>
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 
-using namespace boost;
-using namespace boost::algorithm;
 using namespace boost::random;
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
-slug_PDF_lognormal::
-slug_PDF_lognormal(double sMin_, double sMax_, double sMean_, 
-		   double sDisp_, rng_type *rng_)
+slug_PDF_exponential::
+slug_PDF_exponential(double sMin_, double sMax_, double sScale, 
+		     rng_type *rng_)
   : slug_PDF_segment(sMin_, sMax_, rng_) 
 {
-  vector<double> tokenVals(2);
-  tokenVals[0] = sMean_;
-  tokenVals[1] = sDisp_;
-  initialize(tokenVals);
+  vector<double> tokVals(1, sScale);
+  initialize(tokVals);
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 // Destructor
 ////////////////////////////////////////////////////////////////////////
-slug_PDF_lognormal::~slug_PDF_lognormal() {
-  delete lndist;
+slug_PDF_exponential::~slug_PDF_exponential() {
+  delete expdist;
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_lognormal::initialize(const vector<double>& tokenVal) {
+slug_PDF_exponential::initialize(const vector<double>& tokenVal) {
 
-  // Save values
-  segMean = tokenVal[0];
-  segDisp = tokenVal[1];
+  // Save data read from tokens
+  segScale = tokenVal[0];
 
-  // Get dispersion in base e
-  disp = segDisp*log(10.0);
-
-  // Build a lognormal distribution object with the specified parameters
-  boost::random::lognormal_distribution<> lndist1(log(segMean), disp);
-  lndist = new 
+  // Build an exponential distribution object with the specified parameters
+  boost::exponential_distribution<> expdist1(1.0/segScale);
+  expdist = new 
     variate_generator<rng_type&, 
-		      boost::random::lognormal_distribution<> >(*rng, lndist1);
+		      boost::exponential_distribution<> >(*rng, expdist1);
 
-  // Get normalization, min and max values, expectation value
-  norm = sqrt(2.0/M_PI) / disp /
-    ( erf(-log(segMin/segMean)/(sqrt(2.0)*disp)) -
-      erf(-log(segMax/segMean)/(sqrt(2.0)*disp)) );
-  segMinVal = norm * exp( -pow(log(segMin/segMean),2) /
-			  (2.0*disp*disp) ) / segMin;
-  segMaxVal = norm * exp( -pow(log(segMax/segMean),2) /
-			  (2.0*disp*disp) ) / segMax;
+  // Set norm, min and max val, expectation value
+  norm = 1.0/(segScale * 
+	      ((segMin + segScale)*exp(-segMin/segScale) -
+	       (segMax + segScale)*exp(-segMax/segScale)));
+  segMinVal = norm * exp(-segMin/segScale);
+  segMaxVal = norm * exp(-segMax/segScale);
   expectVal = expectationVal(segMin, segMax);
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 // Value evaluated at a point
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF_lognormal::operator() (double x) {
+slug_PDF_exponential::operator() (double x) {
   if ((x < segMin) || (x > segMax)) return 0.0;
-  return norm * exp( -pow(log(x/segMean),2) /
-		     (2.0*disp*disp) ) / x;
+  return norm * exp(-x/segScale);
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // Expectation value over a finite interval
 ////////////////////////////////////////////////////////////////////////
-double
-slug_PDF_lognormal::expectationVal(double a, double b) {
+double 
+slug_PDF_exponential::expectationVal(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
-  return exp(log(segMean)+disp*disp/2.0) *
-    (erf( (log(segMean/b1)+disp*disp) / (sqrt(2.0)*disp) ) -
-     erf( (log(segMean/a1)+disp*disp) / (sqrt(2.0)*disp) )) /
-    (erf( log(segMean/b1) / (sqrt(2.0)*disp) ) -
-     erf( log(segMean/a1) / (sqrt(2.0)*disp) ));
+  return ( a1 + segScale + (b1-a1)*exp(a1/segScale) /
+	   (exp(-a1/segScale) + exp(b1/segScale)) );
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 // Integral over a finite interval
 ////////////////////////////////////////////////////////////////////////
 double 
-slug_PDF_lognormal::integral(double a, double b) {
+slug_PDF_exponential::integral(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
-  return norm * sqrt(M_PI/2.0) * disp *
-    ( erf(-log(a1/segMean)/(sqrt(2.0)*disp)) -
-      erf(-log(b1/segMean)/(sqrt(2.0)*disp)) );
+  return norm * segScale *
+    ((a1+segScale) * exp(-a1/segScale) - 
+     (b1+segScale)*exp(-b1/segScale));
 }
 
+
 ////////////////////////////////////////////////////////////////////////
-// Draw a value from a lognormal with minimum and maximum
+// Draw a value from an exponential distribution with minimum and
+// maximum
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF_lognormal::draw(double a, double b) {
+slug_PDF_exponential::draw(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
   double val;
   while (1) {
-    val = (*lndist)();
+    val = (*expdist)();
     if ((val >= a1) && (val <= b1)) break;
   }
   return(val);
 }
+
+

@@ -25,8 +25,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 
 slug_specsyn_planck::
-slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
-		    slug_PDF *my_sfh, double z_in) : 
+slug_specsyn_planck(const slug_tracks *my_tracks, 
+		    const slug_PDF *my_imf,
+		    const slug_PDF *my_sfh, const double z_in) : 
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in)
 {
   for (int i=0; i<1001; i++) {
@@ -42,9 +43,10 @@ slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
 ////////////////////////////////////////////////////////////////////////
 slug_specsyn_planck::
 slug_specsyn_planck(const double lambda_min, const double lambda_max, 
-		    const unsigned int nlambda, slug_tracks *my_tracks, 
-		    slug_PDF *my_imf, slug_PDF *my_sfh, double z_in,
-		    bool rest) : 
+		    const unsigned int nlambda, 
+		    const slug_tracks *my_tracks, 
+		    const slug_PDF *my_imf, const slug_PDF *my_sfh,
+		    const double z_in, const bool rest) : 
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in) {
   if (rest) {
     for (unsigned int i=0; i<nlambda; i++) {
@@ -68,8 +70,10 @@ slug_specsyn_planck(const double lambda_min, const double lambda_max,
 ////////////////////////////////////////////////////////////////////////
 slug_specsyn_planck::
 slug_specsyn_planck(const vector<double>& lambda_in,
-		    slug_tracks *my_tracks, slug_PDF *my_imf, 
-		    slug_PDF *my_sfh, double z_in, bool rest) :
+		    const slug_tracks *my_tracks, 
+		    const slug_PDF *my_imf, 
+		    const slug_PDF *my_sfh, const double z_in, 
+		    const bool rest) :
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in) {
   if (rest) {
     lambda_rest = lambda_in;
@@ -85,7 +89,7 @@ slug_specsyn_planck(const vector<double>& lambda_in,
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Method to change the wavelenght table
+// Method to change the wavelength table
 ////////////////////////////////////////////////////////////////////////
 void
 slug_specsyn_planck::
@@ -109,7 +113,7 @@ set_lambda(const vector<double>& lambda_in, bool rest) {
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_planck::
-get_spectrum_const(const vector<slug_stardata>& stardata) {
+get_spectrum_const(const vector<slug_stardata>& stardata) const {
 
   // Build output vector
   vector<double> L_lambda(lambda_rest.size(), 0.0);
@@ -141,7 +145,7 @@ get_spectrum_const(const vector<slug_stardata>& stardata) {
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_planck::
-get_spectrum(const slug_stardata& stardata) {
+get_spectrum(const slug_stardata& stardata) const {
 
   // Build output bector
   vector<double> L_lambda(lambda_rest.size());

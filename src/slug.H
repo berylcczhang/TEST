@@ -15,9 +15,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
 ////////////////////////////////////////////////////////////////////////
-// slug2 Header file
+// slug Header file
 // This header introduces common definitions and includes used through
-// SLUG2. It is included by every slug2 source file.
+// SLUG.
 ////////////////////////////////////////////////////////////////////////
 
 #ifndef _slug_H_
@@ -38,7 +38,7 @@ class slug_cluster;
 class slug_galaxy;
 class slug_parmParser;
 class slug_specsyn;
-// class slug_specsyn_hillier;
+class slug_specsyn_hillier;
 class slug_specsyn_kurucz;
 class slug_specsyn_planck;
 class slug_tracks;

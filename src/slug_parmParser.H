@@ -34,42 +34,44 @@ public:
   ~slug_parmParser();                     // The desctructor
 
   // Functions that return values from parameter file
-  int get_verbosity();                    // Level of verbosity
-  int get_nTrials();                      // How many trials to run
-  double get_timeStep();                  // Size of timestep
-  double get_startTime();                 // Starting time
-  double get_endTime();                   // Final time
-  bool get_constantSFR();                 // Is SFR constant?
-  double get_SFR();                       // SFR value for constant SFR
-  double get_z();                         // Return the redshift
-  double get_metallicity();               // Metallicity
-  double get_WR_mass();                   // Mass at which WR stars appear
-  double get_min_stoch_mass();            // Minimum stellar mass to treat stochstically
-  const char *get_SFH();                  // SF history file name
-  const char *get_IMF();                  // IMF file name
-  const char *get_CMF();                  // CMF file name
-  const char *get_CLF();                  // CLF file name
-  const char *get_trackFile();            // File containing stellar tracks
-  const char *get_atmos_dir();            // Directory containing atmospehre library
-  const char *get_modelName();            // Name of this model
-  const char *get_outDir();               // Dir into which to dump output
-  double get_fClust();                    // Fraction of stars formed in clusters
-  vector<string>::size_type get_nPhot();  // Number of photometric bands
-  const char *get_photBand(int n);        // Name of nth photometric band
-  bool get_writeClusterProp();            // Write out cluster physial properties?
-  bool get_writeClusterPhot();            // Write out cluster photometry?
-  bool get_writeClusterSpec();            // Write out cluster spectra?
-  bool get_writeIntegratedProp();         // Write out integrated physical properties?
-  bool get_writeIntegratedPhot();         // Write out integrated photometry?
-  bool get_writeIntegratedSpec();         // Write out integrated spectra?
-  outputMode get_outputMode();            // Output mode
-  specsynMode get_specsynMode();          // Spectral synthesis mode
+  int get_verbosity() const;              // Level of verbosity
+  int get_nTrials() const;                // How many trials to run
+  double get_timeStep() const;            // Size of timestep
+  double get_startTime() const;           // Starting time
+  double get_endTime() const;             // Final time
+  bool get_constantSFR() const;           // Is SFR constant?
+  double get_SFR() const;                 // SFR value for constant SFR
+  double get_z() const;                   // Return the redshift
+  double get_metallicity() const;         // Metallicity
+  double get_WR_mass() const;             // Mass at which WR stars appear
+  double get_min_stoch_mass() const;      // Minimum stellar mass to treat stochstically
+  const char *get_SFH() const;            // SF history file name
+  const char *get_IMF() const;            // IMF file name
+  const char *get_CMF() const;            // CMF file name
+  const char *get_CLF() const;            // CLF file name
+  const char *get_trackFile() const;      // File containing stellar tracks
+  const char *get_atmos_dir() const;      // Directory containing atmospehre library
+  const char *get_modelName() const;      // Name of this model
+  const char *get_outDir() const;         // Dir into which to dump output
+  double get_fClust() const;              // Fraction of stars formed in clusters
+  vector<string>::size_type get_nPhot() const;  // Number of photometric bands
+  const char *get_photBand(int n) const;  // Name of nth photometric band
+  bool get_writeClusterProp() const;      // Write out cluster physial properties?
+  bool get_writeClusterPhot() const;      // Write out cluster photometry?
+  bool get_writeClusterSpec() const;      // Write out cluster spectra?
+  bool get_writeIntegratedProp() const;   // Write out integrated physical properties?
+  bool get_writeIntegratedPhot() const;   // Write out integrated photometry?
+  bool get_writeIntegratedSpec() const;   // Write out integrated spectra?
+  outputMode get_outputMode() const;      // Output mode
+  specsynMode get_specsynMode() const;    // Spectral synthesis mode
+  bool galaxy_sim() const;                // Galaxy sim or cluster sim?
+  double get_cluster_mass() const;        // Cluster mass for cluster sims
 
   // Function to write out the parameters being used to a file
-  void writeParams();
+  void writeParams() const;
 
 private:
-  // Storage for parameter file values, plus default values
+  // Storage for parameter file values
   int verbosity;                          // Level of verbosity
   int nTrials;                            // How many trials to run
   double timeStep;                        // Size of timestep
@@ -79,7 +81,7 @@ private:
   double z;                               // Redshift
   double metallicity;                     // Metallicity
   double WR_mass;                         // Mass at which WR stars appear
-  double min_stoch_mass;                  // Minimum stellar mass to treat stochastically
+  double min_stoch_mass;                  // Minimum mass to treat stochastically
   string sfh;                             // SF history file name
   string imf;                             // IMF file name
   string cmf;                             // CMF file name
@@ -98,6 +100,8 @@ private:
   bool writeIntegratedSpec;               // Write out integrated spectra?
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode
+  bool run_galaxy_sim;                    // Galaxy sim or cluster sim?
+  double cluster_mass;                    // Cluster mass for cluster sims
 
   // Internal functions
   void printUsage();                      // Print a usage message and exit

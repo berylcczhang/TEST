@@ -28,11 +28,14 @@ using namespace boost::random;
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_normal::
-slug_PDF_normal(double sMin, double sMax, double sMean, 
-		double sDisp, rng_type &rng)
-  : slug_PDF_segment(sMin, sMax) 
+slug_PDF_normal(double sMin_, double sMax_, double sMean_, 
+		double sDisp_, rng_type *rng_)
+  : slug_PDF_segment(sMin_, sMax_, rng_) 
 {
-  initializer(sMean, sDisp, rng);
+  vector<double> tokenVals(2);
+  tokenVals[0] = sMean_;
+  tokenVals[1] = sDisp_;
+  initialize(tokenVals);
 }
 
 
@@ -48,27 +51,26 @@ slug_PDF_normal::~slug_PDF_normal() {
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_normal::initializer(double sMean, double sDisp, 
-			     rng_type& rng) {
+slug_PDF_normal::initialize(const vector<double>& tokenVals) {
 
   // Save data
-  segMean = sMean;
-  segDisp = sDisp;
+  segMean = tokenVals[0];
+  segDisp = tokenVals[1];
 
   // Build a normal distribution object with the specified parameters
-  boost::normal_distribution<> ndist1(sMean, sDisp);
+  boost::normal_distribution<> ndist1(segMean, segDisp);
   ndist = new 
     variate_generator<rng_type&, 
-		      boost::normal_distribution<> >(rng, ndist1);
+		      boost::normal_distribution<> >(*rng, ndist1);
 
   // Set norm, min and max val, expectation value
-  norm = sqrt(2.0/M_PI) / sDisp / 
-    ( erf((segMax-sMean)/(sqrt(2.0)*sDisp)) -
-      erf((segMin-sMean)/(sqrt(2.0)*sDisp)) );
-  segMinVal = norm * exp( -(segMin-sMean)*(segMin-sMean) /
-		   (2.0*sDisp*sDisp) );
-  segMaxVal = norm * exp( -(segMax-sMean)*(segMax-sMean) /
-		   (2.0*sDisp*sDisp) );
+  norm = sqrt(2.0/M_PI) / segDisp / 
+    ( erf((segMax-segMean)/(sqrt(2.0)*segDisp)) -
+      erf((segMin-segMean)/(sqrt(2.0)*segDisp)) );
+  segMinVal = norm * exp( -(segMin-segMean)*(segMin-segMean) /
+		   (2.0*segDisp*segDisp) );
+  segMaxVal = norm * exp( -(segMax-segMean)*(segMax-segMean) /
+		   (2.0*segDisp*segDisp) );
   expectVal = expectationVal(segMin, segMax);
 }
 
@@ -128,99 +130,4 @@ slug_PDF_normal::draw(double a, double b) {
   return(val);
 }
 
-
-////////////////////////////////////////////////////////////////////////
-// File parser
-////////////////////////////////////////////////////////////////////////
-parseStatus
-slug_PDF_normal::parse(ifstream& file, int& lineCount, string &errMsg, 
-		       rng_type& rng, double *weight) {
-
-  // Local variables
-  double mean=0.0, disp=0.0;
-  bool have_mean=false, have_disp=false;
-  bool have_weight = (weight == NULL);
-
-  // Set the error string, in case we need it
-  string errStr = "Expected: 'mean M' or 'disp D'";
-  if (!have_weight) errStr += " or 'weight W'";
-
-  // Read from file
-  vector<string> tokens;
-  string line, linecopy;
-  while (!file.eof()) {
-
-    // Get a line and trim whitespace
-    getline(file, line);
-    linecopy = line;
-    lineCount++;
-    trim(line);
-
-    // Skip comment and blank lines
-    if (line.length() == 0) continue;
-    if (line.compare(0, 1, "#") == 0) continue;
-
-    // Split line into tokens, and lowercase the first one
-    split(tokens, line, is_any_of("\t ,"), token_compress_on);
-    to_lower(tokens[0]);
-
-    // Make sure there's no extraneous junk; if there is, bail out
-    if (tokens.size() > 2) {
-      if (tokens[1].compare(0, 1, "#") != 0) {
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    }
-
-    // Make sure we got two tokens
-    if (tokens.size() == 1) {
-      errMsg = errStr;
-      return PARSE_ERROR;
-    }
-
-    // Make sure we got the right tokens
-    if (tokens[0].compare("mean") == 0) {
-      try {
-	mean = lexical_cast<double>(tokens[1]);
-	have_mean = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else if (tokens[0].compare("disp") == 0) {
-      try {
-	disp = lexical_cast<double>(tokens[1]);
-	have_disp = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else if ((tokens[0].compare("weight") == 0) && !have_weight) {
-      try {
-	*weight = lexical_cast<double>(tokens[1]);
-	have_weight = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else {
-      errMsg = errStr;
-      return PARSE_ERROR;
-    }
-
-    // If we're read everything we need, initialize and then exit
-    if (have_mean && have_disp && have_weight) {
-      initializer(mean, disp, rng);
-      return OK;
-    }
-  }
-
-  // If we got here, we've reached EOF without having the data we
-  // need, so throw an EOF error
-  errMsg = "Incomplete data on normal segment";
-  return EOF_ERROR;
-}
 

@@ -38,23 +38,28 @@ public:
   // in a couple of ways. Wavelengths are assumed to be in
   // Angstrom. The argument rest specifies whether we're suppyling the
   // rest or observed frame wavelength. Default is observed.
-  slug_specsyn_planck(slug_tracks *my_tracks, slug_PDF *my_imf,
-		      slug_PDF *my_sfh, double z_in = 0);
+  slug_specsyn_planck(const slug_tracks *my_tracks, 
+		      const slug_PDF *my_imf,
+		      const slug_PDF *my_sfh, const double z_in = 0);
   slug_specsyn_planck(const double lambda_min, const double lambda_max, 
-		      const unsigned int nlambda, slug_tracks *my_tracks,
-		      slug_PDF *my_imf, slug_PDF *my_sfh, double z_in = 0,
-		      bool rest = false);
+		      const unsigned int nlambda, 
+		      const slug_tracks *my_tracks,
+		      const slug_PDF *my_imf, const slug_PDF *my_sfh,
+		      const double z_in = 0,
+		      const bool rest = false);
   slug_specsyn_planck(const vector<double>& labmda_in, 
-		      slug_tracks *my_tracks, slug_PDF *my_imf,
-		      slug_PDF *my_sfh, double z_in = 0,
-		      bool rest = false);
+		      const slug_tracks *my_tracks, 
+		      const slug_PDF *my_imf,
+		      const slug_PDF *my_sfh, const double z_in = 0,
+		      const bool rest = false);
 
   // The destructor; this is a no-op, since the member vector will
   // auto-desctruct when this class does
   ~slug_specsyn_planck() {};
 
   // Set the wavelength table
-  void set_lambda(const vector<double>& lambda_in, bool rest = false);
+  void set_lambda(const vector<double>& lambda_in, 
+		  const bool rest = false);
 
   // The spectral synthesis functions; see slug_specsyn.H for
   // details. The only trickiness here is that get_spectrum with a
@@ -63,13 +68,13 @@ public:
   // and we want to tell the compiler it is const to allow
   // optimization. To accomplish this, we just make get_spectrum wrap
   // a private function where the vector is declared const.
-  vector<double> get_spectrum(vector<slug_stardata> &stardata)
+  vector<double> get_spectrum(vector<slug_stardata> &stardata) const
   { return get_spectrum_const(stardata); }
-  vector<double> get_spectrum(const slug_stardata &stardata);
+  vector<double> get_spectrum(const slug_stardata &stardata) const;
 
 private:
   vector<double> 
-  get_spectrum_const(const vector<slug_stardata> &stardata);
+  get_spectrum_const(const vector<slug_stardata> &stardata) const;
 
 };
 

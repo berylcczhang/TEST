@@ -1,6 +1,6 @@
 # Set flags for debug and non-debug mode
-CXXOPTFLAGS     = -O3 -MMD -MP -I $(CXX_INCLUDE_PATH) -I $(BOOST_HOME) -Wall -std=c++11 -DNDEBUG
-LDOPTFLAGS      = -O3 -lm -lboost_system-mt -lboost_filesystem-mt -lboost_regex-mt -L $(LD_LIBRARY_PATH)
+CXXOPTFLAGS     = -O3 -ffast-math -MMD -MP -I $(CXX_INCLUDE_PATH) -I $(BOOST_HOME) -Wall -std=c++11 -DNDEBUG
+LDOPTFLAGS      = -O4 -ffast-math -lm -lboost_system-mt -lboost_filesystem-mt -lboost_regex-mt -L $(LD_LIBRARY_PATH)
 CXXDEBFLAGS     = -g -MMD -MP -I $(CXX_INCLUDE_PATH) -I $(BOOST_HOME) -Wall -std=c++11
 LDDEBFLAGS      = -g -lm -lboost_system-mt -lboost_filesystem-mt -lboost_regex-mt -L $(LD_LIBRARY_PATH)
 
