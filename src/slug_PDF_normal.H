@@ -80,9 +80,9 @@ private:
   const vector<string> tokList = { "mean", "disp" };
 
   // Internal data
-  double segMean;          // Mean of normal
-  double segDisp;          // Dispersion of normal
-  double norm;             // Normalization
+  double segMean;         // Mean of normal
+  double segDisp;         // Dispersion of normal
+  double norm;            // Normalization
   double segMinVal;       // Value of segment evaluated at segMin
   double segMaxVal;       // Value of segment evaluated at segMax
   double expectVal;       // Expectation value

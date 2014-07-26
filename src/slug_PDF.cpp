@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "constants.H"
 #include "slug_PDF.H"
+#include "slug_PDF_delta.H"
 #include "slug_PDF_exponential.H"
 #include "slug_PDF_lognormal.H"
 #include "slug_PDF_normal.H"
@@ -552,10 +553,10 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
   if (firstline.size() < 3)
     parseError(lineCount, "", "Need at least two breakpoints");
 
-  // Read the breakpoints
+  // Read the breakpoints, and make sure they're non-decreasing
   unsigned int nbreak = firstline.size() - 1;
   unsigned int nsegment = nbreak - 1;
-  double *breakpoints = new double[nbreak];
+  vector<double> breakpoints(nbreak);
   for (unsigned int i=0; i<nbreak; i++) {
     try {
       breakpoints[i] = lexical_cast<double>(firstline[i+1]);
@@ -563,6 +564,11 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       // If we're here, a type conversion failed
       parseError(lineCount, "", 
 		 "Expected: 'breakpoints M1 M2 M3 ... MN'");
+    }
+    if (i>0) {
+      if (breakpoints[i] < breakpoints[i-1])
+	parseError(lineCount, "", 
+		   "Breakpoints must be non-decreasing");
     }
   }
 
@@ -616,7 +622,11 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
       // Read the segment type, and call the appropriate constructor
       to_lower(tokens[1]);
       slug_PDF_segment *seg = NULL;
-      if (tokens[1].compare("exponential")==0) {
+      if (tokens[1].compare("delta")==0) {
+	slug_PDF_delta *new_seg = 
+	  new slug_PDF_delta(breakpoints[bptr], breakpoints[bptr+1], rng);
+	seg = (slug_PDF_segment *) new_seg;
+      } else if (tokens[1].compare("exponential")==0) {
 	slug_PDF_exponential *new_seg = 
 	  new slug_PDF_exponential(breakpoints[bptr], breakpoints[bptr+1], rng);
 	seg = (slug_PDF_segment *) new_seg;
@@ -808,21 +818,24 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
       // Read the segment type, and call the appropriate constructor
       to_lower(tokens[1]);
       slug_PDF_segment *seg = NULL;
-      if (tokens[1].compare("exponential")==0) {
+      if (tokens[1].compare("delta")==0) {
+	slug_PDF_delta *new_seg = new slug_PDF_delta(rng);
+	seg = (slug_PDF_segment *) new_seg;
+      } else if (tokens[1].compare("exponential")==0) {
 	slug_PDF_exponential *new_seg = new slug_PDF_exponential(rng);
-	seg = (slug_PDF_segment *) &new_seg;
+	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("lognormal")==0) {
 	slug_PDF_lognormal *new_seg = new slug_PDF_lognormal(rng);
-	seg = (slug_PDF_segment *) &new_seg;
+	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("normal")==0) {
 	slug_PDF_normal *new_seg = new slug_PDF_normal(rng);
-	seg = (slug_PDF_segment *) &new_seg;
+	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("powerlaw")==0) {
 	slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw(rng);
-	seg = (slug_PDF_segment *) &new_seg;
+	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("schechter")==0) {
 	slug_PDF_schechter *new_seg = new slug_PDF_schechter(rng);
-	seg = (slug_PDF_segment *) &new_seg;
+	seg = (slug_PDF_segment *) new_seg;
       } else {
 	string errStr("Unknown segment type ");
 	errStr += tokens[1];

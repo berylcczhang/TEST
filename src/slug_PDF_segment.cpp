@@ -148,6 +148,17 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
     }
   }
 
+  // Special case: we're here because we got to EOF, but if we didn't
+  // need to read any tokens, that's ok, and we should return
+  // success.
+  double have_all_tok = have_weight && have_min && have_max;
+  for (unsigned int i=0; i<have_tok.size(); i++)
+    have_all_tok = have_all_tok && have_tok[i];
+  if (have_all_tok) {
+    initialize(tok_vals);
+    return OK;
+  }
+
   // If we got here, we've reached EOF without having the data we
   // need, so throw an EOF error
   errMsg = "Incomplete data on segment";

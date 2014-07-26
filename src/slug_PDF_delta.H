@@ -24,7 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // special handling when being included in an integral.
 //
 ////////////////////////////////////////////////////////////////////////
-#if 0
 #ifndef _slug_PDF_delta_H_
 #define _slug_PDF_delta_H_
 
@@ -34,18 +33,30 @@ class slug_PDF_delta : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_delta() {};
+  slug_PDF_delta(rng_type* rng_) : slug_PDF_segment(rng_) {};
 
   // Construct a segment representing a delta function at a particular
   // point
-  slug_PDF_delta(double x) : slug_PDF_segment(x, x) { expectVal = x; };
+  slug_PDF_delta(double x, rng_type* rng_) : 
+    slug_PDF_segment(x, x, rng) {};
+
+  // Construct a segment taking a min and max. We will make sure they
+  // are the same, or bail out with an error.
+  slug_PDF_delta(double segMin_, double segMax_, rng_type* rng_);
 
   // Destructor
   ~slug_PDF_delta() {};
 
   // Functions to return integral and expectation value over finite intervals
+  double expectationVal() { return segMin; }
   double expectationVal(double a, double b);
   double integral(double a, double b);
+
+  // Functions to return the segment values evaluated at the
+  // endpoints. For a delta function PDF these are undefined, so we
+  // bail out if they are ever called.
+  double sMinVal();
+  double sMaxVal();
 
   // Draw function
   double draw(double a, double b);
@@ -53,17 +64,15 @@ public:
   // Operator to return the value of the segment evaluated at a specified
   // point. This is required to be defined by the slug_PDF_segment
   // interfrace, but of course it makes no sense for a delta
-  // distribution, so we implement it by throwing an error if it is
+  // distribution, so we implement it by exiting with an error if it is
   // ever called.
   double operator()(const double x);
 
-  // Function to read data for a particular segment from a file; pure
-  // virtual. Returns true on successful read, false on failure.
-  parseStatus parse(ifstream& file, int& lineCount, string &errMsg, 
-		    rng_type& rng, double *weight);
+protected:
+  // Initializer
+  void initialize(const vector<double>& tokenVal);
 
 };
 
 #endif
 // _slug_PDF_delta_H_
-#endif

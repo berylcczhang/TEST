@@ -112,7 +112,7 @@ private:
   // Vector of segments in the PDF
   vector<slug_PDF_segment *> segments;  // Segments in the PDF
   vector<slug_PDF_segment *> seg_restricted; // Segments for
-					     // restricted draws
+	  				     // restricted draws
 
   // Pointer to the rng
   rng_type *rng;

@@ -13,14 +13,38 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
-#if 0
+
 #include "slug_PDF_delta.H"
 #include <cassert>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 
-using namespace boost;
-using namespace boost::algorithm;
+////////////////////////////////////////////////////////////////////////
+// Constructor
+////////////////////////////////////////////////////////////////////////
+slug_PDF_delta::
+slug_PDF_delta(double segMin_, double segMax_, rng_type* rng_) :
+  slug_PDF_segment(segMin_, segMax_, rng_) {
+  if (segMin != segMax) {
+    std::cerr << 
+      "slug error: delta function segments must have min == max!"
+	       << std::endl;
+    exit(1);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Initialization function. Note that tokenVals will be an empty
+// vector, since we don't want any tokens. We just check that min and
+// max are the same.
+////////////////////////////////////////////////////////////////////////
+void
+slug_PDF_delta::initialize(const vector<double>& tokenVals) {
+  if (segMin != segMax) {
+    std::cerr << 
+      "slug error: delta function segments must have min == max!"
+	       << std::endl;
+    exit(1);
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Expectation value over a finite interval
@@ -50,26 +74,25 @@ slug_PDF_delta::draw(double a, double b) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Operator to return the value of the segment evaluated at a specified
-// point. This is required to be defined by the slug_PDF_segment
-// interfrace, but of course it makes no sense for a delta
-// distribution, so we implement it by throwing an error if it is
-// ever called.
+// Disallowed functions. These are defined in the slug_PDF class
+// interface, but are meaningless for delta functions, so we bail out
+// if any of them are ever called.
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_delta::operator() (double x) {
-  std::cerr << "Cannot evaluate delta(x)!" << std::endl;
+  std::cerr << "slug error: cannot evaluate delta(x)!" << std::endl;
   exit(1);
 }
 
-////////////////////////////////////////////////////////////////////////
-// File parser
-////////////////////////////////////////////////////////////////////////
-parseStatus
-slug_PDF_normal::parse(ifstream& file, int& lineCount, string &errMsg, 
-		       rng_type& rng, double *weight) {
+double
+slug_PDF_delta::sMinVal() {
+  std::cerr << "slug error: cannot evaluate delta(x)!" << std::endl;
+  exit(1);
+}
 
-  // Make sure we've been called in advanced mode, indicated by the
-  // fact that weight != NULL
-  
-#endif
+double
+slug_PDF_delta::sMaxVal() {
+  std::cerr << "slug error: cannot evaluate delta(x)!" << std::endl;
+  exit(1);
+}
+
