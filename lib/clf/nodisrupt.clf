@@ -1,0 +1,16 @@
+###############################################################
+# This is an CLF (cluster lifetime function) definition file 
+# for SLUG v2.
+# This file defines a CLF such that clusters never disrupt --
+# formally, we make the lifetime distribution a delta function
+# at 10^300 yr.
+###############################################################
+
+# Breakpoints: time values where the functional form changes
+# The first and last breakpoint will define the minimum and
+# maximum possible lifetime
+breakpoints 1.0e300 1e300
+
+# Definitions of segments between the breakpoints
+segment
+type delta
