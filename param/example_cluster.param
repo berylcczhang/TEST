@@ -1,0 +1,104 @@
+#######################################
+# An example parameter file for SLUG2 #
+#######################################
+
+# Note: all parameters are explained below. For some of them, a
+# default value is given, and these parameters are optional. Some are
+# also optional under other circumstances, as noted below.
+
+# Name of the model
+model_name        SLUG_EXAMPLE_CLUSTER
+
+# Type of simulation ("galaxy" or "cluster"; default = "galaxy")
+sim_type  	  cluster
+
+# Mass of cluster for cluster mode simulation (in Msun)
+cluster_mass      1e3
+
+# Directory into which to write output
+out_dir           ../output/
+
+# Number of model galaxies to run (default = 1)
+n_trials          1
+
+# Length of time step (in yr)
+time_step    	  1.0e6
+
+# Maximum evolution time (in yr; must be < 10^9)
+end_time	  4.0e7
+
+# IMF (initial mass function) file name
+imf   	          lib/imf/chabrier.imf
+
+# CLF (cluster lifetime function) file name
+clf               lib/clf/slug_default.clf
+
+# Minimum stellar mass for full stochastic treatment; lower mass stars are 
+# handled assuming that they are continuously-distributed (Default: 2.0)
+min_stoch_mass    2.0
+
+# Stellar tracks to use
+tracks	  	  lib/tracks/modp020.dat
+
+# Stellar atmospheres set to use
+atmospheres 	  lib/atmospheres
+
+# Write out cluster physical properties? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster       1
+
+# Write out cluster photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_phot  1
+
+# Write out cluster spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_spec  1
+
+# Write out integrated physical properties of galaxy?  Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated     1
+
+# Write out integrated photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_phot  1
+
+# Write out integrated spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_spec  1
+
+# Spectral synthesis mode; currently allowed values are 
+# -- planck (treat stars as blackbodies)
+# -- kurucz (use Kurucz atmospheres, as compiled by Lejeune+ 1997)
+# -- kurucz+hillier (use Hillier models for WR stars, kurucz for all others)
+# -- sb99 (emulate starburst99)
+# Default: sb99
+specsyn_mode	   kurucz+hillier
+
+# Photometric filters to be used; can be comma- or whitespace-separated
+phot_bands         UVIS1_F225W, UVIS1_F336W, UVIS1_F438W, UVIS1_F555W, UVIS1_F814W
+
+# Write output as binary or ASCII; allowed values:
+# -- binary
+# -- ascii
+# Default: ascii
+output_mode      ascii
+
+# Level of verbosity while running; allowed values:
+# -- 0 (run silently)
+# -- 1 (some basic output)
+# -- 2 (lots of output)
+# Default: 1
+verbosity        2
