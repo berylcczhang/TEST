@@ -39,10 +39,12 @@ class slug_specsyn_hillier : public slug_specsyn {
 public:
 
   // Constructor
-  slug_specsyn_hillier(const char *dirname, slug_tracks *my_tracks, 
-		       slug_PDF *my_imf, slug_PDF *my_sfh,
-		       double z_in = 0.0, 
-		       bool check_data_in = true);
+  slug_specsyn_hillier(const char *dirname, 
+		       const slug_tracks *my_tracks, 
+		       const slug_PDF *my_imf, 
+		       const slug_PDF *my_sfh,
+		       const double z_in = 0.0, 
+		       const bool check_data_in = true);
 
   // Destructor
   ~slug_specsyn_hillier();

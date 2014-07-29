@@ -229,6 +229,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	  specsyn_mode = KURUCZ;
 	else if (tokens[1].compare("kurucz+hillier") == 0)
 	  specsyn_mode = KURUCZ_HILLIER;
+	else if (tokens[1].compare("kurucz+pauldrach") == 0)
+	  specsyn_mode = KURUCZ_PAULDRACH;
 	else if (tokens[1].compare("sb99") == 0)
 	  specsyn_mode = SB99;
 	else {

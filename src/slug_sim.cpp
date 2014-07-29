@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_sim.H"
 #include "slug_specsyn_hillier.H"
 #include "slug_specsyn_kurucz.H"
+#include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 #include <ctime>
 #include <iomanip>
@@ -89,6 +90,10 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     specsyn = (slug_specsyn *) 
       new slug_specsyn_hillier(pp.get_atmos_dir(), tracks, 
 			       imf, sfh, pp.get_z());
+  } else if (pp.get_specsynMode() == KURUCZ_PAULDRACH) {
+    specsyn = (slug_specsyn *) 
+      new slug_specsyn_pauldrach(pp.get_atmos_dir(), tracks, 
+				 imf, sfh, pp.get_z());
     //  } else if (pp.get_specsynMode() == SB99) {
     //specsyn = (slug_specsyn *) new slug_specsyn_sb99(pp);
   }

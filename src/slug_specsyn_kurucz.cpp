@@ -341,7 +341,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
       // Now we have ptr3 pointing at the start of a block in logg,
       // and ptr4 pointing at the end of it, so add the contribution
       // from this point in the model grid.
-      for (int i=ptr3; i<ptr4; i++)
+      for (unsigned int i=ptr3; i<ptr4; i++)
 	for (unsigned int j=0; j<L_lambda.size(); j++)
 	  L_lambda[j] += surf_area[i] *
 	    Twgt[i-ptr1] * Tfac1[i-ptr1] * F_lambda[Tptr][gptr][j];

@@ -50,7 +50,7 @@ enum WRtype { NONE, WC, WN };
 enum outputMode { ASCII, BINARY };
 
 // Enum for spectral synthesis modes
-enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, SB99 };
+enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH, SB99 };
 
 // Struct to represent basic data on stars
 typedef struct { 

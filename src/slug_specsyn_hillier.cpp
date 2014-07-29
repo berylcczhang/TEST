@@ -51,9 +51,9 @@ namespace hillier {
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_specsyn_hillier::
-slug_specsyn_hillier(const char *dirname, slug_tracks *my_tracks, 
-		     slug_PDF *my_imf, slug_PDF *my_sfh,
-		     double z_in, bool check_data_in) :
+slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks, 
+		     const slug_PDF *my_imf, const slug_PDF *my_sfh,
+		     const double z_in, const bool check_data_in) :
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
   Teff_wn(12), Teff_wc(12), logT_break_wn(11), logT_break_wc(11),
   check_data(check_data_in)
@@ -297,7 +297,10 @@ get_spectrum(vector<slug_stardata>& stars) const {
 
 ////////////////////////////////////////////////////////////////////////
 // Function to compute spectrum for WR stars using Hillier model
-// atmospheres. Closely modeled on starburst99's hillier subroutine.
+// atmospheres. Closely modeled on starburst99's hillier subroutine in
+// terms of functionality, but it should be significantly faster for
+// large group of stars because the process of searching the model
+// grid has been optimized significantly.
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_specsyn_hillier::
