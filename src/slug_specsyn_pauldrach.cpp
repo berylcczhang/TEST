@@ -164,7 +164,7 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
 	   F_lambda[i][j][k+1] * lambda_rest[k+1]) *
 	  (log_lambda[k+1] - log_lambda[k]);
       }
-      for (int k=0; k<1221; j++)
+      for (int k=0; k<1221; k++)
 	F_lambda[i][j][k] *= constants::sigmaSB * 
 	  pow(10.0, 4.0*logT_mod[i]) / integral;
     }
@@ -302,7 +302,6 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
   // Compute surface areas of stars
   vector<double> surf_area(stars.size());
   for (unsigned int i=0; i<stars.size(); i++) {
-    assert(stars[i].WR != NONE); // Safety check in debug mode
     surf_area[i] = 4.0 * M_PI * 
       pow(10.0, 2.0 * (stars[i].logR + constants::logRsun));
   }
@@ -338,7 +337,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
       } else {
 	while (1) {
 	  if (ptr4 == ptr2) break;
-	  if (stars[ptr4].logTeff < logg_break[Tptr][gptr]) break;
+	  if (stars[ptr4].logg < logg_break[Tptr][gptr]) break;
 	  ptr4++;
 	}
       }
