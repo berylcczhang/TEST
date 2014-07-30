@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
@@ -113,7 +114,7 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
 
   // Read the wavelengths
   lambda_rest.resize(1221);
-  for (int i=0; i<1221; i++) atmos_file >> lambda_rest[i];
+  for (unsigned int i=0; i<1221; i++) atmos_file >> lambda_rest[i];
 
   // Read the models
   string modelhdr;
@@ -161,7 +162,8 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
     logg_mod[Tptr][gptr] = logg;
 
     // Read F_lambda
-    for (int i=0; i<1221; i++) atmos_file >> F_lambda[Tptr][gptr][i];
+    for (unsigned int i=0; i<1221; i++) 
+      atmos_file >> F_lambda[Tptr][gptr][i];
 
     // Burn the newline character
     getline(atmos_file, modelhdr);
@@ -182,7 +184,7 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
 
   // Compute observed frame wavelengths
   lambda_obs.resize(lambda_rest.size());
-  for (int i=0; i<1221; i++) 
+  for (unsigned int i=0; i<1221; i++) 
     lambda_obs[i] = (1.0+z)*lambda_rest[i];
 
   // If we're checking the data and using Planck as a backup, set it
@@ -309,7 +311,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
     vector<double> Twgt(ptr2-ptr1);
     vector<double> Tfac1(ptr2-ptr1);
     vector<double> Tfac2(ptr2-ptr1);
-    for (int i=ptr1; i<ptr2; i++) {
+    for (unsigned int i=ptr1; i<ptr2; i++) {
       Twgt[i-ptr1] = (log_Teff_mod[Tptr+1] - stars[i].logTeff) /
 	(log_Teff_mod[Tptr+1] - log_Teff_mod[Tptr]);
       Tfac1[i-ptr1] = 
@@ -363,7 +365,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
 	    0.5*(logg_mod[Tptr+1][gptr]+logg_mod[Tptr+1][gptr+1])) break;
 	ptr4++;
       }
-      for (int i=ptr3; i<ptr4; i++)
+      for (unsigned int i=ptr3; i<ptr4; i++)
 	for (unsigned int j=0; j<L_lambda.size(); j++)
 	  L_lambda[j] += surf_area[i] *
 	    (1.0-Twgt[i-ptr1]) * Tfac2[i-ptr1] * F_lambda[Tptr+1][gptr][j];
@@ -406,13 +408,13 @@ get_spectrum(const slug_stardata& stardata) const {
 
   // If we're here, we assume that the temperature between Teff_min
   // and Teff_max
-  int Tptr = 0;
+  unsigned int Tptr = 0;
   while (stardata.logTeff < log_Teff_mod[Tptr+1]) Tptr++;
   double wgt = (stardata.logTeff - log_Teff_mod[Tptr]) / 
     (log_Teff_mod[Tptr+1] - log_Teff_mod[Tptr]);
 
   // Find closest log g value in each of the two Teff rows
-  int gptr1 = 0;
+  unsigned int gptr1 = 0;
   while (1) {
     if (gptr1 == ng[Tptr]-1) break;
     if (stardata.logg < 
@@ -420,7 +422,7 @@ get_spectrum(const slug_stardata& stardata) const {
       break;
     gptr1++;
   }
-  int gptr2 = 0;
+  unsigned int gptr2 = 0;
   while (1) {
     if (gptr2 == ng[Tptr+1]-1) break;
     if (stardata.logg < 

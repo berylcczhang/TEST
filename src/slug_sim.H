@@ -58,8 +58,15 @@ private:
   void open_integrated_spec();
   void open_cluster_spec();
 
+  // Output information
+  std::vector<double> outTimes;    // Output times
+  std::ofstream int_prop_file;     // Integrated properties file
+  std::ofstream cluster_prop_file; // Cluster properties file
+  std::ofstream int_spec_file;     // Integrated spectra file
+  std::ofstream cluster_spec_file; // Cluster spectra file
+
   // Private data to be used in the simulations
-  const slug_parmParser pp;   // Parameter parser
+  const slug_parmParser &pp;  // Parameter parser
   rng_type *rng;              // Random number generator
   slug_tracks *tracks;        // Stellar evolution tracks
   slug_PDF *imf;              // Stellar IMF
@@ -69,14 +76,8 @@ private:
   slug_specsyn *specsyn;      // Spectral synthesizer
   slug_cluster *cluster;      // A single star cluster
   slug_galaxy *galaxy;        // A single galaxy
-
-  // Output information
-  std::vector<double> outTimes;    // Output times
-  std::ofstream int_prop_file;     // Integrated properties file
-  std::ofstream cluster_prop_file; // Cluster properties file
-  std::ofstream int_spec_file;     // Integrated spectra file
-  std::ofstream cluster_spec_file; // Cluster spectra file
   outputMode out_mode;             // Output mode
+
 };
 
 #endif

@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "slug_specsyn_sb99.H"
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 // Wrapper function that just decides which of type of atmosphere
 // model to use for each star, calls the appropriate one for each, and

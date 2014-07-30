@@ -31,8 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/multi_array.hpp>
 #include <cmath>
 
-using namespace std;
-
 typedef boost::multi_array<double, 2> array2d;
 typedef boost::multi_array<double, 3> array3d;
 
@@ -61,8 +59,10 @@ public:
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for a
   // description of the argument list.
-  vector<double> get_spectrum(vector<slug_stardata>& stars) const;
-  vector<double> get_spectrum(const slug_stardata& stardata) const;
+  std::vector<double> 
+  get_spectrum(std::vector<slug_stardata>& stars) const;
+  std::vector<double> 
+  get_spectrum(const slug_stardata& stardata) const;
 
   // Method that returns the lowest temperature model we have; note
   // that models are ordered from highest to lowest temperature. This
@@ -79,19 +79,19 @@ private:
 
   // Private get_spectrum routine that operates on a list of stars
   // that are all known to be WR stars already
-  vector<double> 
-  get_spectrum_clean(vector<slug_stardata>& stars) const;
+  std::vector<double> 
+  get_spectrum_clean(std::vector<slug_stardata>& stars) const;
 
   // Data
-  string file_name;            // Name of file we read
-  vector<double> logT_mod;     // log_10 T_eff for models
-  vector<double> logT_break;   // log_10 T_eff halfway between models
-  array2d logg_mod;            // log_10 g for models
-  array2d logg_break;          // log_10 g halfway between models
-  array3d F_lambda;            // Model flux
-  slug_specsyn_kurucz *kurucz; // Kurucz synthesizer
-  slug_specsyn_planck *planck; // Planck synthesizer
-  bool check_data;             // Should be check inputs?
+  std::string file_name;          // Name of file we read
+  std::vector<double> logT_mod;   // log_10 T_eff for models
+  std::vector<double> logT_break; // log_10 T_eff halfway between models
+  array2d logg_mod;               // log_10 g for models
+  array2d logg_break;             // log_10 g halfway between models
+  array3d F_lambda;               // Model flux
+  slug_specsyn_kurucz *kurucz;    // Kurucz synthesizer
+  slug_specsyn_planck *planck;    // Planck synthesizer
+  bool check_data;                // Should be check inputs?
 
 };
 

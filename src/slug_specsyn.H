@@ -71,7 +71,7 @@ public:
 	       const slug_PDF *my_sfh, const double z_in = 0.0);
 
   // Virtual destructor
-  virtual ~slug_specsyn() {}
+  virtual ~slug_specsyn();
 
   // Return the wavelengths used by the synthesizer
   std::vector<double>::size_type n_lambda() const 

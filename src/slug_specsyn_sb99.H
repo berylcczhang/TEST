@@ -34,8 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 
-using namespace std;
-
 class slug_specsyn_sb99 : public slug_specsyn {
 
 public:
@@ -59,8 +57,10 @@ public:
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for a
   // description of the argument list.
-  vector<double> get_spectrum(vector<slug_stardata>& stars) const;
-  vector<double> get_spectrum(const slug_stardata& stardata) const;
+  std::vector<double> 
+  get_spectrum(std::vector<slug_stardata>& stars) const;
+  std::vector<double>
+  get_spectrum(const slug_stardata& stardata) const;
 
 private:
 

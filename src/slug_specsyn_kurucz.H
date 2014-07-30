@@ -34,8 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_specsyn_planck.H"
 #include <boost/multi_array.hpp>
 
-using namespace std;
-
 typedef boost::multi_array<double, 2> array2d;
 typedef boost::multi_array<double, 3> array3d;
 
@@ -67,15 +65,17 @@ public:
 
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for details.
-  vector<double> get_spectrum(vector<slug_stardata>& stars) const;
-  vector<double> get_spectrum(const slug_stardata& stardata) const;
+  std::vector<double> 
+  get_spectrum(std::vector<slug_stardata>& stars) const;
+  std::vector<double> 
+  get_spectrum(const slug_stardata& stardata) const;
 
 private:
 
   // Private get_spectrum routine that operates on temperature lists
   // that are guaranteed to be valid
-  vector<double> 
-  get_spectrum_clean(vector<slug_stardata>& stars) const;
+  std::vector<double> 
+  get_spectrum_clean(std::vector<slug_stardata>& stars) const;
 
   // Note on data structures: the model grid consists of a series of
   // Teff values, each with one or more corresponding log g
@@ -91,14 +91,14 @@ private:
   // stored in a contiguous block so that only a single pointer
   // dereference is needed to access any given element.
 
-  vector<double> Teff_mod;           // T_eff values for models
-  vector<double> log_Teff_mod;       // log_10 of T_eff for models
   array2d logg_mod;                  // log g values for models
   array3d F_lambda;                  // Flux of models
-  vector<int> ng;                    // Size of model grid rows
-  string atmos_file_name;            // Atmosphere file name
-  slug_specsyn_planck *planck;       // Planck spectral synthesizer
+  std::vector<double> Teff_mod;      // T_eff values for models
+  std::vector<double> log_Teff_mod;  // log_10 of T_eff for models
+  std::vector<unsigned int> ng;      // Size of model grid rows
+  std::string atmos_file_name;       // Atmosphere file name
   double log_Teff_min, log_Teff_max; // Min and max Teff for models
+  slug_specsyn_planck *planck;       // Planck spectral synthesizer
   bool check_data;                   // Check if temperatures are valid?
 
 };

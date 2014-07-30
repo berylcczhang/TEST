@@ -124,13 +124,14 @@ slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks,
   // Read the WC models
   string modelhdr;
   double modelnum;
-  for (int i=0; i<11; i++) getline(atmos_file, modelhdr); // Burn 11 lines
-  for (int i=0; i<12; i++) {
+  for (unsigned int i=0; i<11; i++) 
+    getline(atmos_file, modelhdr); // Burn 11 lines
+  for (unsigned int i=0; i<12; i++) {
     getline(atmos_file, modelhdr);   // Burn a line
     getline(atmos_file, modelhdr);   // Burn a line 
     atmos_file >> modelnum;
     atmos_file >> Teff_wc[i];
-    for (int j=0; j<1221; j++) {
+    for (unsigned int j=0; j<1221; j++) {
       atmos_file >> lambda_rest[j] >> F_lam_wc[i][j];
     }
   }
@@ -159,13 +160,13 @@ slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks,
     exit(1);
   }
   wn_file_name = atmos_path.string();
-  for (int i=0; i<11; i++) getline(atmos_file, modelhdr);
-  for (int i=0; i<12; i++) {
+  for (unsigned int i=0; i<11; i++) getline(atmos_file, modelhdr);
+  for (unsigned int i=0; i<12; i++) {
     getline(atmos_file, modelhdr);
     getline(atmos_file, modelhdr);
     atmos_file >> modelnum;
     atmos_file >> Teff_wn[i];
-    for (int j=0; j<1221; j++) {
+    for (unsigned int j=0; j<1221; j++) {
       atmos_file >> lambda_rest[j] >> F_lam_wn[i][j];
     }
   }
@@ -173,7 +174,7 @@ slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks,
 
   // Compute observed frame wavelengths
   lambda_obs.resize(lambda_rest.size());
-  for (int i=0; i<1221; i++) 
+  for (unsigned int i=0; i<1221; i++) 
     lambda_obs[i] = (1.0+z)*lambda_rest[i];
 
   // Renormalize the Hillier models so that they give fluxes at
@@ -184,8 +185,8 @@ slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks,
 			    2.33, 1.84, 1.50, 1.03, 0.7};
   const double wnradii[] = {20.30, 17.24, 14.90, 11.40, 9.00, 7.30, 
 			    5.07, 3.72, 2.84, 2.26, 1.82, 1.27};
-  for (int i=0; i<12; i++) {
-    for (int j=0; j<1221; j++) {
+  for (unsigned int i=0; i<12; i++) {
+    for (unsigned int j=0; j<1221; j++) {
       F_lam_wc[i][j] *= 
 	pow(constants::kpc/(constants::Rsun*wcradii[i]), 2);
       F_lam_wn[i][j] *= 
@@ -195,7 +196,7 @@ slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks,
 
   // Generate breakpoints between models in log T, since that's what
   // will be passed in
-  for (int i=0; i<11; i++) {
+  for (unsigned int i=0; i<11; i++) {
     logT_break_wn[i] = log10(0.5*(Teff_wn[i]+Teff_wn[i+1]));
     logT_break_wc[i] = log10(0.5*(Teff_wc[i]+Teff_wc[i+1]));
   }
@@ -333,7 +334,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
   // Go through the WN stars and assign spectra based on model
   // temperatures
   unsigned int Tptr = 0;
-  unsigned int ptr1 = 0, ptr2 = 0;
+  vector<double>::size_type ptr1 = 0, ptr2 = 0;
   while (ptr2 < wcptr) {
 
     // Move pointer 2 until it hits the next Teff value or the end of
@@ -352,7 +353,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
     // Add contribution from stars in this temperature block, with a
     // normalization factor to account for the difference in Teff
     // between the star and the grid model.
-    for (unsigned int i=ptr1; i<ptr2; i++) {
+    for (vector<double>::size_type i=ptr1; i<ptr2; i++) {
       double Tfac = pow(10.0, 4.0*stars[i].logTeff) 
 	/ pow(Teff_wn[Tptr], 4);
       for (unsigned int j=0; j<L_lambda.size(); j++) {
@@ -386,7 +387,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
     // Add contribution from stars in this temperature block, with a
     // normalization factor to account for the difference in Teff
     // between the star and the grid model
-    for (unsigned int i=ptr1; i<ptr2; i++) {
+    for (vector<double>::size_type i=ptr1; i<ptr2; i++) {
       double Tfac = pow(10.0, 4.0*stars[i].logTeff) 
 	/ pow(Teff_wc[Tptr], 4);
       for (unsigned int j=0; j<L_lambda.size(); j++) {

@@ -32,7 +32,7 @@ slug_specsyn_planck(const slug_tracks *my_tracks,
 		    const slug_PDF *my_sfh, const double z_in) : 
   slug_specsyn(my_tracks, my_imf, my_sfh, z_in)
 {
-  for (int i=0; i<1001; i++) {
+  for (unsigned int i=0; i<1001; i++) {
     lambda_rest.push_back(91.0 * 
 			  pow(10., i/1000.0*4));
     lambda_obs.push_back(lambda_rest[i]*(1.0+z));

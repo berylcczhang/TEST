@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
@@ -61,10 +62,10 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
   const int nfile = 5;
   double zdiff = constants::big;
   int idx = -1;
-  for (int i=0; i<nfile; i++) {
+  for (unsigned int i=0; i<nfile; i++) {
     double zdiff1 = abs(log10(zrel[i]) - log10(my_tracks->get_metallicity()));
     if (zdiff > zdiff1) {
-      idx = i;
+      idx = (int) i;
       zdiff = zdiff1;
     }
   }
@@ -119,8 +120,9 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
 
   // Read the models
   string modelhdr;
-  for (int i=0; i<10; i++) getline(atmos_file, modelhdr); // Burn 10 lines
-  for (int i=0; i<33; i++) {
+  for (unsigned int i=0; i<10; i++) 
+    getline(atmos_file, modelhdr); // Burn 10 lines
+  for (unsigned int i=0; i<33; i++) {
     getline(atmos_file, modelhdr);   // Burn a line
     getline(atmos_file, modelhdr);   // Burn a line
     getline(atmos_file, modelhdr);   // Read the header
@@ -129,14 +131,14 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
     split(tokens, modelhdr, is_any_of("\t "), token_compress_on);
     logT_mod[i % 11] = lexical_cast<double>(tokens[1]);
     logg_mod[i % 11][i / 11] = lexical_cast<double>(tokens[3]);
-    for (int j=0; j<1221; j++)
+    for (unsigned int j=0; j<1221; j++)
       atmos_file >> lambda_rest[j] >> F_lambda[i%11][i/11][j];
   }
   atmos_file.close();
 
   // Compute observed frame wavelengths
   lambda_obs.resize(lambda_rest.size());
-  for (int i=0; i<1221; i++) 
+  for (unsigned int i=0; i<1221; i++) 
     lambda_obs[i] = (1.0+z)*lambda_rest[i];
 
   // Models are not normalized for some reason, so re-normalize them
@@ -154,11 +156,12 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
   // lambda is probably finely enough sampled that it doesn't make too
   // much difference.
   vector<double> log_lambda(1221);
-  for (int i=0; i<1221; i++) log_lambda[i] = std::log(lambda_rest[i]);
-  for (int i=0; i<11; i++) {
-    for (int j=0; j<3; j++) {
+  for (unsigned int i=0; i<1221; i++) 
+    log_lambda[i] = std::log(lambda_rest[i]);
+  for (unsigned int i=0; i<11; i++) {
+    for (unsigned int j=0; j<3; j++) {
       double integral = 0.0;
-      for (int k=0; k<1220; k++) {
+      for (unsigned int k=0; k<1220; k++) {
 	integral += 0.5 * 
 	  (F_lambda[i][j][k] * lambda_rest[k] + 
 	   F_lambda[i][j][k+1] * lambda_rest[k+1]) *
@@ -171,10 +174,10 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
   }
 
   // Compute breakpoints halfway between model points in log T and log g
-  for (int i=0; i<10; i++) 
+  for (unsigned int i=0; i<10; i++) 
     logT_break[i] = 0.5*(logT_mod[i] + logT_mod[i+1]);
-  for (int i=0; i<11; i++)
-    for (int j=0; j<2; j++)
+  for (unsigned int i=0; i<11; i++)
+    for (unsigned int j=0; j<2; j++)
       logg_break[i][j] = 0.5*(logg_mod[i][j] + logg_mod[i][j+1]);
 
   // If using data range checking, set up the Kurucz and Planck
@@ -308,7 +311,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
 
   // Find nearest neighbors in temperature and log g in model grid
   unsigned int Tptr = 0;
-  unsigned int ptr1 = 0, ptr2 = 0;
+  vector<double>::size_type ptr1 = 0, ptr2 = 0;
   while (ptr2 < stars.size()) {
 
     // Move pointer 2 until it hits the next Teff value or the end of
@@ -327,7 +330,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
     // For stars in this temperature block, use the same procedure to
     // assign log g values
     unsigned int gptr = 0;
-    unsigned int ptr3 = ptr1, ptr4 = ptr1;
+    vector<double>::size_type ptr3 = ptr1, ptr4 = ptr1;
     while (ptr4 < ptr2) {
 
       // Move pointer 4 until it hits the next logg value or the end

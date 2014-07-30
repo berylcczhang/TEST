@@ -122,7 +122,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     slopes.resize(extent[ntrack-1][ntime]);
 
     // Loop over tracks
-    for (int i=0; i<ntrack; i++) {
+    for (unsigned int i=0; i<ntrack; i++) {
 
       // Blank line
       getline(trackfile, line);
@@ -149,25 +149,26 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       // bcpl...
       vector<unsigned int> breaks;
       if (tracktype.back().compare("WR") == 0) {
-	int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 64, 73, 82, 
-			89, 96};
+	unsigned int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 
+				    64, 73, 82, 89, 96};
 	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
       } else if (tracktype.back().compare("RO") == 0) {
-	int colbreaks[] = {0, 3, 25, 37, 47, 57, 72, 87, 102, 117, 132, 
-			142, 150};
+	unsigned int colbreaks[] = {0, 3, 25, 37, 47, 57, 72, 87, 102,
+				    117, 132, 142, 150};
 	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
       } else if (tracktype.back().compare("ML") == 0) {
-	int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 64, 73, 82,
-			89};
+	unsigned int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 64, 
+				    73, 82, 89};
 	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
       } else {
-	int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 64, 73, 82};
+	unsigned int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 
+				    64, 73, 82};
 	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
@@ -177,7 +178,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       getline(trackfile, line);
 
       // Loop over times
-      for (int j=1; j<ntime; j++) {
+      for (unsigned int j=1; j<ntime; j++) {
 
 	// Read a line
 	getline(trackfile, line);
@@ -406,7 +407,7 @@ slug_tracks::death_mass(const double time) const {
 
   // We're here, so this age is in the grid. Figure out which two
   // tracks it is between.
-  int i=0;
+  unsigned int i=0;
   while (logtimes[i][ntime-1] < logt) i++;
 
   // Get death mass
@@ -430,7 +431,7 @@ slug_tracks::star_lifetime(const double mass) const {
   if (logm > logmass[0]) return exp(logtimes[0][ntime-1]);
 
   // Find the pair of tracks that bounds this entry
-  int trackptr = 0;
+  unsigned int trackptr = 0;
   while (logm < logmass[trackptr+1]) {
     trackptr++;
     if (trackptr == ntrack-1) {
@@ -466,18 +467,19 @@ get_isochrone(const double t, const vector<double> &m) const {
 
   // Throw out any stars that are below our lowest mass track, or
   // above our highest mass track
-  int startptr = 0;
+  unsigned int startptr = 0;
   double mMin = exp(logmass[ntrack-1]);
   double mMax = exp(logmass[0]);
   while (m[startptr] < mMin) startptr++;
   int endptr = m.size()-1;
   while (m[endptr] > mMax) endptr--;
-  int nstar = endptr - startptr + 1;
+  unsigned int nstar = endptr - startptr + 1;
 
   // Construct array of log masses, and get the indices and weights
   vector<double> logm(nstar), timewgt(nstar), trackwgt(nstar);
-  vector<int> timeidx(nstar), trackidx(nstar);
-  for (int i=startptr; i<=endptr; i++) logm[i-startptr] = log(m[i]);
+  vector<unsigned int> timeidx(nstar), trackidx(nstar);
+  for (unsigned int i=startptr; i<=endptr; i++) 
+    logm[i-startptr] = log(m[i]);
 
   // Populate index and weight arrays
   double logt;
@@ -489,7 +491,7 @@ get_isochrone(const double t, const vector<double> &m) const {
   vector<slug_stardata> stars(nstar);
 
   // Interpolate to get desired quantities
-  for (int i=0; i<nstar; i++) {
+  for (unsigned int i=0; i<nstar; i++) {
 
     // L_bol
     stars[i].logL = 
@@ -625,7 +627,8 @@ get_isochrone(const double t, const vector<double> &m) const {
 void
 slug_tracks::isochrone_wgts(const double logt, const 
 			    vector<double> &logm, 
-			    vector<int> &timeidx, vector<int> &trackidx, 
+			    vector<unsigned int> &timeidx, 
+			    vector<unsigned int> &trackidx, 
 			    vector<double> &timewgt,
 			    vector<double> &trackwgt) const {
 
@@ -634,12 +637,12 @@ slug_tracks::isochrone_wgts(const double logt, const
 
   // Start a mass pointer at the track that is the largest one below
   // the smallest input mass
-  int trackptr = ntrack - 1;
+  unsigned int trackptr = ntrack - 1;
   while (logmass[trackptr-1] < logm[0]) trackptr--;
   double logmptr = logmass[trackptr];
 
   // Get index in the time direction at starting point
-  int timeptr = 0;
+  unsigned int timeptr = 0;
   while (logtimes[trackptr][timeptr+1] < logt) timeptr++;
 
   // Now march upward through the grid. At each step, stop when we

@@ -231,6 +231,12 @@ slug_specsyn::slug_specsyn(const slug_tracks *my_tracks,
 
 
 ////////////////////////////////////////////////////////////////////////
+// Destructor
+////////////////////////////////////////////////////////////////////////
+slug_specsyn::~slug_specsyn() { }
+
+
+////////////////////////////////////////////////////////////////////////
 // Spectral synthesis function for a continuous IMF
 ////////////////////////////////////////////////////////////////////////
 
@@ -303,7 +309,7 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
     q.me.assign(1, err);
     q.rbol.assign(1, L_bol);
     q.ebol.assign(1, bol_err);
-    unsigned int intervalptr = 0;
+    vector<double>::size_type intervalptr = 0;
     unsigned int itCounter = 1;
 
     // Begin iterating
@@ -357,8 +363,9 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 	    bol_err2 / L_bol));
 
       // Traverse the list of intervals to decide which to work on next
-      intervalptr = distance(q.me.begin(), 
-			     max_element(q.me.begin(), q.me.end()));
+      intervalptr = (vector<double>::size_type) 
+	distance(q.me.begin(), 
+		 max_element(q.me.begin(), q.me.end()));
 
       // Update the iteration counter, and check against maximum
       itCounter++;
@@ -416,7 +423,7 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
     q.b.assign(1, m_max);
     q.rbol.assign(1, L_bol);
     q.ebol.assign(1, bol_err);
-    unsigned int intervalptr = 0;
+    vector<double>::size_type intervalptr = 0;
     unsigned int itCounter = 1;
 
     // Begin iterating
@@ -452,8 +459,9 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
       q.ebol.push_back(bol_err2);
 
       // Traverse the list of intervals to decide which to work on next
-      intervalptr = distance(q.ebol.begin(), 
-			     max_element(q.ebol.begin(), q.ebol.end()));
+      intervalptr = (vector<double>::size_type)
+	distance(q.ebol.begin(), 
+		 max_element(q.ebol.begin(), q.ebol.end()));
 
       // Update the iteration counter, and check against maximum
       itCounter++;
@@ -533,7 +541,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
     q.me.assign(1, err);
     q.rbol.assign(1, L_bol);
     q.ebol.assign(1, err_bol);
-    unsigned int intervalptr = 0;
+    vector<double>::size_type intervalptr = 0;
     unsigned int itCounter = 1;
 
     // Begin iterating
@@ -587,8 +595,9 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
 	    err_bol2 / L_bol));
 
       // Traverse the list of intervals to decide which to work on next
-      intervalptr = distance(q.me.begin(), 
-			     max_element(q.me.begin(), q.me.end()));
+      intervalptr = (vector<double>::size_type)
+	distance(q.me.begin(), 
+		 max_element(q.me.begin(), q.me.end()));
 
       // Update the iteration counter, and check against maximum
       itCounter++;
@@ -634,7 +643,7 @@ get_Lbol_cts_sfh(const double t, const double tol) const {
     q.b.assign(1, t);
     q.rbol.assign(1, L_bol);
     q.ebol.assign(1, err_bol);
-    unsigned int intervalptr = 0;
+    vector<double>::size_type intervalptr = 0;
     unsigned int itCounter = 1;
 
     // Begin iterating
@@ -670,8 +679,9 @@ get_Lbol_cts_sfh(const double t, const double tol) const {
       q.ebol.push_back(err_bol2);
 
       // Traverse the list of intervals to decide which to work on next
-      intervalptr = distance(q.ebol.begin(), 
-			     max_element(q.ebol.begin(), q.ebol.end()));
+      intervalptr = (vector<double>::size_type)
+	distance(q.ebol.begin(), 
+		 max_element(q.ebol.begin(), q.ebol.end()));
 
       // Update the iteration counter, and check against maximum
       itCounter++;
@@ -720,8 +730,8 @@ get_spectrum_cts_gk(const double m_min, const double m_max,
   // Now form the Gauss and Konrod sums
 
   // Central mass point
-  int ptr1 = gknum/2;
-  int ptr2;
+  unsigned int ptr1 = gknum/2;
+  unsigned int ptr2;
 
   // Get spectrum at this mass
   q.L_tmp1 = get_spectrum(stardata[ptr1]);
@@ -838,8 +848,8 @@ get_Lbol_cts_gk(const double m_min, const double m_max,
   // Now form the Gauss and Konrod sums
 
   // Central mass point
-  int ptr1 = gknum/2;
-  int ptr2;
+  unsigned int ptr1 = gknum/2;
+  unsigned int ptr2;
 
   // Get IMF at this mass
   double imf_val1 = (*imf)(x_k[ptr1]);
@@ -928,8 +938,8 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
   // Now form the Gauss and Konrod sums
 
   // Central mass point
-  int ptr1 = gknum/2;
-  int ptr2;
+  unsigned int ptr1 = gknum/2;
+  unsigned int ptr2;
 
   // Get spectrum at the central time, leaving a fair margin of error
   // in the tolerance; note that we normalize to 1 Msun here, and fix
@@ -1038,8 +1048,8 @@ get_Lbol_cts_sfh_gk(const double t_min, const double t_max,
   // Now form the Gauss and Konrod sums
 
   // Central mass point
-  int ptr1 = gknum/2;
-  int ptr2;
+  unsigned int ptr1 = gknum/2;
+  unsigned int ptr2;
 
   // Get Lbol at the central time, leaving a fair margin of error
   // in the tolerance; note that we normalize to 1 Msun here, and fix

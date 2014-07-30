@@ -71,18 +71,14 @@ private:
   // Method to get isochrone weights and indices
   void isochrone_wgts(const double logt, 
 		      const std::vector<double> &logm,
-		      std::vector<int> &timeidx, 
-		      std::vector<int> &trackidx, 
+		      std::vector<unsigned int> &timeidx, 
+		      std::vector<unsigned int> &trackidx, 
 		      std::vector<double> &timewgt,
 		      std::vector<double> &trackwgt) const;
 
   // Private data
   std::string trackfileName;    // Name of the track file
   std::string trackDesc;        // Descriptor string on 1st line of file
-  double metallicity;           // Metallicity normalized to solar
-  double WR_mass;               // Mass at which WR stars form
-  unsigned int ntrack;          // Number of tracks
-  unsigned int ntime;           // Number of times per track
   std::vector<std::string> tracktype; // Type of track (WR, RO, ML)
   std::vector<double>logmass;   // Log base e initial masses [Msun]
   array2d logtimes;             // Log base e of times [yr]
@@ -98,6 +94,10 @@ private:
   array2d logmDot;              // Log base 10 of wind mass flux [Msun/yr]
   array2d slopes;               // Slopes connectiong points in (log
 				// t, logm)
+  double metallicity;           // Metallicity normalized to solar
+  double WR_mass;               // Mass at which WR stars form
+  unsigned int ntrack;          // Number of tracks
+  unsigned int ntime;           // Number of times per track
 };
 
 #endif
