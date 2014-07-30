@@ -335,7 +335,7 @@ get_spectrum_clean(vector<slug_stardata>& stars) const {
 
       // Move pointer 4 until it hits the next logg value or the end
       // of this block of the star list
-      if (gptr == logg_mod.shape()[1]) {
+      if (gptr == logg_break.shape()[1]) {
 	ptr4 = ptr2;
       } else {
 	while (1) {

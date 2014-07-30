@@ -39,7 +39,7 @@ class slug_specsyn_sb99 : public slug_specsyn {
 public:
 
   // Constructor -- just constructs all the spectral synthesizer
-  // members
+  // members and initializes the wavelengths
   slug_specsyn_sb99(const char *dirname, 
 		    const slug_tracks *my_tracks, 
 		    const slug_PDF *my_imf,
@@ -49,7 +49,11 @@ public:
     hillier(dirname, my_tracks, my_imf, my_sfh, z_in, false),
     kurucz(dirname, my_tracks, my_imf, my_sfh, z_in, false),
     pauldrach(dirname, my_tracks, my_imf, my_sfh, z_in, false),
-    planck(lambda_obs, my_tracks, my_imf, my_sfh, z_in) {}
+    planck(lambda_obs, my_tracks, my_imf, my_sfh, z_in)
+  {
+    lambda_obs = kurucz.lambda();
+    lambda_rest = kurucz.lambda(true);
+  }
 
   // Destructor
   ~slug_specsyn_sb99() {}

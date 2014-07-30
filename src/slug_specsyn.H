@@ -74,9 +74,13 @@ public:
   virtual ~slug_specsyn();
 
   // Return the wavelengths used by the synthesizer
-  std::vector<double>::size_type n_lambda() const 
-  { return lambda_obs.size(); }
-  const std::vector<double> &lambda() const { return lambda_obs; }
+  std::vector<double>::size_type n_lambda() const {
+    return lambda_obs.size(); 
+  }
+  const std::vector<double> &lambda(bool rest = false) const { 
+    if (!rest) return lambda_obs;
+    else return lambda_rest;
+  }
 
   // Methods to return the summed spectrum from a set of stars whose
   // properties are described by the input vector of stellar data, or
