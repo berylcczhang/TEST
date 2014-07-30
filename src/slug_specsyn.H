@@ -33,8 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_tracks.H"
 #include "slug_PDF.H"
 
-using namespace std;
-
 
 ////////////////////////////////////////////////////////////////////////
 // Helper class that just holds workspace data for doing numerical
@@ -44,16 +42,20 @@ class qag_wksp {
 public:
 
   // Constructor; just allocates vectors
-  qag_wksp(int n);
+  qag_wksp(std::vector<double>::size_type n, 
+	   std::vector<double>::size_type gknum) : 
+    x_k(gknum), gaussQuad(n), L_tmp1(n), L_tmp2(n), L_out1(n), 
+    L_out2(n), errsum(n), err1(n), err2(n)
+  { }
 
   // Destructor
-  ~qag_wksp() {};
+  ~qag_wksp() {}
 
   // A bunch of workspace data
-  vector<double> x_k, gaussQuad, L_tmp1, L_tmp2, L_out1, L_out2, 
+  std::vector<double> x_k, gaussQuad, L_tmp1, L_tmp2, L_out1, L_out2, 
     errsum, err1, err2;
-  vector<double> a, b, me, rbol, ebol;
-  vector<vector<double> > r, e;
+  std::vector<double> a, b, me, rbol, ebol;
+  std::vector<std::vector<double> > r, e;
 };
 
 
@@ -69,11 +71,12 @@ public:
 	       const slug_PDF *my_sfh, const double z_in = 0.0);
 
   // Virtual destructor
-  virtual ~slug_specsyn() {};
+  virtual ~slug_specsyn() {}
 
   // Return the wavelengths used by the synthesizer
-  unsigned int n_lambda() const { return lambda_obs.size(); }
-  const vector<double> &lambda() const { return lambda_obs; }
+  std::vector<double>::size_type n_lambda() const 
+  { return lambda_obs.size(); }
+  const std::vector<double> &lambda() const { return lambda_obs; }
 
   // Methods to return the summed spectrum from a set of stars whose
   // properties are described by the input vector of stellar data, or
@@ -84,9 +87,9 @@ public:
   // because we want to allow the spectral synthesizer to modify the
   // list (e.g. by sorting to allow more efficient assignment to a
   // model grid).
-  virtual vector<double> 
-  get_spectrum(vector<slug_stardata> &stardata) const = 0;
-  virtual vector<double> 
+  virtual std::vector<double> 
+  get_spectrum(std::vector<slug_stardata> &stardata) const = 0;
+  virtual std::vector<double> 
   get_spectrum(const slug_stardata &stardata) const = 0;
 
   // Routines to compute the spectrum and the bolometric luminosity for a
@@ -98,7 +101,7 @@ public:
   // parameter tol specified the error tolerance in the numerical
   // integration.
   void get_spectrum_cts(const double m_tot, const double age,
-			vector<double>& L_lambda,
+			std::vector<double>& L_lambda,
 			double &L_bol, const double tol = 1e-3) const;
   double get_Lbol_cts(const double m_tot, const double age,
 		      const double tol = 1e-3) const;
@@ -112,27 +115,30 @@ public:
   // the bolometric luminosity Lbol in units of Lsun. The optional
   // parameter tol specified the error tolerance in the numerical
   // integration.
-  void get_spectrum_cts_sfh(const double t, vector<double>& L_lambda, 
-			    double& L_bol, const double tol = 1e-3) const;
-  double get_Lbol_cts_sfh(const double t, const double tol = 1e-3) const;
+  void get_spectrum_cts_sfh(const double t, 
+			    std::vector<double>& L_lambda, 
+			    double& L_bol, 
+			    const double tol = 1e-3) const;
+  double get_Lbol_cts_sfh(const double t, 
+			  const double tol = 1e-3) const;
 
 
 protected:
 
-  vector<double> lambda_rest;   // Rest wavelengths, in Angstrom
-  vector<double> lambda_obs;    // Observed wavelenghts, in Angstrom
-  const double z;               // Redshift
-  const slug_tracks *tracks;    // Stellar tracks
-  const slug_PDF *imf;          // IMF
-  const slug_PDF *sfh;          // Star formation history
+  std::vector<double> lambda_rest; // Rest wavelengths, in A
+  std::vector<double> lambda_obs;  // Observed wavelenghts, in A
+  const double z;                  // Redshift
+  const slug_tracks *tracks;       // Stellar tracks
+  const slug_PDF *imf;             // IMF
+  const slug_PDF *sfh;             // Star formation history
 
 private:
 
   // Helper function to do Gauss-Konrod integration on a particular
   // mass interval
   void get_spectrum_cts_gk(const double m_min, const double m_max,
-			   const double age, vector<double>& L_lambda, 
-			   double& L_bol, vector<double>& err, 
+			   const double age, std::vector<double>& L_lambda, 
+			   double& L_bol, std::vector<double>& err, 
 			   double& err_bol, qag_wksp& q) const;
   void get_Lbol_cts_gk(const double m_min, const double m_max,
 		       const double age, double& L_bol,
@@ -141,8 +147,8 @@ private:
   // Helper function to do Gauss-Konrod integration on a particular
   // time interval
   void get_spectrum_cts_sfh_gk(const double t_min, const double t_max, 
-			       const double t, vector<double>& L_lambda, 
-			       double &L_bol, vector<double>& err, 
+			       const double t, std::vector<double>& L_lambda, 
+			       double &L_bol, std::vector<double>& err, 
 			       double& err_bol, qag_wksp& q, 
 			       const double tol) const;
   void get_Lbol_cts_sfh_gk(const double t_min, const double t_max, 

@@ -88,8 +88,8 @@ public:
   // be read from the file and tries to read them. If it does so
   // successfully, it passes them to the initialize function, which
   // must be implemented to process them appropriately.
-  virtual parseStatus parse(ifstream& file, int& lineCount,
-			    string &errMsg, double *weight = NULL);
+  virtual parseStatus parse(std::ifstream& file, int& lineCount,
+			    std::string &errMsg, double *weight = NULL);
 
 protected:
 
@@ -97,17 +97,20 @@ protected:
   // routine and use it to initialize the segment. This is defined as
   // vitual and a no-op so that derived classes that don't want to use
   // this mechansim don't have to, but they can override it if they
-  // want.
-  virtual void initialize(const vector<double>& tokenVal) { }
+  // want. Note that we cast the expression to void to suppress
+  // the compiler warning about unused parameters; this doesn't do
+  // anything.
+  virtual void initialize(const std::vector<double>& tokenVal) 
+  { (void) tokenVal; }
 
   // Method to return the list of tokens we expect to get out of the
   // parser. This returns an empty vector unless the derived class
   // overrides this behavior.
-  virtual const vector<string>& tokenList()
+  virtual const std::vector<std::string>& tokenList()
   { return _empty_string; }
 
   // An empty string to return by default
-  vector<string> _empty_string;
+  const std::vector<std::string> _empty_string;
 
   // Data
   double segMin, segMax;  // Lower and upper limits of segment

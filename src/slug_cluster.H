@@ -37,14 +37,14 @@ class slug_cluster {
 
 public:
   // Construct a cluster with specified target mass, birth time, IMF
-  slug_cluster(const long my_id, const double my_mass, 
+  slug_cluster(const unsigned long my_id, const double my_mass, 
 	       const double time, const slug_PDF *my_imf, 
 	       const slug_tracks *my_tracks, const 
 	       slug_specsyn *my_specsyn, 
 	       const slug_PDF *my_clf=NULL);
 
   // Destructor
-  ~slug_cluster() { };
+  ~slug_cluster() { }
 
   // Routine to return the id
   unsigned long get_id() const { return id; }
@@ -78,22 +78,23 @@ public:
   double get_lifetime() const { return lifetime; }
 
   // Routine to return the number of stochastic stars
-  unsigned int get_nstars() const { return stars.size(); }
+  std::vector<double>::size_type get_nstars() const 
+  { return stars.size(); }
 
   // Routines to return the stellar masses, other stellar data, the
   // bolometric luminosity, the spectrum, and the wavelength data to
   // go with the spectrum. Where something must be computed, these
   // functions just invoke the corresponding set method and then
   // return.
-  const vector<double> &get_stars() const { return stars; }
-  const vector<slug_stardata> &get_isochrone()
+  const std::vector<double> &get_stars() const { return stars; }
+  const std::vector<slug_stardata> &get_isochrone()
   { set_isochrone(); return stardata; }
   double get_Lbol() 
   { set_Lbol(); return Lbol; }
-  const vector<double> &get_spectrum()
+  const std::vector<double> &get_spectrum()
   { set_spectrum(); return L_lambda; }
-  void get_spectrum(vector<double> &lambda_out, 
-		    vector<double> &L_lambda_out)
+  void get_spectrum(std::vector<double> &lambda_out, 
+		    std::vector<double> &L_lambda_out)
   { set_spectrum(); 
     lambda_out = specsyn->lambda(); 
     L_lambda_out = L_lambda; }
@@ -103,9 +104,9 @@ public:
   // collection of them, and that this cluster should therefore write
   // out its time and the number 1, indicating that it is the only
   // cluster. This only makes a difference if out_mode == BINARY.
-  void write_prop(ofstream& outfile, const outputMode out_mode, 
+  void write_prop(std::ofstream& outfile, const outputMode out_mode, 
 		  const bool cluster_only = false) const;
-  void write_spectrum(ofstream& outfile, const outputMode out_mode,
+  void write_spectrum(std::ofstream& outfile, const outputMode out_mode,
 		      const bool cluster_only = false);
 
 private:
@@ -132,11 +133,11 @@ private:
   double curTime;                     // Current time
   double lifetime;                    // Time at which this cluster disrupts
   double stellarDeathMass;            // Mass of star dying at current age
-  vector<double> stars;               // List of stellar masses
-  vector<slug_stardata> stardata;     // Data on stellar properties
-  bool is_disrupted;                  // Is this cluster disrupted?
-  vector<double> L_lambda;            // Spectrum
   double Lbol;                        // Bolometric luminosity
+  std::vector<double> stars;          // List of stellar masses
+  std::vector<slug_stardata> stardata; // Data on stellar properties
+  std::vector<double> L_lambda;       // Spectrum
+  bool is_disrupted;                  // Is this cluster disrupted?
   bool data_set, Lbol_set, spec_set;  // Status indicators
 };
 

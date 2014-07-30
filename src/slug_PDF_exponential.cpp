@@ -26,9 +26,9 @@ using namespace boost::random;
 slug_PDF_exponential::
 slug_PDF_exponential(double sMin_, double sMax_, double sScale, 
 		     rng_type *rng_)
-  : slug_PDF_segment(sMin_, sMax_, rng_) 
+  : slug_PDF_segment(sMin_, sMax_, rng_)
 {
-  vector<double> tokVals(1, sScale);
+  std::vector<double> tokVals(1, sScale);
   initialize(tokVals);
 }
 
@@ -45,7 +45,7 @@ slug_PDF_exponential::~slug_PDF_exponential() {
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_exponential::initialize(const vector<double>& tokenVal) {
+slug_PDF_exponential::initialize(const std::vector<double>& tokenVal) {
 
   // Save data read from tokens
   segScale = tokenVal[0];

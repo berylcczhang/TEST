@@ -20,10 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include <iomanip>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
-slug_cluster::slug_cluster(const long my_id, const double my_mass, 
+slug_cluster::slug_cluster(const unsigned long my_id, 
+			   const double my_mass, 
 			   const double time, const slug_PDF *my_imf, 
 			   const slug_tracks *my_tracks, 
 			   const slug_specsyn *my_specsyn, 
@@ -128,14 +131,9 @@ slug_cluster::advance(double time) {
 
   // Traverse the list, popping off stars that have died, and
   // correcting the mass downward as we go
-  int i = stars.size() - 1;
-  if (i >= 0) {
-    while (stars[i] > stellarDeathMass) {
-      aliveMass -= stars.back();
-      stars.pop_back();
-      i--;
-      if (i<0) break;
-    }
+  while (stars.size() > 0) {
+    if (stars.back() > stellarDeathMass) stars.pop_back();
+    else break;
   }
 
   // If the maximum mass for non-stochastic treatment is smaller than
@@ -214,7 +212,7 @@ slug_cluster::set_spectrum() {
   if (spec_set) return;
 
   // Initialize
-  unsigned int nl = specsyn->n_lambda();
+  vector<double>::size_type nl = specsyn->n_lambda();
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
 

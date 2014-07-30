@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
+using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
 
@@ -82,64 +83,47 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
     }
 
     // Did we get weight, min, or max?
-    if ((tokens[0].compare("weight") == 0) && !have_weight) {
-      try {
+    try {
+      if ((tokens[0].compare("weight") == 0) && !have_weight) {
 	*weight = lexical_cast<double>(tokens[1]);
 	have_weight = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else if ((tokens[0].compare("min") == 0) && !have_min) {
-      try {
+      } else if ((tokens[0].compare("min") == 0) && !have_min) {
 	segMin = lexical_cast<double>(tokens[1]);
 	have_min = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else if ((tokens[0].compare("max") == 0) && !have_max) {
-      try {
+      } else if ((tokens[0].compare("max") == 0) && !have_max) {
 	segMax = lexical_cast<double>(tokens[1]);
 	have_max = true;
-      } catch (const bad_lexical_cast& ia) {
-	// If we're here, a type conversion failed
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
-    } else {
-      // Did we get one of the other tokens expected by this class?
-      unsigned int i;
-      for (i=0; i<tokList.size(); i++) {
-	if (tokens[0].compare(tokList[i]) == 0) {
-	  // Match found
-	  try {
+      } else {
+	// Did we get one of the other tokens expected by this class?
+	unsigned int i;
+	for (i=0; i<tokList.size(); i++) {
+	  if (tokens[0].compare(tokList[i]) == 0) {
+	    // Match found
 	    tok_vals[i] = lexical_cast<double>(tokens[1]);
 	    have_tok[i] = true;
 	    break;
-	  } catch (const bad_lexical_cast& ia) {
-	    // If we're here, a type conversion failed
-	    errMsg = errStr;
-	    return PARSE_ERROR;
 	  }
 	}
-      }
 
-      // If we're here and i == tokList.size(), then we've compared
-      // this token to min, max, weight, and all the tokens defined by
-      // the class, and still not found a match. Bail out with an
-      // error in this case
-      if (i == tokList.size()) {
-	errMsg = errStr;
-	return PARSE_ERROR;
+	// If we're here and i == tokList.size(), then we've compared
+	// this token to min, max, weight, and all the tokens defined by
+	// the class, and still not found a match. Bail out with an
+	// error in this case
+	if (i == tokList.size()) {
+	  errMsg = errStr;
+	  return PARSE_ERROR;
+	}
       }
+    } catch (const bad_lexical_cast& ia) {
+      // If we're here, a type conversion failed
+      (void) ia; // No-op to suppress compiler warning
+      errMsg = errStr;
+      return PARSE_ERROR;
     }
 
     // If we're read everything we need, call the initialize routine
     // and then return a success
-    double have_all_tok = have_weight && have_min && have_max;
+    bool have_all_tok = have_weight && have_min && have_max;
     for (unsigned int i=0; i<have_tok.size(); i++)
       have_all_tok = have_all_tok && have_tok[i];
     if (have_all_tok) {
@@ -151,7 +135,7 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
   // Special case: we're here because we got to EOF, but if we didn't
   // need to read any tokens, that's ok, and we should return
   // success.
-  double have_all_tok = have_weight && have_min && have_max;
+  bool have_all_tok = have_weight && have_min && have_max;
   for (unsigned int i=0; i<have_tok.size(); i++)
     have_all_tok = have_all_tok && have_tok[i];
   if (have_all_tok) {

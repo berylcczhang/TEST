@@ -37,7 +37,8 @@ slug_PDF_delta(double segMin_, double segMax_, rng_type* rng_) :
 // max are the same.
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_delta::initialize(const vector<double>& tokenVals) {
+slug_PDF_delta::initialize(const std::vector<double>& tokenVals) {
+  assert(tokenVals.size() == 0);
   if (segMin != segMax) {
     std::cerr << 
       "slug error: delta function segments must have min == max!"
@@ -80,6 +81,7 @@ slug_PDF_delta::draw(double a, double b) {
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_delta::operator() (double x) {
+  (void) x; // No-op to suppress compiler warning
   std::cerr << "slug error: cannot evaluate delta(x)!" << std::endl;
   exit(1);
 }

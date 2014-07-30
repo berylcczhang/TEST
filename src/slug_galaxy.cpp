@@ -23,12 +23,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include <iomanip>
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 // A trivial little helper function, used below
 ////////////////////////////////////////////////////////////////////////
-bool sort_death_time_decreasing(const slug_star star1, 
-				const slug_star star2) {
-  return (star1.death_time > star2.death_time);
+namespace galaxy {
+  bool sort_death_time_decreasing(const slug_star star1, 
+				  const slug_star star2) {
+    return (star1.death_time > star2.death_time);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -167,7 +171,7 @@ slug_galaxy::advance(double time) {
 
     // Sort field star list by death time, from largest to smallest
     sort(field_stars.begin(), field_stars.end(), 
-	 sort_death_time_decreasing);
+	 galaxy::sort_death_time_decreasing);
 
     // Increase the non-stochastic field star mass by the mass of
     // field stars that should have formed below the stochstic limit
@@ -208,13 +212,12 @@ slug_galaxy::advance(double time) {
 
   // Go through the field star list and remove any field stars that
   // have died
-  int i = field_stars.size() - 1;
-  if (i >= 0) {
-    while (field_stars[i].death_time < curTime) {
+  while (field_stars.size() > 0) {
+    if (field_stars.back().death_time < curTime) {
       aliveMass -= field_stars.back().mass;
       field_stars.pop_back();
-      i--;
-      if (i<0) break;
+    } else {
+      break;
     }
   }
 
@@ -299,7 +302,7 @@ slug_galaxy::set_spectrum() {
   if (spec_set) return;
 
   // Initialize
-  unsigned int nl = specsyn->n_lambda();
+  vector<double>::size_type nl = specsyn->n_lambda();
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
 
@@ -308,7 +311,8 @@ slug_galaxy::set_spectrum() {
   list<slug_cluster *>::iterator it;
   for (it = clusters.begin(); it != clusters.end(); it++) {
     const vector<double>& spec = (*it)->get_spectrum();
-    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    for (vector<double>::size_type i=0; i<nl; i++) 
+      L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
   }
 
@@ -316,15 +320,17 @@ slug_galaxy::set_spectrum() {
   for (it = disrupted_clusters.begin(); it != disrupted_clusters.end(); 
        it++) {
     const vector<double>& spec = (*it)->get_spectrum();
-    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    for (vector<double>::size_type i=0; i<nl; i++) 
+      L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
   }
 
   // Now do stochastic field stars
   if (!field_data_set) set_field_data();
-  for (unsigned int i=0; i<field_data.size(); i++) {
+  for (vector<slug_stardata>::size_type i=0; i<field_data.size(); i++) {
     const vector<double> &spec = specsyn->get_spectrum(field_data[i]);
-    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    for (vector<double>::size_type j=0; j<nl; j++) 
+      L_lambda[j] += spec[j];
     Lbol += pow(10.0, field_data[i].logL);
   }
 
@@ -333,7 +339,8 @@ slug_galaxy::set_spectrum() {
     double Lbol_tmp;
     vector<double> spec;
     specsyn->get_spectrum_cts_sfh(curTime, spec, Lbol_tmp);
-    for (unsigned int i=0; i<nl; i++) L_lambda[i] += spec[i];
+    for (vector<double>::size_type i=0; i<nl; i++) 
+      L_lambda[i] += spec[i];
     Lbol += Lbol_tmp;
   }
 
@@ -411,7 +418,7 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
 
   if (out_mode == ASCII) {
     vector<double> lambda = specsyn->lambda();
-    for (unsigned int i=0; i<lambda.size(); i++) {
+    for (vector<double>::size_type i=0; i<lambda.size(); i++) {
       int_spec_file << setprecision(5) << scientific 
 		    << setw(11) << right << curTime << "   "
 		    << setw(11) << right << lambda[i] << "   "

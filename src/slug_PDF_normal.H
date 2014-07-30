@@ -32,11 +32,11 @@ class slug_PDF_normal : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_normal(rng_type* rng_) : slug_PDF_segment(rng_) {};
+  slug_PDF_normal(rng_type* rng_) : slug_PDF_segment(rng_) {}
 
   // Construct a segment with just min and max values
   slug_PDF_normal(double sMin_, double sMax_, rng_type* rng_) : 
-    slug_PDF_segment(sMin_, sMax_, rng_) {};
+    slug_PDF_segment(sMin_, sMax_, rng_) {}
 
   // Construct a segment with a specified min and max range, and a
   // specfied center and dispersion
@@ -65,10 +65,11 @@ public:
 protected:
 
   // Initializer
-  void initialize(const vector<double>& tokenVal);
+  void initialize(const std::vector<double>& tokenVal);
 
   // Token list return function
-  virtual const vector<string>& tokenList() { return tokList; }
+  virtual const std::vector<std::string>& tokenList() 
+  { return tokList; }
 
 private:
 
@@ -77,7 +78,7 @@ private:
 			   boost::normal_distribution<> > *ndist;
 
   // This list of tokens we expect to read
-  const vector<string> tokList = { "mean", "disp" };
+  const std::vector<std::string> tokList = { "mean", "disp" };
 
   // Internal data
   double segMean;         // Mean of normal

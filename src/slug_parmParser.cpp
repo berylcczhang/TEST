@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.H"
 #include "slug_parmParser.H"
 
+using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
@@ -109,6 +110,7 @@ slug_parmParser::setDefaults() {
     writeClusterSpec = writeIntegratedSpec = true;
   out_mode = ASCII;
   model = "SLUG_DEF";
+  specsyn_mode = SB99;
   run_galaxy_sim = true;
 }
 
@@ -273,6 +275,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       }
     } catch (const bad_lexical_cast& ia) {
       // If we're here, a type conversion failed
+      (void) ia; // No-op to suppress compiler warning
       parseError(line);
     }
 
@@ -289,6 +292,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 // Method to throw a parsing error and exit
 ////////////////////////////////////////////////////////////////////////
 
+[[noreturn]]
 void
 slug_parmParser::parseError(string line) {
   cerr << "slug error: unable to parse line:" << endl;
@@ -500,7 +504,7 @@ const { return outDir.string().c_str(); }
 double slug_parmParser::get_fClust() const { return fClust; }
 vector<string>::size_type slug_parmParser::get_nPhot()
 const { return photBand.size(); }
-const char *slug_parmParser::get_photBand(int n)
+const char *slug_parmParser::get_photBand(unsigned int n)
 const { return photBand[n].c_str(); }
 bool slug_parmParser::get_writeClusterProp()
 const { return writeClusterProp; }

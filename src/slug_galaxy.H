@@ -34,8 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <vector>
 
-using namespace std;
-
 class slug_galaxy {
 
 public:
@@ -56,24 +54,24 @@ public:
   // spectrum. These just invoke the corresponding set method and
   // return.
   double get_Lbol() { set_Lbol(); return Lbol; }
-  const vector<double> &get_spectrum()
+  const std::vector<double> &get_spectrum()
   { set_spectrum(); return L_lambda; }
-  void get_spectrum(vector<double>& lambda_out, 
-		    vector<double>& L_lambda_out)
+  void get_spectrum(std::vector<double>& lambda_out, 
+		    std::vector<double>& L_lambda_out)
   { set_spectrum();
-    vector<double> lambda_tmp(specsyn->lambda());
-    vector<double> L_lambda_tmp = L_lambda;
+    std::vector<double> lambda_tmp(specsyn->lambda());
+    std::vector<double> L_lambda_tmp = L_lambda;
     lambda_out = lambda_tmp;
     L_lambda_out = L_lambda_tmp; }
 
   // Output functions
-  void write_integrated_prop(ofstream& int_prop_file, 
+  void write_integrated_prop(std::ofstream& int_prop_file, 
 			     const outputMode out_mode);
-  void write_cluster_prop(ofstream& cluster_prop_file,
+  void write_cluster_prop(std::ofstream& cluster_prop_file,
 			  const outputMode out_mode);
-  void write_integrated_spec(ofstream& int_spec_file,
+  void write_integrated_spec(std::ofstream& int_spec_file,
 			     const outputMode out_mode);
-  void write_cluster_spec(ofstream& cluster_spec_file,
+  void write_cluster_spec(std::ofstream& cluster_spec_file,
 			  const outputMode out_mode);
 
 private:
@@ -98,14 +96,14 @@ private:
   double aliveMass;                   // Mass of currently alive stars
   double clusterMass;                 // Mass in non-disrupted clusters
   double fc;                          // Fraction of stars in clusters
-  vector<slug_star> field_stars;      // Field stars
-  vector<slug_stardata> field_data;   // Field star data
   double nonStochFieldMass;        // Mass of field stars w/out stochasticity
-  list<slug_cluster *> disrupted_clusters; // Disrupted clusters
-  list<slug_cluster *> clusters;      // Cluster list
-  long cluster_id;                    // Cluster ID counter
   double Lbol;                        // Bolometric luminosity of galaxy
-  vector<double> L_lambda;            // Specific luminosity of galaxy
+  unsigned long cluster_id;           // Cluster ID counter
+  std::vector<slug_star> field_stars; // Field stars
+  std::vector<slug_stardata> field_data; // Field star data
+  std::list<slug_cluster *> disrupted_clusters; // Disrupted clusters
+  std::list<slug_cluster *> clusters; // Cluster list
+  std::vector<double> L_lambda;       // Specific luminosity of galaxy
 
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?

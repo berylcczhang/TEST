@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;

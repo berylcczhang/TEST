@@ -17,14 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_PDF_schechter.H"
 #include <cmath>
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/expint.hpp>
 #include <boost/math/special_functions/gamma.hpp>
 #include <boost/random/uniform_01.hpp>
 
 using namespace boost;
-using namespace boost::algorithm;
 using namespace boost::math;
 using namespace boost::random;
 
@@ -36,7 +33,7 @@ slug_PDF_schechter(double sMin_, double sMax_, double sSlope_,
 		   double sStar_, rng_type *rng_)
   : slug_PDF_segment(sMin_, sMax_, rng_) 
 {
-  vector<double> tokenVals(2);
+  std::vector<double> tokenVals(2);
   tokenVals[0] = sSlope_;
   tokenVals[1] = sStar_;
   initialize(tokenVals);
@@ -55,7 +52,7 @@ slug_PDF_schechter::~slug_PDF_schechter() {
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_schechter::initialize(const vector<double>& tokenVal) {
+slug_PDF_schechter::initialize(const std::vector<double>& tokenVal) {
 
   // Save the slope and M* value
   segSlope = tokenVal[0];

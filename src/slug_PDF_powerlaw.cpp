@@ -17,11 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_PDF_powerlaw.H"
 #include <cmath>
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 
 using namespace boost;
-using namespace boost::algorithm;
 using namespace boost::random;
 
 ////////////////////////////////////////////////////////////////////////
@@ -32,7 +29,7 @@ slug_PDF_powerlaw(double sMin_, double sMax_, double sSlope_,
 		  rng_type *rng_)
   : slug_PDF_segment(sMin_, sMax_, rng_) 
 {
-  vector<double> tokenVals(1, sSlope_);
+  std::vector<double> tokenVals(1, sSlope_);
   initialize(tokenVals);
 }
 
@@ -49,7 +46,7 @@ slug_PDF_powerlaw::~slug_PDF_powerlaw() {
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_powerlaw::initialize(const vector<double> &tokenVals) {
+slug_PDF_powerlaw::initialize(const std::vector<double> &tokenVals) {
 
   // Save the slope
   segSlope = tokenVals[0];

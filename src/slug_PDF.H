@@ -97,22 +97,23 @@ public:
   // returned will only be drawn from the stochastically-limited
   // range, and any input target will be adjusted down by the mass
   // fraction that is in the stochastic range
-  double drawPopulation(double target, vector<double>& pop) const;
+  double drawPopulation(double target, std::vector<double>& pop) const;
 
   // Operator to return the PDF evaluated at a particular x
   double operator()(const double x) const;
 
 private:
   // Functions to parse basic and advanced mode PDF files
-  void parseBasic(ifstream& PDFFile, vector<string> firstline,
+  void parseBasic(std::ifstream& PDFFile, 
+		  std::vector<std::string> firstline,
 		  int& lineCount);
-  void parseAdvanced(ifstream& PDFFile, int& lineCount);
+  void parseAdvanced(std::ifstream& PDFFile, int& lineCount);
 
   // Data
   // Vector of segments in the PDF
-  vector<slug_PDF_segment *> segments;  // Segments in the PDF
-  vector<slug_PDF_segment *> seg_restricted; // Segments for
-	  				     // restricted draws
+  std::vector<slug_PDF_segment *> segments;  // Segments in the PDF
+  std::vector<slug_PDF_segment *> seg_restricted; // Segments for
+	  				          // restricted draws
 
   // Pointer to the rng
   rng_type *rng;
@@ -128,30 +129,25 @@ private:
 			   boost::random::uniform_smallint<> > *coin;
 
   // Function invoked if parser fails to parse a file
-  void parseError(int lineCount, string line = "", 
-		  string message = "");
+  [[ noreturn ]] void parseError(int lineCount, std::string line = "", 
+				 std::string message = "");
 
   // Function invoked if the parser reaches EOF without getting all
   // the data it needed
-  void eofError(string message = "");
+  [[ noreturn ]] void eofError(std::string message = "");
 
   // Name of the PDF file
-  string PDFFileName;
-
-  // Flag for whether this is a normalized PDF
-  bool normalized;
+  std::string PDFFileName;
 
   // Weights of the various segments
-  vector<double> weights;
-  vector<double> weights_restricted;
+  std::vector<double> weights;
+  std::vector<double> weights_restricted;
 
   // Lower and upper limits of the PDF
   double xMin, xMax;
 
-  // Lower and upper limits for the stochstic treatment, and flag to
-  // indicate if they are set
+  // Lower and upper limits for the stochstic treatment
   double xStochMin, xStochMax;
-  bool range_restrict;
 
   // Expectation value and integral under PDF, and under the
   // stochastically-treated part of it only
@@ -160,6 +156,11 @@ private:
 
   // Sampling method
   samplingMethod method;
+
+  // Flags for whether this is a normalized PDF, and whether there are
+  // limits to the stochastic range
+  bool normalized;
+  bool range_restrict;
 };
 
 #endif

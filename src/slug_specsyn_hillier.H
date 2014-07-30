@@ -30,8 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_specsyn_planck.H"
 #include <boost/multi_array.hpp>
 
-using namespace std;
-
 typedef boost::multi_array<double, 2> array2d;
 
 class slug_specsyn_hillier : public slug_specsyn {
@@ -59,22 +57,24 @@ public:
   // Methods to get the spectrum. These are implementations of virtual
   // methods defined in slug_specsyn; see slug_specsyn.H for a
   // description of the argument list.
-  vector<double> get_spectrum(vector<slug_stardata>& stars) const;
-  vector<double> get_spectrum(const slug_stardata& stardata) const;
+  std::vector<double> 
+  get_spectrum(std::vector<slug_stardata>& stars) const;
+  std::vector<double> 
+  get_spectrum(const slug_stardata& stardata) const;
 
 private:
 
   // Private get_spectrum routine that operates on a list of stars
   // that are all known to be WR stars already
-  vector<double> 
-  get_spectrum_clean(vector<slug_stardata>& stars) const;
+  std::vector<double> 
+  get_spectrum_clean(std::vector<slug_stardata>& stars) const;
 
   // Data
-  string wc_file_name, wn_file_name;  // Names of file we read
-  vector<double> Teff_wn;             // T_eff for WN models
-  vector<double> Teff_wc;             // T_eff for WC models
-  vector<double> logT_break_wn;       // Log_10 T_eff halfway
-  vector<double> logT_break_wc;       // between WN/WC models
+  std::string wc_file_name, wn_file_name;  // Names of file we read
+  std::vector<double> Teff_wn;             // T_eff for WN models
+  std::vector<double> Teff_wc;             // T_eff for WC models
+  std::vector<double> logT_break_wn;       // Log_10 T_eff halfway
+  std::vector<double> logT_break_wc;       // between WN/WC models
   array2d F_lam_wn;                   // Models for WC stars
   array2d F_lam_wc;                   // Models for WN stars
   slug_specsyn_kurucz *kurucz;        // Kurucz synthesizer

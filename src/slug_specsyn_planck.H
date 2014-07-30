@@ -28,8 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "slug_specsyn.H"
 
-using namespace std;
-
 class slug_specsyn_planck : public slug_specsyn {
 
 public:
@@ -47,7 +45,7 @@ public:
 		      const slug_PDF *my_imf, const slug_PDF *my_sfh,
 		      const double z_in = 0,
 		      const bool rest = false);
-  slug_specsyn_planck(const vector<double>& labmda_in, 
+  slug_specsyn_planck(const std::vector<double>& labmda_in, 
 		      const slug_tracks *my_tracks, 
 		      const slug_PDF *my_imf,
 		      const slug_PDF *my_sfh, const double z_in = 0,
@@ -55,10 +53,10 @@ public:
 
   // The destructor; this is a no-op, since the member vector will
   // auto-desctruct when this class does
-  ~slug_specsyn_planck() {};
+  ~slug_specsyn_planck() {}
 
   // Set the wavelength table
-  void set_lambda(const vector<double>& lambda_in, 
+  void set_lambda(const std::vector<double>& lambda_in, 
 		  const bool rest = false);
 
   // The spectral synthesis functions; see slug_specsyn.H for
@@ -68,13 +66,14 @@ public:
   // and we want to tell the compiler it is const to allow
   // optimization. To accomplish this, we just make get_spectrum wrap
   // a private function where the vector is declared const.
-  vector<double> get_spectrum(vector<slug_stardata> &stardata) const
+  std::vector<double> 
+  get_spectrum(std::vector<slug_stardata> &stardata) const
   { return get_spectrum_const(stardata); }
-  vector<double> get_spectrum(const slug_stardata &stardata) const;
+  std::vector<double> get_spectrum(const slug_stardata &stardata) const;
 
 private:
-  vector<double> 
-  get_spectrum_const(const vector<slug_stardata> &stardata) const;
+  std::vector<double> 
+  get_spectrum_const(const std::vector<slug_stardata> &stardata) const;
 
 };
 

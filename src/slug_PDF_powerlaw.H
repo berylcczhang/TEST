@@ -32,11 +32,11 @@ class slug_PDF_powerlaw : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_powerlaw(rng_type* rng_) : slug_PDF_segment(rng_) {};
+  slug_PDF_powerlaw(rng_type* rng_) : slug_PDF_segment(rng_) {}
 
   // Construct a segment with just min and max values
   slug_PDF_powerlaw(double sMin_, double sMax_, rng_type *rng_) : 
-    slug_PDF_segment(sMin_, sMax_, rng_) {};
+    slug_PDF_segment(sMin_, sMax_, rng_) {}
 
   // Construct a segment with a specified min and max range, and a
   // specfied slope
@@ -65,10 +65,11 @@ public:
 protected:
 
   // Initializer
-  virtual void initialize(const vector<double>& tokenVal);
+  virtual void initialize(const std::vector<double>& tokenVal);
 
   // Token list return function
-  virtual const vector<string>& tokenList() { return tokList; }
+  virtual const std::vector<std::string>& tokenList() 
+  { return tokList; }
 
 private:
 
@@ -77,7 +78,7 @@ private:
 			   boost::uniform_01<> > *unidist;
 
   // This list of tokens we expect to read
-  const vector<string> tokList = { "slope" };
+  const std::vector<std::string> tokList = { "slope" };
 
   // Private data
   double segSlope;        // Powerlaw slope

@@ -25,8 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/random/mersenne_twister.hpp>
 
-using namespace std;
-
 // Declare all classes here
 class slug_PDF;
 class slug_PDF_lognormal;

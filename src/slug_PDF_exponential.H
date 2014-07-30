@@ -32,11 +32,11 @@ class slug_PDF_exponential : public slug_PDF_segment {
 
 public:
   // Uninitialized constructor
-  slug_PDF_exponential(rng_type *rng_) : slug_PDF_segment(rng_) { };
+  slug_PDF_exponential(rng_type *rng_) : slug_PDF_segment(rng_) { }
 
   // Constructor with just min and max values
   slug_PDF_exponential(double sMin_, double sMax_, rng_type *rng_) : 
-    slug_PDF_segment(sMin_, sMax_, rng_) { };
+    slug_PDF_segment(sMin_, sMax_, rng_) { }
 
   // Construct a segment with a specified min and max range, and a
   // specfied exponential scale value
@@ -65,10 +65,11 @@ public:
 protected:
 
   // Initializer
-  virtual void initialize(const vector<double>& tokenVal);
+  virtual void initialize(const std::vector<double>& tokenVal);
 
   // Token list return function
-  virtual const vector<string>& tokenList() { return tokList; }
+  virtual const std::vector<std::string>& tokenList() 
+  { return tokList; }
 
 private:
 
@@ -78,7 +79,7 @@ private:
 			   boost::exponential_distribution<> > *expdist;
 
   // This list of tokens we expect to read
-  const vector<string> tokList = { "scale" };
+  const std::vector<std::string> tokList = { "scale" };
 
   // Internal data
   double segScale;        // The exponential scale length

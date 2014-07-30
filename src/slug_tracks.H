@@ -34,8 +34,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef boost::multi_array<double, 2> array2d;
 
-using namespace std;
-
 class slug_tracks {
 
 public:
@@ -44,7 +42,7 @@ public:
 	      double my_WR_mass = -1.0);
 
   // Destructor
-  ~slug_tracks() { };
+  ~slug_tracks() { }
 
   // Maximum and minimum mass in the tracks
   double max_mass() const { return exp(logmass[0]); }
@@ -65,26 +63,28 @@ public:
   // Method to produce vector of stellar data from input vector of
   // mass and fixed time. Input mass m is in Msun, and the time t is
   // in yr.
-  vector<slug_stardata>
-  get_isochrone(const double t, const vector<double> &m) const;
+  std::vector<slug_stardata>
+  get_isochrone(const double t, const std::vector<double> &m) const;
 
 private:
 
   // Method to get isochrone weights and indices
-  void isochrone_wgts(const double logt, const vector<double> &logm,
-		      vector<int> &timeidx, vector<int> &trackidx, 
-		      vector<double> &timewgt,
-		      vector<double> &trackwgt) const;
+  void isochrone_wgts(const double logt, 
+		      const std::vector<double> &logm,
+		      std::vector<int> &timeidx, 
+		      std::vector<int> &trackidx, 
+		      std::vector<double> &timewgt,
+		      std::vector<double> &trackwgt) const;
 
   // Private data
-  string trackfileName;         // Name of the track file
-  string trackDesc;             // Descriptor string on 1st line of file
+  std::string trackfileName;    // Name of the track file
+  std::string trackDesc;        // Descriptor string on 1st line of file
   double metallicity;           // Metallicity normalized to solar
   double WR_mass;               // Mass at which WR stars form
-  int ntrack;                   // Number of tracks
-  int ntime;                    // Number of times per track
-  vector<string> tracktype;     // Type of track (WR, RO, ML)
-  vector<double>logmass;        // Log base e initial masses [Msun]
+  unsigned int ntrack;          // Number of tracks
+  unsigned int ntime;           // Number of times per track
+  std::vector<std::string> tracktype; // Type of track (WR, RO, ML)
+  std::vector<double>logmass;   // Log base e initial masses [Msun]
   array2d logtimes;             // Log base e of times [yr]
   array2d logcur_mass;          // Log base e of current stellar masses [Msun]
   array2d logL;                 // Log base 10 of luminosity [Lsun]

@@ -71,12 +71,12 @@ private:
   slug_galaxy *galaxy;        // A single galaxy
 
   // Output information
-  vector<double> outTimes;    // Output times
-  outputMode out_mode;        // Output mode
-  ofstream int_prop_file;     // Integrated properties file
-  ofstream cluster_prop_file; // Cluster properties file
-  ofstream int_spec_file;     // Integrated spectra file
-  ofstream cluster_spec_file; // Cluster spectra file
+  std::vector<double> outTimes;    // Output times
+  std::ofstream int_prop_file;     // Integrated properties file
+  std::ofstream cluster_prop_file; // Cluster properties file
+  std::ofstream int_spec_file;     // Integrated spectra file
+  std::ofstream cluster_spec_file; // Cluster spectra file
+  outputMode out_mode;             // Output mode
 };
 
 #endif

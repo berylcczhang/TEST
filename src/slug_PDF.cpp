@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/lexical_cast.hpp>
 #include <boost/random/poisson_distribution.hpp>
 
+using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
 using namespace boost::filesystem;
@@ -356,9 +357,9 @@ double
 slug_PDF::draw() const {
 
   // First decide which segment to draw from
-  int segNum;
+  unsigned int segNum;
   if (segments.size() > 1) {
-    segNum = (*disc)();
+    segNum = (unsigned int) (*disc)();
   } else {
     segNum = 0;
   }
@@ -378,9 +379,9 @@ slug_PDF::draw_restricted() const {
   if (!range_restrict) return draw();
 
   // First decide which segment to draw from
-  int segNum;
+  unsigned int segNum;
   if (seg_restricted.size() > 1) {
-    segNum = (*disc_restricted)();
+    segNum = (unsigned int) (*disc_restricted)();
   } else {
     segNum = 0;
   }
@@ -426,9 +427,9 @@ slug_PDF::draw(double a, double b) const {
 		    discrete_distribution <> > disc_temp(*rng, dist);
 
   // Draw from discrete generator
-  int segNum;
+  unsigned int segNum;
   if (seg_temp.size() > 1) {
-    segNum = disc_temp();
+    segNum = (unsigned int) disc_temp();
   } else {
     segNum = 0;
   }
@@ -554,14 +555,15 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
     parseError(lineCount, "", "Need at least two breakpoints");
 
   // Read the breakpoints, and make sure they're non-decreasing
-  unsigned int nbreak = firstline.size() - 1;
-  unsigned int nsegment = nbreak - 1;
+  unsigned long nbreak = firstline.size() - 1;
+  unsigned long nsegment = nbreak - 1;
   vector<double> breakpoints(nbreak);
   for (unsigned int i=0; i<nbreak; i++) {
     try {
       breakpoints[i] = lexical_cast<double>(firstline[i+1]);
     } catch (const bad_lexical_cast& ia) {
       // If we're here, a type conversion failed
+      (void) ia; // No-op to suppress compiler warning
       parseError(lineCount, "", 
 		 "Expected: 'breakpoints M1 M2 M3 ... MN'");
     }
@@ -939,8 +941,8 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
 ////////////////////////////////////////////////////////////////////////
 // Parsing error handler
 ////////////////////////////////////////////////////////////////////////
-void
-  slug_PDF::parseError(int lineCount, string line, string message) {
+[[noreturn]] void
+slug_PDF::parseError(int lineCount, string line, string message) {
   cerr << "slug error: parsing error in file " 
        << PDFFileName 
        << " on line " << lineCount;
@@ -957,7 +959,7 @@ void
 ////////////////////////////////////////////////////////////////////////
 // Unexpected EOF error handler
 ////////////////////////////////////////////////////////////////////////
-void
+[[noreturn]] void
 slug_PDF::eofError(string message) {
   cerr << "slug error: unxepctedly reached end of PDF file "
        << PDFFileName << endl;

@@ -97,9 +97,10 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     vector<string> tokens;
     split(tokens, line, is_any_of("\t "), token_compress_on);
     try {
-      ntrack = lexical_cast<int>(tokens[0]);
-      ntime = lexical_cast<int>(tokens[1]) + 1;  // Add a dummy entry at time = 0
+      ntrack = lexical_cast<unsigned int>(tokens[0]);
+      ntime = lexical_cast<unsigned int>(tokens[1]) + 1;  // Add a dummy entry at time = 0
     } catch (const bad_lexical_cast& ia) {
+      (void) ia;  // No-op to suppress compiler warning
       cerr << "Error reading track file " << trackfileName << endl;
       exit(1);
     }
@@ -133,6 +134,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       try {
 	logmass[i] = log(lexical_cast<double>(tokens[0]));
       } catch (const bad_lexical_cast& ia) {
+	(void) ia;  // No-op to suppress compiler warning
 	cerr << "Error reading track file " << trackfileName << endl;
 	exit(1);
       }
@@ -145,28 +147,28 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       // intput data based on column positions. Claus, please, please
       // switch to a modern computer language... like cobol... or
       // bcpl...
-      vector<int> breaks;
+      vector<unsigned int> breaks;
       if (tracktype.back().compare("WR") == 0) {
 	int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 64, 73, 82, 
 			89, 96};
-	vector<int> 
+	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
       } else if (tracktype.back().compare("RO") == 0) {
 	int colbreaks[] = {0, 3, 25, 37, 47, 57, 72, 87, 102, 117, 132, 
 			142, 150};
-	vector<int> 
+	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
       } else if (tracktype.back().compare("ML") == 0) {
 	int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 64, 73, 82,
 			89};
-	vector<int> 
+	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
       } else {
 	int colbreaks[] = {0, 2, 16, 25, 31, 37, 46, 55, 64, 73, 82};
-	vector<int> 
+	vector<unsigned int> 
 	  brks(colbreaks, colbreaks + sizeof(colbreaks)/sizeof(int));
 	breaks = brks;
       }
@@ -242,12 +244,14 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	    logmDot[i][j] = -30;
 	  }
 	} catch (const bad_lexical_cast& ia) {
+	  (void) ia;  // No-op to suppress compiler warning
 	  cerr << "Error reading track file " << trackfileName << endl;
 	  exit(1);
 	}
       }
     }
   } catch(ifstream::failure e) {
+    (void) e;  // No-op to suppress compiler warning
     cerr << "Error reading track file " << trackfileName << endl;
     exit(1);
   }
@@ -258,7 +262,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
   // Populate the dummy row at time 0. We add this row to avoid
   // running into problems if we try to interpolate to very young
   // ages.
-  for (int i=0; i<ntrack; i++) {
+  for (unsigned int i=0; i<ntrack; i++) {
     logtimes[i][0] = -constants::big;
     logcur_mass[i][0] = logmass[i];
     logL[i][0] = logL[i][1];
@@ -275,8 +279,8 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
   // Construct the slopes in the (log t, log m) plane; slopes[i, j] =
   // the slope of the segment connecting time[i, j] at mass[i] to
   // time[i+1,j] at mass[i+1]
-  for (int i=0; i<ntrack-1; i++) {
-    for (int j=0; j<ntime; j++) {
+  for (unsigned int i=0; i<ntrack-1; i++) {
+    for (unsigned int j=0; j<ntime; j++) {
       slopes[i][j] = (logmass[i+1]-logmass[i]) /
 	(logtimes[i+1][j] - logtimes[i][j] + 
 	 constants::small);
@@ -290,27 +294,27 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 
     // File names of the form modCXXX.dat or modCXXXX.dat, where C is
     // a letter and the X's are digits; metallicity is 0.XXX or 0.XXXX
-    static const regex pattern1("mod[A-z][0-9]{3}.dat");
-    static const regex pattern2("mod[A-z][0-9]{4}.dat");
+    const regex pattern1("mod[A-z][0-9]{3}.dat");
+    const regex pattern2("mod[A-z][0-9]{4}.dat");
 
     // File names of the form ZXXXXvYY.txt, where the X's and Y's are
     // digits; metallicity is 0.02 if XXXX = 0140, and is 1/7 solar if
     // XXXX = 0020
-    static const regex pattern3("Z0140v[0-9]{2}.txt");
-    static const regex pattern4("Z0020v[0-9]{2}.txt");
+    const regex pattern3("Z0140v[0-9]{2}.txt");
+    const regex pattern4("Z0020v[0-9]{2}.txt");
 
     // Check for matches
     match_results<std::basic_string<char>::iterator> name_match;
     if (regex_search(trackfileName.begin(), trackfileName.end(), 
 		     name_match, pattern1, match_posix)) {
-      string fname(name_match[0].first, name_match[0].second);
-      string metalstring = fname.substr(4, 3);
+      string fnametmp(name_match[0].first, name_match[0].second);
+      string metalstring = fnametmp.substr(4, 3);
       metalstring.insert(0, "0.");    // Add the decimal point
       metallicity = lexical_cast<double>(metalstring)/0.02;
     } else if (regex_search(trackfileName.begin(), trackfileName.end(), 
 			    name_match, pattern2, match_posix)) {
-      string fname(name_match[0].first, name_match[0].second);
-      string metalstring = fname.substr(4, 4);
+      string fnametmp(name_match[0].first, name_match[0].second);
+      string metalstring = fnametmp.substr(4, 4);
       metalstring.insert(0, "0.");    // Add the decimal point
       metallicity = lexical_cast<double>(metalstring)/0.02;
     } else if (regex_search(trackfileName.begin(), trackfileName.end(), 

@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_specsyn_planck.H"
 #include "constants.H"
 
+using namespace std;
+
 ////////////////////////////////////////////////////////////////////////
 // Constructor with default wavelengths. Default is 1001 wavelengths,
 // logarithmically spaced from 9.1 x 10^1 to 9.1 x 10^5 Angstrom.

@@ -22,6 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.H"
 #include "slug_specsyn.H"
 
+using namespace std;
+
 #define GK_MAX_ITER 50
 
 ////////////////////////////////////////////////////////////////////////
@@ -219,15 +221,6 @@ static const double wgk[11] =   /* weights of the 21-point kronrod rule */
 
 
 ////////////////////////////////////////////////////////////////////////
-// Constructor or the qag_wksp helper class
-////////////////////////////////////////////////////////////////////////
-qag_wksp::qag_wksp(int n) : 
-  x_k(gknum), gaussQuad(n), L_tmp1(n), L_tmp2(n), L_out1(n), L_out2(n), 
-  errsum(n), err1(n), err2(n)
-{ }
-
-
-////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_specsyn::slug_specsyn(const slug_tracks *my_tracks, 
@@ -278,7 +271,7 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
   L_bol = 0.0;
 
   // Allocate workspace
-  qag_wksp q(lambda_rest.size());
+  qag_wksp q(lambda_rest.size(), gknum);
 
   // Get the range of integration from the IMF and the stellar tracks:
   // minimum mass is the larger of the smallest mass in the IMF and
@@ -397,7 +390,7 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
   double L_bol = 0.0;
 
   // Allocate workspace
-  qag_wksp q(1);
+  qag_wksp q(1, gknum);
 
   // Get the range of integration from the IMF and the stellar tracks:
   // minimum mass is the larger of the smallest mass in the IMF and
@@ -517,7 +510,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
   L_lambda.assign(lambda_rest.size(), 0.0);
 
   // Allocate workspace
-  qag_wksp q(lambda_rest.size());
+  qag_wksp q(lambda_rest.size(), gknum);
 
   // Do initial integration with Gauss-Konrod
   double err_bol;
@@ -625,7 +618,7 @@ get_Lbol_cts_sfh(const double t, const double tol) const {
 
   // Allocate workspace
   double L_bol, err_bol;
-  qag_wksp q(1);
+  qag_wksp q(1, gknum);
 
   // Do initial integration with Gauss-Konrod
   get_Lbol_cts_sfh_gk(0, t, t, L_bol, err_bol, tol);

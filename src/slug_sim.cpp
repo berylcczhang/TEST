@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_specsyn_kurucz.H"
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
+#include "slug_specsyn_sb99.H"
 #include <ctime>
 #include <iomanip>
 #include <boost/algorithm/string.hpp>
@@ -94,8 +95,10 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     specsyn = (slug_specsyn *) 
       new slug_specsyn_pauldrach(pp.get_atmos_dir(), tracks, 
 				 imf, sfh, pp.get_z());
-    //  } else if (pp.get_specsynMode() == SB99) {
-    //specsyn = (slug_specsyn *) new slug_specsyn_sb99(pp);
+  } else if (pp.get_specsynMode() == SB99) {
+    specsyn = (slug_specsyn *) 
+      new slug_specsyn_sb99(pp.get_atmos_dir(), tracks,
+			    imf, sfh, pp.get_z());
   }
 
   // Initialize either a galaxy or a single cluster, depending on

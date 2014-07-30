@@ -17,11 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_PDF_lognormal.H"
 #include <cmath>
 #include <vector>
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 
 using namespace boost;
-using namespace boost::algorithm;
 using namespace boost::random;
 
 ////////////////////////////////////////////////////////////////////////
@@ -32,7 +29,7 @@ slug_PDF_lognormal(double sMin_, double sMax_, double sMean_,
 		   double sDisp_, rng_type *rng_)
   : slug_PDF_segment(sMin_, sMax_, rng_) 
 {
-  vector<double> tokenVals(2);
+  std::vector<double> tokenVals(2);
   tokenVals[0] = sMean_;
   tokenVals[1] = sDisp_;
   initialize(tokenVals);
@@ -49,7 +46,7 @@ slug_PDF_lognormal::~slug_PDF_lognormal() {
 // Initializer
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF_lognormal::initialize(const vector<double>& tokenVal) {
+slug_PDF_lognormal::initialize(const std::vector<double>& tokenVal) {
 
   // Save values
   segMean = tokenVal[0];
