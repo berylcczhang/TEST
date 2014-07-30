@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "constants.H"
 #include "slug_specsyn_pauldrach.H"
+#include "slug_tab_integrator.H"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -150,24 +151,21 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
   //
   // \int L_lambda dlambda = \int L_lambda lambda d(log lambda)
   //
-  // We then integrate using the trapezoidal rule. This is fairly
-  // crude and could certainly be done better using a higher-order
-  // rule. On the other hand, it's what SB99 does, and the grid in
-  // lambda is probably finely enough sampled that it doesn't make too
-  // much difference.
+  // We evaluate the integral using a tabulated 5 point Newton-Cotes
+  // method. Note that this is somewhat different than SB99, which
+  // just uses a simple trapezoidal rule, but should be more accurate
+  // with only very marginal extra cost.
   vector<double> log_lambda(1221);
   for (unsigned int i=0; i<1221; i++) 
     log_lambda[i] = std::log(lambda_rest[i]);
   for (unsigned int i=0; i<11; i++) {
     for (unsigned int j=0; j<3; j++) {
-      double integral = 0.0;
-      for (unsigned int k=0; k<1220; k++) {
-	integral += 0.5 * 
-	  (F_lambda[i][j][k] * lambda_rest[k] + 
-	   F_lambda[i][j][k+1] * lambda_rest[k+1]) *
-	  (log_lambda[k+1] - log_lambda[k]);
-      }
-      for (int k=0; k<1221; k++)
+      vector<double> lambda_F_lambda(1221);
+      for (unsigned int k=0; k<1220; k++)
+      	lambda_F_lambda[k] = F_lambda[i][j][k] * lambda_rest[k];
+      slug_tab_integrator integrator(log_lambda, lambda_F_lambda);
+      double integral = integrator.integrate();
+      for (unsigned int k=0; k<1221; k++)
 	F_lambda[i][j][k] *= constants::sigmaSB * 
 	  pow(10.0, 4.0*logT_mod[i]) / integral;
     }
