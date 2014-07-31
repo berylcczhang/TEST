@@ -111,6 +111,7 @@ slug_parmParser::setDefaults() {
   out_mode = ASCII;
   model = "SLUG_DEF";
   specsyn_mode = SB99;
+  phot_mode = L_NU;
   run_galaxy_sim = true;
 }
 
@@ -186,6 +187,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	track = tokens[1];
       } else if (!(tokens[0].compare("atmospheres"))) {
 	atmos_dir = tokens[1];
+      } else if (!(tokens[0].compare("filters"))) {
+	filter_dir = tokens[1];
       } else if (!(tokens[0].compare("min_stoch_mass"))) {
 	min_stoch_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("model_name"))) {
@@ -235,6 +238,23 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	  specsyn_mode = KURUCZ_PAULDRACH;
 	else if (tokens[1].compare("sb99") == 0)
 	  specsyn_mode = SB99;
+	else {
+	  cerr << "slug error: unknown output_mode: " << endl
+	       << line << endl;
+	  exit(1);
+	}
+      } else if (!(tokens[0].compare("phot_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("l_nu") == 0)
+	  phot_mode = L_NU;
+	else if (tokens[1].compare("l_lambda") == 0)
+	  phot_mode = L_LAMBDA;
+	else if (tokens[1].compare("ab") == 0)
+	  phot_mode = AB;
+	else if (tokens[1].compare("stmag") == 0)
+	  phot_mode = STMAG;
+	else if (tokens[1].compare("vega") == 0)
+	  phot_mode = VEGA;
 	else {
 	  cerr << "slug error: unknown output_mode: " << endl
 	       << line << endl;
@@ -453,6 +473,20 @@ slug_parmParser::writeParams() const {
   }
   if (run_galaxy_sim)
     paramFile << "clust_frac           " << fClust << endl;
+  if (writeClusterPhot || writeIntegratedPhot) {
+    paramFile << "phot_mode            ";
+    if (phot_mode == L_NU) {
+      paramFile << "L_nu" << endl;
+    } else if (phot_mode == L_LAMBDA) {
+      paramFile << "L_lambda" << endl;
+    } else if (phot_mode == AB) {
+      paramFile << "AB" << endl;
+    } else if (phot_mode == STMAG) {
+      paramFile << "STMAG" << endl;
+    } else if (phot_mode == VEGA) {
+      paramFile << "Vega" << endl;
+    }
+  }
   paramFile << "out_cluster          " << writeClusterProp << endl;
   paramFile << "out_cluster_phot     " << writeClusterPhot << endl;
   paramFile << "out_cluster_spec     " << writeClusterSpec << endl;
@@ -498,6 +532,8 @@ const char *slug_parmParser::get_CMF() const { return cmf.c_str(); }
 const char *slug_parmParser::get_CLF() const { return clf.c_str(); }
 const char *slug_parmParser::get_trackFile() const { return track.c_str(); }
 const char *slug_parmParser::get_atmos_dir() const { return atmos_dir.c_str(); }
+const char *slug_parmParser::get_filter_dir() const 
+{ return filter_dir.c_str(); }
 const char *slug_parmParser::get_modelName() const { return model.c_str(); }
 const char *slug_parmParser::get_outDir() 
 const { return outDir.string().c_str(); }
@@ -520,5 +556,8 @@ bool slug_parmParser::get_writeIntegratedSpec()
 const { return writeIntegratedSpec; }
 outputMode slug_parmParser::get_outputMode() const { return out_mode; }
 specsynMode slug_parmParser::get_specsynMode() const { return specsyn_mode; }
+photMode slug_parmParser::get_photMode() const { return phot_mode; }
 bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
 double slug_parmParser::get_cluster_mass() const { return cluster_mass; }
+const vector<string>& slug_parmParser::get_photBand() const
+{ return photBand; }

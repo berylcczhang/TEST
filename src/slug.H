@@ -50,6 +50,9 @@ enum outputMode { ASCII, BINARY };
 // Enum for spectral synthesis modes
 enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH, SB99 };
 
+// Enum for type of photometry -- this describes what will be returned
+enum photMode { L_NU, L_LAMBDA, AB, STMAG, VEGA };
+
 // Struct to represent basic data on stars
 typedef struct { 
   double mass;       // Mass at birth

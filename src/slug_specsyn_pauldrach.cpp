@@ -163,7 +163,7 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
       vector<double> lambda_F_lambda(1221);
       for (unsigned int k=0; k<1220; k++)
       	lambda_F_lambda[k] = F_lambda[i][j][k] * lambda_rest[k];
-      integral = 
+      double integral = 
 	int_tabulated::integrate(log_lambda, lambda_F_lambda);
       for (unsigned int k=0; k<1221; k++)
 	F_lambda[i][j][k] *= constants::sigmaSB * 

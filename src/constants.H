@@ -24,14 +24,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace constants {
 
-  // Physical constants -- 2010 CODATA values, or derived therefrom
+  // Physical constants -- 2010 CODATA values, or derived therefrom,
+  // all in CGS units
   const double G = 6.67384e-8;
   const double c = 2.99792458e10;
   const double h = 6.62606957e-27;
   const double kB = 1.3806488e-16;
   const double sigmaSB = 5.670373e-5;
   const double hcOverkB = 1.4387769599838156;
+  const double hc = 1.986445683269303e-16;
   const double hc2 = 5.955214340707938e-06;
+  const double Ryd = 2.1798721703680373e-11;
+
+  // Ionization threshhold wavelengths for HI, HeI, HeII, in Angstrom
+  const double lambdaHI = 911.2670505509151;
+  const double lambdaHeI = 503.9888;
+  const double lambdaHeII = 227.2979;
 
   // Unit conversions to CGS
   const double Msun = 1.989e33;

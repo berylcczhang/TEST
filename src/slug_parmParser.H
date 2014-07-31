@@ -51,6 +51,7 @@ public:
   const char *get_CLF() const;            // CLF file name
   const char *get_trackFile() const;      // File containing stellar tracks
   const char *get_atmos_dir() const;      // Directory w/atmospehre library
+  const char *get_filter_dir() const;     // Directory w/filter library
   const char *get_modelName() const;      // Name of this model
   const char *get_outDir() const;         // Dir into which to dump output
   double get_fClust() const;              // Frac stars formed in clusters
@@ -58,6 +59,9 @@ public:
   // Number of photometric bands
   const char *get_photBand(unsigned int n) const;  
   // Name of nth photometric band
+  const std::vector<std::string>& get_photBand() const;
+  // Reference to vector of photometric bands
+  photMode get_photMode() const;          // Photometry mode
   bool get_writeClusterProp() const;      // Write cluster phys properties?
   bool get_writeClusterPhot() const;      // Write cluster photometry?
   bool get_writeClusterSpec() const;      // Write cluster spectra?
@@ -78,6 +82,7 @@ private:
   int nTrials;                            // How many trials to run
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode
+  photMode phot_mode;                     // Photometry mode
   double timeStep;                        // Size of timestep
   double endTime;                         // Final time
   double sfr;                             // SFR value for constant SFR
@@ -101,6 +106,7 @@ private:
   std::string clf;                        // CLF file name
   std::string track;                      // File containing stellar tracks
   std::string atmos_dir;                  // Directory w/atmosphere library
+  std::string filter_dir;                 // Directory w/filter library
   std::string model;                      // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   std::vector<std::string> photBand;      // Names of photometric bands
