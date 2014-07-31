@@ -15,8 +15,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "constants.H"
+#include "int_tabulated.H"
 #include "slug_specsyn_pauldrach.H"
-#include "slug_tab_integrator.H"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -163,8 +163,8 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
       vector<double> lambda_F_lambda(1221);
       for (unsigned int k=0; k<1220; k++)
       	lambda_F_lambda[k] = F_lambda[i][j][k] * lambda_rest[k];
-      slug_tab_integrator integrator(log_lambda, lambda_F_lambda);
-      double integral = integrator.integrate();
+      integral = 
+	int_tabulated::integrate(log_lambda, lambda_F_lambda);
       for (unsigned int k=0; k<1221; k++)
 	F_lambda[i][j][k] *= constants::sigmaSB * 
 	  pow(10.0, 4.0*logT_mod[i]) / integral;
