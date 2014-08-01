@@ -41,25 +41,38 @@ public:
   // The constructor; takes a set of filter names and a directory
   // where the data for them are located
   slug_filter_set(const std::vector<std::string>& filter_names,
-		  const char *filter_dir);
+		  const char *filter_dir, 
+		  const photMode phot_mode_);
 
   // The desctructor
   ~slug_filter_set();
+
+  // Return to return the names of the filters
+  const std::vector<std::string>& get_filter_names() const
+  { return filter_names; }
+
+  // Return a vector of strings giving the units of all filters
+  const std::vector<std::string>& get_filter_units() const
+  { return filter_units; }
 
   // Routine to compute photometry over a filter set. The quantity
   // returned depends on the type of photometry requested, with the
   // exception that the special filters QH0, QHe0, and QHe1 always
   // return a photon luminosity in units of photons / sec above
-  // threshold.
+  // threshold. The special filter Lbol always returns -1, to indicate
+  // that this should not be computed by integration, it should simply
+  // be set to the already-known bolometric luminosity.
   std::vector<double> 
   compute_phot(const std::vector<double>& lambda,
-	       const std::vector<double>& L_lambda, 
-	       photMode phot_mode) const;
+	       const std::vector<double>& L_lambda) const;
 
 private:
 
   // Data
+  std::vector<std::string> filter_names;
+  std::vector<std::string> filter_units;
   std::vector<const slug_filter *> filters;
+  photMode phot_mode;
 };
 
 #endif

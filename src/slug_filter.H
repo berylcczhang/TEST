@@ -35,22 +35,23 @@ class slug_filter {
 public:
 
   // Constructor
-  slug_filter(const std::string& name_,
-	      const std::vector<double>& lambda_, 
+  slug_filter(const std::vector<double>& lambda_, 
 	      const std::vector<double>& response_,
 	      const double beta_ = 0.0,
 	      const double lambda_c_ = 0.0,
-	      const bool phot_flux_ = false);
+	      const bool phot_flux_ = false,
+	      const bool bol_flux_ = false);
 
   // Destructor
   ~slug_filter() { }
 
-  // Return the name of this filter
-  const std::string& get_name() const { return name; }
-
   // Return whether this is a filter that should be used to compute a
   // photon flux above a threshold, rather than a luminosity
   bool photon_filter() const { return phot_flux; }
+
+  // Return whether this is a filter that should return a bolometric
+  // luminosity instead of one integrated over a filter
+  bool bol_filter() const { return bol_flux; }
 
   // Routines to compute average luminosity of a spectrum through a
   // filter. This average can be taken in several ways, and different
@@ -97,11 +98,10 @@ public:
 private:
 
   // Data
-  const std::string name;
   const std::vector<double> lambda;
   const std::vector<double> response;
   const double beta, lambda_c;
-  const bool phot_flux;
+  const bool phot_flux, bol_flux;
   std::vector<double> ln_lambda;
   double norm;
 };

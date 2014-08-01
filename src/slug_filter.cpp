@@ -25,17 +25,17 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
-slug_filter::slug_filter(const string& name_,
-			 const vector<double>& lambda_, 
+slug_filter::slug_filter(const vector<double>& lambda_, 
 			 const vector<double>& response_,
 			 const double beta_,
 			 const double lambda_c_,
-			 const bool phot_flux_) :
-  name(name_), lambda(lambda_), response(response_), beta(beta_), 
-  lambda_c(lambda_c_), phot_flux(phot_flux_), 
+			 const bool phot_flux_,
+			 const bool bol_flux_) :
+  lambda(lambda_), response(response_), beta(beta_), 
+  lambda_c(lambda_c_), phot_flux(phot_flux_), bol_flux(bol_flux_),
   ln_lambda(lambda_.size())
 {
-  if (!phot_flux) {
+  if ((!phot_flux) && (!bol_flux)) {
 
     // Store log of lambda
     for (vector<double>::size_type i = 0; i<lambda.size(); i++)
@@ -62,6 +62,7 @@ slug_filter::compute_Lbar_nu(const std::vector<double>& lambda_in,
 
   // Safety check
   assert(!phot_flux);
+  assert(!bol_flux);
 
   // Compute L_nu = lambda^2/c L_lambda; be careful about units, since
   // lambda is in Angstrom, L_lambda is in erg/s/Ang, and c is in
@@ -91,6 +92,7 @@ compute_Lbar_lambda(const std::vector<double>& lambda_in,
 		    const std::vector<double>& L_lambda) const {
 
   // Safety
+  assert(!bol_flux);
   assert(!phot_flux);
 
   // Compute ln lambda for the input grid
@@ -116,6 +118,7 @@ compute_photon_lum(const std::vector<double>& lambda_in,
 
   // Safety check
   assert(phot_flux);
+  assert(!bol_flux);
 
   // Find the part of the input wavelength grid that is at wavelengths
   // shorter than the threshold; take log of these while we're at it

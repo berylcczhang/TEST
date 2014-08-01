@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_galaxy_H_
 
 #include "slug.H"
+#include "slug_filter_set.H"
 #include "slug_specsyn.H"
 #include <list>
 #include <iostream>
@@ -41,7 +42,8 @@ public:
   slug_galaxy(const slug_parmParser& pp, const slug_PDF* my_imf, 
 	      const slug_PDF* my_cmf, const slug_PDF* my_clf, 
 	      const slug_PDF* my_sfh, const slug_tracks* tracks, 
-	      const slug_specsyn* my_specsyn);
+	      const slug_specsyn* my_specsyn,
+	      const slug_filter_set* my_filters);
   ~slug_galaxy();
 
   // Set galaxy back to its initial state
@@ -50,19 +52,22 @@ public:
   // Advance to specified time
   void advance(double time);
 
-  // Routines to return the bolometric luminosity and the
-  // spectrum. These just invoke the corresponding set method and
-  // return.
+  // Routines to return the bolometric luminosity, the spectrum, and
+  // the photometry. These just invoke the corresponding set method
+  // and return.
   double get_Lbol() { set_Lbol(); return Lbol; }
+
   const std::vector<double> &get_spectrum()
   { set_spectrum(); return L_lambda; }
+
   void get_spectrum(std::vector<double>& lambda_out, 
 		    std::vector<double>& L_lambda_out)
   { set_spectrum();
-    std::vector<double> lambda_tmp(specsyn->lambda());
-    std::vector<double> L_lambda_tmp = L_lambda;
-    lambda_out = lambda_tmp;
-    L_lambda_out = L_lambda_tmp; }
+    lambda_out = specsyn->lambda();
+    L_lambda_out = L_lambda; }
+
+  const std::vector<double>& get_photometry()
+  { set_photometry(); return phot; }
 
   // Output functions
   void write_integrated_prop(std::ofstream& int_prop_file, 
@@ -73,21 +78,28 @@ public:
 			     const outputMode out_mode);
   void write_cluster_spec(std::ofstream& cluster_spec_file,
 			  const outputMode out_mode);
+  void write_integrated_phot(std::ofstream& outfile,
+			     const outputMode out_mode);
+  void write_cluster_phot(std::ofstream& outfile,
+			  const outputMode out_mode);
 
 private:
 
-  // Routines to set stellar data, bolometric luminosity, spectrum
+  // Routines to set stellar data, bolometric luminosity, spectrum,
+  // photometry
   void set_field_data();
   void set_Lbol();
   void set_spectrum();
+  void set_photometry();
 
   // Distributions and physical models used in simulation
-  const slug_PDF *imf;                      // IMF
-  const slug_PDF *cmf;                      // CMF
-  const slug_PDF *clf;                      // CLF
-  const slug_PDF *sfh;                      // SFH
-  const slug_tracks *tracks;                // Evolutionary track set
-  const slug_specsyn *specsyn;              // Spectral synthesizer
+  const slug_PDF *imf;                // IMF
+  const slug_PDF *cmf;                // CMF
+  const slug_PDF *clf;                // CLF
+  const slug_PDF *sfh;                // SFH
+  const slug_tracks *tracks;          // Evolutionary track set
+  const slug_specsyn *specsyn;        // Spectral synthesizer
+  const slug_filter_set *filters;     // Filter set
 
   // Simulation data
   double curTime;                     // Current time
@@ -104,11 +116,13 @@ private:
   std::list<slug_cluster *> disrupted_clusters; // Disrupted clusters
   std::list<slug_cluster *> clusters; // Cluster list
   std::vector<double> L_lambda;       // Specific luminosity of galaxy
+  std::vector<double> phot;           // Integrated photometry of galaxy
 
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?
   bool spec_set;                      // Is the spectrum current?
   bool field_data_set;                // Is the field star data current?
+  bool phot_set;                      // Is photometry current
   
 };
 

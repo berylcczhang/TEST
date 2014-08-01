@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_cluster_H_
 
 #include "slug.H"
+#include "slug_filter_set.H"
 #include "slug_galaxy.H"
 #include "slug_PDF.H"
 #include "slug_specsyn.H"
@@ -39,8 +40,9 @@ public:
   // Construct a cluster with specified target mass, birth time, IMF
   slug_cluster(const unsigned long my_id, const double my_mass, 
 	       const double time, const slug_PDF *my_imf, 
-	       const slug_tracks *my_tracks, const 
-	       slug_specsyn *my_specsyn, 
+	       const slug_tracks *my_tracks, 
+	       const slug_specsyn *my_specsyn,
+	       const slug_filter_set *my_filters,
 	       const slug_PDF *my_clf=NULL);
 
   // Destructor
@@ -82,22 +84,29 @@ public:
   { return stars.size(); }
 
   // Routines to return the stellar masses, other stellar data, the
-  // bolometric luminosity, the spectrum, and the wavelength data to
-  // go with the spectrum. Where something must be computed, these
-  // functions just invoke the corresponding set method and then
-  // return.
+  // bolometric luminosity, the spectrum, the wavelength data to
+  // go with the spectrum, and the photometry. Where something must be
+  // computed, these functions just invoke the corresponding set
+  // method and then return.
   const std::vector<double> &get_stars() const { return stars; }
+
   const std::vector<slug_stardata> &get_isochrone()
   { set_isochrone(); return stardata; }
+
   double get_Lbol() 
   { set_Lbol(); return Lbol; }
+
   const std::vector<double> &get_spectrum()
   { set_spectrum(); return L_lambda; }
+
   void get_spectrum(std::vector<double> &lambda_out, 
 		    std::vector<double> &L_lambda_out)
   { set_spectrum(); 
     lambda_out = specsyn->lambda(); 
     L_lambda_out = L_lambda; }
+
+  const std::vector<double> &get_photometry()
+  { set_photometry(); return phot; }
 
   // Output routines. The optional arguemnt cluster_only is used to
   // flag that only this cluster is being written, rather than a
@@ -108,6 +117,8 @@ public:
 		  const bool cluster_only = false) const;
   void write_spectrum(std::ofstream& outfile, const outputMode out_mode,
 		      const bool cluster_only = false);
+  void write_photometry(std::ofstream& outfile, const outputMode out_mode,
+			const bool cluster_only = false);
 
 private:
 
@@ -115,6 +126,7 @@ private:
   void set_isochrone();
   void set_Lbol();
   void set_spectrum();
+  void set_photometry();
 
   // Invariant data
   const double targetMass;            // Target mass
@@ -122,6 +134,7 @@ private:
   const slug_PDF *clf;                // CLF
   const slug_tracks *tracks;          // Evolutionary track set
   const slug_specsyn *specsyn;        // Spectral synthesizer
+  const slug_filter_set *filters;     // Photometric filters
 
   // Malleable data
   unsigned long id;                   // Unique ID
@@ -137,8 +150,9 @@ private:
   std::vector<double> stars;          // List of stellar masses
   std::vector<slug_stardata> stardata; // Data on stellar properties
   std::vector<double> L_lambda;       // Spectrum
+  std::vector<double> phot;           // Photometry
   bool is_disrupted;                  // Is this cluster disrupted?
-  bool data_set, Lbol_set, spec_set;  // Status indicators
+  bool data_set, Lbol_set, spec_set, phot_set;  // Status indicators
 };
 
 #endif

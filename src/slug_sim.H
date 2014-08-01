@@ -57,6 +57,8 @@ private:
   void open_cluster_prop();
   void open_integrated_spec();
   void open_cluster_spec();
+  void open_integrated_phot();
+  void open_cluster_phot();
 
   // Output information
   std::vector<double> outTimes;    // Output times
@@ -64,6 +66,8 @@ private:
   std::ofstream cluster_prop_file; // Cluster properties file
   std::ofstream int_spec_file;     // Integrated spectra file
   std::ofstream cluster_spec_file; // Cluster spectra file
+  std::ofstream int_phot_file;     // Integrated photometry file
+  std::ofstream cluster_phot_file; // Cluster photometry file
 
   // Private data to be used in the simulations
   const slug_parmParser &pp;  // Parameter parser
@@ -74,9 +78,10 @@ private:
   slug_PDF *clf;              // Cluster lifetime function
   slug_PDF *sfh;              // Star formation history
   slug_specsyn *specsyn;      // Spectral synthesizer
+  slug_filter_set *filters;   // Photometric filters
   slug_cluster *cluster;      // A single star cluster
   slug_galaxy *galaxy;        // A single galaxy
-  outputMode out_mode;             // Output mode
+  outputMode out_mode;        // Output mode
 
 };
 

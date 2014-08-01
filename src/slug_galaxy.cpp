@@ -44,13 +44,15 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
 			 const slug_PDF* my_clf, 
 			 const slug_PDF* my_sfh, 
 			 const slug_tracks* my_tracks, 
-			 const slug_specsyn* my_specsyn) :
+			 const slug_specsyn* my_specsyn,
+			 const slug_filter_set* my_filters) :
   imf(my_imf), 
   cmf(my_cmf), 
   clf(my_clf),
   sfh(my_sfh),
   tracks(my_tracks),
-  specsyn(my_specsyn)
+  specsyn(my_specsyn),
+  filters(my_filters)
  {
 
   // Initialize mass and time
@@ -68,7 +70,7 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   cluster_id = 0;
 
   // Initialize status flags
-  Lbol_set = spec_set = field_data_set = false;
+  Lbol_set = spec_set = field_data_set = phot_set = false;
 }
 
 
@@ -99,7 +101,7 @@ slug_galaxy::reset(bool reset_cluster_id) {
   // for different trials to be distinct.
   curTime = mass = targetMass = aliveMass = clusterMass 
     = nonStochFieldMass = 0.0;
-  Lbol_set = spec_set = field_data_set = false;
+  Lbol_set = spec_set = field_data_set = phot_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
     delete disrupted_clusters.back();
@@ -141,7 +143,8 @@ slug_galaxy::advance(double time) {
       double birth_time = sfh->draw(curTime, time);
       slug_cluster *new_cluster = 
 	new slug_cluster(cluster_id++, new_cluster_masses[i],
-			 birth_time, imf, tracks, specsyn, clf);
+			 birth_time, imf, tracks, specsyn, filters,
+			 clf);
       clusters.push_back(new_cluster);
       mass += new_cluster->get_birth_mass();
       aliveMass += new_cluster->get_birth_mass();
@@ -221,8 +224,8 @@ slug_galaxy::advance(double time) {
     }
   }
 
-  // Flag that computed quantities are now out of data
-  Lbol_set = spec_set = field_data_set = false;
+  // Flag that computed quantities are now out of date
+  Lbol_set = spec_set = field_data_set = phot_set = false;
 
   // Store new time
   curTime = time;
@@ -349,6 +352,33 @@ slug_galaxy::set_spectrum() {
 }
 
 
+////////////////////////////////////////////////////////////////////////
+// Compute photometry
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::set_photometry() {
+
+  // Do nothing if already set
+  if (phot_set) return;
+
+  // Compute the spectrum
+  set_spectrum();
+
+  // Grab the wavelength table
+  const vector<double>& lambda = specsyn->lambda();
+
+  // Compute photometry
+  phot = filters->compute_phot(lambda, L_lambda);
+
+  // If any of the photometric values are -big, that indicates that we
+  // want the bolometric luminosity, so insert that
+  for (vector<double>::size_type i=0; i<phot.size(); i++)
+    if (phot[i] == -constants::big) phot[i] = Lbol;
+
+  // Flag that the photometry is set
+  phot_set = true;
+}  
+
 
 ////////////////////////////////////////////////////////////////////////
 // Output integrated properties
@@ -451,4 +481,48 @@ slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file,
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_spectrum(cluster_spec_file, out_mode);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Output integrated photometry
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_integrated_phot(ofstream& outfile, 
+				   const outputMode out_mode) {
+
+  // Make sure photometric information is current. If not, compute it.
+  if (!phot_set) set_photometry();
+
+  if (out_mode == ASCII) {
+    outfile << setprecision(5) << scientific 
+	    << setw(11) << right << curTime;
+    for (vector<double>::size_type i=0; i<phot.size(); i++)
+      outfile << "   " << setw(15) << right << phot[i];
+    outfile << endl;
+  } else {
+    outfile.write((char *) &curTime, sizeof curTime);
+    outfile.write((char *) phot.data(), 
+			sizeof(double)*phot.size());
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster photometry
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_cluster_phot(ofstream& outfile, 
+				const outputMode out_mode) {
+
+  // In binary mode, write out the time and the number of clusters
+  // first, because individual clusters won't write this data
+  if (out_mode == BINARY) {
+    outfile.write((char *) &curTime, sizeof curTime);
+    vector<double>::size_type n = clusters.size();
+    outfile.write((char *) &n, sizeof n);
+  }
+
+  // Now have each cluster write
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_photometry(outfile, out_mode);
 }

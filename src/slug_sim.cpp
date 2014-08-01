@@ -36,12 +36,6 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   
-  // Read the tracks
-  if (pp.get_verbosity() > 1)
-    std::cout << "slug: reading tracks" << std::endl;
-  tracks = new slug_tracks(pp.get_trackFile(), pp.get_metallicity(),
-			   pp.get_WR_mass());
-
   // Set up the time stepping
   double t = pp.get_timeStep();
   while (t <= pp.get_endTime()) {
@@ -51,6 +45,23 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 
   // Set up the random number generator
   rng = new rng_type(static_cast<unsigned int>(time(0)));
+
+  // Set up the photometric filters
+  if (pp.get_nPhot() > 0) {
+    if (pp.get_verbosity() > 1)
+      std::cout << "slug: reading filters" << std::endl;
+    filters = new slug_filter_set(pp.get_photBand(), 
+				  pp.get_filter_dir(), 
+				  pp.get_photMode());
+  } else {
+    filters = NULL;
+  }
+
+  // Read the tracks
+  if (pp.get_verbosity() > 1)
+    std::cout << "slug: reading tracks" << std::endl;
+  tracks = new slug_tracks(pp.get_trackFile(), pp.get_metallicity(),
+			   pp.get_WR_mass());
 
   // Set up the IMF, including the limts on its stochasticity
   imf = new slug_PDF(pp.get_IMF(), rng);
@@ -123,11 +134,12 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // which type of simulation we're running
   if (pp.galaxy_sim()) {
     galaxy = new slug_galaxy(pp, imf, cmf, clf, sfh, tracks, 
-			     specsyn);
+			     specsyn, filters);
     cluster = NULL;
   } else {
     cluster = new slug_cluster(0, pp.get_cluster_mass(), 0.0,
-			       imf, tracks, specsyn, clf);
+			       imf, tracks, specsyn, filters, 
+			       clf);
     galaxy = NULL;
   }
 
@@ -136,13 +148,16 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 
   // Open the output files we'll need and write their headers
   if (pp.get_verbosity() > 1)
-    std::cout << "slug: preparing output files" << std::endl;
+    std::cout << "slug: opening output files" << std::endl;
   if (pp.galaxy_sim() && pp.get_writeIntegratedProp()) 
     open_integrated_prop();
   if (pp.get_writeClusterProp()) open_cluster_prop();
   if (pp.galaxy_sim() && pp.get_writeIntegratedSpec()) 
     open_integrated_spec();
   if (pp.get_writeClusterSpec()) open_cluster_spec();
+  if (pp.galaxy_sim() && pp.get_writeIntegratedPhot()) 
+    open_integrated_phot();
+  if (pp.get_writeClusterSpec()) open_cluster_phot();
 }
 
 
@@ -161,12 +176,15 @@ slug_sim::~slug_sim() {
   if (imf != NULL) delete imf;
   if (tracks != NULL) delete tracks;
   if (rng != NULL) delete rng;
+  if (filters != NULL) delete filters;
 
   // Close open files
   if (int_prop_file.is_open()) int_prop_file.close();
   if (cluster_prop_file.is_open()) cluster_prop_file.close();
   if (int_spec_file.is_open()) int_spec_file.close();
   if (cluster_spec_file.is_open()) cluster_spec_file.close();
+  if (int_phot_file.is_open()) int_phot_file.close();
+  if (cluster_phot_file.is_open()) cluster_phot_file.close();
 }
 
 
@@ -208,6 +226,12 @@ void slug_sim::galaxy_sim() {
 	galaxy->write_integrated_spec(int_spec_file, out_mode);
       if (pp.get_writeClusterSpec())
 	galaxy->write_cluster_spec(cluster_spec_file, out_mode);
+
+      // Write photometry if requested
+      if (pp.get_writeIntegratedPhot())
+	galaxy->write_integrated_phot(int_phot_file, out_mode);
+      if (pp.get_writeClusterPhot())
+	galaxy->write_cluster_phot(cluster_phot_file, out_mode);
     }
   }
 }
@@ -252,9 +276,13 @@ void slug_sim::cluster_sim() {
       if (pp.get_writeClusterProp()) 
 	cluster->write_prop(cluster_prop_file, out_mode, true);
 
-      // Write spectra if requested
+      // Write spectrum if requested
       if (pp.get_writeClusterSpec()) 
 	cluster->write_spectrum(cluster_spec_file, out_mode, true);
+
+      // Write photometry if requested
+      if (pp.get_writeClusterPhot()) 
+	cluster->write_photometry(cluster_phot_file, out_mode, true);
     }
   }
 }
@@ -480,5 +508,120 @@ void slug_sim::open_cluster_spec() {
     vector<double>::size_type nl = lambda.size();
     cluster_spec_file.write((char *) &nl, sizeof nl);
     cluster_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open integrated photometry file and write its header
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_integrated_phot() {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_integrated_phot";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    int_phot_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+      full_path /= fname;
+      int_phot_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+
+  // Make sure file is open
+  if (!int_phot_file.is_open()) {
+    cerr << "slug error: unable to open intergrated photometry file " 
+	 << full_path.string() << endl;
+    exit(1);
+  }
+
+  // Grab the names and units of the photometric filters
+  const vector<string> filter_names = filters->get_filter_names();
+  const vector<string> filter_units = filters->get_filter_units();
+
+  // Write header
+  if (out_mode == ASCII) {
+    int_phot_file << setw(18) << left << "Time";
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      int_phot_file << setw(18) << left << filter_names[i];
+    int_phot_file << endl;
+    int_phot_file << setw(18) << left << "(yr)";
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      int_phot_file << setw(18) << left 
+		    << "(" + filter_units[i] + ")";
+    int_phot_file << endl;
+    int_phot_file << setw(18) << left << "---------------";
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      int_phot_file << setw(18) << left << "---------------";
+    int_phot_file << endl;
+  } else {
+    // File starts with the number of filters and then the list
+    // of filters names and units in ASCII; rest is binary
+    int_phot_file << filter_names.size() << endl;
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      int_phot_file << filter_names[i] << " " 
+		    << filter_units[i] << endl;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open cluster photometry file and write its header
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_cluster_phot() {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_cluster_phot";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    cluster_phot_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+      full_path /= fname;
+      cluster_phot_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+
+  // Make sure file is open
+  if (!cluster_phot_file.is_open()) {
+    cerr << "slug error: unable to open cluster photometry file " 
+	 << full_path.string() << endl;
+    exit(1);
+  }
+
+  // Grab the names and units of the photometric filters
+  const vector<string> filter_names = filters->get_filter_names();
+  const vector<string> filter_units = filters->get_filter_units();
+
+  // Write header
+  if (out_mode == ASCII) {
+    cluster_phot_file << setw(18) << left << "UniqueID"
+		      << setw(18) << left << "Time";
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      cluster_phot_file << setw(18) << left << filter_names[i];
+    cluster_phot_file << endl;
+    cluster_phot_file << setw(18) << left << ""
+		      << setw(18) << left << "(yr)";
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      cluster_phot_file << setw(18) << left 
+		    << "(" + filter_units[i] + ")";
+    cluster_phot_file << endl;
+    cluster_phot_file << setw(18) << left << "---------------"
+		      << setw(18) << left << "---------------";
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      cluster_phot_file << setw(18) << left << "---------------";
+    cluster_phot_file << endl;
+  } else {
+    // File starts with the number of filters and then the list
+    // of filters names and units in ASCII; rest is binary
+    cluster_phot_file << filter_names.size() << endl;
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+      cluster_phot_file << filter_names[i] << " " 
+		    << filter_units[i] << endl;
   }
 }

@@ -32,9 +32,11 @@ using namespace boost::filesystem;
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_filter_set::
-slug_filter_set(const std::vector<std::string>& filter_names,
-		const char *filter_dir) : 
-  filters(filter_names.size()) {
+slug_filter_set(const std::vector<std::string>& filter_names_,
+		const char *filter_dir, const photMode phot_mode_) : 
+  filter_names(filter_names_.size()), 
+  filter_units(filter_names_.size()),
+  filters(filter_names_.size()), phot_mode(phot_mode_) {
 
   // Try to open the FILTER_LIST file
   string fname = "FILTER_LIST";
@@ -75,7 +77,6 @@ slug_filter_set(const std::vector<std::string>& filter_names,
     // beta != 0)
     trim(line);
     split(tokens, line, is_any_of("\t "), token_compress_on);
-    to_lower(tokens[1]);
     avail_filters.push_back(tokens[1]);
     beta.push_back(lexical_cast<double>(tokens[2]));
     if (beta.back() == 0.0) lambda_c.push_back(0.0);
@@ -85,26 +86,55 @@ slug_filter_set(const std::vector<std::string>& filter_names,
 
   // Find indices for all the filters we've been requested to read
   vector<int> filter_idx;
-  for (unsigned int i = 0; i < filter_names.size(); i++) {
-    string temp_name = filter_names[i];
+  for (unsigned int i = 0; i < filter_names_.size(); i++) {
+    string temp_name = filter_names_[i];
     to_lower(temp_name);
-    // Special case: filters QH0, QHe0, and QHe1 get assigned an index
-    // of -1, -2, and -3, respectively
-    if (temp_name.compare("qh0") == 0) {
+    // Special case: filters Lbol, QH0, QHe0, and QHe1 get assigned
+    // indices of -1 to -4, respectively
+    if (temp_name.compare("lbol") == 0) {
+      filter_names[i] = "Lbol";
+      filter_units[i] = "Lsun";
       filter_idx.push_back(-1);
-    } else if (temp_name.compare("qhe0") == 0) {
+    } else if (temp_name.compare("qh0") == 0) {
+      filter_names[i] = "QH0";
+      filter_units[i] = "phot/s";
       filter_idx.push_back(-2);
-    } else if (temp_name.compare("qhe1") == 0) {
+    } else if (temp_name.compare("qhe0") == 0) {
+      filter_units[i] = "phot/s";
+      filter_names[i] = "QHe0";
       filter_idx.push_back(-3);
+    } else if (temp_name.compare("qhe1") == 0) {
+      filter_units[i] = "phot/s";
+      filter_names[i] = "QHe1";
+      filter_idx.push_back(-4);
     } else {
       for (unsigned int j = 0; j < avail_filters.size(); j++) {
-	if (temp_name.compare(avail_filters[j]) == 0) {
+	string temp_name1 = avail_filters[j];
+	to_lower(temp_name1);
+	if (temp_name.compare(temp_name1) == 0) {
+	  filter_names[i] = avail_filters[j];
+	  switch (phot_mode) {
+	  case L_NU:
+	    filter_units[i] = "erg/s/Hz";
+	    break;
+	  case L_LAMBDA:
+	    filter_units[i] = "erg/s/A";
+	    break;
+	  case AB:
+	    filter_units[i] = "AB mag";
+	    break;
+	  case STMAG:
+	    filter_units[i] = "ST mag";
+	    break;
+	  case VEGA:
+	    filter_units[i] = "Vega mag";
+	  }
 	  filter_idx.push_back(j);
 	  break;
 	}
 	if (j == avail_filters.size()) {
 	  cerr << "slug error: couldn't find filter "
-	       << filter_names[i] << endl;
+	       << filter_names_[i] << endl;
 	  exit(1);
 	}
       }
@@ -136,28 +166,33 @@ slug_filter_set(const std::vector<std::string>& filter_names,
   }
 
   // Add dummy filters for the special cases of ionizing photon
-  // fluxes. For these filters, the wavelength vector contains just a
-  // single element, which gives the ionization threshold.
+  // fluxes and Lbol. For these filters, the wavelength vector
+  // contains just a single element, which gives the ionization
+  // threshold.
   vector<double> lambda, response;
   unsigned int nrecorded = 0;
   lambda.resize(0);
   response.resize(0);
   for (unsigned int i=0; i<filter_idx.size(); i++) {
     if (filter_idx[i] == -1) {
-      lambda.push_back(constants::lambdaHI);
-      filters[i] = new slug_filter("QH0", lambda, response, 
-				   0.0, 0.0, true);
-      lambda.resize(0);
+      filters[i] = new slug_filter(lambda, response, 
+				   0.0, 0.0, false, true);
       nrecorded++;
-    } else if (filter_idx[i] == -2) {
-      lambda.push_back(constants::lambdaHeI);
-      filters[i] = new slug_filter("QHe0", lambda, response, 
+    } if (filter_idx[i] == -2) {
+      lambda.push_back(constants::lambdaHI);
+      filters[i] = new slug_filter(lambda, response, 
 				   0.0, 0.0, true);
       lambda.resize(0);
       nrecorded++;
     } else if (filter_idx[i] == -3) {
+      lambda.push_back(constants::lambdaHeI);
+      filters[i] = new slug_filter(lambda, response, 
+				   0.0, 0.0, true);
+      lambda.resize(0);
+      nrecorded++;
+    } else if (filter_idx[i] == -4) {
       lambda.push_back(constants::lambdaHeII);
-      filters[i] = new slug_filter("QHe1", lambda, response, 
+      filters[i] = new slug_filter(lambda, response, 
 				   0.0, 0.0, true);
       lambda.resize(0);
       nrecorded++;
@@ -180,8 +215,8 @@ slug_filter_set(const std::vector<std::string>& filter_names,
       // the appropriate spot.
       if (recordptr >= 0) {
 	filters[recordptr] = 
-	  new slug_filter(avail_filters[filterptr], lambda, response,
-			  beta[filterptr], lambda_c[filterptr]);
+	  new slug_filter(lambda, response, beta[filterptr], 
+			  lambda_c[filterptr]);
 	// Break if we have now read all filters
 	nrecorded++;
 	if (nrecorded == filters.size()) break;
@@ -221,7 +256,8 @@ slug_filter_set(const std::vector<std::string>& filter_names,
   if (nrecorded < filters.size()) {
     assert(recordptr >= 0);   // Safety check
     filters[recordptr] = 
-      new slug_filter(avail_filters[filterptr], lambda, response);
+      new slug_filter(lambda, response, beta[filterptr], 
+		      lambda_c[filterptr]);
   }
 }
 
@@ -239,8 +275,8 @@ slug_filter_set::~slug_filter_set() {
 ////////////////////////////////////////////////////////////////////////
 vector<double> 
 slug_filter_set::compute_phot(const std::vector<double>& lambda,
-			      const std::vector<double>& L_lambda, 
-			      photMode phot_mode) const {
+			      const std::vector<double>& L_lambda) 
+  const {
 
   // Create return array
   vector<double> phot(filters.size());
@@ -248,8 +284,15 @@ slug_filter_set::compute_phot(const std::vector<double>& lambda,
   // Loop over filters
   for (vector<double>::size_type i = 0; i<phot.size(); i++) {
 
-    // Decide what to do based on type of filter and photometry
-    if (filters[i]->photon_filter()) {
+    // Decide what to do based on type of filter and photometry mode
+    if (filters[i]->bol_filter()) {
+
+      // This is just a dummy filter to represent the bolometric
+      // luminosity. Set the value to -a big number to flag that we
+      // should just set this to Lbol later.
+      phot[i] = -constants::big;
+
+    } else if (filters[i]->photon_filter()) {
 
       // This is a filter that represents photon counts above a
       // threshold, so return that

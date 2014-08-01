@@ -30,9 +30,11 @@ slug_cluster::slug_cluster(const unsigned long my_id,
 			   const double time, const slug_PDF *my_imf, 
 			   const slug_tracks *my_tracks, 
 			   const slug_specsyn *my_specsyn, 
+			   const slug_filter_set *my_filters,
 			   const slug_PDF *my_clf) :
   targetMass(my_mass), imf(my_imf), clf(my_clf), tracks(my_tracks), 
-  specsyn(my_specsyn), id(my_id), formationTime(time), curTime(time)
+  specsyn(my_specsyn), filters(my_filters), id(my_id), 
+  formationTime(time), curTime(time)
 {
 
   // Initialize to non-disrupted
@@ -62,7 +64,7 @@ slug_cluster::slug_cluster(const unsigned long my_id,
   }
 
   // Initialize status flags for what data has been stored
-  spec_set = Lbol_set = data_set = false;
+  spec_set = Lbol_set = data_set = phot_set = false;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -77,7 +79,7 @@ slug_cluster::reset(bool keep_id) {
   // Reset the time, the disruption state, and all flags
   curTime = 0.0;
   is_disrupted = false;
-  data_set = Lbol_set = spec_set = false;
+  data_set = Lbol_set = spec_set = phot_set = false;
 
   // Delete current stellar masses and data
   stars.resize(0);
@@ -152,7 +154,7 @@ slug_cluster::advance(double time) {
   curTime = time;
 
   // Mark that data are not current
-  data_set = spec_set = Lbol_set = false;
+  data_set = spec_set = Lbol_set = phot_set = false;
 }
 
 
@@ -246,6 +248,34 @@ slug_cluster::set_spectrum() {
 
 
 ////////////////////////////////////////////////////////////////////////
+// Photometry calculation routine
+////////////////////////////////////////////////////////////////////////
+void
+slug_cluster::set_photometry() {
+
+  // Do nothing if already set
+  if (phot_set) return;
+
+  // Compute the spectrum
+  set_spectrum();
+
+  // Grab the wavelength table
+  const vector<double>& lambda = specsyn->lambda();
+
+  // Compute photometry
+  phot = filters->compute_phot(lambda, L_lambda);
+
+  // If any of the photometric values are -big, that indicates that we
+  // want the bolometric luminosity, so insert that
+  for (vector<double>::size_type i=0; i<phot.size(); i++)
+    if (phot[i] == -constants::big) phot[i] = Lbol;
+
+  // Flag that the photometry is set
+  phot_set = true;
+}  
+
+
+////////////////////////////////////////////////////////////////////////
 // Output physical properties
 ////////////////////////////////////////////////////////////////////////
 void
@@ -292,7 +322,7 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
 
 
 ////////////////////////////////////////////////////////////////////////
-// Output spectrum properties
+// Output spectrum
 ////////////////////////////////////////////////////////////////////////
 void
 slug_cluster::
@@ -303,7 +333,7 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
   if (!spec_set) set_spectrum();
 
   if (out_mode == ASCII) {
-    vector<double> lambda = specsyn->lambda();
+    const vector<double>& lambda = specsyn->lambda();
     for (unsigned int i=0; i<lambda.size(); i++) {
       outfile << setprecision(5) << scientific 
 	      << setw(11) << right << id << "   "
@@ -321,5 +351,36 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
     outfile.write((char *) &id, sizeof id);
     outfile.write((char *) L_lambda.data(), 
 		  L_lambda.size()*sizeof(double));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Output photometry
+////////////////////////////////////////////////////////////////////////
+void
+slug_cluster::
+write_photometry(ofstream& outfile, const outputMode out_mode,
+		 bool cluster_only) {
+
+  // Make sure information is current
+  if (!phot_set) set_photometry();
+
+  if (out_mode == ASCII) {
+    outfile << setprecision(5) << scientific 
+	    << setw(15) << right << id << "   "
+	    << setw(15) << right << curTime;
+    for (vector<double>::size_type i=0; i<phot.size(); i++)
+      outfile << "   " << setw(15) << right << phot[i];
+    outfile << endl;
+  } else {
+    if (cluster_only) {
+      outfile.write((char *) &curTime, sizeof curTime);
+      vector<double>::size_type n = 1;
+      outfile.write((char *) &n, sizeof n);
+    }
+    outfile.write((char *) &id, sizeof id);
+    outfile.write((char *) phot.data(), 
+		  phot.size()*sizeof(double));
   }
 }
