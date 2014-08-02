@@ -11,17 +11,17 @@ LDFLAGS		= $(LDOPTFLAGS)
 # Name for executable
 EXENAME		= slug
 
+# Pointers to sources
+SOURCES		= $(wildcard *.cpp)
+OBJECTS		= $(SOURCES:%.cpp=%.o)
+DEPS		= $(SOURCES:%.cpp=%.d)
+
 # Default target
 .PHONY: debug exec
 exec:	$(EXENAME)
 
 # Include dependencies
 -include $(DEPS)
-
-# Pointers to sources
-SOURCES		= $(wildcard *.cpp)
-OBJECTS		= $(SOURCES:%.cpp=%.o)
-DEPS		= $(SOURCES:%.cpp=%.d)
 
 debug: CXXFLAGS = $(CXXDEBFLAGS)
 debug: LDFLAGS = $(LDDEBFLAGS)

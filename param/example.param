@@ -47,8 +47,11 @@ clust_frac        1.0
 # Stellar tracks to use
 tracks	  	  lib/tracks/modp020.dat
 
-# Stellar atmospheres set to use
+# Directory containing stellar atmosphere models
 atmospheres 	  lib/atmospheres
+
+# Directory containing filter data
+filters	      	  lib/filters
 
 # Write out cluster physical properties? Allowed values:
 # -- 0 (no)
@@ -86,16 +89,28 @@ out_integrated_phot  1
 # Default: 1
 out_integrated_spec  1
 
-# Spectral synthesis mode; currently allowed values are 
+# Spectral synthesis mode; allowed values are 
 # -- planck (treat stars as blackbodies)
 # -- kurucz (use Kurucz atmospheres, as compiled by Lejeune+ 1997)
 # -- kurucz+hillier (use Hillier models for WR stars, kurucz for all others)
-# -- sb99 (emulate starburst99)
+# -- kurucz+pauldrach (use Pauldrach models for OB stars, kurucz for others)
+# -- sb99 (emulate starburst99 -- Pauldrach for OB stars, Hillier for WR 
+#          stars, kurucz for others)
 # Default: sb99
-specsyn_mode	   kurucz+hillier
+specsyn_mode	   sb99
+
+# Photometry mode; allowed values are
+# -- L_nu (report frequency-averaged luminosity in band, in erg/s/Hz)
+# -- L_lambda (report wavelength-averaged luminosity in band, in erg/s/A)
+# -- AB (report absolute AB magnitude)
+# -- STMAG (report absolute ST magnitude)
+# -- VEGA (report absolute Vega magnitude)
+# Default: L_nu
+phot_mode          L_nu
 
 # Photometric filters to be used; can be comma- or whitespace-separated
-phot_bands         UVIS1_F225W, UVIS1_F336W, UVIS1_F438W, UVIS1_F555W, UVIS1_F814W
+phot_bands         QH0 LBOL WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F438W, WFC3_UVIS_F555W, WFC3_UVIS_F814W
+
 
 # Write output as binary or ASCII; allowed values:
 # -- binary
