@@ -92,11 +92,6 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
             # Still the same cluster, so append to wavelength list
             wavelength.append(float(data[2]))
 
-        # Print status
-        if verbose:
-            print("Read cluster {:d} at time {:e}".
-                  format(cluster_id[-1], time[-1]))
-
         # We have now read one full chunk, so we know how many
         # wavelength entries per cluster there are
         nl = len(wavelength)
@@ -151,11 +146,6 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
                            struct.calcsize('d')*ncluster*nl)
             data_list = struct.unpack(('L'+'d'*nl)*ncluster, data)
 
-            # Print status
-            if verbose:
-                print("Read {:d} clusters at time {:e}".
-                      format(ncluster, t))
-
             # Pack clusters into data list
             cluster_id.extend(data_list[::nl+1])
             L_lambda.extend(
@@ -167,7 +157,7 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
 
     # Convert to arrays
     wavelength = np.array(wavelength)
-    cluster_id = np.array(cluster_id)
+    cluster_id = np.array(cluster_id, dtype='uint')
     time = np.array(time)
     L_lambda = np.array(L_lambda)
     L_lambda = np.reshape(L_lambda, (len(time), len(wavelength)))

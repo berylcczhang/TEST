@@ -105,13 +105,13 @@ int_tabulated::integrate(const std::vector<double>& x1,
   while ((ptr1 < x1.size()) && (ptr2 < x2.size())) {
     if ((x1[ptr1] > xMax) && (x2[ptr2] > xMax)) break;
     if (x1[ptr1] < x2[ptr2]) {
-      x[++ptr] = x1[++ptr1];
+      x[ptr++] = x1[ptr1++];
     } else if (x1[ptr1] > x2[ptr2]) {
-      x[++ptr] = x2[++ptr2];
+      x[ptr++] = x2[ptr2++];
     } else {
       // x1 and x2 are equal, so add one of them but increment both
       // pointers
-      x[++ptr] = x1[++ptr1];
+      x[ptr++] = x1[ptr1++];
       ptr2++;
     }
   }
@@ -129,7 +129,7 @@ int_tabulated::integrate(const std::vector<double>& x1,
 
   // Interpolate the data onto the grid
   vector<double> f1_interp = int_tabulated::interp(x1, f1, x_interp);
-  vector<double> f2_interp = int_tabulated::interp(x1, f2, x_interp);
+  vector<double> f2_interp = int_tabulated::interp(x2, f2, x_interp);
 
   // Perform the Newton-Cotes integration
   double total = 0.0;

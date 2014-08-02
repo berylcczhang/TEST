@@ -38,7 +38,7 @@ public:
   slug_filter(const std::vector<double>& lambda_, 
 	      const std::vector<double>& response_,
 	      const double beta_ = 0.0,
-	      const double lambda_c_ = 0.0,
+	      const double lambda_c_ = 5.0e3,
 	      const bool phot_flux_ = false,
 	      const bool bol_flux_ = false);
 

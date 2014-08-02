@@ -45,7 +45,7 @@ slug_filter::slug_filter(const vector<double>& lambda_,
     vector<double> integrand(lambda.size());
     for (vector<double>::size_type i = 0; i<lambda.size(); i++)
       integrand[i] = response[i] * pow(lambda[i]/lambda_c, -beta);
-    norm = int_tabulated::integrate(lambda, integrand);
+    norm = int_tabulated::integrate(ln_lambda, integrand);
 
   } else {
     norm = 0.0;

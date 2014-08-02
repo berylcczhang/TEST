@@ -8,7 +8,7 @@ import struct
 from slug_open import slug_open
 
 def read_integrated_spec(model_name, output_dir=None, asciionly=False,
-                      binonly=False, verbose=False):
+                         binonly=False, verbose=False):
     """
     Function to read a SLUG2 integrated_spec file.
 
@@ -37,14 +37,14 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
     L_lambda : array, shape (len(lambda), len(times))
        specific luminosity at each wavelength and each time, in erg/s/A
     """
-
+    
     # Open file
     fp = slug_open(model_name+"_integrated_spec", output_dir=output_dir,
                    asciionly=asciionly, binonly=binonly)
 
     # Print status
     if verbose:
-        print("Reading "+model_name)
+        print("Reading integrated spectra for model "+model_name)
 
     # Read ASCII or binary
     if fp.mode == 'r':
