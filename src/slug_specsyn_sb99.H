@@ -49,7 +49,7 @@ public:
     hillier(dirname, my_tracks, my_imf, my_sfh, z_in, false),
     kurucz(dirname, my_tracks, my_imf, my_sfh, z_in, false),
     pauldrach(dirname, my_tracks, my_imf, my_sfh, z_in, false),
-    planck(lambda_obs, my_tracks, my_imf, my_sfh, z_in)
+    planck(kurucz.lambda(), my_tracks, my_imf, my_sfh, z_in)
   {
     lambda_obs = kurucz.lambda();
     lambda_rest = kurucz.lambda(true);

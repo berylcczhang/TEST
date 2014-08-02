@@ -122,7 +122,7 @@ public:
   void get_spectrum_cts_sfh(const double t, 
 			    std::vector<double>& L_lambda, 
 			    double& L_bol, 
-			    const double tol = 1e-3) const;
+			    const double tol = 1e-2) const;
   double get_Lbol_cts_sfh(const double t, 
 			  const double tol = 1e-3) const;
 

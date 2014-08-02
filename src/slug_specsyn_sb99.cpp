@@ -99,23 +99,27 @@ vector<double>
 slug_specsyn_sb99::
 get_spectrum(const slug_stardata& stardata) const {
 
+  vector<double> L_lambda;
+
   // Choose the type of synthesizer, and return its output
   if (stardata.WR != NONE) {
     // WR stars are tagged as such
-    return hillier.get_spectrum(stardata);
+    L_lambda = hillier.get_spectrum(stardata);
   } else if ((stardata.logTeff > kurucz.get_logTeff_max()) ||
 	     (stardata.logTeff < kurucz.get_logTeff_min())) {
     // Stars with temperature that are too high or low for the
     // models get treated as black bodies
-    return planck.get_spectrum(stardata);
+    L_lambda = planck.get_spectrum(stardata);
   } else if ((stardata.logTeff > pauldrach.get_logTeff_min()) &&
 	     (stardata.logg >= pauldrach.get_logg_min()) &&
 	     (stardata.logg <= pauldrach.get_logg_max(stardata.logTeff))) {
     // Stars in the right temperature and log g range get treated as
     // OB stars
-    return pauldrach.get_spectrum(stardata);
+    L_lambda = pauldrach.get_spectrum(stardata);
   } else {
     // Otherwise use a Kurucz model
-    return kurucz.get_spectrum(stardata);
+    L_lambda = kurucz.get_spectrum(stardata);
   }
+  assert(L_lambda.size() == lambda_rest.size());
+  return L_lambda;
 }

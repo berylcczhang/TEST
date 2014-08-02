@@ -327,7 +327,8 @@ slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
   for (unsigned int i=0; i<seg_restricted.size(); i++)
     expectVal_restrict += weights_restricted[i] * 
       seg_restricted[i]->expectationVal(xStochMin, xStochMax);
-  expectVal_restrict = expectVal_restrict / PDFintegral_restrict;
+  expectVal_restrict = expectVal_restrict / 
+    (PDFintegral_restrict + constants::small);
 }
 
 
@@ -443,12 +444,18 @@ slug_PDF::draw(double a, double b) const {
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF::drawPopulation(double target, vector<double>& pop) const {
+
+  // Initialize
   double sum = 0.0;
+  pop.resize(0);
 
   // If we're only using stochasticity over a limited range, reduce
   // the target value by the fraction of the PDF that is being treated
   // stochastically
   if (range_restrict) target *= mass_frac_restrict();
+
+  // Special case: if target is zero, just return
+  if (target == 0.0) return 0.0;
 
   // Procedure depends on sampling method
   if ((method == STOP_NEAREST) || (method == STOP_BEFORE) ||

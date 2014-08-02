@@ -406,7 +406,7 @@ get_spectrum(const slug_stardata& stardata) const {
   }
   while (logg_break[Tptr][gptr] > stardata.logg) {
     gptr++;
-    if (gptr == logg_mod.shape()[1]) break;
+    if (gptr == logg_mod.shape()[1]-1) break;
   }
 
   // Assign result
