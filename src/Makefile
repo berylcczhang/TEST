@@ -4,10 +4,6 @@ LDOPTFLAGS      = -O4 -ffast-math -lm -lgsl -lboost_system-mt -lboost_filesystem
 CXXDEBFLAGS     = -g -MMD -MP -I $(CXX_INCLUDE_PATH) -I $(BOOST_HOME) -Wall -std=c++11
 LDDEBFLAGS      = -g -lm -lgsl -lboost_system-mt -lboost_filesystem-mt -lboost_regex-mt -L $(LD_LIBRARY_PATH)
 
-# Set default compilation flags to non-debug ones; can be overridden below
-CXXFLAGS	= $(CXXOPTFLAGS)
-LDFLAGS		= $(LDOPTFLAGS)
-
 # Name for executable
 EXENAME		= slug
 
@@ -17,17 +13,21 @@ OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
-.PHONY: debug exec
-exec:	$(EXENAME)
+.PHONY: all debug exec
+all: CXXFLAGS += $(CXXOPTFLAGS)
+all: LDFLAGS += $(LDOPTFLAGS)
+all:	exec
 
 # Include dependencies
 -include $(DEPS)
 
-debug: CXXFLAGS = $(CXXDEBFLAGS)
-debug: LDFLAGS = $(LDDEBFLAGS)
+$(EXENAME):	all
+
+debug: CXXFLAGS += $(CXXDEBFLAGS)
+debug: LDFLAGS += $(LDDEBFLAGS)
 debug: exec
 
-$(EXENAME):	$(OBJECTS)
+exec:	$(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(EXENAME) $^
 
 compile:	$(OBJECTS)
