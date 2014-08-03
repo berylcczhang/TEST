@@ -99,7 +99,8 @@ void
 slug_parmParser::setDefaults() {
   verbosity = 1;
   nTrials = 1;
-  timeStep = endTime = fClust = cluster_mass = -constants::big;
+  startTime = timeStep = endTime = fClust = cluster_mass = -constants::big;
+  logTime = false;
   z = 0.0;
   metallicity = -1.0;    // Flag for not set
   WR_mass = -1.0;        // flag for not set
@@ -165,10 +166,14 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	}
       } else if (!(tokens[0].compare("n_trials"))) {
 	nTrials = lexical_cast<int>(tokens[1]);
+      } else if (!(tokens[0].compare("start_time"))) {
+	startTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
 	timeStep = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("end_time"))) {
 	endTime = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("log_time"))) {
+	logTime = (lexical_cast<double>(tokens[1]) == 1);
       } else if (!(tokens[0].compare("sfr"))) {
 	sfr = lexical_cast<double>(tokens[1]);
 	if (sfr <= 0) constantSFR = false;
@@ -337,6 +342,11 @@ slug_parmParser::checkParams() {
   if (nTrials < 0) {
     cerr << "slug error: nTrials must be >= 1" << endl;
     exit(1);
+  }
+  if (startTime == -constants::big) {
+    startTime = timeStep;   // Default start time = time step
+  } else if (startTime <= 0.0) {
+    cerr << "slug error: startTime must be > 0" << endl;
   }
   if (timeStep <= 0) {
     if (timeStep == -constants::big) {
@@ -518,8 +528,10 @@ slug_parmParser::writeParams() const {
 
 int slug_parmParser::get_verbosity() const { return verbosity; }
 int slug_parmParser::get_nTrials() const { return nTrials; }
+double slug_parmParser::get_startTime() const { return startTime; }
 double slug_parmParser::get_timeStep() const { return timeStep; }
 double slug_parmParser::get_endTime() const { return endTime; }
+bool slug_parmParser::get_logTime() const { return logTime; }
 bool slug_parmParser::get_constantSFR() const { return constantSFR; }
 double slug_parmParser::get_SFR() const { return sfr; }
 double slug_parmParser::get_z() const { return z; }

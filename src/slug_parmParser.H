@@ -39,6 +39,7 @@ public:
   double get_timeStep() const;            // Size of timestep
   double get_startTime() const;           // Starting time
   double get_endTime() const;             // Final time
+  bool get_logTime() const;               // Logarithmic time stepping?
   bool get_constantSFR() const;           // Is SFR constant?
   double get_SFR() const;                 // SFR value for constant SFR
   double get_z() const;                   // Return the redshift
@@ -83,8 +84,10 @@ private:
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode
   photMode phot_mode;                     // Photometry mode
+  double startTime;                       // Time of first output
   double timeStep;                        // Size of timestep
   double endTime;                         // Final time
+  bool logTime;                           // Logarithmic time stepping?
   double sfr;                             // SFR value for constant SFR
   double z;                               // Redshift
   double metallicity;                     // Metallicity

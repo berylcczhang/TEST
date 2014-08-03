@@ -15,8 +15,18 @@ out_dir           ../output/
 # Number of model galaxies to run (default = 1)
 n_trials          1
 
+# Logarithmic time stepping? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 0
+log_time          0
+
 # Length of time step (in yr)
 time_step    	  2.0e7
+
+# Starting time (in yr)
+# Default: start_time = time_step
+start_time        2.0e7
 
 # Maximum evolution time (in yr; must be < 10^9)
 end_time	  4.0e7

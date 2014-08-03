@@ -11,11 +11,18 @@ out_dir           ../output/
 # Number of model galaxies to run (default = 1)
 n_trials          1
 
-# Length of time step (in yr)
-time_step    	  1.0e6
+# Logarithmic time stepping
+# Default = 0 (linear time stepping)
+log_time          1
+
+# Time of first output (in yr)
+start_time        1.0e6
+
+# Length of time step (in dex for logarithmic time stepping)
+time_step    	  0.05
 
 # Maximum evolution time (in yr; must be < 10^9)
-end_time	  1.0e8
+end_time	  1.0e9
 
 # Star formation rate (Msun/yr; give a negative value for a SFHist file)
 sfr    		  1.0

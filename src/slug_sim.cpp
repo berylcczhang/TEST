@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 #include "slug_specsyn_sb99.H"
+#include <cmath>
 #include <ctime>
 #include <iomanip>
 #include <boost/algorithm/string.hpp>
@@ -37,10 +38,13 @@ using namespace boost::filesystem;
 slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   
   // Set up the time stepping
-  double t = pp.get_timeStep();
+  double t = pp.get_startTime();
   while (t <= pp.get_endTime()) {
     outTimes.push_back(t);
-    t += pp.get_timeStep();
+    if (!pp.get_logTime())
+      t += pp.get_timeStep();
+    else
+      t *= pow(10.0, pp.get_timeStep());
   }
 
   // Set up the random number generator
