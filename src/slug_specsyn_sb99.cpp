@@ -120,6 +120,5 @@ get_spectrum(const slug_stardata& stardata) const {
     // Otherwise use a Kurucz model
     L_lambda = kurucz.get_spectrum(stardata);
   }
-  assert(L_lambda.size() == lambda_rest.size());
   return L_lambda;
 }

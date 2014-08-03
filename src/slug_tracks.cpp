@@ -694,6 +694,10 @@ slug_tracks::isochrone_wgts(const double logt, const
 	logtimes[trackptr][timeptr+1];
       timewgt[starptr] = (logt - logtleft) / (logtright - logtleft);
 
+      // Safety assertion
+      assert(timewgt[starptr] >= 0);
+      assert(timewgt[starptr] <= 1);
+
       // Increment to the next star
       starptr++;
 
@@ -717,6 +721,14 @@ slug_tracks::isochrone_wgts(const double logt, const
 	slopes[trackptr-1][timeptr+1] * (logt - logtimes[trackptr][timeptr+1]);
       timeptr++;
 
+      // Skip more than one time if there are duplicate time entries
+      // in both rows
+      while ((logtimes[trackptr][timeptr] == logtimes[trackptr][timeptr+1])  &&
+	     (slopes[trackptr-1][timeptr] == slopes[trackptr-1][timeptr+1])) {
+	timeptr++;
+	if (timeptr == ntime-1) break;
+      }
+
       // Safety assertion
       assert(timeptr < ntime);
 
@@ -728,6 +740,14 @@ slug_tracks::isochrone_wgts(const double logt, const
       logmptr = logmass[trackptr] + 
 	slopes[trackptr-1][timeptr] * (logt - logtimes[trackptr][timeptr]);
       timeptr--;
+
+      // Skip more than one time if there are duplicate time entries
+      // in both rows
+      while ((logtimes[trackptr][timeptr] == logtimes[trackptr][timeptr-1])  &&
+	     (slopes[trackptr-1][timeptr] == slopes[trackptr-1][timeptr-1])) {
+	timeptr--;
+	if (timeptr == 0) break;
+      }
 
       // Safety assertion
       assert(timeptr >= 0);

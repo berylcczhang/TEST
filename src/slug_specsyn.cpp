@@ -27,12 +27,12 @@ using namespace std;
 #define GK_MAX_ITER 500
 
 ////////////////////////////////////////////////////////////////////////
-// Gauss-Konrod abcissae and weights, copied directly from GSL. Used
-// for the Gauss-Konrod integrations done in this class.
+// Gauss-Kronrod abcissae and weights, copied directly from GSL. Used
+// for the Gauss-Kronrod integrations done in this class.
 ////////////////////////////////////////////////////////////////////////
 
 #if 1
-// Order of konrod rule, and number of independent points
+// Order of kronrod rule, and number of independent points
 static unsigned int gknum = 15;
 static unsigned int gknum1 = 8;
 
@@ -73,7 +73,7 @@ static const double wgk[8] =    /* weights of the 15-point kronrod rule */
 #endif
 
 #if 0
-// Order of konrod rule, and number of independent points
+// Order of kronrod rule, and number of independent points
 static unsigned int gknum = 61;
 static unsigned int gknum1 = 31;
 
@@ -172,7 +172,7 @@ static const double wgk[31] =   /* weights of the 61-point kronrod rule */
 
 
 #if 0
-// Order of konrod rule, and number of independent points
+// Order of kronrod rule, and number of independent points
 static unsigned int gknum = 21;
 static unsigned int gknum1 = 11;
 
@@ -288,7 +288,7 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
   double logm_max = log(min(min(imf->get_xStochMin(), tracks->max_mass()),
 			    tracks->death_mass(age)));
 
-  // Do initial integration with Gauss-Konrod
+  // Do initial integration with Gauss-Kronrod
   double bol_err;
   get_spectrum_cts_gk(logm_min, logm_max, age, L_lambda, L_bol, 
 		      q.errsum, bol_err, q);
@@ -338,15 +338,6 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
       // Have we converged? If so, stop iterating
       max_L = *max_element(L_lambda.begin(), L_lambda.end());
       max_err = *max_element(q.errsum.begin(), q.errsum.end());
-
-#if 0
-      cout << "t = " << age << ", ml/mc/mr = "
-	   << exp(logm_left) << " " << exp(logm_cen)
-	   << " " << exp(logm_right) << ", Lerr = "
-	   << max_err/max_L << ", bolerr = "
-	   << bol_err/L_bol << endl;
-#endif
-
       err = max(max_err/max_L, bol_err/L_bol);
       if (err < tol) break;
 
@@ -417,7 +408,7 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
   double logm_max = log(min(min(imf->get_xStochMin(), tracks->max_mass()),
 			    tracks->death_mass(age)));
 
-  // Do initial integration with Gauss-Konrod
+  // Do initial integration with Gauss-Kronrod
   double bol_err;
   get_Lbol_cts_gk(logm_min, logm_max, age, L_bol, bol_err);
 
@@ -529,7 +520,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
   // Allocate workspace
   qag_wksp q(lambda_rest.size(), gknum);
 
-  // Do initial integration with Gauss-Konrod
+  // Do initial integration with Gauss-Kronrod
   double err_bol;
   get_spectrum_cts_sfh_gk(0, t, t, L_lambda, L_bol,
 			  q.errsum, err_bol, q, tol);
@@ -612,7 +603,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
       itCounter++;
       if (itCounter > GK_MAX_ITER) {
 	cerr << "Error: non-convergence in non-stochastic "
-	     << "spectral integration!" << endl;
+	     << "spectral integration for SFH!" << endl;
 	exit(1);
       }
     }
@@ -638,7 +629,7 @@ get_Lbol_cts_sfh(const double t, const double tol) const {
   double L_bol, err_bol;
   qag_wksp q(1, gknum);
 
-  // Do initial integration with Gauss-Konrod
+  // Do initial integration with Gauss-Kronrod
   get_Lbol_cts_sfh_gk(0, t, t, L_bol, err_bol, tol);
 
   // Get error estimate
@@ -736,7 +727,7 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
   const vector<slug_stardata> &stardata = 
     tracks->get_isochrone(age, q.x_k);
 
-  // Now form the Gauss and Konrod sums
+  // Now form the Gauss and Kronrod sums
 
   // Central mass point
   unsigned int ptr1 = gknum/2;
@@ -753,7 +744,7 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
   double L1 = pow(10.0, stardata[ptr1].logL);
   double L2;
 
-  // Add to Konrod sum, and to Gauss sum if central point appears in
+  // Add to Kronrod sum, and to Gauss sum if central point appears in
   // it
   for (unsigned int j=0; j<lambda_rest.size(); j++)
     L_lambda[j] = q.L_tmp1[j] * imf_val1 * wgk[gknum1-1];
@@ -764,7 +755,7 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
     L_bol_gauss = L1 * imf_val1 * wg[gknum1 / 2 - 1];
   }
   
-  // Compute terms that are common to both Gauss and Konrod sum
+  // Compute terms that are common to both Gauss and Kronrod sum
   for (unsigned int i=0; i<(gknum1-1)/2; i++) {
 
     // Point on the left side of the mass interval
@@ -779,7 +770,7 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
     imf_val2 = (*imf)(q.x_k[ptr2]) * q.x_k[ptr2];
     L2 = pow(10.0, stardata[ptr2].logL);
 
-    // Compute the contribution to the Gaussian and Konrod quadratures
+    // Compute the contribution to the Gaussian and Kronrod quadratures
     for (unsigned int j=0; j<lambda_rest.size(); j++) {
       q.gaussQuad[j] += wg[i] * 
 	(q.L_tmp1[j]*imf_val1 + q.L_tmp2[j]*imf_val2);
@@ -790,7 +781,7 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
     L_bol_gauss += wg[i] * (L1*imf_val1 + L2*imf_val2);
   }
 
-  // Compute terms that appear only in the Konrod sum
+  // Compute terms that appear only in the Kronrod sum
   for (unsigned int i=0; i<gknum1/2; i++) {
 
     // Point on left half of interval
@@ -805,7 +796,7 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
     imf_val2 = (*imf)(q.x_k[ptr2]) * q.x_k[ptr2];
     L2 = pow(10.0, stardata[ptr2].logL);
 
-    // Add to Konrod sum
+    // Add to Kronrod sum
     for (unsigned int j=0; j<lambda_rest.size(); j++)
       L_lambda[j] += wgk[ptr1] * 
 	(q.L_tmp1[j]*imf_val1 + q.L_tmp2[j]*imf_val2);
@@ -854,7 +845,7 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
   const vector<slug_stardata> &stardata = 
     tracks->get_isochrone(age, x_k);
 
-  // Now form the Gauss and Konrod sums
+  // Now form the Gauss and Kronrod sums
 
   // Central mass point
   unsigned int ptr1 = gknum/2;
@@ -868,14 +859,14 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
   double L1 = pow(10.0, stardata[ptr1].logL);
   double L2;
 
-  // Add to Konrod sum, and to Gauss sum if central point appears in
+  // Add to Kronrod sum, and to Gauss sum if central point appears in
   // it
   L_bol = L1 * imf_val1 * wgk[gknum1-1];
   if (gknum1 % 2 == 0) {
     L_bol_gauss = L1 * imf_val1 * wg[gknum1 / 2 - 1];
   }
   
-  // Compute terms that are common to both Gauss and Konrod sum
+  // Compute terms that are common to both Gauss and Kronrod sum
   for (unsigned int i=0; i<(gknum1-1)/2; i++) {
 
     // Point on the left side of the mass interval
@@ -888,12 +879,12 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
     imf_val2 = (*imf)(x_k[ptr2]) * x_k[ptr2];
     L2 = pow(10.0, stardata[ptr2].logL);
 
-    // Compute the contribution to the Gauss and Konrod quadratures
+    // Compute the contribution to the Gauss and Kronrod quadratures
     L_bol += wgk[ptr1] * (L1*imf_val1 + L2*imf_val2);
     L_bol_gauss += wg[i] * (L1*imf_val1 + L2*imf_val2);
   }
 
-  // Compute terms that appear only in the Konrod sum
+  // Compute terms that appear only in the Kronrod sum
   for (unsigned int i=0; i<gknum1/2; i++) {
 
     // Point on left half of interval
@@ -906,7 +897,7 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
     imf_val2 = (*imf)(x_k[ptr2]) * x_k[ptr2];
     L2 = pow(10.0, stardata[ptr2].logL);
 
-    // Add to Konrod sum
+    // Add to Kronrod sum
     L_bol += wgk[ptr1] * (L1*imf_val1 + L2*imf_val2);
   }
 
@@ -944,7 +935,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
   }
   q.x_k[gknum/2] = t_cen;
 
-  // Now form the Gauss and Konrod sums
+  // Now form the Gauss and Kronrod sums
 
   // Central mass point
   unsigned int ptr1 = gknum/2;
@@ -960,7 +951,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
   double sfh_val1 = (*sfh)(q.x_k[ptr1]);
   double sfh_val2;
 
-  // Add to Konrod sum, and to Gauss sum if central point appears in
+  // Add to Kronrod sum, and to Gauss sum if central point appears in
   // it
   for (unsigned int j=0; j<lambda_rest.size(); j++)
     L_lambda[j] = q.L_tmp1[j] * sfh_val1 * wgk[gknum1-1];
@@ -971,7 +962,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
     L_bol_gauss = L_bol1 * sfh_val1 * wg[gknum1 / 2 - 1];
   }
   
-  // Compute terms that are common to both Gauss and Konrod sum
+  // Compute terms that are common to both Gauss and Kronrod sum
   for (unsigned int i=0; i<(gknum1-1)/2; i++) {
 
     // Point on the left side of the mass interval
@@ -984,7 +975,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
     get_spectrum_cts(1.0, t-q.x_k[ptr2], q.L_tmp2, L_bol2, tol/10.0);
     sfh_val2 = (*sfh)(q.x_k[ptr2]);
 
-    // Compute the contribution to the Gaussian and Konrod quadratures
+    // Compute the contribution to the Gaussian and Kronrod quadratures
     for (unsigned int j=0; j<lambda_rest.size(); j++) {
       q.gaussQuad[j] += wg[i] * 
 	(q.L_tmp1[j]*sfh_val1 + q.L_tmp2[j]*sfh_val2);
@@ -995,7 +986,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
     L_bol_gauss += wg[i] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
   }
 
-  // Compute terms that appear only in the Konrod sum
+  // Compute terms that appear only in the Kronrod sum
   for (unsigned int i=0; i<gknum1/2; i++) {
 
     // Point on left half of interval
@@ -1008,7 +999,7 @@ get_spectrum_cts_sfh_gk(const double t_min, const double t_max,
     get_spectrum_cts(1.0, t-q.x_k[ptr2], q.L_tmp2, L_bol2, tol/10.0);
     sfh_val2 = (*sfh)(q.x_k[ptr2]);
 
-    // Add to Konrod sum
+    // Add to Kronrod sum
     for (unsigned int j=0; j<lambda_rest.size(); j++)
       L_lambda[j] += wgk[ptr1] * 
 	(q.L_tmp1[j]*sfh_val1 + q.L_tmp2[j]*sfh_val2);
@@ -1054,7 +1045,7 @@ get_Lbol_cts_sfh_gk(const double t_min, const double t_max,
   }
   x_k[gknum/2] = t_cen;
 
-  // Now form the Gauss and Konrod sums
+  // Now form the Gauss and Kronrod sums
 
   // Central mass point
   unsigned int ptr1 = gknum/2;
@@ -1070,14 +1061,14 @@ get_Lbol_cts_sfh_gk(const double t_min, const double t_max,
   double sfh_val1 = (*sfh)(x_k[ptr1]);
   double sfh_val2;
 
-  // Add to Konrod sum, and to Gauss sum if central point appears in
+  // Add to Kronrod sum, and to Gauss sum if central point appears in
   // it
   L_bol = L_bol1 * sfh_val1 * wgk[gknum1-1];
   if (gknum1 % 2 == 0) {
     L_bol_gauss = L_bol1 * sfh_val1 * wg[gknum1 / 2 - 1];
   }
   
-  // Compute terms that are common to both Gauss and Konrod sum
+  // Compute terms that are common to both Gauss and Kronrod sum
   for (unsigned int i=0; i<(gknum1-1)/2; i++) {
 
     // Point on the left side of the mass interval
@@ -1090,12 +1081,12 @@ get_Lbol_cts_sfh_gk(const double t_min, const double t_max,
     L_bol2 = get_Lbol_cts(1.0, t-x_k[ptr2], tol/10.0);
     sfh_val2 = (*sfh)(x_k[ptr2]);
 
-    // Compute the contribution to the Gaussian and Konrod quadratures
+    // Compute the contribution to the Gaussian and Kronrod quadratures
     L_bol += wgk[ptr1] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
     L_bol_gauss += wg[i] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
   }
 
-  // Compute terms that appear only in the Konrod sum
+  // Compute terms that appear only in the Kronrod sum
   for (unsigned int i=0; i<gknum1/2; i++) {
 
     // Point on left half of interval
@@ -1108,7 +1099,7 @@ get_Lbol_cts_sfh_gk(const double t_min, const double t_max,
     L_bol2 = get_Lbol_cts(1.0, t-x_k[ptr2], tol/10.0);
     sfh_val2 = (*sfh)(x_k[ptr2]);
 
-    // Add to Konrod sum
+    // Add to Kronrod sum
     L_bol += wgk[ptr1] * (L_bol1*sfh_val1 + L_bol2*sfh_val2);
   }
 
