@@ -1,0 +1,121 @@
+#########################################################
+# Parameter file for a fully-non-stochastic run of SLUG #
+########################################################
+
+# Name of the model
+model_name        NON-STOCHASTIC
+
+# Directory into which to write output
+out_dir           ../output/
+
+# Number of model galaxies to run (default = 1)
+n_trials          1
+
+# Length of time step (in yr)
+time_step    	  1.0e6
+
+# Maximum evolution time (in yr; must be < 10^9)
+end_time	  1.0e8
+
+# Star formation rate (Msun/yr; give a negative value for a SFHist file)
+sfr    		  1.0
+
+# Star formation history file (only used if sfr < 0; can be omitted
+# otherwise)
+#sfh              sfh.txt
+
+# IMF (initial mass function) file name
+imf   	          lib/imf/kroupa.imf
+
+# CMF (cluster mass function) file name
+cmf               lib/cmf/slug_default.cmf
+
+# CLF (cluster lifetime function) file name
+clf               lib/clf/slug_default.clf
+
+# Minimum stellar mass for full stochastic treatment; lower mass stars are 
+# handled assuming that they are continuously-distributed (Default: 2.0)
+min_stoch_mass    120.0
+
+# Fraction of stars born in clusters (must be 0 - 1)
+clust_frac        0.0
+
+# Stellar tracks to use
+tracks	  	  lib/tracks/Z0140v00.txt
+
+# Directory containing stellar atmosphere models
+atmospheres 	  lib/atmospheres
+
+# Directory containing filter data
+filters	      	  lib/filters
+
+# Write out cluster physical properties? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster       0
+
+# Write out cluster photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_phot  0
+
+# Write out cluster spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_spec  0
+
+# Write out integrated physical properties of galaxy?  Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated     1
+
+# Write out integrated photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_phot  1
+
+# Write out integrated spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_spec  1
+
+# Spectral synthesis mode; allowed values are 
+# -- planck (treat stars as blackbodies)
+# -- kurucz (use Kurucz atmospheres, as compiled by Lejeune+ 1997)
+# -- kurucz+hillier (use Hillier models for WR stars, kurucz for all others)
+# -- kurucz+pauldrach (use Pauldrach models for OB stars, kurucz for others)
+# -- sb99 (emulate starburst99 -- Pauldrach for OB stars, Hillier for WR 
+#          stars, kurucz for others)
+# Default: sb99
+specsyn_mode	   sb99
+
+# Photometry mode; allowed values are
+# -- L_nu (report frequency-averaged luminosity in band, in erg/s/Hz)
+# -- L_lambda (report wavelength-averaged luminosity in band, in erg/s/A)
+# -- AB (report absolute AB magnitude)
+# -- STMAG (report absolute ST magnitude)
+# -- VEGA (report absolute Vega magnitude)
+# Default: L_nu
+phot_mode          L_nu
+
+# Photometric filters to be used; can be comma- or whitespace-separated
+phot_bands         QH0 LBOL
+
+# Write output as binary or ASCII; allowed values:
+# -- binary
+# -- ascii
+# Default: ascii
+output_mode      binary
+
+# Level of verbosity while running; allowed values:
+# -- 0 (run silently)
+# -- 1 (some basic output)
+# -- 2 (lots of output)
+# Default: 1
+verbosity        2
