@@ -277,6 +277,14 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     logmDot[i][0] = logmDot[i][1];
   }
 
+  // Safety check to verify that lifetimes are monotonic
+  for (unsigned int i=0; i<ntrack-1; i++)
+    if (logtimes[i][ntime-1] > logtimes[i+1][ntime-1]) {
+      cerr << "slug error: non-monotonic stellar lifetimes are "
+	   << "not currently supported" << endl;
+      exit(1);
+    }
+
   // Construct the slopes in the (log t, log m) plane; slopes[i, j] =
   // the slope of the segment connecting time[i, j] at mass[i] to
   // time[i+1,j] at mass[i+1]
@@ -348,7 +356,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	"mods050.dat", 
 	// Padova w/AGB stars
 	"modp0004.dat", "modp004.dat", "modp008.dat", "modp020.dat",
-	"modp050.dat"
+	"modp050.dat",
 	// Geneva (2013) non-rotating
 	"Z0020v00.txt", "Z0140v00.txt",
 	// Geneva (2013) rotating at 40% of breakup
