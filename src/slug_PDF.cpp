@@ -283,8 +283,8 @@ slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
   if ((x_stoch_min <= xMin) && (x_stoch_max >= xMax)) return;
 
   // Step 3: set flags and store data for new range restriction
-  xStochMin = x_stoch_min;
-  xStochMax = x_stoch_max;
+  xStochMin = min(x_stoch_min, xMax);
+  xStochMax = max(x_stoch_max, xMin);
   range_restrict = true;
 
   // Step 4: generate a restricted segment list
