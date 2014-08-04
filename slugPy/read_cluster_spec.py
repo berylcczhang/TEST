@@ -84,9 +84,10 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
             data = entry.split()
             L_lambda.append(float(data[3]))
             id_tmp = long(data[0])
+            time_tmp = float(data[1])
 
-            # Stop when we find a different cluster
-            if id_tmp != cluster_id[0]:
+            # Stop when we find a different cluster or a different time
+            if id_tmp != cluster_id[0] or time_tmp != time[0]:
                 break
 
             # Still the same cluster, so append to wavelength list
