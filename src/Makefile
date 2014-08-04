@@ -13,21 +13,19 @@ OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
-.PHONY: all debug exec
+.PHONY: all debug
 all: CXXFLAGS += $(CXXOPTFLAGS)
 all: LDFLAGS += $(LDOPTFLAGS)
-all:	exec
+all: $(EXENAME)
 
 # Include dependencies
 -include $(DEPS)
 
-$(EXENAME):	all
-
 debug: CXXFLAGS += $(CXXDEBFLAGS)
 debug: LDFLAGS += $(LDDEBFLAGS)
-debug: exec
+debug: $(EXENAME)
 
-exec:	$(OBJECTS)
+$(EXENAME):	$(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(EXENAME) $^
 
 compile:	$(OBJECTS)

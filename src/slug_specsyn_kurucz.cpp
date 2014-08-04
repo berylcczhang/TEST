@@ -409,7 +409,7 @@ get_spectrum(const slug_stardata& stardata) const {
   // If we're here, we assume that the temperature between Teff_min
   // and Teff_max
   unsigned int Tptr = 0;
-  while (stardata.logTeff < log_Teff_mod[Tptr+1]) Tptr++;
+  while (stardata.logTeff > log_Teff_mod[Tptr+1]) Tptr++;
   double wgt = (stardata.logTeff - log_Teff_mod[Tptr]) / 
     (log_Teff_mod[Tptr+1] - log_Teff_mod[Tptr]);
 
@@ -426,7 +426,7 @@ get_spectrum(const slug_stardata& stardata) const {
   while (1) {
     if (gptr2 == ng[Tptr+1]-1) break;
     if (stardata.logg < 
-	0.5*(logg_mod[Tptr][gptr2] + logg_mod[Tptr][gptr2+1]))
+	0.5*(logg_mod[Tptr+1][gptr2] + logg_mod[Tptr+1][gptr2+1]))
       break;
     gptr2++;
   }

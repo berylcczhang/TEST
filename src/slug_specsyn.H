@@ -116,15 +116,25 @@ public:
   // class, uisng the stellar tracks that are also stored as part of
   // the class. The only input is the duration of star formation t (in
   // yr). The spectrum L_lambda is in units of erg/s/Ang, and
-  // the bolometric luminosity Lbol in units of Lsun. The optional
-  // parameter tol specified the error tolerance in the numerical
-  // integration.
+  // the bolometric luminosity Lbol in units of Lsun.
+  // 
+  // The optional parameter tol specified the error tolerance in the
+  // numerical integration.
+  //
+  // The optional arguments t_shift, L_lambda_prev, and L_bol_prev can be
+  // used to accelerate the calculation in the case where the SFR is
+  // constant. In this case, if we have already done the integral from
+  // times 0 to t_shift, we can extend the integral to time t just by
+  // taking the previously computed values (input in L_lambda_prev and
+  // L_bol_prev) and adding the integral from t_shift to t. If the
+  // input value t_shift is non-zero, this is what the code does.
+  //
   void get_spectrum_cts_sfh(const double t, 
 			    std::vector<double>& L_lambda, 
 			    double& L_bol, 
 			    const double tol = 1e-2) const;
   double get_Lbol_cts_sfh(const double t, 
-			  const double tol = 1e-3) const;
+			  const double tol = 1e-2) const;
 
 
 protected:

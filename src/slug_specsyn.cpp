@@ -284,17 +284,17 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
   // the lowest mass track maximum mass is the smallest of the edge of
   // the non-stochastic range, the largest mass track, and the death
   // mass at this age
-  double logm_min = log(max(imf->get_xMin(), tracks->min_mass()));
-  double logm_max = log(min(min(imf->get_xStochMin(), tracks->max_mass()),
-			    tracks->death_mass(age)));
+  double m_min = max(imf->get_xMin(), tracks->min_mass());
+  double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+			    tracks->death_mass(age));
 
   // If m_min > m_max (can happen for strange IMFs if all stars have
   // died), just leave L_lambda and L_bol as 0
-  if (logm_min >= logm_max) return;
+  if (m_min >= m_max) return;
 
   // Do initial integration with Gauss-Kronrod
   double bol_err;
-  get_spectrum_cts_gk(logm_min, logm_max, age, L_lambda, L_bol, 
+  get_spectrum_cts_gk(m_min, m_max, age, L_lambda, L_bol, 
 		      q.errsum, bol_err, q);
 
   // Get error estimates
@@ -302,21 +302,13 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
   for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
     spec_err = max(spec_err, q.errsum[i]/L_lambda[i]);
   double err = max(spec_err, bol_err/L_bol);
-  //double max_L = *max_element(L_lambda.begin(), L_lambda.end());
-  //double max_err = *max_element(q.errsum.begin(), q.errsum.end());
-  //double err = max(max_err/max_L, bol_err/L_bol);
-
-#if 0
-  cout << "Initial sum: spec_err = " << spec_err
-       << ", bol_err = " << bol_err/L_bol << endl;
-#endif
 
   // If error is not below tolerance, begin recursive bisection
   if (err > tol) {
 
     // Initialize the interval, result, and error pointers
-    q.a.assign(1, logm_min);
-    q.b.assign(1, logm_max);
+    q.a.assign(1, m_min);
+    q.b.assign(1, m_max);
     q.r.assign(1, L_lambda);
     q.e.assign(1, q.errsum);
     q.me.assign(1, err);
@@ -329,15 +321,15 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
     while (1) {
 
       // Figure out which interval to work on
-      double logm_left = q.a[intervalptr];
-      double logm_right = q.b[intervalptr];
-      double logm_cen = 0.5 * (logm_left + logm_right);
+      double m_left = q.a[intervalptr];
+      double m_right = q.b[intervalptr];
+      double m_cen = 0.5 * (m_left + m_right);
 
       // Compute integrals on two bisected sub-sections
       double L_bol1, L_bol2, bol_err1, bol_err2;
-      get_spectrum_cts_gk(logm_left, logm_cen, age, q.L_out1, L_bol1, 
+      get_spectrum_cts_gk(m_left, m_cen, age, q.L_out1, L_bol1, 
 			  q.err1, bol_err1, q);
-      get_spectrum_cts_gk(logm_cen, logm_right, age, q.L_out2, L_bol2, 
+      get_spectrum_cts_gk(m_cen, m_right, age, q.L_out2, L_bol2, 
 			  q.err2, bol_err2, q);
 
       // Update result and the error estimate
@@ -349,56 +341,34 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
       bol_err += bol_err1 + bol_err2 - q.ebol[intervalptr];
 
       // Have we converged? If so, stop iterating
-      //max_L = *max_element(L_lambda.begin(), L_lambda.end());
-      //max_err = *max_element(q.errsum.begin(), q.errsum.end());
-      //err = max(max_err/max_L, bol_err/L_bol);
-
       spec_err = 0.0;
       for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
 	spec_err = max(spec_err, q.errsum[i]/L_lambda[i]);
       err = max(spec_err, bol_err/L_bol);
-
-#if 0
-      cout << "Interval ml/mc/mr = " << exp(logm_left) << " "
-	   << " " << exp(logm_cen) << " " << exp(logm_right)
-	   << ", spec_err = " << spec_err << ", bol_err = "
-	   << bol_err/L_bol << endl;
-#endif
-
       if (err < tol) break;
 
       // If we're here, we haven't converged. Replace the current
       // interval with the left half, then push the right half onto
       // the list.
-      q.b[intervalptr] = logm_cen;
+      q.b[intervalptr] = m_cen;
       q.r[intervalptr] = q.L_out1;
       q.e[intervalptr] = q.err1;
       q.rbol[intervalptr] = L_bol1;
       q.ebol[intervalptr] = bol_err1;
-
       spec_err = 0.0;
       for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
 	spec_err = max(spec_err, q.err1[i]/L_lambda[i]);
       q.me[intervalptr] = max(spec_err, bol_err1/L_bol);
-
-      //q.me[intervalptr] = 
-      //	max((*max_element(q.err1.begin(), q.err1.end())) / max_L,
-      //    bol_err1 / L_bol);
-      q.a.push_back(logm_cen);
-      q.b.push_back(logm_right);
+      q.a.push_back(m_cen);
+      q.b.push_back(m_right);
       q.r.push_back(q.L_out2);
       q.e.push_back(q.err2);
       q.rbol.push_back(L_bol2);
       q.ebol.push_back(bol_err2);
-
       spec_err = 0.0;
       for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
 	spec_err = max(spec_err, q.err2[i]/L_lambda[i]);
       q.me.push_back(max(spec_err, bol_err2/L_bol));
-
-      //q.me.push_back(
-      //max((*max_element(q.err2.begin(), q.err2.end())) / max_L,
-      //    bol_err2 / L_bol));
 
       // Traverse the list of intervals to decide which to work on next
       intervalptr = (vector<double>::size_type) 
@@ -442,13 +412,13 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
   // the lowest mass track
   // maximum mass is the smallest of the edge of the non-stochastic
   // range, the largest mass track, and the death mass at this age
-  double logm_min = log(max(imf->get_xMin(), tracks->min_mass()));
-  double logm_max = log(min(min(imf->get_xStochMin(), tracks->max_mass()),
-			    tracks->death_mass(age)));
+  double m_min = max(imf->get_xMin(), tracks->min_mass());
+  double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+			    tracks->death_mass(age));
 
   // Do initial integration with Gauss-Kronrod
   double bol_err;
-  get_Lbol_cts_gk(logm_min, logm_max, age, L_bol, bol_err);
+  get_Lbol_cts_gk(m_min, m_max, age, L_bol, bol_err);
 
   // Get error estimate
   double err = bol_err/L_bol;
@@ -457,8 +427,8 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
   if (err > tol) {
 
     // Initialize the interval, result, and error pointers
-    q.a.assign(1, logm_min);
-    q.b.assign(1, logm_max);
+    q.a.assign(1, m_min);
+    q.b.assign(1, m_max);
     q.rbol.assign(1, L_bol);
     q.ebol.assign(1, bol_err);
     vector<double>::size_type intervalptr = 0;
@@ -468,14 +438,14 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
     while (1) {
 
       // Figure out which interval to work on
-      double logm_left = q.a[intervalptr];
-      double logm_right = q.b[intervalptr];
-      double logm_cen = 0.5 * (logm_left + logm_right);
+      double m_left = q.a[intervalptr];
+      double m_right = q.b[intervalptr];
+      double m_cen = 0.5 * (m_left + m_right);
 
       // Compute integrals on two bisected sub-sections
       double L_bol1, L_bol2, bol_err1, bol_err2;
-      get_Lbol_cts_gk(logm_left, logm_cen, age, L_bol1, bol_err1);
-      get_Lbol_cts_gk(logm_cen, logm_right, age, L_bol2, bol_err2);
+      get_Lbol_cts_gk(m_left, m_cen, age, L_bol1, bol_err1);
+      get_Lbol_cts_gk(m_cen, m_right, age, L_bol2, bol_err2);
 
       // Update result and the error estimate
       L_bol += L_bol1 + L_bol2 - q.rbol[intervalptr];
@@ -488,11 +458,11 @@ slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
       // If we're here, we haven't converged. Replace the current
       // interval with the left half, then push the right half onto
       // the list.
-      q.b[intervalptr] = logm_cen;
+      q.b[intervalptr] = m_cen;
       q.rbol[intervalptr] = L_bol1;
       q.ebol[intervalptr] = bol_err1;
-      q.a.push_back(logm_cen);
-      q.b.push_back(logm_right);
+      q.a.push_back(m_cen);
+      q.b.push_back(m_right);
       q.rbol.push_back(L_bol2);
       q.ebol.push_back(bol_err2);
 
@@ -743,7 +713,7 @@ get_Lbol_cts_sfh(const double t, const double tol) const {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_specsyn::
-get_spectrum_cts_gk(const double logm_min, const double logm_max,
+get_spectrum_cts_gk(const double m_min, const double m_max,
 		    const double age, vector<double>& L_lambda, 
 		    double& L_bol, vector<double>& err,
 		    double& err_bol, qag_wksp& q) const {
@@ -753,13 +723,13 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
   q.gaussQuad.assign(lambda_rest.size(), 0.0);
 
   // Construct grid of mass points
-  double logm_cen = 0.5 * (logm_min + logm_max);
-  double half_length = 0.5 * (logm_max - logm_min);
+  double m_cen = 0.5 * (m_min + m_max);
+  double half_length = 0.5 * (m_max - m_min);
   for (unsigned int i=0; i<gknum/2; i++) {
-    q.x_k[i] = exp(logm_cen - half_length * xgk[i]);
-    q.x_k[gknum-i-1] = exp(logm_cen + half_length * xgk[i]);
+    q.x_k[i] = m_cen - half_length * xgk[i];
+    q.x_k[gknum-i-1] = m_cen + half_length * xgk[i];
   }
-  q.x_k[gknum/2] = exp(logm_cen);
+  q.x_k[gknum/2] = m_cen;
 
   // Get stellar data for the mass grid
   const vector<slug_stardata> &stardata = 
@@ -774,8 +744,8 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
   // Get spectrum at this mass
   q.L_tmp1 = get_spectrum(stardata[ptr1]);
 
-  // Get IMF at this mass; note that dN / dln M = M dN/dM
-  double imf_val1 = (*imf)(q.x_k[ptr1]) * q.x_k[ptr1];
+  // Get IMF at this mass
+  double imf_val1 = (*imf)(q.x_k[ptr1]);
   double imf_val2;
 
   // Get bolometric luminosity at this mass
@@ -799,13 +769,13 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
     // Point on the left side of the mass interval
     ptr1 = 2*i+1;
     q.L_tmp1 = get_spectrum(stardata[ptr1]);
-    imf_val1 = (*imf)(q.x_k[ptr1]) * q.x_k[ptr1];
+    imf_val1 = (*imf)(q.x_k[ptr1]);
     L1 = pow(10.0, stardata[ptr1].logL);
 
     // Point on the right side of the mass interval
     ptr2 = gknum - 2*i - 2;
     q.L_tmp2 = get_spectrum(stardata[ptr2]);
-    imf_val2 = (*imf)(q.x_k[ptr2]) * q.x_k[ptr2];
+    imf_val2 = (*imf)(q.x_k[ptr2]);
     L2 = pow(10.0, stardata[ptr2].logL);
 
     // Compute the contribution to the Gaussian and Kronrod quadratures
@@ -825,13 +795,13 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
     // Point on left half of interval
     ptr1 = 2*i;
     q.L_tmp1 = get_spectrum(stardata[ptr1]);
-    imf_val1 = (*imf)(q.x_k[ptr1]) * q.x_k[ptr1];
+    imf_val1 = (*imf)(q.x_k[ptr1]);
     L1 = pow(10.0, stardata[ptr1].logL);
 
     // Point on right half of interval
     ptr2 = gknum - 2*i - 1;
     q.L_tmp2 = get_spectrum(stardata[ptr2]);
-    imf_val2 = (*imf)(q.x_k[ptr2]) * q.x_k[ptr2];
+    imf_val2 = (*imf)(q.x_k[ptr2]);
     L2 = pow(10.0, stardata[ptr2].logL);
 
     // Add to Kronrod sum
@@ -862,7 +832,7 @@ get_spectrum_cts_gk(const double logm_min, const double logm_max,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_specsyn::
-get_Lbol_cts_gk(const double logm_min, const double logm_max,
+get_Lbol_cts_gk(const double m_min, const double m_max,
 		const double age, double& L_bol, 
 		double& err_bol) const {
 
@@ -871,13 +841,13 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
 
   // Construct grid of mass points
   vector<double> x_k(gknum);
-  double logm_cen = 0.5 * (logm_min + logm_max);
-  double half_length = 0.5 * (logm_max - logm_min);
+  double m_cen = 0.5 * (m_min + m_max);
+  double half_length = 0.5 * (m_max - m_min);
   for (unsigned int i=0; i<gknum/2; i++) {
-    x_k[i] = exp(logm_cen - half_length * xgk[i]);
-    x_k[gknum-i-1] = exp(logm_cen + half_length * xgk[i]);
+    x_k[i] = m_cen - half_length * xgk[i];
+    x_k[gknum-i-1] = m_cen + half_length * xgk[i];
   }
-  x_k[gknum/2] = exp(logm_cen);
+  x_k[gknum/2] = m_cen;
 
   // Get stellar data for the mass grid
   const vector<slug_stardata> &stardata = 
@@ -890,7 +860,7 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
   unsigned int ptr2;
 
   // Get IMF at this mass
-  double imf_val1 = (*imf)(x_k[ptr1]) * x_k[ptr1];
+  double imf_val1 = (*imf)(x_k[ptr1]);
   double imf_val2;
 
   // Get bolometric luminosity at this mass
@@ -909,12 +879,12 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
 
     // Point on the left side of the mass interval
     ptr1 = 2*i+1;
-    imf_val1 = (*imf)(x_k[ptr1]) * x_k[ptr1];
+    imf_val1 = (*imf)(x_k[ptr1]);
     L1 = pow(10.0, stardata[ptr1].logL);
 
     // Point on the right side of the mass interval
     ptr2 = gknum - 2*i - 2;
-    imf_val2 = (*imf)(x_k[ptr2]) * x_k[ptr2];
+    imf_val2 = (*imf)(x_k[ptr2]);
     L2 = pow(10.0, stardata[ptr2].logL);
 
     // Compute the contribution to the Gauss and Kronrod quadratures
@@ -927,12 +897,12 @@ get_Lbol_cts_gk(const double logm_min, const double logm_max,
 
     // Point on left half of interval
     ptr1 = 2*i;
-    imf_val1 = (*imf)(x_k[ptr1]) * x_k[ptr1];
+    imf_val1 = (*imf)(x_k[ptr1]);
     L1 = pow(10.0, stardata[ptr1].logL);
 
     // Point on right half of interval
     ptr2 = gknum - 2*i - 1;
-    imf_val2 = (*imf)(x_k[ptr2]) * x_k[ptr2];
+    imf_val2 = (*imf)(x_k[ptr2]);
     L2 = pow(10.0, stardata[ptr2].logL);
 
     // Add to Kronrod sum
