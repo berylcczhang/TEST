@@ -281,12 +281,16 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 
   // Get the range of integration from the IMF and the stellar tracks:
   // minimum mass is the larger of the smallest mass in the IMF and
-  // the lowest mass track
-  // maximum mass is the smallest of the edge of the non-stochastic
-  // range, the largest mass track, and the death mass at this age
+  // the lowest mass track maximum mass is the smallest of the edge of
+  // the non-stochastic range, the largest mass track, and the death
+  // mass at this age
   double logm_min = log(max(imf->get_xMin(), tracks->min_mass()));
   double logm_max = log(min(min(imf->get_xStochMin(), tracks->max_mass()),
 			    tracks->death_mass(age)));
+
+  // If m_min > m_max (can happen for strange IMFs if all stars have
+  // died), just leave L_lambda and L_bol as 0
+  if (logm_min >= logm_max) return;
 
   // Do initial integration with Gauss-Kronrod
   double bol_err;
@@ -294,9 +298,18 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 		      q.errsum, bol_err, q);
 
   // Get error estimates
-  double max_L = *max_element(L_lambda.begin(), L_lambda.end());
-  double max_err = *max_element(q.errsum.begin(), q.errsum.end());
-  double err = max(max_err/max_L, bol_err/L_bol);
+  double spec_err = 0.0;
+  for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+    spec_err = max(spec_err, q.errsum[i]/L_lambda[i]);
+  double err = max(spec_err, bol_err/L_bol);
+  //double max_L = *max_element(L_lambda.begin(), L_lambda.end());
+  //double max_err = *max_element(q.errsum.begin(), q.errsum.end());
+  //double err = max(max_err/max_L, bol_err/L_bol);
+
+#if 0
+  cout << "Initial sum: spec_err = " << spec_err
+       << ", bol_err = " << bol_err/L_bol << endl;
+#endif
 
   // If error is not below tolerance, begin recursive bisection
   if (err > tol) {
@@ -336,9 +349,22 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
       bol_err += bol_err1 + bol_err2 - q.ebol[intervalptr];
 
       // Have we converged? If so, stop iterating
-      max_L = *max_element(L_lambda.begin(), L_lambda.end());
-      max_err = *max_element(q.errsum.begin(), q.errsum.end());
-      err = max(max_err/max_L, bol_err/L_bol);
+      //max_L = *max_element(L_lambda.begin(), L_lambda.end());
+      //max_err = *max_element(q.errsum.begin(), q.errsum.end());
+      //err = max(max_err/max_L, bol_err/L_bol);
+
+      spec_err = 0.0;
+      for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+	spec_err = max(spec_err, q.errsum[i]/L_lambda[i]);
+      err = max(spec_err, bol_err/L_bol);
+
+#if 0
+      cout << "Interval ml/mc/mr = " << exp(logm_left) << " "
+	   << " " << exp(logm_cen) << " " << exp(logm_right)
+	   << ", spec_err = " << spec_err << ", bol_err = "
+	   << bol_err/L_bol << endl;
+#endif
+
       if (err < tol) break;
 
       // If we're here, we haven't converged. Replace the current
@@ -349,18 +375,30 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
       q.e[intervalptr] = q.err1;
       q.rbol[intervalptr] = L_bol1;
       q.ebol[intervalptr] = bol_err1;
-      q.me[intervalptr] = 
-	max((*max_element(q.err1.begin(), q.err1.end())) / max_L,
-	    bol_err1 / L_bol);
+
+      spec_err = 0.0;
+      for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+	spec_err = max(spec_err, q.err1[i]/L_lambda[i]);
+      q.me[intervalptr] = max(spec_err, bol_err1/L_bol);
+
+      //q.me[intervalptr] = 
+      //	max((*max_element(q.err1.begin(), q.err1.end())) / max_L,
+      //    bol_err1 / L_bol);
       q.a.push_back(logm_cen);
       q.b.push_back(logm_right);
       q.r.push_back(q.L_out2);
       q.e.push_back(q.err2);
       q.rbol.push_back(L_bol2);
       q.ebol.push_back(bol_err2);
-      q.me.push_back(
-	max((*max_element(q.err2.begin(), q.err2.end())) / max_L,
-	    bol_err2 / L_bol));
+
+      spec_err = 0.0;
+      for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+	spec_err = max(spec_err, q.err2[i]/L_lambda[i]);
+      q.me.push_back(max(spec_err, bol_err2/L_bol));
+
+      //q.me.push_back(
+      //max((*max_element(q.err2.begin(), q.err2.end())) / max_L,
+      //    bol_err2 / L_bol));
 
       // Traverse the list of intervals to decide which to work on next
       intervalptr = (vector<double>::size_type) 
