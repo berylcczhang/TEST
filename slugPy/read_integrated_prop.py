@@ -30,24 +30,26 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
     Returns
     -------
     A namedtuple containing the following fields:
-    time : array, shape (N_trials, N_times)
-       Output times, where N_times = number of output times, N_trials 
-       = number of trials
-    target_mass : array, shape (N_trials, N_times)
+    time : array
+       Times at which data are output
+    target_mass : array, shape
        Target stellar mass at each time
-    actual_mass : array, shape (N_trials, N_times)
-       Actual mass of stars created up to each time
-    live_mass : array, shape (N_trials, N_times)
-       Mass of currently-alive stars at each time
-    cluster_mass : array, shape (N_trials, N_times)
-       Mass of living stars in non-disrupted clusters at each time
-    num_clusters : array, shape (N_trials, N_times), dtype ulonglong
-       Number of non-disrupted clusters present at each time
-    num_dis_clusters : array, shape (N_trials, N_times), dtype ulonglong
-       Number of disrupted clusters present at each time
-    num_fld_stars : array, shape (N_trials, N_times), dtype ulonglong
+    actual_mass : array, shape (N_times, N_trials)
+       Actual mass of stars created up to each time in each trial
+    live_mass : array, shape (N_times, N_trials)
+       Mass of currently-alive stars at each time in each trial
+    cluster_mass : array, shape (N_times, N_trials)
+       Mass of living stars in non-disrupted clusters at each time in
+       each trial
+    num_clusters : array, shape (N_times, N_trials), dtype ulonglong
+       Number of non-disrupted clusters present at each time in each
+       trial
+    num_dis_clusters : array, shape (N_times, N_trials), dtype ulonglong
+       Number of disrupted clusters present at each time in each trial
+    num_fld_stars : array, shape (N_times, N_trials), dtype ulonglong
        Number of living field stars (excluding those in disrupted 
-       clusters) present at each time
+       clusters and those being treated non-stochastically) present at
+       each time in each trial
     """
 
     # Open file
@@ -56,7 +58,7 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
 
     # Print status
     if verbose:
-        print("Reading "+model_name)
+        print("Reading integrated properties for model "+model_name)
 
     # Prepare lists to hold data
     time = []
@@ -80,6 +82,8 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
 
         # Read data
         for entry in fp:
+            if entry[:3] == '---':
+                continue       # Skip separator lines
             data = entry.split()
             time.append(float(data[0]))
             target_mass.append(float(data[1]))
@@ -130,15 +134,15 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
     ntrial = len(idx[0])
     ntime = len(time)/ntrial
 
-    # Reshape the output arrays
-    time = time.reshape((ntrial, ntime))
-    target_mass = target_mass.reshape(ntrial, ntime)
-    actual_mass = actual_mass.reshape(ntrial, ntime)
-    live_mass = live_mass.reshape(ntrial, ntime)
-    cluster_mass = cluster_mass.reshape(ntrial, ntime)
-    num_clusters = num_clusters.reshape(ntrial, ntime)
-    num_dis_clusters = num_dis_clusters.reshape(ntrial, ntime)
-    num_fld_stars = num_fld_stars.reshape(ntrial, ntime)
+    # Prune / reshape the output arrays
+    time = time[0:ntime]
+    target_mass = target_mass[0:ntime]
+    actual_mass = np.transpose(actual_mass.reshape(ntrial, ntime))
+    live_mass = np.transpose(live_mass.reshape(ntrial, ntime))
+    cluster_mass = np.transpose(cluster_mass.reshape(ntrial, ntime))
+    num_clusters = np.transpose(num_clusters.reshape(ntrial, ntime))
+    num_dis_clusters = np.transpose(num_dis_clusters.reshape(ntrial, ntime))
+    num_fld_stars = np.transpose(num_fld_stars.reshape(ntrial, ntime))
 
     # Build the namedtuple to hold output
     out_type = namedtuple('integrated_prop',

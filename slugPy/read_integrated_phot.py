@@ -46,32 +46,32 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
     Returns
     -------
     A namedtuple containing the following fields:
-    filters : list of strings
+    time : array
+       times at which colors are output, in yr
+    filter_names : list of string
        a list giving the name for each filter
-    units : list of string
+    filter_units : list of string
        a list giving the units for each filter
-    central_wavelength : list
+    filter_wl_cen : list
        central wavelength of each filter; this is set to None for the
        filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
        True
-    wavelength : list of arrays
+    filter_wl : list of arrays
        a list giving the wavelength table for each filter; this is
        None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
        nofilterdata is True
-    response : list of arrays
+    filter_response : list of arrays
        a list giving the photon response function for each filter;
        this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
        if nofilterdata is True 
-    time : array
-       times at which colors are output, in yr
-    phot : array, shape (len(times), len(filters))
-       photometric value in each filter at each time; units are as
-       indicated in the units field
+    phot : array, shape (N_filter, N_times, N_trials)
+       photometric value in each filter at each time in each trial;
+       units are as indicated in the units field
        
     Raises
     ------
     IOError, if no photometry file can be found
-    ValueError, if photsystem is set to an unknown values
+    ValueError, if photsystem is set to an unknown value
     """
 
     # Open file
@@ -90,6 +90,7 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
         # Read the list of filters
         line = fp.readline()
         filters = line.split()[1:]
+        nfilter = len(filters)
 
         # Read the list of units
         line = fp.readline()
@@ -109,6 +110,8 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
 
         # Read through data
         for line in fp:
+            if line[:3] == '---':
+                continue       # Skip separator lines
             linesplit = line.split()
             time.append(float(linesplit[0]))
             phot.append(np.array(linesplit[1:], dtype='float'))
@@ -150,12 +153,22 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
     # Close file
     fp.close()
 
+    # Reshape time and photometry arrays
+    ntrial = 1 + np.sum(time[1:] <= time[:-1])
+    ntime = len(time)/ntrial
+    time = time[:ntime]
+    phot = np.transpose(np.reshape(phot, (ntrial, ntime, nfilter)))
+
     # Read filter data if requested
     if not nofilterdata:
+        if verbose:
+            print("Reading filter data")
         wl_cen, wavelength, response = read_filter(filters)
 
     # Do photometric system conversion if requested
     if photsystem is not None:
+        if verbose:
+            print("Converting photometric system")
         if nofilterdata:
             photometry_convert(photsystem, phot, units)
         else:
@@ -164,15 +177,16 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
     # Construct return object
     if nofilterdata:
         out_type = namedtuple('integrated_phot',
-                              ['filters', 'units', 'time', 'phot'])
-        out = out_type(filters, units, time, phot)
+                              ['time', 'filter_names', 
+                               'filter_units', 'phot'])
+        out = out_type(time, filters, units, phot)
     else:
         out_type = namedtuple('integrated_phot',
-                              ['filters', 'units',
-                               'central_wavelength','wavelength',
-                               'response', 'time', 'phot'])
-        out = out_type(filters, units, wl_cen, wavelength, response,
-                       time, phot)
+                              ['time', 'filter_names', 'filter_units',
+                               'filter_wl_cen', 'filter_wl', 
+                               'filter_response', 'phot'])
+        out = out_type(time, filters, units, wl_cen, wavelength, response,
+                       phot)
 
     # Return
     return out

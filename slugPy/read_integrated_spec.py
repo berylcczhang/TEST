@@ -30,12 +30,13 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
     Returns
     -------
     A namedtuple containing the following fields:
-    wavelength : array
-       wavelength, in Angstrom
     time : array
        times at which spectra are output, in yr
-    L_lambda : array, shape (len(lambda), len(times))
-       specific luminosity at each wavelength and each time, in erg/s/A
+    wl : array
+       wavelength, in Angstrom
+    spec : array, shape (N_wavelength, N_times, N_trials)
+       specific luminosity at each wavelength and each time for each
+       trial, in erg/s/A
     """
     
     # Open file
@@ -64,23 +65,41 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
         # Read data
         for entry in fp:
 
+            if entry[:3] == '---':
+                continue       # Skip separator lines
+
             # Split up the line
             data = entry.split()
             time.append(float(data[0]))
             wavelength.append(float(data[1]))
             L_lambda.append(float(data[2]))
 
-        # Figure out how to decompose the data into arrays
+        # Convert to arrays
         time = np.array(time)
         wavelength = np.array(wavelength)
         L_lambda = np.array(L_lambda)
-        dummy, idx = np.unique(time, return_index=True)
-        if len(idx) > 1:
-            nl = idx[1]
-            nt = len(time)/nl
+
+        # Figure out the number of wavelengths by finding the first
+        # time a wavelength repeats. Truncate the wavelength and time
+        # arrays appropriately.
+        repeats = np.where(wavelength == wavelength[0])[0]
+        if len(repeats > 1):
+            nl = repeats[1]
+            wavelength = wavelength[:nl]
             time = time[::nl]
-            wavelength = wavelength[0:nl]
-            L_lambda = np.reshape(L_lambda, (nt, nl))
+        else:
+            nl = len(wavelength)
+            time = [time[0]]
+
+        # Figure out how many trials there are from how many times the
+        # time array decreases instead of increasing. Truncate the
+        # time array appropriately.
+        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        ntime = len(time)/ntrial
+        time = time[:ntime]
+
+        # Reshape the L_lambda array
+        L_lambda = np.transpose(np.reshape(L_lambda, (ntrial, ntime, nl)))
 
     else:
 
@@ -98,19 +117,28 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
         nchunk = ndata/(nl+1)
         data_list = struct.unpack('d'*ndata, data)
 
-        # Parse into arrays
+        # Figure out how many times we have, and get unique times
         time = np.array(data_list[::nl+1])
-        L_lambda = np.array(
-            [data_list[(nl+1)*i+1:(nl+1)*(i+1)] 
-             for i in range(nchunk)])
+        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        ntime = len(time)/ntrial
+        time = time[:ntime]
+
+        # Put L_lambda into array
+        L_lambda = np.zeros((nl, ntime, ntrial))
+        ptr = 0
+        for i in range(ntrial):
+            for j in range(ntime):
+                L_lambda[:,j,i] \
+                    = np.array(data_list[ptr*(nl+1)+1:(ptr+1)*(nl+1)])
+                ptr = ptr+1
 
     # Close file
     fp.close()
 
     # Build the namedtuple to hold output
     out_type = namedtuple('integrated_spec',
-                          ['wavelength', 'time', 'L_lambda'])
-    out = out_type(wavelength, time, L_lambda)
+                          ['time', 'wl', 'spec'])
+    out = out_type(time, wavelength, L_lambda)
 
     # Return
     return out
