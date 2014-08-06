@@ -28,7 +28,7 @@ def read_filter(filtername, filter_dir=None):
     wl_cen : float or array
        Central wavelength of the filter, defined by 
        wl_cen = \int R lambda dlambda / \int R dlambda
-    wavelength : array or list of arrays
+    wl : array or list of arrays
        Wavelength table for each filter, in Ang
     response : array or list of arrays
        Response function per photon for each filter
@@ -195,7 +195,7 @@ def read_filter(filtername, filter_dir=None):
 
     # Build the output object
     out_type = namedtuple('filter_data',
-                          ['wl_cen', 'wavelength', 'response'])
+                          ['wl_cen', 'wl', 'response'])
     out = out_type(wl_cen, wavelength, response)
 
     # Return
