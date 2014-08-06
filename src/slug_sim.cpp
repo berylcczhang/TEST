@@ -210,6 +210,23 @@ void slug_sim::galaxy_sim() {
     // Reset the galaxy
     galaxy->reset();
 
+    // Write trial separator to ASCII files if operating in ASCII
+    // mode
+    if ((out_mode == ASCII) && (i != 0)) {
+      if (pp.get_writeIntegratedProp()) 
+	write_separator(int_prop_file, 8*14-3);
+      if (pp.get_writeIntegratedSpec()) 
+	write_separator(int_spec_file, 3*14-3);
+      if (pp.get_writeIntegratedPhot())
+	write_separator(int_phot_file, (1+pp.get_nPhot())*18-3);
+      if (pp.get_writeClusterProp())
+	write_separator(cluster_prop_file, 9*14-3);
+      if (pp.get_writeClusterSpec())
+	write_separator(cluster_spec_file, 4*14-3);
+      if (pp.get_writeClusterPhot())
+	write_separator(cluster_phot_file, (2+pp.get_nPhot())*18-3);
+    }
+
     // Loop over time steps
     for (unsigned int j=0; j<outTimes.size(); j++) {
 
@@ -630,4 +647,15 @@ void slug_sim::open_cluster_phot() {
       cluster_phot_file << filter_names[i] << " " 
 		    << filter_units[i] << endl;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Write out a separator
+////////////////////////////////////////////////////////////////////////
+void slug_sim::write_separator(ofstream& file, 
+			       const unsigned int width) {
+  string sep;
+  for (unsigned int i=0; i<width; i++) sep += "-";
+  file << sep << endl;
 }

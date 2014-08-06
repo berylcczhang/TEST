@@ -60,6 +60,10 @@ private:
   void open_integrated_phot();
   void open_cluster_phot();
 
+  // Function to write separators between trials to files
+  void write_separator(std::ofstream& file, 
+		       const unsigned int width = 80);
+
   // Output information
   std::vector<double> outTimes;    // Output times
   std::ofstream int_prop_file;     // Integrated properties file

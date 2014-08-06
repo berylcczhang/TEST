@@ -501,7 +501,7 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
 
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific 
-	    << setw(11) << right << curTime;
+	    << setw(15) << right << curTime;
     for (vector<double>::size_type i=0; i<phot.size(); i++)
       outfile << "   " << setw(15) << right << phot[i];
     outfile << endl;
