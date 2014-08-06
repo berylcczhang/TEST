@@ -41,28 +41,13 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
   // Try to open the FILTER_LIST file
   string fname = "FILTER_LIST";
   ifstream filter_file;
-  char *slug_dir = getenv("SLUG_DIR");
-  path dname(filter_dir);
-  path filter_path, filter_fullPath;
-  filter_path = dname / path(fname.c_str());
-  if (slug_dir != NULL) {
-    // Try opening relative to SLUG_DIR
-    filter_fullPath = path(slug_dir) / filter_path;
-    filter_file.open(filter_fullPath.c_str());
-  }
-  if (filter_file.is_open()) {
-    filter_path = filter_fullPath;
-  } else {
-    // Try opening relative to current path
-    filter_file.open(filter_path.c_str());
-  }
+  path dirname(filter_dir);
+  path filter_path = dirname / path(fname.c_str());
+  filter_file.open(filter_path.c_str());
   if (!filter_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug error: unable to open filter file " 
-	 << filter_path.string();
-    if (slug_dir != NULL)
-      cerr << " or " << filter_fullPath.string();
-    cerr << endl;
+    cerr << "slug: error: unable to open filter file " 
+	 << filter_path.string() << endl;
     exit(1);
   }
 
@@ -143,25 +128,12 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
 
   // Now try to open the filter data file
   fname = "allfilters.dat";
-  filter_path = dname / path(fname.c_str());
-  if (slug_dir != NULL) {
-    // Try opening relative to SLUG_DIR
-    filter_fullPath = path(slug_dir) / filter_path;
-    filter_file.open(filter_fullPath.c_str());
-  }
-  if (filter_file.is_open()) {
-    filter_path = filter_fullPath;
-  } else {
-    // Try opening relative to current path
-    filter_file.open(filter_path.c_str());
-  }
+  filter_path = dirname / path(fname.c_str());
+  filter_file.open(filter_path.c_str());
   if (!filter_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug error: unable to open filter file " 
-	 << filter_path.string();
-    if (slug_dir != NULL)
-      cerr << " or " << filter_fullPath.string();
-    cerr << endl;
+    cerr << "slug: error: unable to open filter file " 
+	 << filter_path.string() << endl;
     exit(1);
   }
 

@@ -36,7 +36,7 @@ slug_parmParser::slug_parmParser(int argc, char **argv) {
   // First make sure we have the right number of arguments; if not,
   // print error and exit with error
   if (argc != 2) {
-    cerr << "slug error: expected exactly 1 argument" << endl;
+    cerr << "slug: error: expected exactly 1 argument" << endl;
     printUsage();
     exit(1);
   }
@@ -57,7 +57,7 @@ slug_parmParser::slug_parmParser(int argc, char **argv) {
   ifstream paramFile;
   paramFile.open(paramFileName.c_str(), ios::in);
   if (!paramFile.is_open()) {
-    cerr << "slug error: unable to open file " 
+    cerr << "slug: error: unable to open file " 
 	      << paramFileName << endl;
     exit(1);
   }
@@ -97,23 +97,61 @@ slug_parmParser::printUsage() {
 
 void
 slug_parmParser::setDefaults() {
+
+  // See if the SLUG_DIR environment variable is set, for use in
+  // setting up default paths. If not, set it to current working
+  // directory.
+  string slug_dir(getenv("SLUG_DIR"));
+  if (slug_dir.length() == 0) slug_dir = ".";
+  path slug_path(slug_dir);
+
+  // Basic data
+  model = "SLUG_DEF";
+  path out_path("output");
+  outDir = (slug_path / out_path).string();
   verbosity = 1;
+
+  // Control flow parameters
+  run_galaxy_sim = true;
   nTrials = 1;
-  startTime = timeStep = endTime = fClust = cluster_mass = -constants::big;
   logTime = false;
-  z = 0.0;
+  startTime = timeStep = endTime = -constants::big;
+  sfr = cluster_mass = -constants::big;
+  constantSFR = false;
+
+  // Physical model parameters
+  path lib_path("lib");
+  path imf_path("imf");
+  path imf_file("chabrier.imf");
+  imf = (slug_path / lib_path / imf_path / imf_file).string();
+  path cmf_path("cmf");
+  path cmf_file("slug_default.cmf");
+  cmf = (slug_path / lib_path / cmf_path / cmf_file).string();
+  path clf_path("clf");
+  path clf_file("slug_default.clf");
+  clf = (slug_path / lib_path / clf_path / clf_file).string();
+  path track_path("tracks");
+  path track_file("Z0140v00.txt");
+  track = (slug_path / lib_path / track_path / track_file).string();
+  path atmos_path("atmospheres");
+  atmos_dir = (slug_path / lib_path / atmos_path).string();
+  specsyn_mode = SB99;
+  fClust = 1.0;
+  min_stoch_mass = 2.0;
   metallicity = -1.0;    // Flag for not set
   WR_mass = -1.0;        // flag for not set
-  min_stoch_mass = 2.0;
-  constantSFR = false;
+
+  // Photometric parameters
+  path filter_path("filters");
+  filter_dir = (slug_path / lib_path / filter_path).string();
+  phot_mode = L_NU;
+
+  // Output parameters
+  z = 0.0;
   writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
     writeClusterSpec = writeIntegratedSpec = true;
   out_mode = ASCII;
-  model = "SLUG_DEF";
-  specsyn_mode = SB99;
-  phot_mode = L_NU;
-  run_galaxy_sim = true;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -200,7 +238,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	model = tokens[1];
       } else if (!(tokens[0].compare("out_dir"))) {
 	outDir = tokens[1];
-      } else if (!(tokens[0].compare("z"))) {
+      } else if (!(tokens[0].compare("redshift"))) {
 	z = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("metallicity"))) {
 	metallicity = lexical_cast<double>(tokens[1]);
@@ -320,7 +358,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 [[noreturn]]
 void
 slug_parmParser::parseError(string line) {
-  cerr << "slug error: unable to parse line:" << endl;
+  cerr << "slug: error: unable to parse line:" << endl;
   cerr << line << endl;
   exit(1);
 }
@@ -335,86 +373,63 @@ void
 slug_parmParser::checkParams() {
 
   if (verbosity < 0 || verbosity > 2) {
-    cerr << "slug error: verbosity must be 0, 1, or 2" 
+    cerr << "slug: error: verbosity must be 0, 1, or 2" 
 	      << endl;
     exit(1);
   }
   if (nTrials < 0) {
-    cerr << "slug error: nTrials must be >= 1" << endl;
+    cerr << "slug: error: nTrials must be >= 1" << endl;
     exit(1);
   }
   if (startTime == -constants::big) {
     startTime = timeStep;   // Default start time = time step
   } else if (startTime <= 0.0) {
-    cerr << "slug error: startTime must be > 0" << endl;
+    cerr << "slug: error: startTime must be > 0" << endl;
   }
   if (timeStep <= 0) {
     if (timeStep == -constants::big) {
-      cerr << "slug error: parameter timeStep must be set" 
+      cerr << "slug: error: parameter timeStep must be set" 
 		<< endl;
     } else {
-      cerr << "slug error: timeStep must be > 0" << endl;
+      cerr << "slugK error: timeStep must be > 0" << endl;
     }
     exit(1);
   }
   if (endTime <= 0) {
     if (endTime == -constants::big) {
-      cerr << "slug error: parameter endTime must be set" 
+      cerr << "slug: error: parameter endTime must be set" 
 		<< endl;
     } else {
-      cerr << "slug error: endTime must be > 0" << endl;
+      cerr << "slug: error: endTime must be > 0" << endl;
     }
     exit(1);
   }
   if (!constantSFR && run_galaxy_sim) {
     if (sfh.length() == 0) {
-      cerr << "slug error: for non-constant SFR, must set SFH" 
+      cerr << "slug: error: for non-constant SFR, must set SFH" 
 		<< endl;
       exit(1);
     }    
   }
   if (!run_galaxy_sim && cluster_mass < 0) {
-    cerr << "slug error: cluster mass must be set to > 0 for cluster sim"
+    cerr << "slug: error: cluster mass must be set to > 0 for cluster sim"
 	 << endl;
     exit(1);
   }
-  if (imf.length() == 0) {
-    cerr << "slug error: must set IMF" << endl;
-    exit(1);
-  }
-  if (cmf.length() == 0 && run_galaxy_sim) {
-    cerr << "slug error: for sim_type galaxy, must set CMF" << endl;
-    exit(1);
-  }
-  if (clf.length() == 0) {
-    cerr << "slug error: must set CLF" << endl;
-    exit(1);
-  }
-  if (track.length() == 0) {
-    cerr << "slug error: must set track" << endl;
-    exit(1);
-  }
-  if (atmos_dir.length() == 0) {
-    cerr << "slug error: must set atmos_dir" << endl;
-    exit(1);
-  }
-  if (fClust == -constants::big && run_galaxy_sim) {
-    cerr << "slug error: for sim_type galaxy, must set clust_frac" << endl;
-    exit(1);
-  } else if ((fClust < 0 || fClust > 1) && run_galaxy_sim) {
-    cerr << "slug error: clust_frac must be in the range [0,1]"
+  if ((fClust < 0 || fClust > 1) && run_galaxy_sim) {
+    cerr << "slug: error: clust_frac must be in the range [0,1]"
 	 << endl;
     exit(1);
   }
   if (!writeClusterProp && !writeClusterPhot 
       && !writeClusterSpec && !writeIntegratedPhot
       && !writeIntegratedSpec) {
-    cerr << "slug error: nothing to be written!" << endl;
+    cerr << "slug: error: nothing to be written!" << endl;
     exit(1);
   }
   if ((writeClusterPhot || writeIntegratedPhot) && 
       (photBand.size() == 0)) {
-    cerr << "slug error: photometry requested, "
+    cerr << "slug: error: photometry requested, "
 	 << "but no photometric bands specified" << endl;
     exit(1);
   }

@@ -48,36 +48,21 @@ using namespace boost::filesystem;
 // compatibility with SB99.
 
 slug_tracks::slug_tracks(const char *fname, double my_metallicity,
-			 double my_WR_mass) :
+			 double my_WR_mass, double max_time) :
   metallicity(my_metallicity), WR_mass(my_WR_mass) {
 
   // Try to open file
   ifstream trackfile;
-  char *slug_dir = getenv("SLUG_DIR");
-  path trackpath(fname), trackfullPath;
-  if (slug_dir != NULL) {
-    // Try opening relative to SLUG_DIR
-    trackfullPath = path(slug_dir) / trackpath;
-    trackfile.open(trackfullPath.c_str());
-  }
-  if (trackfile.is_open()) {
-    trackpath = trackfullPath;
-  } else {
-    // Try opening relative to current path
-    trackfile.open(trackpath.c_str());
-  }
+  trackfile.open(fname);
   if (!trackfile.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug error: unable to open track file " 
-	 << trackpath.string();
-    if (slug_dir != NULL)
-      cerr << " or " << trackfullPath.string();
-    cerr << endl;
+    cerr << "slug: error: unable to open track file " 
+	 << fname << endl;
     exit(1);
   }
 
   // Save file name
-  trackfileName = trackpath.string();
+  trackfileName = fname;
 
   // Catch exceptions
   trackfile.exceptions(ifstream::failbit | ifstream::badbit | 
@@ -101,7 +86,8 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       ntime = lexical_cast<unsigned int>(tokens[1]) + 1;  // Add a dummy entry at time = 0
     } catch (const bad_lexical_cast& ia) {
       (void) ia;  // No-op to suppress compiler warning
-      cerr << "Error reading track file " << trackfileName << endl;
+      cerr << "slug: error: badly formatted track file " 
+	   << trackfileName << endl;
       exit(1);
     }
 
@@ -135,7 +121,8 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	logmass[i] = log(lexical_cast<double>(tokens[0]));
       } catch (const bad_lexical_cast& ia) {
 	(void) ia;  // No-op to suppress compiler warning
-	cerr << "Error reading track file " << trackfileName << endl;
+	cerr << "slug: error: badly formatted track file " 
+	     << trackfileName << endl;
 	exit(1);
       }
       tracktype.push_back(tokens[1]);
@@ -246,14 +233,16 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	  }
 	} catch (const bad_lexical_cast& ia) {
 	  (void) ia;  // No-op to suppress compiler warning
-	  cerr << "Error reading track file " << trackfileName << endl;
+	  cerr << "slug: error: badly formatted track file " 
+	       << trackfileName << endl;
 	  exit(1);
 	}
       }
     }
   } catch(ifstream::failure e) {
     (void) e;  // No-op to suppress compiler warning
-    cerr << "Error reading track file " << trackfileName << endl;
+    cerr << "slug: error: badly formatted track file " 
+	 << trackfileName << endl;
     exit(1);
   }
 
@@ -277,7 +266,8 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     logmDot[i][0] = logmDot[i][1];
   }
 
-  // Issue warning if lifetimes are non-monotonic
+  // Issue warning if lifetimes are non-monotonic at ages less than
+  // the maximum age we're going to use
   double mwarn = -1.0;
   double twarn = constants::big;
   for (unsigned int i=0; i<ntrack-1; i++) {
@@ -289,12 +279,14 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     }
   }
   if (mwarn > 0) {
-    cerr << "slug: warning: Stellar lifetime is non-monotonic "
-	 << "for stellar mass " << mwarn << " Msun." << endl;
-    cerr << "slug: warning: Non-monotonic stellar lifetimes are "
-	 << "not currently supported. Calculation will proceed, but "
-	 << "results likely become inaccurate for stellar "
-	 << "population ages > " << twarn << " yr." << endl;
+    if ((max_time == -1.0) || (twarn < max_time)) {
+      cerr << "slug: warning: Stellar lifetime is non-monotonic "
+	   << "for stellar mass " << mwarn << " Msun." << endl;
+      cerr << "slug: warning: Non-monotonic stellar lifetimes are "
+	   << "not currently supported. Calculation will proceed, but "
+	   << "results likely become inaccurate for stellar "
+	   << "population ages > " << twarn << " yr." << endl;
+    }
   }
 
   // Construct the slopes in the (log t, log m) plane; slopes[i, j] =
@@ -480,6 +472,8 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 
   // If not already set, try to guess the metallicity from the file
   // name
+  path trackpath(trackfileName);
+  string trackpath_strip = trackpath.filename().string();
   if (metallicity < 0) {
     // Default value, not specified, so guess from file name
 
@@ -496,26 +490,30 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 
     // Check for matches
     match_results<std::basic_string<char>::iterator> name_match;
-    if (regex_search(trackfileName.begin(), trackfileName.end(), 
+    if (regex_search(trackpath_strip.begin(), 
+		     trackpath_strip.end(), 
 		     name_match, pattern1, match_posix)) {
       string fnametmp(name_match[0].first, name_match[0].second);
       string metalstring = fnametmp.substr(4, 3);
       metalstring.insert(0, "0.");    // Add the decimal point
       metallicity = lexical_cast<double>(metalstring)/0.02;
-    } else if (regex_search(trackfileName.begin(), trackfileName.end(), 
+    } else if (regex_search(trackpath_strip.begin(), 
+			    trackpath_strip.end(), 
 			    name_match, pattern2, match_posix)) {
       string fnametmp(name_match[0].first, name_match[0].second);
       string metalstring = fnametmp.substr(4, 4);
       metalstring.insert(0, "0.");    // Add the decimal point
       metallicity = lexical_cast<double>(metalstring)/0.02;
-    } else if (regex_search(trackfileName.begin(), trackfileName.end(), 
+    } else if (regex_search(trackpath_strip.begin(), 
+			    trackpath_strip.end(), 
 			    name_match, pattern3, match_posix)) {
       metallicity = 1.0;
-    } else if  (regex_search(trackfileName.begin(), trackfileName.end(), 
+    } else if (regex_search(trackpath_strip.begin(), 
+			    trackpath_strip.end(), 
 			    name_match, pattern4, match_posix)) {
       metallicity = 1.0/7.0;
     } else {
-      cerr << "Error: could not guess metallicity from file name "
+      cerr << "slug: error: could not guess metallicity from file name "
 	   << trackfileName << "; "
 	   << "please set manually in parameter file"
 	   << endl;
@@ -564,7 +562,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     }
     // Make sure we found a match
     if (WR_mass < 0) {
-      cerr << "Error: could not guess WR mass from file name "
+      cerr << "slug: error: could not guess WR mass from file name "
 	   << trackfileName << "; "
 	   << "please set manually in parameter file"
 	   << endl;

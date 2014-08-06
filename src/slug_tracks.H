@@ -80,7 +80,7 @@ class slug_tracks {
 public:
   // Construct a set of tracks from a file containing them
   slug_tracks(const char *fname, double my_metallicity = -1.0,
-	      double my_WR_mass = -1.0);
+	      double my_WR_mass = -1.0, double max_time = -1.0);
 
   // Destructor
   ~slug_tracks();

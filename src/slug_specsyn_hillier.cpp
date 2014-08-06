@@ -93,28 +93,13 @@ slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks,
   // Construct the file name for the WC models and try to open the file
   string fname = "CMFGEN_WC_Z"+extensions[idx]+".dat";
   ifstream atmos_file;
-  char *slug_dir = getenv("SLUG_DIR");
-  path dname(dirname);
-  path atmos_path, atmos_fullPath;
-  atmos_path = dname / path(fname.c_str());
-  if (slug_dir != NULL) {
-    // Try opening relative to SLUG_DIR
-    atmos_fullPath = path(slug_dir) / atmos_path;
-    atmos_file.open(atmos_fullPath.c_str());
-  }
-  if (atmos_file.is_open()) {
-    atmos_path = atmos_fullPath;
-  } else {
-    // Try opening relative to current path
-    atmos_file.open(atmos_path.c_str());
-  }
+  path dirname_path(dirname);
+  path atmos_path = dirname_path / path(fname.c_str());
+  atmos_file.open(atmos_path.c_str());
   if (!atmos_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug error: unable to open atmosphere file " 
-	 << atmos_path.string();
-    if (slug_dir != NULL)
-      cerr << " or " << atmos_fullPath.string();
-    cerr << endl;
+    cerr << "slug: error: unable to open atmosphere file " 
+	 << atmos_path.string() << endl;
     exit(1);
   }
 
@@ -141,22 +126,12 @@ slug_specsyn_hillier(const char *dirname, const slug_tracks *my_tracks,
 
   // Repeat for WN models
   fname = "CMFGEN_WN_Z"+extensions[idx]+".dat";
-  atmos_path = dname / path(fname.c_str());
-  if (slug_dir != NULL) {
-    atmos_fullPath = path(slug_dir) / atmos_path;
-    atmos_file.open(atmos_fullPath.c_str());
-  }
-  if (atmos_file.is_open()) {
-    atmos_path = atmos_fullPath;
-  } else {
-    atmos_file.open(atmos_path.c_str());
-  }
+  atmos_path = dirname_path / path(fname.c_str());
+  atmos_file.open(atmos_path.c_str());
   if (!atmos_file.is_open()) {
-    cerr << "slug error: unable to open atmosphere file " 
-	 << atmos_path.string();
-    if (slug_dir != NULL)
-      cerr << " or " << atmos_fullPath.string();
-    cerr << endl;
+    // Couldn't open file, so bail out
+    cerr << "slug: error: unable to open atmosphere file " 
+	 << atmos_path.string() << endl;
     exit(1);
   }
   wn_file_name = atmos_path.string();

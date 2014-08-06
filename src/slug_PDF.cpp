@@ -92,35 +92,18 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   // Record if this PDF is assumed to be normalized to unity or not
   normalized = is_normalized;
 
-  // Try to open the PDF file; search for it relative to SLUG_DIR
-  // environment variable first if that is set, and then search
-  // relative to current directory
+  // Try to open the PDF file
   ifstream PDFFile;
-  char *slug_dir = getenv("SLUG_DIR");
-  path PDFpath(PDF), PDFfullPath;
-  if (slug_dir != NULL) {
-    // Try opening relative to SLUG_DIR
-    PDFfullPath = path(slug_dir) / PDFpath;
-    PDFFile.open(PDFfullPath.c_str());
-  }
-  if (PDFFile.is_open()) {
-    PDFpath = PDFfullPath;
-  } else {
-    // Try opening relative to current path
-    PDFFile.open(PDFpath.c_str());
-  }
+  PDFFile.open(PDF);
   if (!PDFFile.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug error: unable to open PDF file " 
-	 << PDFpath.string();
-    if (slug_dir != NULL)
-      cerr << " or " << PDFfullPath.string();
-    cerr << endl;
+    cerr << "slug: error: unable to open PDF file " 
+	 << PDF << endl;
     exit(1);
   }
 
   // Save name of PDF file
-  PDFFileName = PDFpath.string();
+  PDFFileName = PDF;
 
   // We've successfully opened the PDF file. Read the first
   // non-whitespace line.
@@ -950,7 +933,7 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
 ////////////////////////////////////////////////////////////////////////
 [[noreturn]] void
 slug_PDF::parseError(int lineCount, string line, string message) {
-  cerr << "slug error: parsing error in file " 
+  cerr << "slug: error: parsing error in file " 
        << PDFFileName 
        << " on line " << lineCount;
   if (line.length() > 0) 
@@ -968,7 +951,7 @@ slug_PDF::parseError(int lineCount, string line, string message) {
 ////////////////////////////////////////////////////////////////////////
 [[noreturn]] void
 slug_PDF::eofError(string message) {
-  cerr << "slug error: unxepctedly reached end of PDF file "
+  cerr << "slug: error: unxepctedly reached end of PDF file "
        << PDFFileName << endl;
   if (message.length() > 0)
     cerr << message << endl;

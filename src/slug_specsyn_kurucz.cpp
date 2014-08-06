@@ -84,28 +84,13 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
   // Construct the file name and try to open the file
   string fname = "lcb97_"+extensions[idx]+".flu";
   ifstream atmos_file;
-  char *slug_dir = getenv("SLUG_DIR");
-  path dname(dirname);
-  path atmos_path, atmos_fullPath;
-  atmos_path = dname / path(fname.c_str());
-  if (slug_dir != NULL) {
-    // Try opening relative to SLUG_DIR
-    atmos_fullPath = path(slug_dir) / atmos_path;
-    atmos_file.open(atmos_fullPath.c_str());
-  }
-  if (atmos_file.is_open()) {
-    atmos_path = atmos_fullPath;
-  } else {
-    // Try opening relative to current path
-    atmos_file.open(atmos_path.c_str());
-  }
+  path dirname_path(dirname);
+  path atmos_path = dirname_path / path(fname.c_str());
+  atmos_file.open(atmos_path.c_str());
   if (!atmos_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug error: unable to open atmosphere file " 
-	 << atmos_path.string();
-    if (slug_dir != NULL)
-      cerr << " or " << atmos_fullPath.string();
-    cerr << endl;
+    cerr << "slug: error: unable to open atmosphere file " 
+	 << atmos_path.string() << endl;
     exit(1);
   }
 
@@ -126,8 +111,16 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
     // Split the header into tokens, and read Teff and log g
     trim(modelhdr);
     split(tokens, modelhdr, is_any_of("\t "), token_compress_on);
-    double Teff = lexical_cast<double>(tokens[1]);
-    double logg = lexical_cast<double>(tokens[2]);
+    double Teff, logg;
+    try {
+      Teff = lexical_cast<double>(tokens[1]);
+      logg = lexical_cast<double>(tokens[2]);
+    } catch (const bad_lexical_cast& ia) {
+      (void) ia;  // No-op to suppress compiler warning
+      cerr << "slug: error: badly formatted Kurucz atmospheres file " 
+	   << atmos_path.string() << endl;
+      exit(1);
+    }
 
     // Is this a new temperature, so that we need to start a new row?
     bool new_row = false;

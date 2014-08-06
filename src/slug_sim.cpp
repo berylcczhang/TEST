@@ -65,7 +65,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.get_verbosity() > 1)
     std::cout << "slug: reading tracks" << std::endl;
   tracks = new slug_tracks(pp.get_trackFile(), pp.get_metallicity(),
-			   pp.get_WR_mass());
+			   pp.get_WR_mass(), pp.get_endTime());
 
   // Set up the IMF, including the limts on its stochasticity
   imf = new slug_PDF(pp.get_IMF(), rng);
