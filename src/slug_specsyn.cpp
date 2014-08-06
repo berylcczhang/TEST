@@ -31,7 +31,7 @@ using namespace std;
 // for the Gauss-Kronrod integrations done in this class.
 ////////////////////////////////////////////////////////////////////////
 
-#if 1
+#if 0
 // Order of kronrod rule, and number of independent points
 static unsigned int gknum = 15;
 static unsigned int gknum1 = 8;
@@ -72,7 +72,7 @@ static const double wgk[8] =    /* weights of the 15-point kronrod rule */
 };
 #endif
 
-#if 0
+#if 1
 // Order of kronrod rule, and number of independent points
 static unsigned int gknum = 61;
 static unsigned int gknum1 = 31;
@@ -534,9 +534,10 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
 			  q.errsum, err_bol, q, tol);
 
   // Get error estimates
-  double max_L = *max_element(L_lambda.begin(), L_lambda.end());
-  double max_err = *max_element(q.errsum.begin(), q.errsum.end());
-  double err = max(max_err/max_L, err_bol/L_bol);
+  double spec_err = 0.0;
+  for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+    spec_err = max(spec_err, q.err2[i]/L_lambda[i]);
+  double err = max(spec_err, err_bol/L_bol);
 
   // If error is not below tolerance, begin recursive bisection
   if (err > tol) {
@@ -576,9 +577,10 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
       err_bol += err_bol1 + err_bol2 - q.ebol[intervalptr];
 
       // Have we converged? If so, stop iterating
-      max_L = *max_element(L_lambda.begin(), L_lambda.end());
-      max_err = *max_element(q.errsum.begin(), q.errsum.end());
-      err = max(max_err/max_L, err_bol/L_bol);
+      spec_err = 0.0;
+      for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+	spec_err = max(spec_err, q.errsum[i]/L_lambda[i]);
+      err = max(spec_err, err_bol/L_bol);
       if (err < tol) break;
 
       // If we're here, we haven't converged. Replace the current
@@ -589,18 +591,20 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
       q.e[intervalptr] = q.err1;
       q.rbol[intervalptr] = L_bol1;
       q.ebol[intervalptr] = err_bol1;
-      q.me[intervalptr] = 
-	max((*max_element(q.err1.begin(), q.err1.end())) / max_L,
-	    err_bol1 / L_bol);
+      spec_err = 0.0;
+      for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+	spec_err = max(spec_err, q.err1[i]/L_lambda[i]);
+      q.me[intervalptr] = max(spec_err, err_bol1/L_bol);
       q.a.push_back(t_cen);
       q.b.push_back(t_right);
       q.r.push_back(q.L_out2);
       q.e.push_back(q.err2);
       q.rbol.push_back(L_bol2);
       q.ebol.push_back(err_bol2);
-      q.me.push_back(
-	max((*max_element(q.err2.begin(), q.err2.end())) / max_L,
-	    err_bol2 / L_bol));
+      spec_err = 0.0;
+      for (vector<double>::size_type i=0; i<L_lambda.size(); i++)
+	spec_err = max(spec_err, q.err2[i]/L_lambda[i]);
+      q.me.push_back(max(spec_err, err_bol2/L_bol));
 
       // Traverse the list of intervals to decide which to work on next
       intervalptr = (vector<double>::size_type)
@@ -616,12 +620,6 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
       }
     }
   }
-
-  // Apply final normalization
-  for (unsigned int j=0; j<lambda_rest.size(); j++) {
-    L_lambda[j] /= imf->expectationVal();
-  }
-  L_bol /= imf->expectationVal();
 }
 
 
@@ -701,8 +699,7 @@ get_Lbol_cts_sfh(const double t, const double tol) const {
     }
   }
 
-  // Apply final normalization
-  L_bol /= imf->expectationVal();
+  // Return
   return L_bol;
 }
 

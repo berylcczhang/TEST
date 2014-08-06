@@ -76,14 +76,16 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (imf->get_xMin() < tracks->min_mass()*(1.0-1.0e-10)) {
     cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
 	 << " Msun < minimum evolution track mass " << tracks->min_mass()
-	 << " Msun. Calculation will proceed, but stars with mass "
+	 << " Msun." << endl;
+    cerr << "slug: warning: Calculation will proceed, but stars with mass "
 	 << imf->get_xMin() << " Msun to " << tracks->min_mass()
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
   if (imf->get_xMax() > tracks->max_mass()*(1.0+1.0e-10)) {
     cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
 	 << " Msun > maximum evolution track mass " << tracks->max_mass()
-	 << " Msun. Calculation will proceed, but stars with mass "
+	 << " Msun." << endl;
+    cerr << "slug: warning: Calculation will proceed, but stars with mass "
 	 << tracks->max_mass() << " Msun to " << imf->get_xMax()
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
