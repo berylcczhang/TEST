@@ -437,8 +437,8 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
   // stochastically
   if (range_restrict) target *= mass_frac_restrict();
 
-  // Special case: if target is zero, just return
-  if (target == 0.0) return 0.0;
+  // Special case: if target is zero or negative, just return
+  if (target <= 0.0) return 0.0;
 
   // Procedure depends on sampling method
   if ((method == STOP_NEAREST) || (method == STOP_BEFORE) ||

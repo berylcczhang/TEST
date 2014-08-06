@@ -125,8 +125,14 @@ slug_galaxy::advance(double time) {
   // Make sure we're not trying to go back into the past
   assert(time >= curTime);
 
-  // Compute mass of new stars to be created
+  // Compute mass of new stars to be created; this is equal to the
+  // expected mass of stars in the next time interval, plus or minus
+  // any deficit or over-production from the previous step. This
+  // second part is added to ensure that, if we're doing stop nearest
+  // or something like that, we get as close as possible at each
+  // time.
   double new_mass = sfh->integral(curTime, time);
+  double mass_to_draw = new_mass + targetMass - mass;
   targetMass += new_mass;
 
   // Create new clusters
@@ -134,7 +140,7 @@ slug_galaxy::advance(double time) {
 
     // Get masses of new clusters
     vector<double> new_cluster_masses;
-    cmf->drawPopulation(fc*new_mass, new_cluster_masses);
+    cmf->drawPopulation(fc*mass_to_draw, new_cluster_masses);
 
     // Create clusters of chosen masses; for each one, generate a
     // random birth time, create the cluster, and push it onto the
@@ -157,7 +163,7 @@ slug_galaxy::advance(double time) {
 
     // Get masses of new field stars
     vector<double> new_star_masses;
-    imf->drawPopulation((1.0-fc)*new_mass, new_star_masses);
+    imf->drawPopulation((1.0-fc)*mass_to_draw, new_star_masses);
 
     // Push stars onto field star list; in the process, set the birth
     // time and death time for each of them

@@ -96,7 +96,7 @@ public:
   // the population drawn is returned in pop. Note that the population
   // returned will only be drawn from the stochastically-limited
   // range, and any input target will be adjusted down by the mass
-  // fraction that is in the stochastic range
+  // fraction that is in the stochastic range.
   double drawPopulation(double target, std::vector<double>& pop) const;
 
   // Operator to return the PDF evaluated at a particular x
