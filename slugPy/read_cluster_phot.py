@@ -56,8 +56,8 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
        a list giving the name for each filter
     filter_units : list of string
        a list giving the units for each filter
-    filter_wl_cen : list
-       central wavelength of each filter; this is set to None for the
+    filter_wl_eff : list
+       effective wavelength of each filter; this is set to None for the
        filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
        True
     filter_wl : list of arrays
@@ -190,7 +190,7 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
     if not nofilterdata:
         if verbose:
             print("Reading filter data")
-        wl_cen, wavelength, response = read_filter(filters)
+        wl_eff, wavelength, response = read_filter(filters)
 
     # Do photometric system conversion if requested
     if photsystem is not None:
@@ -199,7 +199,7 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
         if nofilterdata:
             photometry_convert(photsystem, phot, units, filter_last=True)
         else:
-            photometry_convert(photsystem, phot, units, wl_cen,
+            photometry_convert(photsystem, phot, units, wl_eff,
                                filter_last=True)
 
     # Construct return object
@@ -212,9 +212,9 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
         out_type = namedtuple('integrated_phot',
                               ['id', 'trial', 'time', 'filter_names', 
                                'filter_units',
-                               'filter_wl_cen','filter_wl',
+                               'filter_wl_eff','filter_wl',
                                'filter_response', 'phot'])
-        out = out_type(cluster_id, trial, time, filters, units, wl_cen,
+        out = out_type(cluster_id, trial, time, filters, units, wl_eff,
                        wavelength, response, phot)
 
     # Return

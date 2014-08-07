@@ -25,9 +25,9 @@ def read_filter(filtername, filter_dir=None):
     Returns
     -------
     A namedtuple containing the following fields:
-    wl_cen : float or array
+    wl_eff : float or array
        Central wavelength of the filter, defined by 
-       wl_cen = \int R lambda dlambda / \int R dlambda
+       wl_eff = exp(\int R ln lambda dln lambda / \int R dln lambda)
     wl : array or list of arrays
        Wavelength table for each filter, in Ang
     response : array or list of arrays
@@ -174,29 +174,38 @@ def read_filter(filtername, filter_dir=None):
             raise IOError("Unable to find data for filter " +
                           filter_names[i] + " in allfilters.dat")
 
-    # Compute the central wavelength for each filter
-    wl_cen = []
+    # Compute the effective wavelength for each filter
+    wl_eff = []
     for i in range(len(filter_names)):
         if filteridx[i] == -1:
-            wl_cen.append(None)
+            wl_eff.append(None)
         else:
-            dlambda = wavelength[i][1:] - wavelength[i][:-1]
-            rlambda = 0.5 * (wavelength[i][1:]*response[i][1:] + 
-                             wavelength[i][:-1]*response[i][:-1])
+            # Effective wavelength -- weighted by log lambda
+            lnlambda = np.log(wavelength[i])
+            dlnlambda = lnlambda[1:] - lnlambda[:-1]
+            rlambda = 0.5*(lnlambda[1:]*response[i][1:] +
+                           lnlambda[:-1]*response[i][:-1])
             rcen = 0.5 * (response[i][1:] + response[i][:-1])
-            wl_cen.append(np.sum(rlambda*dlambda) / np.sum(rcen*dlambda))
+            wl_eff.append(np.exp(np.sum(rlambda*dlnlambda) / 
+                                 np.sum(rcen*dlnlambda)))
+            # Commented out: weighted by lambda
+            #dlambda = wavelength[i][1:] - wavelength[i][:-1]
+            #rlambda = 0.5 * (wavelength[i][1:]*response[i][1:] + 
+            #                 wavelength[i][:-1]*response[i][:-1])
+            #rcen = 0.5 * (response[i][1:] + response[i][:-1])
+            #wl_eff.append(np.sum(rlambda*dlambda) / np.sum(rcen*dlambda))
 
     # If we were given a scalar string as input, turn the output back
     # into scalars
     if not hasattr(filtername, '__iter__'):
         wavelength = wavelength[0]
         response = response[0]
-        wl_cen = wl_cen[0]
+        wl_eff = wl_eff[0]
 
     # Build the output object
     out_type = namedtuple('filter_data',
-                          ['wl_cen', 'wl', 'response'])
-    out = out_type(wl_cen, wavelength, response)
+                          ['wl_eff', 'wl', 'response'])
+    out = out_type(wl_eff, wavelength, response)
 
     # Return
     return out

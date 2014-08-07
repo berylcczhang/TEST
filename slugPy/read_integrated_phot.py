@@ -52,8 +52,8 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
        a list giving the name for each filter
     filter_units : list of string
        a list giving the units for each filter
-    filter_wl_cen : list
-       central wavelength of each filter; this is set to None for the
+    filter_wl_eff : list
+       effective wavelength of each filter; this is set to None for the
        filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
        True
     filter_wl : list of arrays
@@ -163,7 +163,7 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
     if not nofilterdata:
         if verbose:
             print("Reading filter data")
-        wl_cen, wavelength, response = read_filter(filters)
+        wl_eff, wavelength, response = read_filter(filters)
 
     # Do photometric system conversion if requested
     if photsystem is not None:
@@ -172,7 +172,7 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
         if nofilterdata:
             photometry_convert(photsystem, phot, units)
         else:
-            photometry_convert(photsystem, phot, units, wl_cen)
+            photometry_convert(photsystem, phot, units, wl_eff)
 
     # Construct return object
     if nofilterdata:
@@ -183,9 +183,9 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
     else:
         out_type = namedtuple('integrated_phot',
                               ['time', 'filter_names', 'filter_units',
-                               'filter_wl_cen', 'filter_wl', 
+                               'filter_wl_eff', 'filter_wl', 
                                'filter_response', 'phot'])
-        out = out_type(time, filters, units, wl_cen, wavelength, response,
+        out = out_type(time, filters, units, wl_eff, wavelength, response,
                        phot)
 
     # Return
