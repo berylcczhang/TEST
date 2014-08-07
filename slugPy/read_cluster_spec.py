@@ -52,7 +52,7 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
 
     # Print status
     if verbose:
-        print("Reading "+model_name)
+        print("Reading cluster spectra for model "+model_name)
 
     # Prepare storage
     cluster_id = []
@@ -133,9 +133,6 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
                 time.append(float(data[1]))
                 trial.append(trialptr)
                 ptr = 0
-                if verbose:
-                    print("Read cluster {:d} at time {:e}".
-                          format(cluster_id[-1], time[-1]))
 
     else:
 

@@ -11,7 +11,8 @@ c = physcons.c*100.0
 Angstrom = 1e-8
 pc = 3.0856775814671918e18
 
-def photometry_convert(photsystem, phot, units, wl_cen=None):
+def photometry_convert(photsystem, phot, units, wl_cen=None,
+                       filter_last=False):
     """
     Function to convert photometric data between photometric systems.
 
@@ -35,6 +36,12 @@ def photometry_convert(photsystem, phot, units, wl_cen=None):
        central wavelengths of the filters, in Angstrom; can be left as
        None if the requested conversion doesn't require going between
        wavelength- and frequency-based systems.
+    filter_last : bool
+       If the input data have more than one dimension, by default it
+       is assumed that the first dimension contains values for the
+       different photometric filters. If this keyword is set to True,
+       it will instead be assumed that the last dimension contains the
+       values for the different filters.
 
     Returns
     -------
@@ -77,62 +84,116 @@ def photometry_convert(photsystem, phot, units, wl_cen=None):
             # L_lambda to other units
             if (units[i] == 'erg/s/A') and \
                (target_units == 'erg/s/Hz'):
-                phot[i,:] = phot[i,:] * wl_cen[i]**2 * Angstrom / c
+                if filter_last:
+                    phot[:,i] = phot[:,i] * wl_cen[i]**2 * Angstrom / c
+                else:
+                    phot[i,:] = phot[i,:] * wl_cen[i]**2 * Angstrom / c
             elif (units[i] == 'erg/s/A') and \
                  (target_units == 'AB mag'):
-                L_nu = phot[i,:] * wl_cen[i]**2 * Angstrom / c
-                F_nu = L_nu / (4.0*np.pi*(10.0*pc)**2)
-                phot[i,:] = -2.5*np.log10(F_nu) - 48.6
+                if filter_last:
+                    L_nu = phot[:,i] * wl_cen[i]**2 * Angstrom / c
+                    F_nu = L_nu / (4.0*np.pi*(10.0*pc)**2)
+                    phot[:,i] = -2.5*np.log10(F_nu) - 48.6
+                else:
+                    L_nu = phot[i,:] * wl_cen[i]**2 * Angstrom / c
+                    F_nu = L_nu / (4.0*np.pi*(10.0*pc)**2)
+                    phot[i,:] = -2.5*np.log10(F_nu) - 48.6
             elif (units[i] == 'erg/s/A') and \
                  (target_units == 'ST mag'):
-                F_lambda = phot[i,:] / (4.0*np.pi*(10.0*pc)**2)
-                phot[i,:] = -2.5*np.log10(F_lambda) - 21.1
+                if filter_last:
+                    F_lambda = phot[:,i] / (4.0*np.pi*(10.0*pc)**2)
+                    phot[:,i] = -2.5*np.log10(F_lambda) - 21.1
+                else:
+                    F_lambda = phot[i,:] / (4.0*np.pi*(10.0*pc)**2)
+                    phot[i,:] = -2.5*np.log10(F_lambda) - 21.1
 
             # L_nu to other units
             elif (units[i] == 'erg/s/Hz') and \
                  (target_units == 'erg/s/A'):
-                phot[i,:] = phot[i,:] * c / (wl_cen[i]**2 * Angstrom)
+                if filter_last:
+                    phot[:,i] = phot[:,i] * c / \
+                                (wl_cen[i]**2 * Angstrom)
+                else:
+                    phot[i,:] = phot[i,:] * c / \
+                                (wl_cen[i]**2 * Angstrom)
             elif (units[i] == 'erg/s/Hz') and \
                  (target_units == 'AB mag'):
-                F_nu = phot[i,:] / (4.0*np.pi*(10.0*pc)**2)
-                phot[i,:] = -2.5*np.log10(F_nu) - 48.6
+                if filter_last:
+                    F_nu = phot[:,i] / (4.0*np.pi*(10.0*pc)**2)
+                    phot[:,i] = -2.5*np.log10(F_nu) - 48.6
+                else:
+                    F_nu = phot[i,:] / (4.0*np.pi*(10.0*pc)**2)
+                    phot[i,:] = -2.5*np.log10(F_nu) - 48.6
             elif (units[i] == 'erg/s/Hz') and \
                  (target_units == 'ST mag'):
-                L_lambda = phot[i,:] * c / (wl_cen[i]**2 * Angstrom)
-                F_lambda = L_lambda / (4.0*np.pi*(10.0*pc)**2)
-                phot[i,:] = -2.5*np.log10(F_lambda) - 21.1
+                if filter_last:
+                    L_lambda = phot[:,i] * c / (wl_cen[i]**2 * Angstrom)
+                    F_lambda = L_lambda / (4.0*np.pi*(10.0*pc)**2)
+                    phot[:,i] = -2.5*np.log10(F_lambda) - 21.1
+                else:
+                    L_lambda = phot[i,:] * c / (wl_cen[i]**2 * Angstrom)
+                    F_lambda = L_lambda / (4.0*np.pi*(10.0*pc)**2)
+                    phot[i,:] = -2.5*np.log10(F_lambda) - 21.1
 
             # AB mag to other units
             elif (units[i] == 'AB mag') and \
                  (target_units == 'erg/s/A'):
-                F_nu = 10.0**(-(phot[i,:] + 48.6)/2.5)
-                F_lambda = F_nu * c / (wl_cen[i]**2 * Angstrom)
-                phot[i,:] = F_lambda * 4.0*np.pi*(10.0*pc)**2
+                if filter_last:
+                    F_nu = 10.0**(-(phot[:,i] + 48.6)/2.5)
+                    F_lambda = F_nu * c / (wl_cen[i]**2 * Angstrom)
+                    phot[:,i] = F_lambda * 4.0*np.pi*(10.0*pc)**2
+                else:
+                    F_nu = 10.0**(-(phot[i,:] + 48.6)/2.5)
+                    F_lambda = F_nu * c / (wl_cen[i]**2 * Angstrom)
+                    phot[i,:] = F_lambda * 4.0*np.pi*(10.0*pc)**2
             elif (units[i] == 'AB mag') and \
                  (target_units == 'erg/s/Hz'):
-                F_nu = 10.0**(-(phot[i,:] + 48.6)/2.5)
-                phot[i,:] = F_nu * 4.0*np.pi*(10.0*pc)**2
+                if filter_last:
+                    F_nu = 10.0**(-(phot[:,i] + 48.6)/2.5)
+                    phot[:,i] = F_nu * 4.0*np.pi*(10.0*pc)**2
+                else:
+                    F_nu = 10.0**(-(phot[i,:] + 48.6)/2.5)
+                    phot[i,:] = F_nu * 4.0*np.pi*(10.0*pc)**2
             elif (units[i] == 'AB mag') and \
                  (target_units == 'ST mag'):
-                F_nu = 10.0**(-(phot[i,:] + 48.6)/2.5)
-                F_lambda = F_nu * c / (wl_cen[i]**2 * Angstrom)
-                phot[i,:] = -2.5*np.log10(F_lambda) - 21.1
+                if filter_last:
+                    F_nu = 10.0**(-(phot[:,i] + 48.6)/2.5)
+                    F_lambda = F_nu * c / (wl_cen[i]**2 * Angstrom)
+                    phot[:,i] = -2.5*np.log10(F_lambda) - 21.1
+                else:
+                    F_nu = 10.0**(-(phot[i,:] + 48.6)/2.5)
+                    F_lambda = F_nu * c / (wl_cen[i]**2 * Angstrom)
+                    phot[i,:] = -2.5*np.log10(F_lambda) - 21.1
 
             # ST mag to other units
             elif (units[i] == 'ST mag') and \
                  (target_units == 'erg/s/A'):
-                F_lambda = 10.0**(-(phot[i,:] + 21.1)/2.5)
-                phot[i,:] = F_lambda * 4.0*np.pi*(10.0*pc)**2
+                if filter_last:
+                    F_lambda = 10.0**(-(phot[:,i] + 21.1)/2.5)
+                    phot[:,i] = F_lambda * 4.0*np.pi*(10.0*pc)**2
+                else:
+                    F_lambda = 10.0**(-(phot[i,:] + 21.1)/2.5)
+                    phot[i,:] = F_lambda * 4.0*np.pi*(10.0*pc)**2
             elif (units[i] == 'ST mag') and \
                  (target_units == 'erg/s/Hz'):
-                F_lambda = 10.0**(-(phot[i,:] + 21.1)/2.5)
-                F_nu = F_lambda * wl_cen[i]**2 * Angstrom / c
-                phot[i,:] = F_nu * 4.0*np.pi*(10.0*pc)**2
+                if filter_last:
+                    F_lambda = 10.0**(-(phot[:,i] + 21.1)/2.5)
+                    F_nu = F_lambda * wl_cen[i]**2 * Angstrom / c
+                    phot[:,i] = F_nu * 4.0*np.pi*(10.0*pc)**2
+                else:
+                    F_lambda = 10.0**(-(phot[i,:] + 21.1)/2.5)
+                    F_nu = F_lambda * wl_cen[i]**2 * Angstrom / c
+                    phot[i,:] = F_nu * 4.0*np.pi*(10.0*pc)**2
             elif (units[i] == 'ST mag') and \
                  (target_units == 'AB mag'):
-                F_lambda = 10.0**(-(phot[i,:] + 21.1)/2.5)
-                F_nu = F_lambda * wl_cen[i]**2 * Angstrom / c
-                phot[i,:] = -2.5*np.log10(F_nu) - 48.6
+                if filter_last:
+                    F_lambda = 10.0**(-(phot[:,i] + 21.1)/2.5)
+                    F_nu = F_lambda * wl_cen[i]**2 * Angstrom / c
+                    phot[:,i] = -2.5*np.log10(F_nu) - 48.6
+                else:
+                    F_lambda = 10.0**(-(phot[i,:] + 21.1)/2.5)
+                    F_nu = F_lambda * wl_cen[i]**2 * Angstrom / c
+                    phot[i,:] = -2.5*np.log10(F_nu) - 48.6
 
         except NameError:
             raise ValueError("Requested photometric " +

@@ -188,14 +188,19 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
 
     # Read filter data if requested
     if not nofilterdata:
+        if verbose:
+            print("Reading filter data")
         wl_cen, wavelength, response = read_filter(filters)
 
     # Do photometric system conversion if requested
     if photsystem is not None:
+        if verbose:
+            print("Converting photometric system")
         if nofilterdata:
-            photometry_convert(photsystem, phot, units)
+            photometry_convert(photsystem, phot, units, filter_last=True)
         else:
-            photometry_convert(photsystem, phot, units, wl_cen)
+            photometry_convert(photsystem, phot, units, wl_cen,
+                               filter_last=True)
 
     # Construct return object
     if nofilterdata:

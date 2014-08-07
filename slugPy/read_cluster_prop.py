@@ -47,7 +47,7 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
     live_mass : array
        mass of currently living stars
     num_star : array, dtype ulonglong
-       number of living stars in cluster
+       number of living stars in cluster being treated stochastically
     max_star_mass : array
        mass of most massive living star in cluster
     """
@@ -58,7 +58,7 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
 
     # Print status
     if verbose:
-        print("Reading "+model_name)
+        print("Reading cluster properties for model "+model_name)
 
     # Prepare lists to hold data
     cluster_id = []
