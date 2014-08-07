@@ -33,7 +33,8 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 slug_filter_set::
 slug_filter_set(const std::vector<std::string>& filter_names_,
-		const char *filter_dir, const photMode phot_mode_) : 
+		const char *filter_dir, const photMode phot_mode_,
+		const char *atmos_dir) : 
   filter_names(filter_names_.size()), 
   filter_units(filter_names_.size()),
   filters(filter_names_.size()), phot_mode(phot_mode_) {
@@ -93,7 +94,8 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
       filter_names[i] = "QHe1";
       filter_idx.push_back(-4);
     } else {
-      for (unsigned int j = 0; j < avail_filters.size(); j++) {
+      unsigned int j;
+      for (j = 0; j < avail_filters.size(); j++) {
 	string temp_name1 = avail_filters[j];
 	to_lower(temp_name1);
 	if (temp_name.compare(temp_name1) == 0) {
@@ -117,11 +119,11 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
 	  filter_idx.push_back(j);
 	  break;
 	}
-	if (j == avail_filters.size()) {
-	  cerr << "slug error: couldn't find filter "
-	       << filter_names_[i] << endl;
-	  exit(1);
-	}
+      }
+      if (j == avail_filters.size()) {
+	cerr << "slug: error: couldn't find filter "
+	     << filter_names_[i] << endl;
+	exit(1);
       }
     }
   }
@@ -172,9 +174,8 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
   }
 
   // Read through the filter data file
-  unsigned int filterptr = 0;
+  int filterptr = -1;
   int recordptr = -1;
-  getline(filter_file, line);   // Burn the first line
   while (getline(filter_file, line)) {
     trim(line);
 
@@ -230,6 +231,121 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     filters[recordptr] = 
       new slug_filter(lambda, response, beta[filterptr], 
 		      lambda_c[filterptr]);
+  }
+
+  // If we've been asked to write output in Vega magnitudes, read in
+  // the spectrum of Vega and integrate it over all our filters to get
+  // the offsets we'll need
+  if (phot_mode == VEGA) {
+
+    // Open file
+    assert(atmos_dir != NULL);
+    ifstream vegafile;
+    path atmos_path(atmos_dir);
+    path vega_path = atmos_path / path("A0V_KURUCZ_92.SED");
+    vegafile.open(vega_path.c_str());
+    if (!vegafile.is_open()) {
+      // Couldn't open file, so bail out
+      cerr << "slug: error: unable to open Vega spectrum file "
+	   << vega_path.string() << endl;
+      exit(1);
+    }
+
+    // Allocate memory
+    lambda_vega.resize(1221);
+    F_lambda_vega.resize(1221);
+
+    // Read vega spectrum
+    string line;
+    getline(vegafile, line);  // Burn a line
+    for (unsigned int i=0; i<1221; i++)
+      vegafile >> lambda_vega[i] >> F_lambda_vega[i];
+
+    // Close file
+    vegafile.close();
+
+    // For each filter (other than the special ones QH0, QHe0, QHe1,
+    // and Lbol), compute magnitude of Vega from spectrum. These will
+    // be off in their normalization, because we're plugging in the
+    // surface flux of Vega, not the flux that would been at 10
+    // pc. We'll fix that below.
+    for (vector<double>::size_type i = 0; i<filters.size(); i++) {
+      if (filters[i]->bol_filter() || filters[i]->photon_filter()) {
+	vega_mag.push_back(-constants::big);
+      } else {
+	double F_nu_vega = 
+	  filters[i]->compute_Lbar_nu(lambda_vega, F_lambda_vega);
+	vega_mag.push_back(-2.5*log10(F_nu_vega) - 48.6);
+      }
+    }
+
+    // Now we need to fix the scale by normalizing the V magnitude of
+    // Vega to be 0.02. To do this, we first need to read the Johnson
+    // V filter.
+    unsigned int V_index, i;
+    for (i = 0; i < avail_filters.size(); i++) {
+      string temp_name = avail_filters[i];
+      to_lower(temp_name);
+      if (temp_name.compare("johnson_v") == 0) {
+	V_index = i;
+	break;
+      }
+    }
+
+    // Bail out if no V filter is available
+    if (i == avail_filters.size()) {
+      cerr << "slug: error: cannot use Vega magnitudes if filter "
+	   << "list does not contain a Johnson_V filter" << endl;
+      exit(1);
+    }
+
+    // Re-open the filter file
+    filter_file.open(filter_path.c_str());
+    if (!filter_file.is_open()) {
+      // Couldn't open file, so bail out
+      cerr << "slug: error: unable to open filter file " 
+	   << filter_path.string() << endl;
+      exit(1);
+    }
+
+    // Now read the V filter
+    int filterptr = -1;
+    lambda.resize(0);
+    response.resize(0);
+    while (getline(filter_file, line)) {
+      trim(line);
+      // Does this line start with #? If so, it marks the beginning of
+      // the data for a new filter.
+      if (line.compare(0, 1, "#") == 0) {
+	// Incremenet filter pointer, and if we've passed the filter
+	// we want, stop reading.
+	filterptr++;
+	if (filterptr > V_index) break;
+      } else if (filterptr == V_index) {
+	// If this is the filter we want, record its values
+	split(tokens, line, is_any_of("\t "), token_compress_on);
+	lambda.push_back(lexical_cast<double>(tokens[0]));
+	response.push_back(lexical_cast<double>(tokens[1]));
+      }
+    }
+
+    // Close the filter file
+    filter_file.close();
+
+    // Make a V filter object
+    slug_filter V_filter(lambda, response);
+
+    // Compute the magnitude of Vega through the V filter
+    double F_nu_vega = 
+      V_filter.compute_Lbar_nu(lambda_vega, F_lambda_vega);
+    double V_mag_vega = -2.5*log10(F_nu_vega) - 48.6;
+
+    // Now add a constant offset to all the magnitudes we've computed
+    // so that the V magnitude of Vega is set to 0.02
+    for (vector<double>::size_type i=0; i<vega_mag.size(); i++) {
+      if (vega_mag[i] == -constants::big) continue;
+      vega_mag[i] += 0.02 - V_mag_vega;
+    }
   }
 }
 
@@ -297,6 +413,14 @@ slug_filter_set::compute_phot(const std::vector<double>& lambda,
       double F_lambda = Lbar_lambda / 
 	(4.0*M_PI*pow(10.0*constants::pc, 2));
       phot[i] = -2.5*log10(F_lambda) - 21.1;
+
+    } else if (phot_mode == VEGA) {
+
+      // Vega mag: same as AB mag mode, but then we subtract off the
+      // magnitude of Vega (already computed)
+      double Lbar_nu = filters[i]->compute_Lbar_nu(lambda, L_lambda);
+      double F_nu = Lbar_nu / (4.0*M_PI*pow(10.0*constants::pc, 2));
+      phot[i] = -2.5*log10(F_nu) - 48.6 - vega_mag[i];
 
     }
 

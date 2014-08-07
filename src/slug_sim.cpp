@@ -56,7 +56,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       std::cout << "slug: reading filters" << std::endl;
     filters = new slug_filter_set(pp.get_photBand(), 
 				  pp.get_filter_dir(), 
-				  pp.get_photMode());
+				  pp.get_photMode(),
+				  pp.get_atmos_dir());
   } else {
     filters = NULL;
   }

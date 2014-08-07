@@ -39,10 +39,13 @@ class slug_filter_set {
 public:
 
   // The constructor; takes a set of filter names and a directory
-  // where the data for them are located
+  // where the data for them are located. The optional atmos_dir
+  // argument must be supplied if we need to read in the spectrum of
+  // Vega.
   slug_filter_set(const std::vector<std::string>& filter_names,
 		  const char *filter_dir, 
-		  const photMode phot_mode_);
+		  const photMode phot_mode_,
+		  const char *atmos_dir = NULL);
 
   // The desctructor
   ~slug_filter_set();
@@ -72,6 +75,7 @@ private:
   std::vector<std::string> filter_names;
   std::vector<std::string> filter_units;
   std::vector<const slug_filter *> filters;
+  std::vector<double> lambda_vega, F_lambda_vega, vega_mag;
   photMode phot_mode;
 };
 
