@@ -8,9 +8,10 @@ SLUG is the Stochastically Lighting Up Galaxies Code. SLUG is a stellar populati
 This repository contains SLUG v2. SLUG v1 is available at <https://sites.google.com/site/runslug/>. The code here is a complete re-implementation of SLUG, with a number of major improvements.
 
 * The ability to predict full spectra as well as photometry
-* A vastly larger array of photometric filters, with the ability to add more without needing to alter the source code
+* A vastly larger array of photometric filters, with the ability to add more without needing to alter the source code; there is also wide range of choices for photometric system
 * The ability to handle a very wide range of functional forms for the initial mass function, cluster mass function, cluster lifetime function, and star formation history
 * Many sampling methods available for mass-limited sampling
+* The ability to simulate simple stellar populations with finite masses, as well as full star formation histories
 * More accurate numerical methods for interpolation and integration
 * A cleaner, easier-to-use control file structure
 * Python helper routines for parsing output (replacing the older IDL routines used by SLUG v1)
