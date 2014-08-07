@@ -14,7 +14,7 @@ This repository contains SLUG v2. SLUG v1 is available at <https://sites.google.
 * A cleaner, easier-to-use control file structure
 * Python helper routines for parsing output (replacing the older IDL routines used by SLUG v1)
 
-SLUG v1 will no longer be maintained, so all users are encouraged to migrate to SLUV v2 as soon as possible.
+SLUG v1 will no longer be maintained, so all users are encouraged to migrate to SLUG v2 as soon as possible.
 
 ### Layout of the repository ###
 
