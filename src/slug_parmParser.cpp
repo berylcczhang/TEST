@@ -98,17 +98,9 @@ slug_parmParser::printUsage() {
 void
 slug_parmParser::setDefaults() {
 
-  // See if the SLUG_DIR environment variable is set, for use in
-  // setting up default paths. If not, set it to current working
-  // directory.
-  string slug_dir(getenv("SLUG_DIR"));
-  if (slug_dir.length() == 0) slug_dir = ".";
-  path slug_path(slug_dir);
-
   // Basic data
   model = "SLUG_DEF";
-  path out_path("output");
-  outDir = (slug_path / out_path).string();
+  outDir = "output";
   verbosity = 1;
 
   // Control flow parameters
@@ -123,18 +115,18 @@ slug_parmParser::setDefaults() {
   path lib_path("lib");
   path imf_path("imf");
   path imf_file("chabrier.imf");
-  imf = (slug_path / lib_path / imf_path / imf_file).string();
+  imf = (lib_path / imf_path / imf_file).string();
   path cmf_path("cmf");
   path cmf_file("slug_default.cmf");
-  cmf = (slug_path / lib_path / cmf_path / cmf_file).string();
+  cmf = (lib_path / cmf_path / cmf_file).string();
   path clf_path("clf");
   path clf_file("slug_default.clf");
-  clf = (slug_path / lib_path / clf_path / clf_file).string();
+  clf = (lib_path / clf_path / clf_file).string();
   path track_path("tracks");
   path track_file("Z0140v00.txt");
-  track = (slug_path / lib_path / track_path / track_file).string();
+  track = (lib_path / track_path / track_file).string();
   path atmos_path("atmospheres");
-  atmos_dir = (slug_path / lib_path / atmos_path).string();
+  atmos_dir = (lib_path / atmos_path).string();
   specsyn_mode = SB99;
   fClust = 1.0;
   min_stoch_mass = 2.0;
@@ -143,7 +135,7 @@ slug_parmParser::setDefaults() {
 
   // Photometric parameters
   path filter_path("filters");
-  filter_dir = (slug_path / lib_path / filter_path).string();
+  filter_dir = (lib_path / filter_path).string();
   phot_mode = L_NU;
 
   // Output parameters
@@ -372,6 +364,7 @@ slug_parmParser::parseError(string line) {
 void
 slug_parmParser::checkParams() {
 
+  // Make sure parameters have acceptable values
   if (verbosity < 0 || verbosity > 2) {
     cerr << "slug: error: verbosity must be 0, 1, or 2" 
 	      << endl;
@@ -433,6 +426,37 @@ slug_parmParser::checkParams() {
 	 << "but no photometric bands specified" << endl;
     exit(1);
   }
+
+  // See if the SLUG_DIR environment variable is set, for use in
+  // setting up default paths. If not, set it to current working
+  // directory.
+  string slug_dir(getenv("SLUG_DIR"));
+  if (slug_dir.length() == 0) slug_dir = ".";
+  path slug_path(slug_dir);
+
+  // If any of the input file names/directories are relative paths,
+  // take them to be relative to the SLUG_DIR
+  path out_path(outDir);
+  path imf_path(imf);
+  path cmf_path(cmf);
+  path clf_path(clf);
+  path track_path(track);
+  path atmos_path(atmos_dir);
+  path filter_path(filter_dir);
+  if (!out_path.is_absolute())
+    outDir = (slug_path / out_path).string();
+  if (!imf_path.is_absolute()) 
+    imf = (slug_path / imf_path).string();
+  if (!cmf_path.is_absolute()) 
+    cmf = (slug_path / cmf_path).string();
+  if (!clf_path.is_absolute()) 
+    clf = (slug_path / clf_path).string();
+  if (!track_path.is_absolute()) 
+    track = (slug_path / track_path).string();
+  if (!atmos_path.is_absolute()) 
+    atmos_dir = (slug_path / atmos_path).string();
+  if (!filter_path.is_absolute()) 
+    filter_dir = (slug_path / filter_path).string();
 }
 
 
