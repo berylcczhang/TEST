@@ -32,6 +32,8 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
     A namedtuple containing the following fields:
     id : array, dtype uint
        unique ID of cluster
+    trial: array, dtype uint
+       which trial was this cluster part of
     time : array
        time at which cluster's properties are being evaluated
     form_time : array
@@ -60,6 +62,7 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
 
     # Prepare lists to hold data
     cluster_id = []
+    trial = []
     time = []
     form_time = []
     lifetime = []
@@ -80,9 +83,15 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
         fp.readline()
 
         # Read data
+        trialptr = 0
         for entry in fp:
+            if entry[:3] == '---':
+                # Separator line
+                trialptr = trialptr + 1
+                continue
             data = entry.split()
             cluster_id.append(long(data[0]))
+            trial.append(trialptr)
             time.append(float(data[1]))
             form_time.append(float(data[2]))
             lifetime.append(float(data[3]))
@@ -96,6 +105,9 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
 
         # Binary mode
 
+        # Set trial counter
+        trialptr = 0
+
         # Go through file
         while True:
 
@@ -106,13 +118,24 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
                 break
             t, ncluster = struct.unpack('dL', data)
 
+            # Skip if no clusters
+            if ncluster == 0:
+                continue
+
             # Read the next block of clusters
             data = fp.read(struct.calcsize('LdddddQd')*ncluster)
             data_list = struct.unpack('LdddddQd'*ncluster, data)
 
+            # If this time is not bigger than the last one was, this
+            # is a new trial
+            if len(time) > 0:
+                if t <= time[-1]:
+                    trialptr = trialptr + 1
+
             # Pack these clusters into the data list
             cluster_id.extend(data_list[0::8])
             time.extend([t]*ncluster)
+            trial.extend([trialptr]*ncluster)
             form_time.extend(data_list[1::8])
             lifetime.extend(data_list[2::8])
             target_mass.extend(data_list[3::8])
@@ -126,6 +149,7 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
 
     # Convert lists to arrays
     cluster_id = np.array(cluster_id, dtype='uint')
+    trial = np.array(trial, dtype='uint')
     time = np.array(time)
     form_time = np.array(form_time)
     lifetime = np.array(lifetime)
@@ -137,11 +161,12 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
 
     # Build the namedtuple to hold output
     out_type = namedtuple('cluster_prop',
-                          ['id', 'time', 'form_time', 'lifetime', 'target_mass',
-                           'actual_mass', 'live_mass', 'num_star',
-                           'max_star_mass'])
-    out = out_type(cluster_id, time, form_time, lifetime, target_mass, 
-                   actual_mass, live_mass, num_star, max_star_mass)
+                          ['id', 'trial', 'time', 'form_time', 
+                           'lifetime', 'target_mass', 'actual_mass', 
+                           'live_mass', 'num_star', 'max_star_mass'])
+    out = out_type(cluster_id, trial, time, form_time, lifetime, 
+                   target_mass, actual_mass, live_mass, num_star,
+                   max_star_mass)
 
     # Return
     return out

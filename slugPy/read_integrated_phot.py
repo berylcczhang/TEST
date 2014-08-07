@@ -70,7 +70,7 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
        
     Raises
     ------
-    IOError, if no photometry file can be found
+    IOError, if no photometry file can be opened
     ValueError, if photsystem is set to an unknown value
     """
 

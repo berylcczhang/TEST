@@ -30,14 +30,20 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
     Returns
     -------
     A namedtuple containing the following fields:
-    wavelength : array
-       wavelength, in Angstrom
     id : array, dtype uint
        unique ID of cluster
+    trial: array, dtype uint
+       which trial was this cluster part of
     time : array
        times at which cluster spectra are output, in yr
-    L_lambda : array, shape (len(id), len(wavelength))
+    wl : array
+       wavelength, in Angstrom
+    spec : array, shape (N_cluster, N_wavelength)
        specific luminosity of each cluster at each wavelength, in erg/s/A
+
+    Raises
+    ------
+    IOError, if no spectrum file can be opened
     """
 
     # Open file
@@ -51,6 +57,7 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
     # Prepare storage
     cluster_id = []
     time = []
+    trial = []
     wavelength = []
     L_lambda = []
 
@@ -65,19 +72,24 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
         fp.readline()
 
         # Read first line and store cluster data
+        trialptr = 0
         entry = fp.readline()
         data = entry.split()
         cluster_id.append(long(data[0]))
         time.append(float(data[1]))
         wavelength.append(float(data[2]))
         L_lambda.append(float(data[3]))
+        trial.append(trialptr)
 
         # Read the rest of the data for first cluster
         while True:
             entry = fp.readline()
 
-            # Check for EOF
+            # Check for EOF and separator lines
             if entry == '':
+                break
+            if entry[:3] == '---':
+                trialptr = trialptr+1
                 break
 
             # Split up data
@@ -107,15 +119,19 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
             entry = fp.readline()
             if entry == '':
                 break
+            if entry[:3] == '---':
+                trialptr = trialptr+1
+                continue
             data = entry.split()
             L_lambda.append(float(data[3]))
             ptr = ptr+1
 
-            # When we get to the end of a chunk, push cluster ID and
-            # time onto list, then reset pointer
+            # When we get to the end of a chunk, push cluster ID,
+            # time, trial number list, then reset pointer
             if ptr == nl:
                 cluster_id.append(long(data[0]))
                 time.append(float(data[1]))
+                trial.append(trialptr)
                 ptr = 0
                 if verbose:
                     print("Read cluster {:d} at time {:e}".
@@ -132,6 +148,7 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
         wavelength = np.array(struct.unpack('d'*nl, data))
 
         # Go through the rest of the file
+        trialptr = 0
         while True:
 
             # Read number of clusters and time in next block, checking
@@ -140,7 +157,20 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
             if len(data) < struct.calcsize('dL'):
                 break
             t, ncluster = struct.unpack('dL', data)
+
+            # Skip if no clusters
+            if ncluster == 0:
+                continue
+
+            # If this time is not bigger than the last one was, this
+            # is a new trial
+            if len(time) > 0:
+                if t <= time[-1]:
+                    trialptr = trialptr + 1
+
+            # Add to time and trial arrays
             time.extend([t]*ncluster)
+            trial.extend([trialptr]*ncluster)
 
             # Read the next block of clusters
             data = fp.read(struct.calcsize('L')*ncluster + 
@@ -160,13 +190,14 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
     wavelength = np.array(wavelength)
     cluster_id = np.array(cluster_id, dtype='uint')
     time = np.array(time)
+    trial = np.array(trial, dtype='uint')
     L_lambda = np.array(L_lambda)
     L_lambda = np.reshape(L_lambda, (len(time), len(wavelength)))
 
     # Build namedtuple to hold output
     out_type = namedtuple('cluster_spec',
-                          ['wavelength', 'id', 'time', 'L_lambda'])
-    out = out_type(wavelength, cluster_id, time, L_lambda)
+                          ['id', 'trial', 'time', 'wl', 'spec'])
+    out = out_type(cluster_id, trial, time, wavelength, L_lambda)
 
     # Return
     return out

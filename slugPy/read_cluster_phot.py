@@ -46,33 +46,35 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
     Returns
     -------
     A namedtuple containing the following fields:
-    filters : list of strings
+    id : array, dtype uint
+       unique ID of cluster
+    trial: array, dtype uint
+       which trial was this cluster part of
+    time : array
+       times at which cluster spectra are output, in yr
+    filter_names : list of string
        a list giving the name for each filter
-    units : list of string
+    filter_units : list of string
        a list giving the units for each filter
-    central_wavelength : list
+    filter_wl_cen : list
        central wavelength of each filter; this is set to None for the
        filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
        True
-    wavelength : list of arrays
+    filter_wl : list of arrays
        a list giving the wavelength table for each filter; this is
        None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
        nofilterdata is True
-    response : list of arrays
+    filter_response : list of arrays
        a list giving the photon response function for each filter;
        this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
        if nofilterdata is True 
-    id : array, dtype uint
-       unique ID of cluster
-    time : array
-       times at which cluster photometry are output, in yr
-    phot : array, shape (len(id), len(filters))
+    phot : array, shape (N_cluster, N_filter)
        photometric value in each filter for each cluster; units are as
        indicated in the units field
        
     Raises
     ------
-    IOError, if no photometry file can be found
+    IOError, if no photometry file can be opened
     ValueError, if photsystem is set to an unknown values
     """
 
@@ -88,6 +90,7 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
     cluster_id = []
     time = []
     phot = []
+    trial = []
 
     # Read ASCII or binary
     if fp.mode == 'r':
@@ -111,11 +114,16 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
         line = fp.readline()
 
         # Read through data
+        trialptr = 0
         for line in fp:
+            if line[:3] == '---':
+                trialptr = trialptr+1
+                continue
             linesplit = line.split()
             cluster_id.append(long(linesplit[0]))
             time.append(float(linesplit[1]))
             phot.append(linesplit[2:])
+            trial.append(trialptr)
 
     else:
 
@@ -133,6 +141,7 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
             units.append(line.split()[1])
 
         # Go through the rest of the file
+        trialptr = 0
         while True:
 
             # Read number of clusters and time in next block, checking
@@ -141,7 +150,20 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
             if len(data) < struct.calcsize('dL'):
                 break
             t, ncluster = struct.unpack('dL', data)
+
+            # Skip if no clusters
+            if ncluster == 0:
+                continue
+
+            # If this time is not bigger than the last one was, this
+            # is a new trial
+            if len(time) > 0:
+                if t <= time[-1]:
+                    trialptr = trialptr + 1
+
+            # Add to time and trial arrays
             time.extend([t]*ncluster)
+            trial.extend([trialptr]*ncluster)
 
             # Read the next block of clusters
             data = fp.read(struct.calcsize('L')*ncluster + 
@@ -160,6 +182,7 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
     # Convert to arrays
     cluster_id = np.array(cluster_id, dtype='uint')
     time = np.array(time, dtype='float')
+    trial = np.array(trial, dtype='uint')
     phot = np.array(phot, dtype='float')
     phot = np.reshape(phot, (len(time), len(filters)))
 
@@ -177,15 +200,17 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
     # Construct return object
     if nofilterdata:
         out_type = namedtuple('cluster_phot',
-                              ['filters', 'units', 'id', 'time', 'phot'])
-        out = out_type(filters, units, clsuter_id, time, phot)
+                              ['id', 'trial', 'time', 'filter_names', 
+                               'filter_units', 'phot'])
+        out = out_type(cluster_id, trial, time, filters, units, phot)
     else:
         out_type = namedtuple('integrated_phot',
-                              ['filters', 'units',
-                               'central_wavelength','wavelength',
-                               'response', 'id', 'time', 'phot'])
-        out = out_type(filters, units, wl_cen, wavelength, response,
-                       cluster_id, time, phot)
+                              ['id', 'trial', 'time', 'filter_names', 
+                               'filter_units',
+                               'filter_wl_cen','filter_wl',
+                               'filter_response', 'phot'])
+        out = out_type(cluster_id, trial, time, filters, units, wl_cen,
+                       wavelength, response, phot)
 
     # Return
     return out
