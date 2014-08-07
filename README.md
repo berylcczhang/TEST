@@ -55,13 +55,13 @@ Once the code is compiled, running a SLUG simulation is fairly straightforward. 
 1. Set the environment variable SLUG_DIR to the directory where you have installed SLUG. This is not strictly necessary, but it avoids the need for you to specify manually the locations of all the data files the SLUG needs.
 2. Create a parameter file, or edit one of the provided examples, to set up the desired simulation. The files *param/example.param* and *param/example_cluster.param* can provide useful starting points for creating your own parameter files.
 3. Run the simulation with the command line `./bin/slug param/mysimulation.param`.
-4. Once the simulation is done, you can examine the output by eye (if you chose to write the output in ASCII format) or, more likely, read the data using the provided python routines. The two basic output reading routines can be invoked by doing
+4. Once the simulation is done, you can examine the output by eye (if you chose to write the output in ASCII format) or, more likely, read the data using the provided python routines. The two basic output reading routines can be invoked by doing the following in a python program of the command prompt of an interactive session:
 
 `from slugPy import *`
-`int_data = read_integrated('RUN_NAME')`
-`cluster_data = read_cluster('RUN_NAME')`
 
-in a python program or from the command prompt of an interactive session.
+`int_data = read_integrated('RUN_NAME')`
+
+`cluster_data = read_cluster('RUN_NAME')`
 
 ### Questions, bugs, and getting involved ###
 
