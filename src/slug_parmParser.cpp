@@ -430,7 +430,10 @@ slug_parmParser::checkParams() {
   // See if the SLUG_DIR environment variable is set, for use in
   // setting up default paths. If not, set it to current working
   // directory.
-  string slug_dir(getenv("SLUG_DIR"));
+  char *slug_dir_ptr = getenv("SLUG_DIR");
+  string slug_dir;
+  if (slug_dir_ptr != NULL)
+    slug_dir = slug_dir_ptr;
   if (slug_dir.length() == 0) slug_dir = ".";
   path slug_path(slug_dir);
 
