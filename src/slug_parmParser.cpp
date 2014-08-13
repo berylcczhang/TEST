@@ -129,7 +129,7 @@ slug_parmParser::setDefaults() {
   atmos_dir = (lib_path / atmos_path).string();
   specsyn_mode = SB99;
   fClust = 1.0;
-  min_stoch_mass = 2.0;
+  min_stoch_mass = 0.0;
   metallicity = -1.0;    // Flag for not set
   WR_mass = -1.0;        // flag for not set
 
@@ -375,16 +375,23 @@ slug_parmParser::checkParams() {
     exit(1);
   }
   if (startTime == -constants::big) {
-    startTime = timeStep;   // Default start time = time step
+    if (!logTime)
+      startTime = timeStep;   // Default start time = time step if
+			      // time is not logarithmic
+    else {
+      cerr << "slug: error: startTime must be set" << endl;
+      exit(1);
+    }
   } else if (startTime <= 0.0) {
     cerr << "slug: error: startTime must be > 0" << endl;
+    exit(1);
   }
   if (timeStep <= 0) {
     if (timeStep == -constants::big) {
       cerr << "slug: error: parameter timeStep must be set" 
 		<< endl;
     } else {
-      cerr << "slugK error: timeStep must be > 0" << endl;
+      cerr << "slug: error: timeStep must be > 0" << endl;
     }
     exit(1);
   }
