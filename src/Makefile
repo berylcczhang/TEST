@@ -22,6 +22,9 @@ else
      endif
 endif
 
+# Set compiler
+CXX		= $(MACH_CXX)
+
 # Set optimization mode flags
 CXXOPTFLAGS	= -c $(MACH_CXXOPTFLAGS) $(MACH_C11FLAG) -DNDEBUG \
 	-DBOOST_DISABLE_ASSERTS -DHAVE_INLINE \
