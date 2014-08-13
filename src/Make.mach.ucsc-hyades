@@ -7,9 +7,15 @@ MACH_CXX     = icpc
 MACH_C11FLAG      = -std=c++11
 
 # Optimization flags
-MACH_CXXOPTFLAGS  = -O3 -ip0 -xAVX -prefetch
-MACH_LDOPTFLAGS	  = -O3 -ip0 -xAVX -prefetch
+MACH_CXXOPTFLAGS  = -O3 -ipo -xAVX
+MACH_LDOPTFLAGS	  = -O3 -ipo -xAVX
 
 # Debug flags
 MACH_CXXDEBFLAGS  = -g
-MACH_LDDEBFLAGS   = 0g
+MACH_LDDEBFLAGS   = -g
+
+# Locations of BOOST and GSL library files
+BOOST_HDR_PATH	  = /home/krumholz/lib/include
+BOOST_LIB_PATH	  = /home/krumholz/lib/lib
+GSL_HDR_PATH	  = /home/krumholz/lib/include
+GSL_LIB_PATH	  = /home/krumholz/lib/lib

@@ -9,6 +9,10 @@ all:
 	then \
 		mkdir bin; \
 	fi)
+	@(if [ ! -e output ]; \
+        then \
+                mkdir output; \
+        fi)
 	@(cp src/slug bin)
 
 debug:
@@ -16,6 +20,10 @@ debug:
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
+	fi)
+	@(if [ ! -e output]; \
+	then \
+		mkdir output
 	fi)
 	@(cp src/slug bin)
 

@@ -26,23 +26,40 @@ endif
 CXX		= $(MACH_CXX)
 
 # Set optimization mode flags
-CXXOPTFLAGS	= -c $(MACH_CXXOPTFLAGS) $(MACH_C11FLAG) -DNDEBUG \
+CXXOPTFLAGS	= $(MACH_CXXOPTFLAGS) $(MACH_C11FLAG) -DNDEBUG \
 	-DBOOST_DISABLE_ASSERTS -DHAVE_INLINE \
 	-MMD -MP -Wall
 LDOPTFLAGS	= $(MACH_LDOPTFLAGS)
 
 # Set debug mode flags
-CXXDEBFLAGS     = -c $(MACH_CXXDEBFLAGS) $(MACH_C11FLAG) -MMD -MP -Wall
+CXXDEBFLAGS     = $(MACH_CXXDEBFLAGS) $(MACH_C11FLAG) -MMD -MP -Wall
 LDDEBFLAGS	= $(MACH_LDDEBFLAGS)
+
+# Include flags
+ifdef CXX_INCLUDE_PATH
+     INCFLAGS += -I $(CXX_INCLUDE_PATH)
+endif
+ifdef BOOST_HDR_PATH
+     INCFLAGS += -I $(BOOST_HDR_PATH)
+endif
+ifdef GSL_HDR_PATH
+     INCFLAGS += -I $(GSL_HDR_PATH)
+endif
+
+# Link flags
+LDLIBFLAGS      = -lgsl -lgslcblas -lboost_system-mt -lboost_filesystem-mt -lboost_regex-mt
+ifdef LD_LIBRARY_PATH
+     LDLIBFLAGS += -L $(LD_LIBRARY_PATH)
+endif
+ifdef BOOST_LIB_PATH
+     LDLIBFLAGS += -L $(BOOST_LIB_PATH)
+endif
+ifdef GSL_LIB_PATH
+     LDLIBFLAGS += -L $(GSL_LIB_PATH)
+endif
 
 # Read any user overrides
 -include Make.config.override
-
-# Include and load flags
-INCFLAGS	= -I $(CXX_INCLUDE_PATH) -I $(BOOST_HDR_PATH) -I $(GSL_HDR_PATH)
-LDLIBFLAGS	= -lm -lgsl -lboost_system-mt -lboost_filesystem-mt \
-	-lboost_regex-mt -L $(LD_LIBRARY_PATH) $(BOOST_LIB_PATH) \
-	$(GSL_LIB_PATH)
 
 # Name for executable
 EXENAME		= slug
