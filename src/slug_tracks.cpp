@@ -14,6 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
+#ifdef __INTEL_COMPILER
+// Need this to fix a bug in the intel compilers relating to c++11
+namespace std
+{
+     typedef decltype(nullptr) nullptr_t;
+}
+#endif
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -1091,8 +1098,11 @@ get_isochrone(const double t, const vector<double> &m) const {
     starptr++;
   }
 
-  // Shrink memory for star vector to fit
+#ifndef __INTEL_COMPILER
+  // Shrink memory for star vector to fit. Note that intel does not appear to
+  // support this part of the c++11 standard.
   stars.shrink_to_fit();
+#endif
 
   // Return
   return stars;

@@ -14,6 +14,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
+#ifdef __INTEL_COMPILER
+// Need this to fix a bug in the intel compilers relating to c++11
+namespace std
+{
+     typedef decltype(nullptr) nullptr_t;
+}
+#endif
 #include "constants.H"
 #include "int_tabulated.H"
 #include "slug_specsyn_pauldrach.H"

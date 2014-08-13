@@ -18,6 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // main function for slug2
 ////////////////////////////////////////////////////////////////////////
 
+#ifdef __INTEL_COMPILER
+// Need this to fix a bug in the intel compilers relating to c++11
+namespace std
+{
+    typedef decltype(nullptr) nullptr_t;
+}
+#endif
 #include "slug_parmParser.H"
 #include "slug_sim.H"
 
