@@ -1,0 +1,17 @@
+# Machine-specific settings file when we can't figure out what type of
+# machine we're on. This may or may not work, depending on your
+# system.
+
+# Default name for c++ compiler
+MACH_CXX          = c++
+
+# Flag needed to specify c++11 standard
+MACH_C11FLAG      = -std=c++11
+
+# Optimization flags
+MACH_CXXOPTFLAGS  = -O2
+MACH_LDOPTFLAGS   = -O2
+
+# Debug flags
+MACH_CXXDEBFLAGS  = -g
+MACH_LDDEBFLAGS   = -g

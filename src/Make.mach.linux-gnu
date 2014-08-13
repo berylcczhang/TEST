@@ -1,0 +1,15 @@
+# Machine-specific settings for generic gnu-linux
+
+# Default is g++ compiler
+MACH_CXX          = g++
+
+# Flag needed to specify c++11 standard
+MACH_C11FLAG      = -std=c++11
+
+# Optimization flags for clang
+MACH_CXXOPTFLAGS  = -Ofast
+MACH_LDOPTFLAGS   = -Ofast
+
+# Debug flags for clang
+MACH_CXXDEBFLAGS  = -Og
+MACH_LDDEBFLAGS   = -Og

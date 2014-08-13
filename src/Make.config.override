@@ -1,0 +1,20 @@
+# Users can override default options here. Just uncomment and fill in
+# the appropriate line.
+
+# c++ compiler
+#CXX           =
+
+# Optimization flags for compile and link stages
+#CXXOPTFLAGS   =
+#LDOPTFLAGS    =
+
+# Debug flags for compile and link stages
+#CXXDEBFLAGS   =
+#LDDEBFLAGS    =
+
+# Locations of boost and GSL libraries. Can be left blank if these are
+# in the default link/include paths.
+#BOOST_HDR_PATH	= 
+#BOOST_LIB_PATH	=
+#GSL_HDR_PATH	=
+#GSL_LIB_PATH	=

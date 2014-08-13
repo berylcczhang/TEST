@@ -1,9 +1,10 @@
 # Makefile for the slug code, v2
-
 .PHONY: all debug exec clean
 
+MACHINE	=
+
 all:
-	cd src && $(MAKE) all
+	cd src && $(MAKE) all MACHINE=$(MACHINE)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
@@ -11,7 +12,7 @@ all:
 	@(cp src/slug bin)
 
 debug:
-	cd src && $(MAKE) debug
+	cd src && $(MAKE) debug MACHINE=$(MACHINE)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
@@ -22,6 +23,5 @@ clean:
 	cd src && $(MAKE) clean
 	@(if [ ! -e bin ]; \
 	then \
-		mkdir bin; \
+		rm -f bin/slug; \
 	fi)
-	@(rm bin/slug)

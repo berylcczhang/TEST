@@ -1,0 +1,15 @@
+# Machine-specific settings for UCSC hyades
+
+# Default is icpc
+MACH_CXX     = icpc
+
+# Flag needed to specify c++11 standard
+MACH_C11FLAG      = -std=c++11
+
+# Optimization flags
+MACH_CXXOPTFLAGS  = -O3 -ip0 -xAVX -prefetch
+MACH_LDOPTFLAGS	  = -O3 -ip0 -xAVX -prefetch
+
+# Debug flags
+MACH_CXXDEBFLAGS  = -g
+MACH_LDDEBFLAGS   = 0g
