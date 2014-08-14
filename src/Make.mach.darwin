@@ -13,3 +13,6 @@ MACH_LDOPTFLAGS   = -O4
 # Debug flags for clang
 MACH_CXXDEBFLAGS  = -g
 MACH_LDDEBFLAGS   = -g
+
+# The macports version of boost includes the -mt tag
+MACH_BOOST_TAG 	  = -mt

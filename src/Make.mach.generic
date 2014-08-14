@@ -15,3 +15,6 @@ MACH_LDOPTFLAGS   = -O2
 # Debug flags
 MACH_CXXDEBFLAGS  = -g
 MACH_LDDEBFLAGS   = -g
+
+# Assume boost library is untagged on this platform
+MACH_BOOST_TAG    =

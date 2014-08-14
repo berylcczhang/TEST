@@ -19,3 +19,6 @@ BOOST_HDR_PATH	  = /home/krumholz/lib/include
 BOOST_LIB_PATH	  = /home/krumholz/lib/lib
 GSL_HDR_PATH	  = /home/krumholz/lib/include
 GSL_LIB_PATH	  = /home/krumholz/lib/lib
+
+# Boost library names do not have tags
+MACH_BOOST_TAG    =

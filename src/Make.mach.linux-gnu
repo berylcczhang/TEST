@@ -13,3 +13,6 @@ MACH_LDOPTFLAGS   = -Ofast
 # Debug flags for clang
 MACH_CXXDEBFLAGS  = -Og
 MACH_LDDEBFLAGS   = -Og
+
+# By default boost library names under linux do not have tags
+MACH_BOOST_TAG    =
