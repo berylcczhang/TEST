@@ -27,19 +27,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Declare all classes here
 class slug_PDF;
+class slug_PDF_delta;
+class slug_PDF_exponential;
 class slug_PDF_lognormal;
 class slug_PDF_normal;
 class slug_PDF_powerlaw;
 class slug_PDF_schechter;
 class slug_PDF_segment;
 class slug_cluster;
+class slug_filter;
+class slug_filter_set;
 class slug_galaxy;
 class slug_parmParser;
+class slug_sim;
 class slug_specsyn;
 class slug_specsyn_hillier;
 class slug_specsyn_kurucz;
+class slug_specsyn_pauldrach;
 class slug_specsyn_planck;
+class slug_specsyn_sb99;
 class slug_tracks;
+
 
 // Enum for WR star types
 enum WRtype { NONE, WC, WN };
