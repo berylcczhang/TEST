@@ -71,15 +71,16 @@ n_trials          5
 # Default: 0
 #log_time          0
 
-# Length of time step (in yr)
+# Length of time step (in yr for linear time step, in dex for
+# logarithmic)
 time_step    	  2.0e7
 
 # Starting time (in yr)
-# Default: start_time = time_step
+# Default: start_time = time_step, only if log_time = 0; otherwise
+# must be set
 #start_time        2.0e7
 
-# Maximum evolution time, in yr. Maximum allowed value depends on the
-# stellar tracks used.
+# Maximum evolution time, in yr.
 end_time	  2.0e8
 
 # Star formation rate in case where sim_type = galaxy, in Msun/yr; can
@@ -97,6 +98,56 @@ sfr    		  0.001
 #cluster_mass      1e3
 
 
+#############################################
+# Parameters controlling simulation outputs #
+#############################################
+
+# Write out cluster physical properties? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster       1
+
+# Write out cluster photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_phot  1
+
+# Write out cluster spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_spec  1
+
+# Write out integrated physical properties of galaxy? Can be omitted,
+# and will be ignored, if sim_type = cluster.  Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated     1
+
+# Write out integrated photometry? Can be omitted, and will be ignored,
+# if sim_type = cluster. Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_phot  1
+
+# Write out integrated spectra? Can be omitted, and will be ignored,
+# if sim_type = cluster. Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_spec  1
+
+# Write output as binary or ASCII; allowed values:
+# -- binary
+# -- ascii
+# Default: ascii
+output_mode      ascii
+
+
 #####################################################################
 # Parameters controlling the physical models used for star and star #
 # cluster formation, and stellar properties
@@ -104,24 +155,24 @@ sfr    		  0.001
 
 # IMF (initial mass function) file name
 # Default: $SLUG_DIR/lib/imf/chabrier.imf (Chabrier 2005 IMF)
-#imf   	          lib/imf/chabrier.imf
+imf   	          lib/imf/chabrier.imf
 
 # CMF (cluster mass function) file name; ignored if sim_type = cluster
 # Default: $SLUG_DIR/lib/cmf/slug_default.cmf (dN/dM ~ M^-2)
-#cmf               lib/cmf/slug_default.cmf
+cmf               lib/cmf/slug_default.cmf
 
 # CLF (cluster lifetime function) file name
 # Default: $SLUG_DIR/lib/clf/slug_default.clf (dN/dt ~ t^-1.9)
-#clf               lib/clf/slug_default.clf
+clf               lib/clf/slug_default.clf
 
 # Stellar tracks to use
 # Default: $SLUG_DIR/lib/tracks/Z0140v00.txt (Geneva 2013, solar
 # metallicity no rotation)
-#tracks	  	  lib/tracks/Z0140v00.txt
+tracks	  	  lib/tracks/Z0140v00.txt
 
 # Directory containing stellar atmosphere models
 # Default: $SLUG_DIR/lib/atmospheres
-#atmospheres 	  lib/atmospheres
+atmospheres 	  lib/atmospheres
 
 # Spectral synthesis mode, describing which models to use for stellar
 # atmospheres; allowed values are 
@@ -132,17 +183,17 @@ sfr    		  0.001
 # -- sb99 (emulate starburst99 -- Pauldrach for OB stars, Hillier for WR 
 #          stars, kurucz for others)
 # Default: sb99
-#specsyn_mode	   sb99
+specsyn_mode	   sb99
 
 # Fraction of stars born in clusters (must be 0 - 1); can be omitted
 # if sim_type = cluster
 # Default: 1.0
-#clust_frac        1.0
+clust_frac        1.0
 
 # Minimum stellar mass for full stochastic treatment; lower mass stars are 
 # handled assuming that they are continuously-distributed
-# Default: 2.0
-#min_stoch_mass    2.0
+# Default: 0.0
+min_stoch_mass    0.0
 
 # Metallicity; the metallicity of the stellar track set being used,
 # relative to solar (i.e. solar = 1). If this keyword is omitted, the
@@ -158,6 +209,12 @@ sfr    		  0.001
 # tracks, you will have to set this parameter manually.
 #WR_mass           25.0
 
+# Redshift; if set to a non-zero value, this causes all spectra to be
+# redshifted by the specified amount. In this case photometry and
+# spectra are computed in the observed frame.
+# Default: 0
+redshift             0
+
 
 #############################################
 # Parameters describing photometric filters #
@@ -170,12 +227,11 @@ sfr    		  0.001
 # Photometric filters to be used; can be comma- or
 # whitespace-separated. For a list of available filters, see the file
 # lib/filters/FILTER_LIST.
-phot_bands         QH0 LBOL WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F438W, WFC3_UVIS_F555W, WFC3_UVIS_F814W
+phot_bands         Johnson_V, Johnson_U, Johnson_B, Cousins_R, Cousins_I, QH0, LBOL, WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F438W, WFC3_UVIS_F555W, WFC3_UVIS_F814W
 
-# Directory containing photometric filter data; can be omitted, and
-# will be ignored, if 
+# Directory containing photometric filter data
 # Default: $SLUG_DIR/lib/filters
-#filters	  lib/filters
+filters	           lib/filters
 
 # Photometry mode; allowed values are
 # -- L_nu (report frequency-averaged luminosity in band, in erg/s/Hz)
@@ -184,60 +240,4 @@ phot_bands         QH0 LBOL WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F438W, W
 # -- STMAG (report absolute ST magnitude)
 # -- VEGA (report absolute Vega magnitude)
 # Default: L_nu
-#phot_mode          L_nu
-
-
-#############################################
-# Parameters controlling simulation outputs #
-#############################################
-
-# Write out cluster physical properties? Allowed values:
-# -- 0 (no)
-# -- 1 (yes)
-# Default: 1
-#out_cluster       1
-
-# Write out cluster photometry? Allowed values:
-# -- 0 (no)
-# -- 1 (yes)
-# Default: 1
-#out_cluster_phot  1
-
-# Write out cluster spectra? Allowed values:
-# -- 0 (no)
-# -- 1 (yes)
-# Default: 1
-#out_cluster_spec  1
-
-# Write out integrated physical properties of galaxy? Can be omitted,
-# and will be ignored, if sim_type = cluster.  Allowed values:
-# -- 0 (no)
-# -- 1 (yes)
-# Default: 1
-#out_integrated     1
-
-# Write out integrated photometry? Can be omitted, and will be ignored,
-# if sim_type = cluster. Allowed values:
-# -- 0 (no)
-# -- 1 (yes)
-# Default: 1
-#out_integrated_phot  1
-
-# Write out integrated spectra? Can be omitted, and will be ignored,
-# if sim_type = cluster. Allowed values:
-# -- 0 (no)
-# -- 1 (yes)
-# Default: 1
-#out_integrated_spec  1
-
-# Redshift; if set to a non-zero value, this causes all spectra to be
-# redshifted by the specified amount. In this case photometry is
-# computed in the observed frame.
-# Default: 0
-#redshift             0
-
-# Write output as binary or ASCII; allowed values:
-# -- binary
-# -- ascii
-# Default: ascii
-#output_mode      ascii
+phot_mode          L_nu
