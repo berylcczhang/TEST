@@ -6,7 +6,8 @@ MACH_CXX          = g++
 # Flag needed to specify c++11 standard
 MACH_C11FLAG      = -std=c++11
 
-# Optimization flags for clang
+# Optimization flags for clang; note that we omit -Wall because
+# g++ issues a ton of warnings about boost when -Wall is enabled
 MACH_CXXOPTFLAGS  = -Ofast
 MACH_LDOPTFLAGS   = -Ofast
 
