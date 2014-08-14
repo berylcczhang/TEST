@@ -289,7 +289,8 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     // Now we need to fix the scale by normalizing the V magnitude of
     // Vega to be 0.02. To do this, we first need to read the Johnson
     // V filter.
-    unsigned int V_index, i;
+    unsigned int i;
+    int V_index = -1;
     for (i = 0; i < avail_filters.size(); i++) {
       string temp_name = avail_filters[i];
       to_lower(temp_name);

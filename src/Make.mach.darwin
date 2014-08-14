@@ -7,12 +7,12 @@ MACH_CXX          = c++
 MACH_C11FLAG      = -std=c++11
 
 # Optimization flags for clang
-MACH_CXXOPTFLAGS  = -O3 -ffast-math
-MACH_LDOPTFLAGS   = -O4
+MACH_CXXOPTFLAGS  = -O3 -ffast-math -Wall
+MACH_LDOPTFLAGS   = -O4 -Wall
 
 # Debug flags for clang
-MACH_CXXDEBFLAGS  = -g
-MACH_LDDEBFLAGS   = -g
+MACH_CXXDEBFLAGS  = -g -Wall
+MACH_LDDEBFLAGS   = -g -Wall
 
 # The macports version of boost includes the -mt tag
 MACH_BOOST_TAG 	  = -mt
