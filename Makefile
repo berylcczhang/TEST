@@ -21,9 +21,9 @@ debug:
 	then \
 		mkdir bin; \
 	fi)
-	@(if [ ! -e output]; \
+	@(if [ ! -e output ]; \
 	then \
-		mkdir output
+		mkdir output; \
 	fi)
 	@(cp src/slug bin)
 
