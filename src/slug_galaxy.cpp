@@ -149,14 +149,16 @@ slug_galaxy::advance(double time) {
     vector<double> new_cluster_masses;
     cmf->drawPopulation(fc*mass_to_draw, new_cluster_masses);
 
-    // Create clusters of chosen masses; for each one, generate a
-    // random birth time, create the cluster, and push it onto the
-    // master cluster list
+    // Get birth times of new clusters
+    vector<double> birth_times = sfh->draw(curTime, time,
+					   new_cluster_masses.size());
+
+    // Create clusters of chosen masses and birth times, and push them
+    // onto the master cluster list
     for (unsigned int i=0; i<new_cluster_masses.size(); i++) {
-      double birth_time = sfh->draw(curTime, time);
       slug_cluster *new_cluster = 
 	new slug_cluster(cluster_id++, new_cluster_masses[i],
-			 birth_time, imf, tracks, specsyn, filters,
+			 birth_times[i], imf, tracks, specsyn, filters,
 			 clf);
       clusters.push_back(new_cluster);
       mass += new_cluster->get_birth_mass();

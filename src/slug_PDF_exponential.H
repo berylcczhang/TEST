@@ -76,7 +76,7 @@ private:
 
   // The class that will generate normal deviates for us
   boost::variate_generator<rng_type&, 
-			   boost::exponential_distribution<> > *expdist;
+			   boost::uniform_01<> > *unidist;
 
   // This list of tokens we expect to read
   const std::vector<std::string> tokList = { "scale" };

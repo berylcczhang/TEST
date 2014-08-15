@@ -90,6 +90,8 @@ public:
   double draw() const;             // Draw from full range
   double draw_restricted() const;  // Draw from stochastically-limited range
   double draw(double a, double b) const; // Draw from specified range
+  std::vector<double> draw(double a, double b, unsigned long n) const; 
+                               // Draw n samples from specified range
 
   // Function to draw a population with the goal of reaching a certain
   // sum; return value is the sum of the actual population drawn, and

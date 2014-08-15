@@ -116,7 +116,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 			 outTimes.back()*pp.get_SFR());
     } else {
       // SFR is not constant, so read SFH from file
-      sfh = new slug_PDF(pp.get_SFH(), rng);
+      sfh = new slug_PDF(pp.get_SFH(), rng, false);
     }
   }
 
