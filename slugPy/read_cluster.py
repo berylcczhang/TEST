@@ -133,7 +133,7 @@ def read_cluster(model_name, output_dir=None, asciionly=False,
     elif phot is not None:
         out_data = [phot.id, phot.trial, phot.time]
     else:
-        raise IOError("unable to open any integrated files for run " +
+        raise IOError("unable to open any cluster files for run " +
                       model_name)
     if prop is not None:
         out_fields = out_fields + list(prop._fields[3:])
