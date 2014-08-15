@@ -77,7 +77,7 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
 
     // Make sure there's no extraneous junk; if there is, bail out
     if (tokens.size() > 2) {
-      if (tokens[1].compare(0, 1, "#") != 0) {
+      if (tokens[2].compare(0, 1, "#") != 0) {
 	errMsg = errStr;
 	return PARSE_ERROR;
       }

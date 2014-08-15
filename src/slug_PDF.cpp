@@ -859,6 +859,9 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
       segments.push_back(seg);
       weights.push_back(wgt);
 
+      // We're done with this segment
+      inSegment = false;
+
     } else {
 
       // If we're not in the middle of a segment, two things are
