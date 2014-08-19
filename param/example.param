@@ -63,7 +63,7 @@ verbosity        2
 
 # Number of model galaxies to run
 # Default: 1
-n_trials          5
+n_trials          2
 
 # Logarithmic time stepping? Allowed values:
 # -- 0 (no)
@@ -141,9 +141,10 @@ out_integrated_phot  1
 # Default: 1
 out_integrated_spec  1
 
-# Write output as binary or ASCII; allowed values:
+# Write output as binary, ASCII, or FITS; allowed values:
 # -- binary
 # -- ascii
+# -- fits
 # Default: ascii
 output_mode      ascii
 

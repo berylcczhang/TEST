@@ -8,7 +8,7 @@ import struct
 from slug_open import slug_open
 
 def read_integrated_spec(model_name, output_dir=None, asciionly=False,
-                         binonly=False, verbose=False):
+                         binonly=False, fitsonly=False, verbose=False):
     """
     Function to read a SLUG2 integrated_spec file.
 
@@ -24,6 +24,8 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
        If True, only look for ASCII versions of outputs, ending in .txt
     binonly : bool
        If True, only look for binary versions of outputs, ending in .bin
+    fitsonly : bool
+       If True, only look for FITS versions of outputs, ending in .fits
     verbose : bool
        If True, verbose output is printed as code runs
 
@@ -40,15 +42,17 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
     """
     
     # Open file
-    fp = slug_open(model_name+"_integrated_spec", output_dir=output_dir,
-                   asciionly=asciionly, binonly=binonly)
+    fp, fname = slug_open(model_name+"_integrated_spec", 
+                          output_dir=output_dir,
+                          asciionly=asciionly, binonly=binonly,
+                          fitsonly=fitsonly)
 
     # Print status
     if verbose:
         print("Reading integrated spectra for model "+model_name)
 
-    # Read ASCII or binary
-    if fp.mode == 'r':
+    # Read data
+    if fname.endswith('.txt'):
 
         # ASCII mode
 
@@ -101,7 +105,7 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
         # Reshape the L_lambda array
         L_lambda = np.transpose(np.reshape(L_lambda, (ntrial, ntime, nl)))
 
-    else:
+    elif fname.endswith('.bin'):
 
         # Binary mode
 
@@ -131,6 +135,25 @@ def read_integrated_spec(model_name, output_dir=None, asciionly=False,
                 L_lambda[:,j,i] \
                     = np.array(data_list[ptr*(nl+1)+1:(ptr+1)*(nl+1)])
                 ptr = ptr+1
+
+    elif fname.endswith('.fits'):
+
+        # FITS mode
+
+        # Read data
+        wavelength = fp[1].data.field('Wavelength')
+        wavelength = wavelength.flatten()
+        trial = fp[2].data.field('Trial')
+        time = fp[2].data.field('Time')
+        L_lambda = fp[2].data.field('L_lambda')
+
+        # Re-arrange data into desired shape
+        ntrial = len(np.unique(trial))
+        ntime = len(time)/ntrial
+        time = time[:ntime]
+        L_lambda \
+            = np.transpose(
+                np.reshape(L_lambda, (ntrial, ntime, len(wavelength))))
 
     # Close file
     fp.close()

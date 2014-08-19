@@ -2,9 +2,10 @@
 .PHONY: all debug exec clean
 
 MACHINE	=
+FITS ?= ENABLE_FITS
 
 all:
-	cd src && $(MAKE) all MACHINE=$(MACHINE)
+	cd src && $(MAKE) all MACHINE=$(MACHINE) FITS=$(FITS)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
@@ -16,7 +17,7 @@ all:
 	@(cp src/slug bin)
 
 debug:
-	cd src && $(MAKE) debug MACHINE=$(MACHINE)
+	cd src && $(MAKE) debug MACHINE=$(MACHINE) FITS=$(FITS)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \

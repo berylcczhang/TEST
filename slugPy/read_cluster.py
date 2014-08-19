@@ -8,7 +8,7 @@ from read_cluster_phot import read_cluster_phot
 from read_cluster_spec import read_cluster_spec
 
 def read_cluster(model_name, output_dir=None, asciionly=False,
-                 binonly=False, nofilterdata=False, 
+                 binonly=False, fitsonly=False, nofilterdata=False, 
                  photsystem=None, verbose=False):
     """
     Function to read all cluster data for a SLUG2 run.
@@ -25,6 +25,8 @@ def read_cluster(model_name, output_dir=None, asciionly=False,
        If True, only look for ASCII versions of outputs, ending in .txt
     binonly : bool
        If True, only look for binary versions of outputs, ending in .bin
+    fitsonly : bool
+       If True, only look for FITS versions of outputs, ending in .fits
     nofilterdata : bool
        If True, the routine does not attempt to read the filter
        response data from the standard location
@@ -105,22 +107,22 @@ def read_cluster(model_name, output_dir=None, asciionly=False,
     # Read properties
     try:
         prop = read_cluster_prop(model_name, output_dir, asciionly,
-                                 binonly, verbose)
+                                 binonly, fitsonly, verbose)
     except IOError:
         prop = None
 
     # Read spectra
     try:
         spec = read_cluster_spec(model_name, output_dir, asciionly,
-                                 binonly, verbose)
+                                 binonly, fitsonly, verbose)
     except IOError:
         spec = None
 
     # Read photometry
     try:
         phot = read_cluster_phot(model_name, output_dir, asciionly,
-                                 binonly, nofilterdata, photsystem,
-                                 verbose)
+                                 binonly, fitsonly, nofilterdata, 
+                                 photsystem, verbose)
     except IOError:
         phot = None
 

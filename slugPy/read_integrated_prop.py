@@ -8,7 +8,7 @@ import struct
 from slug_open import slug_open
 
 def read_integrated_prop(model_name, output_dir=None, asciionly=False,
-                         binonly=False, verbose=False):
+                         binonly=False, fitsonly=False, verbose=False):
     """
     Function to read a SLUG2 integrated_prop file.
 
@@ -24,6 +24,8 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
        If True, only look for ASCII versions of outputs, ending in .txt
     binonly : bool
        If True, only look for binary versions of outputs, ending in .bin
+    fitsonly : bool
+       If True, only look for FITS versions of outputs, ending in .fits
     verbose : bool
        If True, verbose output is printed as code runs
 
@@ -53,8 +55,10 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
     """
 
     # Open file
-    fp = slug_open(model_name+"_integrated_prop", output_dir=output_dir,
-                   asciionly=asciionly, binonly=binonly)
+    fp, fname = slug_open(model_name+"_integrated_prop", 
+                          output_dir=output_dir,
+                          asciionly=asciionly, binonly=binonly,
+                          fitsonly=fitsonly)
 
     # Print status
     if verbose:
@@ -70,8 +74,8 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
     num_dis_clusters = []
     num_fld_stars = []
 
-    # Read ASCII or binary
-    if fp.mode == 'r':
+    # Read data
+    if fname.endswith('.txt'):
 
         # ASCII mode
 
@@ -94,7 +98,7 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
             num_dis_clusters.append(int(data[6]))
             num_fld_stars.append(int(data[7]))
 
-    else:
+    elif fname.endswith('.bin'):
 
         # Binary mode
 
@@ -114,6 +118,18 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
         num_clusters = data_list[5::8]
         num_dis_clusters = data_list[6::8]
         num_fld_stars = data_list[7::8]
+
+    elif fname.endswith('fits'):
+
+        # FITS mode
+        time = fp[1].data.field('Time')
+        target_mass = fp[1].data.field('TargetMass')
+        actual_mass = fp[1].data.field('ActualMass')
+        live_mass = fp[1].data.field('LiveMass')
+        cluster_mass = fp[1].data.field('ClusterMass')
+        num_clusters = fp[1].data.field('NumClusters')
+        num_dis_clusters = fp[1].data.field('NumDisClust')
+        num_fld_stars = fp[1].data.field('NumFldStar')
 
     # Close file
     fp.close()

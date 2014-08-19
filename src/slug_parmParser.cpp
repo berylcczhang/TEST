@@ -263,6 +263,10 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	  out_mode = ASCII;
 	else if (tokens[1].compare("binary") == 0)
 	  out_mode = BINARY;
+#ifdef ENABLE_FITS
+	else if (tokens[1].compare("fits") == 0)
+	  out_mode = FITS;
+#endif
 	else {
 	  cerr << "slug error: unknown output_mode: " << endl
 	       << line << endl;

@@ -8,8 +8,9 @@ from read_integrated_phot import read_integrated_phot
 from read_integrated_spec import read_integrated_spec
 
 def read_integrated(model_name, output_dir=None, asciionly=False,
-                    binonly=False, nofilterdata=False, 
-                    photsystem=None, verbose=False):
+                    binonly=False, fitsonly=False,
+                    nofilterdata=False, photsystem=None, 
+                    verbose=False):
     """
     Function to read all integrated data for a SLUG2 run.
 
@@ -25,6 +26,8 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
        If True, only look for ASCII versions of outputs, ending in .txt
     binonly : bool
        If True, only look for binary versions of outputs, ending in .bin
+    fitsonly : bool
+       If True, only look for FITS versions of outputs, ending in .fits
     nofilterdata : bool
        If True, the routine does not attempt to read the filter
        response data from the standard location
@@ -101,22 +104,22 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
     # Read properties
     try:
         prop = read_integrated_prop(model_name, output_dir, asciionly,
-                                    binonly, verbose)
+                                    binonly, fitsonly, verbose)
     except IOError:
         prop = None
 
     # Read spectra
     try:
         spec = read_integrated_spec(model_name, output_dir, asciionly,
-                                    binonly, verbose)
+                                    binonly, fitsonly, verbose)
     except IOError:
         spec = None
 
     # Read photometry
     try:
         phot = read_integrated_phot(model_name, output_dir, asciionly,
-                                    binonly, nofilterdata, photsystem,
-                                    verbose)
+                                    binonly, fitsonly, nofilterdata,
+                                    photsystem, verbose)
     except IOError:
         phot = None
 

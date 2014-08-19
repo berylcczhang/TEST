@@ -430,6 +430,43 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 
 
 ////////////////////////////////////////////////////////////////////////
+// Output integrated properties to fits file
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, int trial) {
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(int_prop_fits, &nrows, &fits_status);
+
+  // Write a new entry
+  fits_write_col(int_prop_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(int_prop_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  fits_write_col(int_prop_fits, TDOUBLE, 3, nrows+1, 1, 1, &targetMass, 
+		 &fits_status);
+  fits_write_col(int_prop_fits, TDOUBLE, 4, nrows+1, 1, 1, &mass, 
+		 &fits_status);
+  fits_write_col(int_prop_fits, TDOUBLE, 5, nrows+1, 1, 1, &aliveMass, 
+		 &fits_status);
+  fits_write_col(int_prop_fits, TDOUBLE, 6, nrows+1, 1, 1, 
+		 &clusterMass, &fits_status);
+  vector<slug_cluster *>::size_type n = clusters.size();
+  fits_write_col(int_prop_fits, TULONG, 7, nrows+1, 1, 1, &n,	 
+		 &fits_status);
+  n = disrupted_clusters.size();
+  fits_write_col(int_prop_fits, TULONG, 8, nrows+1, 1, 1, &n,	 
+		 &fits_status);
+  n = field_stars.size();
+  fits_write_col(int_prop_fits, TULONG, 9, nrows+1, 1, 1, &n,	 
+		 &fits_status);
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
 // Output cluster properties
 ////////////////////////////////////////////////////////////////////////
 void
@@ -449,6 +486,19 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
        it != clusters.end(); ++it)
     (*it)->write_prop(cluster_prop_file, out_mode);
 }
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster properties in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits, 
+				int trial) {
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_prop(cluster_prop_fits, trial);
+}
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -477,6 +527,33 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
   }
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Output integrated spectra in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits, 
+				   int trial) {
+
+  // Make sure spectrum information is current. If not, compute it.
+  if (!spec_set) set_spectrum();
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(int_spec_fits, &nrows, &fits_status);
+
+  // Write data
+  fits_write_col(int_spec_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(int_spec_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  fits_write_col(int_spec_fits, TDOUBLE, 3, nrows+1, 1, 
+		 L_lambda.size(), L_lambda.data(), &fits_status);
+}
+#endif
+
 ////////////////////////////////////////////////////////////////////////
 // Output cluster spectra
 ////////////////////////////////////////////////////////////////////////
@@ -497,6 +574,20 @@ slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file,
        it != clusters.end(); ++it)
     (*it)->write_spectrum(cluster_spec_file, out_mode);
 }
+
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster spectra in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_cluster_spec(fitsfile* cluster_spec_fits, 
+				int trial) {
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_spectrum(cluster_spec_fits, trial);
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 // Output integrated photometry
@@ -522,6 +613,35 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
 }
 
 ////////////////////////////////////////////////////////////////////////
+// Output integrated photometry in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits, 
+				   int trial) {
+
+  // Make sure photometric information is current. If not, compute it.
+  if (!phot_set) set_photometry();
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(int_phot_fits, &nrows, &fits_status);
+
+  // Write data
+  fits_write_col(int_phot_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(int_phot_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  for (int i=0; i<phot.size(); i++) {
+    int colnum = i+3;
+    fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		   &(phot[i]), &fits_status);
+  }
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
 // Output cluster photometry
 ////////////////////////////////////////////////////////////////////////
 void
@@ -541,3 +661,17 @@ slug_galaxy::write_cluster_phot(ofstream& outfile,
        it != clusters.end(); ++it)
     (*it)->write_photometry(outfile, out_mode);
 }
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster photometry in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_cluster_phot(fitsfile* cluster_phot_fits, 
+				int trial) {
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_photometry(cluster_phot_fits, trial);
+}
+#endif
+

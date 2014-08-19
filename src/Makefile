@@ -60,6 +60,12 @@ ifdef GSL_LIB_PATH
      LDLIBFLAGS += -L $(GSL_LIB_PATH)
 endif
 
+# Turn FITS on or off
+ifeq ($(FITS), ENABLE_FITS)
+     LDLIBFLAGS += -lcfitsio
+     DEFINES    += -DENABLE_FITS
+endif
+
 # Read any user overrides
 -include Make.config.override
 
@@ -73,14 +79,14 @@ DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
 .PHONY: all debug
-all: CXXFLAGS += $(CXXOPTFLAGS) $(INCFLAGS)
+all: CXXFLAGS += $(CXXOPTFLAGS) $(INCFLAGS) $(DEFINES)
 all: LDFLAGS += $(LDOPTFLAGS) $(LDLIBFLAGS)
 all: $(EXENAME)
 
 # Include dependencies
 -include $(DEPS)
 
-debug: CXXFLAGS += $(CXXDEBFLAGS) $(INCFLAGS)
+debug: CXXFLAGS += $(CXXDEBFLAGS) $(INCFLAGS) $(DEFINES)
 debug: LDFLAGS += $(LDDEBFLAGS) $(LDLIBFLAGS)
 debug: $(EXENAME)
 

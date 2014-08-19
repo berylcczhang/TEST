@@ -141,11 +141,12 @@ out_cluster_spec  1
 # Default: 1
 #out_integrated_spec  1
 
-# Write output as binary or ASCII; allowed values:
+# Write output as binary, ASCII, or FITS; allowed values:
 # -- binary
 # -- ascii
+# -- fits
 # Default: ascii
-output_mode      ascii
+output_mode      binary
 
 
 #####################################################################

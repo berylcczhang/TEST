@@ -33,6 +33,7 @@ namespace std
 #include <iomanip>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
 using namespace boost;
@@ -160,6 +161,12 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // Record the output mode
   out_mode = pp.get_outputMode();
 
+#ifdef ENABLE_FITS
+  // Set FITS file pointers to NULL to indicate they are closed
+  int_prop_fits = cluster_prop_fits = int_spec_fits = 
+    cluster_spec_fits = int_phot_fits = cluster_phot_fits = NULL;
+#endif
+
   // Open the output files we'll need and write their headers
   if (pp.get_verbosity() > 1)
     std::cout << "slug: opening output files" << std::endl;
@@ -199,6 +206,25 @@ slug_sim::~slug_sim() {
   if (cluster_spec_file.is_open()) cluster_spec_file.close();
   if (int_phot_file.is_open()) int_phot_file.close();
   if (cluster_phot_file.is_open()) cluster_phot_file.close();
+
+#ifdef ENABLE_FITS
+  // Close FITS files
+  int fits_status = 0;
+  if (out_mode == FITS) {
+    if (int_prop_fits != NULL)
+      fits_close_file(int_prop_fits, &fits_status);
+    if (cluster_prop_fits != NULL)
+      fits_close_file(cluster_prop_fits, &fits_status);
+    if (int_spec_fits != NULL)
+      fits_close_file(int_spec_fits, &fits_status);
+    if (cluster_spec_fits != NULL)
+      fits_close_file(cluster_spec_fits, &fits_status);
+    if (int_phot_fits != NULL)
+      fits_close_file(int_phot_fits, &fits_status);
+    if (cluster_phot_fits != NULL)
+      fits_close_file(cluster_phot_fits, &fits_status);
+  }
+#endif
 }
 
 
@@ -247,22 +273,76 @@ void slug_sim::galaxy_sim() {
       galaxy->advance(outTimes[j]);
 
       // Write physical properties if requested
-      if (pp.get_writeIntegratedProp()) 
-	galaxy->write_integrated_prop(int_prop_file, out_mode);
-      if (pp.get_writeClusterProp()) 
-	galaxy->write_cluster_prop(cluster_prop_file, out_mode);
+      if (pp.get_writeIntegratedProp()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_integrated_prop(int_prop_file, out_mode);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_integrated_prop(int_prop_fits, i);
+	}
+#endif
+      }
+      if (pp.get_writeClusterProp()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_cluster_prop(cluster_prop_file, out_mode);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_cluster_prop(cluster_prop_fits, i);
+	}
+#endif
+      }
 
       // Write spectra if requested
-      if (pp.get_writeIntegratedSpec()) 
-	galaxy->write_integrated_spec(int_spec_file, out_mode);
-      if (pp.get_writeClusterSpec())
-	galaxy->write_cluster_spec(cluster_spec_file, out_mode);
-
+      if (pp.get_writeIntegratedSpec()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_integrated_spec(int_spec_file, out_mode);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_integrated_spec(int_spec_fits, i);
+	}
+#endif
+      }
+      if (pp.get_writeClusterSpec()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_cluster_spec(cluster_spec_file, out_mode);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_cluster_spec(cluster_spec_fits, i);
+	}
+#endif
+      }
+      
       // Write photometry if requested
-      if (pp.get_writeIntegratedPhot())
-	galaxy->write_integrated_phot(int_phot_file, out_mode);
-      if (pp.get_writeClusterPhot())
-	galaxy->write_cluster_phot(cluster_phot_file, out_mode);
+      if (pp.get_writeIntegratedPhot()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_integrated_phot(int_phot_file, out_mode);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_integrated_phot(int_phot_fits, i);
+	}
+#endif
+      }
+      if (pp.get_writeClusterPhot()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_cluster_phot(cluster_phot_file, out_mode);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_cluster_phot(cluster_phot_fits, i);
+	}
+#endif
+      }
     }
   }
 }
@@ -304,16 +384,43 @@ void slug_sim::cluster_sim() {
       }
 
       // Write physical properties if requested
-      if (pp.get_writeClusterProp()) 
-	cluster->write_prop(cluster_prop_file, out_mode, true);
+      if (pp.get_writeClusterProp()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  cluster->write_prop(cluster_prop_file, out_mode, true);
+#ifdef ENABLE_FITS
+	} else {
+	  cluster->write_prop(cluster_prop_fits, i);
+	}
+#endif
+      }
 
       // Write spectrum if requested
-      if (pp.get_writeClusterSpec()) 
-	cluster->write_spectrum(cluster_spec_file, out_mode, true);
+      if (pp.get_writeClusterSpec()) { 
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  cluster->write_spectrum(cluster_spec_file, out_mode, true);
+#ifdef ENABLE_FITS
+	} else {
+	  cluster->write_spectrum(cluster_spec_fits, i);
+	}
+#endif
+      }
 
       // Write photometry if requested
-      if (pp.get_writeClusterPhot()) 
-	cluster->write_photometry(cluster_phot_file, out_mode, true);
+      if (pp.get_writeClusterPhot()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  cluster->write_photometry(cluster_phot_file, out_mode, true);
+#ifdef ENABLE_FITS
+	} else {
+	  cluster->write_photometry(cluster_phot_fits, i);
+	}
+#endif
+      }
     }
   }
 }
@@ -334,16 +441,39 @@ void slug_sim::open_integrated_prop() {
     int_prop_file.open(full_path.c_str(), ios::out);
   } else if (out_mode == BINARY) {
     fname += ".bin";
-      full_path /= fname;
-      int_prop_file.open(full_path.c_str(), ios::out | ios::binary);
+    full_path /= fname;
+    int_prop_file.open(full_path.c_str(), ios::out | ios::binary);
+  } 
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&int_prop_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open integrated properties file "
+	   << full_path.string()
+	   << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
   }
+#endif
 
   // Make sure file is open
-  if (!int_prop_file.is_open()) {
-    cerr << "slug error: unable to open intergrated properties file " 
-	 << full_path.string() << endl;
-    exit(1);
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!int_prop_file.is_open()) {
+      cerr << "slug error: unable to open intergrated properties file " 
+	   << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
   }
+#endif 
 
   // Write header
   if (out_mode == ASCII) {
@@ -375,6 +505,30 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "-----------"
 		  << endl;
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    // Note: this is pretty awkward -- we have to declare a vector of
+    // string, then cast them to arrays of char *, because the cfitsio
+    // library wants that. Unfortunately this awkwardness is the only
+    // way to avoid lots of compiler warnings.
+    vector<string> ttype_str = 
+      { "Trial", "Time", "TargetMass", "ActualMass", "LiveMass", 
+	"ClusterMass", "NumClusters", "NumDisClust", "NumFldStar" };
+    vector<string> tform_str = 
+      { "1K", "1D", "1D", "1D", "1D", "1D", "1K", "1K", "1K" };
+    vector<string> tunit_str = 
+      { "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "" };
+    char *ttype[9], *tform[9], *tunit[9];
+    for (int i=0; i<9; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
+    int fits_status = 0;
+    fits_create_tbl(int_prop_fits, BINARY_TBL, 0, 9,
+		    ttype, tform, tunit, NULL, &fits_status);
+  }
+#endif
 }
 
 
@@ -396,13 +550,36 @@ void slug_sim::open_cluster_prop() {
     full_path /= fname;
     cluster_prop_file.open(full_path.c_str(), ios::out | ios::binary);
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&cluster_prop_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open cluster properties file "
+	   << full_path.string()
+	   << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
 
   // Make sure file is open
-  if (!cluster_prop_file.is_open()) {
-    cerr << "slug error: unable to open cluster properties file " 
-	 << full_path.string() << endl;
-    exit(1);
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!cluster_prop_file.is_open()) {
+      cerr << "slug error: unable to open cluster properties file " 
+	   << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
   }
+#endif
 
   // Write header
   if (out_mode == ASCII) {
@@ -437,6 +614,33 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "-----------"
 		      << endl;
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    // Note: this is pretty awkward -- we have to declare a vector of
+    // string, then cast them to arrays of char *, because the cfitsio
+    // library wants that. Unfortunately this awkwardness is the only
+    // way to avoid lots of compiler warnings.
+    vector<string> ttype_str = 
+      { "Trial", "UniqueID", "Time", "FormTime", "Lifetime",
+	"TargetMass", "BirthMass", "LiveMass",
+	"NumStar", "MaxStarMass" };
+    vector<string> tform_str = 
+      { "1K", "1K", "1D", "1D", "1D", "1D", "1D", "1D", "1K", "1D" };
+    vector<string> tunit_str = 
+      { "", "", "yr", "yr", "yr", "Msun", "Msun", "Msun", "", "Msun" };
+    char *ttype[10], *tform[10], *tunit[10];
+    for (int i=0; i<10; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
+
+    // Create the table
+    int fits_status = 0;
+    fits_create_tbl(cluster_prop_fits, BINARY_TBL, 0, 10,
+		    ttype, tform, tunit, NULL, &fits_status);
+  }
+#endif
 }
 
 
@@ -458,13 +662,36 @@ void slug_sim::open_integrated_spec() {
       full_path /= fname;
       int_spec_file.open(full_path.c_str(), ios::out | ios::binary);
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&int_spec_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open integrated spectrum file "
+	   << full_path.string()
+	   << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
 
   // Make sure file is open
-  if (!int_spec_file.is_open()) {
-    cerr << "slug error: unable to open intergrated spectrum file " 
-	 << full_path.string() << endl;
-    exit(1);
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!int_spec_file.is_open()) {
+      cerr << "slug error: unable to open intergrated spectrum file " 
+	   << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
   }
+#endif
 
   // Write header
   if (out_mode == ASCII) {
@@ -480,13 +707,53 @@ void slug_sim::open_integrated_spec() {
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << endl;
-  } else {
+  } else if (out_mode == BINARY) {
     // File starts with the list of wavelengths
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
     int_spec_file.write((char *) &nl, sizeof nl);
     int_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+
+    // In FITS mode, write the wavelength information in the first HDU
+    vector<double> lambda = specsyn->lambda();
+    vector<double>::size_type nl = lambda.size();
+    string ttype_str = "Wavelength";
+    string tform_str = lexical_cast<string>(nl) + "D";
+    string tunit_str = "Angstrom";
+    char *ttype[1], *tform[1], *tunit[1];
+    ttype[0] = const_cast<char*>(ttype_str.c_str());
+    tform[0] = const_cast<char*>(tform_str.c_str());
+    tunit[0] = const_cast<char*>(tunit_str.c_str());
+    int fits_status = 0;
+    char wl_name[] = "Wavelength";
+
+    // Create the table
+    fits_create_tbl(int_spec_fits, BINARY_TBL, 0, 1,
+		    ttype, tform, tunit, wl_name, &fits_status);
+
+    // Write wavelength data to table
+    fits_write_col(int_spec_fits, TDOUBLE, 1, 1, 1, nl,
+		   lambda.data(), &fits_status);
+
+    // Create a new table to hold the computed spectra.
+    char spec_name[] = "Spectra";
+    vector<string> ttype2_str = { "Trial", "Time", "L_lambda" };
+    vector<string> tform2_str = { "1K", "1D", "" };
+    tform2_str[2] = lexical_cast<string>(nl) + "D";
+    vector<string> tunit2_str = { "", "yr", "erg/s/A" };
+    char *ttype2[3], *tform2[3], *tunit2[3];
+    for (int i=0; i<3; i++) {
+      ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
+      tform2[i] = const_cast<char*>(tform2_str[i].c_str());
+      tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());
+    }
+    fits_create_tbl(int_spec_fits, BINARY_TBL, 0, 3,
+		    ttype2, tform2, tunit2, spec_name, &fits_status);
+  }
+#endif
 }
 
 
@@ -508,13 +775,36 @@ void slug_sim::open_cluster_spec() {
       full_path /= fname;
       cluster_spec_file.open(full_path.c_str(), ios::out | ios::binary);
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&cluster_spec_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open cluster spectrum file "
+	   << full_path.string()
+	   << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
 
   // Make sure file is open
-  if (!cluster_spec_file.is_open()) {
-    cerr << "slug error: unable to open cluster spectrum file " 
-	 << full_path.string() << endl;
-    exit(1);
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!cluster_spec_file.is_open()) {
+      cerr << "slug error: unable to open cluster spectrum file " 
+	   << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
   }
+#endif
 
   // Write header
   if (out_mode == ASCII) {
@@ -533,13 +823,54 @@ void slug_sim::open_cluster_spec() {
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << endl;
-  } else {
+  } else if (out_mode == BINARY) {
     // File starts with the list of wavelengths
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
     cluster_spec_file.write((char *) &nl, sizeof nl);
     cluster_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+
+    // In FITS mode, write the wavelength information in the first HDU
+    vector<double> lambda = specsyn->lambda();
+    vector<double>::size_type nl = lambda.size();
+    string ttype_str = "Wavelength";
+    string tform_str = lexical_cast<string>(nl) + "D";
+    string tunit_str = "Angstrom";
+    char *ttype[1], *tform[1], *tunit[1];
+    ttype[0] = const_cast<char*>(ttype_str.c_str());
+    tform[0] = const_cast<char*>(tform_str.c_str());
+    tunit[0] = const_cast<char*>(tunit_str.c_str());
+    int fits_status = 0;
+    char wl_name[] = "Wavelength";
+
+    // Create the table
+    fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, 1,
+		    ttype, tform, tunit, wl_name, &fits_status);
+
+    // Write wavelength data to table
+    fits_write_col(cluster_spec_fits, TDOUBLE, 1, 1, 1, nl,
+		   lambda.data(), &fits_status);
+
+    // Create a new table to hold the computed spectra
+    char spec_name[] = "Spectra";
+    vector<string> ttype2_str = 
+      { "Trial", "UniqueID", "Time", "L_lambda" };
+    vector<string> tform2_str = { "1K", "1K", "1D", "" };
+    tform2_str[3] = lexical_cast<string>(nl) + "D";
+    vector<string> tunit2_str = { "", "", "yr", "erg/s/A" };
+    char *ttype2[4], *tform2[4], *tunit2[4];
+    for (int i=0; i<4; i++) {
+      ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
+      tform2[i] = const_cast<char*>(tform2_str[i].c_str());
+      tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());
+    }
+    fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, 4,
+		    ttype2, tform2, tunit2, spec_name, &fits_status);
+  }
+#endif
 }
 
 
@@ -561,13 +892,36 @@ void slug_sim::open_integrated_phot() {
       full_path /= fname;
       int_phot_file.open(full_path.c_str(), ios::out | ios::binary);
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&int_phot_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open integrated photometry file "
+	   << full_path.string()
+	   << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
 
   // Make sure file is open
-  if (!int_phot_file.is_open()) {
-    cerr << "slug error: unable to open intergrated photometry file " 
-	 << full_path.string() << endl;
-    exit(1);
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!int_phot_file.is_open()) {
+      cerr << "slug error: unable to open intergrated photometry file " 
+	   << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
   }
+#endif
 
   // Grab the names and units of the photometric filters
   const vector<string> filter_names = filters->get_filter_names();
@@ -588,7 +942,7 @@ void slug_sim::open_integrated_phot() {
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       int_phot_file << setw(18) << left << "---------------";
     int_phot_file << endl;
-  } else {
+  } else if (out_mode == BINARY) {
     // File starts with the number of filters and then the list
     // of filters names and units in ASCII; rest is binary
     int_phot_file << filter_names.size() << endl;
@@ -596,6 +950,32 @@ void slug_sim::open_integrated_phot() {
       int_phot_file << filter_names[i] << " " 
 		    << filter_units[i] << endl;
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    vector<char *> ttype, tform, tunit;
+    // First column is trial number, second column is time
+    vector<string> ttype_str = { "Trial", "Time" };
+    vector<string> form_str = { "1K", "1D" };
+    vector<string> unit_str = { "", "yr" };
+    for (int i=0; i<2; i++) {
+      ttype.push_back(const_cast<char*>(ttype_str[i].c_str()));
+      tform.push_back(const_cast<char*>(form_str[i].c_str()));
+      tunit.push_back(const_cast<char*>(unit_str[i].c_str()));
+    }
+    // Next n columns are filters
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
+      ttype.push_back(const_cast<char*>(filter_names[i].c_str()));
+      tform.push_back(const_cast<char*>(form_str[1].c_str()));
+      tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
+    }
+    // Create table
+    int fits_status = 0;
+    fits_create_tbl(int_phot_fits, BINARY_TBL, 0, 
+		    2+filter_names.size(),
+		    ttype.data(), tform.data(), tunit.data(), NULL, 
+		    &fits_status);
+  }
+#endif
 }
 
 
@@ -617,13 +997,36 @@ void slug_sim::open_cluster_phot() {
       full_path /= fname;
       cluster_phot_file.open(full_path.c_str(), ios::out | ios::binary);
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&cluster_phot_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open cluster photometry file "
+	   << full_path.string()
+	   << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
 
   // Make sure file is open
-  if (!cluster_phot_file.is_open()) {
-    cerr << "slug error: unable to open cluster photometry file " 
-	 << full_path.string() << endl;
-    exit(1);
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!cluster_phot_file.is_open()) {
+      cerr << "slug error: unable to open cluster photometry file " 
+	   << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
   }
+#endif
 
   // Grab the names and units of the photometric filters
   const vector<string> filter_names = filters->get_filter_names();
@@ -647,7 +1050,7 @@ void slug_sim::open_cluster_phot() {
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       cluster_phot_file << setw(18) << left << "---------------";
     cluster_phot_file << endl;
-  } else {
+  } else if (out_mode == BINARY) {
     // File starts with the number of filters and then the list
     // of filters names and units in ASCII; rest is binary
     cluster_phot_file << filter_names.size() << endl;
@@ -655,6 +1058,32 @@ void slug_sim::open_cluster_phot() {
       cluster_phot_file << filter_names[i] << " " 
 		    << filter_units[i] << endl;
   }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    vector<char *> ttype, tform, tunit;
+    // Columns are trial, uniqueID, time
+    vector<string> ttype_str = { "Trial", "UniqueID", "Time" };
+    vector<string> form_str = { "1K", "1K", "1D" };
+    vector<string> unit_str = { "", "", "yr" };
+    for (int i=0; i<3; i++) {
+      ttype.push_back(const_cast<char*>(ttype_str[i].c_str()));
+      tform.push_back(const_cast<char*>(form_str[i].c_str()));
+      tunit.push_back(const_cast<char*>(unit_str[i].c_str()));
+    }
+    // Next n columns are filters
+    for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
+      ttype.push_back(const_cast<char*>(filter_names[i].c_str()));
+      tform.push_back(const_cast<char*>(form_str[2].c_str()));
+      tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
+    }
+    // Create table
+    int fits_status = 0;
+    fits_create_tbl(cluster_phot_fits, BINARY_TBL, 0, 
+		    3+filter_names.size(),
+		    ttype.data(), tform.data(), tunit.data(), NULL, 
+		    &fits_status);
+  }
+#endif
 }
 
 

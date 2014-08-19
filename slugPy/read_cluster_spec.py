@@ -8,7 +8,7 @@ import struct
 from slug_open import slug_open
 
 def read_cluster_spec(model_name, output_dir=None, asciionly=False,
-                      binonly=False, verbose=False):
+                      binonly=False, fitsonly=False, verbose=False):
     """
     Function to read a SLUG2 integrated_spec file.
 
@@ -24,6 +24,8 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
        If True, only look for ASCII versions of outputs, ending in .txt
     binonly : bool
        If True, only look for binary versions of outputs, ending in .bin
+    fitsonly : bool
+       If True, only look for FITS versions of outputs, ending in .fits
     verbose : bool
        If True, verbose output is printed as code runs
 
@@ -47,8 +49,10 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
     """
 
     # Open file
-    fp = slug_open(model_name+"_cluster_spec", output_dir=output_dir,
-                   asciionly=asciionly, binonly=binonly)
+    fp, fname = slug_open(model_name+"_cluster_spec", 
+                          output_dir=output_dir,
+                          asciionly=asciionly, binonly=binonly,
+                          fitsonly=fitsonly)
 
     # Print status
     if verbose:
@@ -62,7 +66,7 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
     L_lambda = []
 
     # Read ASCII or binary
-    if fp.mode == 'r':
+    if fname.endswith('.txt'):
 
         # ASCII mode
 
@@ -134,7 +138,7 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
                 trial.append(trialptr)
                 ptr = 0
 
-    else:
+    elif fname.endswith('.bin'):
 
         # Binary mode
 
@@ -179,6 +183,16 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
             L_lambda.extend(
                 [data_list[(nl+1)*i+1:(nl+1)*(i+1)] 
                  for i in range(ncluster)])
+
+    elif fname.endswith('.fits'):
+
+        # FITS mode
+        wavelength = fp[1].data.field('Wavelength')
+        wavelength = wavelength.flatten()
+        cluster_id = fp[2].data.field('UniqueID')
+        trial = fp[2].data.field('Trial')
+        time = fp[2].data.field('Time')
+        L_lambda = fp[2].data.field('L_lambda')
 
     # Close file
     fp.close()
