@@ -47,6 +47,10 @@ parser.add_argument('-n', '--nproc', default=None, type=int,
 parser.add_argument('-b', '--batchsize', default=None, type=int,
                     help="number of trials per slug process "+
                     "(default: ntrial/nproc)")
+parser.add_argument('-nc', '--noconsolidate', action='store_true',
+                    default=False, help="leave outputs in separate "
+                    "files (default action: consolidate into a single "
+                    "file)")
 args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
@@ -195,7 +199,7 @@ while completed_trials < ntrials:
             break
 
         # Generate model name and number of trials for this run
-        new_model_name = model_name + "_p{:03d}_n{:03d}". \
+        new_model_name = model_name + "_p{:05d}_n{:05d}". \
                          format(p, proc_ctr[p])
         new_ntrials = min(batchsize, ntrials-completed_trials)
 
@@ -277,59 +281,94 @@ while True:
     if nrunning == 0:
         break
 
-# Step 7: consolidate output files
-combined_name = osp.join(out_dir, model_name)
-if verbosity > 0:
-    print("Completed parallel runs, consolidating outputs to " + 
-          combined_name)
+# Step 7: consolidate output files if requested; just move them if not
+if output_mode == 'ascii':
+    extension = '.txt'
+elif output_mode == 'binary':
+    extension = '.bin'
+elif output_mode == 'fits':
+    extension = '.fits'
+if args.noconsolidate == False:
 
-# Step 7a: summary files: change the model name, output directory, and
-# number of trials in the first output, and delete all the rest
-fp = open(out_names[0]+'_summary.txt', 'r')
-fpout = open(osp.join(out_dir, model_name+'_summary.txt'), 'w')
-for line in fp:
-    linesplit = line.split()
-    if linesplit[0] == 'model_name':
-        fpout.write("model_name           "+model_name+"\n")
-    elif linesplit[0] == 'out_dir':
-        fpout.write("out_dir              "+out_dir+"\n")
-    elif linesplit[0] == 'n_trials':
-        fpout.write("n_trials             {:d}\n".format(ntrials))
-    else:
-        fpout.write(line)
-fp.close()
-fpout.close()
-for f in out_names:
-    try: os.remove(f+'_summary.txt')
-    except OSError:
-        warnings.warn("unable to clean up temporary file "+f)
+    combined_name = osp.join(out_dir, model_name)
+    if verbosity > 0:
+        print("Consolidating outputs to " + combined_name)
 
-# Step 7b: integrated files: read data from all files, combine, then
-# write back out
-if sim_type != 'cluster':
+    # Step 7a: summary files: change the model name, output directory,
+    # and number of trials in the first output, and delete all the
+    # rest
+    fp = open(out_names[0]+'_summary.txt', 'r')
+    fpout = open(osp.join(out_dir, model_name+'_summary.txt'), 'w')
+    for line in fp:
+        linesplit = line.split()
+        if linesplit[0] == 'model_name':
+            fpout.write("model_name           "+model_name+"\n")
+        elif linesplit[0] == 'out_dir':
+            fpout.write("out_dir              "+out_dir+"\n")
+        elif linesplit[0] == 'n_trials':
+            fpout.write("n_trials             {:d}\n".format(ntrials))
+        else:
+            fpout.write(line)
+    fp.close()
+    fpout.close()
+    for f in out_names:
+        try:
+            os.remove(f+'_summary.txt')
+        except OSError:
+            warnings.warn("unable to clean up temporary file "+f)
+
+    # Step 7b: integrated files: read data from all files, combine,
+    # then write back out
+    if sim_type != 'cluster':
+        data = []
+        for f in out_names:
+            if verbosity > 1:
+                print("Reading integrated data from "+f+"...")
+            data.append(read_integrated(f, fmt=output_mode,
+                                        nofilterdata=True))
+        combined_data = combine_integrated(data)
+        write_integrated(combined_data, combined_name, fmt=output_mode)
+
+    # Step 7c: cluster files; same as integrated files
     data = []
     for f in out_names:
         if verbosity > 1:
-            print("Reading integrated data from "+f+"...")
-        data.append(read_integrated(f, fmt=output_mode,
-                                    nofilterdata=True))
-    combined_data = combine_integrated(data)
-    write_integrated(combined_data, combined_name, fmt=output_mode)
+            print("Reading cluster data from "+f+"...")
+        data.append(read_cluster(f, fmt=output_mode,
+                                 nofilterdata=True))
+    combined_data = combine_cluster(data)
+    write_cluster(combined_data, combined_name, fmt=output_mode)
 
-# Step 7c: cluster files; same as integrated files
-data = []
-for f in out_names:
-    if verbosity > 1:
-        print("Reading cluster data from "+f+"...")
-    data.append(read_cluster(f, fmt=output_mode,
-                             nofilterdata=True))
-combined_data = combine_cluster(data)
-write_cluster(combined_data, combined_name, fmt=output_mode)
+else:
+
+    # Move files
+    for f in out_names:
+        fname = f+'_summary.txt'
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_integrated_prop'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_integrated_spec'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_integrated_phot'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_cluster_prop'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_cluster_spec'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_cluster_phot'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
 
 
 # Step 8: clean up remaining temporary files
 if verbosity > 0:
-    print("Consolidation complete, cleaning up temporary files")
+    print("Cleaning up temporary files")
 
 # Delete parameter files
 for i in range(nproc):
@@ -341,12 +380,6 @@ for i in range(nproc):
         warnings.warn("unable to clean up temporary file "+pfile_name)
 
 # Delete output files
-if output_mode == 'ascii':
-    extension = '.txt'
-elif output_mode == 'binary':
-    extension = '.bin'
-elif output_mode == 'fits':
-    extension = '.fits'
 for f in out_names:
     try:
         fname = f+'_summary.txt'
