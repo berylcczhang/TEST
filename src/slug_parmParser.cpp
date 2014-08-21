@@ -113,6 +113,7 @@ slug_parmParser::setDefaults() {
   // Control flow parameters
   run_galaxy_sim = true;
   nTrials = 1;
+  rng_offset = 0;
   logTime = false;
   startTime = timeStep = endTime = -constants::big;
   sfr = cluster_mass = -constants::big;
@@ -245,6 +246,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	WR_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("clust_frac"))) {
 	fClust = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("rng_offset"))) {
+	rng_offset = lexical_cast<unsigned int>(tokens[1]);
       } else if (!(tokens[0].compare("out_cluster"))) {
 	writeClusterProp = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_phot"))) {
@@ -633,3 +636,5 @@ bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
 double slug_parmParser::get_cluster_mass() const { return cluster_mass; }
 const vector<string>& slug_parmParser::get_photBand() const
 { return photBand; }
+unsigned int slug_parmParser::get_rng_offset()
+  const { return rng_offset; }

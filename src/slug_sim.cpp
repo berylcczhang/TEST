@@ -31,6 +31,7 @@ namespace std
 #include <cmath>
 #include <ctime>
 #include <iomanip>
+#include "fcntl.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -55,8 +56,31 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       t *= pow(10.0, pp.get_timeStep());
   }
 
+  // Get a random see from /dev/urandom if possible
+  unsigned int seed;
+  int fn;
+  bool rand_set = false;
+  fn = open("/dev/urandom", O_RDONLY);
+  if (fn != -1) {
+    rand_set = (read(fn, &seed, 4) == 4); // True if read succeeds
+    close(fn);
+  }
+  if (!rand_set) {
+    // Failed to set from /dev/urandom; seed using system time instead.
+    seed = static_cast<unsigned int>(time(0));
+  }
+  // Add offset if running; this probably isn't necessary if
+  // /dev/urandom worked, but do it anyway in case it failed.
+  seed += pp.get_rng_offset();
+
   // Set up the random number generator
-  rng = new rng_type(static_cast<unsigned int>(time(0)));
+  rng = new rng_type(seed);
+
+  // Warm up the rng by drawing 1000 random numbers. This is another
+  // safety measure to avoid getting correlated sequences of random
+  // numbers if we're running in parallel.
+  boost::random::uniform_int_distribution<> six_sided_die(1,6);
+  for (int i=0; i<1000; i++) six_sided_die(*rng);
 
   // Set up the photometric filters
   if (pp.get_nPhot() > 0) {
@@ -363,6 +387,17 @@ void slug_sim::cluster_sim() {
 
     // Reset the cluster
     cluster->reset();
+
+    // Write trial separator to ASCII files if operating in ASCII
+    // mode
+    if ((out_mode == ASCII) && (i != 0)) {
+      if (pp.get_writeClusterProp())
+	write_separator(cluster_prop_file, 9*14-3);
+      if (pp.get_writeClusterSpec())
+	write_separator(cluster_spec_file, 4*14-3);
+      if (pp.get_writeClusterPhot())
+	write_separator(cluster_phot_file, (2+pp.get_nPhot())*18-3);
+    }
 
     // Loop over time steps
     for (unsigned int j=0; j<outTimes.size(); j++) {

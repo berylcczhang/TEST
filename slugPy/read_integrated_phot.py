@@ -9,8 +9,7 @@ from photometry_convert import photometry_convert
 from read_filter import read_filter
 from slug_open import slug_open
 
-def read_integrated_phot(model_name, output_dir=None, asciionly=False,
-                         binonly=False, fitsonly=False,
+def read_integrated_phot(model_name, output_dir=None, fmt=None,
                          nofilterdata=False, photsystem=None,
                          verbose=False):
     """
@@ -24,12 +23,14 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
        The directory where the SLUG2 output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
-    fitsonly : bool
-       If True, only look for FITS versions of outputs, ending in .fits
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
     nofilterdata : bool
        If True, the routine does not attempt to read the filter
        response data from the standard location
@@ -80,8 +81,7 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
     # Open file
     fp, fname = slug_open(model_name+"_integrated_phot", 
                           output_dir=output_dir,
-                          asciionly=asciionly, binonly=binonly,
-                          fitsonly=fitsonly)
+                          fmt=fmt)
 
     # Print status
     if verbose:

@@ -7,8 +7,8 @@ from collections import namedtuple
 import struct
 from slug_open import slug_open
 
-def read_cluster_spec(model_name, output_dir=None, asciionly=False,
-                      binonly=False, fitsonly=False, verbose=False):
+def read_cluster_spec(model_name, output_dir=None, fmt=None, 
+                      verbose=False):
     """
     Function to read a SLUG2 integrated_spec file.
 
@@ -20,12 +20,14 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
        The directory where the SLUG2 output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
-    fitsonly : bool
-       If True, only look for FITS versions of outputs, ending in .fits
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
     verbose : bool
        If True, verbose output is printed as code runs
 
@@ -51,8 +53,7 @@ def read_cluster_spec(model_name, output_dir=None, asciionly=False,
     # Open file
     fp, fname = slug_open(model_name+"_cluster_spec", 
                           output_dir=output_dir,
-                          asciionly=asciionly, binonly=binonly,
-                          fitsonly=fitsonly)
+                          fmt=fmt)
 
     # Print status
     if verbose:

@@ -73,6 +73,7 @@ public:
   specsynMode get_specsynMode() const;    // Spectral synthesis mode
   bool galaxy_sim() const;                // Galaxy sim or cluster sim?
   double get_cluster_mass() const;        // Cluster mass for cluster sims
+  unsigned int get_rng_offset() const;    // Offset for rng
 
   // Function to write out the parameters being used to a file
   void writeParams() const;
@@ -81,6 +82,7 @@ private:
   // Storage for parameter file values
   int verbosity;                          // Level of verbosity
   int nTrials;                            // How many trials to run
+  unsigned int rng_offset;                // Offset to rng
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode
   photMode phot_mode;                     // Photometry mode

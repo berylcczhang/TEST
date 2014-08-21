@@ -9,10 +9,10 @@ try:
 except ImportError:
     fits = None
     import warnings
-    warnings.warn("Unable to import astropy. FITS output will not be readable.")
+    warnings.warn("Unable to import astropy. FITS funtionality" +
+                  " will not be available.")
 
-def slug_open(filename, output_dir=None, asciionly=False,
-              binonly=False, fitsonly=False):
+def slug_open(filename, output_dir=None, fmt=None):
     """
     Function to open a SLUG2 output file.
 
@@ -26,12 +26,14 @@ def slug_open(filename, output_dir=None, asciionly=False,
        the current directory is searched, followed by the
        SLUG_DIR/output directory if the SLUG_DIR environment variable
        is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
-    fitsonly : bool
-       If True, only look for FITS versions of outputs, ending in .fits
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
 
     Returns
     -------
@@ -52,8 +54,18 @@ def slug_open(filename, output_dir=None, asciionly=False,
     else:
         outdir = output_dir
 
+    # Make sure fmt is valid
+    if fmt != 'ascii' and fmt != 'bin' and fmt != 'binary' and \
+       fmt != 'fits' and fmt is not None:
+        raise ValueError("fmt must be ascii, bin, binary, or fits")
+
+    # Make sure we're not trying to do fits if we don't have astropy
+    if fmt == 'fits' and fits is None:
+        raise ValueError("Couldn't import astropy, so fits format "+
+                         "is unavailable.")
+
     # See if we have a text file
-    if not binonly and not fitsonly:
+    if fmt is None or fmt=='ascii':
         fname = osp.join(outdir, filename+'.txt')
         try:
             fp = open(fname, 'r')
@@ -64,7 +76,7 @@ def slug_open(filename, output_dir=None, asciionly=False,
 
     # If that failed, look for a binary file
     if fp is None:
-        if not asciionly and not fitsonly:
+        if fmt is None or fmt=='bin' or fmt=='binary':
             fname = osp.join(outdir, filename+'.bin')
             try:
                 fp = open(fname, 'rb')
@@ -73,7 +85,7 @@ def slug_open(filename, output_dir=None, asciionly=False,
 
     # If that failed, look for a fits file
     if fp is None:
-        if not asciionly and not binonly and fits is not None:
+        if fmt is None or fmt=='fits':
             fname = osp.join(outdir, filename+'.fits')
             try:
                 fp = fits.open(fname)
@@ -86,21 +98,22 @@ def slug_open(filename, output_dir=None, asciionly=False,
     if (fp is None) and (output_dir is None) and \
        ('SLUG_DIR' in os.environ):
         outdir = osp.join(os.environ['SLUG_DIR'], 'output')
-        if not binonly and not fitsonly:
+        if fmt is None or fmt == 'ascii':
             fname = osp.join(outdir,
                              filename+'.txt')
             try:
                 fp = open(fname, 'r')
             except IOError:
                 pass
-        if not asciionly and not fitsonly and fp is None:
+        if (fmt is None or fmt == 'bin' or fmt == 'binary') \
+           and fp is None:
             fname = osp.join(outdir, 
                              filename+'.bin')
             try:
                 fp = open(fname, 'rb')
             except IOError:
                 pass
-        if not asciionly and not binonly and fp is None \
+        if (fmt is None or fmt == 'fits') and fp is None \
            and fits is not None:
             fname = osp.join(outdir, 
                              filename+'.fits')
