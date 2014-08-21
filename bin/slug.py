@@ -330,15 +330,52 @@ write_cluster(combined_data, combined_name, fmt=output_mode)
 # Step 8: clean up remaining temporary files
 if verbosity > 0:
     print("Consolidation complete, cleaning up temporary files")
-#for i in range(nproc):
-#    pfile_name = osp.join(cwd, "slug_par_tmp", 
-#                          "slug_par_p{:03d}".format(i))
-#    try:
-#        os.remove(pfile_name)
-#    except OSError:
-#        warnings.warn("unable to clean up temporary file "+pfile_name)
-#try:
-#    os.rmdir("slug_par_tmp")
-#except OSError:
-#    warnings.warn("unable to clean up temporary directory "
-#                  "slug_par_tmp")
+
+# Delete parameter files
+for i in range(nproc):
+    pfile_name = osp.join(cwd, "slug_par_tmp", 
+                          "slug_par_p{:03d}".format(i))
+    try:
+        os.remove(pfile_name)
+    except OSError:
+        warnings.warn("unable to clean up temporary file "+pfile_name)
+
+# Delete output files
+if output_mode == 'ascii':
+    extension = '.txt'
+elif output_mode == 'binary':
+    extension = '.bin'
+elif output_mode == 'fits':
+    extension = '.fits'
+for f in out_names:
+    try:
+        fname = f+'_summary.txt'
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_integrated_prop'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_integrated_spec'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_integrated_phot'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_cluster_prop'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_cluster_spec'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_cluster_phot'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+    except OSError:
+        warnings.warn("unable to clean up temporary file "+fname)
+
+# Remove temporary directory
+try:
+    os.rmdir(osp.join(cwd, "slug_par_tmp"))
+except OSError:
+    warnings.warn("unable to clean up temporary directory "+
+                  osp.join(cwd, "slug_par_tmp"))

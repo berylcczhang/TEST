@@ -213,9 +213,13 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       } else if (!(tokens[0].compare("log_time"))) {
 	logTime = (lexical_cast<double>(tokens[1]) == 1);
       } else if (!(tokens[0].compare("sfr"))) {
-	sfr = lexical_cast<double>(tokens[1]);
-	if (sfr <= 0) constantSFR = false;
-	else constantSFR = true;
+	to_lower(tokens[1]);
+	if (tokens[1].compare("sfh") == 0)
+	  constantSFR = false;
+	else {
+	  sfr = lexical_cast<double>(tokens[1]);
+	  constantSFR = true;
+	}
       } else if (!(tokens[0].compare("cluster_mass"))) {
 	cluster_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("sfh"))) {

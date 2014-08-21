@@ -297,3 +297,116 @@ def write_integrated(data, model_name, fmt):
             hdulist.writeto(model_name+'_integrated_spec.fits', 
                             clobber=True)
                 
+    ################################################################
+    # Write photometry file if we have the data for it
+    ################################################################
+    if 'phot' in data._fields:
+
+        if fmt == 'ascii':
+
+            ########################################################
+            # ASCII mode
+            ########################################################
+
+            fp = open(model_name+'_integrated_phot.txt', 'w')
+
+            # Write header lines
+            fp.write("{:<18s}".format('Time'))
+            for f in data.filter_names:
+                fp.write("{:<18s}".format(f))
+            fp.write("\n")
+            fp.write("{:<18s}".format('(yr)'))
+            for f in data.filter_units:
+                fp.write("({:s}".format(f)+")"+" "*(16-len(f)))
+            fp.write("\n")
+            fp.write("{:<18s}".format('---------------'))
+            nf = len(data.filter_names)
+            for i in range(nf):
+                fp.write("{:<18s}".format('---------------'))
+            fp.write("\n")
+
+            # Write data
+            ntime = data.phot.shape[1]
+            ntrial = data.phot.shape[2]
+            for i in range(ntrial):
+                # Write separator between trials
+                if i != 0:
+                    fp.write("-"*((1+nf)*18-3)+"\n")
+                for j in range(ntime):
+                    fp.write("    {:11.5e}".format(data.time[j]))
+                    for k in range(nf):
+                        fp.write("       {:11.5e}".format(data.phot[k,j,i]))
+                    fp.write("\n")
+
+            # Close
+            fp.close()
+
+        elif fmt == 'bin' or fmt == 'binary':
+
+            ########################################################
+            # Binary mode
+            ########################################################
+
+            fp = open(model_name+'_integrated_phot.bin', 'wb')
+
+            # Write number of filters and filter names as ASCII
+            nf = len(data.filter_names)
+            fp.write(str(nf)+"\n")
+            for i in range(nf):
+                fp.write(data.filter_names[i] + " " + 
+                         data.filter_units[i] + "\n")
+
+            # Write data
+            ntime = data.phot.shape[1]
+            ntrial = data.phot.shape[2]
+            for i in range(ntrial):
+                for j in range(ntime):
+                    fp.write(data.time[j])
+                    # This next line is needed to put the data into a
+                    # contiguous block before writing
+                    tmp = np.copy(data.phot[:,j,i])
+                    fp.write(tmp)
+
+            # Close file
+            fp.close()
+
+        elif fmt == 'fits':
+
+            ########################################################
+            # FITS mode
+            ########################################################
+
+            # Figure out number of trials, and tile arrays
+            ntrial = data.actual_mass.shape[-1]
+            ntimes = len(data.time)
+            trial = np.transpose(np.tile(
+                np.arange(ntrial, dtype='int64'), (ntimes,1))).\
+                flatten()
+            times = np.tile(data.time, ntrial)
+            nf = len(data.filter_names)
+
+            # Convert data to FITS columns
+            cols = []
+            cols.append(fits.Column(name="Trial", format="1K",
+                                    unit="", array=trial))
+            cols.append(fits.Column(name="Time", format="1D",
+                                    unit="yr", array=times))
+            for i in range(len(data.filter_names)):
+                cols.append(
+                    fits.Column(name=data.filter_names[i],
+                                unit=data.filter_units[i],
+                                format="1D",
+                                array=np.transpose(data.phot[i,:,:]).
+                                flatten()))
+            fitscols = fits.ColDefs(cols)
+
+            # Create the binary table HDU
+            tbhdu = fits.BinTableHDU.from_columns(fitscols)
+
+            # Create dummy primary HDU
+            prihdu = fits.PrimaryHDU()
+
+            # Create HDU list and write to file
+            hdulist = fits.HDUList([prihdu, tbhdu])
+            hdulist.writeto(model_name+'_integrated_phot.fits',
+                            clobber=True)
