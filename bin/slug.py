@@ -24,13 +24,13 @@ import sys
 import threading
 import warnings
 try:
-    from slugPy import *    # If slugPy is already in our path
+    from slugpy import *    # If slugpy is already in our path
 except ImportError:
     # If import failed, try to find slugPy in $SLUG_DIR
     if 'SLUG_DIR' in os.environ:
         cur_path = copy.deepcopy(sys.path)
         sys.path.append(os.environ['SLUG_DIR'])
-        from slugPy import *
+        from slugpy import *
         sys.path = cur_path
     else:
         raise ImportError("No module named slugPy")
