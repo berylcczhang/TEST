@@ -1,10 +1,21 @@
-from slugPy import *
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import os.path as osp
 import copy
 from subprocess import call
+try:
+    from slugpy import *    # If slugpy is already in our path
+except ImportError:
+    # If import failed, try to find slugpy in $SLUG_DIR
+    if 'SLUG_DIR' in os.environ:
+        import sys
+        cur_path = copy.deepcopy(sys.path)
+        sys.path.append(os.environ['SLUG_DIR'])
+        from slugpy import *
+        sys.path = cur_path
+    else:
+        raise ImportError("No module named slugpy")
 
 # IMFs to use
 imfs = ['chabrier', 'kroupa', 'wk06']
@@ -46,14 +57,15 @@ for imf in imfs:
     fpout.close()
 
     # Run simulation
-    #call([osp.join('bin', 'slug'), 
-    #      osp.join('param', 'cluster_imf_compare.param')])
+    #call(['python ' + osp.join('bin', 'slug.py') + ' ' + 
+    #      osp.join('param', 'cluster_imf_compare.param')],
+    #     shell=True)
 
 # Read runs
-#tcomp = [1e6, 2e6, 4e6, 1e7]
-#data = []
-#for f in fnames:
-#    data.append(read_cluster('output/'+f))
+tcomp = [1e6, 2e6, 4e6, 1e7]
+data = []
+for f in fnames:
+    data.append(read_cluster('output/'+f))
 
 # Get mean and percentiles for spectra
 wl = data[0].wl
@@ -61,7 +73,7 @@ meanspec = np.zeros((len(fnames), len(tcomp), 1221))
 percspec = np.zeros((len(fnames), len(tcomp), 3, 1221))
 for i, d in enumerate(data):
     for j, t in enumerate(tcomp):
-        spec = d.spec[where(d.time == t),:].reshape(1000, 1221)
+        spec = d.spec[np.where(d.time == t),:].reshape(1000, 1221)
         meanspec[i,j,:] = np.mean(spec, axis=0)
         percspec[i,j,:,:] = np.percentile(spec, (10, 50, 90), axis=0)
 
@@ -74,7 +86,7 @@ meanphot = np.zeros((len(fnames), len(tcomp), len(data[0].filter_names)))
 percphot = np.zeros((len(fnames), len(tcomp), 3, len(data[0].filter_names)))
 for i, d in enumerate(data):
     for j, t in enumerate(tcomp):
-        phot = d.phot[where(d.time == t),:]. \
+        phot = d.phot[np.where(d.time == t),:]. \
                reshape(1000, len(data[0].filter_names))
         meanphot[i,j,:] = np.mean(phot, axis=0)
         percphot[i,j,:,:] = np.percentile(phot, (10, 50, 90), axis=0)
@@ -88,7 +100,7 @@ photbin = np.zeros((len(fnames), len(tcomp), nbin, len(data[0].filter_names)))
 photbinedge = np.zeros((len(fnames), len(tcomp), nbin+1, len(data[0].filter_names)))
 for i, d in enumerate(data):
     for j, t in enumerate(tcomp):
-        phot = np.copy(d.phot[where(d.time == t),:]. \
+        phot = np.copy(d.phot[np.where(d.time == t),:]. \
                        reshape(1000, len(data[0].filter_names)))
         photsort[i,j,:,:] = np.sort(phot, axis=0)
         units = copy.deepcopy(data[0].filter_units)
@@ -96,7 +108,7 @@ for i, d in enumerate(data):
                            data[0].filter_wl_eff, filter_last=True)
         for k in range(len(data[0].filter_names)):
             photbin[i,j,:,k], photbinedge[i,j,:,k] \
-                = numpy.histogram(np.log10(phot[:,k]), bins=nbin)
+                = np.histogram(np.log10(phot[:,k]), bins=nbin)
 
 
 # Plot spectra
