@@ -51,6 +51,9 @@ parser.add_argument('-nc', '--noconsolidate', action='store_true',
                     default=False, help="leave outputs in separate "
                     "files (default action: consolidate into a single "
                     "file)")
+parser.add_argument('-nl', '--nicelevel', default=0, type=int,
+                    help="nice level of the cloudy processes " +
+                    "(default: 0)")
 args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
@@ -244,6 +247,8 @@ while completed_trials < ntrials:
 
         # Start new process
         cmd = osp.join(cwd, 'slug') + " " + pfile_name
+        if args.nicelevel > 0:
+            cmd = "nice -n " + str(args.nicelevel) + " " + cmd
         proc_list[p] \
             = subprocess.Popen(cmd, bufsize=1, shell=True,
                                stdout=subprocess.PIPE, 
