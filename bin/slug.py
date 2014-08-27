@@ -26,14 +26,14 @@ import warnings
 try:
     from slugpy import *    # If slugpy is already in our path
 except ImportError:
-    # If import failed, try to find slugPy in $SLUG_DIR
+    # If import failed, try to find slugpy in $SLUG_DIR
     if 'SLUG_DIR' in os.environ:
         cur_path = copy.deepcopy(sys.path)
         sys.path.append(os.environ['SLUG_DIR'])
         from slugpy import *
         sys.path = cur_path
     else:
-        raise ImportError("No module named slugPy")
+        raise ImportError("No module named slugpy")
 
 
 # Step 1: grab command line arguments and working directory
@@ -321,23 +321,35 @@ if args.noconsolidate == False:
     # then write back out
     if sim_type != 'cluster':
         data = []
+        nointegrated = False
         for f in out_names:
             if verbosity > 1:
                 print("Reading integrated data from "+f+"...")
-            data.append(read_integrated(f, fmt=output_mode,
-                                        nofilterdata=True))
-        combined_data = combine_integrated(data)
-        write_integrated(combined_data, combined_name, fmt=output_mode)
+            try:
+                data.append(read_integrated(f, fmt=output_mode,
+                                            nofilterdata=True))
+            except IOError:
+                nointegrated = True
+                break
+        if not nointegrated:
+            combined_data = combine_integrated(data)
+            write_integrated(combined_data, combined_name, fmt=output_mode)
 
     # Step 7c: cluster files; same as integrated files
     data = []
+    nocluster = False
     for f in out_names:
         if verbosity > 1:
             print("Reading cluster data from "+f+"...")
-        data.append(read_cluster(f, fmt=output_mode,
-                                 nofilterdata=True))
-    combined_data = combine_cluster(data)
-    write_cluster(combined_data, combined_name, fmt=output_mode)
+        try:
+            data.append(read_cluster(f, fmt=output_mode,
+                                     nofilterdata=True))
+        except IOError:
+            nocluster = True
+            break
+    if not nocluster:
+        combined_data = combine_cluster(data)
+        write_cluster(combined_data, combined_name, fmt=output_mode)
 
 else:
 
