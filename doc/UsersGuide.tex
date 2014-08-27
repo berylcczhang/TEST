@@ -68,7 +68,9 @@ M_{\rm AB} = -2.5 \log_{10} \left[\frac{\langle L_\nu\rangle_R}{4\pi\left(10\,\m
 where $\langle L_\nu\rangle_R$ is in units of erg s$^{-1}$ Hz$^{-1}$.
 \item The ST magnitude, defined by
 \begin{equation}
-M_{\rm ST} = -2.5 \log_{10} \left[\frac{\langle L_\nu\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 21.1,
+%MF: changed the following line
+%M_{\rm ST} = -2.5 \log_{10} \left[\frac{\langle L_\nu\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 21.1,
+M_{\rm ST} = -2.5 \log_{10} \left[\frac{\langle L_\lambda\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 21.1,
 \end{equation}
 where $\langle L_\lambda\rangle_R$ is in units of erg s$^{-1}$ \AA$^{-1}$.
 \item The Vega magnitude, defined by
@@ -196,7 +198,9 @@ These control the operation of the simulation.
 \begin{itemize}
 \item \verb=sim_type= (\verb=galaxy=): set to \verb=galaxy= to run a ``galaxy" simulation (a composite stellar population), or to \verb=cluster= to run a ``cluster" simulation (a simple stellar population)
 \item \verb=n_trials= (\verb=1=): number of trials to run
-\item \verb=log_time= (\verb=0=): set to 0 for logarithmic time step, 1 for linear time steps
+%MF: changed the following line
+%\item \verb=log_time= (\verb=0=): set to 0 for logarithmic time step, 1 for linear time steps
+\item \verb=log_time= (\verb=0=): set to 1 for logarithmic time step, 0 for linear time steps
 \item \verb=time_step=: size of the time step. If \verb=log_time= is set to 0, this is in yr. If \verb=log_time= is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time).
 \item \verb=start_time=: first output time. This may be omitted if \verb=log_time= is set to 0, in which case it defaults to a value equal to \verb=time_step=.
 \item \verb=end_time=: last output time, in yr. Note that not all the tracks include entries going out to times $>1$ Gyr, and the results will become inaccurate if the final time is larger than the tracks allow.
@@ -471,7 +475,7 @@ to the PDF file. This line can appear anywhere except inside a \verb=segment= sp
 \item \texttt{stop\_50}: same as \texttt{stop\_nearest}, but keep or exclude the final object with 50\% probability regardless of which choice gets closer to the target.
 \item \texttt{number}: draw exactly $N = M_{\rm target}/\langle M\rangle$ object, where $\langle M\rangle$ is the expectation value for a single draw.
 \item \texttt{poisson}: draw exactly $N$ objects, where the value of $N$ is chosen from a Poisson distribution with expectation value $\langle N \rangle = M_{\rm target}/\langle M\rangle$
-\item \texttt{sorted\_sampling}: this method was introduced by Weidner \& Kroupa (2006, MNRAS. 365, 1333), and proceeds in steps. one first draws exactly $N= M_{\rm target}/\langle M\rangle$ as in the \texttt{number} method. If the resulting total mass $M_{\rm pop}$ is less than $M_{\rm target}$, the procedure is repeated recursively using a target mass $M_{\rm target} - M_{\rm pop}$ until $M_{\rm pop} > M_{\rm target}$. Finally, one sorts the resulting stellar list from least to most massive, and then keeps or removes the final, most massive star using a \texttt{stop\_nearest} policy. 
+\item \texttt{sorted\_sampling}: this method was introduced by Weidner \& Kroupa (2006, MNRAS. 365, 1333), and proceeds in steps. One first draws exactly $N= M_{\rm target}/\langle M\rangle$ as in the \texttt{number} method. If the resulting total mass $M_{\rm pop}$ is less than $M_{\rm target}$, the procedure is repeated recursively using a target mass $M_{\rm target} - M_{\rm pop}$ until $M_{\rm pop} > M_{\rm target}$. Finally, one sorts the resulting stellar list from least to most massive, and then keeps or removes the final, most massive star using a \texttt{stop\_nearest} policy. 
 \end{itemize}
 See the file \texttt{lib/imf/wk06.imf} for an example of a PDF file with a \verb=method= specification.
 
@@ -670,5 +674,84 @@ Filter data is stored in two ASCII text files, \verb=FILTER_LIST= and \verb=allf
 The \verb=allfilters.dat= file contains the filter responses. The file contains a series of entires for different filters, each delineated by a header line that begins with \verb=#=. The order in which filters appear in this file matches that in which they appear in the \verb=FILTER_LIST=. After the header line, are a series of lines each containing two numbers. The first is the wavelength in {\AA}ngstrom, and the second is the filter response function at that wavelength.
 
 \section{\slugpy\ -- The Python Helper Library}
+
+
+
+\section{Test Problems}
+\label{sec:test}
+
+This section describes a set of problems that can be used to test and explore the different 
+capabilities of \slug. \slug\ ships a set of problems \verb=problemname= that are specified by a 
+parameter file \verb=param/problemname.param=. Users can reproduce the output of the test 
+problems with the following command: \verb=./bin/slug param/problemname.param=.
+For each problem, a script for analysis is distributed in \verb=test/problemname.py=. 
+Specific information for each test problem are given below. 
+
+\subsection{Problem {\tt example}: basic galaxy simulation}
+
+This problem illustrates the basic usage of \slug\ in \verb=galaxy= mode. 
+
+[simple run]
+
+\subsection{Problem {\tt example\_cluster}: basic cluster simulation}
+
+This problem illustrates the basic usage of \slug\ in \verb=cluster= mode. 
+
+[simple run]
+
+\subsection{Problem {\tt sfrstochastic}: stochastic star formation}
+
+This problem highlights the relevance of stochastic star formation in \slug, in
+comparison to deterministic codes.
+
+[show the scatter in a quantity relative to the 'mean' deterministic value]
+
+\subsection{Problem {\tt sfhsampling}: realizations of SFH}
+
+This problem illustrates the conceptual difference between an input SFH and the effective 
+realizations produced by \slug, in comparison to deterministic codes.
+
+[show how a input SFH gets implemented in different realizations]
+
+\subsection{Problem {\tt constsampl}: importance of constrained sampling}
+
+This problem illustrates the effects of constrained sampling on the realization of an 
+input IMF.
+
+[change cluster mass to show how max mass changes]
+
+\subsection{Problem {\tt imfchoice}: different IMF implementations}
+
+This problem highlights the flexible choice of IMF implementations in \slug.
+
+[basic run with different imfs]
+
+\subsection{Problem {\tt cmfchoice}: different CMF implementations}
+
+This problem highlights the flexible choice of CMF implementations in \slug.
+
+[basic run with different cmfs]
+
+\subsection{Problem {\tt cldisrupt}: cluster disruption at work}
+
+This problem highlights the flexible choice of CLF implementations in \slug.
+
+[basic run with different clfs]
+
+
+\subsection{Problem {\tt clfraction}: cluster fraction at work}
+
+This problem highlights the flexible choice of cluster fraction during \slug\ simulations.
+
+[basic run with different fc]
+
+
+\subsection{Problem {\tt spectra}: full spectra}
+
+This problem highlights the power of the new feature offered in \slug\ v2: the ability to produce 
+full spectra. 
+
+[basic run with full spectra out: shows stochasticity applied to spectra]
+
 
 \end{document}
