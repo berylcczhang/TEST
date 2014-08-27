@@ -2,6 +2,10 @@
 # An example parameter file for SLUG2 #
 #######################################
 
+# This parameter file provides an example setup for simulating a
+# single star cluster of fixed mass, within which the stars are taken
+# to be coeval.
+#
 # Notes:
 #
 # 1. Meanings of all parameters are explained below.
@@ -13,18 +17,16 @@
 #
 # 3. The parameters need not be specified in any particular order.
 #
-# 4. When manually specifying paths, the path can either be an
-#    absolute one, or can be relative to the current working
-#    directory.
+# 4. When manually specifying paths, the path can be given as either
+#    an asbolute path or a relative one. Relative paths are assumed
+#    to be relative to the directory specified by the $SLUG_DIR
+#    environment variable if it is set. If not set, they are assumed
+#    to be relative to the current working directory.
 #
-# 5. Some defaults give paths relative to $SLUG_DIR. This is an
-#    environment variable. If it is not set, then SLUG_DIR will be
-#    taken to be the current working directory.
-#
-# 6. Although the defaults paths listed below have been written out
+# 5. Although the defaults paths listed below have been written out
 #    using UNIX-style path separators (/), the actual code
 #    implementation will set the default using whatever path separator
-#    is appropraite for the file system on which the code was
+#    is appropriate for the file system on which the code was
 #    compiled. Thus the defaults should work on systems that use
 #    windows-style path separators (\) as well.
 
@@ -39,7 +41,7 @@
 model_name        SLUG_CLUSTER_EXAMPLE
 
 # Directory into which to write output
-# Default: $SLUG_DIR/output
+# Default: output
 #out_dir           output
 
 # Level of verbosity while running; allowed values:
@@ -84,13 +86,14 @@ time_step    	  1.0e6
 end_time	  1.0e7
 
 # Star formation rate in case where sim_type = galaxy, in Msun/yr; can
-# be omitted, and will be ignored, if sim_type = cluster. A negative
-# value indicates that the star formation history should be read from
-# a star formation history file.
+# be omitted, and will be ignored, if sim_type = cluster. If, instead
+# of a numerical value, the string "sfh" appears, this indicates that
+# the star formation history should be read from a star formation
+# history file.
 #sfr    		  0.001
 
 # Star formation history file. Can be omitted, and will be ignored, if
-# sim_type = cluster or sfr > 0.
+# sim_type = cluster or if sfr is not equal to the special string sfh.
 #sfh              sfh.txt
 
 # Mass of cluster for cluster mode simulation, in Msun; can be omitted,
@@ -146,7 +149,7 @@ out_cluster_spec  1
 # -- ascii
 # -- fits
 # Default: ascii
-output_mode      binary
+output_mode      fits
 
 
 #####################################################################
@@ -155,24 +158,24 @@ output_mode      binary
 #####################################################################
 
 # IMF (initial mass function) file name
-# Default: $SLUG_DIR/lib/imf/chabrier.imf (Chabrier 2005 IMF)
+# Default: lib/imf/chabrier.imf (Chabrier 2005 IMF)
 imf   	          lib/imf/chabrier.imf
 
 # CMF (cluster mass function) file name; ignored if sim_type = cluster
-# Default: $SLUG_DIR/lib/cmf/slug_default.cmf (dN/dM ~ M^-2)
+# Default: lib/cmf/slug_default.cmf (dN/dM ~ M^-2)
 #cmf               lib/cmf/slug_default.cmf
 
 # CLF (cluster lifetime function) file name
-# Default: $SLUG_DIR/lib/clf/slug_default.clf (dN/dt ~ t^-1.9)
+# Default: lib/clf/slug_default.clf (dN/dt ~ t^-1.9)
 clf               lib/clf/nodisrupt.clf
 
 # Stellar tracks to use
-# Default: $SLUG_DIR/lib/tracks/Z0140v00.txt (Geneva 2013, solar
+# Default: lib/tracks/Z0140v00.txt (Geneva 2013, solar
 # metallicity no rotation)
 tracks	  	  lib/tracks/Z0140v00.txt
 
 # Directory containing stellar atmosphere models
-# Default: $SLUG_DIR/lib/atmospheres
+# Default: lib/atmospheres
 atmospheres 	  lib/atmospheres
 
 # Spectral synthesis mode, describing which models to use for stellar
@@ -227,11 +230,16 @@ specsyn_mode	   sb99
 
 # Photometric filters to be used; can be comma- or
 # whitespace-separated. For a list of available filters, see the file
-# lib/filters/FILTER_LIST.
+# lib/filters/FILTER_LIST. In addition to those filters, the following
+# special values are always available:
+# -- QH0 : H ionizing photon luminosity, in phot/s
+# -- QHe0 : He ionizing photon luminosity, in phot/s
+# -- QHe1 : He+ ionizing photon luminosity, in phot/s
+# -- Lbol : bolometric luminosity, in L_sun
 phot_bands         QH0, LBOL, GALEX_FUV, WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F555W, WFC3_UVIS_F814W
 
 # Directory containing photometric filter data
-# Default: $SLUG_DIR/lib/filters
+# Default: lib/filters
 filters	           lib/filters
 
 # Photometry mode; allowed values are
