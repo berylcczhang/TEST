@@ -118,6 +118,7 @@ slug_parmParser::setDefaults() {
   startTime = timeStep = endTime = -constants::big;
   sfr = cluster_mass = -constants::big;
   constantSFR = false;
+  save_seed = read_seed = false;
 
   // Physical model parameters
   path lib_path("lib");
@@ -236,6 +237,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	atmos_dir = tokens[1];
       } else if (!(tokens[0].compare("filters"))) {
 	filter_dir = tokens[1];
+      } else if (!(tokens[0].compare("rng_seed_file"))) {
+	seed_file = tokens[1];
       } else if (!(tokens[0].compare("min_stoch_mass"))) {
 	min_stoch_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("model_name"))) {
@@ -264,6 +267,10 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	writeIntegratedPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_spec"))) {
 	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("save_rng_seed"))) {
+	save_seed = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("read_rng_seed"))) {
+	read_seed = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("output_mode"))) {
 	to_lower(tokens[1]);
 	if (tokens[1].compare("ascii") == 0)
@@ -641,5 +648,8 @@ bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
 double slug_parmParser::get_cluster_mass() const { return cluster_mass; }
 const vector<string>& slug_parmParser::get_photBand() const
 { return photBand; }
-unsigned int slug_parmParser::get_rng_offset()
-  const { return rng_offset; }
+unsigned int slug_parmParser::get_rng_offset() const
+{ return rng_offset; }
+bool slug_parmParser::save_rng_seed() const { return save_seed; }
+bool slug_parmParser::read_rng_seed() const { return read_seed; }
+const string slug_parmParser::rng_seed_file() const { return seed_file; }

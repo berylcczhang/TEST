@@ -31,6 +31,7 @@ namespace std
 #include <cmath>
 #include <ctime>
 #include <iomanip>
+#include <sstream>
 #include "fcntl.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -56,22 +57,54 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       t *= pow(10.0, pp.get_timeStep());
   }
 
-  // Get a random see from /dev/urandom if possible
+  // Either read a random seed from a file, or generate one
   unsigned int seed;
-  int fn;
-  bool rand_set = false;
-  fn = open("/dev/urandom", O_RDONLY);
-  if (fn != -1) {
-    rand_set = (read(fn, &seed, 4) == 4); // True if read succeeds
-    close(fn);
+  if (pp.read_rng_seed()) {
+
+    // Read seed from file
+    ifstream seed_file;
+    string seed_file_name = pp.rng_seed_file();
+    if (pp.get_rng_offset() != 0) {
+      stringstream ss;
+      ss << seed_file_name << "_off_" << pp.get_rng_offset();
+      seed_file_name = ss.str();
+    }
+    seed_file.open(seed_file_name.c_str(), ios::in);
+    seed_file >> seed;
+    seed_file.close();
+
+  } else {
+
+    // Get a random see from /dev/urandom if possible
+    int fn;
+    bool rand_set = false;
+    fn = open("/dev/urandom", O_RDONLY);
+    if (fn != -1) {
+      rand_set = (read(fn, &seed, 4) == 4); // True if read succeeds
+      close(fn);
+    }
+    if (!rand_set) {
+      // Failed to set from /dev/urandom; seed using system time instead.
+      seed = static_cast<unsigned int>(time(0));
+    }
+    // Add offset if requested; this probably isn't necessary if
+    // /dev/urandom worked, but do it anyway in case it failed.
+    seed += pp.get_rng_offset();
+
+    // Save the rng seed if requested
+    if (pp.save_rng_seed()) {
+      ofstream seed_file;
+      string seed_file_name = pp.rng_seed_file();
+      if (pp.get_rng_offset() != 0) {
+	stringstream ss;
+	ss << seed_file_name << "_off_" << pp.get_rng_offset();
+	seed_file_name = ss.str();
+      }
+      seed_file.open(seed_file_name.c_str(), ios::out);
+      seed_file << seed;
+      seed_file.close();
+    }
   }
-  if (!rand_set) {
-    // Failed to set from /dev/urandom; seed using system time instead.
-    seed = static_cast<unsigned int>(time(0));
-  }
-  // Add offset if running; this probably isn't necessary if
-  // /dev/urandom worked, but do it anyway in case it failed.
-  seed += pp.get_rng_offset();
 
   // Set up the random number generator
   rng = new rng_type(seed);

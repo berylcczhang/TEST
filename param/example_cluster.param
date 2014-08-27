@@ -100,6 +100,23 @@ end_time	  1.0e7
 # and will be ignored, if sim_type = galaxy
 cluster_mass      5e2
 
+# Read a random number generator seed from a file?
+# -- 0 (no, seed is automatically generated)
+# -- 1 (yes)
+# Default: 0
+#read_rng_seed     0
+
+# Save the random number generator seed?
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 0
+#save_rng_seed     0
+
+# Name of random number generator seed file for
+# reading/writing. Important exception: unlike every other file, this
+# is NOT assumed to be relative to the SLUG_DIR directory if given as
+# a relative path.
+#rng_seed_file     seed.txt
 
 #############################################
 # Parameters controlling simulation outputs #
