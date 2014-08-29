@@ -4,7 +4,6 @@ sphere static
 cosmic rays background
 stop temperature 1000
 stop efrac 0.1
-save last hydrogen conditions "OUTPUT_FILENAME.hcon"
 save last continuum "OUTPUT_FILENAME.con"
 save last lines, array "OUTPUT_FILENAME.lines"
 save line labels "OUTPUT_FILENAME.line_labels"
