@@ -69,6 +69,7 @@ def slug_open(filename, output_dir=None, fmt=None):
         fname = osp.join(outdir, filename+'.txt')
         try:
             fp = open(fname, 'r')
+            fmt = 'ascii'
         except IOError:
             fp = None
     else:
@@ -80,6 +81,7 @@ def slug_open(filename, output_dir=None, fmt=None):
             fname = osp.join(outdir, filename+'.bin')
             try:
                 fp = open(fname, 'rb')
+                fmt = 'bin'
             except IOError:
                 pass
 
@@ -89,6 +91,7 @@ def slug_open(filename, output_dir=None, fmt=None):
             fname = osp.join(outdir, filename+'.fits')
             try:
                 fp = fits.open(fname)
+                fmt = 'fits'
             except IOError:
                 pass
 
@@ -103,6 +106,7 @@ def slug_open(filename, output_dir=None, fmt=None):
                              filename+'.txt')
             try:
                 fp = open(fname, 'r')
+                fmt = 'ascii'
             except IOError:
                 pass
         if (fmt is None or fmt == 'bin' or fmt == 'binary') \
@@ -111,6 +115,7 @@ def slug_open(filename, output_dir=None, fmt=None):
                              filename+'.bin')
             try:
                 fp = open(fname, 'rb')
+                fmt = 'bin'
             except IOError:
                 pass
         if (fmt is None or fmt == 'fits') and fp is None \
@@ -119,6 +124,7 @@ def slug_open(filename, output_dir=None, fmt=None):
                              filename+'.fits')
             try:
                 fp = fits.open(fname)
+                fmt = 'fits'
             except IOError:
                 pass
 

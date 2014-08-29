@@ -1,16 +1,17 @@
 """
-Function to read a SLUG2 integrated_spec file.
+Function to read a SLUG2 integrated_cloudyspec file.
 """
 
 import numpy as np
 from collections import namedtuple
 import struct
-from slug_open import slug_open
+from ..slug_open import slug_open
 
-def read_integrated_spec(model_name, output_dir=None, fmt=None, 
-                         verbose=False, read_info=None):
+def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
+                               nofilterdata=False, photsystem=None,
+                               verbose=False, read_info=None):
     """
-    Function to read a SLUG2 integrated_spec file.
+    Function to read a SLUG2 integrated_cloudyspec file.
 
     Parameters
     ----------
@@ -42,19 +43,30 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
        times at which spectra are output, in yr
     wl : array
        wavelength, in Angstrom
-    spec : array, shape (N_wavelength, N_times, N_trials)
-       specific luminosity at each wavelength and each time for each
-       trial, in erg/s/A
+    inc : array, shape (N_wavelength, N_times, N_trials)
+       specific luminosity of the stellar radiation field at each
+       wavelength and each time for each trial, in erg/s/A
+    trans : array, shape (N_wavelength, N_times, N_trials)
+       specific luminosity of the stellar radiation field after it has
+       passed through the HII region, at each wavelength and each time
+       for each trial, in erg/s/A
+    emit : array, shape (N_wavelength, N_times, N_trials)
+       specific luminosity of the radiation field emitted by the HII
+       region, at each wavelength and each time for each trial, in
+       erg/s/A
+    trans_emit : array, shape (N_wavelength, N_times, N_trials)
+       the sum of emitted and transmitted; this is what would be seen
+       by an observer looking at both the star cluster and its nebula
     """
-    
-    # Open file
-    fp, fname = slug_open(model_name+"_integrated_spec", 
+
+        # Open file
+    fp, fname = slug_open(model_name+"_integrated_cloudyspec", 
                           output_dir=output_dir,
                           fmt=fmt)
 
     # Print status
     if verbose:
-        print("Reading integrated spectra for model "+model_name)
+        print("Reading integrated cloudy spectra for model "+model_name)
     if read_info is not None:
         read_info['fname'] = fname
 
@@ -68,7 +80,10 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # Prepare output holders
         wavelength = []
         time = []
-        L_lambda = []
+        inc = []
+        trans = []
+        emit = []
+        trans_emit = []
 
         # Burn the three header lines
         fp.readline()
@@ -85,12 +100,18 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
             data = entry.split()
             time.append(float(data[0]))
             wavelength.append(float(data[1]))
-            L_lambda.append(float(data[2]))
+            inc.append(float(data[2]))
+            trans.append(float(data[3]))
+            emit.append(float(data[4]))
+            trans_emit.append(float(data[5]))
 
         # Convert to arrays
         time = np.array(time)
         wavelength = np.array(wavelength)
-        L_lambda = np.array(L_lambda)
+        inc = np.array(inc)
+        trans = np.array(trans)
+        emit = np.array(emit)
+        trans_emit = np.array(trans_emit)
 
         # Figure out the number of wavelengths by finding the first
         # time a wavelength repeats. Truncate the wavelength and time
@@ -111,8 +132,11 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         ntime = len(time)/ntrial
         time = time[:ntime]
 
-        # Reshape the L_lambda array
-        L_lambda = np.transpose(np.reshape(L_lambda, (ntrial, ntime, nl)))
+        # Reshape the spectral array
+        inc = np.transpose(np.reshape(inc, (ntrial, ntime, nl)))
+        trans = np.transpose(np.reshape(trans, (ntrial, ntime, nl)))
+        emit = np.transpose(np.reshape(emit, (ntrial, ntime, nl)))
+        trans_emit = np.transpose(np.reshape(trans_emit, (ntrial, ntime, nl)))
 
     elif fname.endswith('.bin'):
 
@@ -129,22 +153,28 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # Now read the rest of the file and convert to doubles
         data = fp.read()
         ndata = len(data)/struct.calcsize('d')
-        nchunk = ndata/(nl+1)
+        nchunk = ndata/(4*nl+1)
         data_list = struct.unpack('d'*ndata, data)
 
         # Figure out how many times we have, and get unique times
-        time = np.array(data_list[::nl+1])
+        time = np.array(data_list[::4*nl+1])
         ntrial = 1 + np.sum(time[1:] <= time[:-1])
         ntime = len(time)/ntrial
         time = time[:ntime]
 
-        # Put L_lambda into array
-        L_lambda = np.zeros((nl, ntime, ntrial))
+        # Put spectra into arrays
+        inc = np.zeros((nl, ntime, ntrial))
+        trans = np.zeros((nl, ntime, ntrial))
+        emit = np.zeros((nl, ntime, ntrial))
+        trans_emit = np.zeros((nl, ntime, ntrial))
         ptr = 0
         for i in range(ntrial):
             for j in range(ntime):
-                L_lambda[:,j,i] \
-                    = np.array(data_list[ptr*(nl+1)+1:(ptr+1)*(nl+1)])
+                recptr = ptr*(4*nl+1)+1
+                inc[:,j,i] = np.array(data_list[recptr:recptr+nl])
+                trans[:,j,i] = np.array(data_list[recptr+nl:recptr+2*nl])
+                emit[:,j,i] = np.array(data_list[recptr+2*nl:recptr+3*nl])
+                trans_emit[:,j,i] = np.array(data_list[recptr+3*nl:recptr+4*nl])
                 ptr = ptr+1
 
     elif fname.endswith('.fits'):
@@ -158,24 +188,39 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         wavelength = wavelength.flatten()
         trial = fp[2].data.field('Trial')
         time = fp[2].data.field('Time')
-        L_lambda = fp[2].data.field('L_lambda')
+        inc = fp[2].data.field('Incident_spectrum')
+        trans = fp[2].data.field('Transmitted_spectrum')
+        emit = fp[2].data.field('Emitted_spectrum')
+        trans_emit = fp[2].data.field('Transmitted_plus_emitted_spectrum')
 
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
         time = time[:ntime]
-        L_lambda \
+        inc \
             = np.transpose(
-                np.reshape(L_lambda, (ntrial, ntime, len(wavelength))))
+                np.reshape(inc, (ntrial, ntime, len(wavelength))))
+        trans \
+            = np.transpose(
+                np.reshape(trans, (ntrial, ntime, len(wavelength))))
+        emit \
+            = np.transpose(
+                np.reshape(emit, (ntrial, ntime, len(wavelength))))
+        trans_emit \
+            = np.transpose(
+                np.reshape(trans_emit, (ntrial, ntime, len(wavelength))))
 
-    # Close file
+    # Close the file
     fp.close()
 
     # Build the namedtuple to hold output
-    out_type = namedtuple('integrated_spec',
-                          ['time', 'wl', 'spec'])
-    out = out_type(time, wavelength, L_lambda)
+    out_type = namedtuple('integrated_cloudyspec',
+                          ['time', 'cloudy_wl', 'cloudy_inc', 
+                           'cloudy_trans', 'cloudy_emit', 
+                           'cloudy_trans_emit'])
+    out = out_type(time, wavelength, inc, trans, emit, trans_emit)
 
     # Return
     return out
     
+

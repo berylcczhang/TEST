@@ -8,7 +8,7 @@ import struct
 from slug_open import slug_open
 
 def read_integrated_prop(model_name, output_dir=None, fmt=None, 
-                         verbose=False):
+                         verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_prop file.
 
@@ -30,6 +30,10 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
        files.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'fname' and
+       'format', giving the name of the file read and the format it
+       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
     -------
@@ -61,9 +65,11 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
                           output_dir=output_dir,
                           fmt=fmt)
 
-    # Print status
+    # Print status and record
     if verbose:
         print("Reading integrated properties for model "+model_name)
+    if read_info is not None:
+        read_info['fname'] = fname
 
     # Prepare lists to hold data
     time = []
@@ -79,6 +85,8 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     if fname.endswith('.txt'):
 
         # ASCII mode
+        if read_info is not None:
+            read_info['format'] = 'ascii'
 
         # Burn the three header lines
         fp.readline()
@@ -102,6 +110,8 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     elif fname.endswith('.bin'):
 
         # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
 
         # Suck file into memory
         data = fp.read()
@@ -123,6 +133,8 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     elif fname.endswith('fits'):
 
         # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
         time = fp[1].data.field('Time')
         target_mass = fp[1].data.field('TargetMass')
         actual_mass = fp[1].data.field('ActualMass')

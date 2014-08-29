@@ -1,7 +1,8 @@
 __version__ = '0.1'
 __all__ = ["combine_cluster", "combine_integrated", "photometry_convert", 
            "read_integrated", "read_integrated_phot", 
-           "read_integrated_prop", "read_integrated_spec", "read_cluster",
+           "read_integrated_prop", "read_integrated_spec", 
+           "read_cluster",
            "read_cluster_phot", "read_cluster_prop", 
            "read_cluster_spec", "read_filter", "slug_open",
            "write_cluster", "write_integrated"]
