@@ -8,7 +8,6 @@ import struct
 from ..slug_open import slug_open
 
 def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
-                               nofilterdata=False, photsystem=None,
                                verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_cloudyspec file.
@@ -59,10 +58,12 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
        by an observer looking at both the star cluster and its nebula
     """
 
-        # Open file
+    # Open file
     fp, fname = slug_open(model_name+"_integrated_cloudyspec", 
                           output_dir=output_dir,
                           fmt=fmt)
+    if read_info is not None:
+        read_info['fname'] = fname
 
     # Print status
     if verbose:
