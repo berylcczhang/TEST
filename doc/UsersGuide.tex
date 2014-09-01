@@ -681,17 +681,24 @@ The \verb=allfilters.dat= file contains the filter responses. The file contains 
 \label{sec:test}
 
 This section describes a set of problems that can be used to test and explore the different 
-capabilities of \slug. \slug\ ships a set of problems \verb=problemname= that are specified by a 
-parameter file \verb=param/problemname.param=. Users can reproduce the output of the test 
-problems with the following command: \verb=./bin/slug param/problemname.param=.
-For each problem, a script for analysis is distributed in \verb=test/problemname.py=. 
-Specific information for each test problem are given below. 
+capabilities of \slug. \slug\ ships a set of problems \verb=problemname= that are specified by 
+a parameter file \verb=param/problemname.param=. 
+Problems that require multiple simulations are described instead by multiple 
+paramater files, each with unique ID XX:  \verb=param/problemnameXX.param=.
+Users can reproduce the output of the test problems with the provided executable scripts 
+\verb=test/run_problemname.sh=. For each problem, a script for analysis is distributed 
+in \verb=test/problemname.py=. Details for each test problem are given below. 
+Throughtout this section, it is assumed that the \verb=SLUG_DIR= has been properly set. 
 
 \subsection{Problem {\tt example}: basic galaxy simulation}
 
-This problem illustrates the basic usage of \slug\ in \verb=galaxy= mode. 
+This problem illustrates the basic usage of \slug\ in \verb=galaxy= mode
+by running 48 realizations of a galaxy with constant SFR$=0.001~\rm M_\odot/yr$,
+up to a maximum time of $2\times 10^8$ yr. Multiple outputs are enabled. 
+By issuing the command \verb=test/run_example.sh= the output files \verb=SLUG_EXAMPLE*= are 
+generated. 
+ 
 
-[simple run]
 
 \subsection{Problem {\tt example\_cluster}: basic cluster simulation}
 
