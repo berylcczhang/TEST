@@ -6,6 +6,7 @@ from collections import namedtuple
 from read_integrated_prop import read_integrated_prop
 from read_integrated_phot import read_integrated_phot
 from read_integrated_spec import read_integrated_spec
+from cloudy.read_integrated_cloudylines import read_integrated_cloudylines
 from cloudy.read_integrated_cloudyspec import read_integrated_cloudyspec
 
 def read_integrated(model_name, output_dir=None, fmt=None,
@@ -47,9 +48,11 @@ def read_integrated(model_name, output_dir=None, fmt=None,
        If True, verbose output is printed as code runs
     read_info : dict
        On return, this dict will contain the keys 'prop_name',
-       'phot_name', 'spec_name', 'cloudyspec_name', and 'format',
-       giving the names of the files read and the format they were in;
-       'format' will be one of 'ascii', 'binary', or 'fits'
+       'phot_name', 'spec_name', 'cloudyspec_name', 'cloudylines_name'
+       and 'format', giving the names of the files read and the format
+       they were in; 'format' will be one of 'ascii', 'binary', or
+       'fits'. If one of the files is not present, the corresponding
+       _name key will be omitted from the dict.
 
     Returns
     -------
@@ -149,6 +152,16 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     except IOError:
         cloudyspec = None
 
+    # Read cloudy lines
+    try:
+        cloudylines \
+            = read_integrated_cloudylines(model_name, output_dir, fmt,
+                                          verbose, read_info)
+        if read_info is not None:
+            read_info['cloudylines_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudylines = None
 
     # Build the output
     out_fields = ['time']
@@ -160,6 +173,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
         out_data = [phot.time]
     elif cloudyspec is not None:
         out_data = [cloudyspec.time]
+    elif cloudylines is not None:
+        out_data = [cloudylines.time]
     else:
         raise IOError("unable to open any integrated files for run " +
                       model_name)
@@ -175,6 +190,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     if cloudyspec is not None:
         out_fields = out_fields + list(cloudyspec._fields[1:])
         out_data = out_data + list(cloudyspec[1:])
+    if cloudylines is not None:
+        out_fields = out_fields + list(cloudylines._fields[1:])
+        out_data = out_data + list(cloudylines[1:])
     out_type = namedtuple('integrated_data', out_fields)
     out = out_type._make(out_data)
 

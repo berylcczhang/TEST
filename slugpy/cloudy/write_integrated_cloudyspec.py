@@ -83,7 +83,6 @@ def write_integrated_cloudyspec(data, model_name, fmt):
     elif fmt == 'bin' or fmt == 'binary':
 
         # Binary mode
-
         fp = open(model_name+'_integrated_cloudyspec.bin', 'wb')
 
         # Write out wavelength data

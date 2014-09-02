@@ -1,13 +1,13 @@
 """
-Function to read a SLUG2 integrated_cloudyspec file.
+Function to read a SLUG2 integrated_cloudylines file.
 """
 
-import numpy as np
 from collections import namedtuple
+import numpy as np
 import struct
 from ..slug_open import slug_open
 
-def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
+def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
                                verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_cloudyspec file.
@@ -39,27 +39,18 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
     -------
     A namedtuple containing the following fields:
     time : array
-       times at which spectra are output, in yr
-    cloudy_wl : array
-       wavelength, in Angstrom
-    cloudy_inc : array, shape (N_wavelength, N_times, N_trials)
-       specific luminosity of the stellar radiation field at each
-       wavelength and each time for each trial, in erg/s/A
-    cloudy_trans : array, shape (N_wavelength, N_times, N_trials)
-       specific luminosity of the stellar radiation field after it has
-       passed through the HII region, at each wavelength and each time
-       for each trial, in erg/s/A
-    cloudy_emit : array, shape (N_wavelength, N_times, N_trials)
-       specific luminosity of the radiation field emitted by the HII
-       region, at each wavelength and each time for each trial, in
-       erg/s/A
-    cloudy_trans_emit : array, shape (N_wavelength, N_times, N_trials)
-       the sum of emitted and transmitted; this is what would be seen
-       by an observer looking at both the star cluster and its nebula
+       times at which line luminosities are output, in yr
+    cloudy_linelabel : array, dtype='S4', shape (N_lines)
+       labels for the lines, following cloudy's 4 character line label
+       notation
+    cloudy_linewl : array, shape (N_lines)
+       rest wavelength for each line, in Angstrom
+    cloudy_linelum : array, shape (N_lines, N_times, N_trials)
+       luminosity of each line at each time for each trial, in erg/s
     """
 
     # Open file
-    fp, fname = slug_open(model_name+"_integrated_cloudyspec", 
+    fp, fname = slug_open(model_name+"_integrated_cloudylines", 
                           output_dir=output_dir,
                           fmt=fmt)
     if read_info is not None:
@@ -67,7 +58,8 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
 
     # Print status
     if verbose:
-        print("Reading integrated cloudy spectra for model "+model_name)
+        print("Reading integrated cloudy line luminosities for "
+              "model "+model_name)
     if read_info is not None:
         read_info['fname'] = fname
 
@@ -81,10 +73,8 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         # Prepare output holders
         wavelength = []
         time = []
-        inc = []
-        trans = []
-        emit = []
-        trans_emit = []
+        label = []
+        lum = []
 
         # Burn the three header lines
         fp.readline()
@@ -98,28 +88,24 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
                 continue       # Skip separator lines
 
             # Split up the line
-            data = entry.split()
-            time.append(float(data[0]))
-            wavelength.append(float(data[1]))
-            inc.append(float(data[2]))
-            trans.append(float(data[3]))
-            emit.append(float(data[4]))
-            trans_emit.append(float(data[5]))
+            time.append(float(entry[0:11]))
+            label.append(entry[21:25])
+            wavelength.append(float(entry[28:39]))
+            lum.append(float(entry[42:53]))
 
         # Convert to arrays
         time = np.array(time)
+        label = np.array(label)
         wavelength = np.array(wavelength)
-        inc = np.array(inc)
-        trans = np.array(trans)
-        emit = np.array(emit)
-        trans_emit = np.array(trans_emit)
+        lum = np.array(lum)
 
         # Figure out the number of wavelengths by finding the first
-        # time a wavelength repeats. Truncate the wavelength and time
-        # arrays appropriately.
+        # time a wavelength repeats. Truncate the wavelength, label,
+        # and time arrays appropriately.
         repeats = np.where(wavelength == wavelength[0])[0]
         if len(repeats > 1):
             nl = repeats[1]
+            label = label[:nl]
             wavelength = wavelength[:nl]
             time = time[::nl]
         else:
@@ -133,11 +119,8 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         ntime = len(time)/ntrial
         time = time[:ntime]
 
-        # Reshape the spectral arrays
-        inc = np.transpose(np.reshape(inc, (ntrial, ntime, nl)))
-        trans = np.transpose(np.reshape(trans, (ntrial, ntime, nl)))
-        emit = np.transpose(np.reshape(emit, (ntrial, ntime, nl)))
-        trans_emit = np.transpose(np.reshape(trans_emit, (ntrial, ntime, nl)))
+        # Reshape the line luminosity array
+        lum = np.transpose(np.reshape(lum, (ntrial, ntime, nl)))
 
     elif fname.endswith('.bin'):
 
@@ -145,37 +128,37 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'binary'
 
-        # First read number of wavelengths and wavelength table
-        data = fp.read(struct.calcsize('L'))
-        nl, = struct.unpack('L', data)
+        # Read number of lines
+        nl = int(fp.readline())
+
+        # Read line labels
+        label = []
+        for i in range(nl):
+            label.append(fp.readline().split()[0])
+
+        # Read the line wavelengths
         data = fp.read(struct.calcsize('d')*nl)
         wavelength = np.array(struct.unpack('d'*nl, data))
 
         # Now read the rest of the file and convert to doubles
         data = fp.read()
         ndata = len(data)/struct.calcsize('d')
-        nchunk = ndata/(4*nl+1)
+        nchunk = ndata/(nl+1)
         data_list = struct.unpack('d'*ndata, data)
 
         # Figure out how many times we have, and get unique times
-        time = np.array(data_list[::4*nl+1])
+        time = np.array(data_list[::nl+1])
         ntrial = 1 + np.sum(time[1:] <= time[:-1])
         ntime = len(time)/ntrial
         time = time[:ntime]
 
-        # Put spectra into arrays
-        inc = np.zeros((nl, ntime, ntrial))
-        trans = np.zeros((nl, ntime, ntrial))
-        emit = np.zeros((nl, ntime, ntrial))
-        trans_emit = np.zeros((nl, ntime, ntrial))
+        # Put line luminosity into array
+        lum = np.zeros((nl, ntime, ntrial))
         ptr = 0
         for i in range(ntrial):
             for j in range(ntime):
-                recptr = ptr*(4*nl+1)+1
-                inc[:,j,i] = np.array(data_list[recptr:recptr+nl])
-                trans[:,j,i] = np.array(data_list[recptr+nl:recptr+2*nl])
-                emit[:,j,i] = np.array(data_list[recptr+2*nl:recptr+3*nl])
-                trans_emit[:,j,i] = np.array(data_list[recptr+3*nl:recptr+4*nl])
+                recptr = ptr*(nl+1)+1
+                lum[:,j,i] = np.array(data_list[recptr:recptr+nl])
                 ptr = ptr+1
 
     elif fname.endswith('.fits'):
@@ -184,44 +167,31 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'fits'
 
-        # Read data
+        # Get the line labels and wavelengths from the first HDU
+        label = fp[1].data.field('Line_Label')
         wavelength = fp[1].data.field('Wavelength')
-        wavelength = wavelength.flatten()
+
+        # Get time, trial, line luminosities from the second HDU
         trial = fp[2].data.field('Trial')
         time = fp[2].data.field('Time')
-        inc = fp[2].data.field('Incident_spectrum')
-        trans = fp[2].data.field('Transmitted_spectrum')
-        emit = fp[2].data.field('Emitted_spectrum')
-        trans_emit = fp[2].data.field('Transmitted_plus_emitted_spectrum')
+        lum = fp[2].data.field('Line_Luminosity')
 
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
         time = time[:ntime]
-        inc \
+        lum \
             = np.transpose(
-                np.reshape(inc, (ntrial, ntime, len(wavelength))))
-        trans \
-            = np.transpose(
-                np.reshape(trans, (ntrial, ntime, len(wavelength))))
-        emit \
-            = np.transpose(
-                np.reshape(emit, (ntrial, ntime, len(wavelength))))
-        trans_emit \
-            = np.transpose(
-                np.reshape(trans_emit, (ntrial, ntime, len(wavelength))))
+                np.reshape(lum, (ntrial, ntime, len(wavelength))))
 
     # Close the file
     fp.close()
 
     # Build the namedtuple to hold output
-    out_type = namedtuple('integrated_cloudyspec',
-                          ['time', 'cloudy_wl', 'cloudy_inc', 
-                           'cloudy_trans', 'cloudy_emit', 
-                           'cloudy_trans_emit'])
-    out = out_type(time, wavelength, inc, trans, emit, trans_emit)
+    out_type = namedtuple('integrated_cloudyline',
+                          ['time', 'cloudy_linelabel', 'cloudy_linewl', 
+                           'cloudy_linelum'])
+    out = out_type(time, label, wavelength, lum)
 
     # Return
     return out
-    
-

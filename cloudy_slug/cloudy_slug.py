@@ -145,7 +145,7 @@ compute_lines = False
 for line in tempfile:
     if 'save' in line and 'continuum' in line:
         compute_continuum = True
-    elif 'save' in line and 'lines' in line:
+    elif 'save' in line and 'lines' and 'list' in line:
         compute_lines = True
 if compute_continuum:
     cloudywl = []
@@ -162,7 +162,19 @@ if compute_continuum:
             for i in range(args.start_spec, end_spec):
                 cloudywl[j].append(None)
                 cloudyspec[j].append(None)
-cloudylines = None
+if compute_lines:
+    linelist = None
+    linewl = None
+    linelum = []
+    # Create dummy holders for cloudy lines
+    if args.clustermode:
+        for i in range(end_spec-args.start_spec):
+            linelum.append(None)
+    else:
+        for j in range(data.spec.shape[-2]):
+            linelum.append([])
+            for i in range(args.start_spec, end_spec):
+                linelum[j].append(None)
 
 
 # Step 5: queue up the SLUG runs
@@ -180,10 +192,17 @@ def do_cloudy_run(thread_num, q):
 
     # Declare global variables
     global compute_continuum
+    global compute_lines
     global data
     if compute_continuum:
         global cloudywl
         global cloudyspec
+        global continuum_file
+    if compute_lines:
+        global linelist
+        global linewl
+        global linelum
+        global lines_file
 
     # Terminate when queue empties
     while not q.empty():
@@ -232,10 +251,12 @@ def do_cloudy_run(thread_num, q):
                         lquote = newline.find('"')
                         rquote = newline.rfind('"')
                         continuum_file = newline[lquote+1:rquote]
-                    elif 'lines' in newline:
+                    elif 'line list' in newline or 'linelist' in newline:
                         lquote = newline.find('"')
-                        rquote = newline.rfind('"')
-                        lines_file = newline[lquote+1:rquote]
+                        rquote = newline[lquote+1:].find('"')
+                        lines_file = newline[lquote+1:lquote+1+rquote]
+                        print newline
+                        print lines_file
                 else:
                     fpout.write(line+'\n')
 
@@ -306,6 +327,18 @@ def do_cloudy_run(thread_num, q):
                 cloudywl[time][trial] = cdata.wl
                 cloudyspec[time][trial] = cdata.L_lambda
 
+        # Read and store the cloudy line luminosity output
+        if lines_file is not None:
+            ldata = read_cloudy_linelist(lines_file)
+            if linelist is None:
+                linelist = ldata.label
+            if linewl is None:
+                linewl = ldata.wl
+            if args.clustermode:
+                linelum[cluster_num] = ldata.lum
+            else:
+                linelum[time][trial] = ldata.lum
+
         # Clean up the cloudy output unless requested to keep it
         if not args.save:
             if continuum_file is not None:
@@ -374,7 +407,17 @@ if compute_continuum:
 
     # Final step: make a namedtuple to hold the data
     if args.clustermode:
-        pass
+        cloudyspec_type = namedtuple('cluster_cloudyspec',
+                                     ['id', 'trial', 'time', 
+                                      'cloudy_wl', 'cloudy_inc', 
+                                      'cloudy_trans', 'cloudy_emit', 
+                                      'cloudy_trans_emit'])
+        cloudyspec_data \
+            = cloudyspec_type(data.id, data.trial, data.time, cloudywl_max,
+                              np.transpose(cloudyspec[:,:,0,:], (2,0,1)),
+                              np.transpose(cloudyspec[:,:,1,:], (2,0,1)),
+                              np.transpose(cloudyspec[:,:,2,:], (2,0,1)),
+                              np.transpose(cloudyspec[:,:,3,:], (2,0,1)))
     else:
         cloudyspec_type = namedtuple('integrated_cloudyspec',
                                      ['time', 'cloudy_wl', 'cloudy_inc', 
@@ -387,8 +430,8 @@ if compute_continuum:
                               np.transpose(cloudyspec[:,:,2,:], (2,0,1)),
                               np.transpose(cloudyspec[:,:,3,:], (2,0,1)))
 
-# Step 8: write the cloudy output to a file
-if compute_continuum or compute_lines:
+# Step 9: write the cloudy spectra to file
+if compute_continuum:
     if args.clustermode:
         write_cluster_cloudyspec(cloudyspec_data, args.slug_model_name,
                                  file_info['format'])
@@ -397,3 +440,26 @@ if compute_continuum or compute_lines:
                                     args.slug_model_name,
                                     file_info['format'])
 
+# Step 10: write the line data to file
+if compute_lines:
+    linelum = np.array(linelum)
+    if args.clustermode:
+        cloudylines_type = namedtuple('cluster_cloudylines',
+                                      ['id', 'trial', 'time', 
+                                       'cloudy_linelist',
+                                       'cloudy_linewl',
+                                       'cloudy_linelum'])
+        cloudylines = cloudylines_type(data.id, data.trial, data.time, 
+                                       linelist, linewl, linelum)
+        write_cluster_cloudylines(cloudylines, args.slug_model_name,
+                                  file_info['format'])
+    else:
+        cloudylines_type = namedtuple('cluster_cloudylines',
+                                      ['time', 'cloudy_linelabel',
+                                       'cloudy_linewl',
+                                       'cloudy_linelum'])
+        cloudylines = cloudylines_type(data.time, linelist,
+                                       linewl, 
+                                       np.transpose(linelum, (2,0,1)))
+        write_integrated_cloudylines(cloudylines, args.slug_model_name,
+                                     file_info['format'])

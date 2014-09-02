@@ -7,6 +7,8 @@ single output file.
 """
 
 import numpy as np
+from cloudy import write_integrated_cloudylines
+from cloudy import write_integrated_cloudyspec
 try:
     import astropy.io.fits as fits
 except ImportError:
@@ -377,8 +379,8 @@ def write_integrated(data, model_name, fmt):
             ########################################################
 
             # Figure out number of trials, and tile arrays
-            ntrial = data.actual_mass.shape[-1]
-            ntimes = len(data.time)
+            ntimes = data.phot.shape[1]
+            ntrial = data.phot.shape[2]
             trial = np.transpose(np.tile(
                 np.arange(ntrial, dtype='int64'), (ntimes,1))).\
                 flatten()
@@ -410,3 +412,11 @@ def write_integrated(data, model_name, fmt):
             hdulist = fits.HDUList([prihdu, tbhdu])
             hdulist.writeto(model_name+'_integrated_phot.fits',
                             clobber=True)
+
+    ################################################################
+    # Write cloudy files if we have the data for them
+    ################################################################
+    if 'cloudy_inc' in data._fields:
+        write_integrated_cloudyspec(data, model_name, fmt=fmt)
+    if 'cloudy_linelum' in data._fields:
+        write_integrated_cloudylines(data, model_name, fmt=fmt)
