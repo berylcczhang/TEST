@@ -37,13 +37,13 @@ LDDEBFLAGS	= $(MACH_LDDEBFLAGS)
 
 # Include flags
 ifdef CXX_INCLUDE_PATH
-     INCFLAGS += -I $(CXX_INCLUDE_PATH)
+     INCFLAGS += -I$(CXX_INCLUDE_PATH)
 endif
 ifdef BOOST_HDR_PATH
-     INCFLAGS += -I $(BOOST_HDR_PATH)
+     INCFLAGS += -I$(BOOST_HDR_PATH)
 endif
 ifdef GSL_HDR_PATH
-     INCFLAGS += -I $(GSL_HDR_PATH)
+     INCFLAGS += -I$(GSL_HDR_PATH)
 endif
 
 # Link flags
@@ -51,13 +51,13 @@ LDLIBFLAGS      = -lgsl -lgslcblas -lboost_system$(MACH_BOOST_TAG) \
 	-lboost_filesystem$(MACH_BOOST_TAG) \
 	-lboost_regex$(MACH_BOOST_TAG)
 ifdef LD_LIBRARY_PATH
-     LDLIBFLAGS += -L $(LD_LIBRARY_PATH)
+     LDLIBFLAGS += -L$(LD_LIBRARY_PATH)
 endif
 ifdef BOOST_LIB_PATH
-     LDLIBFLAGS += -L $(BOOST_LIB_PATH)
+     LDLIBFLAGS += -L$(BOOST_LIB_PATH)
 endif
 ifdef GSL_LIB_PATH
-     LDLIBFLAGS += -L $(GSL_LIB_PATH)
+     LDLIBFLAGS += -L$(GSL_LIB_PATH)
 endif
 
 # Turn FITS on or off
@@ -91,7 +91,7 @@ debug: LDFLAGS += $(LDDEBFLAGS) $(LDLIBFLAGS)
 debug: $(EXENAME)
 
 $(EXENAME):	$(OBJECTS)
-	$(CXX) $(LDFLAGS) -o $(EXENAME) $^
+	$(CXX) $(LDFLAGS) -o $(EXENAME) $^ 
 
 compile:	$(OBJECTS)
 
