@@ -33,7 +33,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_tracks.H"
 #include <vector>
 #ifdef ENABLE_FITS
-#   include "fitsio.h"
+extern "C" {
+#include "fitsio.h"
+}
 #endif
 
 class slug_sim {

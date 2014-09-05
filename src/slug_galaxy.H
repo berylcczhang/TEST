@@ -35,7 +35,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <vector>
 #ifdef ENABLE_FITS
+extern "C" {
 #   include "fitsio.h"
+}
 #endif
 
 class slug_galaxy {
