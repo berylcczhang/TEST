@@ -34,7 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <fstream>
 #ifdef ENABLE_FITS
+extern "C" {
 #   include "fitsio.h"
+}
 #endif
 
 class slug_cluster {

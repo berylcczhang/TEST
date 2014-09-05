@@ -91,7 +91,7 @@ debug: LDFLAGS += $(LDDEBFLAGS) $(LDLIBFLAGS)
 debug: $(EXENAME)
 
 $(EXENAME):	$(OBJECTS)
-	$(CXX) $(LDFLAGS) -o $(EXENAME) $^ 
+	$(CXX) -o $(EXENAME) $^ $(LDFLAGS)
 
 compile:	$(OBJECTS)
 
