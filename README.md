@@ -9,11 +9,13 @@ This repository contains SLUG v2. SLUG v1 is available at <https://sites.google.
 
 * The ability to predict full spectra as well as photometry
 * A vastly larger array of photometric filters, with the ability to add more without needing to alter the source code; there is also wide range of choices for photometric system
+* Fully automated parallelism for computations in multi-processor environments
 * The ability to handle a very wide range of functional forms for the initial mass function, cluster mass function, cluster lifetime function, and star formation history
 * Many sampling methods available for mass-limited sampling
 * The ability to simulate simple stellar populations with finite masses, as well as full star formation histories
 * More accurate numerical methods for interpolation and integration
 * A cleaner, easier-to-use control file structure
+* Greater flexibility in output and output formatting (ASCII, binary, or FITS)
 * Python helper routines for parsing output (replacing the older IDL routines used by SLUG v1)
 
 SLUG v1 will no longer be maintained, so all users are encouraged to migrate to SLUG v2 as soon as possible.
@@ -22,7 +24,7 @@ SLUG v1 will no longer be maintained, so all users are encouraged to migrate to 
 
 The SLUG repository contains several subdirectories.
 
-* *bin*: this contains the slug source code when it is compiled
+* *bin*: this contains the slug source code when it is compiled, as well as the paralle wrapper python script
 * *doc*: this contains documentation for the code
 * *lib*: this contains the data files required by the code
     - *lib/atmospheres*: contains stellar atmosphere models
@@ -33,7 +35,7 @@ The SLUG repository contains several subdirectories.
     - *lib/tracks*: contains stellar evolution tracks
 * *output*: this is the default location for writing output
 * *param*: this is the default location for parameter files that control slug simulations
-* *slugPy*: this contains the python module slugPy, which includes routines for parsing simulation outputs
+* *slugpy*: this contains the python module slugpy, which includes routines for parsing and manipulating simulation outputs
 * *src*: this contains the main source code for SLUG
 * *test*: this contains python test scripts
     - *test/aux*: contains data files for the test scripts
@@ -42,13 +44,21 @@ The SLUG repository contains several subdirectories.
 
 #### Dependencies ####
 
-* The SLUG source code requires the [GNU scientific library](http://www.gnu.org/software/gsl/)
-* The SLUG source code requires the [BOOST c++ libraries](http://www.boost.org/)
-* The Python parsing routines require numPy and sciPy
+The core SLUG c++ code requires:
+
+* The [GNU scientific library](http://www.gnu.org/software/gsl/)
+* The [BOOST c++ libraries](http://www.boost.org/)
+* The [cfitsio libary](http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html) (optional, only required for FITS output capability)
+
+The slugPy python routines require:
+
+* [numpy](http://www.numpy.org/)
+* [scipy](http://www.scipy.org/)
+* [astropy](http://www.astropy.org/) (optional, only required for FITS handling capability)
 
 #### Compiling ####
 
-SLUG comes with a Makefile in the main directory, and it shoudl be possible to build the code in most environment simply by typing "make". Compliation requires that the GSL and BOOST header files be included in the include path, and that their shared object libraries be included in the link path.
+SLUG comes with a Makefile in the main directory, and it shoudl be possible to build the code in most environments simply by typing "make". Compliation requires that the GSL and BOOST header files be included in the include path, and that their shared object libraries be included in the link path. If FITS capability is desired, the cfitsio library and header must be included as well.
 
 #### Running ####
 
@@ -56,10 +66,10 @@ Once the code is compiled, running a SLUG simulation is fairly straightforward. 
 
 1. Set the environment variable SLUG_DIR to the directory where you have installed SLUG. This is not strictly necessary, but it avoids the need for you to specify manually the locations of all the data files the SLUG needs.
 2. Create a parameter file, or edit one of the provided examples, to set up the desired simulation. The files *param/example.param* and *param/example_cluster.param* can provide useful starting points for creating your own parameter files.
-3. Run the simulation with the command line `./bin/slug param/mysimulation.param`.
+3. Run the simulation with the command line `./bin/slug param/mysimulation.param`. Alternately, you can run the simulation in parallel by doing `python ./bin/slug.py param/mysimulation.param`.
 4. Once the simulation is done, you can examine the output by eye (if you chose to write the output in ASCII format) or, more likely, read the data using the provided python routines. The two basic output reading routines can be invoked by doing the following in a python program of the command prompt of an interactive session:
 
-`from slugPy import *`
+`from slugpy import *`
 
 `int_data = read_integrated('RUN_NAME')`
 

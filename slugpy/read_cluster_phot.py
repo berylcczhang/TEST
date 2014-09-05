@@ -9,9 +9,9 @@ from photometry_convert import photometry_convert
 from read_filter import read_filter
 from slug_open import slug_open
 
-def read_cluster_phot(model_name, output_dir=None, asciionly=False,
-                      binonly=False, nofilterdata=False, 
-                      photsystem=None, verbose=False):
+def read_cluster_phot(model_name, output_dir=None, fmt=None, 
+                      nofilterdata=False, photsystem=None,
+                      verbose=False):
     """
     Function to read a SLUG2 integrated_phot file.
 
@@ -23,10 +23,14 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
        The directory where the SLUG2 output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
     nofilterdata : bool
        If True, the routine does not attempt to read the filter
        response data from the standard location
@@ -79,8 +83,9 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
     """
 
     # Open file
-    fp = slug_open(model_name+"_cluster_phot", output_dir=output_dir,
-                   asciionly=asciionly, binonly=binonly)
+    fp, fname = slug_open(model_name+"_cluster_phot", 
+                          output_dir=output_dir,
+                          fmt=fmt)
 
     # Print status
     if verbose:
@@ -92,8 +97,8 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
     phot = []
     trial = []
 
-    # Read ASCII or binary
-    if fp.mode == 'r':
+    # Read data
+    if fname.endswith('.txt'):
 
         # ASCII mode
 
@@ -125,7 +130,7 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
             phot.append(linesplit[2:])
             trial.append(trialptr)
 
-    else:
+    elif fname.endswith('.bin'):
 
         # Binary mode
 
@@ -175,6 +180,30 @@ def read_cluster_phot(model_name, output_dir=None, asciionly=False,
             phot.extend(
                 [data_list[(nfilter+1)*i+1:(nfilter+1)*(i+1)] 
                  for i in range(ncluster)])
+
+    elif fname.endswith('.fits'):
+
+        # FITS mode
+
+        # Get cluster ID, trial, time
+        cluster_id = fp[1].data.field('UniqueID')
+        trial = fp[1].data.field('Trial')
+        time = fp[1].data.field('Time')
+
+        # Get filter names and units
+        filters = []
+        units = []
+        i = 4
+        while 'TTYPE'+str(i) in fp[1].header.keys():
+            filters.append(fp[1].header['TTYPE'+str(i)])
+            units.append(fp[1].header['TUNIT'+str(i)])
+            i = i+1
+
+        # Get photometric data
+        phot = np.zeros((len(time), len(filters)))
+        for i in range(len(filters)):
+            phot[:,i] = fp[1].data.field(filters[i])
+
 
     # Close file
     fp.close()

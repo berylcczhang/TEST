@@ -9,9 +9,9 @@ from photometry_convert import photometry_convert
 from read_filter import read_filter
 from slug_open import slug_open
 
-def read_integrated_phot(model_name, output_dir=None, asciionly=False,
-                         binonly=False, nofilterdata=False, 
-                         photsystem=None, verbose=False):
+def read_integrated_phot(model_name, output_dir=None, fmt=None,
+                         nofilterdata=False, photsystem=None,
+                         verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_phot file.
 
@@ -23,10 +23,14 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
        The directory where the SLUG2 output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
     nofilterdata : bool
        If True, the routine does not attempt to read the filter
        response data from the standard location
@@ -42,6 +46,10 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
        central wavelength of the photometric filters is available.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'fname' and
+       'format', giving the name of the file read and the format it
+       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
     -------
@@ -75,17 +83,22 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
     """
 
     # Open file
-    fp = slug_open(model_name+"_integrated_phot", output_dir=output_dir,
-                   asciionly=asciionly, binonly=binonly)
+    fp, fname = slug_open(model_name+"_integrated_phot", 
+                          output_dir=output_dir,
+                          fmt=fmt)
 
     # Print status
     if verbose:
         print("Reading integrated photometry for model "+model_name)
+    if read_info is not None:
+        read_info['fname'] = fname
 
-    # Read ASCII or binary
-    if fp.mode == 'r':
+    # Read data
+    if fname.endswith('.txt'):
 
         # ASCII mode
+        if read_info is not None:
+            read_info['format'] = 'ascii'
 
         # Read the list of filters
         line = fp.readline()
@@ -120,9 +133,11 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
         time = np.array(time)
         phot = np.array(phot)
 
-    else:
+    elif fname.endswith('.bin'):
 
         # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
 
         # Read number of filters
         nfilter = int(fp.readline())
@@ -149,6 +164,31 @@ def read_integrated_phot(model_name, output_dir=None, asciionly=False,
         phot = np.zeros((ntime, nfilter))
         for i in range(ntime):
             phot[i,:] = data_list[(nfilter+1)*i+1:(nfilter+1)*(i+1)]
+
+    elif fname.endswith('.fits'):
+
+        # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
+
+        # Get trial, time
+        trial = fp[1].data.field('Trial')
+        time = fp[1].data.field('Time')
+
+        # Get filter names and units
+        filters = []
+        units = []
+        i = 3
+        while 'TTYPE'+str(i) in fp[1].header.keys():
+            filters.append(fp[1].header['TTYPE'+str(i)])
+            units.append(fp[1].header['TUNIT'+str(i)])
+            i = i+1
+
+        # Get photometric data
+        nfilter = len(filters)
+        phot = np.zeros((len(time), nfilter))
+        for i in range(len(filters)):
+            phot[:,i] = fp[1].data.field(filters[i])
 
     # Close file
     fp.close()

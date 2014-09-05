@@ -33,6 +33,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_tracks.H"
 #include <iostream>
 #include <fstream>
+#ifdef ENABLE_FITS
+#   include "fitsio.h"
+#endif
 
 class slug_cluster {
 
@@ -119,6 +122,14 @@ public:
 		      const bool cluster_only = false);
   void write_photometry(std::ofstream& outfile, const outputMode out_mode,
 			const bool cluster_only = false);
+
+#ifdef ENABLE_FITS
+  // These are identical to the previous three routines, but they
+  // write to a FITS file instead of an ofstream
+  void write_prop(fitsfile *out_fits, int trial);
+  void write_spectrum(fitsfile *out_fits, int trial);
+  void write_photometry(fitsfile *out_fits, int trial);
+#endif
 
 private:
 

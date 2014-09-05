@@ -1,0 +1,9 @@
+title Cloudy computation on a SLUG output spectrum
+abundances HII region
+sphere static
+cosmic rays background
+stop temperature 1000
+stop efrac 0.1
+save last continuum "OUTPUT_FILENAME.con"
+save last lines, array "OUTPUT_FILENAME.lines"
+save line labels "OUTPUT_FILENAME.line_labels"

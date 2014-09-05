@@ -7,8 +7,8 @@ from collections import namedtuple
 import struct
 from slug_open import slug_open
 
-def read_cluster_prop(model_name, output_dir=None, asciionly=False,
-                      binonly=False, verbose=False):
+def read_cluster_prop(model_name, output_dir=None, fmt=None, 
+                      verbose=False):
     """
     Function to read a SLUG2 integrated_prop file.
 
@@ -17,13 +17,17 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
     model_name : string
        The name of the model to be read
     output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
+       The directory where the output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
     verbose : bool
        If True, verbose output is printed as code runs
 
@@ -53,8 +57,9 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
     """
 
     # Open file
-    fp = slug_open(model_name+"_cluster_prop", output_dir=output_dir,
-                   asciionly=asciionly, binonly=binonly)
+    fp, fname = slug_open(model_name+"_cluster_prop",
+                          output_dir=output_dir,
+                          fmt=fmt)
 
     # Print status
     if verbose:
@@ -72,8 +77,8 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
     num_star = []
     max_star_mass = []
 
-    # Read ASCII or binary
-    if fp.mode == 'r':
+    # Read data
+    if fname.endswith('.txt'):
 
         # ASCII mode
 
@@ -101,7 +106,7 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
             num_star.append(long(data[7]))
             max_star_mass.append(float(data[8]))
 
-    else:
+    elif fname.endswith('.bin'):
 
         # Binary mode
 
@@ -143,6 +148,20 @@ def read_cluster_prop(model_name, output_dir=None, asciionly=False,
             live_mass.extend(data_list[5::8])
             num_star.extend(data_list[6::8])
             max_star_mass.extend(data_list[7::8])
+
+    elif fname.endswith('.fits'):
+
+        # FITS mode
+        cluster_id = fp[1].data.field('UniqueID')
+        trial = fp[1].data.field('Trial')
+        time = fp[1].data.field('Time')
+        form_time = fp[1].data.field('FormTime')
+        lifetime = fp[1].data.field('Lifetime')
+        target_mass = fp[1].data.field('TargetMass')
+        actual_mass = fp[1].data.field('BirthMass')
+        live_mass = fp[1].data.field('LiveMass')
+        num_star = fp[1].data.field('NumStar')
+        max_star_mass = fp[1].data.field('MaxStarMass')
 
     # Close file
     fp.close()

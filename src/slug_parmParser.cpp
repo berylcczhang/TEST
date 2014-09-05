@@ -113,10 +113,12 @@ slug_parmParser::setDefaults() {
   // Control flow parameters
   run_galaxy_sim = true;
   nTrials = 1;
+  rng_offset = 0;
   logTime = false;
   startTime = timeStep = endTime = -constants::big;
   sfr = cluster_mass = -constants::big;
   constantSFR = false;
+  save_seed = read_seed = false;
 
   // Physical model parameters
   path lib_path("lib");
@@ -212,9 +214,13 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       } else if (!(tokens[0].compare("log_time"))) {
 	logTime = (lexical_cast<double>(tokens[1]) == 1);
       } else if (!(tokens[0].compare("sfr"))) {
-	sfr = lexical_cast<double>(tokens[1]);
-	if (sfr <= 0) constantSFR = false;
-	else constantSFR = true;
+	to_lower(tokens[1]);
+	if (tokens[1].compare("sfh") == 0)
+	  constantSFR = false;
+	else {
+	  sfr = lexical_cast<double>(tokens[1]);
+	  constantSFR = true;
+	}
       } else if (!(tokens[0].compare("cluster_mass"))) {
 	cluster_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("sfh"))) {
@@ -231,6 +237,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	atmos_dir = tokens[1];
       } else if (!(tokens[0].compare("filters"))) {
 	filter_dir = tokens[1];
+      } else if (!(tokens[0].compare("rng_seed_file"))) {
+	seed_file = tokens[1];
       } else if (!(tokens[0].compare("min_stoch_mass"))) {
 	min_stoch_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("model_name"))) {
@@ -245,6 +253,8 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	WR_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("clust_frac"))) {
 	fClust = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("rng_offset"))) {
+	rng_offset = lexical_cast<unsigned int>(tokens[1]);
       } else if (!(tokens[0].compare("out_cluster"))) {
 	writeClusterProp = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_phot"))) {
@@ -257,12 +267,20 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	writeIntegratedPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_spec"))) {
 	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("save_rng_seed"))) {
+	save_seed = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("read_rng_seed"))) {
+	read_seed = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("output_mode"))) {
 	to_lower(tokens[1]);
 	if (tokens[1].compare("ascii") == 0)
 	  out_mode = ASCII;
 	else if (tokens[1].compare("binary") == 0)
 	  out_mode = BINARY;
+#ifdef ENABLE_FITS
+	else if (tokens[1].compare("fits") == 0)
+	  out_mode = FITS;
+#endif
 	else {
 	  cerr << "slug error: unknown output_mode: " << endl
 	       << line << endl;
@@ -511,8 +529,9 @@ slug_parmParser::writeParams() const {
   paramFile << "time_step            " << timeStep << endl;
   paramFile << "end_time             " << endTime << endl;
   if (run_galaxy_sim) {
-    paramFile << "SFR                  " << sfr << endl;
-    if (sfh.length() > 0)
+    if (constantSFR)
+      paramFile << "SFR                  " << sfr << endl;
+    else
       paramFile << "SFH                  " << sfh << endl;
   }
   paramFile << "IMF                  " << imf << endl;
@@ -629,3 +648,8 @@ bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
 double slug_parmParser::get_cluster_mass() const { return cluster_mass; }
 const vector<string>& slug_parmParser::get_photBand() const
 { return photBand; }
+unsigned int slug_parmParser::get_rng_offset() const
+{ return rng_offset; }
+bool slug_parmParser::save_rng_seed() const { return save_seed; }
+bool slug_parmParser::read_rng_seed() const { return read_seed; }
+const string slug_parmParser::rng_seed_file() const { return seed_file; }

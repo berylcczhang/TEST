@@ -32,6 +32,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_PDF.H"
 #include "slug_tracks.H"
 #include <vector>
+#ifdef ENABLE_FITS
+#   include "fitsio.h"
+#endif
 
 class slug_sim {
 
@@ -72,6 +75,15 @@ private:
   std::ofstream cluster_spec_file; // Cluster spectra file
   std::ofstream int_phot_file;     // Integrated photometry file
   std::ofstream cluster_phot_file; // Cluster photometry file
+#ifdef ENABLE_FITS
+  // FITS file versions of the above
+  fitsfile *int_prop_fits;
+  fitsfile *cluster_prop_fits;
+  fitsfile *int_spec_fits;
+  fitsfile *cluster_spec_fits;
+  fitsfile *int_phot_fits;
+  fitsfile *cluster_phot_fits;
+#endif
 
   // Private data to be used in the simulations
   const slug_parmParser &pp;  // Parameter parser

@@ -34,6 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <fstream>
 #include <vector>
+#ifdef ENABLE_FITS
+#   include "fitsio.h"
+#endif
 
 class slug_galaxy {
 
@@ -82,6 +85,16 @@ public:
 			     const outputMode out_mode);
   void write_cluster_phot(std::ofstream& outfile,
 			  const outputMode out_mode);
+
+#ifdef ENABLE_FITS
+  // FITS output functions
+  void write_integrated_prop(fitsfile* int_prop_fits, int trial);
+  void write_cluster_prop(fitsfile* cluster_prop_fits, int trial);
+  void write_integrated_spec(fitsfile* int_spec_fits, int trial);
+  void write_cluster_spec(fitsfile* cluster_spec_fits, int trial);
+  void write_integrated_phot(fitsfile* int_phot_fits, int trial);
+  void write_cluster_phot(fitsfile* cluster_phot_fits, int trial);
+#endif
 
 private:
 

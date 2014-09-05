@@ -6,10 +6,12 @@ from collections import namedtuple
 from read_integrated_prop import read_integrated_prop
 from read_integrated_phot import read_integrated_phot
 from read_integrated_spec import read_integrated_spec
+from cloudy.read_integrated_cloudylines import read_integrated_cloudylines
+from cloudy.read_integrated_cloudyspec import read_integrated_cloudyspec
 
-def read_integrated(model_name, output_dir=None, asciionly=False,
-                    binonly=False, nofilterdata=False, 
-                    photsystem=None, verbose=False):
+def read_integrated(model_name, output_dir=None, fmt=None,
+                    nofilterdata=False, photsystem=None, 
+                    verbose=False, read_info=None):
     """
     Function to read all integrated data for a SLUG2 run.
 
@@ -21,10 +23,14 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
        The directory where the SLUG2 output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
     nofilterdata : bool
        If True, the routine does not attempt to read the filter
        response data from the standard location
@@ -40,6 +46,13 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
        central wavelength of the photometric filters is available.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'prop_name',
+       'phot_name', 'spec_name', 'cloudyspec_name', 'cloudylines_name'
+       and 'format', giving the names of the files read and the format
+       they were in; 'format' will be one of 'ascii', 'binary', or
+       'fits'. If one of the files is not present, the corresponding
+       _name key will be omitted from the dict.
 
     Returns
     -------
@@ -50,7 +63,7 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
        Times at which data are output
 
     (Only present if an integrated_prop file is found)
-    target_mass : array, shape
+    target_mass : array, shape (N_times)
        Target stellar mass at each time
     actual_mass : array, shape (N_times, N_trials)
        Actual mass of stars created up to each time in each trial
@@ -100,25 +113,55 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
 
     # Read properties
     try:
-        prop = read_integrated_prop(model_name, output_dir, asciionly,
-                                    binonly, verbose)
+        prop = read_integrated_prop(model_name, output_dir, fmt,
+                                    verbose, read_info)
+        if read_info is not None:
+            read_info['prop_name'] = read_info['fname']
+            del read_info['fname']
     except IOError:
         prop = None
 
     # Read spectra
     try:
-        spec = read_integrated_spec(model_name, output_dir, asciionly,
-                                    binonly, verbose)
+        spec = read_integrated_spec(model_name, output_dir, fmt,
+                                    verbose, read_info)
+        if read_info is not None:
+            read_info['spec_name'] = read_info['fname']
+            del read_info['fname']
     except IOError:
         spec = None
 
     # Read photometry
     try:
-        phot = read_integrated_phot(model_name, output_dir, asciionly,
-                                    binonly, nofilterdata, photsystem,
-                                    verbose)
+        phot = read_integrated_phot(model_name, output_dir, fmt, 
+                                    nofilterdata, photsystem, 
+                                    verbose, read_info)
+        if read_info is not None:
+            read_info['phot_name'] = read_info['fname']
+            del read_info['fname']
     except IOError:
         phot = None
+
+    # Read cloudy spectra
+    try:
+        cloudyspec = read_integrated_cloudyspec(model_name, output_dir, fmt,
+                                                verbose, read_info)
+        if read_info is not None:
+            read_info['cloudyspec_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudyspec = None
+
+    # Read cloudy lines
+    try:
+        cloudylines \
+            = read_integrated_cloudylines(model_name, output_dir, fmt,
+                                          verbose, read_info)
+        if read_info is not None:
+            read_info['cloudylines_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudylines = None
 
     # Build the output
     out_fields = ['time']
@@ -128,6 +171,10 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
         out_data = [spec.time]
     elif phot is not None:
         out_data = [phot.time]
+    elif cloudyspec is not None:
+        out_data = [cloudyspec.time]
+    elif cloudylines is not None:
+        out_data = [cloudylines.time]
     else:
         raise IOError("unable to open any integrated files for run " +
                       model_name)
@@ -140,6 +187,12 @@ def read_integrated(model_name, output_dir=None, asciionly=False,
     if phot is not None:
         out_fields = out_fields + list(phot._fields[1:])
         out_data = out_data + list(phot[1:])
+    if cloudyspec is not None:
+        out_fields = out_fields + list(cloudyspec._fields[1:])
+        out_data = out_data + list(cloudyspec[1:])
+    if cloudylines is not None:
+        out_fields = out_fields + list(cloudylines._fields[1:])
+        out_data = out_data + list(cloudylines[1:])
     out_type = namedtuple('integrated_data', out_fields)
     out = out_type._make(out_data)
 

@@ -37,7 +37,7 @@ slug_PDF_exponential(double sMin_, double sMax_, double sScale,
 // Destructor
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_exponential::~slug_PDF_exponential() {
-  delete expdist;
+  delete unidist;
 }
 
 
@@ -50,16 +50,15 @@ slug_PDF_exponential::initialize(const std::vector<double>& tokenVal) {
   // Save data read from tokens
   segScale = tokenVal[0];
 
-  // Build an exponential distribution object with the specified parameters
-  boost::exponential_distribution<> expdist1(1.0/segScale);
-  expdist = new 
-    variate_generator<rng_type&, 
-		      boost::exponential_distribution<> >(*rng, expdist1);
+  // Build a uniform distribution object with the specified parameters
+  uniform_01<> uni01;
+  unidist =
+    new variate_generator<rng_type&, uniform_01<> >(*rng, uni01);
 
   // Set norm, min and max val, expectation value
-  norm = 1.0/(segScale * 
-	      ((segMin + segScale)*exp(-segMin/segScale) -
-	       (segMax + segScale)*exp(-segMax/segScale)));
+  norm = 1.0/(segScale *
+	      (exp(-segMin/segScale) -
+	       exp(-segMax/segScale)));
   segMinVal = norm * exp(-segMin/segScale);
   segMaxVal = norm * exp(-segMax/segScale);
   expectVal = expectationVal(segMin, segMax);
@@ -82,8 +81,8 @@ double
 slug_PDF_exponential::expectationVal(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
-  return ( a1 + segScale + (b1-a1)*exp(a1/segScale) /
-	   (exp(-a1/segScale) + exp(b1/segScale)) );
+  return a1 + segScale + (a1-b1)*exp(a1/segScale) /
+    (exp(b1/segScale) - exp(a1/segScale));
 }
 
 
@@ -94,9 +93,7 @@ double
 slug_PDF_exponential::integral(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
-  return norm * segScale *
-    ((a1+segScale) * exp(-a1/segScale) - 
-     (b1+segScale)*exp(-b1/segScale));
+  return segScale * norm * (exp(-a1/segScale)-exp(-b1/segScale));
 }
 
 
@@ -108,11 +105,14 @@ double
 slug_PDF_exponential::draw(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
-  double val;
-  while (1) {
-    val = (*expdist)();
-    if ((val >= a1) && (val <= b1)) break;
-  }
+  double val, udev;
+
+  // Draw a uniform deviate
+  udev = (*unidist)();
+
+  // Transform to exponential distribution
+  val = -segScale * 
+    log(udev*exp(-b1/segScale) + (1.0-udev)*exp(-a1/segScale));
   return(val);
 }
 

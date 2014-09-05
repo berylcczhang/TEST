@@ -53,7 +53,11 @@ class slug_tracks;
 enum WRtype { NONE, WC, WN };
 
 // Enum for output modes
-enum outputMode { ASCII, BINARY };
+enum outputMode { ASCII, BINARY
+#ifdef ENABLE_FITS
+		  , FITS
+#endif
+};
 
 // Enum for spectral synthesis modes
 enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH, SB99 };

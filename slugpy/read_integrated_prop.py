@@ -7,8 +7,8 @@ from collections import namedtuple
 import struct
 from slug_open import slug_open
 
-def read_integrated_prop(model_name, output_dir=None, asciionly=False,
-                         binonly=False, verbose=False):
+def read_integrated_prop(model_name, output_dir=None, fmt=None, 
+                         verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_prop file.
 
@@ -20,12 +20,20 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
        The directory where the SLUG2 output is located; if set to None,
        the current directory is searched, followed by the SLUG_DIR
        directory if that environment variable is set
-    asciionly : bool
-       If True, only look for ASCII versions of outputs, ending in .txt
-    binonly : bool
-       If True, only look for binary versions of outputs, ending in .bin
+    fmt : string
+       Format for the file to be read. Allowed values are 'ascii',
+       'bin' or 'binary, and 'fits'. If one of these is set, the code
+       will only attempt to open ASCII-, binary-, or FITS-formatted
+       output, ending in .txt., .bin, or .fits, respectively. If set
+       to None, the code will try to open ASCII files first, then if
+       it fails try binary files, and if it fails again try FITS
+       files.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'fname' and
+       'format', giving the name of the file read and the format it
+       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
     -------
@@ -53,12 +61,15 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
     """
 
     # Open file
-    fp = slug_open(model_name+"_integrated_prop", output_dir=output_dir,
-                   asciionly=asciionly, binonly=binonly)
+    fp, fname = slug_open(model_name+"_integrated_prop", 
+                          output_dir=output_dir,
+                          fmt=fmt)
 
-    # Print status
+    # Print status and record
     if verbose:
         print("Reading integrated properties for model "+model_name)
+    if read_info is not None:
+        read_info['fname'] = fname
 
     # Prepare lists to hold data
     time = []
@@ -70,10 +81,12 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
     num_dis_clusters = []
     num_fld_stars = []
 
-    # Read ASCII or binary
-    if fp.mode == 'r':
+    # Read data
+    if fname.endswith('.txt'):
 
         # ASCII mode
+        if read_info is not None:
+            read_info['format'] = 'ascii'
 
         # Burn the three header lines
         fp.readline()
@@ -94,9 +107,11 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
             num_dis_clusters.append(int(data[6]))
             num_fld_stars.append(int(data[7]))
 
-    else:
+    elif fname.endswith('.bin'):
 
         # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
 
         # Suck file into memory
         data = fp.read()
@@ -114,6 +129,20 @@ def read_integrated_prop(model_name, output_dir=None, asciionly=False,
         num_clusters = data_list[5::8]
         num_dis_clusters = data_list[6::8]
         num_fld_stars = data_list[7::8]
+
+    elif fname.endswith('fits'):
+
+        # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
+        time = fp[1].data.field('Time')
+        target_mass = fp[1].data.field('TargetMass')
+        actual_mass = fp[1].data.field('ActualMass')
+        live_mass = fp[1].data.field('LiveMass')
+        cluster_mass = fp[1].data.field('ClusterMass')
+        num_clusters = fp[1].data.field('NumClusters')
+        num_dis_clusters = fp[1].data.field('NumDisClust')
+        num_fld_stars = fp[1].data.field('NumFldStar')
 
     # Close file
     fp.close()

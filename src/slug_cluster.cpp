@@ -329,6 +329,48 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
 
 
 ////////////////////////////////////////////////////////////////////////
+// Output physical properties in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_cluster::write_prop(fitsfile *out_fits, int trial) {
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(out_fits, &nrows, &fits_status);
+
+  // Write a new entry
+  fits_write_col(out_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id,
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 3, nrows+1, 1, 1, &curTime,
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 4, nrows+1, 1, 1, &formationTime,
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 5, nrows+1, 1, 1, &lifetime,
+		 &fits_status);
+  double tmass = targetMass; // Needed to avoid compiler complaint
+  fits_write_col(out_fits, TDOUBLE, 6, nrows+1, 1, 1, &tmass,
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 7, nrows+1, 1, 1, &birthMass,
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 8, nrows+1, 1, 1, &aliveMass,
+		 &fits_status);
+  vector<double>::size_type n = stars.size();
+  fits_write_col(out_fits, TULONG, 9, nrows+1, 1, 1, &n,
+		 &fits_status);
+  double mstar;
+  if (n>0) mstar = stars.back();
+  else mstar = 0.0;
+  fits_write_col(out_fits, TDOUBLE, 10, nrows+1, 1, 1, &mstar,
+		 &fits_status);
+}
+#endif
+
+
+////////////////////////////////////////////////////////////////////////
 // Output spectrum
 ////////////////////////////////////////////////////////////////////////
 void
@@ -361,6 +403,34 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
   }
 }
 
+////////////////////////////////////////////////////////////////////////
+// Output spectrum in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_cluster::
+write_spectrum(fitsfile *out_fits, int trial) {
+
+  // Make sure information is current
+  if (!spec_set) set_spectrum();
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(out_fits, &nrows, &fits_status);
+
+  // Write data
+  fits_write_col(out_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id, 
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 3, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 4, nrows+1, 1, L_lambda.size(), 
+		 L_lambda.data(), &fits_status);
+}
+#endif
+
 
 ////////////////////////////////////////////////////////////////////////
 // Output photometry
@@ -391,3 +461,35 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
 		  phot.size()*sizeof(double));
   }
 }
+
+
+////////////////////////////////////////////////////////////////////////
+// Output photometry in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_cluster::
+write_photometry(fitsfile *out_fits, int trial) {
+
+  // Make sure information is current
+  if (!phot_set) set_photometry();
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(out_fits, &nrows, &fits_status);
+
+  // Write data
+  fits_write_col(out_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id, 
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 3, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  for (int i=0; i<phot.size(); i++) {
+    int colnum = i+4;
+    fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		   &(phot[i]), &fits_status);
+  }
+}
+#endif

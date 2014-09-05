@@ -432,6 +432,66 @@ slug_PDF::draw(double a, double b) const {
   return seg_temp[segNum]->draw(a, b);
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Draw function over limited range, returning n samples
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_PDF::draw(double a, double b, unsigned long n) const {
+
+  // If there's just one segment, this is trival: just draw from it
+  // with a restricted range and return the result
+  if (segments.size() == 1) {
+    vector<double> samples(n);
+    for (unsigned long i=0; i<n; i++)
+      samples[i] = segments[0]->draw(a, b);
+    return samples;
+  }
+
+  // If we're here, we need to construct temporary list of segments
+  // and weights with the restricted range we've been given
+  vector<slug_PDF_segment *> seg_temp;
+  vector<double> wgt_temp;
+  for (unsigned int i=0; i<segments.size(); i++) {
+    if (a >= segments[i]->sMax()) continue; // Segment is out of range
+    if (b <= segments[i]->sMin()) continue; // Segment is out of range
+    if (a <= segments[i]->sMin() && b >= segments[i]->sMax()) {
+      // Segment entirely in range, just copy weight
+      seg_temp.push_back(segments[i]);
+      wgt_temp.push_back(weights[i]);
+    } else {
+      // Segment partly in range; store segment and compute new weight
+      seg_temp.push_back(segments[i]);
+      wgt_temp.push_back(weights[i] * segments[i]->integral(a, b));
+    }
+  }
+
+  // Create a new discrete distribution generator from the new weights
+  boost::random::discrete_distribution<> 
+    dist(wgt_temp.begin(), wgt_temp.end());
+  variate_generator<rng_type&,
+    boost::random::discrete_distribution <> > disc_temp(*rng, dist);
+
+  // Draw n samples
+  vector<double> samples(n);
+  for (unsigned long i=0; i<n; i++) {
+
+    // Draw from discrete generator
+    unsigned int segNum;
+    if (seg_temp.size() > 1) {
+      segNum = (unsigned int) disc_temp();
+    } else {
+      segNum = 0;
+    }
+
+    // Draw from that segment and return
+    samples[i] = seg_temp[segNum]->draw(a, b);
+  }
+
+  // Return
+  return samples;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Draw population function
 ////////////////////////////////////////////////////////////////////////
@@ -858,6 +918,9 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
       // Push this segment onto the segment vector
       segments.push_back(seg);
       weights.push_back(wgt);
+
+      // We're done with this segment
+      inSegment = false;
 
     } else {
 

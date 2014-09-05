@@ -73,6 +73,10 @@ public:
   specsynMode get_specsynMode() const;    // Spectral synthesis mode
   bool galaxy_sim() const;                // Galaxy sim or cluster sim?
   double get_cluster_mass() const;        // Cluster mass for cluster sims
+  unsigned int get_rng_offset() const;    // Offset for rng
+  const std::string rng_seed_file() const; // Name of rng seed file
+  bool save_rng_seed() const;             // Save rng seed?
+  bool read_rng_seed() const;             // Read rng seed?
 
   // Function to write out the parameters being used to a file
   void writeParams() const;
@@ -81,6 +85,7 @@ private:
   // Storage for parameter file values
   int verbosity;                          // Level of verbosity
   int nTrials;                            // How many trials to run
+  unsigned int rng_offset;                // Offset to rng
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode
   photMode phot_mode;                     // Photometry mode
@@ -103,6 +108,8 @@ private:
   bool writeIntegratedPhot;               // Write out integrated photometry?
   bool writeIntegratedSpec;               // Write out integrated spectra?
   bool run_galaxy_sim;                    // Galaxy sim or cluster sim?
+  bool save_seed;                         // Save the rng seed?
+  bool read_seed;                         // Read the rng seed?
   std::string sfh;                        // SF history file name
   std::string imf;                        // IMF file name
   std::string cmf;                        // CMF file name
@@ -113,6 +120,7 @@ private:
   std::string model;                      // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   std::vector<std::string> photBand;      // Names of photometric bands
+  std::string seed_file;                  // rng seed file name
 
   // Internal functions
   void printUsage();                      // Print a usage message

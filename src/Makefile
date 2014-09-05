@@ -37,13 +37,13 @@ LDDEBFLAGS	= $(MACH_LDDEBFLAGS)
 
 # Include flags
 ifdef CXX_INCLUDE_PATH
-     INCFLAGS += -I $(CXX_INCLUDE_PATH)
+     INCFLAGS += -I$(CXX_INCLUDE_PATH)
 endif
 ifdef BOOST_HDR_PATH
-     INCFLAGS += -I $(BOOST_HDR_PATH)
+     INCFLAGS += -I$(BOOST_HDR_PATH)
 endif
 ifdef GSL_HDR_PATH
-     INCFLAGS += -I $(GSL_HDR_PATH)
+     INCFLAGS += -I$(GSL_HDR_PATH)
 endif
 
 # Link flags
@@ -51,13 +51,19 @@ LDLIBFLAGS      = -lgsl -lgslcblas -lboost_system$(MACH_BOOST_TAG) \
 	-lboost_filesystem$(MACH_BOOST_TAG) \
 	-lboost_regex$(MACH_BOOST_TAG)
 ifdef LD_LIBRARY_PATH
-     LDLIBFLAGS += -L $(LD_LIBRARY_PATH)
+     LDLIBFLAGS += -L$(LD_LIBRARY_PATH)
 endif
 ifdef BOOST_LIB_PATH
-     LDLIBFLAGS += -L $(BOOST_LIB_PATH)
+     LDLIBFLAGS += -L$(BOOST_LIB_PATH)
 endif
 ifdef GSL_LIB_PATH
-     LDLIBFLAGS += -L $(GSL_LIB_PATH)
+     LDLIBFLAGS += -L$(GSL_LIB_PATH)
+endif
+
+# Turn FITS on or off
+ifeq ($(FITS), ENABLE_FITS)
+     LDLIBFLAGS += -lcfitsio
+     DEFINES    += -DENABLE_FITS
 endif
 
 # Read any user overrides
@@ -73,19 +79,19 @@ DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
 .PHONY: all debug
-all: CXXFLAGS += $(CXXOPTFLAGS) $(INCFLAGS)
+all: CXXFLAGS += $(CXXOPTFLAGS) $(INCFLAGS) $(DEFINES)
 all: LDFLAGS += $(LDOPTFLAGS) $(LDLIBFLAGS)
 all: $(EXENAME)
 
 # Include dependencies
 -include $(DEPS)
 
-debug: CXXFLAGS += $(CXXDEBFLAGS) $(INCFLAGS)
+debug: CXXFLAGS += $(CXXDEBFLAGS) $(INCFLAGS) $(DEFINES)
 debug: LDFLAGS += $(LDDEBFLAGS) $(LDLIBFLAGS)
 debug: $(EXENAME)
 
 $(EXENAME):	$(OBJECTS)
-	$(CXX) $(LDFLAGS) -o $(EXENAME) $^
+	$(CXX) $(LDFLAGS) -o $(EXENAME) $^ 
 
 compile:	$(OBJECTS)
 
