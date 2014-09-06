@@ -62,8 +62,6 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
     fp, fname = slug_open(model_name+"_integrated_cloudyspec", 
                           output_dir=output_dir,
                           fmt=fmt)
-    if read_info is not None:
-        read_info['fname'] = fname
 
     # Print status
     if verbose:

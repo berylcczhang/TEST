@@ -131,9 +131,13 @@ basename = osp.basename(args.slug_model_name)
 if args.clustermode:
     if args.end_spec != -1:
         end_spec = min(args.end_spec, len(data.id))
+    else:
+        end_spec = len(data.id)
 else:
     if args.end_spec != -1:
         end_spec = min(args.end_spec, data.spec.shape[-1])
+    else:
+        end_spec = data.spec.shape[-1]
 
 # Step 4: read the template cloudy input file template, and set up
 # storage for what we'll be computing
@@ -215,7 +219,7 @@ def do_cloudy_run(thread_num, q):
             ext = "_n{:09d}".format(cluster_num)
             qH0 = data.phot[cluster_num,qH0idx]
             outstr = "launching cloudy on cluster {:d} of {:d}" \
-                .format(i+1, len(data.id))
+                .format(cluster_num+1, len(data.id))
         else:
             trial, time = q.get()
             spec = data.spec[:, time, trial]
@@ -255,8 +259,6 @@ def do_cloudy_run(thread_num, q):
                         lquote = newline.find('"')
                         rquote = newline[lquote+1:].find('"')
                         lines_file = newline[lquote+1:lquote+1+rquote]
-                        print newline
-                        print lines_file
                 else:
                     fpout.write(line+'\n')
 
@@ -387,7 +389,7 @@ if compute_continuum:
     # Now loop over stored spectra, padding array beginnings
     if args.clustermode:
         for i in range(len(cloudywl)):
-            offset = maxlen - len(cloudywl[i])
+            offset = len(cloudywl_max) - len(cloudywl[i])
             if offset > 0:
                 cloudyspec[i] \
                     = np.insert(cloudyspec[i], 0,
@@ -414,10 +416,8 @@ if compute_continuum:
                                       'cloudy_trans_emit'])
         cloudyspec_data \
             = cloudyspec_type(data.id, data.trial, data.time, cloudywl_max,
-                              np.transpose(cloudyspec[:,:,0,:], (2,0,1)),
-                              np.transpose(cloudyspec[:,:,1,:], (2,0,1)),
-                              np.transpose(cloudyspec[:,:,2,:], (2,0,1)),
-                              np.transpose(cloudyspec[:,:,3,:], (2,0,1)))
+                              cloudyspec[:,0,:], cloudyspec[:,1,:],
+                              cloudyspec[:,2,:], cloudyspec[:,3,:])
     else:
         cloudyspec_type = namedtuple('integrated_cloudyspec',
                                      ['time', 'cloudy_wl', 'cloudy_inc', 

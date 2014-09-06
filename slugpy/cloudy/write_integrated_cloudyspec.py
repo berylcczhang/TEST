@@ -1,5 +1,5 @@
 """
-This function writes out a spectrum computed by cloudy from a slug
+This function writes out integrated spectra computed by cloudy from a slug
 run.
 """
 
