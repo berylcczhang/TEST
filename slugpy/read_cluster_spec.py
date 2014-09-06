@@ -8,7 +8,7 @@ import struct
 from slug_open import slug_open
 
 def read_cluster_spec(model_name, output_dir=None, fmt=None, 
-                      verbose=False):
+                      verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_spec file.
 
@@ -30,6 +30,10 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
        files.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'fname' and
+       'format', giving the name of the file read and the format it
+       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
     -------
@@ -58,6 +62,8 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
     # Print status
     if verbose:
         print("Reading cluster spectra for model "+model_name)
+    if read_info is not None:
+        read_info['fname'] = fname
 
     # Prepare storage
     cluster_id = []
@@ -70,6 +76,8 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
     if fname.endswith('.txt'):
 
         # ASCII mode
+        if read_info is not None:
+            read_info['format'] = 'ascii'
 
         # Burn the three header lines
         fp.readline()
@@ -142,6 +150,8 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
     elif fname.endswith('.bin'):
 
         # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
 
         # First read number of wavelengths and wavelength table
         data = fp.read(struct.calcsize('L'))
@@ -188,6 +198,8 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
     elif fname.endswith('.fits'):
 
         # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
         wavelength = fp[1].data.field('Wavelength')
         wavelength = wavelength.flatten()
         cluster_id = fp[2].data.field('UniqueID')

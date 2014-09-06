@@ -391,10 +391,11 @@ if verbosity > 0:
 for i in range(nproc):
     pfile_name = osp.join(cwd, "slug_par_tmp", 
                           "slug_par_p{:03d}".format(i))
-    try:
-        os.remove(pfile_name)
-    except OSError:
-        warnings.warn("unable to clean up temporary file "+pfile_name)
+    if i < ntrials:
+        try:
+            os.remove(pfile_name)
+        except OSError:
+            warnings.warn("unable to clean up temporary file "+pfile_name)
 
 # Delete output files
 for f in out_names:

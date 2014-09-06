@@ -8,7 +8,8 @@ from read_cluster_phot import read_cluster_phot
 from read_cluster_spec import read_cluster_spec
 
 def read_cluster(model_name, output_dir=None, fmt=None,
-                 nofilterdata=False, photsystem=None, verbose=False):
+                 nofilterdata=False, photsystem=None, verbose=False,
+                 read_info=None):
     """
     Function to read all cluster data for a SLUG2 run.
 
@@ -43,6 +44,13 @@ def read_cluster(model_name, output_dir=None, fmt=None,
        central wavelength of the photometric filters is available.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'prop_name',
+       'phot_name', 'spec_name', 'cloudyspec_name', 'cloudylines_name'
+       and 'format', giving the names of the files read and the format
+       they were in; 'format' will be one of 'ascii', 'binary', or
+       'fits'. If one of the files is not present, the corresponding
+       _name key will be omitted from the dict.
 
     Returns
     -------
@@ -107,20 +115,32 @@ def read_cluster(model_name, output_dir=None, fmt=None,
 
     # Read properties
     try:
-        prop = read_cluster_prop(model_name, output_dir, fmt, verbose)
+        prop = read_cluster_prop(model_name, output_dir, fmt, verbose,
+                                 read_info)
+        if read_info is not None:
+            read_info['prop_name'] = read_info['fname']
+            del read_info['fname']
     except IOError:
         prop = None
 
     # Read spectra
     try:
-        spec = read_cluster_spec(model_name, output_dir, fmt, verbose)
+        spec = read_cluster_spec(model_name, output_dir, fmt, verbose,
+                                 read_info)
+        if read_info is not None:
+            read_info['spec_name'] = read_info['fname']
+            del read_info['fname']
     except IOError:
         spec = None
 
     # Read photometry
     try:
         phot = read_cluster_phot(model_name, output_dir, fmt, 
-                                 nofilterdata, photsystem, verbose)
+                                 nofilterdata, photsystem, verbose,
+                                 read_info)
+        if read_info is not None:
+            read_info['phot_name'] = read_info['fname']
+            del read_info['fname']
     except IOError:
         phot = None
 

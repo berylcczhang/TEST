@@ -8,7 +8,7 @@ import struct
 from slug_open import slug_open
 
 def read_cluster_prop(model_name, output_dir=None, fmt=None, 
-                      verbose=False):
+                      verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_prop file.
 
@@ -30,6 +30,10 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
        files.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'fname' and
+       'format', giving the name of the file read and the format it
+       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
     -------
@@ -64,6 +68,8 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
     # Print status
     if verbose:
         print("Reading cluster properties for model "+model_name)
+    if read_info is not None:
+        read_info['fname'] = fname
 
     # Prepare lists to hold data
     cluster_id = []
@@ -81,6 +87,8 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
     if fname.endswith('.txt'):
 
         # ASCII mode
+        if read_info is not None:
+            read_info['format'] = 'ascii'
 
         # Burn the three header lines
         fp.readline()
@@ -109,6 +117,8 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
     elif fname.endswith('.bin'):
 
         # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
 
         # Set trial counter
         trialptr = 0
@@ -152,6 +162,8 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
     elif fname.endswith('.fits'):
 
         # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
         cluster_id = fp[1].data.field('UniqueID')
         trial = fp[1].data.field('Trial')
         time = fp[1].data.field('Time')

@@ -275,7 +275,7 @@ def write_cluster(data, model_name, fmt):
                     # Loop over clusters and write them
                     for k in range(ptr, block_end):
                         fp.write(data.id[k])
-                        fp.write(data.spec[i,:])
+                        fp.write(data.spec[k,:])
 
                     # Move pointer
                     ptr = block_end

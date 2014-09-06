@@ -11,7 +11,7 @@ from slug_open import slug_open
 
 def read_cluster_phot(model_name, output_dir=None, fmt=None, 
                       nofilterdata=False, photsystem=None,
-                      verbose=False):
+                      verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_phot file.
 
@@ -46,6 +46,10 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
        central wavelength of the photometric filters is available.
     verbose : bool
        If True, verbose output is printed as code runs
+    read_info : dict
+       On return, this dict will contain the keys 'fname' and
+       'format', giving the name of the file read and the format it
+       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
     -------
@@ -90,6 +94,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
     # Print status
     if verbose:
         print("Reading cluster photometry for model "+model_name)
+    if read_info is not None:
+        read_info['fname'] = fname
 
     # Prepare holders for data
     cluster_id = []
@@ -101,6 +107,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
     if fname.endswith('.txt'):
 
         # ASCII mode
+        if read_info is not None:
+            read_info['format'] = 'ascii'
 
         # Read the list of filters
         line = fp.readline()
@@ -133,6 +141,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
     elif fname.endswith('.bin'):
 
         # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
 
         # Read number of filters
         nfilter = int(fp.readline())
@@ -184,6 +194,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
     elif fname.endswith('.fits'):
 
         # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
 
         # Get cluster ID, trial, time
         cluster_id = fp[1].data.field('UniqueID')
