@@ -6,6 +6,8 @@ fits), or to consolidate multiple runs into a single output file.
 """
 
 import numpy as np
+from cloudy import write_cluster_cloudylines
+from cloudy import write_cluster_cloudyspec
 try:
     import astropy.io.fits as fits
 except ImportError:
@@ -455,3 +457,11 @@ def write_cluster(data, model_name, fmt):
             hdulist = fits.HDUList([prihdu, tbhdu])
             hdulist.writeto(model_name+'_cluster_phot.fits',
                             clobber=True)
+
+    ################################################################
+    # Write cloudy files if we have the data for them
+    ################################################################
+    if 'cloudy_inc' in data._fields:
+        write_cluster_cloudyspec(data, model_name, fmt=fmt)
+    if 'cloudy_linelum' in data._fields:
+        write_cluster_cloudylines(data, model_name, fmt=fmt)

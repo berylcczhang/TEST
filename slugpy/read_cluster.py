@@ -6,6 +6,8 @@ from collections import namedtuple
 from read_cluster_prop import read_cluster_prop
 from read_cluster_phot import read_cluster_phot
 from read_cluster_spec import read_cluster_spec
+from cloudy.read_cluster_cloudylines import read_cluster_cloudylines
+from cloudy.read_cluster_cloudyspec import read_cluster_cloudyspec
 
 def read_cluster(model_name, output_dir=None, fmt=None,
                  nofilterdata=False, photsystem=None, verbose=False,
@@ -144,6 +146,27 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     except IOError:
         phot = None
 
+    # Read cloudy spectra
+    try:
+        cloudyspec = read_cluster_cloudyspec(model_name, output_dir, fmt,
+                                             verbose, read_info)
+        if read_info is not None:
+            read_info['cloudyspec_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudyspec = None
+
+    # Read cloudy lines
+    try:
+        cloudylines \
+            = read_cluster_cloudylines(model_name, output_dir, fmt,
+                                       verbose, read_info)
+        if read_info is not None:
+            read_info['cloudylines_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudylines = None
+
     # Build the output
     out_fields = ['id', 'trial', 'time']
     if prop is not None:
@@ -152,6 +175,10 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         out_data = [spec.id, spec.trial, spec.time]
     elif phot is not None:
         out_data = [phot.id, phot.trial, phot.time]
+    elif cloudyspec is not None:
+        out_data = [cloudyspec.id, cloudyspec.trial, cloudyspec.time]
+    elif cloudylines is not None:
+        out_data = [cloudylines.id, cloudylines.trial, cloudylines.time]
     else:
         raise IOError("unable to open any cluster files for run " +
                       model_name)
@@ -164,6 +191,12 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     if phot is not None:
         out_fields = out_fields + list(phot._fields[3:])
         out_data = out_data + list(phot[3:])
+    if cloudyspec is not None:
+        out_fields = out_fields + list(cloudyspec._fields[3:])
+        out_data = out_data + list(cloudyspec[3:])
+    if cloudylines is not None:
+        out_fields = out_fields + list(cloudylines._fields[3:])
+        out_data = out_data + list(cloudylines[3:])
     out_type = namedtuple('cluster_data', out_fields)
     out = out_type._make(out_data)
 
