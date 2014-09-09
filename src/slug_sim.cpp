@@ -202,6 +202,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 			    imf, sfh, pp.get_z());
   }
 
+
   // Initialize either a galaxy or a single cluster, depending on
   // which type of simulation we're running
   if (pp.galaxy_sim()) {
@@ -215,6 +216,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     galaxy = NULL;
   }
 
+
   // Record the output mode
   out_mode = pp.get_outputMode();
 
@@ -223,6 +225,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   int_prop_fits = cluster_prop_fits = int_spec_fits = 
     cluster_spec_fits = int_phot_fits = cluster_phot_fits = NULL;
 #endif
+
 
   // Open the output files we'll need and write their headers
   if (pp.get_verbosity() > 1)
@@ -499,6 +502,7 @@ void slug_sim::cluster_sim() {
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::open_integrated_prop() {
 
+
   // Construct file name and path
   string fname(pp.get_modelName());
   fname += "_integrated_prop";
@@ -585,18 +589,23 @@ void slug_sim::open_integrated_prop() {
     vector<string> tform_str = 
       { "1K", "1D", "1D", "1D", "1D", "1D", "1K", "1K", "1K" };
     vector<string> tunit_str = 
-      { "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "" };
+      { "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "", "" };
     char *ttype[9], *tform[9], *tunit[9];
+
     for (int i=0; i<9; i++) {
       ttype[i] = const_cast<char*>(ttype_str[i].c_str());
       tform[i] = const_cast<char*>(tform_str[i].c_str());
       tunit[i] = const_cast<char*>(tunit_str[i].c_str());
     }
+
     int fits_status = 0;
     fits_create_tbl(int_prop_fits, BINARY_TBL, 0, 9,
 		    ttype, tform, tunit, NULL, &fits_status);
+    
   }
 #endif
+
+
 }
 
 
