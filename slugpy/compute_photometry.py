@@ -26,7 +26,8 @@ lambda_thresh = {
 
 def compute_photometry(wl, spec, filtername, photsystem='L_nu', 
                        filter_wl=None, filter_response=None,
-                       filter_beta=None, filter_dir=None):
+                       filter_beta=None, filter_wl_c=None,
+                       filter_dir=None):
     """
     This function takes an input spectrum and a set of response
     functions for photometric filters, and returns the photometry
@@ -44,8 +45,7 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
        can also include the special filters Lbol, QH0, QHe0, and QHe1;
        the values returned for these will be the bolometric luminosity
        (in erg/s) and the photon luminosities (in photons/s) in the H,
-       He, and He+ ionizing-continua, respectively. This argument is
-       ignored if filter_wl and filter_response are set.
+       He, and He+ ionizing-continua, respectively.
     photsystem : string
        The photometric system to use for the output. Allowable values
        are 'L_nu', 'L_lambda', 'AB', 'STMAG', and 'Vega',
@@ -55,13 +55,17 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
        response function is given. If this object is an iterable of
        arrays rather than a single array, it is assumed to represent
        the wavelengths for a set of filters. If this is set,
-       filtername is ignored, and no data is read from disk.
+       no data is read from disk. Default behavior is to read the
+       filter information from disk.
     filter_response : array or iterable of arrays
        Array giving the filter response function at each wavelenght
        and for each filter in filter_wl. Must be set if filter_wl is
        set, ignored otherwise.
     filter_beta : iterable
        Array-like object containing the index beta for each
+       filter. Must be set if filter_wl is set, ignored otherwise.
+    filter_wl_c : iterable
+       Array-like object containing the pivot wavelength for each
        filter. Must be set if filter_wl is set, ignored otherwise.
     filter_dir : string
        Directory where the filter data files can be found. If left as
