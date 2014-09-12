@@ -3,7 +3,7 @@ __all__ = ["combine_cluster", "combine_integrated",
            "compute_photometry", "photometry_convert", 
            "read_integrated", "read_integrated_phot", 
            "read_integrated_prop", "read_integrated_spec", 
-           "read_cluster",
+           "read_summary", "read_cluster",
            "read_cluster_phot", "read_cluster_prop", 
            "read_cluster_spec", "read_filter", "slug_open",
            "write_cluster", "write_integrated"]
@@ -21,6 +21,7 @@ from read_integrated import read_integrated
 from read_integrated_phot import read_integrated_phot
 from read_integrated_prop import read_integrated_prop
 from read_integrated_spec import read_integrated_spec
+from read_summary import read_summary
 from slug_open import slug_open
 from write_cluster import write_cluster
 from write_integrated import write_integrated
