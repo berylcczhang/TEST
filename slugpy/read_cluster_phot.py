@@ -76,6 +76,11 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
        a list giving the photon response function for each filter;
        this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
        if nofilterdata is True 
+    filter_beta : list
+       powerlaw index beta for each filter; used to normalize the
+       photometry
+    filter_wl_c : list
+       pivot wavelength for each filter; used to normalize the photometry
     phot : array, shape (N_cluster, N_filter)
        photometric value in each filter for each cluster; units are as
        indicated in the units field
@@ -231,7 +236,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
     if not nofilterdata:
         if verbose:
             print("Reading filter data")
-        wl_eff, wavelength, response = read_filter(filters)
+        wl_eff, wavelength, response, beta, wl_c = read_filter(filters)
 
     # Do photometric system conversion if requested
     if photsystem is not None:
@@ -254,9 +259,10 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                               ['id', 'trial', 'time', 'filter_names', 
                                'filter_units',
                                'filter_wl_eff','filter_wl',
-                               'filter_response', 'phot'])
+                               'filter_response', 'filter_beta', 
+                               'filter_wl_c', 'phot'])
         out = out_type(cluster_id, trial, time, filters, units, wl_eff,
-                       wavelength, response, phot)
+                       wavelength, response, beta, wl_c, phot)
 
     # Return
     return out

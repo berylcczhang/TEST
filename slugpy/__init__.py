@@ -1,5 +1,6 @@
 __version__ = '0.1'
-__all__ = ["combine_cluster", "combine_integrated", "photometry_convert", 
+__all__ = ["combine_cluster", "combine_integrated", 
+           "compute_photometry", "photometry_convert", 
            "read_integrated", "read_integrated_phot", 
            "read_integrated_prop", "read_integrated_spec", 
            "read_cluster",
@@ -9,6 +10,7 @@ __all__ = ["combine_cluster", "combine_integrated", "photometry_convert",
 
 from combine_cluster import combine_cluster
 from combine_integrated import combine_integrated
+from compute_photometry import compute_photometry
 from photometry_convert import photometry_convert
 from read_cluster import read_cluster
 from read_cluster_phot import read_cluster_phot

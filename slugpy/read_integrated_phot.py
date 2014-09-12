@@ -72,6 +72,11 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
        a list giving the photon response function for each filter;
        this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
        if nofilterdata is True 
+    filter_beta : list
+       powerlaw index beta for each filter; used to normalize the
+       photometry
+    filter_wl_c : list
+       pivot wavelength for each filter; used to normalize the photometry
     phot : array, shape (N_filter, N_times, N_trials)
        photometric value in each filter at each time in each trial;
        units are as indicated in the units field
@@ -203,7 +208,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
     if not nofilterdata:
         if verbose:
             print("Reading filter data")
-        wl_eff, wavelength, response = read_filter(filters)
+        wl_eff, wavelength, response, beta, wl_c = read_filter(filters)
 
     # Do photometric system conversion if requested
     if photsystem is not None:
@@ -224,9 +229,10 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         out_type = namedtuple('integrated_phot',
                               ['time', 'filter_names', 'filter_units',
                                'filter_wl_eff', 'filter_wl', 
-                               'filter_response', 'phot'])
+                               'filter_response', 'filter_beta',
+                               'filter_wl_c', 'phot'])
         out = out_type(time, filters, units, wl_eff, wavelength, response,
-                       phot)
+                       beta, wl_c, phot)
 
     # Return
     return out
