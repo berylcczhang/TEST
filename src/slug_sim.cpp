@@ -238,7 +238,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.get_writeClusterSpec()) open_cluster_spec();
   if (pp.galaxy_sim() && pp.get_writeIntegratedPhot()) 
     open_integrated_phot();
-  if (pp.get_writeClusterSpec()) open_cluster_phot();
+  if (pp.get_writeClusterPhot()) open_cluster_phot();
 }
 
 
