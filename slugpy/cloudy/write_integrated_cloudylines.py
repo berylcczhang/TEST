@@ -3,7 +3,6 @@ This function writes out a list of line luminosities computed by
 cloudy from a slug run.
 """
 
-from collections import namedtuple
 import numpy as np
 try:
     import astropy.io.fits as fits
@@ -15,7 +14,7 @@ except ImportError:
 
 def write_integrated_cloudylines(data, model_name, fmt):
     """
-    Write out data computed by cloudy on a slug spectrum
+    Write out line luminosities computed by cloudy on a slug spectrum
 
     data : namedtuple
        Integrated cloudy line data to be written; a namedtuple

@@ -19,7 +19,7 @@ def write_cluster_cloudyspec(data, model_name, fmt):
 
     data : namedtuple
        Cloudy spectral data for clusters to be written; a namedtuple
-       containing the field time, cloudy_wl, cloudy_inc, cloudy_trans,
+       containing the fields id, time, cloudy_wl, cloudy_inc, cloudy_trans,
        cloudy_emit, and cloudy_trans_emit
     model_name : string
        Base file name to give the model to be written. Can include a

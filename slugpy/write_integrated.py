@@ -7,6 +7,7 @@ single output file.
 """
 
 import numpy as np
+from cloudy import write_integrated_cloudyphot
 from cloudy import write_integrated_cloudylines
 from cloudy import write_integrated_cloudyspec
 try:
@@ -420,3 +421,5 @@ def write_integrated(data, model_name, fmt):
         write_integrated_cloudyspec(data, model_name, fmt=fmt)
     if 'cloudy_linelum' in data._fields:
         write_integrated_cloudylines(data, model_name, fmt=fmt)
+    if 'cloudy_phot_trans' in data._fields:
+        write_integrated_cloudyphot(data, model_name, fmt=fmt)

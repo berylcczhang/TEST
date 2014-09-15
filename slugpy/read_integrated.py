@@ -6,6 +6,7 @@ from collections import namedtuple
 from read_integrated_prop import read_integrated_prop
 from read_integrated_phot import read_integrated_phot
 from read_integrated_spec import read_integrated_spec
+from cloudy.read_integrated_cloudyphot import read_integrated_cloudyphot
 from cloudy.read_integrated_cloudylines import read_integrated_cloudylines
 from cloudy.read_integrated_cloudyspec import read_integrated_cloudyspec
 
@@ -113,8 +114,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
 
     # Read properties
     try:
-        prop = read_integrated_prop(model_name, output_dir, fmt,
-                                    verbose, read_info)
+        prop = read_integrated_prop(model_name, output_dir, fmt=fmt,
+                                    verbose=verbose, 
+                                    read_info=read_info)
         if read_info is not None:
             read_info['prop_name'] = read_info['fname']
             del read_info['fname']
@@ -123,8 +125,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
 
     # Read spectra
     try:
-        spec = read_integrated_spec(model_name, output_dir, fmt,
-                                    verbose, read_info)
+        spec = read_integrated_spec(model_name, output_dir, fmt=fmt,
+                                    verbose=verbose, 
+                                    read_info=read_info)
         if read_info is not None:
             read_info['spec_name'] = read_info['fname']
             del read_info['fname']
@@ -133,9 +136,11 @@ def read_integrated(model_name, output_dir=None, fmt=None,
 
     # Read photometry
     try:
-        phot = read_integrated_phot(model_name, output_dir, fmt, 
-                                    nofilterdata, photsystem, 
-                                    verbose, read_info)
+        phot = read_integrated_phot(model_name, output_dir, fmt=fmt, 
+                                    nofilterdata=nofilterdata,
+                                    photsystem=photsystem, 
+                                    verbose=verbose,
+                                    read_info=read_info)
         if read_info is not None:
             read_info['phot_name'] = read_info['fname']
             del read_info['fname']
@@ -144,8 +149,10 @@ def read_integrated(model_name, output_dir=None, fmt=None,
 
     # Read cloudy spectra
     try:
-        cloudyspec = read_integrated_cloudyspec(model_name, output_dir, fmt,
-                                                verbose, read_info)
+        cloudyspec = read_integrated_cloudyspec(model_name, output_dir, 
+                                                fmt=fmt,
+                                                verbose=verbose, 
+                                                read_info=read_info)
         if read_info is not None:
             read_info['cloudyspec_name'] = read_info['fname']
             del read_info['fname']
@@ -155,13 +162,30 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     # Read cloudy lines
     try:
         cloudylines \
-            = read_integrated_cloudylines(model_name, output_dir, fmt,
-                                          verbose, read_info)
+            = read_integrated_cloudylines(model_name, output_dir,
+                                          fmt=fmt,
+                                          verbose=verbose,
+                                          read_info=read_info)
         if read_info is not None:
             read_info['cloudylines_name'] = read_info['fname']
             del read_info['fname']
     except IOError:
         cloudylines = None
+
+    # Read cloudy photometry
+    try:
+        cloudyphot \
+            = read_integrated_cloudyphot(model_name, output_dir, 
+                                         fmt=fmt,
+                                         nofilterdata=nofilterdata,
+                                         photsystem=photsystem, 
+                                         verbose=verbose,
+                                         read_info=read_info)
+        if read_info is not None:
+            read_info['cloudyphot_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudyphot = None
 
     # Build the output
     out_fields = ['time']
@@ -175,6 +199,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
         out_data = [cloudyspec.time]
     elif cloudylines is not None:
         out_data = [cloudylines.time]
+    elif cloudyphot is not None:
+        out_data = [cloudyphot.time]
     else:
         raise IOError("unable to open any integrated files for run " +
                       model_name)
@@ -193,6 +219,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     if cloudylines is not None:
         out_fields = out_fields + list(cloudylines._fields[1:])
         out_data = out_data + list(cloudylines[1:])
+    if cloudyphot is not None:
+        out_fields = out_fields + list(cloudyphot._fields[1:])
+        out_data = out_data + list(cloudyphot[1:])
     out_type = namedtuple('integrated_data', out_fields)
     out = out_type._make(out_data)
 

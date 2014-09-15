@@ -6,6 +6,7 @@ from collections import namedtuple
 from read_cluster_prop import read_cluster_prop
 from read_cluster_phot import read_cluster_phot
 from read_cluster_spec import read_cluster_spec
+from cloudy.read_cluster_cloudyphot import read_cluster_cloudyphot
 from cloudy.read_cluster_cloudylines import read_cluster_cloudylines
 from cloudy.read_cluster_cloudyspec import read_cluster_cloudyspec
 
@@ -167,6 +168,17 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     except IOError:
         cloudylines = None
 
+    # Read cloudy photometry
+    try:
+        cloudyphot \
+            = read_cluster_cloudyphot(model_name, output_dir, fmt,
+                                       verbose, read_info)
+        if read_info is not None:
+            read_info['cloudyphot_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudyphot = None
+
     # Build the output
     out_fields = ['id', 'trial', 'time']
     if prop is not None:
@@ -179,6 +191,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         out_data = [cloudyspec.id, cloudyspec.trial, cloudyspec.time]
     elif cloudylines is not None:
         out_data = [cloudylines.id, cloudylines.trial, cloudylines.time]
+    elif cloudyphot is not None:
+        out_data = [cloudyphot.id, cloudyphot.trial, cloudyphot.time]
     else:
         raise IOError("unable to open any cluster files for run " +
                       model_name)
@@ -197,6 +211,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     if cloudylines is not None:
         out_fields = out_fields + list(cloudylines._fields[3:])
         out_data = out_data + list(cloudylines[3:])
+    if cloudyphot is not None:
+        out_fields = out_fields + list(cloudyphot._fields[3:])
+        out_data = out_data + list(cloudyphot[3:])
     out_type = namedtuple('cluster_data', out_fields)
     out = out_type._make(out_data)
 

@@ -22,6 +22,7 @@ from scipy.constants import c
 import subprocess
 import sys
 from threading import Thread
+from time import sleep
 try:
     from slugpy import *    # If slugpy is already in our path
     from slugpy.cloudy import *
@@ -103,15 +104,14 @@ if args.cloudytemplate is None:
 else:
     cloudytemplate = args.cloudytemplate
 
+
 # Step 3: read the SLUG output to be processed, and check that we have
 # what we need
 file_info = {}
 if (args.clustermode):
-    data = read_cluster(args.slug_model_name, nofilterdata=True,
-                        read_info=file_info)
+    data = read_cluster(args.slug_model_name, read_info=file_info)
 else:
-    data = read_integrated(args.slug_model_name, nofilterdata=True, 
-                           read_info=file_info)
+    data = read_integrated(args.slug_model_name, read_info=file_info)
 valid = True
 if 'spec' not in data._fields:
     valid = False
@@ -139,6 +139,24 @@ else:
     else:
         end_spec = data.spec.shape[-1]
 
+# Figure out the photometric system we're using
+if 'erg/s/Hz' in data.filter_units:
+    photsystem = 'L_nu'
+elif 'erg/s/A' in data.filter_units:
+    photsystem = 'L_lambda'
+elif 'AB mag' in data.filter_units:
+    photsystem = 'AB'
+elif 'ST mag' in data.filter_units:
+    photsystem = 'STMAG'
+elif 'Vega mag' in data.filter_units:
+    photsystem = 'Vega'
+else:
+    photsystem = 'L_nu'
+
+# Number of filters
+nfilt = len(data.filter_names)
+
+
 # Step 4: read the template cloudy input file template, and set up
 # storage for what we'll be computing
 fp = open(cloudytemplate, 'r')
@@ -154,18 +172,22 @@ for line in tempfile:
 if compute_continuum:
     cloudywl = []
     cloudyspec = []
+    cloudyphot = []
     # Create dummy holders for cloudy spectra
     if args.clustermode:
         for i in range(end_spec-args.start_spec):
             cloudywl.append(None)
             cloudyspec.append(None)
+            cloudyphot.append(None)
     else:
         for j in range(data.spec.shape[-2]):
             cloudywl.append([])
             cloudyspec.append([])
+            cloudyphot.append([])
             for i in range(args.start_spec, end_spec):
                 cloudywl[j].append(None)
                 cloudyspec[j].append(None)
+                cloudyphot[j].append(None)
 if compute_lines:
     linelist = None
     linewl = None
@@ -202,6 +224,7 @@ def do_cloudy_run(thread_num, q):
         global cloudywl
         global cloudyspec
         global continuum_file
+        global cloudyphot
     if compute_lines:
         global linelist
         global linewl
@@ -308,7 +331,7 @@ def do_cloudy_run(thread_num, q):
 
         # If verbose, print status
         if args.verbose:
-            print("thread {:d}: ".format(thread_num) + outstr)
+            print("thread {:d}: ".format(thread_num+1) + outstr)
 
         # Launch the cloudy process and wait for it to complete
         cloudy_out_fname = osp.join(cwd, 'cloudy_tmp', 'cloudy.out'+ext)
@@ -316,11 +339,12 @@ def do_cloudy_run(thread_num, q):
               " > " + cloudy_out_fname
         if args.nicelevel > 0:
             cmd = "nice -n " + str(args.nicelevel) + " " + cmd
-        #proc = subprocess.Popen(cmd, shell=True)
-        #proc.wait()
+        #proc = subprocess.call(cmd, shell=True)
 
         # Read and store the cloudy continuum output
         if continuum_file is not None:
+            while os.stat(continuum_file).st_size == 0:
+                sleep(2)
             cdata = read_cloudy_continuum(continuum_file, r0=r0)
             if args.clustermode:
                 cloudywl[cluster_num] = cdata.wl
@@ -331,6 +355,8 @@ def do_cloudy_run(thread_num, q):
 
         # Read and store the cloudy line luminosity output
         if lines_file is not None:
+            while os.stat(lines_file).st_size == 0:
+                sleep(2)
             ldata = read_cloudy_linelist(lines_file)
             if linelist is None:
                 linelist = ldata.label
@@ -340,6 +366,39 @@ def do_cloudy_run(thread_num, q):
                 linelum[cluster_num] = ldata.lum
             else:
                 linelum[time][trial] = ldata.lum
+
+        # Compute photometry from the cloudy data
+        if continuum_file is not None:
+            trans_phot \
+                = compute_photometry(cdata.wl, cdata.L_lambda[1,:],
+                                     data.filter_names, 
+                                     photsystem=photsystem,
+                                     filter_wl=data.filter_wl,
+                                     filter_response=data.filter_response,
+                                     filter_beta=data.filter_beta,
+                                     filter_wl_c=data.filter_wl_c)
+            emit_phot \
+                = compute_photometry(cdata.wl, cdata.L_lambda[2,:],
+                                     data.filter_names, 
+                                     photsystem=photsystem,
+                                     filter_wl=data.filter_wl,
+                                     filter_response=data.filter_response,
+                                     filter_beta=data.filter_beta,
+                                     filter_wl_c=data.filter_wl_c)
+            trans_emit_phot \
+                = compute_photometry(cdata.wl, cdata.L_lambda[3,:],
+                                     data.filter_names, 
+                                     photsystem=photsystem,
+                                     filter_wl=data.filter_wl,
+                                     filter_response=data.filter_response,
+                                     filter_beta=data.filter_beta,
+                                     filter_wl_c=data.filter_wl_c)
+            phot = np.array([trans_phot, emit_phot,
+                             trans_emit_phot])
+            if args.clustermode:
+                cloudyphot[cluster_num] = phot
+            else:
+                cloudyphot[time][trial] = phot
 
         # Clean up the cloudy output unless requested to keep it
         if not args.save:
@@ -371,7 +430,7 @@ slug_queue.join()
 # assumed to follow standard cloudy output format, so that they all
 # have the same wavelength spacing and the same maximum wavelength,
 # but different minimum wavelengths. Thus we are padding the
-# beginnings of the arrays
+# beginnings of the arrays.
 if compute_continuum:
 
     # Get the maximum length wavelength array
@@ -463,3 +522,62 @@ if compute_lines:
                                        np.transpose(linelum, (2,0,1)))
         write_integrated_cloudylines(cloudylines, args.slug_model_name,
                                      file_info['format'])
+
+# Step 11: write photometry to file
+if compute_continuum:
+
+    cloudyphot = np.array(cloudyphot)
+
+    # Cluster or integrated mode
+    if args.clustermode:
+
+        # Build namedtuple
+        cloudyphot_type = namedtuple('cluster_cloudyphot',
+                                     ['id', 'trial', 'time', 
+                                      'cloudy_filter_names', 
+                                      'cloudy_filter_units',
+                                      'cloudy_filter_wl_eff', 
+                                      'cloudy_filter_wl',
+                                      'cloudy_filter_response',
+                                      'cloudy_filter_beta',
+                                      'cloudy_filter_wl_c',
+                                      'cloudy_phot_trans',
+                                      'cloudy_phot_emit', 
+                                      'cloudy_phot_trans_emit'])
+        cloudyphot_data \
+            = cloudyphot_type(data.id, data.trial, data.time,
+                              data.filter_names, data.filter_units,
+                              data.filter_wl_eff, data.filter_wl,
+                              data.filter_response, data.filter_beta,
+                              data.filter_wl_c, cloudyphot[:,0,:],
+                              cloudyphot[:,1,:], cloudyphot[:,1,:])
+        write_cluster_cloudyphot(cloudyphot_data, args.slug_model_name,
+                                 file_info['format'])
+
+    else:
+
+        # Build namedtuple
+        cloudyphot_type = namedtuple('integrated_cloudyphot',
+                                     ['time', 
+                                      'cloudy_filter_names', 
+                                      'cloudy_filter_units',
+                                      'cloudy_filter_wl_eff', 
+                                      'cloudy_filter_wl',
+                                      'cloudy_filter_response',
+                                      'cloudy_filter_beta',
+                                      'cloudy_filter_wl_c',
+                                      'cloudy_phot_trans',
+                                      'cloudy_phot_emit', 
+                                      'cloudy_phot_trans_emit'])
+        cloudyphot_data \
+            = cloudyphot_type(data.time, 
+                              data.filter_names, data.filter_units,
+                              data.filter_wl_eff, data.filter_wl,
+                              data.filter_response, data.filter_beta,
+                              data.filter_wl_c,
+                              np.transpose(cloudyphot[:,:,0,:], (2,0,1)),
+                              np.transpose(cloudyphot[:,:,1,:], (2,0,1)),
+                              np.transpose(cloudyphot[:,:,2,:], (2,0,1)))
+        write_integrated_cloudyphot(cloudyphot_data, args.slug_model_name,
+                                    file_info['format'])
+

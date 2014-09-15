@@ -6,6 +6,7 @@ fits), or to consolidate multiple runs into a single output file.
 """
 
 import numpy as np
+from cloudy import write_cluster_cloudyphot
 from cloudy import write_cluster_cloudylines
 from cloudy import write_cluster_cloudyspec
 try:
@@ -465,3 +466,5 @@ def write_cluster(data, model_name, fmt):
         write_cluster_cloudyspec(data, model_name, fmt=fmt)
     if 'cloudy_linelum' in data._fields:
         write_cluster_cloudylines(data, model_name, fmt=fmt)
+    if 'cloudy_phot_trans' in data._fields:
+        write_cluster_cloudyphot(data, model_name, fmt=fmt)
