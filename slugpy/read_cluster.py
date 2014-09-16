@@ -118,8 +118,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
 
     # Read properties
     try:
-        prop = read_cluster_prop(model_name, output_dir, fmt, verbose,
-                                 read_info)
+        prop = read_cluster_prop(model_name, output_dir, fmt=fmt, 
+                                 verbose=verbose,
+                                 read_info=read_info)
         if read_info is not None:
             read_info['prop_name'] = read_info['fname']
             del read_info['fname']
@@ -128,8 +129,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
 
     # Read spectra
     try:
-        spec = read_cluster_spec(model_name, output_dir, fmt, verbose,
-                                 read_info)
+        spec = read_cluster_spec(model_name, output_dir, fmt=fmt,
+                                 verbose=verbose,
+                                 read_info=read_info)
         if read_info is not None:
             read_info['spec_name'] = read_info['fname']
             del read_info['fname']
@@ -138,9 +140,10 @@ def read_cluster(model_name, output_dir=None, fmt=None,
 
     # Read photometry
     try:
-        phot = read_cluster_phot(model_name, output_dir, fmt, 
-                                 nofilterdata, photsystem, verbose,
-                                 read_info)
+        phot = read_cluster_phot(model_name, output_dir, fmt=fmt, 
+                                 nofilterdata=nofilterdata,
+                                 photsystem=photsystem, verbose=verbose,
+                                 read_info=read_info)
         if read_info is not None:
             read_info['phot_name'] = read_info['fname']
             del read_info['fname']
@@ -149,8 +152,10 @@ def read_cluster(model_name, output_dir=None, fmt=None,
 
     # Read cloudy spectra
     try:
-        cloudyspec = read_cluster_cloudyspec(model_name, output_dir, fmt,
-                                             verbose, read_info)
+        cloudyspec = read_cluster_cloudyspec(model_name, output_dir,
+                                             fmt=fmt,
+                                             verbose=verbose,
+                                             read_info=read_info)
         if read_info is not None:
             read_info['cloudyspec_name'] = read_info['fname']
             del read_info['fname']
@@ -160,8 +165,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     # Read cloudy lines
     try:
         cloudylines \
-            = read_cluster_cloudylines(model_name, output_dir, fmt,
-                                       verbose, read_info)
+            = read_cluster_cloudylines(model_name, output_dir, fmt=fmt,
+                                       verbose=verbose, read_info=read_info)
         if read_info is not None:
             read_info['cloudylines_name'] = read_info['fname']
             del read_info['fname']
@@ -171,8 +176,10 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     # Read cloudy photometry
     try:
         cloudyphot \
-            = read_cluster_cloudyphot(model_name, output_dir, fmt,
-                                       verbose, read_info)
+            = read_cluster_cloudyphot(model_name, output_dir, fmt=fmt,
+                                      nofilterdata=nofilterdata,
+                                      photsystem=photsystem,
+                                      verbose=verbose, read_info=read_info)
         if read_info is not None:
             read_info['cloudyphot_name'] = read_info['fname']
             del read_info['fname']
