@@ -19,6 +19,7 @@ try:
 except ImportError:
     from queue import Queue    # python 3.x
 from scipy.constants import c
+from scipy.constants import k as kB
 import subprocess
 import sys
 from threading import Thread
@@ -36,7 +37,6 @@ except ImportError:
         sys.path = cur_path
     else:
         raise ImportError("No module named slugpy")
-
 
 # Step 1: set up and read command line arguments
 parser = argparse. \
@@ -59,8 +59,6 @@ parser.add_argument("--cloudypath", default=None, type=str,
 parser.add_argument("--cloudytemplate", default=None, type=str,
                     help="template cloudy input file (default: "+
                     "$SLUG_DIR/cloudy_slug/cloudy.in_template)")
-parser.add_argument("--hden", nargs='+', metavar='nH', default=100,
-                    help="hydrogen number densities (default: 100)")
 parser.add_argument("-cm", "--clustermode", action='store_true',
                     default=False, help="run in cluster mode, where "+
                     "each cluster is a separate cloudy run "+
@@ -125,6 +123,9 @@ else:
 if not valid:
     raise IOError("cloudy_slug: error: input slug data must " +
                   "contain spectra and ionizing luminosity")
+if args.clustermode and 'form_time' not in data._fields:
+    raise IOError("cloudy_slug: error: input slug data must " +
+                  "contain cluster physical properties")
 freq = c/(data.wl*1e-10)          # Frequency in Hz
 logfreq = np.log10(freq)          # Log frequency in Hz
 basename = osp.basename(args.slug_model_name)
@@ -259,16 +260,17 @@ def do_cloudy_run(thread_num, q):
                                    'cloudy.in'+'_{:05d}'.format(thread_num))
         fpout = open(cloudy_in_fname, 'w')
         radset = False
-        hdenset = False
         for line in tempfile:
             linesplit = line.split()
             if len(linesplit) > 0:
                 if (linesplit[0] == 'hden'):
-                    hdenset = True
                     hden = 10.0**float(linesplit[1])
+                    if not args.clustermode:
+                        fpout.write(line+'\n')
                 elif (linesplit[0] == 'radius'):
                     radset = True
-                if 'OUTPUT_FILENAME' in line:
+                    fpout.write(line+'\n')
+                elif 'OUTPUT_FILENAME' in line:
                     newline \
                         = line.replace('OUTPUT_FILENAME',
                                        osp.join(cwd, 'cloudy_tmp',
@@ -285,23 +287,47 @@ def do_cloudy_run(thread_num, q):
                 else:
                     fpout.write(line+'\n')
 
-        # Set H density and radius if setting them automatically
-        if not hdenset:
-            fpout.write("hden {:f}\n".format(np.log10(args.hden)))
-            hden = args.hden
-        if not radset:
-            alphaB = 2.59e-13    # Case B recombination coefficient
-            rstrom = (3.0*qH0/(4.0*np.pi*alphaB*hden**2))**(1./3.)
-            r0 = rstrom/1e3
-            fpout.write("radius {:f}\n".format(np.log10(r0)))
-
-        # Write the ionizing or bolometric luminosity to the cloudy
-        # input file
-        if qH0idx != -1:
-            fpout.write("Q(H) = {:f}\n".format(np.log10(qH0)))
+        # In cluster mode, compute internal radius, starting denstiy
+        # self-consistently; in integrated mode, set inner radius
+        # self-consistently
+        if not args.clustermode:
+            if not radset:
+                alphaB = 2.59e-13    # Case B recombination coefficient
+                rstrom = (3.0*qH0/(4.0*np.pi*alphaB*hden**2))**(1./3.)
+                r0 = rstrom/1e3
+                fpout.write("radius {:f}\n".format(np.log10(r0)))
         else:
-            fpout.write("luminosity solar {:f}\n".
-                        format(np.log10(lbol)))
+            # Get current age of this cluster
+            age = data.time[0] - data.form_time[0]
+            # Get characteristic radius and time; all quantities
+            # defined as in Krumholz & Matnzer (2009)
+            alphaB = 2.59e-13    # Case B recombination coefficient
+            mu = 2.34e-24        # Mean mass per H nucleus, in g
+            eps0 = 2.179e-11     # H ionization potential, in erg
+            TII = 1e4            # HII region temp, in K
+            psi = 3.2            # Mean photon energy / eps0
+            ft = 2.0             # Trapping factor
+            phi = 0.73           # Dust absorption fraction
+            rch = alphaB/(12.0*np.pi*phi) * \
+                  (eps0/(2.2*kB*1e7*TII))**2 * ft**2 * \
+                  psi**2 * qH0 / (c*1e2)**2
+            tch = (4.0*np.pi * mu*hden*c * rch**4 /
+                   (3.0*ft*qH0*psi*eps0))**0.5
+            # Get xIIgas, xIIrad
+            tau = age*365.25*24.*3600./tch
+            xIIrad = (2.0*tau**2)**0.25
+            xIIgas = (49.0*tau**2/36.0)**(2.0/7.0)
+            # Get outer radius, inner radius, density
+            r = rch*(xIIrad**3.5 + xIIgas**3.5)**(2.0/7.0)
+            r0 = r/1e3
+            nH = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
+            print rch, r, tau, nH
+            fpout.write("hden {:f}\n".format(np.log10(nH)))
+            if not radset:
+                fpout.write("radius {:f}\n".format(np.log10(r0)))
+
+        # Write the ionizing luminosity to the cloudy input file
+        fpout.write("Q(H) = {:f}\n".format(np.log10(qH0)))
 
         # Write the spectral shape into the cloudy input file,
         # prepending and appending low values outside the range
