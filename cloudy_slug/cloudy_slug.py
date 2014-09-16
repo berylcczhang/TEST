@@ -365,7 +365,7 @@ def do_cloudy_run(thread_num, q):
               " > " + cloudy_out_fname
         if args.nicelevel > 0:
             cmd = "nice -n " + str(args.nicelevel) + " " + cmd
-        #proc = subprocess.call(cmd, shell=True)
+        proc = subprocess.call(cmd, shell=True)
 
         # Read and store the cloudy continuum output
         if continuum_file is not None:
