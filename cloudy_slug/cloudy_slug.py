@@ -224,13 +224,11 @@ def do_cloudy_run(thread_num, q):
     if compute_continuum:
         global cloudywl
         global cloudyspec
-        global continuum_file
         global cloudyphot
     if compute_lines:
         global linelist
         global linewl
         global linelum
-        global lines_file
 
     # Terminate when queue empties
     while not q.empty():
@@ -321,7 +319,6 @@ def do_cloudy_run(thread_num, q):
             r = rch*(xIIrad**3.5 + xIIgas**3.5)**(2.0/7.0)
             r0 = r/1e3
             nH = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
-            print rch, r, tau, nH
             fpout.write("hden {:f}\n".format(np.log10(nH)))
             if not radset:
                 fpout.write("radius {:f}\n".format(np.log10(r0)))
@@ -432,7 +429,7 @@ def do_cloudy_run(thread_num, q):
                 os.remove(continuum_file)
             if lines_file is not None:
                 os.remove(lines_file)
-            osp.remove(cloudy_out_fname)
+            os.remove(cloudy_out_fname)
 
         # Declare that we're done
         q.task_done()
