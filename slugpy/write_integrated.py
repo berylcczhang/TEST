@@ -26,20 +26,18 @@ def write_integrated(data, model_name, fmt):
     read_integrated.
 
     Parameters
-    ----------
-    data : namedtuple
-       Integrated data to be written, in the namedtuple format returned
-       by read_integrated
-    model_name : string
-       Base file name to give the model to be written. Can include a
-       directory specification if desired.
-    fmt : string
-       Format for the output file. Allowed values are 'ascii', 'bin'
-       or 'binary, and 'fits'.
+       data : namedtuple
+          Integrated data to be written, in the namedtuple format returned
+          by read_integrated
+       model_name : string
+          Base file name to give the model to be written. Can include a
+          directory specification if desired.
+       fmt : string
+          Format for the output file. Allowed values are 'ascii', 'bin'
+          or 'binary, and 'fits'.
 
     Returns
-    -------
-    Nothing
+       Nothing
     """
 
     # Make sure fmt is valid

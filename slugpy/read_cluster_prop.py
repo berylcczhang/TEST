@@ -10,54 +10,53 @@ from slug_open import slug_open
 def read_cluster_prop(model_name, output_dir=None, fmt=None, 
                       verbose=False, read_info=None):
     """
-    Function to read a SLUG2 integrated_prop file.
+    Function to read a SLUG2 cluster_prop file.
 
     Parameters
-    ----------
-    model_name : string
-       The name of the model to be read
-    output_dir : string
-       The directory where the output is located; if set to None,
-       the current directory is searched, followed by the SLUG_DIR
-       directory if that environment variable is set
-    fmt : string
-       Format for the file to be read. Allowed values are 'ascii',
-       'bin' or 'binary, and 'fits'. If one of these is set, the code
-       will only attempt to open ASCII-, binary-, or FITS-formatted
-       output, ending in .txt., .bin, or .fits, respectively. If set
-       to None, the code will try to open ASCII files first, then if
-       it fails try binary files, and if it fails again try FITS
-       files.
-    verbose : bool
-       If True, verbose output is printed as code runs
-    read_info : dict
-       On return, this dict will contain the keys 'fname' and
-       'format', giving the name of the file read and the format it
-       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       model_name : string
+          The name of the model to be read
+       output_dir : string
+          The directory where the output is located; if set to None,
+          the current directory is searched, followed by the SLUG_DIR
+          directory if that environment variable is set
+       fmt : string
+          Format for the file to be read. Allowed values are 'ascii',
+          'bin' or 'binary, and 'fits'. If one of these is set, the code
+          will only attempt to open ASCII-, binary-, or FITS-formatted
+          output, ending in .txt., .bin, or .fits, respectively. If set
+          to None, the code will try to open ASCII files first, then if
+          it fails try binary files, and if it fails again try FITS
+          files.
+       verbose : bool
+          If True, verbose output is printed as code runs
+       read_info : dict
+          On return, this dict will contain the keys 'fname' and
+          'format', giving the name of the file read and the format it
+          was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    id : array, dtype uint
-       unique ID of cluster
-    trial: array, dtype uint
-       which trial was this cluster part of
-    time : array
-       time at which cluster's properties are being evaluated
-    form_time : array
-       time when cluster formed
-    lifetime : array
-       time at which cluster will disrupt
-    target_mass : array
-       target cluster mass
-    actual_mass : array
-       actual mass at formation
-    live_mass : array
-       mass of currently living stars
-    num_star : array, dtype ulonglong
-       number of living stars in cluster being treated stochastically
-    max_star_mass : array
-       mass of most massive living star in cluster
+       A namedtuple containing the following fields:
+
+       id : array, dtype uint
+          unique ID of cluster
+       trial: array, dtype uint
+          which trial was this cluster part of
+       time : array
+          time at which cluster's properties are being evaluated
+       form_time : array
+          time when cluster formed
+       lifetime : array
+          time at which cluster will disrupt
+       target_mass : array
+          target cluster mass
+       actual_mass : array
+          actual mass at formation
+       live_mass : array
+          mass of currently living stars
+       num_star : array, dtype ulonglong
+          number of living stars in cluster being treated stochastically
+       max_star_mass : array
+          mass of most massive living star in cluster
     """
 
     # Open file

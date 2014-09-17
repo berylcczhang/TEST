@@ -34,55 +34,53 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
     through those filters.
     
     Parameters
-    ----------
-    wl : array
-       Wavelength of input spectrum in Angstrom
-    spec : array
-       Specific luminosity per unit wavelength for input spectrum, in
-       erg/s/A
-    filtername : string or iterable of strings
-       Name or list of names of the filters to be used. Filter names
-       can also include the special filters Lbol, QH0, QHe0, and QHe1;
-       the values returned for these will be the bolometric luminosity
-       (in erg/s) and the photon luminosities (in photons/s) in the H,
-       He, and He+ ionizing-continua, respectively.
-    photsystem : string
-       The photometric system to use for the output. Allowable values
-       are 'L_nu', 'L_lambda', 'AB', 'STMAG', and 'Vega',
-       corresponding to the options defined in the SLUG code.
-    filter_wl : array or iterable of arrays
-       Array giving the wavelengths in Angstrom at which the filter is
-       response function is given. If this object is an iterable of
-       arrays rather than a single array, it is assumed to represent
-       the wavelengths for a set of filters. If this is set,
-       no data is read from disk. Default behavior is to read the
-       filter information from disk.
-    filter_response : array or iterable of arrays
-       Array giving the filter response function at each wavelenght
-       and for each filter in filter_wl. Must be set if filter_wl is
-       set, ignored otherwise.
-    filter_beta : iterable
-       Array-like object containing the index beta for each
-       filter. Must be set if filter_wl is set, ignored otherwise.
-    filter_wl_c : iterable
-       Array-like object containing the pivot wavelength for each
-       filter. Must be set if filter_wl is set, ignored otherwise.
-    filter_dir : string
-       Directory where the filter data files can be found. If left as
-       None, filters will be looked for in the $SLUG_DIR/lib/filters
-       directory. This parameter is used only if filtername is not
-       None.
+       wl : array
+          Wavelength of input spectrum in Angstrom
+       spec : array
+          Specific luminosity per unit wavelength for input spectrum, in
+          erg/s/A
+       filtername : string or iterable of strings
+          Name or list of names of the filters to be used. Filter names
+          can also include the special filters Lbol, QH0, QHe0, and QHe1;
+          the values returned for these will be the bolometric luminosity
+          (in erg/s) and the photon luminosities (in photons/s) in the H,
+          He, and He+ ionizing-continua, respectively.
+       photsystem : string
+          The photometric system to use for the output. Allowable values
+          are 'L_nu', 'L_lambda', 'AB', 'STMAG', and 'Vega',
+          corresponding to the options defined in the SLUG code.
+       filter_wl : array or iterable of arrays
+          Array giving the wavelengths in Angstrom at which the filter is
+          response function is given. If this object is an iterable of
+          arrays rather than a single array, it is assumed to represent
+          the wavelengths for a set of filters. If this is set,
+          no data is read from disk. Default behavior is to read the
+          filter information from disk.
+       filter_response : array or iterable of arrays
+          Array giving the filter response function at each wavelenght
+          and for each filter in filter_wl. Must be set if filter_wl is
+          set, ignored otherwise.
+       filter_beta : iterable
+          Array-like object containing the index beta for each
+          filter. Must be set if filter_wl is set, ignored otherwise.
+       filter_wl_c : iterable
+          Array-like object containing the pivot wavelength for each
+          filter. Must be set if filter_wl is set, ignored otherwise.
+       filter_dir : string
+          Directory where the filter data files can be found. If left as
+          None, filters will be looked for in the $SLUG_DIR/lib/filters
+          directory. This parameter is used only if filtername is not
+          None.
 
     Returns
-    -------
-    phot : array
-       Photometric values in the requested filters. Units depend on
-       the choice of photometric system:
-       L_nu --> erg/s/Hz
-       L_lambda --> erg/s/A
-       AB --> absolute AB magnitude
-       STMAG --> absolute ST magnitude
-       Vega --> absolute Vega magnitude
+       phot : array
+          Photometric values in the requested filters. Units depend on
+          the choice of photometric system:
+          L_nu --> erg/s/Hz;
+          L_lambda --> erg/s/A;
+          AB --> absolute AB magnitude;
+          STMAG --> absolute ST magnitude;
+          Vega --> absolute Vega magnitude;
     """
 
     # Read filter data if needed

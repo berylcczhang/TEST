@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cloudy-slug: An Automated Interface to cloudy &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="slugpy – The Python Helper Library" href="slugpy.html" />
+    <link rel="prev" title="Filters and Filter Data" href="filters.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="slugpy.html" title="slugpy – The Python Helper Library"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="filters.html" title="Filters and Filter Data"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="cloudy-slug-an-automated-interface-to-cloudy">
+<span id="sec-cloudy-slug"></span><h1>cloudy-slug: An Automated Interface to cloudy<a class="headerlink" href="#cloudy-slug-an-automated-interface-to-cloudy" title="Permalink to this headline">¶</a></h1>
+<p>SLUG stochastically generates stellar spectra, but it does not compute
+the nebular lines produced when those photons interact with the
+interstellar medium. To perform such calculations, SLUG includes an
+automated interface to <a class="reference external" href="http://nublado.org/">cloudy</a> (<a class="reference external" href="http://adsabs.harvard.edu/abs/2013RMxAA..49..137F">Ferland et
+al., 2013, RMxAA, 49, 137</a>). This can be
+used to post-process the output of a SLUG run in order to compute
+nebular emission.</p>
+<div class="section" id="cloudy-slug-basics">
+<h2>cloudy-slug Basics<a class="headerlink" href="#cloudy-slug-basics" title="Permalink to this headline">¶</a></h2>
+<p>The basic steps (described in greater detail below) are as follows:</p>
+<ol class="arabic">
+<li><p class="first">Get cloudy installed and compiled, following the directions on the
+<a class="reference external" href="http://nublado.org/">cloudy website</a>.</p>
+</li>
+<li><p class="first">Set the environment variable <tt class="docutils literal"><span class="pre">$CLOUDY_DIR</span></tt> to the directory where
+the cloudy executable <tt class="docutils literal"><span class="pre">cloudy.exe</span></tt> is located.  If you are using
+a <tt class="docutils literal"><span class="pre">bash</span></tt>-like shell, the syntax for this is:</p>
+<div class="highlight-rest"><div class="highlight"><pre>export CLOUDY_DIR = /path/to/cloudy
+</pre></div>
+</div>
+<p>while for a <tt class="docutils literal"><span class="pre">csh</span></tt>-like shell, it is:</p>
+<div class="highlight-rest"><div class="highlight"><pre>setenv CLOUDY_DIR /path/to/cloudy
+</pre></div>
+</div>
+</li>
+<li><p class="first">If you desire, edit the cloudy input template
+<tt class="docutils literal"><span class="pre">cloudy_slug/cloudy.in_template</span></tt> and the line list
+<tt class="docutils literal"><span class="pre">cloudy_slug/LineList_HII.dat</span></tt>. There are the template input files
+that will be used for all the cloudy runs, and their syntax follows
+the standard cloudy syntax. They control things like the density and
+element abundances in the nebula &#8211; see <a class="reference internal" href="#ssec-cloudy-template"><em>The cloudy-slug Input Template</em></a>
+for more details.</p>
+</li>
+<li><p class="first">Invoke the cloudy-slug interface script via:</p>
+<div class="highlight-rest"><div class="highlight"><pre>python cloudy_slug/cloudy_slug.py SLUG_MODEL_NAME
+</pre></div>
+</div>
+<p>where <tt class="docutils literal"><span class="pre">SLUG_MODEL_NAME</span></tt> is the name of the SLUG run to be
+processed. See <a class="reference internal" href="#ssec-cloudy-slug-options"><em>The cloudy-slug Interface Script</em></a> for more details on
+the python script.</p>
+</li>
+<li><p class="first">The output will be stored as a series of additional output files of
+with names of the form SLUG_MODEL_NAME_*cloudy*.ext, where the
+extension is .txt, .bin, or .fits, depending on the format in which
+the orignal SLUG output was stored. These files can be processed
+automatically by the slugpy helper routines (see
+<a class="reference internal" href="slugpy.html#sec-slugpy"><em>slugpy &#8211; The Python Helper Library</em></a>). See <a class="reference internal" href="#ssec-cloudy-output"><em>Full Description of cloudy-slug Output</em></a> for a full
+description of the outputs.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="the-cloudy-slug-input-template">
+<span id="ssec-cloudy-template"></span><h2>The cloudy-slug Input Template<a class="headerlink" href="#the-cloudy-slug-input-template" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="the-cloudy-slug-interface-script">
+<span id="ssec-cloudy-slug-options"></span><h2>The cloudy-slug Interface Script<a class="headerlink" href="#the-cloudy-slug-interface-script" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="full-description-of-cloudy-slug-output">
+<span id="ssec-cloudy-output"></span><h2>Full Description of cloudy-slug Output<a class="headerlink" href="#full-description-of-cloudy-slug-output" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cloudy-slug: An Automated Interface to cloudy</a><ul>
+<li><a class="reference internal" href="#cloudy-slug-basics">cloudy-slug Basics</a></li>
+<li><a class="reference internal" href="#the-cloudy-slug-input-template">The cloudy-slug Input Template</a></li>
+<li><a class="reference internal" href="#the-cloudy-slug-interface-script">The cloudy-slug Interface Script</a></li>
+<li><a class="reference internal" href="#full-description-of-cloudy-slug-output">Full Description of cloudy-slug Output</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="filters.html"
+                        title="previous chapter">Filters and Filter Data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="slugpy.html"
+                        title="next chapter">slugpy &#8211; The Python Helper Library</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/cloudy.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="slugpy.html" title="slugpy – The Python Helper Library"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="filters.html" title="Filters and Filter Data"
+             >previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

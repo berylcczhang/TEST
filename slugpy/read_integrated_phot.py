@@ -16,75 +16,73 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
     Function to read a SLUG2 integrated_phot file.
 
     Parameters
-    ----------
-    model_name : string
-       The name of the model to be read
-    output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
-       the current directory is searched, followed by the SLUG_DIR
-       directory if that environment variable is set
-    fmt : string
-       Format for the file to be read. Allowed values are 'ascii',
-       'bin' or 'binary, and 'fits'. If one of these is set, the code
-       will only attempt to open ASCII-, binary-, or FITS-formatted
-       output, ending in .txt., .bin, or .fits, respectively. If set
-       to None, the code will try to open ASCII files first, then if
-       it fails try binary files, and if it fails again try FITS
-       files.
-    nofilterdata : bool
-       If True, the routine does not attempt to read the filter
-       response data from the standard location
-    photsystem : None or string
-       If photsystem is None, the data will be returned in the same
-       photometric system in which they were read. Alternately, if it
-       is a string, the data will be converted to the specified
-       photometric system. Allowable values are 'L_nu', 'L_lambda',
-       'AB', 'STMAG', and 'Vega', corresponding to the options defined
-       in the SLUG code. If this is set and the conversion requested
-       involves a conversion from a wavelength-based system to a
-       frequency-based one, nofilterdata must be False so that the
-       central wavelength of the photometric filters is available.
-    verbose : bool
-       If True, verbose output is printed as code runs
-    read_info : dict
-       On return, this dict will contain the keys 'fname' and
-       'format', giving the name of the file read and the format it
-       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       model_name : string
+          The name of the model to be read
+       output_dir : string
+          The directory where the SLUG2 output is located; if set to None,
+          the current directory is searched, followed by the SLUG_DIR
+          directory if that environment variable is set
+       fmt : string
+          Format for the file to be read. Allowed values are 'ascii',
+          'bin' or 'binary, and 'fits'. If one of these is set, the code
+          will only attempt to open ASCII-, binary-, or FITS-formatted
+          output, ending in .txt., .bin, or .fits, respectively. If set
+          to None, the code will try to open ASCII files first, then if
+          it fails try binary files, and if it fails again try FITS
+          files.
+       nofilterdata : bool
+          If True, the routine does not attempt to read the filter
+          response data from the standard location
+       photsystem : None or string
+          If photsystem is None, the data will be returned in the same
+          photometric system in which they were read. Alternately, if it
+          is a string, the data will be converted to the specified
+          photometric system. Allowable values are 'L_nu', 'L_lambda',
+          'AB', 'STMAG', and 'Vega', corresponding to the options defined
+          in the SLUG code. If this is set and the conversion requested
+          involves a conversion from a wavelength-based system to a
+          frequency-based one, nofilterdata must be False so that the
+          central wavelength of the photometric filters is available.
+       verbose : bool
+          If True, verbose output is printed as code runs
+       read_info : dict
+          On return, this dict will contain the keys 'fname' and
+          'format', giving the name of the file read and the format it
+          was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    time : array
-       times at which colors are output, in yr
-    filter_names : list of string
-       a list giving the name for each filter
-    filter_units : list of string
-       a list giving the units for each filter
-    filter_wl_eff : list
-       effective wavelength of each filter; this is set to None for the
-       filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
-       True
-    filter_wl : list of arrays
-       a list giving the wavelength table for each filter; this is
-       None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
-       nofilterdata is True
-    filter_response : list of arrays
-       a list giving the photon response function for each filter;
-       this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
-       if nofilterdata is True 
-    filter_beta : list
-       powerlaw index beta for each filter; used to normalize the
-       photometry
-    filter_wl_c : list
-       pivot wavelength for each filter; used to normalize the photometry
-    phot : array, shape (N_filter, N_times, N_trials)
-       photometric value in each filter at each time in each trial;
-       units are as indicated in the units field
+       A namedtuple containing the following fields:
+
+       time : array
+          times at which colors are output, in yr
+       filter_names : list of string
+          a list giving the name for each filter
+       filter_units : list of string
+          a list giving the units for each filter
+       filter_wl_eff : list
+          effective wavelength of each filter; this is set to None for the
+          filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
+          True
+       filter_wl : list of arrays
+          a list giving the wavelength table for each filter; this is
+          None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
+          nofilterdata is True
+       filter_response : list of arrays
+          a list giving the photon response function for each filter;
+          this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
+          if nofilterdata is True 
+       filter_beta : list
+          powerlaw index beta for each filter; used to normalize the
+          photometry
+       filter_wl_c : list
+          pivot wavelength for each filter; used to normalize the photometry
+       phot : array, shape (N_filter, N_times, N_trials)
+          photometric value in each filter at each time in each trial;
+          units are as indicated in the units field
        
     Raises
-    ------
-    IOError, if no photometry file can be opened
-    ValueError, if photsystem is set to an unknown value
+       IOError, if no photometry file can be opened
+       ValueError, if photsystem is set to an unknown value
     """
 
     # Open file

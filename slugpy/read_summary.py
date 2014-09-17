@@ -10,22 +10,19 @@ def read_summary(model_name, output_dir=None):
     Function to open a SLUG output summary file.
 
     Parameters
-    ----------
-    model_name : string
-       The name of the model to be read
-    output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
-       the current directory is searched, followed by the SLUG_DIR
-       directory if that environment variable is set
+       model_name : string
+          The name of the model to be read
+       output_dir : string
+          The directory where the SLUG2 output is located; if set to None,
+          the current directory is searched, followed by the SLUG_DIR
+          directory if that environment variable is set
 
     Returns
-    -------
-    summary : dict
-       A dict containing all the keywords stored in the output file
+       summary : dict
+          A dict containing all the keywords stored in the output file
 
     Raises
-    ------
-    IOError, if a summary file for the specific model cannot be found
+       IOError, if a summary file for the specified model cannot be found
     """
 
     # Did we get a specific directory in which to look? If not, try

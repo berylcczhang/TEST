@@ -13,56 +13,54 @@ def read_cluster_cloudyspec(model_name, output_dir=None, fmt=None,
     Function to read a SLUG2 cluster_cloudyspec file.
 
     Parameters
-    ----------
-    model_name : string
-       The name of the model to be read
-    output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
-       the current directory is searched, followed by the SLUG_DIR
-       directory if that environment variable is set
-    fmt : string
-       Format for the file to be read. Allowed values are 'ascii',
-       'bin' or 'binary, and 'fits'. If one of these is set, the code
-       will only attempt to open ASCII-, binary-, or FITS-formatted
-       output, ending in .txt., .bin, or .fits, respectively. If set
-       to None, the code will try to open ASCII files first, then if
-       it fails try binary files, and if it fails again try FITS
-       files.
-    verbose : bool
-       If True, verbose output is printed as code runs
-    read_info : dict
-       On return, this dict will contain the keys 'fname' and
-       'format', giving the name of the file read and the format it
-       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       model_name : string
+          The name of the model to be read
+       output_dir : string
+          The directory where the SLUG2 output is located; if set to None,
+          the current directory is searched, followed by the SLUG_DIR
+          directory if that environment variable is set
+       fmt : string
+          Format for the file to be read. Allowed values are 'ascii',
+          'bin' or 'binary, and 'fits'. If one of these is set, the code
+          will only attempt to open ASCII-, binary-, or FITS-formatted
+          output, ending in .txt., .bin, or .fits, respectively. If set
+          to None, the code will try to open ASCII files first, then if
+          it fails try binary files, and if it fails again try FITS
+          files.
+       verbose : bool
+          If True, verbose output is printed as code runs
+       read_info : dict
+          On return, this dict will contain the keys 'fname' and
+          'format', giving the name of the file read and the format it
+          was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    id : array, dtype uint
-       unique ID of cluster
-    trial: array, dtype uint
-       which trial was this cluster part of
-    time : array
-       times at which cluster spectra are output, in yr
-    cloudy_wl : array
-       wavelength, in Angstrom
-    cloudy_inc : array, shape (N_cluster, N_wavelength)
-       specific luminosity of the cluster's stellar radiation field at
-       each wavelength, in erg/s/A
-    cloudy_trans :  array, shape (N_cluster, N_wavelength)
-       specific luminosity of the stellar radiation field after it has
-       passed through the HII region, at each wavelength, in erg/s/A
-    cloudy_emit :  array, shape (N_cluster, N_wavelength)
-       specific luminosity of the radiation field emitted by the HII
-       region, at each wavelength, in erg/s/A
-    cloudy_trans_emit :  array, shape (N_cluster, N_wavelength)
-       the sum of the emitted and transmitted fields; this is what
-       would be seen by an observer looking at both the star cluster
-       and its nebula
+       A namedtuple containing the following fields:
+
+       id : array, dtype uint
+          unique ID of cluster
+       trial: array, dtype uint
+          which trial was this cluster part of
+       time : array
+          times at which cluster spectra are output, in yr
+       cloudy_wl : array
+          wavelength, in Angstrom
+       cloudy_inc : array, shape (N_cluster, N_wavelength)
+          specific luminosity of the cluster's stellar radiation field at
+          each wavelength, in erg/s/A
+       cloudy_trans :  array, shape (N_cluster, N_wavelength)
+          specific luminosity of the stellar radiation field after it has
+          passed through the HII region, at each wavelength, in erg/s/A
+       cloudy_emit :  array, shape (N_cluster, N_wavelength)
+          specific luminosity of the radiation field emitted by the HII
+          region, at each wavelength, in erg/s/A
+       cloudy_trans_emit :  array, shape (N_cluster, N_wavelength)
+          the sum of the emitted and transmitted fields; this is what
+          would be seen by an observer looking at both the star cluster
+          and its nebula
 
     Raises
-    ------
-    IOError, if no spectrum file can be opened
+       IOError, if no spectrum file can be opened
     """
 
     # Open file

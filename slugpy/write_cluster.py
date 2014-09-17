@@ -24,20 +24,18 @@ def write_cluster(data, model_name, fmt):
     starting from a cluster data set as returned by read_cluster.
 
     Parameters
-    ----------
-    data : namedtuple
-       Cluster data to be written, in the namedtuple format returned
-       by read_cluster
-    model_name : string
-       Base file name to give the model to be written. Can include a
-       directory specification if desired.
-    fmt : string
-       Format for the output file. Allowed values are 'ascii', 'bin'
-       or 'binary, and 'fits'.
+       data : namedtuple
+          Cluster data to be written, in the namedtuple format returned
+          by read_cluster
+       model_name : string
+          Base file name to give the model to be written. Can include a
+          directory specification if desired.
+       fmt : string
+          Format for the output file. Allowed values are 'ascii', 'bin'
+          or 'binary, and 'fits'.
 
     Returns
-    -------
-    Nothing
+       Nothing
     """
 
     # Make sure fmt is valid

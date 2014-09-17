@@ -14,16 +14,14 @@ def combine_cluster(data):
     cluster unique ID numbers are altered as necessary to avoid
     duplication between the merged data sets.
 
-    Parameters
-    ----------
-    data : list_like
-       A list containing the cluster data for each run, as
-       returned by read_cluster
+    Parameters:
+       data : list_like
+          A list containing the cluster data for each run, as
+          returned by read_cluster
 
-    Returns
-    -------
-    combined_data : namedtuple
-       The combined data, in the same format as each object in data
+    Returns:
+       combined_data : namedtuple
+          The combined data, in the same format as each object in data
     """
 
     # Safety check: make sure all input data objects have the same

@@ -15,33 +15,31 @@ def read_filter(filtername, filter_dir=None):
     filter_dir keyword.
 
     Parameters
-    ----------
-    filtername : string or iterable containing strings
-       Name or names of filters to be read; for the special filters
-       Lbol, QH0, QHe0, and QHe1, the return value will be None
-    filter_dir : string
-       Directory where the filter data files can be found
+       filtername : string or iterable containing strings
+          Name or names of filters to be read; for the special filters
+          Lbol, QH0, QHe0, and QHe1, the return value will be None
+       filter_dir : string
+          Directory where the filter data files can be found
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    wl_eff : float or array
-       Central wavelength of the filter, defined by 
-       wl_eff = exp(\int R ln lambda dln lambda / \int R dln lambda)
-    wl : array or list of arrays
-       Wavelength table for each filter, in Ang
-    response : array or list of arrays
-       Response function per photon for each filter
-    beta : float or array
-       Index beta for the filter
-    wl_c : flot or array
-       Pivot wavelength for the filter; used when beta != 0 to
-       normalize the photometry
+       A namedtuple containing the following fields:
+
+       wl_eff : float or array
+          Central wavelength of the filter, defined by 
+          wl_eff = exp(\int R ln lambda dln lambda / \int R dln lambda)
+       wl : array or list of arrays
+          Wavelength table for each filter, in Ang
+       response : array or list of arrays
+          Response function per photon for each filter
+       beta : float or array
+          Index beta for the filter
+       wl_c : float or array
+          Pivot wavelength for the filter; used when beta != 0 to
+          normalize the photometry
 
     Raises
-    ------
-    IOError, if the filter data files cannot be opened, or if the
-    requested filter cannot be found
+       IOError, if the filter data files cannot be opened, or if the
+       requested filter cannot be found
     """
 
     # If filter list is not an iterable, make it an iterable of 1

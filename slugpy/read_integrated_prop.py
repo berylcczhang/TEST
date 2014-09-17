@@ -13,51 +13,50 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     Function to read a SLUG2 integrated_prop file.
 
     Parameters
-    ----------
-    model_name : string
-       The name of the model to be read
-    output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
-       the current directory is searched, followed by the SLUG_DIR
-       directory if that environment variable is set
-    fmt : string
-       Format for the file to be read. Allowed values are 'ascii',
-       'bin' or 'binary, and 'fits'. If one of these is set, the code
-       will only attempt to open ASCII-, binary-, or FITS-formatted
-       output, ending in .txt., .bin, or .fits, respectively. If set
-       to None, the code will try to open ASCII files first, then if
-       it fails try binary files, and if it fails again try FITS
-       files.
-    verbose : bool
-       If True, verbose output is printed as code runs
-    read_info : dict
-       On return, this dict will contain the keys 'fname' and
-       'format', giving the name of the file read and the format it
-       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       model_name : string
+          The name of the model to be read
+       output_dir : string
+          The directory where the SLUG2 output is located; if set to None,
+          the current directory is searched, followed by the SLUG_DIR
+          directory if that environment variable is set
+       fmt : string
+          Format for the file to be read. Allowed values are 'ascii',
+          'bin' or 'binary, and 'fits'. If one of these is set, the code
+          will only attempt to open ASCII-, binary-, or FITS-formatted
+          output, ending in .txt., .bin, or .fits, respectively. If set
+          to None, the code will try to open ASCII files first, then if
+          it fails try binary files, and if it fails again try FITS
+          files.
+       verbose : bool
+          If True, verbose output is printed as code runs
+       read_info : dict
+          On return, this dict will contain the keys 'fname' and
+          'format', giving the name of the file read and the format it
+          was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    time : array
-       Times at which data are output
-    target_mass : array, shape
-       Target stellar mass at each time
-    actual_mass : array, shape (N_times, N_trials)
-       Actual mass of stars created up to each time in each trial
-    live_mass : array, shape (N_times, N_trials)
-       Mass of currently-alive stars at each time in each trial
-    cluster_mass : array, shape (N_times, N_trials)
-       Mass of living stars in non-disrupted clusters at each time in
-       each trial
-    num_clusters : array, shape (N_times, N_trials), dtype ulonglong
-       Number of non-disrupted clusters present at each time in each
-       trial
-    num_dis_clusters : array, shape (N_times, N_trials), dtype ulonglong
-       Number of disrupted clusters present at each time in each trial
-    num_fld_stars : array, shape (N_times, N_trials), dtype ulonglong
-       Number of living field stars (excluding those in disrupted 
-       clusters and those being treated non-stochastically) present at
-       each time in each trial
+       A namedtuple containing the following fields:
+
+       time : array
+          Times at which data are output
+       target_mass : array, shape
+          Target stellar mass at each time
+       actual_mass : array, shape (N_times, N_trials)
+          Actual mass of stars created up to each time in each trial
+       live_mass : array, shape (N_times, N_trials)
+          Mass of currently-alive stars at each time in each trial
+       cluster_mass : array, shape (N_times, N_trials)
+          Mass of living stars in non-disrupted clusters at each time in
+          each trial
+       num_clusters : array, shape (N_times, N_trials), dtype ulonglong
+          Number of non-disrupted clusters present at each time in each
+          trial
+       num_dis_clusters : array, shape (N_times, N_trials), dtype ulonglong
+          Number of disrupted clusters present at each time in each trial
+       num_fld_stars : array, shape (N_times, N_trials), dtype ulonglong
+          Number of living field stars (excluding those in disrupted 
+          clusters and those being treated non-stochastically) present at
+          each time in each trial
     """
 
     # Open file

@@ -17,20 +17,20 @@ def write_cluster_cloudylines(data, model_name, fmt):
     """
     Write out data computed by cloudy on a slug spectrum
 
-    data : namedtuple
-       Cloudy spectral data for clusters to be written; a namedtuple
-       containing the fields time, cloudy_linelist, cloudy_linewl, 
-       cloudy_linelum
-    model_name : string
-       Base file name to give the model to be written. Can include a
-       directory specification if desired.
-    fmt : string
-       Format for the output file. Allowed values are 'ascii', 'bin'
-       or 'binary, and 'fits'.
+    Parameters
+       data : namedtuple
+          Cloudy spectral data for clusters to be written; a namedtuple
+          containing the fields time, cloudy_linelist, cloudy_linewl, 
+          cloudy_linelum
+       model_name : string
+          Base file name to give the model to be written. Can include a
+          directory specification if desired.
+       fmt : string
+          Format for the output file. Allowed values are 'ascii', 'bin'
+          or 'binary, and 'fits'.
 
     Returns
-    -------
-    Nothing
+       Nothing
     """
 
     # Make sure fmt is valid

@@ -64,6 +64,10 @@ parser.add_argument("-cm", "--clustermode", action='store_true',
                     "each cluster is a separate cloudy run "+
                     "(default: integrated mode, one cloudy run / "
                     "trial)")
+parser.add_argument('-a', '--agemax', default=4, type=float,
+                    help="maximum cluster age in Myr for which to " +
+                    "compute nebular emission; only used in clustermode " +
+                    "(default: 4 Myr)")
 parser.add_argument('-n', '--nproc', default=None, type=int,
                     help="number of cloudy processes (default: "+
                     "number of cores)")
@@ -236,13 +240,25 @@ def do_cloudy_run(thread_num, q):
         # Fetch a task from the queue, get the data we need, and
         # generate a file name extension to go with it
         if args.clustermode:
+
+            # Cluster mode
             cluster_num = q.get()
+
+            # Check if this cluster is below our age maximum; if not,
+            # skip it
+            if data.time[cluster_num]-data.form_time[cluster_num] > \
+               args.age*1e6*365.25*24.*3600.:
+                q.task_done()
+                continue
             spec = data.spec[cluster_num,:]
             ext = "_n{:09d}".format(cluster_num)
             qH0 = data.phot[cluster_num,qH0idx]
             outstr = "launching cloudy on cluster {:d} of {:d}" \
                 .format(cluster_num+1, len(data.id))
+
         else:
+
+            # Integrated mode
             trial, time = q.get()
             spec = data.spec[:, time, trial]
             ext = "_tr{:05d}_ti{:05d}".format(trial,time)
@@ -429,6 +445,7 @@ def do_cloudy_run(thread_num, q):
                 os.remove(continuum_file)
             if lines_file is not None:
                 os.remove(lines_file)
+            os.remove(cloudy_in_fname)
             os.remove(cloudy_out_fname)
 
         # Declare that we're done
@@ -460,8 +477,9 @@ if compute_continuum:
     cloudywl_max = np.zeros(0)
     if args.clustermode:
         for i in range(len(cloudywl)):
-            if cloudywl[i].shape[0] > cloudywl_max.shape[0]:
-                cloudywl_max = cloudywl[i]
+            if cloudy_wl[i] is not None:
+                if cloudywl[i].shape[0] > cloudywl_max.shape[0]:
+                    cloudywl_max = cloudywl[i]
     else:
         for i in range(len(cloudywl)):
             for j in range(len(cloudywl[0])):
@@ -471,11 +489,14 @@ if compute_continuum:
     # Now loop over stored spectra, padding array beginnings
     if args.clustermode:
         for i in range(len(cloudywl)):
-            offset = len(cloudywl_max) - len(cloudywl[i])
-            if offset > 0:
-                cloudyspec[i] \
-                    = np.insert(cloudyspec[i], 0,
-                                np.zeros((offset,4)), axis=1)
+            if cloudy_wl[i] is not None:
+                offset = len(cloudywl_max) - len(cloudywl[i])
+                if offset > 0:
+                    cloudyspec[i] \
+                        = np.insert(cloudyspec[i], 0,
+                                    np.zeros((offset,4)), axis=1)
+            else:
+                cloudyspec[i] = np.zeros(len(cloudywl_max))
     else:
         for i in range(len(cloudywl)):
             for j in range(len(cloudywl[0])):
@@ -524,8 +545,20 @@ if compute_continuum:
 
 # Step 10: write the line data to file
 if compute_lines:
-    linelum = np.array(linelum)
     if args.clustermode:
+ 
+        # Set clusters we skipped to have line luminosities of zero
+        nline = 1
+        for i in range(len(linelum)):
+            if linelum[i] is not None:
+                nline = linelum[i].shape[0]
+                break
+        for i in range(len(linelum)):
+            if linelum[i] is None:
+                linelum[i] = np.zeros(nline)
+
+        # Write line data
+        linelum = np.array(linelum)
         cloudylines_type = namedtuple('cluster_cloudylines',
                                       ['id', 'trial', 'time', 
                                        'cloudy_linelist',
@@ -536,6 +569,7 @@ if compute_lines:
         write_cluster_cloudylines(cloudylines, args.slug_model_name,
                                   file_info['format'])
     else:
+        linelum = np.array(linelum)
         cloudylines_type = namedtuple('cluster_cloudylines',
                                       ['time', 'cloudy_linelabel',
                                        'cloudy_linewl',
@@ -549,10 +583,22 @@ if compute_lines:
 # Step 11: write photometry to file
 if compute_continuum:
 
-    cloudyphot = np.array(cloudyphot)
-
     # Cluster or integrated mode
     if args.clustermode:
+
+        # Set clusters we skipped to have photometric values of either
+        # 0 (for non-magnitude systems) or +infinity (for magnitude
+        # systems)
+        nfilter = len(data.filter_names)
+        for i in range(len(cloudyphot)):
+            if cloudyphot[i] is None:
+                cloudyphot[i] = np.zeros((3,nfilter))
+                for j in range(nfilter):
+                    if 'mag' in data.filter_units[j]:
+                        cloudyphot[i][:,j] = np.inf
+
+        # Convert to array
+        cloudyphot = np.array(cloudyphot)
 
         # Build namedtuple
         cloudyphot_type = namedtuple('cluster_cloudyphot',
@@ -573,11 +619,16 @@ if compute_continuum:
                               data.filter_wl_eff, data.filter_wl,
                               data.filter_response, data.filter_beta,
                               data.filter_wl_c, cloudyphot[:,0,:],
-                              cloudyphot[:,1,:], cloudyphot[:,1,:])
+                              cloudyphot[:,1,:], cloudyphot[:,2,:])
+
+        # Write
         write_cluster_cloudyphot(cloudyphot_data, args.slug_model_name,
                                  file_info['format'])
 
     else:
+
+        # Convert to array
+        cloudyphot = np.array(cloudyphot)
 
         # Build namedtuple
         cloudyphot_type = namedtuple('integrated_cloudyphot',
@@ -601,6 +652,16 @@ if compute_continuum:
                               np.transpose(cloudyphot[:,:,0,:], (2,0,1)),
                               np.transpose(cloudyphot[:,:,1,:], (2,0,1)),
                               np.transpose(cloudyphot[:,:,2,:], (2,0,1)))
+
+        # Write
         write_integrated_cloudyphot(cloudyphot_data, args.slug_model_name,
                                     file_info['format'])
 
+
+# Step 12: final cleanup
+if not args.save:
+    try:
+        os.rmdir(osp.join(cwd, 'cloudy_tmp'))
+    except OSError:
+        warnings.warn("unable to clean up temporary directory "+
+                      osp.join(cwd, 'cloudy_tmp'))

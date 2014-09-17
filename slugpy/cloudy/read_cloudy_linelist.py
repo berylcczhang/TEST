@@ -10,20 +10,19 @@ def read_cloudy_linelist(filename):
     Reads a cloudy line list output, produced by save last line list
 
     Parameters
-    ----------
-    filename : string
-       name of the file to be read
+       filename : string
+          name of the file to be read
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    labels : array, dtype 'S4'
-       list of line labels
-    wl : array
-       array of line wavelengths, in Angstrom
-    lum : array
-       array of line luminosities; this will be in whatever units the
-       cloudy output is in
+       A namedtuple containing the following fields:
+
+       labels : array, dtype 'S4'
+          list of line labels
+       wl : array
+          array of line wavelengths, in Angstrom
+       lum : array
+          array of line luminosities; this will be in whatever units the
+          cloudy output is in
     """
 
     # Open file

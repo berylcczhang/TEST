@@ -18,6 +18,7 @@ Contents:
    pdfs
    output
    filters
+   cloudy
    slugpy
    tests
 

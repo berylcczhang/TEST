@@ -17,40 +17,37 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
     Function to convert photometric data between photometric systems.
 
     Parameters
-    ----------
-    photsystem : string
-       The photometric system to which to convert. Allowable values
-       are 'L_nu', 'L_lambda', 'AB', 'STMAG', and 'Vega',
-       corresponding to the options defined in the SLUG code. If this
-       is set and the conversion requested involves a conversion from
-       a wavelength-based system to a frequency-based one, wl_cen must
-       not be None.
-    phot : array
-       array of photometric data; if the array has more than one
-       dimension, the first dimension is assumed to represent the
-       different photometric filters
-    units : iterable of strings
-       iterable listing the units of the input photometric data. On
-       return, strings will be changed to the units of the new system.
-    wl_cen : array
-       central wavelengths of the filters, in Angstrom; can be left as
-       None if the requested conversion doesn't require going between
-       wavelength- and frequency-based systems.
-    filter_last : bool
-       If the input data have more than one dimension, by default it
-       is assumed that the first dimension contains values for the
-       different photometric filters. If this keyword is set to True,
-       it will instead be assumed that the last dimension contains the
-       values for the different filters.
+       photsystem : string
+          The photometric system to which to convert. Allowable values
+          are 'L_nu', 'L_lambda', 'AB', 'STMAG', and 'Vega',
+          corresponding to the options defined in the SLUG code. If this
+          is set and the conversion requested involves a conversion from
+          a wavelength-based system to a frequency-based one, wl_cen must
+          not be None.
+       phot : array
+          array of photometric data; if the array has more than one
+          dimension, the first dimension is assumed to represent the
+          different photometric filters
+       units : iterable of strings
+          iterable listing the units of the input photometric data. On
+          return, strings will be changed to the units of the new system.
+       wl_cen : array
+          central wavelengths of the filters, in Angstrom; can be left as
+          None if the requested conversion doesn't require going between
+          wavelength- and frequency-based systems.
+       filter_last : bool
+          If the input data have more than one dimension, by default it
+          is assumed that the first dimension contains values for the
+          different photometric filters. If this keyword is set to True,
+          it will instead be assumed that the last dimension contains the
+          values for the different filters.
 
     Returns
-    -------
-    Nothing
+       Nothing
 
     Raises
-    ------
-    ValueError, if wl_cen is None but the requested conversion
-    requires going between wavelength- and frequency-based systems
+       ValueError, if wl_cen is None but the requested conversion
+       requires going between wavelength- and frequency-based systems
     """
 
     # Set target units based on requested conversion

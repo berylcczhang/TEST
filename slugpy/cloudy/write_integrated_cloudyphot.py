@@ -17,21 +17,21 @@ def write_integrated_cloudyphot(data, model_name, fmt):
     Write out photometry for nebular emission computed by cloudy on a
     slug spectrum
 
-    data : namedtuple
-       Integrated cloudy line data to be written; a namedtuple
-       containing the fields time, cloudy_filter_names, 
-       cloudy_filter_units, cloudy_phot_trans, cloudy_phot_emit,
-       and cloudy_phot_trans_emit
-    model_name : string
-       Base file name to give the model to be written. Can include a
-       directory specification if desired.
-    fmt : string
-       Format for the output file. Allowed values are 'ascii', 'bin'
-       or 'binary, and 'fits'.
+    Parameters
+       data : namedtuple
+          Integrated cloudy photometry data to be written; a namedtuple
+          containing the fields time, cloudy_filter_names, 
+          cloudy_filter_units, cloudy_phot_trans, cloudy_phot_emit,
+          and cloudy_phot_trans_emit
+       model_name : string
+          Base file name to give the model to be written. Can include a
+          directory specification if desired.
+       fmt : string
+          Format for the output file. Allowed values are 'ascii', 'bin'
+          or 'binary, and 'fits'.
 
     Returns
-    -------
-    Nothing
+       Nothing
     """
 
     # Make sure fmt is valid

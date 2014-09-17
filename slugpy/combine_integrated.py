@@ -12,15 +12,13 @@ def combine_integrated(data):
     treating each input run as a separate set of trials.
 
     Parameters
-    ----------
-    data : list_like
-       A list containing the integrated data for each run, as
-       returned by read_integrated
+       data : list_like
+          A list containing the integrated data for each run, as
+          returned by read_integrated
 
     Returns
-    -------
-    combined_data : namedtuple
-       The combined data, in the same format as each object in data
+       combined_data : namedtuple
+          The combined data, in the same format as each object in data
     """
 
     # Safety check: make sure all input data objects have the same
