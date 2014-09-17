@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to slug’s documentation! &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="#" />
+    <link rel="next" title="Introduction to SLUG" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction to SLUG"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="welcome-to-slug-s-documentation">
+<h1>Welcome to slug&#8217;s documentation!<a class="headerlink" href="#welcome-to-slug-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction to SLUG</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#what-does-slug-do">What Does SLUG Do?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#cluster-simulations-and-galaxy-simulations">Cluster Simulations and Galaxy Simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#probability-distribution-functions-the-imf-sfh-cmf-and-clf">Probability Distribution Functions: the IMF, SFH, CMF, and CLF</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#spectra-and-photometry">Spectra and Photometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#monte-carlo-simulation">Monte Carlo Simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="compiling.html">Compiling and Installing SLUG</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="compiling.html#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiling.html#compiling">Compiling</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Running a SLUG simulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parameters.html">Parameter Specification</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html#file-format">File Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html#basic-keywords">Basic Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html#simulation-control-keywords">Simulation Control Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html#output-control-keywords">Output Control Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html#physical-model-keywords">Physical Model Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parameters.html#photometric-filter-keywords">Photometric Filter Keywords</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pdfs.html">Probability Distribution Functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pdfs.html#basic-mode">Basic Mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pdfs.html#advanced-mode">Advanced Mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pdfs.html#sampling-methods">Sampling Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="output.html">Output Files and Format</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="output.html#the-integrated-prop-file">The <tt class="docutils literal"><span class="pre">integrated_prop</span></tt> File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html#the-integrated-spec-file">The <tt class="docutils literal"><span class="pre">integrated_spec</span></tt> File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html#the-integrated-phot-file">The <tt class="docutils literal"><span class="pre">integrated_phot</span></tt> File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html#the-cluster-prop-file">The <tt class="docutils literal"><span class="pre">cluster_prop</span></tt> File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html#the-cluster-spec-file">The <tt class="docutils literal"><span class="pre">cluster_spec</span></tt> File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output.html#the-cluster-phot-file">The <tt class="docutils literal"><span class="pre">cluster_phot</span></tt> File</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="filters.html">Filters and Filter Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="slugpy.html">slugpy &#8211; The Python Helper Library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="slugpy.html#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="slugpy.html#module-slugpy">Full Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">Test Problems</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-example-basic-galaxy-simulation">Problem <tt class="docutils literal"><span class="pre">example</span></tt>: basic galaxy simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-example-cluster-basic-cluster-simulation">Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-constsampl-importance-of-constrained-sampling">Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-sampling-different-sampling-techniques">Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-imfchoice-different-imf-implementations">Problem <tt class="docutils literal"><span class="pre">imfchoice</span></tt>: different IMF implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-cmfchoice-different-cmf-implementations">Problem <tt class="docutils literal"><span class="pre">cmfchoice</span></tt>: different CMF implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-sfhsampling-realizations-of-sfh">Problem <tt class="docutils literal"><span class="pre">sfhsampling</span></tt>: realizations of SFH</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-cldisrupt-cluster-disruption-at-work">Problem <tt class="docutils literal"><span class="pre">cldisrupt</span></tt>: cluster disruption at work</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-clfraction-cluster-fraction-at-work">Problem <tt class="docutils literal"><span class="pre">clfraction</span></tt>: cluster fraction at work</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-spectra-full-spectra">Problem <tt class="docutils literal"><span class="pre">spectra</span></tt>: full spectra</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-redshift-trivial-redshift-example">Problem <tt class="docutils literal"><span class="pre">redshift</span></tt>: trivial redshift example</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to slug&#8217;s documentation!</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="next chapter">Introduction to SLUG</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction to SLUG"
+             >next</a> |</li>
+        <li><a href="#">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

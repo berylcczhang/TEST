@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Test Problems &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="prev" title="slugpy – The Python Helper Library" href="slugpy.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="slugpy.html" title="slugpy – The Python Helper Library"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="test-problems">
+<span id="sec-tests"></span><h1>Test Problems<a class="headerlink" href="#test-problems" title="Permalink to this headline">¶</a></h1>
+<p>This section describes a set of problems that can be used to test and explore the different capabilities of SLUG. SLUG ships a set of problems <tt class="docutils literal"><span class="pre">problemname</span></tt> that are specified by a parameter file <tt class="docutils literal"><span class="pre">param/problemname.param</span></tt>. Problems that require multiple simulations are described instead by multiple paramater files, each with unique ID XX:  <tt class="docutils literal"><span class="pre">param/problemnameXX.param</span></tt>. Users can reproduce the output of the test problems with the provided executable scripts  <tt class="docutils literal"><span class="pre">test/run_problemname.sh</span></tt>. For each problem, a script for analysis is distributed  in <tt class="docutils literal"><span class="pre">test/problemname.py</span></tt>. Details for each test problem are given below.  Throughout this section, it is assumed that the <tt class="docutils literal"><span class="pre">SLUG_DIR</span></tt> has been properly set.</p>
+<div class="section" id="problem-example-basic-galaxy-simulation">
+<h2>Problem <tt class="docutils literal"><span class="pre">example</span></tt>: basic galaxy simulation<a class="headerlink" href="#problem-example-basic-galaxy-simulation" title="Permalink to this headline">¶</a></h2>
+<p>This problem illustrates the basic usage of slugin <tt class="docutils literal"><span class="pre">galaxy</span></tt> mode by running 48 realizations of a galaxy with constant <span class="math">\(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\)</span>, up to a maximum time of <span class="math">\(2\times 10^8\)</span> yr. By issuing the command <tt class="docutils literal"><span class="pre">test/run_example.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_EXAMPLE*</span></tt> are generated. Once the models are ready, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_EXAMPLE_f1.pdf</span></tt>.</p>
+<p>The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence
+of SLUG core algorithm. The 1:1 relation is shown by a red dashed line.
+The remaining panels show examples of integrated photometry (as labeled) of all simulated galaxies
+at different time steps, as a function of the actual mass. Due to its stochastic nature, SLUG produces
+distributions rather than single values for each time step. The expected rate of ionizing
+photon and the bolometric luminosities for a deterministic model with a
+continuous star formation rate of <span class="math">\(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\)</span> are shown
+by red dashed lines in the relevant panels.</p>
+</div>
+<div class="section" id="problem-example-cluster-basic-cluster-simulation">
+<h2>Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation<a class="headerlink" href="#problem-example-cluster-basic-cluster-simulation" title="Permalink to this headline">¶</a></h2>
+<p>This problem illustrates the basic usage of SLUG in <tt class="docutils literal"><span class="pre">cluster</span></tt> mode by running 1000 realizations of a cluster with mass 500 <span class="math">\(M_\odot\)</span>,
+up to a maximum time of 10 Myr. By issuing the command
+<tt class="docutils literal"><span class="pre">test/run_example_cluster.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_CLUSTER_EXAMPLE*</span></tt> are
+generated. Once the models are ready, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_cluster.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_CLUSTER_EXAMPLE_f1.pdf</span></tt>.</p>
+<p>This figure is divided in two columns: the left one shows outputs at the first time step, 1 Myr, while the second one shows outputs at the last time step, 10 Myr.  The top row shows the actual cluster mass for an input mass of <span class="math">\(500\;M_\odot\)</span>.
+In <tt class="docutils literal"><span class="pre">cluster</span></tt> mode, all clusters are generated at the first time step and they evolve
+passively after that. Thus, the mass does not change. As a consequence of the
+random drawing from the IMF, masses are distributed around the input mass.
+As the wanted mass is large enough to allow for many stars to be drawn, the
+actual mass distribution is narrow.</p>
+<p>The second raw shows instead the distribution of the maximum mass of all stars that are still
+alive at a given time step. At 1 Myr, this distribution is a good approximation of the
+input distribution, which is the result of random draws from the IMF. At 10 Myr, which is the
+typical lifetime of a 15-20 <span class="math">\(M_\odot\)</span> star, the most massive stars have died, and
+SLUG stops following them. The distribution of luminosities, and particularly those
+most sensitive to the presence of massive stars, change accordingly
+(third and fourth row for <span class="math">\(Q_{H_0}\)</span> and FUV).</p>
+</div>
+<div class="section" id="problem-constsampl-importance-of-constrained-sampling">
+<h2>Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling<a class="headerlink" href="#problem-constsampl-importance-of-constrained-sampling" title="Permalink to this headline">¶</a></h2>
+<p>This problem illustrates in more details the effects of constrained sampling on SLUG simulations,
+which is the first key ingredient in the core algorithm of SLUG.</p>
+<p>[change cluster mass to show how max mass changes]</p>
+</div>
+<div class="section" id="problem-sampling-different-sampling-techniques">
+<h2>Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques<a class="headerlink" href="#problem-sampling-different-sampling-techniques" title="Permalink to this headline">¶</a></h2>
+<p>This problem highlights the flexible choice of sampling techniques in SLUG, which is
+a new capability of v2.</p>
+<p>[basic run with different sampling]</p>
+</div>
+<div class="section" id="problem-imfchoice-different-imf-implementations">
+<h2>Problem <tt class="docutils literal"><span class="pre">imfchoice</span></tt>: different IMF implementations<a class="headerlink" href="#problem-imfchoice-different-imf-implementations" title="Permalink to this headline">¶</a></h2>
+<p>This problem highlights the flexible choice of IMF implementations in SLUG.</p>
+<p>[basic run with different imfs]</p>
+</div>
+<div class="section" id="problem-cmfchoice-different-cmf-implementations">
+<h2>Problem <tt class="docutils literal"><span class="pre">cmfchoice</span></tt>: different CMF implementations<a class="headerlink" href="#problem-cmfchoice-different-cmf-implementations" title="Permalink to this headline">¶</a></h2>
+<p>This problem highlights the flexible choice of CMF implementations in SLUG.</p>
+<p>[basic run with different cmfs]</p>
+</div>
+<div class="section" id="problem-sfhsampling-realizations-of-sfh">
+<h2>Problem <tt class="docutils literal"><span class="pre">sfhsampling</span></tt>: realizations of SFH<a class="headerlink" href="#problem-sfhsampling-realizations-of-sfh" title="Permalink to this headline">¶</a></h2>
+<p>This problem illustrates the conceptual difference between an input SFH and the effective
+realizations produced by SLUG, in comparison to deterministic codes.</p>
+<p>[show how a input SFH gets implemented in different realizations]</p>
+</div>
+<div class="section" id="problem-cldisrupt-cluster-disruption-at-work">
+<h2>Problem <tt class="docutils literal"><span class="pre">cldisrupt</span></tt>: cluster disruption at work<a class="headerlink" href="#problem-cldisrupt-cluster-disruption-at-work" title="Permalink to this headline">¶</a></h2>
+<p>This problem highlights the flexible choice of CLF implementations in SLUG.</p>
+<p>[basic run with different clfs]</p>
+</div>
+<div class="section" id="problem-clfraction-cluster-fraction-at-work">
+<h2>Problem <tt class="docutils literal"><span class="pre">clfraction</span></tt>: cluster fraction at work<a class="headerlink" href="#problem-clfraction-cluster-fraction-at-work" title="Permalink to this headline">¶</a></h2>
+<p>This problem highlights the flexible choice of cluster fraction during SLUG simulations.</p>
+<p>[basic run with different fc]</p>
+</div>
+<div class="section" id="problem-spectra-full-spectra">
+<h2>Problem <tt class="docutils literal"><span class="pre">spectra</span></tt>: full spectra<a class="headerlink" href="#problem-spectra-full-spectra" title="Permalink to this headline">¶</a></h2>
+<p>This problem highlights the power of the new feature offered in SLUG v2: the ability to produce
+full spectra.</p>
+<p>[basic run with full spectra out: shows stochasticity applied to spectra]</p>
+</div>
+<div class="section" id="problem-redshift-trivial-redshift-example">
+<h2>Problem <tt class="docutils literal"><span class="pre">redshift</span></tt>: trivial redshift example<a class="headerlink" href="#problem-redshift-trivial-redshift-example" title="Permalink to this headline">¶</a></h2>
+<p>This problem shows a trivial example of the redshift capability in SLUG v2.</p>
+<p>[basic run with full spectra out at a different redshift]</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Test Problems</a><ul>
+<li><a class="reference internal" href="#problem-example-basic-galaxy-simulation">Problem <tt class="docutils literal"><span class="pre">example</span></tt>: basic galaxy simulation</a></li>
+<li><a class="reference internal" href="#problem-example-cluster-basic-cluster-simulation">Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation</a></li>
+<li><a class="reference internal" href="#problem-constsampl-importance-of-constrained-sampling">Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling</a></li>
+<li><a class="reference internal" href="#problem-sampling-different-sampling-techniques">Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques</a></li>
+<li><a class="reference internal" href="#problem-imfchoice-different-imf-implementations">Problem <tt class="docutils literal"><span class="pre">imfchoice</span></tt>: different IMF implementations</a></li>
+<li><a class="reference internal" href="#problem-cmfchoice-different-cmf-implementations">Problem <tt class="docutils literal"><span class="pre">cmfchoice</span></tt>: different CMF implementations</a></li>
+<li><a class="reference internal" href="#problem-sfhsampling-realizations-of-sfh">Problem <tt class="docutils literal"><span class="pre">sfhsampling</span></tt>: realizations of SFH</a></li>
+<li><a class="reference internal" href="#problem-cldisrupt-cluster-disruption-at-work">Problem <tt class="docutils literal"><span class="pre">cldisrupt</span></tt>: cluster disruption at work</a></li>
+<li><a class="reference internal" href="#problem-clfraction-cluster-fraction-at-work">Problem <tt class="docutils literal"><span class="pre">clfraction</span></tt>: cluster fraction at work</a></li>
+<li><a class="reference internal" href="#problem-spectra-full-spectra">Problem <tt class="docutils literal"><span class="pre">spectra</span></tt>: full spectra</a></li>
+<li><a class="reference internal" href="#problem-redshift-trivial-redshift-example">Problem <tt class="docutils literal"><span class="pre">redshift</span></tt>: trivial redshift example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="slugpy.html"
+                        title="previous chapter">slugpy &#8211; The Python Helper Library</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/tests.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="slugpy.html" title="slugpy – The Python Helper Library"
+             >previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

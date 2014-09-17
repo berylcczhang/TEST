@@ -1,0 +1,47 @@
+\BOOKMARK [0][-]{chapter.1}{Introduction to SLUG}{}% 1
+\BOOKMARK [1][-]{section.1.1}{What Does SLUG Do?}{chapter.1}% 2
+\BOOKMARK [1][-]{section.1.2}{Cluster Simulations and Galaxy Simulations}{chapter.1}% 3
+\BOOKMARK [1][-]{section.1.3}{Probability Distribution Functions: the IMF, SFH, CMF, and CLF}{chapter.1}% 4
+\BOOKMARK [1][-]{section.1.4}{Spectra and Photometry}{chapter.1}% 5
+\BOOKMARK [1][-]{section.1.5}{Monte Carlo Simulation}{chapter.1}% 6
+\BOOKMARK [0][-]{chapter.2}{Compiling and Installing SLUG}{}% 7
+\BOOKMARK [1][-]{section.2.1}{Dependencies}{chapter.2}% 8
+\BOOKMARK [1][-]{section.2.2}{Compiling}{chapter.2}% 9
+\BOOKMARK [0][-]{chapter.3}{Running a SLUG simulation}{}% 10
+\BOOKMARK [0][-]{chapter.4}{Parameter Specification}{}% 11
+\BOOKMARK [1][-]{section.4.1}{File Format}{chapter.4}% 12
+\BOOKMARK [1][-]{section.4.2}{Basic Keywords}{chapter.4}% 13
+\BOOKMARK [1][-]{section.4.3}{Simulation Control Keywords}{chapter.4}% 14
+\BOOKMARK [1][-]{section.4.4}{Output Control Keywords}{chapter.4}% 15
+\BOOKMARK [1][-]{section.4.5}{Physical Model Keywords}{chapter.4}% 16
+\BOOKMARK [1][-]{section.4.6}{Photometric Filter Keywords}{chapter.4}% 17
+\BOOKMARK [0][-]{chapter.5}{Probability Distribution Functions}{}% 18
+\BOOKMARK [1][-]{section.5.1}{Basic Mode}{chapter.5}% 19
+\BOOKMARK [1][-]{section.5.2}{Advanced Mode}{chapter.5}% 20
+\BOOKMARK [1][-]{section.5.3}{Sampling Methods}{chapter.5}% 21
+\BOOKMARK [0][-]{chapter.6}{Output Files and Format}{}% 22
+\BOOKMARK [1][-]{section.6.1}{The integrated\137prop File}{chapter.6}% 23
+\BOOKMARK [1][-]{section.6.2}{The integrated\137spec File}{chapter.6}% 24
+\BOOKMARK [1][-]{section.6.3}{The integrated\137phot File}{chapter.6}% 25
+\BOOKMARK [1][-]{section.6.4}{The cluster\137prop File}{chapter.6}% 26
+\BOOKMARK [1][-]{section.6.5}{The cluster\137spec File}{chapter.6}% 27
+\BOOKMARK [1][-]{section.6.6}{The cluster\137phot File}{chapter.6}% 28
+\BOOKMARK [0][-]{chapter.7}{Filters and Filter Data}{}% 29
+\BOOKMARK [0][-]{chapter.8}{slugpy \205 The Python Helper Library}{}% 30
+\BOOKMARK [1][-]{section.8.1}{Basic Usage}{chapter.8}% 31
+\BOOKMARK [1][-]{section.8.2}{Full Documentation}{chapter.8}% 32
+\BOOKMARK [0][-]{chapter.9}{Test Problems}{}% 33
+\BOOKMARK [1][-]{section.9.1}{Problem example: basic galaxy simulation}{chapter.9}% 34
+\BOOKMARK [1][-]{section.9.2}{Problem example\137cluster: basic cluster simulation}{chapter.9}% 35
+\BOOKMARK [1][-]{section.9.3}{Problem constsampl: importance of constrained sampling}{chapter.9}% 36
+\BOOKMARK [1][-]{section.9.4}{Problem sampling: different sampling techniques}{chapter.9}% 37
+\BOOKMARK [1][-]{section.9.5}{Problem imfchoice: different IMF implementations}{chapter.9}% 38
+\BOOKMARK [1][-]{section.9.6}{Problem cmfchoice: different CMF implementations}{chapter.9}% 39
+\BOOKMARK [1][-]{section.9.7}{Problem sfhsampling: realizations of SFH}{chapter.9}% 40
+\BOOKMARK [1][-]{section.9.8}{Problem cldisrupt: cluster disruption at work}{chapter.9}% 41
+\BOOKMARK [1][-]{section.9.9}{Problem clfraction: cluster fraction at work}{chapter.9}% 42
+\BOOKMARK [1][-]{section.9.10}{Problem spectra: full spectra}{chapter.9}% 43
+\BOOKMARK [1][-]{section.9.11}{Problem redshift: trivial redshift example}{chapter.9}% 44
+\BOOKMARK [0][-]{chapter.10}{Indices and tables}{}% 45
+\BOOKMARK [0][-]{section*.21}{Python Module Index}{}% 46
+\BOOKMARK [0][-]{section*.22}{Index}{}% 47

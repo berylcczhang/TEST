@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction to SLUG &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="Compiling and Installing SLUG" href="compiling.html" />
+    <link rel="prev" title="Welcome to slug’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="compiling.html" title="Compiling and Installing SLUG"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to slug’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction-to-slug">
+<h1>Introduction to SLUG<a class="headerlink" href="#introduction-to-slug" title="Permalink to this headline">¶</a></h1>
+<p>This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the <a class="reference external" href="http://www.gnu.org/licenses/gpl.html">GNU General Public License v. 3.0</a>. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method paper, <a class="reference external" href="http://adsabs.harvard.edu/abs/2012ApJ...745..145D">da Silva, R. L., Fumagalli, M., &amp; Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145</a>. A second method paper, describing the upgraded version 2 code and a set of ancillary tools, is in preparation at this time.</p>
+<div class="section" id="what-does-slug-do">
+<h2>What Does SLUG Do?<a class="headerlink" href="#what-does-slug-do" title="Permalink to this headline">¶</a></h2>
+<p>SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), and cluster lifetime function (CLF), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. In this regard, SLUG operates much like any other SPS code. The main difference is that SLUG regards the IMF, SFH, CMF, and CLF as probability distributions, and the resulting stellar population as being the result of a draw from them. SLUG performs a Monte Carlo simulation to determine the PDF of the light produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a SLUG simulation. For a more detailed description, readers are referred to <a class="reference external" href="http://adsabs.harvard.edu/abs/2012ApJ...745..145D">da Silva, Fumagalli, &amp; Krumholz (2012)</a>.</p>
+</div>
+<div class="section" id="cluster-simulations-and-galaxy-simulations">
+<h2>Cluster Simulations and Galaxy Simulations<a class="headerlink" href="#cluster-simulations-and-galaxy-simulations" title="Permalink to this headline">¶</a></h2>
+<p>SLUG can simulate either a simple stellar population (i.e., a group of stars all born at one time) or a composite stellar population, consisting of stars born at a distribution of times. We refer to the former case as a &#8220;cluster&#8221; simulation, and the latter as a &#8220;galaxy&#8221; simulation, since one can be thought of as approximating the behavior of a single star cluster, and the other as approximating a whole galaxy.</p>
+</div>
+<div class="section" id="probability-distribution-functions-the-imf-sfh-cmf-and-clf">
+<span id="ssec-slugpdfs"></span><h2>Probability Distribution Functions: the IMF, SFH, CMF, and CLF<a class="headerlink" href="#probability-distribution-functions-the-imf-sfh-cmf-and-clf" title="Permalink to this headline">¶</a></h2>
+<p>As mentioned above, SLUG regards the IMF, SFH, CMF, and CLF as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a> for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a>.</p>
+<p>For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction <span class="math">\(f_c\)</span> of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction <span class="math">\(1-f_c\)</span> of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars <span class="math">\(M_*\)</span> that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses <span class="math">\((1-f_c)M_*\)</span> and <span class="math">\(f_c M_*\)</span>. For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.</p>
+<p>Finally, star clusters can be disrupted independent of the fate of their parent stars. When each cluster is formed, it is assigned a lifetime drawn from the CLF. Once that time has passed, the cluster ceases to be entered in the lists of individual cluster spectra and photometry (see next section), although the individual stars continue to contribute to the integrated light of the galaxy.</p>
+</div>
+<div class="section" id="spectra-and-photometry">
+<span id="ssec-spec-phot"></span><h2>Spectra and Photometry<a class="headerlink" href="#spectra-and-photometry" title="Permalink to this headline">¶</a></h2>
+<p>Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength <span class="math">\(L_\lambda\)</span>. Third and finally, it computes photometry for the stellar population by integrating the computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:</p>
+<ul class="simple">
+<li>The frequency-averaged luminosity across the filter, defined as</li>
+</ul>
+<div class="math">
+\[\langle L_\nu\rangle_R = \frac{\int L_\nu \, d\ln\nu}{\int R_\nu (\nu/\nu_c)^\beta \, d\ln\nu},\]</div>
+<p>where <span class="math">\(L_\nu\)</span> is the specific luminosity per unit frequency, <span class="math">\(R_\nu\)</span> is the filter response function per photon at frequency <span class="math">\(\nu\)</span>, <span class="math">\(\nu_c\)</span> is the central wavelength of the filter, and <span class="math">\(\beta\)</span> is a constant that is defined by convention for each filter, and is either 0, 1, or 2; usually it is 0 for optical and UV filters.</p>
+<ul class="simple">
+<li>The wavelength-averaged luminosity across the filter, defined as</li>
+</ul>
+<p>where <span class="math">\(L_\lambda\)</span> is the specific luminosity per unit wavelength, <span class="math">\(R_\lambda\)</span> is the filter response function per photon at wavelength <span class="math">\(\lambda\)</span>, and <span class="math">\(\lambda_c\)</span> is the central wavelength of the filter.</p>
+<ul class="simple">
+<li>The AB magnitude, defined by</li>
+</ul>
+<div class="math">
+\[M_{\rm AB} = -2.5 \log_{10} \left[\frac{\langle L_\nu\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 48.6,\]</div>
+<p>where <span class="math">\(\langle L_\nu\rangle_R\)</span> is in units of erg s:math:<cite>^{-1}</cite> Hz:math:<cite>^{-1}</cite>.</p>
+<ul class="simple">
+<li>The ST magnitude, defined by</li>
+</ul>
+<div class="math">
+\[M_{\rm ST} = -2.5 \log_{10} \left[\frac{\langle L_\lambda\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 21.1,\]</div>
+<p>where <span class="math">\(\langle L_\lambda\rangle_R\)</span> is in units of erg s:math:<cite>^{-1}</cite> AA:math:<cite>^{-1}</cite>.</p>
+<ul class="simple">
+<li>The Vega magnitude, defined by</li>
+</ul>
+<div class="math">
+\[M_{\rm Vega} = M_{\rm AB} - M_{\rm AB}(\mbox{Vega}),\]</div>
+<p>where <span class="math">\(M_{\rm AB}(\mbox{Vega})\)</span> is the AB magnitude of Vega. The latter quantity is computed on the fly, using a stored Kurucz model spectrum for Vega.</p>
+<ul class="simple">
+<li>The photon flux above some threshold <span class="math">\(\nu_0\)</span>, defined as</li>
+</ul>
+<div class="math">
+\[Q(\nu_0) = \int_{\nu_0}^\infty \frac{L_\nu}{h\nu} \, d\nu.\]</div>
+<ul class="simple">
+<li>The bolometric luminosity,</li>
+</ul>
+<div class="math">
+\[L_{\rm bol} = \int_0^\infty L_\nu \, d\nu.\]</div>
+<p>For a cluster simulation, this procedure is applied to the star cluster being simulated at a user-specified set of output times. For a galaxy simulation, the procedure is much the same, but it can be done both for all the stars in the galaxy taken as a whole, and individually for each star cluster that is still present (i.e., that has not been disrupted).</p>
+</div>
+<div class="section" id="monte-carlo-simulation">
+<h2>Monte Carlo Simulation<a class="headerlink" href="#monte-carlo-simulation" title="Permalink to this headline">¶</a></h2>
+<p>The steps described in the previous two section are those required for a single realization of the stellar population. However, the entire point of SLUG is to repeat this procedure many times in order to build up the statistics of the population light output. Thus the entire procedure can be repeated as many times as the user desires.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Introduction to SLUG</a><ul>
+<li><a class="reference internal" href="#what-does-slug-do">What Does SLUG Do?</a></li>
+<li><a class="reference internal" href="#cluster-simulations-and-galaxy-simulations">Cluster Simulations and Galaxy Simulations</a></li>
+<li><a class="reference internal" href="#probability-distribution-functions-the-imf-sfh-cmf-and-clf">Probability Distribution Functions: the IMF, SFH, CMF, and CLF</a></li>
+<li><a class="reference internal" href="#spectra-and-photometry">Spectra and Photometry</a></li>
+<li><a class="reference internal" href="#monte-carlo-simulation">Monte Carlo Simulation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to slug&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="compiling.html"
+                        title="next chapter">Compiling and Installing SLUG</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/intro.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="compiling.html" title="Compiling and Installing SLUG"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to slug’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

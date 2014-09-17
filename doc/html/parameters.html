@@ -1,0 +1,271 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Parameter Specification &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="Probability Distribution Functions" href="pdfs.html" />
+    <link rel="prev" title="Running a SLUG simulation" href="running.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pdfs.html" title="Probability Distribution Functions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running a SLUG simulation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="parameter-specification">
+<span id="sec-parameters"></span><h1>Parameter Specification<a class="headerlink" href="#parameter-specification" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="file-format">
+<h2>File Format<a class="headerlink" href="#file-format" title="Permalink to this headline">¶</a></h2>
+<p>An example parameter file is included as <tt class="docutils literal"><span class="pre">param/example.param</span></tt> in the source tree. Parameter files for SLUG are generically formatted as a series of entries of the form:</p>
+<div class="highlight-rest"><div class="highlight"><pre>keyword    value
+</pre></div>
+</div>
+<p>Any line starting with <tt class="docutils literal"><span class="pre">#</span></tt> is considered to be a comment and is ignored, and anything on a line after a <tt class="docutils literal"><span class="pre">#</span></tt> is similarly treated as a comment and ignored. Some general rules on keywords are:</p>
+<ul class="simple">
+<li>Keywords may appear in any order.</li>
+<li>Some keywords have default values, indicated in parenthesis in the list below. These keywords are optional and need not appear in the parameter file. All others are required.</li>
+<li>Keywords and values are case-insensitive.</li>
+<li>Unless explicitly stated otherwise, units for mass are always <span class="math">\(M_\odot\)</span>, units for time are always yr.</li>
+<li>Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable <tt class="docutils literal"><span class="pre">$SLUG_DIR</span></tt>. If this environment variable is not set, it is assumed to be relative to the current working directory.</li>
+</ul>
+<p>The keywords recognized by SLUG can be categorized as described in the remainder of this section.</p>
+</div>
+<div class="section" id="basic-keywords">
+<span id="ssec-basic-keywords"></span><h2>Basic Keywords<a class="headerlink" href="#basic-keywords" title="Permalink to this headline">¶</a></h2>
+<p>These specify basic data for the run.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">model_name</span></tt> (default: <tt class="docutils literal"><span class="pre">SLUG_DEF</span></tt>): name of the model. This will become the base filename for the output files.</li>
+<li><tt class="docutils literal"><span class="pre">out_dir</span></tt> (default: <tt class="docutils literal"><span class="pre">output</span></tt>): name of the directory into which output should be written.</li>
+<li><tt class="docutils literal"><span class="pre">verbosity</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): level of verbosity when running, with 0 indicating no output, 1 indicating some output, and 2 indicating a great deal of output.</li>
+</ul>
+</div>
+<div class="section" id="simulation-control-keywords">
+<h2>Simulation Control Keywords<a class="headerlink" href="#simulation-control-keywords" title="Permalink to this headline">¶</a></h2>
+<p>These control the operation of the simulation.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">sim_type</span></tt> (default: <tt class="docutils literal"><span class="pre">galaxy</span></tt>): set to <tt class="docutils literal"><span class="pre">galaxy</span></tt> to run a galaxy simulation (a composite stellar population), or to <tt class="docutils literal"><span class="pre">cluster</span></tt> to run a cluster simulation (a simple stellar population)</li>
+<li><tt class="docutils literal"><span class="pre">n_trials</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): number of trials to run</li>
+<li><tt class="docutils literal"><span class="pre">log_time</span></tt> (default: <tt class="docutils literal"><span class="pre">0</span></tt>): set to 1 for logarithmic time step, 0 for linear time steps</li>
+<li><tt class="docutils literal"><span class="pre">time_step</span></tt>: size of the time step. If <tt class="docutils literal"><span class="pre">log_time</span></tt> is set to 0, this is in yr. If <tt class="docutils literal"><span class="pre">log_time</span></tt> is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time).</li>
+<li><tt class="docutils literal"><span class="pre">start_time</span></tt>: first output time. This may be omitted if <tt class="docutils literal"><span class="pre">log_time</span></tt> is set to 0, in which case it defaults to a value equal to <tt class="docutils literal"><span class="pre">time_step</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">end_time</span></tt>: last output time, in yr. Note that not all the tracks include entries going out to times &gt;1 Gyr, and the results will become inaccurate if the final time is larger than the tracks allow.</li>
+<li><tt class="docutils literal"><span class="pre">sfr</span></tt>: star formation rate. Only used if <tt class="docutils literal"><span class="pre">sim_type</span></tt> is <tt class="docutils literal"><span class="pre">galaxy</span></tt>; for <tt class="docutils literal"><span class="pre">cluster</span></tt>, it will be ignored, and can be omitted. If, instead of specifying a numerical value for this parameter, you specify the string <tt class="docutils literal"><span class="pre">sfh</span></tt>, the code will interpret this as a flag that a star formation history should be read from the file specified by the <tt class="docutils literal"><span class="pre">sfh</span></tt> keyword.</li>
+<li><tt class="docutils literal"><span class="pre">sfh</span></tt>: name of star formation history file. This file is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a>. This is ignored, and can be omitted, if <tt class="docutils literal"><span class="pre">sim_type</span></tt> is <tt class="docutils literal"><span class="pre">cluster</span></tt>, or if <tt class="docutils literal"><span class="pre">sfr</span></tt> is not set to <tt class="docutils literal"><span class="pre">sfh</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">cluster_mass</span></tt>: mass of the star cluster for simulations with <tt class="docutils literal"><span class="pre">sim_type</span></tt> set to <tt class="docutils literal"><span class="pre">cluster</span></tt>. This can be omitted, and will be ignored, if <tt class="docutils literal"><span class="pre">sim_type</span></tt> is <tt class="docutils literal"><span class="pre">galaxy</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">redshift</span></tt> (default: <tt class="docutils literal"><span class="pre">0</span></tt>): place the system at the specified redshift. The computed spectra and photometry will then be computed in the observed rather than the rest frame of the system.</li>
+</ul>
+</div>
+<div class="section" id="output-control-keywords">
+<h2>Output Control Keywords<a class="headerlink" href="#output-control-keywords" title="Permalink to this headline">¶</a></h2>
+<p>These control what quantities are computed and written to disk. Full a full description of the output files and how they are formatted, see <a class="reference internal" href="output.html#sec-output"><em>Output Files and Format</em></a>.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">out_cluster</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): write out the physical properties of star clusters? Set to 1 for yes, 0 for no.</li>
+<li><tt class="docutils literal"><span class="pre">out_cluster_phot</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): write out the photometry of star clusters? Set to 1 for yes, 0 for no.</li>
+<li><tt class="docutils literal"><span class="pre">out_cluster_spec</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): write out the spectra of star clusters? Set to 1 for yes, 0 for no.</li>
+<li><tt class="docutils literal"><span class="pre">out_integrated</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): write out the integrated physical properties of the whole galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if <tt class="docutils literal"><span class="pre">sim_type</span></tt> is <tt class="docutils literal"><span class="pre">cluster</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">out_integrated_phot</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): write out the integrated photometry of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if <tt class="docutils literal"><span class="pre">sim_type</span></tt> is <tt class="docutils literal"><span class="pre">cluster</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">out_integrated_spec</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): write out the integrated spectra of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if <tt class="docutils literal"><span class="pre">sim_type</span></tt> is <tt class="docutils literal"><span class="pre">cluster</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">output_mode</span></tt> (default: <tt class="docutils literal"><span class="pre">ascii</span></tt>): set to <tt class="docutils literal"><span class="pre">ascii</span></tt>, <tt class="docutils literal"><span class="pre">binary</span></tt>, or <tt class="docutils literal"><span class="pre">fits</span></tt>. Selecting <tt class="docutils literal"><span class="pre">ascii</span></tt> causes the output to be written in ASCII text, which is human-readable, but produces much larger files. Selecting <tt class="docutils literal"><span class="pre">binary</span></tt> causes the output to be written in raw binary. Selecting <tt class="docutils literal"><span class="pre">fits</span></tt> causes the output to be written FITS format. This will be somewhat larger than raw binary output, but the resulting files will be portable between machines, which the raw binary files are not guaranteed to be. All three output modes can be read by the python library, though with varying speed &#8211; ASCII output is slowest, FITS is intermediate, and binary is fastest.</li>
+</ul>
+</div>
+<div class="section" id="physical-model-keywords">
+<span id="ssec-phys-keywords"></span><h2>Physical Model Keywords<a class="headerlink" href="#physical-model-keywords" title="Permalink to this headline">¶</a></h2>
+<p>These specify the physical models to be used for stellar evolution, atmospheres, the IMF, etc.</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">imf</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/imf/chabrier.imf</span></tt>): name of the IMF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a>. Note that SLUG ships with the following IMF files pre-defined (in the directory <tt class="docutils literal"><span class="pre">lib/imf</span></tt>)</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">chabrier.imf</span></tt> (single-star IMF from <a class="reference external" href="http://adsabs.harvard.edu/abs/2005ASSL..327...41C">Chabrier, 2005, in &#8220;The Initial Mass Function 50 Years Later&#8221;, eds. E. Corbelli, F. Palla, &amp; H. Zinnecker, Springer: Dordrecht, p. 41</a>)</li>
+<li><tt class="docutils literal"><span class="pre">chabrier03.imf</span></tt> (single-star IMF from <a class="reference external" href="http://adsabs.harvard.edu/abs/2003PASP..115..763C">Chabrier, 2003, PASP, 115, 763-795</a>)</li>
+<li><tt class="docutils literal"><span class="pre">kroupa.imf</span></tt> (IMF from <a class="reference external" href="http://adsabs.harvard.edu/abs/2002Sci...295...82K">Kroupa, 2002, Science, 295, 82-91</a>)</li>
+<li><tt class="docutils literal"><span class="pre">kroupa_sb99.imf</span></tt> (simplified version of the Kroupa, 2002 IMF used by default by <a class="reference external" href="http://www.stsci.edu/science/starburst99/docs/default.htm">starburst99</a>)</li>
+<li><tt class="docutils literal"><span class="pre">salpeter.imf</span></tt> (single-component power law IMF from <a class="reference external" href="http://adsabs.harvard.edu/abs/1955ApJ...121..161S">Salpeter, 1955, ApJ, 121, 161</a>)</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">cmf</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/cmf/slug_default.cmf</span></tt>): name of the CMF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a>. The default selection is a power law <span class="math">\(dN/dM \propto M^{-2}\)</span> from <span class="math">\(M = 10^2 - 10^7\;M_\odot\)</span>. This is ignored, and may be omitted, if <tt class="docutils literal"><span class="pre">sim_type</span></tt> is set to <tt class="docutils literal"><span class="pre">cluster</span></tt>.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">clf</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/clf/slug_default.clf</span></tt>): name of the CLF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a>. The default gives a power law distribution of lifetimes <span class="math">\(t\)</span> with <span class="math">\(dN/dt\propto t^{-1.9}\)</span> from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The SLUG source also ships with an alternative CLF file, <tt class="docutils literal"><span class="pre">lib/clf/nodisrupt.clf</span></tt>, which disables cluster disruption entirely (by setting the lifetime distribution to a <span class="math">\(\delta\)</span> function at <span class="math">\(10^{300}\)</span> yr).</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">tracks</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/tracks/Z0140v00.txt</span></tt>): stellar evolution tracks to use. The following tracks ship with SLUG (all in the directory <tt class="docutils literal"><span class="pre">lib/tracks</span></tt>):</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">ZXXXXvYY.txt</span></tt>: Geneva (2013) tracks; metallicities are Solar (<tt class="docutils literal"><span class="pre">XXXX</span> <span class="pre">=</span> <span class="pre">0140</span></tt>) and 1/7 Solar (<tt class="docutils literal"><span class="pre">XXXX</span> <span class="pre">=</span> <span class="pre">0020</span></tt>), and rotation rates are 0 (<tt class="docutils literal"><span class="pre">YY</span> <span class="pre">=</span> <span class="pre">00</span></tt>) and 40% of breakup (<tt class="docutils literal"><span class="pre">YY</span> <span class="pre">=</span> <span class="pre">40</span></tt>).</li>
+<li><tt class="docutils literal"><span class="pre">modcXXX.dat</span></tt>: Geneva tracks with standard mass loss, for metallicities of <span class="math">\(2\times\)</span> Solar (<tt class="docutils literal"><span class="pre">040</span></tt>), Solar (<tt class="docutils literal"><span class="pre">020</span></tt>), <span class="math">\(0.4\times\)</span> Solar (<tt class="docutils literal"><span class="pre">008</span></tt>), <span class="math">\(0.2\times\)</span> Solar (<tt class="docutils literal"><span class="pre">004</span></tt>), and <span class="math">\(0.05\times\)</span> Solar (<tt class="docutils literal"><span class="pre">001</span></tt>).</li>
+<li><tt class="docutils literal"><span class="pre">modeXXX.dat</span></tt>: same as <tt class="docutils literal"><span class="pre">modcXXX.dat</span></tt>, but with higher mass loss rates.</li>
+<li><tt class="docutils literal"><span class="pre">modpXXX.dat</span></tt>: Padova tracks with thermally pulsing AGB stars; metallicities use the same scale as <tt class="docutils literal"><span class="pre">modcXXX.dat</span></tt> files (i.e., <tt class="docutils literal"><span class="pre">020</span></tt> is Solar).</li>
+<li><tt class="docutils literal"><span class="pre">modsXXX.dat</span></tt>: same as <tt class="docutils literal"><span class="pre">modpXXX.dat</span></tt>, but without thermally pulsing AGB stars</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">atmospheres</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/atmospheres</span></tt>): directory where the stellar atmosphere library is located. Note that file names are hard-coded, so if you want to use different atmosphere models with a different format, you will have to write new source code to do so.</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">specsyn_mode</span></tt> (default: <tt class="docutils literal"><span class="pre">sb99</span></tt>): spectral synthesis mode. Allowed values are:</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">planck</span></tt>: treat all stars as black bodies</li>
+<li><tt class="docutils literal"><span class="pre">Kurucz</span></tt>: use Kurucz atmospheres, as compiled by <a class="reference external" href="http://adsabs.harvard.edu/abs/1997A%26AS..125..229L">Lejeune et al. (1997, A&amp;AS, 125, 229)</a>, for all stars</li>
+<li><tt class="docutils literal"><span class="pre">Kurucz+Hillier</span></tt>: use Kurucz atmospheres for all stars except Wolf-Rayet stars; WR stars use Hillier model atmospheres (<a class="reference external" href="http://adsabs.harvard.edu/abs/1998ApJ...496..407H">Hillier &amp; Miller, 1998, ApJ, 496, 407</a>)</li>
+<li><tt class="docutils literal"><span class="pre">Kurucz+Pauldrach</span></tt>: use Kurucz atmospheres for all stars except OB stars; OB stars use Pauldrach model atmospheres (<a class="reference external" href="http://adsabs.harvard.edu/abs/2001A%26A...375..161P">Pauldrach et al., 2001, A&amp;A, 375, 161</a>)</li>
+<li><tt class="docutils literal"><span class="pre">SB99</span></tt>: emulate the behavior of <tt class="docutils literal"><span class="pre">starburst99</span></tt>: use Pauldrach for OB stars, Hillier for WR stars, and Kurucz for all other stars</li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">clust_frac</span></tt> (default: <tt class="docutils literal"><span class="pre">1.0</span></tt>): fraction of stars formed in clusters</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">min_stoch_mass</span></tt> (default: <tt class="docutils literal"><span class="pre">0.0</span></tt>): minimum stellar mass to be treated stochastically. All stars with masses below this value are assumed to be sampled continuously from the IMF.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">metallicity</span></tt>: metallicity of the stellar population, relative to solar. This may be omitted if <tt class="docutils literal"><span class="pre">tracks</span></tt> is set to one of the default sets of tracks that ships with SLUG, as the metallicities for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">WR_mass</span></tt>: minimum starting mass that stars must have in order to pass through a Wolf-Rayet phase. This can be omitted if <tt class="docutils literal"><span class="pre">tracks</span></tt> is set to one of the default sets of tracks that ships with SLUG, as the WR cutoff masses for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="photometric-filter-keywords">
+<span id="ssec-phot-keywords"></span><h2>Photometric Filter Keywords<a class="headerlink" href="#photometric-filter-keywords" title="Permalink to this headline">¶</a></h2>
+<p>These describe the photometry to be computed. Note that none of these keywords have any effect unless <tt class="docutils literal"><span class="pre">out_integrated_phot</span></tt> or <tt class="docutils literal"><span class="pre">out_cluster_phot</span></tt> is set to 1.</p>
+<ul>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">phot_bands</span></tt>: photometric bands for which photometry is to be computed. The values listed here can be comma- or whitespace-separated. For a list of available photometric filters, see the file <tt class="docutils literal"><span class="pre">lib/filters/FILTER_LIST</span></tt>. In addition to these filters, SLUG always allows four special &#8220;bands&#8221;:</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">QH0</span></tt>: the <span class="math">\(\mathrm{H}^0\)</span> ionizing luminosity, in photons/sec</li>
+<li><tt class="docutils literal"><span class="pre">QHe0</span></tt>: the <span class="math">\(\mathrm{He}^0\)</span> ionizing luminosity, in photons/sec</li>
+<li><tt class="docutils literal"><span class="pre">QHe1</span></tt>: the <span class="math">\(\mathrm{He}^+\)</span> ionizing luminosity, in photons/sec</li>
+<li><tt class="docutils literal"><span class="pre">Lbol</span></tt>: the bolometric luminosity, in <span class="math">\(L_\odot\)</span></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">filters</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/filters</span></tt>): directory containing photometric filter data</p>
+</li>
+<li><dl class="first docutils">
+<dt><tt class="docutils literal"><span class="pre">phot_mode</span></tt> (default: <tt class="docutils literal"><span class="pre">L_nu</span></tt>): photometric system to be used when writing photometric outputs. Full definitions of the quantities computed for each of the choices listed below are given in <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra and Photometry</em></a>. Note that these values are ignored for the four special bands <tt class="docutils literal"><span class="pre">QH0</span></tt>, <tt class="docutils literal"><span class="pre">QHe0</span></tt>, <tt class="docutils literal"><span class="pre">QHe1</span></tt>, and <tt class="docutils literal"><span class="pre">Lbol</span></tt>. These four bands are always written out in the units specified above. Allowed values are:</dt>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">L_nu</span></tt>: report frequency-averaged luminosity in the band, in units of erg/s/Hz</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda</span></tt>: report wavelength-averaged luminosity in the band, in units of erg/s/Angstrom</li>
+<li><tt class="docutils literal"><span class="pre">AB</span></tt>: report AB magnitude</li>
+<li><tt class="docutils literal"><span class="pre">STMAG</span></tt>: report ST magnitude</li>
+<li><tt class="docutils literal"><span class="pre">VEGA</span></tt>: report Vega magnitude</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Parameter Specification</a><ul>
+<li><a class="reference internal" href="#file-format">File Format</a></li>
+<li><a class="reference internal" href="#basic-keywords">Basic Keywords</a></li>
+<li><a class="reference internal" href="#simulation-control-keywords">Simulation Control Keywords</a></li>
+<li><a class="reference internal" href="#output-control-keywords">Output Control Keywords</a></li>
+<li><a class="reference internal" href="#physical-model-keywords">Physical Model Keywords</a></li>
+<li><a class="reference internal" href="#photometric-filter-keywords">Photometric Filter Keywords</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="running.html"
+                        title="previous chapter">Running a SLUG simulation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pdfs.html"
+                        title="next chapter">Probability Distribution Functions</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/parameters.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pdfs.html" title="Probability Distribution Functions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running a SLUG simulation"
+             >previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+.. intro:: rst
+
+Introduction to SLUG
+====================
+
+``SLUG`` is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), and cluster lifetime function (CLF), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. In this regard, ``slug`` operates much like any other SPS code. The main difference is that ``slug`` regards the IMF, SFH, CMF, and CLF as probability distributions, and the resulting stellar population as being the result of a draw from them. ``SLUG`` performs a Monte Carlo simulation to determine the PDF of the light produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a ``slug`` simulation. For a more detailed description, readers are referred to `Link da Silva, Fumagalli, \& Krumholz (2012) <http://adsabs.harvard.edu/abs/2012ApJ...745..145D>`.

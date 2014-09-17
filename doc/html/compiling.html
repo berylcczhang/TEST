@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Compiling and Installing SLUG &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="Running a SLUG simulation" href="running.html" />
+    <link rel="prev" title="Introduction to SLUG" href="intro.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running a SLUG simulation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction to SLUG"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="compiling-and-installing-slug">
+<h1>Compiling and Installing SLUG<a class="headerlink" href="#compiling-and-installing-slug" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>The core SLUG program requires</p>
+<ul class="simple">
+<li>The <a class="reference external" href="http://www.boost.org/">Boost C++ libraries</a></li>
+<li>The <a class="reference external" href="http://www.gnu.org/software/gsl/">GNU scientific library</a></li>
+<li>The <a class="reference external" href="http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html">cfitsio library</a> (optional, only required for FITS capabilities)</li>
+</ul>
+<p>Compilation will be easiest if you install these libraries such that the header files are included in your <tt class="docutils literal"><span class="pre">CXX_INCLUDE_PATH</span></tt> and the compiled object files are in your <tt class="docutils literal"><span class="pre">LD_LIBRARY_PATH</span></tt>. Alternately, you can manually specify the locations of these files by editing the Makefiles &#8211; see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag <tt class="docutils literal"><span class="pre">FITS=DISABLE_FITS</span></tt> when calling <tt class="docutils literal"><span class="pre">make</span></tt> (see below). Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).</p>
+<p>In addition to the core dependencies, slugpy, the python helper library requires:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.numpy.org/">numpy</a></li>
+<li><a class="reference external" href="http://www.scipy.org/">scipy</a></li>
+<li><a class="reference external" href="http://www.astropy.org/">astropy</a> (optional, only required for FITS capabilities)</li>
+</ul>
+</div>
+<div class="section" id="compiling">
+<h2>Compiling<a class="headerlink" href="#compiling" title="Permalink to this headline">¶</a></h2>
+<p>If you have boost, GSL, and (if you&#8217;re using it) cfitsio included in your <tt class="docutils literal"><span class="pre">CXX_INCLUDE_PATH</span></tt> and <tt class="docutils literal"><span class="pre">LD_LIBRARY_PATH</span></tt> environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:</p>
+<div class="highlight-rest"><div class="highlight"><pre>make
+</pre></div>
+</div>
+<p>from the main <tt class="docutils literal"><span class="pre">slug</span></tt> directory. To compile in debug mode, do:</p>
+<div class="highlight-rest"><div class="highlight"><pre>make debug
+</pre></div>
+</div>
+<p>instead. To compile without cfitsio, do:</p>
+<div class="highlight-rest"><div class="highlight"><pre>make FITS=DISABLE_FITS
+</pre></div>
+</div>
+<p>Alternately, you can manually specify the compiler flags to be used by creating a file named <tt class="docutils literal"><span class="pre">Make.mach.MACHINE_NAME</span></tt> in the <tt class="docutils literal"><span class="pre">src</span></tt> directory, and then doing:</p>
+<div class="highlight-rest"><div class="highlight"><pre>make MACHINE=MACHINE_NAME
+</pre></div>
+</div>
+<p>An example machine-specific file, <tt class="docutils literal"><span class="pre">src/Make.mach.ucsc-hyades</span></tt> is included in the repository. You can also override or reset any compilation flag you want by editing the file <tt class="docutils literal"><span class="pre">src/Make.config.override</span></tt>.</p>
+<p>Finally, note that SLUG is written in C++11, and requires some C++11 features, so it may not work with older C++ compilers. The following compiler versions are known to work: gcc &gt;= 4.8 (4.7 works on most but not all platforms), clang/llvm &gt;= 3.3, icc &gt;= 14.0. Earlier versions may work as well, but no guarantees.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Compiling and Installing SLUG</a><ul>
+<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li><a class="reference internal" href="#compiling">Compiling</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="intro.html"
+                        title="previous chapter">Introduction to SLUG</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="running.html"
+                        title="next chapter">Running a SLUG simulation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/compiling.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running a SLUG simulation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="intro.html" title="Introduction to SLUG"
+             >previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
