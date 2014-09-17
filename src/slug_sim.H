@@ -95,6 +95,7 @@ private:
   slug_PDF *cmf;              // Cluster mass function
   slug_PDF *clf;              // Cluster lifetime function
   slug_PDF *sfh;              // Star formation history
+  slug_PDF *sfr_pdf;          // PDF of constant SFRs
   slug_specsyn *specsyn;      // Spectral synthesizer
   slug_filter_set *filters;   // Photometric filters
   slug_cluster *cluster;      // A single star cluster

@@ -118,6 +118,7 @@ slug_parmParser::setDefaults() {
   startTime = timeStep = endTime = -constants::big;
   sfr = cluster_mass = -constants::big;
   constantSFR = false;
+  randomSFR = false;
   save_seed = read_seed = false;
 
   // Physical model parameters
@@ -218,8 +219,17 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	if (tokens[1].compare("sfh") == 0)
 	  constantSFR = false;
 	else {
-	  sfr = lexical_cast<double>(tokens[1]);
-	  constantSFR = true;
+	  try {
+	    // See if the SFR is a number, indicated a constant SFR
+	    sfr = lexical_cast<double>(tokens[1]);
+	    constantSFR = true;
+	  } catch (const bad_lexical_cast& ia) {
+	    // SFR is neither a number nor "sfh", so interpret this as
+	    // giving the name of a PDF file that will be used to draw
+	    // a SFR
+	    randomSFR = true;
+	    sfr_file = tokens[1];
+	  }
 	}
       } else if (!(tokens[0].compare("cluster_mass"))) {
 	cluster_mass = lexical_cast<double>(tokens[1]);
@@ -429,9 +439,9 @@ slug_parmParser::checkParams() {
     }
     exit(1);
   }
-  if (!constantSFR && run_galaxy_sim) {
+  if (!constantSFR && !randomSFR && run_galaxy_sim) {
     if (sfh.length() == 0) {
-      cerr << "slug: error: for non-constant SFR, must set SFH" 
+      cerr << "slug: error: SFH requested, but no SFH file specified" 
 		<< endl;
       exit(1);
     }    
@@ -529,7 +539,7 @@ slug_parmParser::writeParams() const {
   paramFile << "time_step            " << timeStep << endl;
   paramFile << "end_time             " << endTime << endl;
   if (run_galaxy_sim) {
-    if (constantSFR)
+    if (constantSFR || randomSFR)
       paramFile << "SFR                  " << sfr << endl;
     else
       paramFile << "SFH                  " << sfh << endl;
@@ -608,12 +618,14 @@ double slug_parmParser::get_timeStep() const { return timeStep; }
 double slug_parmParser::get_endTime() const { return endTime; }
 bool slug_parmParser::get_logTime() const { return logTime; }
 bool slug_parmParser::get_constantSFR() const { return constantSFR; }
+bool slug_parmParser::get_randomSFR() const { return randomSFR; }
 double slug_parmParser::get_SFR() const { return sfr; }
 double slug_parmParser::get_z() const { return z; }
 double slug_parmParser::get_WR_mass() const { return WR_mass; }
 double slug_parmParser::get_metallicity() const { return metallicity; }
 double slug_parmParser::get_min_stoch_mass() const { return min_stoch_mass; }
 const char *slug_parmParser::get_SFH() const { return sfh.c_str(); }
+const char *slug_parmParser::get_SFR_file() const { return sfr_file.c_str(); }
 const char *slug_parmParser::get_IMF() const { return imf.c_str(); }
 const char *slug_parmParser::get_CMF() const { return cmf.c_str(); }
 const char *slug_parmParser::get_CLF() const { return clf.c_str(); }

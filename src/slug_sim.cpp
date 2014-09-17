@@ -172,9 +172,17 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng);
       sfh = new slug_PDF(sfh_segment, rng, 
 			 outTimes.back()*pp.get_SFR());
+    } else if (pp.get_randomSFR()) {
+      // SFR is to be drawn from a PDF, so read the PDF, and
+      // initialize the SFH from it
+      sfr_pdf = new slug_PDF(pp.get_SFR_file(), rng, false);
+      slug_PDF_powerlaw *sfh_segment = 
+	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng);
+      sfh = new slug_PDF(sfh_segment, rng, 
+			 outTimes.back()*sfr_pdf->draw());
     } else {
       // SFR is not constant, so read SFH from file
-      sfh = new slug_PDF(pp.get_SFH(), rng, false);
+      sfh = new slug_PDF(pp.get_SFH(), rng);
     }
   }
 
@@ -319,6 +327,12 @@ void slug_sim::galaxy_sim() {
 	write_separator(cluster_spec_file, 4*14-3);
       if (pp.get_writeClusterPhot())
 	write_separator(cluster_phot_file, (2+pp.get_nPhot())*18-3);
+    }
+
+    // If the SFR is randomly changing, draw a new SFR for this trial
+    if (pp.get_randomSFR()) {
+      double sfr = sfr_pdf->draw();
+      sfh->setNorm(outTimes.back()*sfr);
     }
 
     // Loop over time steps

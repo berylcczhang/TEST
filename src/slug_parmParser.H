@@ -41,11 +41,13 @@ public:
   double get_endTime() const;             // Final time
   bool get_logTime() const;               // Logarithmic time stepping?
   bool get_constantSFR() const;           // Is SFR constant?
+  bool get_randomSFR() const;             // Is SFR drawn randomly?
   double get_SFR() const;                 // SFR value for constant SFR
   double get_z() const;                   // Return the redshift
   double get_metallicity() const;         // Metallicity
   double get_WR_mass() const;             // Mass at which WR stars appear
   double get_min_stoch_mass() const;      // Min mass to treat stochstically
+  const char *get_SFR_file() const;       // SFR file name for random SFR
   const char *get_SFH() const;            // SF history file name
   const char *get_IMF() const;            // IMF file name
   const char *get_CMF() const;            // CMF file name
@@ -101,6 +103,7 @@ private:
   double fClust;                          // Frac stars formed in clusters
   double cluster_mass;                    // Cluster mass for cluster sims
   bool constantSFR;                       // Is SFR constant?
+  bool randomSFR;                         // Is SFR drawn randomly?
   bool writeClusterProp;                  // Write out cluster properties?
   bool writeClusterPhot;                  // Write out cluster photometry?
   bool writeClusterSpec;                  // Write out cluster spectra?
@@ -110,6 +113,7 @@ private:
   bool run_galaxy_sim;                    // Galaxy sim or cluster sim?
   bool save_seed;                         // Save the rng seed?
   bool read_seed;                         // Read the rng seed?
+  std::string sfr_file;                   // SFR file for random SFRs
   std::string sfh;                        // SF history file name
   std::string imf;                        // IMF file name
   std::string cmf;                        // CMF file name

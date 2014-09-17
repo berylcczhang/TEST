@@ -205,6 +205,27 @@ slug_PDF::~slug_PDF() {
     delete coin;
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Method to change the normalization
+////////////////////////////////////////////////////////////////////////
+void
+slug_PDF::setNorm(double new_norm) {
+
+  // Set new weights on segments
+  for (unsigned int i=0; i<weights.size(); i++)
+    weights[i] *= new_norm / PDFintegral;
+
+  // Set new weights on restrictted segments
+  for (unsigned int i=0; i<weights_restricted.size(); i++)
+    weights_restricted[i] *= new_norm / PDFintegral;
+
+  // Record new normalization
+  PDFintegral = new_norm;
+  if (new_norm == 1.0) normalized = true;
+  else normalized = false;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Function to return integral over a finite range
 ////////////////////////////////////////////////////////////////////////
