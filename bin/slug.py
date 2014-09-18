@@ -56,6 +56,9 @@ parser.add_argument('-nl', '--nicelevel', default=0, type=int,
                     "(default: 0)")
 parser.add_argument('-v', '--verbose', action='store_true',
                     default=False, help="produce verbose output")
+parser.add_argument('-t', '--tmpdir', default=None,
+                    help="directory for temporary work files" +
+                    " (default: cwd/slug_par_tmp)")
 args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
@@ -178,8 +181,12 @@ err_threads = [None] * nproc
 out_names = []
 trial_num = []
 ON_POSIX = 'posix' in sys.builtin_module_names
+if args.tmpdir == None:
+    tmpdir = osp.join(cwd, 'slug_par_tmp')
+else:
+    tmpdir = args.tmpdir
 try: 
-    os.mkdir(osp.join(cwd, 'slug_par_tmp'))  # Temporary working directory
+    os.mkdir(tmpdir)  # Temporary working directory
 except OSError: pass           # Probably failed because dir exists
 while completed_trials < ntrials:
 
@@ -224,10 +231,10 @@ while completed_trials < ntrials:
             pfile_tmp.append("model_name   "+new_model_name)
         if out_dir_line != -1:
             pfile_tmp[out_dir_line] \
-                = "out_dir   "+osp.join(cwd, "slug_par_tmp")
+                = "out_dir   "+tmpdir
         else:
             pfile_tmp.append("out_dir   "+
-                             osp.join(cwd, "slug_par_tmp"))
+                             tmpdir)
         if rng_offset_line != -1:
             pfile_tmp[rng_offset_line] \
                 = "rng_offset   " + str(10000*p)
@@ -235,12 +242,12 @@ while completed_trials < ntrials:
             pfile_tmp.append("rng_offset   " + str(10000*p))
 
         # Record characteristics of this run
-        out_names.append(osp.join(cwd, "slug_par_tmp",
+        out_names.append(osp.join(tmpdir,
                                   new_model_name))
         trial_num.append(new_ntrials)
 
         # Write temporary parameter file to disk
-        pfile_name = osp.join(cwd, "slug_par_tmp", 
+        pfile_name = osp.join(tmpdir, 
                               "slug_par_p{:03d}".format(p))
         fp = open(pfile_name, 'w')
         for line in pfile_tmp:
@@ -399,7 +406,7 @@ if verbosity > 0:
 
 # Delete parameter files
 for i in range(nproc):
-    pfile_name = osp.join(cwd, "slug_par_tmp", 
+    pfile_name = osp.join(tmpdir, 
                           "slug_par_p{:03d}".format(i))
     if i < ntrials:
         try:
@@ -436,7 +443,7 @@ for f in out_names:
 
 # Remove temporary directory
 try:
-    os.rmdir(osp.join(cwd, "slug_par_tmp"))
+    os.rmdir(tmpdir)
 except OSError:
     warnings.warn("unable to clean up temporary directory "+
-                  osp.join(cwd, "slug_par_tmp"))
+                  tmpdir)
