@@ -54,6 +54,8 @@ parser.add_argument('-nc', '--noconsolidate', action='store_true',
 parser.add_argument('-nl', '--nicelevel', default=0, type=int,
                     help="nice level of the cloudy processes " +
                     "(default: 0)")
+parser.add_argument('-v', '--verbose', action='store_true',
+                    default=False, help="produce verbose output")
 args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
@@ -160,7 +162,7 @@ else:
 # output; we'll call threads to run this later
 def display_out(out, procnum):
     for line in iter(out.readline, ''):
-        print("proc {:d}: ".format(procnum) + line.split('\n')[0])
+        print("thread {:d}: ".format(procnum+1) + line.split('\n')[0])
     out.close()
 
 
@@ -244,6 +246,14 @@ while completed_trials < ntrials:
         for line in pfile_tmp:
             fp.write(line+'\n')
         fp.close()
+
+        # Print status if verbose
+        if args.verbose:
+            print(("thread {:d}: launching slug on trials " +
+                   "{:d} - {:d} / {:d}").
+                  format(p+1, completed_trials+1,
+                         completed_trials+batchsize,
+                         ntrials))
 
         # Start new process
         cmd = osp.join(cwd, 'slug') + " " + pfile_name
