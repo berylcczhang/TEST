@@ -31,7 +31,7 @@ def combine_integrated(data):
     new_fields = []
     single_fields = ['time', 'target_mass', 'wl', 'filter_names',
                      'filter_units', 'filter_wl', 'filter_wl_eff',
-                     'filter_response']
+                     'filter_response', 'filter_beta', 'filter_wl_c']
     for i, f in enumerate(data[0]._fields):
 
         # For the following fields we just need one copy
