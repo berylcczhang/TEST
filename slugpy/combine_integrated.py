@@ -29,7 +29,7 @@ def combine_integrated(data):
 
     # Combine fields
     new_fields = []
-    single_fields = ['time', 'target_mass', 'wl', 'filter_names',
+    single_fields = ['time', 'wl', 'filter_names',
                      'filter_units', 'filter_wl', 'filter_wl_eff',
                      'filter_response', 'filter_beta', 'filter_wl_c']
     for i, f in enumerate(data[0]._fields):

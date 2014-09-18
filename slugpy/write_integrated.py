@@ -137,7 +137,6 @@ def write_integrated(data, model_name, fmt):
                 np.arange(ntrial, dtype='int64'), (ntimes,1))).\
                 flatten()
             times = np.tile(data.time, ntrial)
-            target_mass = np.tile(data.target_mass, ntrial)
 
             # Convert data to FITS columns
             cols = []
@@ -145,8 +144,10 @@ def write_integrated(data, model_name, fmt):
                                     unit="", array=trial))
             cols.append(fits.Column(name="Time", format="1D",
                                     unit="yr", array=times))
-            cols.append(fits.Column(name="TargetMass", format="1D",
-                                    unit="Msun", array=target_mass))
+            cols.append(
+                fits.Column(name="TargetMass", format="1D",
+                            unit="Msun", 
+                            array=np.transpose(data.target_mass).flatten()))
             cols.append(
                 fits.Column(name="ActualMass", format="1D",
                             unit="Msun", 

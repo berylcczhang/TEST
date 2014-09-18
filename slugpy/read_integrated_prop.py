@@ -39,7 +39,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
 
        time : array
           Times at which data are output
-       target_mass : array, shape
+       target_mass : array, shape (N_times, N_trials)
           Target stellar mass at each time
        actual_mass : array, shape (N_times, N_trials)
           Actual mass of stars created up to each time in each trial
@@ -164,7 +164,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
 
     # Prune / reshape the output arrays
     time = time[0:ntime]
-    target_mass = target_mass[0:ntime]
+    target_mass = np.transpose(target_mass.reshape(ntrial, ntime))
     actual_mass = np.transpose(actual_mass.reshape(ntrial, ntime))
     live_mass = np.transpose(live_mass.reshape(ntrial, ntime))
     cluster_mass = np.transpose(cluster_mass.reshape(ntrial, ntime))
