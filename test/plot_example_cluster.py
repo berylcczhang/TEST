@@ -86,14 +86,14 @@ indx=cluster.filter_names.index('QH0')
 sbpn=plt.subplot(4,2,5)
 plt.hist(np.log10(cluster.phot[first[0],indx]))
 plt.xlim(44,51)
-plt.xlabel('QH0'+' ('+cluster.filter_units[indx]+')')
+plt.xlabel('log QH0'+' ('+cluster.filter_units[indx]+')')
 plt.ylabel('Number')
 
 
 sbpn=plt.subplot(4,2,6)
 plt.hist(np.log10(cluster.phot[last[0],indx]))
 plt.xlim(44,51)
-plt.xlabel('QH0'+' ('+cluster.filter_units[indx]+')')
+plt.xlabel('log QH0'+' ('+cluster.filter_units[indx]+')')
 plt.ylabel('Number')
 
 #plot integrated photometry in selected bands
@@ -102,13 +102,13 @@ indx=cluster.filter_names.index('GALEX_FUV')
 sbpn=plt.subplot(4,2,7)
 plt.hist(np.log10(cluster.phot[first[0],indx]))
 plt.xlim(21.5,24.5)
-plt.xlabel('GALEX_FUV'+' ('+cluster.filter_units[indx]+')')
+plt.xlabel('log GALEX_FUV'+' ('+cluster.filter_units[indx]+')')
 plt.ylabel('Number')
 
 sbpn=plt.subplot(4,2,8)
 plt.hist(np.log10(cluster.phot[last[0],indx]))
 plt.xlim(21.5,24.5)
-plt.xlabel('GALEX_FUV'+' ('+cluster.filter_units[indx]+')')
+plt.xlabel('log GALEX_FUV'+' ('+cluster.filter_units[indx]+')')
 plt.ylabel('Number')
 
 # Save

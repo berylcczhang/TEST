@@ -13,7 +13,7 @@
 # Name of the model; this will become the base name for all output
 # files
 # Default: SLUG_DEF
-model_name        SLUG_CONSTSAMPL_1
+model_name        SLUG_CONSTSAMPL_3
 
 # Type of simulation. Allowed values:
 # -- cluster (simulate a simple stellar population all formed at time
@@ -35,7 +35,7 @@ end_time	  1.0e6
 
 # Mass of cluster for cluster mode simulation, in Msun; can be omitted,
 # and will be ignored, if sim_type = galaxy
-cluster_mass        50
+cluster_mass        1e4
 
 
 #############################################
