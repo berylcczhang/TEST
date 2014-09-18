@@ -539,8 +539,10 @@ slug_parmParser::writeParams() const {
   paramFile << "time_step            " << timeStep << endl;
   paramFile << "end_time             " << endTime << endl;
   if (run_galaxy_sim) {
-    if (constantSFR || randomSFR)
+    if (constantSFR)
       paramFile << "SFR                  " << sfr << endl;
+    else if (randomSFR)
+      paramFile << "SFR                  " << sfr_file << endl;
     else
       paramFile << "SFH                  " << sfh << endl;
   }
