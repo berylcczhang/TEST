@@ -88,7 +88,7 @@ def write_integrated(data, model_name, fmt):
                               "{:11.5e}   {:11.5e}   {:11d}   " +
                               "{:11d}   {:11d}\n")
                              .format(data.time[j], 
-                                     data.target_mass[j],
+                                     data.target_mass[j,i],
                                      data.actual_mass[j,i],
                                      data.live_mass[j,i],
                                      data.cluster_mass[j,i],
@@ -113,7 +113,7 @@ def write_integrated(data, model_name, fmt):
             for i in range(ntrial):
                 for j in range(ntime):
                     fp.write(data.time[j])
-                    fp.write(data.target_mass[j])
+                    fp.write(data.target_mass[j,i])
                     fp.write(data.actual_mass[j,i])
                     fp.write(data.live_mass[j,i])
                     fp.write(data.cluster_mass[j,i])
