@@ -71,11 +71,11 @@ figure ``test/SLUG_CONSTSAMPL_f1.pdf``.
 
 This figure shows the maximum mass of the stars in these realizations (top row), the 
 rate of ionizing photons :math:`Q_{H_0}` (central row), and the FUV luminosity (bottom row). 
-Histograms refer, form left to right, to the  :math:`50\;M_\odot`, :math:`250\;M_\odot`, 
-and :math:`500\;M_\odot` models.
+Histograms refer, form left to right, to clusters with :math:`50\;M_\odot`, :math:`250\;M_\odot`, 
+and :math:`500\;M_\odot`.
 
 Due to the small timestep, the distributions of stellar masses shown in the top panels reflect 
-to good approximation the distribution of the maximum stellar masses that are drawn by 
+to good approximation the distribution of the maximum stellar masses that are drawn from the IMF by 
 SLUG in each realization. For a cluster of :math:`50\;M_\odot`, the vast majority of the 
 stars are drawn below  :math:`20-50\;M_\odot`. This is an obvious consequence of the 
 fact that a cluster cannot contain stars much more massive than its own mass. However, stars 
@@ -83,8 +83,8 @@ more massive then the targeted mass are not impossible realizations for the defa
 sampling algorithm (see below). For instance, if the first star to be drawn has 
 mass :math:`60\;M_\odot`, then SLUG would add it to the cluster and stop. Leaving this star out
 would indeed be a worse approximation than overshooting the targeted cluster mass by only 
-:math:`10\;M_\odot`.  From left to right, one can see that, as the targeted cluster mass increase, the 
-histogram shifts to progressively higher masses. In the limit of a infinite cluster, 
+:math:`10\;M_\odot`.  From left to right, one can see that, as the targeted cluster mass increases, the 
+histogram shifts to progressively higher masses. In the limit of an infinite cluster, 
 all stellar masses would be represented, and the histogram would peak at :math:`120\;M_\odot`.
 Essentially, this constrained sampling introduces a stochastic (and not deterministic)
 variation in the IMF. An IMF truncated above :math:`60\;M_\odot` would roughly 
@@ -101,6 +101,21 @@ in all cases.
 
 Problem ``sampling``: different sampling techniques
 -----------------------------------------------------
+
+As highlighted in the previous section, the method with which stars are sampled from the 
+IMF has a great influence on the final output. Starting from v2, SLUG has the capability of 
+specifying the desired sampling algorithm for a given PDF. 
+The command  ``test/run_sampling.sh`` runs four ``cluster`` simulations, each with 1000 trials
+of masses of :math:`50\;M_\odot`, and a Kroupa (2002) IMF. 
+The following four sampling methods are chosen for each simulation: 1) ``stop_nearest``, 
+the default in SLUG; 2) ``stop_before``; 3) ``stop_after``; 4) ``sorted_sampling``.
+A description of each method is provided in Section :ref:`sampling_metod_label`. 
+The analysis script ``python test/plot_sampling.py`` produces a multi-panel 
+figure ``test/SLUG_SAMPLING_f1.pdf``. 
+
+
+
+
 
 This problem highlights the flexible choice of sampling techniques in SLUG, which is 
 a new capability of v2.

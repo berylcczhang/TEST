@@ -173,6 +173,8 @@ In the case of a star formation history, as in the example above, the weight :ma
 
 Note that, for the IMF, CMF, and CLF, the absolute values of the weights to not matter, only their relative values. On the other hand, for the SFH, the absolute weight does matter.
 
+.. _sampling_metod_label:
+
 Sampling Methods
 ----------------
 
