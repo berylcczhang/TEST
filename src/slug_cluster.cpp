@@ -91,6 +91,8 @@ slug_cluster::reset(bool keep_id) {
   // Delete current stellar masses and data
   stars.resize(0);
   stardata.resize(0);
+  stars.shrink_to_fit();
+  stardata.shrink_to_fit();
 
   // Re-populate with stars
   birthMass = imf->drawPopulation(targetMass, stars);

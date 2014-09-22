@@ -88,11 +88,13 @@ slug_galaxy::~slug_galaxy() {
 
   // Destroy cluster lists
   while (disrupted_clusters.size() > 0) {
-    delete disrupted_clusters.back();
+    if (disrupted_clusters.back() != nullptr)
+      delete disrupted_clusters.back();
     disrupted_clusters.pop_back();
   }
   while (clusters.size() > 0) {
-    delete clusters.back();
+    if (clusters.back() != nullptr)
+      delete clusters.back();
     clusters.pop_back();
   }
 }
@@ -111,11 +113,13 @@ slug_galaxy::reset(bool reset_cluster_id) {
   Lbol_set = spec_set = field_data_set = phot_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
-    delete disrupted_clusters.back();
+    if (disrupted_clusters.back() != nullptr)
+      delete disrupted_clusters.back();
     disrupted_clusters.pop_back();
   }
   while (clusters.size() > 0) {
-    delete clusters.back();
+    if (clusters.back() != nullptr)
+      delete clusters.back();
     clusters.pop_back();
   }
   L_lambda.resize(0);
@@ -313,7 +317,7 @@ slug_galaxy::set_Lbol() {
 // Compute spectrum, getting Lbol in the process
 ////////////////////////////////////////////////////////////////////////
 void
-slug_galaxy::set_spectrum() {
+slug_galaxy::set_spectrum(const bool del_cluster) {
 
   // Do nothing if already set
   if (spec_set) return;
@@ -331,6 +335,10 @@ slug_galaxy::set_spectrum() {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
+    if (del_cluster) {
+      delete (*it);
+      *it = nullptr;
+    }
   }
 
   // Now do exactly the same thing for disrupted clusters
@@ -340,6 +348,10 @@ slug_galaxy::set_spectrum() {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
+    if (del_cluster) {
+      delete (*it);
+      *it = nullptr;
+    }
   }
 
   // Now do stochastic field stars
@@ -370,13 +382,13 @@ slug_galaxy::set_spectrum() {
 // Compute photometry
 ////////////////////////////////////////////////////////////////////////
 void
-slug_galaxy::set_photometry() {
+slug_galaxy::set_photometry(const bool del_cluster) {
 
   // Do nothing if already set
   if (phot_set) return;
 
   // Compute the spectrum
-  set_spectrum();
+  set_spectrum(del_cluster);
 
   // Grab the wavelength table
   const vector<double>& lambda = specsyn->lambda();
@@ -505,7 +517,8 @@ slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_integrated_spec(ofstream& int_spec_file, 
-				   const outputMode out_mode) {
+				   const outputMode out_mode,
+				   const bool save_cluster_spec) {
 
   // Make sure spectrum information is current. If not, compute it.
   if (!spec_set) set_spectrum();
@@ -533,7 +546,8 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits, 
-				   int trial) {
+				   int trial,
+				   const bool save_cluster_spec) {
 
   // Make sure spectrum information is current. If not, compute it.
   if (!spec_set) set_spectrum();
@@ -593,7 +607,8 @@ slug_galaxy::write_cluster_spec(fitsfile* cluster_spec_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_integrated_phot(ofstream& outfile, 
-				   const outputMode out_mode) {
+				   const outputMode out_mode,
+				   const bool save_cluster_spec) {
 
   // Make sure photometric information is current. If not, compute it.
   if (!phot_set) set_photometry();
@@ -617,7 +632,8 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits, 
-				   int trial) {
+				   int trial,
+				   const bool save_cluster_spec) {
 
   // Make sure photometric information is current. If not, compute it.
   if (!phot_set) set_photometry();

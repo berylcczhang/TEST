@@ -113,6 +113,10 @@ public:
   const std::vector<double> &get_photometry()
   { set_photometry(); return phot; }
 
+  // Method to clear the spectrum, in order to save memory
+  void clear_spectrum()
+  { L_lambda.resize(0); spec_set = false; }
+
   // Output routines. The optional arguemnt cluster_only is used to
   // flag that only this cluster is being written, rather than a
   // collection of them, and that this cluster should therefore write

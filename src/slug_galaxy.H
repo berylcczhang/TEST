@@ -62,17 +62,20 @@ public:
   // and return.
   double get_Lbol() { set_Lbol(); return Lbol; }
 
-  const std::vector<double> &get_spectrum()
-  { set_spectrum(); return L_lambda; }
+  const std::vector<double> 
+  &get_spectrum(const bool del_cluster = false)
+  { set_spectrum(del_cluster); return L_lambda; }
 
   void get_spectrum(std::vector<double>& lambda_out, 
-		    std::vector<double>& L_lambda_out)
-  { set_spectrum();
+		    std::vector<double>& L_lambda_out,
+		    const bool del_cluster = false)
+  { set_spectrum(del_cluster);
     lambda_out = specsyn->lambda();
     L_lambda_out = L_lambda; }
 
-  const std::vector<double>& get_photometry()
-  { set_photometry(); return phot; }
+  const std::vector<double>& 
+  get_photometry(const bool del_cluster = false)
+  { set_photometry(del_cluster); return phot; }
 
   // Output functions
   void write_integrated_prop(std::ofstream& int_prop_file, 
@@ -80,11 +83,13 @@ public:
   void write_cluster_prop(std::ofstream& cluster_prop_file,
 			  const outputMode out_mode);
   void write_integrated_spec(std::ofstream& int_spec_file,
-			     const outputMode out_mode);
+			     const outputMode out_mode,
+			     const bool save_cluster_spec = true);
   void write_cluster_spec(std::ofstream& cluster_spec_file,
 			  const outputMode out_mode);
   void write_integrated_phot(std::ofstream& outfile,
-			     const outputMode out_mode);
+			     const outputMode out_mode,
+			     const bool save_cluster_spec = true);
   void write_cluster_phot(std::ofstream& outfile,
 			  const outputMode out_mode);
 
@@ -92,9 +97,11 @@ public:
   // FITS output functions
   void write_integrated_prop(fitsfile* int_prop_fits, int trial);
   void write_cluster_prop(fitsfile* cluster_prop_fits, int trial);
-  void write_integrated_spec(fitsfile* int_spec_fits, int trial);
+  void write_integrated_spec(fitsfile* int_spec_fits, int trial,
+			     const bool del_cluster = false);
   void write_cluster_spec(fitsfile* cluster_spec_fits, int trial);
-  void write_integrated_phot(fitsfile* int_phot_fits, int trial);
+  void write_integrated_phot(fitsfile* int_phot_fits, int trial,
+			     const bool del_cluster = false);
   void write_cluster_phot(fitsfile* cluster_phot_fits, int trial);
 #endif
 
@@ -104,8 +111,8 @@ private:
   // photometry
   void set_field_data();
   void set_Lbol();
-  void set_spectrum();
-  void set_photometry();
+  void set_spectrum(const bool del_cluster = true);
+  void set_photometry(const bool del_cluster = true);
 
   // Distributions and physical models used in simulation
   const slug_PDF *imf;                // IMF

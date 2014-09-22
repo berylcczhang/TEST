@@ -338,6 +338,10 @@ void slug_sim::galaxy_sim() {
     // Loop over time steps
     for (unsigned int j=0; j<outTimes.size(); j++) {
 
+      // Flag if we should delete clusters on this pass
+      bool del_cluster = (j==outTimes.size()-1) &&
+	(!pp.get_writeClusterSpec()) && (!pp.get_writeClusterPhot());
+
       // If sufficiently verbose, print status
       if (pp.get_verbosity() > 1)
 	std::cout << "  trial " << i+1 << ", advance to time " 
@@ -375,10 +379,11 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_spec(int_spec_file, out_mode);
+	  galaxy->write_integrated_spec(int_spec_file, out_mode,
+					del_cluster);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_integrated_spec(int_spec_fits, i);
+	  galaxy->write_integrated_spec(int_spec_fits, i, del_cluster);
 	}
 #endif
       }
@@ -399,10 +404,12 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_phot(int_phot_file, out_mode);
+	  galaxy->write_integrated_phot(int_phot_file, out_mode, 
+					del_cluster);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_integrated_phot(int_phot_fits, i);
+	  galaxy->write_integrated_phot(int_phot_fits, i,
+					del_cluster);
 	}
 #endif
       }
@@ -473,7 +480,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_prop(cluster_prop_file, out_mode, true);
+	  cluster->write_prop(cluster_prop_file, out_mode);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_prop(cluster_prop_fits, i);
@@ -486,7 +493,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_spectrum(cluster_spec_file, out_mode, true);
+	  cluster->write_spectrum(cluster_spec_file, out_mode);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_spectrum(cluster_spec_fits, i);
@@ -499,7 +506,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_photometry(cluster_phot_file, out_mode, true);
+	  cluster->write_photometry(cluster_phot_file, out_mode);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_photometry(cluster_phot_fits, i);
