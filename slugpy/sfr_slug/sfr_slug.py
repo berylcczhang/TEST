@@ -9,6 +9,7 @@ import numpy as np
 import os
 import os.path as osp
 from copy import deepcopy
+from collections import namedtuple
 from ..read_integrated_phot import read_integrated_phot
 from ..read_integrated_prop import read_integrated_prop
 from gkcons import gk
@@ -41,12 +42,12 @@ class sfr_slug(object):
 
     Methods
        __init__ : initializer
+       __call__ : returns the PDF of SFR from input point-mass SFR
+                  estimates
        pdf : returns the joint PDF of the data set in at a specified
              set of data points
        pdfgrid : returns the joint PDF of the data set evaluated on a
                  grid
-       sfrpdf : returns the PDF of SFR from input point-mass SFR
-                estimates
     """
 
     ##################################################################
@@ -410,9 +411,9 @@ class sfr_slug(object):
     ##################################################################
     # Method to compute PDF of SFR given a point mass estimate
     ##################################################################
-    def sfrpdf(self, logsfr_est, logsfr_err=None, filter_name=None,
-               nmesh=100, logsfr_lim=None, prior=None, error_est=False,
-               gkorder='61'):
+    def __call__(self, logsfr_est, logsfr_err=None, filter_name=None,
+                 nmesh=100, logsfr_lim=None, prior=None,
+                 error_est=False, gkorder='61'):
         """
         Return an estimate of the PDF of true star formation rate for
         one or more point mass estimates of the SFR using a particular
@@ -533,12 +534,13 @@ class sfr_slug(object):
                 # Input is a 2D array giving log SFR estimate from
                 # multiple filters
                 ndata = logsfr_est.shape[0]
+                nphot = logsfr_est.shape[1]
                 logsfr_grd, logsfr_est_grd \
                     = np.meshgrid(logsfr, logsfr_est[:,0])
                 kdedata = np.append(logsfr_grd.ravel()[:,np.newaxis], 
                                     logsfr_est_grd.ravel()[:,np.newaxis], 
                                     axis=1)
-                for i in range(logsfr_est.shape[1]-1):
+                for i in range(nphot-1):
                     kdedata = np.append(kdedata,
                                         np.repeat(logsfr_est[:,i+1],
                                                   nmesh)[:,np.newaxis],
@@ -657,6 +659,11 @@ class sfr_slug(object):
 
         # Return
         if error_est and logsfr_err is not None:
-            return logsfr, sfrpdf, np.abs(sfrpdf-sfrpdf_gauss)
+            out_type = namedtuple('SFR_estimate',
+                                  ['logsfr', 'sfrpdf', 'sfrpdf_err'])
+            out = out_type(logsfr, sfrpdf, np.abs(sfrpdf-sfrpdf_gauss))
         else:
-            return logsfr, sfrpdf
+            out_type = namedtuple('SFR_estimate',
+                                  ['logsfr', 'sfrpdf'])
+            out = out_type(logsfr, sfrpdf)
+        return out
