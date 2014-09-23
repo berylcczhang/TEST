@@ -13,6 +13,7 @@ from collections import namedtuple
 from ..read_integrated_phot import read_integrated_phot
 from ..read_integrated_prop import read_integrated_prop
 from gkcons import gk
+import warnings
 
 class sfr_slug(object):
     """
@@ -413,7 +414,7 @@ class sfr_slug(object):
     ##################################################################
     def __call__(self, logsfr_est, logsfr_err=None, filter_name=None,
                  nmesh=100, logsfr_lim=None, prior=None,
-                 error_est=False, gkorder='61'):
+                 error_est=False, gkorder=None):
         """
         Return an estimate of the PDF of true star formation rate for
         one or more point mass estimates of the SFR using a particular
@@ -452,8 +453,9 @@ class sfr_slug(object):
               model is returned; ignored if logsfr_err is None
            gkorder : string
               order Gauss-Kronrod quadrature; allowed values are '15',
-              '21', '31', '41', '51', '61'; only used if logsfr_err is
-              not None
+              '21', '31', '41', '51', '61'; default is '61' for a
+              single filter, and '15' for >1 filter; this parameter
+              has no effect unless logsfr_err is not None
 
         Returns
            A namedtuple consisting of:
@@ -559,29 +561,50 @@ class sfr_slug(object):
 
             # Case with errors: in this case for every input data
             # point we need to convolve the PDF with the luminosity /
-            # photometric SFR distribution implied by the errors
-
-            xgkvec = gk[gkorder]['xgkvec']
-            wgkvec = gk[gkorder]['wgkvec']
-            wgvec = gk[gkorder]['wgvec']
-            gkord = gk[gkorder]['gkorder']
+            # photometric SFR distribution implied by the errors. This
+            # convolution is evaluated using a non-adaptive
+            # Gauss-Kronrod quadrature. The index magic is fairly
+            # complex, because around each input photometric SFR
+            # value, we need to construct a little grid representing
+            # the error distribution around that point. We then need
+            # to evaluate the integrand at that point, which involves
+            # performing KDE, computing the prior probability of that
+            # set of photometric SFR values, and evaluating the
+            # probability of the model given the data and its
+            # associated errors. Finally, we need to integrate over
+            # that little grid around each point using
+            # quadrature. Doing all this efficiently requires
+            # vectorizing all these operations, hence the fandy index
+            # manipulation.
 
             # Step 1: figure out how many data points and photometric
-            # values per data point we have
+            # values per data point we have; decide on the order of
+            # integration based on this dimensionality
             if not hasattr(logsfr_est, '__iter__'):
                 # Input log SFR estimate is a single number
                 ndata = 1
                 nphot = 1
+                if gkorder is None:
+                    gkorder = '61'
             elif logsfr_est.ndim == 1:
                 # Input is a 1D array giving log SFR estimated from a
                 # single filter
                 ndata = len(logsfr_est)
                 nphot = 1
+                if gkorder is None:
+                    gkorder = '61'
             else:
                 ndata = logsfr_est.shape[0]
                 nphot = logsfr_est.shape[1]
+                if gkorder is None:
+                    gkorder = '15'
+            xgkvec = gk[gkorder]['xgkvec']
+            wgkvec = gk[gkorder]['wgkvec']
+            wgvec = gk[gkorder]['wgvec']
+            gkord = gk[gkorder]['gkorder']
 
-            # Step 2: get p(log SFR_est); this will be our prior on
+            # Step 2: construct the KernelDensity object we will use
+            # to evaluate p(log SFR_est); this will be our prior on
             # the photometry-estimated SFR
             logsfr_est_kde, lim = self.get_kde(filter_name)
 
@@ -591,34 +614,77 @@ class sfr_slug(object):
             # Gauss-Kronrod integration. At each point on this grid,
             # evaluate p(L | data) / p(L).
             if nphot == 1:
-                gkgrid = xgkvec
+                xgkgrid = xgkvec
                 logsfr_est_grid = logsfr_est + \
-                                  np.multiply.outer(gkgrid,
-                                                    5*logsfr_err)
-                probdata = np.exp(-(6.0*gkgrid)**2/2.0)
+                                  np.multiply.outer(xgkgrid,
+                                                    6*logsfr_err)
+                probdata = np.exp(-(6.0*xgkgrid)**2/2.0)
                 priordata = np.exp(logsfr_est_kde.score_samples(
                     logsfr_est_grid.reshape(ndata*gkord,1)). \
-                                reshape(gkord, ndata))+1e-100
+                                reshape(gkord, ndata))
+                idx = np.where(priordata == 0.0)[0]
+                if len(idx) != 0:
+                    warnings.warn("Input photometric SFR off model " + 
+                                  "grid; results may be unreliable")
+                    priordata[idx] = 1e-100
                 pdata = probdata / np.transpose(priordata)
             else:
                 veclist = [xgkvec]*nphot
-                gkgrid = np.array(np.meshgrid(*veclist))
+                xgkgrid = np.transpose(np.array(np.meshgrid(*veclist)))
+                logsfr_est_grid = np.zeros(xgkgrid.shape[:-1]+(ndata,nphot))
+                for i in range(nphot):
+                    idx = (Ellipsis, i)
+                    logsfr_est_grid[idx] \
+                        = logsfr_est[idx] + \
+                        np.multiply.outer(xgkgrid[idx], 6*logsfr_err[idx])
+                probdata = np.exp(
+                    -np.add.reduce((6.0*xgkgrid)**2, axis=nphot)/2.0)
+                priordata = np.exp(logsfr_est_kde.score_samples(
+                    logsfr_est_grid))
+                idx = np.where(priordata == 0.0)[0]
+                if len(idx) != 0:
+                    warnings.warn("Input photometric SFR off model " + 
+                                  "grid; results may be unreliable")
+                    priordata[idx] = 1e-100
+                pdata = probdata / np.transpose(priordata)
 
             # Step 4: generate a grid of points at each combination of
             # SFR and luminosity, and evaluate p(log SFR, log L) at
             # each of those points
             if nphot == 1:
-                logsfr_grd, full_grid \
+                logsfr_grid, logL_grid \
                     = np.meshgrid(logsfr, np.ravel(logsfr_est_grid))
-                full_grid = full_grid.reshape(gkord, ndata, nmesh)
-                logsfr_grd = logsfr_grd.reshape(gkord, ndata, nmesh)
+                logL_grid = logL_grid.reshape(gkord, ndata, nmesh)
+                logsfr_grid = logsfr_grid.reshape(gkord, ndata, nmesh)
                 kdedata = np.append(
-                    logsfr_grd.reshape(logsfr_grd.shape+(1,)),
-                    full_grid.reshape(full_grid.shape+(1,)),
-                    axis=logsfr_grd.ndim)
+                    logsfr_grid.reshape(logsfr_grid.shape+(1,)),
+                    logL_grid.reshape(logL_grid.shape+(1,)),
+                    axis=logsfr_grid.ndim)
                 kdeprob = np.exp(self.kde.score_samples(kdedata))
             else:
-                pass
+                idx=(Ellipsis,0)
+                logsfr_grid, logL_grid \
+                    = np.meshgrid(logsfr,
+                                  np.ravel(logsfr_est_grid[idx]))
+                logsfr_grid = logsfr_grid.reshape((gkord,)*nphot+
+                                                  (ndata,)+(nmesh,))
+                logL_grid = logL_grid.reshape((gkord,)*nphot+
+                                              (ndata,)+(nmesh,))
+                kdedata = np.append(
+                    logsfr_grid.reshape(logsfr_grid.shape+(1,)),
+                    logL_grid.reshape(logL_grid.shape+(1,)),
+                    axis=logsfr_grid.ndim)
+                for i in range(nphot-1):
+                    idx=(Ellipsis,i+1)
+                    logL_tmp = np.repeat(
+                        np.ravel(logsfr_est_grid[idx]), nmesh). \
+                        reshape((gkord,)*nphot+
+                                (ndata,)+(nmesh,))
+                    kdedata = np.append(
+                        kdedata, 
+                        np.reshape(logL_tmp, logL_tmp.shape+(1,)),
+                        axis=logsfr_grid.ndim)
+                kdeprob = np.exp(self.kde.score_samples(kdedata))
 
             # Step 5: multiply by the prior on log L to get the full
             # integrand
@@ -627,14 +693,32 @@ class sfr_slug(object):
             # Step 6: last step: perform a weighted sum of the
             # integrand at each input photometric SFR and each output
             # SFR to get the quadrature estimate of the integral
-            sfrpdf = np.transpose(np.sum(integrand*wgkvec, axis=2))
-            if error_est:
-                sfrpdf_gauss = np.transpose(
-                    np.sum(integrand[:,:,1::2]*wgvec, axis=2))
-            if not hasattr(logsfr_est, '__iter__'):
-                sfrpdf=np.ravel(sfrpdf)
+            if nphot == 1:
+                sfrpdf = np.transpose(np.sum(integrand*wgkvec, axis=2))
                 if error_est:
-                    sfrpdf_gauss=np.ravel(sfrpdf_gauss)
+                    sfrpdf_gauss = np.transpose(
+                        np.sum(integrand[:,:,1::2]*wgvec, axis=2))
+                if not hasattr(logsfr_est, '__iter__'):
+                    sfrpdf=np.ravel(sfrpdf)
+                    if error_est:
+                        sfrpdf_gauss=np.ravel(sfrpdf_gauss)
+            else:
+                wgkgrid = np.multiply.outer(wgkvec, wgkvec)
+                for i in range(nphot-2):
+                    wgkgrid = np.multiply.outer(wgkgrid, wgkvec)
+                sfrpdf = np.transpose(
+                    np.sum(integrand*wgkgrid, 
+                           axis=tuple(range(integrand.ndim-nphot, 
+                                            integrand.ndim))))
+                if error_est:
+                    wggrid = np.multiply.outer(wgvec, wgvec)
+                    for i in range(nphot-2):
+                        wggrid = np.multiply.outer(wggrid, wgvec)
+                    idx = (Ellipsis,)+(slice(1,None,2),)*nphot
+                    sfrpdf_gauss = np.transpose(
+                        np.sum(integrand[idx]*wggrid, 
+                               axis=tuple(range(integrand.ndim-nphot, 
+                                                integrand.ndim))))
 
         # Adjust prior on SFR
         sfrpdf = sfrpdf * priorfac
