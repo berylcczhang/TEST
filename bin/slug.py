@@ -267,7 +267,7 @@ while completed_trials < ntrials:
         if args.nicelevel > 0:
             cmd = "nice -n " + str(args.nicelevel) + " " + cmd
         proc_list[p] \
-            = subprocess.Popen(cmd, bufsize=1, shell=True,
+            = subprocess.Popen(cmd, bufsize=0, shell=True,
                                stdout=subprocess.PIPE, 
                                stderr=subprocess.PIPE,
                                close_fds=ON_POSIX)
