@@ -118,10 +118,10 @@ key1 VAL1
 <caption>Segment Types</caption>
 <colgroup>
 <col width="10%" />
-<col width="31%" />
-<col width="7%" />
+<col width="33%" />
+<col width="6%" />
 <col width="16%" />
-<col width="7%" />
+<col width="6%" />
 <col width="29%" />
 </colgroup>
 <thead valign="bottom">
@@ -149,7 +149,7 @@ key1 VAL1
 <td>&nbsp;</td>
 </tr>
 <tr class="row-even"><td><tt class="docutils literal"><span class="pre">lognormal</span></tt></td>
-<td><span class="math">\(x^{-1} \exp[-\log_{10}(x/x_0)^2/2\sigma^2]\)</span></td>
+<td><span class="math">\(x^{-1} \exp\{-[\log_{10}(x/x_0)]^2/2\sigma^2\}\)</span></td>
 <td><tt class="docutils literal"><span class="pre">mean</span></tt></td>
 <td>Mean, <span class="math">\(x_0\)</span></td>
 <td><tt class="docutils literal"><span class="pre">disp</span></tt></td>
@@ -256,7 +256,7 @@ In the case of a star formation history, as in the example above, the weight <sp
 <p>Note that, for the IMF, CMF, and CLF, the absolute values of the weights to not matter, only their relative values. On the other hand, for the SFH, the absolute weight does matter.</p>
 </div>
 <div class="section" id="sampling-methods">
-<h2>Sampling Methods<a class="headerlink" href="#sampling-methods" title="Permalink to this headline">¶</a></h2>
+<span id="sampling-metod-label"></span><h2>Sampling Methods<a class="headerlink" href="#sampling-methods" title="Permalink to this headline">¶</a></h2>
 <p>A final option allowed in both basic and advanced mode is a specification of the sampling method. The sampling method is a description of how to draw a population of objects from the PDF, when the population is specified as having a total sum <span class="math">\(M_{\rm target}\)</span> (usually but not necessarily a total mass) rather than a total number of members <span class="math">\(N\)</span>; there are a number of ways to do this, which do not necessarily yield identical distributions, even for the same underlying PDF. To specify a sampling method, simply add the line:</p>
 <div class="highlight-rest"><div class="highlight"><pre>method METHOD
 </pre></div>

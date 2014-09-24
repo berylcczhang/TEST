@@ -51,11 +51,20 @@
             
   <div class="section" id="test-problems">
 <span id="sec-tests"></span><h1>Test Problems<a class="headerlink" href="#test-problems" title="Permalink to this headline">¶</a></h1>
-<p>This section describes a set of problems that can be used to test and explore the different capabilities of SLUG. SLUG ships a set of problems <tt class="docutils literal"><span class="pre">problemname</span></tt> that are specified by a parameter file <tt class="docutils literal"><span class="pre">param/problemname.param</span></tt>. Problems that require multiple simulations are described instead by multiple paramater files, each with unique ID XX:  <tt class="docutils literal"><span class="pre">param/problemnameXX.param</span></tt>. Users can reproduce the output of the test problems with the provided executable scripts  <tt class="docutils literal"><span class="pre">test/run_problemname.sh</span></tt>. For each problem, a script for analysis is distributed  in <tt class="docutils literal"><span class="pre">test/problemname.py</span></tt>. Details for each test problem are given below.  Throughout this section, it is assumed that the <tt class="docutils literal"><span class="pre">SLUG_DIR</span></tt> has been properly set.</p>
+<p>This section describes a set of problems that can be used to test and explore the different capabilities of SLUG. SLUG ships a
+set of problems <tt class="docutils literal"><span class="pre">problemname</span></tt> that are specified by a parameter file <tt class="docutils literal"><span class="pre">param/problemname.param</span></tt>. Problems that require
+multiple simulations are described instead by multiple paramater files, each with unique ID XX:  <tt class="docutils literal"><span class="pre">param/problemnameXX.param</span></tt>.
+Users can reproduce the output of the test problems with the provided executable scripts  <tt class="docutils literal"><span class="pre">test/run_problemname.sh</span></tt>.
+For each problem, a script for analysis is distributed  in <tt class="docutils literal"><span class="pre">test/problemname.py</span></tt>. Details for each test problem are given below.
+Throughout this section, it is assumed that the <tt class="docutils literal"><span class="pre">SLUG_DIR</span></tt> has been properly set.</p>
 <div class="section" id="problem-example-basic-galaxy-simulation">
 <h2>Problem <tt class="docutils literal"><span class="pre">example</span></tt>: basic galaxy simulation<a class="headerlink" href="#problem-example-basic-galaxy-simulation" title="Permalink to this headline">¶</a></h2>
-<p>This problem illustrates the basic usage of slugin <tt class="docutils literal"><span class="pre">galaxy</span></tt> mode by running 48 realizations of a galaxy with constant <span class="math">\(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\)</span>, up to a maximum time of <span class="math">\(2\times 10^8\)</span> yr. By issuing the command <tt class="docutils literal"><span class="pre">test/run_example.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_EXAMPLE*</span></tt> are generated. Once the models are ready, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_EXAMPLE_f1.pdf</span></tt>.</p>
-<p>The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence
+<p>This problem illustrates the basic usage of slugin <tt class="docutils literal"><span class="pre">galaxy</span></tt> mode by running 48 realizations of a galaxy with constant
+<span class="math">\(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\)</span>, up to a maximum time of <span class="math">\(2\times 10^8\)</span> yr. By issuing the
+command <tt class="docutils literal"><span class="pre">test/run_example.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_EXAMPLE*</span></tt> are generated. Once the models are ready,
+<tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_EXAMPLE_f1.pdf</span></tt>.</p>
+<p>The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a
+function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence
 of SLUG core algorithm. The 1:1 relation is shown by a red dashed line.
 The remaining panels show examples of integrated photometry (as labeled) of all simulated galaxies
 at different time steps, as a function of the actual mass. Due to its stochastic nature, SLUG produces
@@ -66,11 +75,14 @@ by red dashed lines in the relevant panels.</p>
 </div>
 <div class="section" id="problem-example-cluster-basic-cluster-simulation">
 <h2>Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation<a class="headerlink" href="#problem-example-cluster-basic-cluster-simulation" title="Permalink to this headline">¶</a></h2>
-<p>This problem illustrates the basic usage of SLUG in <tt class="docutils literal"><span class="pre">cluster</span></tt> mode by running 1000 realizations of a cluster with mass 500 <span class="math">\(M_\odot\)</span>,
-up to a maximum time of 10 Myr. By issuing the command
+<p>This problem illustrates the basic usage of SLUG in <tt class="docutils literal"><span class="pre">cluster</span></tt> mode by running 1000 realizations of a cluster
+with mass 500 <span class="math">\(M_\odot\)</span>, up to a maximum time of 10 Myr. By issuing the command
 <tt class="docutils literal"><span class="pre">test/run_example_cluster.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_CLUSTER_EXAMPLE*</span></tt> are
-generated. Once the models are ready, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_cluster.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_CLUSTER_EXAMPLE_f1.pdf</span></tt>.</p>
-<p>This figure is divided in two columns: the left one shows outputs at the first time step, 1 Myr, while the second one shows outputs at the last time step, 10 Myr.  The top row shows the actual cluster mass for an input mass of <span class="math">\(500\;M_\odot\)</span>.
+generated. Once the models are ready, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_cluster.py</span></tt> produces a multi-panel
+figure <tt class="docutils literal"><span class="pre">test/SLUG_CLUSTER_EXAMPLE_f1.pdf</span></tt>.</p>
+<p>This figure is divided in two columns: the left one shows outputs at the first time step, 1 Myr, while
+the second one shows outputs at the last time step, 10 Myr.  The top row shows the actual cluster mass for an
+input mass of <span class="math">\(500\;M_\odot\)</span>.
 In <tt class="docutils literal"><span class="pre">cluster</span></tt> mode, all clusters are generated at the first time step and they evolve
 passively after that. Thus, the mass does not change. As a consequence of the
 random drawing from the IMF, masses are distributed around the input mass.
@@ -86,12 +98,51 @@ most sensitive to the presence of massive stars, change accordingly
 </div>
 <div class="section" id="problem-constsampl-importance-of-constrained-sampling">
 <h2>Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling<a class="headerlink" href="#problem-constsampl-importance-of-constrained-sampling" title="Permalink to this headline">¶</a></h2>
-<p>This problem illustrates in more details the effects of constrained sampling on SLUG simulations,
-which is the first key ingredient in the core algorithm of SLUG.</p>
-<p>[change cluster mass to show how max mass changes]</p>
+<p>This problem illustrates in more detail the effects of constrained sampling on SLUG simulations.
+This is the first key ingredient in the core algorithm of SLUG. With the command <tt class="docutils literal"><span class="pre">test/run_constsampl.sh</span></tt>,
+three different <tt class="docutils literal"><span class="pre">cluster</span></tt> simulations are run, each with 1000 trials, but with masses of <span class="math">\(50\;M_\odot\)</span>,
+<span class="math">\(250\;M_\odot\)</span>, and <span class="math">\(500\;M_\odot\)</span>. A single timestep of <span class="math">\(10^6\)</span> yr is generated.
+The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_constsampl.py</span></tt> produces a multi-panel
+figure <tt class="docutils literal"><span class="pre">test/SLUG_CONSTSAMPL_f1.pdf</span></tt>.</p>
+<p>This figure shows the maximum mass of the stars in these realizations (top row), the
+rate of ionizing photons <span class="math">\(Q_{H_0}\)</span> (central row), and the FUV luminosity (bottom row).
+Histograms refer, form left to right, to clusters with <span class="math">\(50\;M_\odot\)</span>, <span class="math">\(250\;M_\odot\)</span>,
+and <span class="math">\(500\;M_\odot\)</span>.</p>
+<p>Due to the small timestep, the distributions of stellar masses shown in the top panels reflect
+to good approximation the distribution of the maximum stellar masses that are drawn from the IMF by
+SLUG in each realization. For a cluster of <span class="math">\(50\;M_\odot\)</span>, the vast majority of the
+stars are drawn below  <span class="math">\(20-50\;M_\odot\)</span>. This is an obvious consequence of the
+fact that a cluster cannot contain stars much more massive than its own mass. However, stars
+more massive then the targeted mass are not impossible realizations for the default
+sampling algorithm (see below). For instance, if the first star to be drawn has
+mass <span class="math">\(60\;M_\odot\)</span>, then SLUG would add it to the cluster and stop. Leaving this star out
+would indeed be a worse approximation than overshooting the targeted cluster mass by only
+<span class="math">\(10\;M_\odot\)</span>.  From left to right, one can see that, as the targeted cluster mass increases, the
+histogram shifts to progressively higher masses. In the limit of an infinite cluster,
+all stellar masses would be represented, and the histogram would peak at <span class="math">\(120\;M_\odot\)</span>.
+Essentially, this constrained sampling introduces a stochastic (and not deterministic)
+variation in the IMF. An IMF truncated above <span class="math">\(60\;M_\odot\)</span> would roughly
+approximate the results of the left column; however, a deterministic cut-off
+would not correctly reproduce the non-zero tail at higher masses, thus artificially
+reducing the scatter introduced by random sampling.</p>
+<p>The second and third row simply reflect what said above: for large clusters that can host
+stars at all masses, the luminosity peaks around what is expected according to a deterministic
+stellar population synthesis codes. At lower cluster masses, ionizing and UV fluxes
+are instead suppresses, due to the lack of massive stars. However, tails to high values exist
+in all cases.</p>
 </div>
 <div class="section" id="problem-sampling-different-sampling-techniques">
 <h2>Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques<a class="headerlink" href="#problem-sampling-different-sampling-techniques" title="Permalink to this headline">¶</a></h2>
+<p>As highlighted in the previous section, the method with which stars are sampled from the
+IMF has a great influence on the final output. Starting from v2, SLUG has the capability of
+specifying the desired sampling algorithm for a given PDF.
+The command  <tt class="docutils literal"><span class="pre">test/run_sampling.sh</span></tt> runs four <tt class="docutils literal"><span class="pre">cluster</span></tt> simulations, each with 1000 trials
+of masses of <span class="math">\(50\;M_\odot\)</span>, and a Kroupa (2002) IMF.
+The following four sampling methods are chosen for each simulation: 1) <tt class="docutils literal"><span class="pre">stop_nearest</span></tt>,
+the default in SLUG; 2) <tt class="docutils literal"><span class="pre">stop_before</span></tt>; 3) <tt class="docutils literal"><span class="pre">stop_after</span></tt>; 4) <tt class="docutils literal"><span class="pre">sorted_sampling</span></tt>.
+A description of each method is provided in Section <a class="reference internal" href="pdfs.html#sampling-metod-label"><em>Sampling Methods</em></a>.
+The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_sampling.py</span></tt> produces a multi-panel
+figure <tt class="docutils literal"><span class="pre">test/SLUG_SAMPLING_f1.pdf</span></tt>.</p>
 <p>This problem highlights the flexible choice of sampling techniques in SLUG, which is
 a new capability of v2.</p>
 <p>[basic run with different sampling]</p>
