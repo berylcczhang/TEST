@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_cluster_H_
 
 #include "slug.H"
+#include "slug_extinction.H"
 #include "slug_filter_set.H"
 #include "slug_galaxy.H"
 #include "slug_PDF.H"
@@ -48,6 +49,7 @@ public:
 	       const slug_tracks *my_tracks, 
 	       const slug_specsyn *my_specsyn,
 	       const slug_filter_set *my_filters,
+	       const slug_extinction *my_extinct,
 	       const slug_PDF *my_clf=NULL);
 
   // Destructor
@@ -113,9 +115,26 @@ public:
   const std::vector<double> &get_photometry()
   { set_photometry(); return phot; }
 
+  // Methods to get the spectrum and photometry including extinction
+  double get_Lbol_extinct() 
+  { set_Lbol(); return Lbol_ext; }
+
+  const std::vector<double> &get_spectrum_extinct()
+  { set_spectrum(); return L_lambda_ext; }
+
+  void get_spectrum_extinct(std::vector<double> &lambda_out, 
+			    std::vector<double> &L_lambda_out)
+  { set_spectrum(); 
+    lambda_out = extinct->lambda(); 
+    L_lambda_out = L_lambda_ext; }
+
+  const std::vector<double> &get_photometry_extinct()
+  { set_photometry(); return phot_ext; }
+
   // Method to clear the spectrum, in order to save memory
   void clear_spectrum()
-  { L_lambda.resize(0); spec_set = false; }
+  { L_lambda.resize(0); L_lambda_ext.resize(0); 
+    spec_set = false; }
 
   // Output routines. The optional arguemnt cluster_only is used to
   // flag that only this cluster is being written, rather than a
@@ -152,6 +171,7 @@ private:
   const slug_tracks *tracks;          // Evolutionary track set
   const slug_specsyn *specsyn;        // Spectral synthesizer
   const slug_filter_set *filters;     // Photometric filters
+  const slug_extinction *extinct;     // Extinction
 
   // Malleable data
   unsigned long id;                   // Unique ID
@@ -163,11 +183,15 @@ private:
   double curTime;                     // Current time
   double lifetime;                    // Time at which this cluster disrupts
   double stellarDeathMass;            // Mass of star dying at current age
+  double A_V;                         // A_V value
   double Lbol;                        // Bolometric luminosity
+  double Lbol_ext;                    // Extincted bolometric luminosity
   std::vector<double> stars;          // List of stellar masses
   std::vector<slug_stardata> stardata; // Data on stellar properties
   std::vector<double> L_lambda;       // Spectrum
   std::vector<double> phot;           // Photometry
+  std::vector<double> L_lambda_ext;   // Spectrum after extinction
+  std::vector<double> phot_ext;       // Photometry after extinction
   bool is_disrupted;                  // Is this cluster disrupted?
   bool data_set, Lbol_set, spec_set, phot_set;  // Status indicators
 };

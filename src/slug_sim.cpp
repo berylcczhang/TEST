@@ -210,17 +210,23 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 			    imf, sfh, pp.get_z());
   }
 
+  // If using extinction, initialize the extinction curve
+  if (pp.get_use_extinct()) {
+    extinct = new slug_extinction(pp, specsyn->lambda(true), rng);
+  } else {
+    extinct = NULL;
+  }
 
   // Initialize either a galaxy or a single cluster, depending on
   // which type of simulation we're running
   if (pp.galaxy_sim()) {
     galaxy = new slug_galaxy(pp, imf, cmf, clf, sfh, tracks, 
-			     specsyn, filters);
+			     specsyn, filters, extinct);
     cluster = NULL;
   } else {
     cluster = new slug_cluster(0, pp.get_cluster_mass(), 0.0,
-			       imf, tracks, specsyn, filters, 
-			       clf);
+			       imf, tracks, specsyn, filters,
+			       extinct, clf);
     galaxy = NULL;
   }
 
@@ -317,16 +323,29 @@ void slug_sim::galaxy_sim() {
     if ((out_mode == ASCII) && (i != 0)) {
       if (pp.get_writeIntegratedProp()) 
 	write_separator(int_prop_file, 8*14-3);
-      if (pp.get_writeIntegratedSpec()) 
-	write_separator(int_spec_file, 3*14-3);
-      if (pp.get_writeIntegratedPhot())
-	write_separator(int_phot_file, (1+pp.get_nPhot())*18-3);
-      if (pp.get_writeClusterProp())
-	write_separator(cluster_prop_file, 9*14-3);
-      if (pp.get_writeClusterSpec())
-	write_separator(cluster_spec_file, 4*14-3);
-      if (pp.get_writeClusterPhot())
-	write_separator(cluster_phot_file, (2+pp.get_nPhot())*18-3);
+      if (extinct == NULL) {
+	if (pp.get_writeIntegratedSpec()) 
+	  write_separator(int_spec_file, 3*14-3);
+	if (pp.get_writeIntegratedPhot())
+	  write_separator(int_phot_file, (1+pp.get_nPhot())*21-3);
+	if (pp.get_writeClusterProp())
+	  write_separator(cluster_prop_file, 9*14-3);
+	if (pp.get_writeClusterSpec())
+	  write_separator(cluster_spec_file, 4*14-3);
+	if (pp.get_writeClusterPhot())
+	  write_separator(cluster_phot_file, (2+pp.get_nPhot())*21-3);
+      } else {
+	if (pp.get_writeIntegratedSpec()) 
+	  write_separator(int_spec_file, 4*14-3);
+	if (pp.get_writeIntegratedPhot())
+	  write_separator(int_phot_file, (1+2*pp.get_nPhot())*21-3);
+	if (pp.get_writeClusterProp())
+	  write_separator(cluster_prop_file, 10*14-3);
+	if (pp.get_writeClusterSpec())
+	  write_separator(cluster_spec_file, 5*14-3);
+	if (pp.get_writeClusterPhot())
+	  write_separator(cluster_phot_file, (2+2*pp.get_nPhot())*21-3);
+      }
     }
 
     // If the SFR is randomly changing, draw a new SFR for this trial
@@ -689,8 +708,10 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "BirthMass"
 		      << setw(14) << left << "LiveMass"
 		      << setw(14) << left << "NumStar"
-		      << setw(14) << left << "MaxStarMass"
-		      << endl;
+		      << setw(14) << left << "MaxStarMass";
+    if (extinct != NULL)
+      cluster_prop_file << setw(14) << left << "A_V";
+    cluster_prop_file << endl;
     cluster_prop_file << setw(14) << left << ""
 		      << setw(14) << left << "(yr)"
 		      << setw(14) << left << "(yr)"
@@ -699,8 +720,10 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "(Msun)"
 		      << setw(14) << left << "(Msun)"
 		      << setw(14) << left << ""
-		      << setw(14) << left << "(Msun)"
-		      << endl;
+		      << setw(14) << left << "(Msun)";
+    if (extinct != NULL)
+      cluster_prop_file << setw(14) << left << "(mag)";
+    cluster_prop_file << endl;
     cluster_prop_file << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
@@ -709,8 +732,14 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << endl;
+		      << setw(14) << left << "-----------";
+    if (extinct != NULL)
+      cluster_prop_file << setw(14) << left << "-----------";
+    cluster_prop_file << endl;
+  } else if (out_mode == BINARY) {
+    // File starts with a bit indicating whether we're using extinction
+    bool use_extinct = (extinct != NULL);
+    cluster_prop_file.write((char *) &use_extinct, sizeof use_extinct);
   }
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -718,6 +747,7 @@ void slug_sim::open_cluster_prop() {
     // string, then cast them to arrays of char *, because the cfitsio
     // library wants that. Unfortunately this awkwardness is the only
     // way to avoid lots of compiler warnings.
+    int ncol = 10;
     vector<string> ttype_str = 
       { "Trial", "UniqueID", "Time", "FormTime", "Lifetime",
 	"TargetMass", "BirthMass", "LiveMass",
@@ -726,8 +756,16 @@ void slug_sim::open_cluster_prop() {
       { "1K", "1K", "1D", "1D", "1D", "1D", "1D", "1D", "1K", "1D" };
     vector<string> tunit_str = 
       { "", "", "yr", "yr", "yr", "Msun", "Msun", "Msun", "", "Msun" };
-    char *ttype[10], *tform[10], *tunit[10];
-    for (int i=0; i<10; i++) {
+    if (extinct != NULL) {
+      ttype_str.push_back("A_V");
+      tform_str.push_back("1D");
+      tunit_str.push_back("mag");
+      ncol++;
+    }
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
       ttype[i] = const_cast<char*>(ttype_str[i].c_str());
       tform[i] = const_cast<char*>(tform_str[i].c_str());
       tunit[i] = const_cast<char*>(tunit_str[i].c_str());
@@ -735,8 +773,11 @@ void slug_sim::open_cluster_prop() {
 
     // Create the table
     int fits_status = 0;
-    fits_create_tbl(cluster_prop_fits, BINARY_TBL, 0, 10,
+    fits_create_tbl(cluster_prop_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, NULL, &fits_status);
+    delete ttype;
+    delete tform;
+    delete tunit;
   }
 #endif
 }
@@ -795,22 +836,39 @@ void slug_sim::open_integrated_spec() {
   if (out_mode == ASCII) {
     int_spec_file << setw(14) << left << "Time"
 		  << setw(14) << left << "Wavelength"
-		  << setw(14) << left << "L_lambda"
-		  << endl;
+		  << setw(14) << left << "L_lambda";
+    if (extinct != NULL)
+      int_spec_file << setw(14) << left << "L_lambda_ex";
+    int_spec_file << endl;
     int_spec_file << setw(14) << left << "(yr)"
 		  << setw(14) << left << "(Angstrom)"
-		  << setw(14) << left << "(erg/s/A)"
-		  << endl;
+		  << setw(14) << left << "(erg/s/A)";
+    if (extinct != NULL)
+      int_spec_file << setw(14) << left << "(erg/s/A)";
+    int_spec_file << endl;
     int_spec_file << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << endl;
+		  << setw(14) << left << "-----------";
+    if (extinct != NULL)
+      int_spec_file << setw(14) << left << "-----------";
+    int_spec_file << endl;
   } else if (out_mode == BINARY) {
-    // File starts with the list of wavelengths
+    // File starts with a bit indicating whether we're using extinction
+    bool use_extinct = (extinct != NULL);
+    int_spec_file.write((char *) &use_extinct, sizeof use_extinct);
+    // List of wavelengths
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
     int_spec_file.write((char *) &nl, sizeof nl);
     int_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
+    // List of extincted wavelengths
+    if (use_extinct) {
+      vector<double> lambda_ext = extinct->lambda();
+      vector<double>::size_type nl_ext = lambda.size();
+      int_spec_file.write((char *) &nl_ext, sizeof nl_ext);
+      int_spec_file.write((char *) &(lambda_ext[0]),
+			  nl_ext*sizeof(double));
+    }
   }
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -818,23 +876,45 @@ void slug_sim::open_integrated_spec() {
     // In FITS mode, write the wavelength information in the first HDU
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
-    string ttype_str = "Wavelength";
-    string tform_str = lexical_cast<string>(nl) + "D";
-    string tunit_str = "Angstrom";
-    char *ttype[1], *tform[1], *tunit[1];
-    ttype[0] = const_cast<char*>(ttype_str.c_str());
-    tform[0] = const_cast<char*>(tform_str.c_str());
-    tunit[0] = const_cast<char*>(tunit_str.c_str());
+    vector<double> lambda_ext;
+    vector<double>::size_type nl_ext;
+    vector<string> ttype_str = { "Wavelength" };
+    vector<string> tform_str;
+    tform_str.push_back(lexical_cast<string>(nl) + "D");
+    vector<string> tunit_str = { "Angstrom" };
+    int ncol=1;
+    if (extinct != NULL) {
+      lambda_ext = extinct->lambda();
+      nl_ext = lambda_ext.size();
+      ttype_str.push_back("Wavelength_ex");
+      tform_str.push_back(lexical_cast<string>(nl_ext) + "D");
+      tunit_str.push_back("Angstrom");
+      ncol++;
+    }
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
     int fits_status = 0;
     char wl_name[] = "Wavelength";
 
     // Create the table
-    fits_create_tbl(int_spec_fits, BINARY_TBL, 0, 1,
+    fits_create_tbl(int_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, wl_name, &fits_status);
+    delete ttype;
+    delete tform;
+    delete tunit;
 
     // Write wavelength data to table
     fits_write_col(int_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
+    if (extinct != NULL)
+      fits_write_col(int_spec_fits, TDOUBLE, 2, 1, 1, nl_ext,
+		     lambda_ext.data(), &fits_status);
 
     // Create a new table to hold the computed spectra.
     char spec_name[] = "Spectra";
@@ -842,14 +922,26 @@ void slug_sim::open_integrated_spec() {
     vector<string> tform2_str = { "1K", "1D", "" };
     tform2_str[2] = lexical_cast<string>(nl) + "D";
     vector<string> tunit2_str = { "", "yr", "erg/s/A" };
-    char *ttype2[3], *tform2[3], *tunit2[3];
-    for (int i=0; i<3; i++) {
+    ncol = 3;
+    if (extinct != NULL) {
+      ttype2_str.push_back("L_lambda_ex");
+      tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
+      tunit2_str.push_back("erg/s/A");
+      ncol++;
+    }
+    char **ttype2 = new char *[ncol];
+    char **tform2 = new char *[ncol];
+    char **tunit2 = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
       ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
       tform2[i] = const_cast<char*>(tform2_str[i].c_str());
       tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());
     }
-    fits_create_tbl(int_spec_fits, BINARY_TBL, 0, 3,
+    fits_create_tbl(int_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype2, tform2, tunit2, spec_name, &fits_status);
+    delete ttype2;
+    delete tform2;
+    delete tunit2;
   }
 #endif
 }
@@ -909,24 +1001,41 @@ void slug_sim::open_cluster_spec() {
     cluster_spec_file << setw(14) << left << "UniqueID"
 		      << setw(14) << left << "Time"
 		      << setw(14) << left << "Wavelength"
-		      << setw(14) << left << "L_lambda"
-		      << endl;
+		      << setw(14) << left << "L_lambda";
+    if (extinct != NULL)
+      cluster_spec_file << setw(14) << left << "L_lambda_ex";
+    cluster_spec_file << endl;
     cluster_spec_file << setw(14) << left << ""
 		      << setw(14) << left << "(yr)"
 		      << setw(14) << left << "(Angstrom)"
-		      << setw(14) << left << "(erg/s/A)"
-		      << endl;
+		      << setw(14) << left << "(erg/s/A)";
+    if (extinct != NULL)
+      cluster_spec_file << setw(14) << left << "(erg/s/A)";
+    cluster_spec_file << endl;
     cluster_spec_file << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
-		      << setw(14) << left << "-----------"
-		      << endl;
+		      << setw(14) << left << "-----------";
+    if (extinct != NULL)
+      cluster_spec_file << setw(14) << left << "-----------";
+    cluster_spec_file << endl;
   } else if (out_mode == BINARY) {
-    // File starts with the list of wavelengths
+    // File starts with a bit indicating whether we're using extinction
+    bool use_extinct = (extinct != NULL);
+    cluster_spec_file.write((char *) &use_extinct, sizeof use_extinct);
+    // List of wavelengths
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
     cluster_spec_file.write((char *) &nl, sizeof nl);
     cluster_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
+    // List of extincted wavelengths
+    if (use_extinct) {
+      vector<double> lambda_ext = extinct->lambda();
+      vector<double>::size_type nl_ext = lambda.size();
+      cluster_spec_file.write((char *) &nl_ext, sizeof nl_ext);
+      cluster_spec_file.write((char *) &(lambda_ext[0]),
+			      nl_ext*sizeof(double));
+    }
   }
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -934,23 +1043,45 @@ void slug_sim::open_cluster_spec() {
     // In FITS mode, write the wavelength information in the first HDU
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
-    string ttype_str = "Wavelength";
-    string tform_str = lexical_cast<string>(nl) + "D";
-    string tunit_str = "Angstrom";
-    char *ttype[1], *tform[1], *tunit[1];
-    ttype[0] = const_cast<char*>(ttype_str.c_str());
-    tform[0] = const_cast<char*>(tform_str.c_str());
-    tunit[0] = const_cast<char*>(tunit_str.c_str());
+    vector<double> lambda_ext;
+    vector<double>::size_type nl_ext;
+    vector<string> ttype_str = { "Wavelength" };
+    vector<string> tform_str;
+    tform_str.push_back(lexical_cast<string>(nl) + "D");
+    vector<string> tunit_str = { "Angstrom" };
+    int ncol=1;
+    if (extinct != NULL) {
+      lambda_ext = extinct->lambda();
+      nl_ext = lambda_ext.size();
+      ttype_str.push_back("Wavelength_ex");
+      tform_str.push_back(lexical_cast<string>(nl_ext) + "D");
+      tunit_str.push_back("Angstrom");
+      ncol++;
+    }
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
     int fits_status = 0;
     char wl_name[] = "Wavelength";
 
     // Create the table
-    fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, 1,
+    fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, wl_name, &fits_status);
+    delete ttype;
+    delete tform;
+    delete tunit;
 
     // Write wavelength data to table
     fits_write_col(cluster_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
+    if (extinct != NULL)
+      fits_write_col(cluster_spec_fits, TDOUBLE, 2, 1, 1, nl_ext,
+		     lambda_ext.data(), &fits_status);
 
     // Create a new table to hold the computed spectra
     char spec_name[] = "Spectra";
@@ -959,14 +1090,25 @@ void slug_sim::open_cluster_spec() {
     vector<string> tform2_str = { "1K", "1K", "1D", "" };
     tform2_str[3] = lexical_cast<string>(nl) + "D";
     vector<string> tunit2_str = { "", "", "yr", "erg/s/A" };
-    char *ttype2[4], *tform2[4], *tunit2[4];
-    for (int i=0; i<4; i++) {
+    if (extinct != NULL) {
+      ttype2_str.push_back("L_lambda_ex");
+      tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
+      tunit2_str.push_back("erg/s/A");
+      ncol++;
+    }
+    char **ttype2 = new char *[ncol];
+    char **tform2 = new char *[ncol];
+    char **tunit2 = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
       ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
       tform2[i] = const_cast<char*>(tform2_str[i].c_str());
       tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());
     }
-    fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, 4,
+    fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype2, tform2, tunit2, spec_name, &fits_status);
+    delete ttype2;
+    delete tform2;
+    delete tunit2;
   }
 #endif
 }
@@ -1027,18 +1169,31 @@ void slug_sim::open_integrated_phot() {
 
   // Write header
   if (out_mode == ASCII) {
-    int_phot_file << setw(18) << left << "Time";
+    int_phot_file << setw(21) << left << "Time";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
-      int_phot_file << setw(18) << left << filter_names[i];
+      int_phot_file << setw(21) << left << filter_names[i];
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+	int_phot_file << setw(21) << left << filter_names[i]+"_ex";
+    }
     int_phot_file << endl;
-    int_phot_file << setw(18) << left << "(yr)";
+    int_phot_file << setw(21) << left << "(yr)";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
-      int_phot_file << setw(18) << left 
+      int_phot_file << setw(21) << left 
 		    << "(" + filter_units[i] + ")";
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+	int_phot_file << setw(21) << left 
+		      << "(" + filter_units[i] + ")";
+    }
     int_phot_file << endl;
-    int_phot_file << setw(18) << left << "---------------";
+    int_phot_file << setw(21) << left << "------------------";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
-      int_phot_file << setw(18) << left << "---------------";
+      int_phot_file << setw(21) << left << "------------------";
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+	int_phot_file << setw(21) << left << "------------------";
+    }
     int_phot_file << endl;
   } else if (out_mode == BINARY) {
     // File starts with the number of filters and then the list
@@ -1047,6 +1202,10 @@ void slug_sim::open_integrated_phot() {
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       int_phot_file << filter_names[i] << " " 
 		    << filter_units[i] << endl;
+    // First piece of binary information: a bit saying whether we're
+    // using extinction
+    bool use_extinct = (extinct != NULL);
+    int_phot_file.write((char *) &use_extinct, sizeof use_extinct);
   }
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -1066,10 +1225,20 @@ void slug_sim::open_integrated_phot() {
       tform.push_back(const_cast<char*>(form_str[1].c_str()));
       tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
     }
+    int ncol = 2+filter_names.size();
+    // If using extinction, add columns for filters w/extinction
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
+	string tmp = filter_names[i] + "_ex";
+	ttype.push_back(const_cast<char*>(tmp.c_str()));
+	tform.push_back(const_cast<char*>(form_str[1].c_str()));
+	tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
+      }
+      ncol += filter_names.size();
+    }
     // Create table
     int fits_status = 0;
-    fits_create_tbl(int_phot_fits, BINARY_TBL, 0, 
-		    2+filter_names.size(),
+    fits_create_tbl(int_phot_fits, BINARY_TBL, 0, ncol,
 		    ttype.data(), tform.data(), tunit.data(), NULL, 
 		    &fits_status);
   }
@@ -1132,21 +1301,34 @@ void slug_sim::open_cluster_phot() {
 
   // Write header
   if (out_mode == ASCII) {
-    cluster_phot_file << setw(18) << left << "UniqueID"
-		      << setw(18) << left << "Time";
+    cluster_phot_file << setw(21) << left << "UniqueID"
+		      << setw(21) << left << "Time";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
-      cluster_phot_file << setw(18) << left << filter_names[i];
+      cluster_phot_file << setw(21) << left << filter_names[i];
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+	cluster_phot_file << setw(21) << left << filter_names[i]+"_ex";
+    }
     cluster_phot_file << endl;
-    cluster_phot_file << setw(18) << left << ""
-		      << setw(18) << left << "(yr)";
+    cluster_phot_file << setw(21) << left << ""
+		      << setw(21) << left << "(yr)";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
-      cluster_phot_file << setw(18) << left 
+      cluster_phot_file << setw(21) << left 
 		    << "(" + filter_units[i] + ")";
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+	cluster_phot_file << setw(21) << left 
+			  << "(" + filter_units[i] + ")";
+    }
     cluster_phot_file << endl;
-    cluster_phot_file << setw(18) << left << "---------------"
-		      << setw(18) << left << "---------------";
+    cluster_phot_file << setw(21) << left << "------------------"
+		      << setw(21) << left << "------------------";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
-      cluster_phot_file << setw(18) << left << "---------------";
+      cluster_phot_file << setw(21) << left << "------------------";
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++)
+	cluster_phot_file << setw(21) << left << "------------------";
+    }
     cluster_phot_file << endl;
   } else if (out_mode == BINARY) {
     // File starts with the number of filters and then the list
@@ -1155,6 +1337,10 @@ void slug_sim::open_cluster_phot() {
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       cluster_phot_file << filter_names[i] << " " 
 		    << filter_units[i] << endl;
+    // First piece of binary information: a bit saying whether we're
+    // using extinction
+    bool use_extinct = (extinct != NULL);
+    cluster_phot_file.write((char *) &use_extinct, sizeof use_extinct);
   }
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -1174,10 +1360,20 @@ void slug_sim::open_cluster_phot() {
       tform.push_back(const_cast<char*>(form_str[2].c_str()));
       tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
     }
+    int ncol = 3+filter_names.size();
+    // If using extinction, add columns for filters w/extinction
+    if (extinct != NULL) {
+      for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
+	string tmp = filter_names[i] + "_ex";
+	ttype.push_back(const_cast<char*>(tmp.c_str()));
+	tform.push_back(const_cast<char*>(form_str[2].c_str()));
+	tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
+      }
+      ncol += filter_names.size();
+    }
     // Create table
     int fits_status = 0;
-    fits_create_tbl(cluster_phot_fits, BINARY_TBL, 0, 
-		    3+filter_names.size(),
+    fits_create_tbl(cluster_phot_fits, BINARY_TBL, 0, ncol,
 		    ttype.data(), tform.data(), tunit.data(), NULL, 
 		    &fits_status);
   }

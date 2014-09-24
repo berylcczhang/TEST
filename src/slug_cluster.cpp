@@ -22,9 +22,11 @@ namespace std
 }
 #endif
 #include "constants.H"
+#include "int_tabulated.H"
 #include "slug_cluster.H"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 
 using namespace std;
@@ -38,10 +40,11 @@ slug_cluster::slug_cluster(const unsigned long my_id,
 			   const slug_tracks *my_tracks, 
 			   const slug_specsyn *my_specsyn, 
 			   const slug_filter_set *my_filters,
+			   const slug_extinction *my_extinct,
 			   const slug_PDF *my_clf) :
   targetMass(my_mass), imf(my_imf), clf(my_clf), tracks(my_tracks), 
-  specsyn(my_specsyn), filters(my_filters), id(my_id), 
-  formationTime(time), curTime(time)
+  specsyn(my_specsyn), filters(my_filters), extinct(my_extinct),
+  id(my_id), formationTime(time), curTime(time)
 {
 
   // Initialize to non-disrupted
@@ -68,6 +71,11 @@ slug_cluster::slug_cluster(const unsigned long my_id,
     lifetime = clf->draw();
   } else {
     lifetime = constants::big;
+  }
+
+  // If we are using extinction, draw one
+  if (extinct != NULL) {
+    A_V = extinct->draw_AV();
   }
 
   // Initialize status flags for what data has been stored
@@ -115,6 +123,11 @@ slug_cluster::reset(bool keep_id) {
     lifetime = clf->draw();
   } else {
     lifetime = constants::big;
+  }
+
+  // If we are using extinction, draw one
+  if (extinct != NULL) {
+    A_V = extinct->draw_AV();
   }
 }
 
@@ -206,6 +219,14 @@ void slug_cluster::set_Lbol() {
   if (imf->has_stoch_lim())
     Lbol += specsyn->get_Lbol_cts(birthMass, curTime-formationTime);
 
+  // If using extinction, to compute Lbol we need to first compute the
+  // spectrum, then integrate it
+  if (extinct != NULL) {
+    set_spectrum();
+    Lbol_ext = int_tabulated::
+      integrate(extinct->lambda(), L_lambda_ext) / constants::Lsun;
+  }
+
   // Flag that things are set
   Lbol_set = true;
 }
@@ -251,6 +272,15 @@ slug_cluster::set_spectrum() {
     Lbol += Lbol_tmp;
   }
 
+  // If using extinction, compute the extincted spectrum and the
+  // bolometric luminosity after extinction is applied
+  if (extinct != NULL) {
+    L_lambda_ext = extinct->spec_extinct(A_V, L_lambda);
+    Lbol_ext = int_tabulated::
+      integrate(extinct->lambda(), L_lambda_ext) 
+      / constants::Lsun;
+  }
+
   // Flag that things are set
   spec_set = Lbol_set = true;
 }
@@ -279,6 +309,28 @@ slug_cluster::set_photometry() {
   for (vector<double>::size_type i=0; i<phot.size(); i++)
     if (phot[i] == -constants::big) phot[i] = Lbol;
 
+  // If using extinction, compute photometry on the extincted
+  // spectrum; in the process, be careful to mask filters whose
+  // response curve doesn't overlap with the extincted spectrum
+  if (extinct != NULL) {
+    phot_ext = filters->compute_phot(extinct->lambda(), 
+				     L_lambda_ext);
+    for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
+      if (phot_ext[i] == -constants::big) {
+	phot_ext[i] = Lbol_ext;
+      } else if (filters->get_filter(i)->photon_filter() &&
+		 (filters->get_filter(i)->get_wavelength_min() >
+		  extinct->lambda_max())) {
+	phot_ext[i] = nan("");
+      } else if ((filters->get_filter(i)->get_wavelength_min() <
+		  extinct->lambda_min()) ||
+		 (filters->get_filter(i)->get_wavelength_max() >
+		  extinct->lambda_max())) {
+	phot_ext[i] = nan("");
+      }
+    }
+  }
+  
   // Flag that the photometry is set
   phot_set = true;
 }  
@@ -304,6 +356,8 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
       outfile << setw(11) << right << stars[stars.size()-1];
     else
       outfile << setw(11) << right << 0.0;
+    if (extinct != NULL)
+      outfile << "   " << setw(11) << right << A_V;
     outfile << endl;
   } else if (out_mode == BINARY) {
     if (cluster_only) {
@@ -326,6 +380,8 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
       double mstar = 0.0;
       outfile.write((char *) &mstar, sizeof mstar);
     }
+    if (extinct != NULL)
+      outfile.write((char *) &A_V, sizeof A_V);
   }
 }
 
@@ -368,6 +424,9 @@ slug_cluster::write_prop(fitsfile *out_fits, int trial) {
   else mstar = 0.0;
   fits_write_col(out_fits, TDOUBLE, 10, nrows+1, 1, 1, &mstar,
 		 &fits_status);
+  if (extinct != NULL)
+    fits_write_col(out_fits, TDOUBLE, 11, nrows+1, 1, 1, &A_V,
+		   &fits_status);
 }
 #endif
 
@@ -390,8 +449,15 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
 	      << setw(11) << right << id << "   "
 	      << setw(11) << right << curTime << "   "
 	      << setw(11) << right << lambda[i] << "   "
-	      << setw(11) << right << L_lambda[i]
-	      << endl;
+	      << setw(11) << right << L_lambda[i];
+      if (extinct != NULL) {
+	int j = i - extinct->off();
+	if ((j >= 0) && (j < L_lambda_ext.size())) {
+	  outfile << "   "
+		  << setw(11) << right << L_lambda_ext[j];
+	}
+      }
+      outfile << endl;
     }
   } else {
     if (cluster_only) {
@@ -402,6 +468,9 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
     outfile.write((char *) &id, sizeof id);
     outfile.write((char *) L_lambda.data(), 
 		  L_lambda.size()*sizeof(double));
+    if (extinct != NULL)
+      outfile.write((char *) L_lambda_ext.data(), 
+		    L_lambda_ext.size()*sizeof(double));
   }
 }
 
@@ -430,6 +499,9 @@ write_spectrum(fitsfile *out_fits, int trial) {
 		 &fits_status);
   fits_write_col(out_fits, TDOUBLE, 4, nrows+1, 1, L_lambda.size(), 
 		 L_lambda.data(), &fits_status);
+  if (extinct != NULL)
+    fits_write_col(out_fits, TDOUBLE, 5, nrows+1, 1, L_lambda_ext.size(), 
+		   L_lambda_ext.data(), &fits_status);
 }
 #endif
 
@@ -447,10 +519,18 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
 
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific 
-	    << setw(15) << right << id << "   "
-	    << setw(15) << right << curTime;
+	    << setw(18) << right << id << "   "
+	    << setw(18) << right << curTime;
     for (vector<double>::size_type i=0; i<phot.size(); i++)
-      outfile << "   " << setw(15) << right << phot[i];
+      outfile << "   " << setw(18) << right << phot[i];
+    if (extinct != NULL) {
+      for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
+	if (!isnan(phot_ext[i]))
+	  outfile << "   " << setw(18) << right << phot_ext[i];
+	else
+	  outfile << "   " << setw(18) << right << " ";
+      }
+    }
     outfile << endl;
   } else {
     if (cluster_only) {
@@ -461,6 +541,9 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
     outfile.write((char *) &id, sizeof id);
     outfile.write((char *) phot.data(), 
 		  phot.size()*sizeof(double));
+    if (extinct != NULL)
+      outfile.write((char *) phot_ext.data(), 
+		    phot_ext.size()*sizeof(double));
   }
 }
 
@@ -492,6 +575,13 @@ write_photometry(fitsfile *out_fits, int trial) {
     int colnum = i+4;
     fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
 		   &(phot[i]), &fits_status);
+  }
+  if (extinct != NULL) {
+    for (int i=0; i<phot_ext.size(); i++) {
+      int colnum = i+4+phot_ext.size();
+      fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		     &(phot_ext[i]), &fits_status);
+    }
   }
 }
 #endif

@@ -118,8 +118,10 @@ slug_parmParser::setDefaults() {
   startTime = timeStep = endTime = -constants::big;
   sfr = cluster_mass = -constants::big;
   constantSFR = false;
+  constantAV = false;
   randomSFR = false;
   save_seed = read_seed = false;
+  use_extinct = false;
 
   // Physical model parameters
   path lib_path("lib");
@@ -137,6 +139,9 @@ slug_parmParser::setDefaults() {
   track = (lib_path / track_path / track_file).string();
   path atmos_path("atmospheres");
   atmos_dir = (lib_path / atmos_path).string();
+  path extinct_path("extinct");
+  path extinct_file("SB_ATT_SLUG.dat");
+  extinct_curve = (lib_path / extinct_path / extinct_file).string();
   specsyn_mode = SB99;
   fClust = 1.0;
   min_stoch_mass = 0.0;
@@ -215,8 +220,9 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       } else if (!(tokens[0].compare("log_time"))) {
 	logTime = (lexical_cast<double>(tokens[1]) == 1);
       } else if (!(tokens[0].compare("sfr"))) {
-	to_lower(tokens[1]);
-	if (tokens[1].compare("sfh") == 0)
+	string tmp = tokens[1];
+	to_lower(tmp);
+	if (tmp.compare("sfh") == 0)
 	  constantSFR = false;
 	else {
 	  try {
@@ -247,6 +253,19 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	atmos_dir = tokens[1];
       } else if (!(tokens[0].compare("filters"))) {
 	filter_dir = tokens[1];
+      } else if (!(tokens[0].compare("a_v"))) {
+	use_extinct = true;
+	try {
+	  // See if the A_V is a number, indicated a constant A_V
+	  A_V = lexical_cast<double>(tokens[1]);
+	  constantAV = true;
+	} catch (const bad_lexical_cast& ia) {
+	  // A_V is not a number, so assume it is a distribution file name
+	  AV_dist = tokens[1];
+	  constantAV = false;
+	}
+      } else if (!(tokens[0].compare("extinction_curve"))) {
+	extinct_curve = tokens[1];
       } else if (!(tokens[0].compare("rng_seed_file"))) {
 	seed_file = tokens[1];
       } else if (!(tokens[0].compare("min_stoch_mass"))) {
@@ -488,6 +507,8 @@ slug_parmParser::checkParams() {
   path track_path(track);
   path atmos_path(atmos_dir);
   path filter_path(filter_dir);
+  path extinct_path(extinct_curve);
+  path AV_path(AV_dist);
   if (!out_path.is_absolute())
     outDir = (slug_path / out_path).string();
   if (!imf_path.is_absolute()) 
@@ -502,6 +523,10 @@ slug_parmParser::checkParams() {
     atmos_dir = (slug_path / atmos_path).string();
   if (!filter_path.is_absolute()) 
     filter_dir = (slug_path / filter_path).string();
+  if (!extinct_path.is_absolute())
+    extinct_curve = (slug_path / extinct_path).string();
+  if (!AV_path.is_absolute())
+    AV_path = (slug_path / AV_path).string();
 }
 
 
@@ -568,6 +593,16 @@ slug_parmParser::writeParams() const {
   } else if (specsyn_mode == SB99) {
     paramFile << "sb99" << endl;
   }
+  if (use_extinct) {
+    paramFile << "extinction           " << "yes" << endl;
+    if (constantAV)
+      paramFile << "A_V                  " << A_V << endl;
+    else
+      paramFile << "A_V                  " << AV_dist << endl;
+    paramFile << "extinction_curve     " << extinct_curve << endl;
+  } else {
+    paramFile << "extinction           " << "no" << endl;
+  }
   if (run_galaxy_sim)
     paramFile << "clust_frac           " << fClust << endl;
   if (writeClusterPhot || writeIntegratedPhot) {
@@ -621,7 +656,9 @@ double slug_parmParser::get_endTime() const { return endTime; }
 bool slug_parmParser::get_logTime() const { return logTime; }
 bool slug_parmParser::get_constantSFR() const { return constantSFR; }
 bool slug_parmParser::get_randomSFR() const { return randomSFR; }
+bool slug_parmParser::get_constantAV() const { return constantAV; }
 double slug_parmParser::get_SFR() const { return sfr; }
+double slug_parmParser::get_AV() const { return A_V; }
 double slug_parmParser::get_z() const { return z; }
 double slug_parmParser::get_WR_mass() const { return WR_mass; }
 double slug_parmParser::get_metallicity() const { return metallicity; }
@@ -633,6 +670,10 @@ const char *slug_parmParser::get_CMF() const { return cmf.c_str(); }
 const char *slug_parmParser::get_CLF() const { return clf.c_str(); }
 const char *slug_parmParser::get_trackFile() const { return track.c_str(); }
 const char *slug_parmParser::get_atmos_dir() const { return atmos_dir.c_str(); }
+const char *slug_parmParser::get_extinct_curve() const 
+{ return extinct_curve.c_str(); }
+const char *slug_parmParser::get_AV_dist() const 
+{ return AV_dist.c_str(); }
 const char *slug_parmParser::get_filter_dir() const 
 { return filter_dir.c_str(); }
 const char *slug_parmParser::get_modelName() const { return model.c_str(); }
@@ -667,3 +708,4 @@ unsigned int slug_parmParser::get_rng_offset() const
 bool slug_parmParser::save_rng_seed() const { return save_seed; }
 bool slug_parmParser::read_rng_seed() const { return read_seed; }
 const string slug_parmParser::rng_seed_file() const { return seed_file; }
+bool slug_parmParser::get_use_extinct() const { return use_extinct; }

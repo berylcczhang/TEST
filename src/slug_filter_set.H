@@ -69,6 +69,10 @@ public:
   compute_phot(const std::vector<double>& lambda,
 	       const std::vector<double>& L_lambda) const;
 
+  // Routine to provide read-only access to an individual filter
+  const slug_filter *get_filter(unsigned int i) const
+  { return filters[i]; }
+
 private:
 
   // Data

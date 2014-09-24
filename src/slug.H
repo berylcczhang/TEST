@@ -35,6 +35,7 @@ class slug_PDF_powerlaw;
 class slug_PDF_schechter;
 class slug_PDF_segment;
 class slug_cluster;
+class slug_extinction;
 class slug_filter;
 class slug_filter_set;
 class slug_galaxy;

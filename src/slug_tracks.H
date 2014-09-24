@@ -67,8 +67,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <cmath>
 #include <boost/multi_array.hpp>
-#include <gsl/gsl_interp.h>
-#include <gsl/gsl_spline.h>
+extern "C" {
+#   include <gsl/gsl_interp.h>
+#   include <gsl/gsl_spline.h>
+}
 #include "slug.H"
 
 typedef boost::multi_array<double, 2> array2d;

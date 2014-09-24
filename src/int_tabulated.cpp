@@ -18,8 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
-#include <gsl/gsl_interp.h>
-#include <gsl/gsl_spline.h>
+extern "C" {
+#   include <gsl/gsl_interp.h>
+#   include <gsl/gsl_spline.h>
+}
 
 using namespace std;
 
