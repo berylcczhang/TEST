@@ -33,7 +33,9 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
        phot : array
           array of photometric data; if the array has more than one
           dimension, the first dimension is assumed to represent the
-          different photometric filters
+          different photometric filters (unless filter_last is True,
+          in which case the last dimension is represents the array of
+          filters)
        units : iterable of strings
           iterable listing the units of the input photometric data. On
           return, strings will be changed to the units of the new system.

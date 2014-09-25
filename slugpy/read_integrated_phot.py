@@ -4,6 +4,7 @@ Function to read a SLUG2 integrated_phot file.
 
 import numpy as np
 from collections import namedtuple
+from copy import deepcopy
 import struct
 from photometry_convert import photometry_convert
 from read_filter import read_filter
@@ -117,12 +118,32 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
                 units.append(l)
         units = units[1:]    # Get rid of the units for time
 
+        # See if we have extinction; this is indicated by there being
+        # an even number of filters, and by the filters in the second
+        # half of the list having the same names as those in the first
+        # half, but with the extension "_ex"
+        if nfilter % 2 == 0:
+            extinct = True
+            for i in range(nfilter/2):
+                extinct = extinct and \
+                          (filters[i]+'_ex' == filters[i+nfilter/2])
+        else:
+            extinct = False
+
+        # If we have extinction, reshape the filter and unit lists
+        if extinct:
+            nfilter = nfilter/2
+            filters = filters[:nfilter]
+            units = units[:nfilter]
+
         # Burn a line
         line = fp.readline()
 
         # Prepare holders for data
         time = []
         phot = []
+        if extinct:
+            phot_ex = []
 
         # Read through data
         for line in fp:
@@ -130,11 +151,23 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
                 continue       # Skip separator lines
             linesplit = line.split()
             time.append(float(linesplit[0]))
-            phot.append(np.array(linesplit[1:], dtype='float'))
+            phot.append(np.array(linesplit[1:nfilter+1],
+                                 dtype='float'))
+            if extinct:
+                tmp_ex = []
+                for i in range(nfilter):
+                    substr = line[21*(1+nfilter+i):21*(1+nfilter+i+1)]
+                    if substr.isspace():
+                        tmp_ex.append(np.nan)
+                    else:
+                        tmp_ex.append(float(substr))
+                phot_ex.append(np.array(tmp_ex))
 
         # Convert to arrays
         time = np.array(time)
         phot = np.array(phot)
+        if extinct:
+            phot_ex = np.array(phot_ex)
 
     elif fname.endswith('.bin'):
 
@@ -153,20 +186,36 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
             filters.append(line.split()[0])
             units.append(line.split()[1])
 
-        # Read rest of file, then close
+        # Read the bit that tells us if we're using extinction
+        data = fp.read(struct.calcsize('b'))
+        extinct = struct.unpack('b', data)[0] != 0
+
+        # Read rest of file
         data = fp.read()
-        fp.close()
 
         # Unpack the data
         ndata = len(data)/struct.calcsize('d')
-        ntime = ndata/(nfilter+1)
+        if extinct:
+            ntime = ndata/(2*nfilter+1)
+        else:
+            ntime = ndata/(nfilter+1)
         data_list = struct.unpack('d'*ndata, data)
 
         # Parse into arrays
-        time = np.array(data_list[::nfilter+1])
-        phot = np.zeros((ntime, nfilter))
-        for i in range(ntime):
-            phot[i,:] = data_list[(nfilter+1)*i+1:(nfilter+1)*(i+1)]
+        if extinct:
+            time = np.array(data_list[::2*nfilter+1])
+            phot = np.zeros((ntime, nfilter))
+            phot_ex = np.zeros((ntime, nfilter))
+            for i in range(ntime):
+                phot[i,:] = data_list[(2*nfilter+1)*i+1:
+                                      (2+nfilter+1)*i+1+nfilter]
+                phot_ex[i,:] = data_list[(2*nfilter+1)*i+1+nfilter:
+                                      (2+nfilter+1)*i+1+2*nfilter]
+        else:
+            time = np.array(data_list[::nfilter+1])
+            phot = np.zeros((ntime, nfilter))
+            for i in range(ntime):
+                phot[i,:] = data_list[(nfilter+1)*i+1:(nfilter+1)*(i+1)]
 
     elif fname.endswith('.fits'):
 
@@ -187,11 +236,33 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
             units.append(fp[1].header['TUNIT'+str(i)])
             i = i+1
 
-        # Get photometric data
+        # See if we have extinction; this is indicated by there being
+        # an even number of filters, and by the filters in the second
+        # half of the list having the same names as those in the first
+        # half, but with the extension "_ex"
         nfilter = len(filters)
+        if nfilter % 2 == 0:
+            extinct = True
+            for i in range(nfilter/2):
+                extinct = extinct and \
+                          (filters[i]+'_ex' == filters[i+nfilter/2])
+        else:
+            extinct = False
+
+        # If we have extinction, reshape the filter and unit lists
+        if extinct:
+            nfilter = nfilter/2
+            filters = filters[:nfilter]
+            units = units[:nfilter]
+
+        # Get photometric data
         phot = np.zeros((len(time), nfilter))
+        if extinct:
+            phot_ex = np.zeros((len(time), nfilter))
         for i in range(len(filters)):
             phot[:,i] = fp[1].data.field(filters[i])
+            if extinct:
+                phot_ex[:,i] = fp[1].data.field(filters[i]+"_ex")
 
     # Close file
     fp.close()
@@ -201,6 +272,8 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
     ntime = len(time)/ntrial
     time = time[:ntime]
     phot = np.transpose(np.reshape(phot, (ntrial, ntime, nfilter)))
+    if extinct:
+        phot_ex = np.transpose(np.reshape(phot_ex, (ntrial, ntime, nfilter)))
 
     # Read filter data if requested
     if not nofilterdata:
@@ -213,24 +286,49 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         if verbose:
             print("Converting photometric system")
         if nofilterdata:
-            photometry_convert(photsystem, phot, units)
+            units_save = deepcopy(units)
+            photometry_convert(photsystem, phot, units, 
+                               filter_names=filters)
+            if extinct:
+                photometry_convert(photsystem, phot_ex, units_save, 
+                                   filter_names=filters)
         else:
-            photometry_convert(photsystem, phot, units, wl_eff)
+            units_save = deepcopy(units)
+            photometry_convert(photsystem, phot, units, wl_eff, 
+                               filter_names=filters)
+            if extinct:
+                photometry_convert(photsystem, phot_ex, units_save, wl_eff, 
+                                   filter_names=filters)
 
     # Construct return object
     if nofilterdata:
-        out_type = namedtuple('integrated_phot',
-                              ['time', 'filter_names', 
-                               'filter_units', 'phot'])
-        out = out_type(time, filters, units, phot)
+        if extinct:
+            out_type = namedtuple('integrated_phot',
+                                  ['time', 'filter_names', 
+                                   'filter_units', 'phot', 'phot_ex'])
+            out = out_type(time, filters, units, phot, phot_ex)
+        else:
+            out_type = namedtuple('integrated_phot',
+                                  ['time', 'filter_names', 
+                                   'filter_units', 'phot'])
+            out = out_type(time, filters, units, phot)
     else:
-        out_type = namedtuple('integrated_phot',
-                              ['time', 'filter_names', 'filter_units',
-                               'filter_wl_eff', 'filter_wl', 
-                               'filter_response', 'filter_beta',
-                               'filter_wl_c', 'phot'])
-        out = out_type(time, filters, units, wl_eff, wavelength, response,
-                       beta, wl_c, phot)
+        if extinct:
+            out_type = namedtuple('integrated_phot',
+                                  ['time', 'filter_names', 'filter_units',
+                                   'filter_wl_eff', 'filter_wl', 
+                                   'filter_response', 'filter_beta',
+                                   'filter_wl_c', 'phot', 'phot_ex'])
+            out = out_type(time, filters, units, wl_eff, wavelength, 
+                           response, beta, wl_c, phot, phot_ex)
+        else:
+            out_type = namedtuple('integrated_phot',
+                                  ['time', 'filter_names', 'filter_units',
+                                   'filter_wl_eff', 'filter_wl', 
+                                   'filter_response', 'filter_beta',
+                                   'filter_wl_c', 'phot'])
+            out = out_type(time, filters, units, wl_eff, wavelength, 
+                           response, beta, wl_c, phot)
 
     # Return
     return out
