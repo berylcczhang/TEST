@@ -4,6 +4,8 @@ for photometric filters, and returns the photometry through those
 filters.
 """
 
+import os
+import os.path as osp
 import numpy as np
 from int_tabulated import int_tabulated
 from int_tabulated import int_tabulated2
@@ -98,36 +100,6 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
             filter_beta.append(filterdata[3])
             filter_wl_c.append(filterdata[4])
 
-    # Read Vega spectrum if needed
-    if photsystem == 'Vega':
-
-        from astropy.io import ascii
-
-        # Look in SLUG_DIR for Vega spectrum
-        if 'SLUG_DIR' in os.environ:
-            slugdir = os.environ['SLUG_DIR']
-            fname = osp.join(slugdir, 'lib', 'atmospheres',
-                             'A0V_KURUCZ_92.SED')
-            try:
-                vegadata = ascii.read(fname)
-            except IOError:
-                vegadata = None
-
-        # Look in cwd if that fails
-        if vegadata is None:
-            try:
-                vegadata = ascii.read('A0V_KURUCZ_92.SED', 'r')
-            except IOError:
-                raise IOError("could not find Vega spectrum "+
-                              "file A0V_KURUCZ_92.SED in "+
-                              "SLUG_DIR/lib/atmospheres or "+
-                              "in current directory")
-
-        # Record data
-        vega_logwl = np.log(np.array(vegadata['col1']))
-        vega_spec = np.array(vegadata['col2'])
-        vega_L_nu = ang * vega_spec * exp(2.0*vega_logwl) / c
-
     # Compute normalization for each filter
     filter_norm = []
     filter_logwl = []
@@ -196,9 +168,11 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
                                          filter_logwl[i], 
                                          filter_response[i]) / filter_norm[i]
 
-            elif photsystem == 'AB':
+            elif photsystem == 'AB' or photsystem == 'Vega':
 
-                # AB mag mode
+                # AB mag mode or Vega mag mode; for now treat this as
+                # AB in either case, and convert to Vega below if
+                # needed
                 L_nu = ang * spec * wl**2 / c
                 Lbar_nu = int_tabulated2(logwl, L_nu, 
                                          filter_logwl[i], 
@@ -216,20 +190,77 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
                 F_lambda = Lbar_lambda / (4.0*np.pi*(10.0*pc)**2)
                 phot[i] = -2.5*np.log10(F_lambda) - 21.1
 
-            elif photsystem == 'VEGA':
+            else:
 
-                # Vega mag mode
+                # Unknown photometry mode, throw error
+                raise ValueError("unknown photometric system " +
+                                 str(photsystem))
 
-                # Compute Lbar_nu for this star and Vega
-                L_nu = ang * spec * wl**2 / c
-                Lbar_nu = int_tabulated2(logwl, L_nu, 
-                                         filter_logwl[i], 
-                                         filter_response[i]) / filter_norm[i]
-                vega_Lbar_nu \
-                    = int_tabulated2(vega_logwl, vega_L_nu,
-                                     filter_logwl[i],
-                                     filter_response[i]) / filter_norm[i]
-                phot[i] = -2.5*np.log10(Lbar_nu/vega_Lbar_nu)
+
+    # For Vega magnitudes, convert from AB to that
+    if photsystem == 'Vega':
+
+        from astropy.io import ascii
+
+        # Look in SLUG_DIR for Vega spectrum
+        if 'SLUG_DIR' in os.environ:
+            slugdir = os.environ['SLUG_DIR']
+            fname = osp.join(slugdir, 'lib', 'atmospheres',
+                             'A0V_KURUCZ_92.SED')
+            try:
+                vegadata = ascii.read(fname)
+            except IOError:
+                vegadata = None
+
+        # Look in cwd if that fails
+        if vegadata is None:
+            try:
+                vegadata = ascii.read('A0V_KURUCZ_92.SED', 'r')
+            except IOError:
+                raise IOError("could not find Vega spectrum "+
+                              "file A0V_KURUCZ_92.SED in "+
+                              "SLUG_DIR/lib/atmospheres or "+
+                              "in current directory")
+
+        # Record Vega data
+        vega_logwl = np.log(np.array(vegadata['col1']))
+        vega_spec = np.array(vegadata['col2'])
+        vega_F_nu = ang * vega_spec * np.exp(2.0*vega_logwl) / c
+
+        # Get the convolution of Vega's spectrum with the Johnson V
+        # filter, and convert that to magnitudes
+        fdat = read_filter('Johnson_V', filter_dir=filter_dir)
+        v_norm = int_tabulated(np.log(fdat.wl), fdat.response)
+        vega_Fbar_nu \
+            = int_tabulated2(vega_logwl, vega_F_nu,
+                             np.log(fdat.wl), fdat.response) / v_norm
+        vega_mag_offset = -2.5*np.log10(vega_Fbar_nu)
+
+        # Now figure out the magnitude of Vega in all other filters,
+        # and use that to convert AB magnitudes to Vega magnitudes
+        for i in range(len(filter_wl)):
+
+            # Skip special filters
+            if filtername is None:
+                fname = ''
+            else:
+                fname = filtername[i]
+            if fname == 'Lbol' or fname in lambda_thresh.keys():
+                continue
+
+            # Get magnitudes in this filter before applying offset
+            vega_Fbar_nu_filter \
+                = int_tabulated2(vega_logwl, vega_F_nu,
+                                 filter_logwl[i],
+                                 filter_response[i]) / filter_norm[i]
+            vega_mag_filter = -2.5*np.log10(vega_Fbar_nu)
+
+            # Compute magnitude of Vega in this band from condition
+            # that Vega has magnitude 0.02 in Johnson_V
+            vega_mag = vega_mag_filter - vega_mag_offset + 0.02
+
+            # Now convert AB to Vega mag
+            phot[i] = phot[i] - vega_mag
 
     # Return
     return phot
