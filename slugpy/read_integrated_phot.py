@@ -80,6 +80,9 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
        phot : array, shape (N_filter, N_times, N_trials)
           photometric value in each filter at each time in each trial;
           units are as indicated in the units field
+       phot_ex : array, shape (N_filter, N_times, N_trials)
+          same as phot, but after extinction has been applied (present
+          only if SLUG was run with extinction enabled)
        
     Raises
        IOError, if no photometry file can be opened
@@ -208,9 +211,9 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
             phot_ex = np.zeros((ntime, nfilter))
             for i in range(ntime):
                 phot[i,:] = data_list[(2*nfilter+1)*i+1:
-                                      (2+nfilter+1)*i+1+nfilter]
+                                      (2*nfilter+1)*i+1+nfilter]
                 phot_ex[i,:] = data_list[(2*nfilter+1)*i+1+nfilter:
-                                      (2+nfilter+1)*i+1+2*nfilter]
+                                      (2*nfilter+1)*i+1+2*nfilter]
         else:
             time = np.array(data_list[::nfilter+1])
             phot = np.zeros((ntime, nfilter))

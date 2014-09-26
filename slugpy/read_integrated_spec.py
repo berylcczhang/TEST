@@ -49,8 +49,9 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
           only if SLUG was run with extinction enabled)
        spec_ex : array, shape (N_wavelength, N_times, N_trials)
           specific luminosity at each wavelength in wl_ex and each
-          time for each trial, in erg/s/A (present only if SLUG was
-          run with extinction enabled)
+          time for each trial after extinction has been applied, in
+          erg/s/A (present only if SLUG was run with extinction
+          enabled)
     """
     
     # Open file

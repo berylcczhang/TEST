@@ -57,6 +57,9 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
           number of living stars in cluster being treated stochastically
        max_star_mass : array
           mass of most massive living star in cluster
+       A_V : array
+          A_V value for each cluster, in mag (present only if SLUG was
+          run with extinction enabled)
     """
 
     # Open file
@@ -89,8 +92,18 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'ascii'
 
-        # Burn the three header lines
-        fp.readline()
+        # Read the first header line
+        hdr = fp.readline()
+
+        # See if we have extinction
+        hdrsplit = hdr.split()
+        if hdrsplit[-1] == 'A_V':
+            extinct = True
+            A_V = []
+        else:
+            extinct = False
+
+        # Burn the next two header lines
         fp.readline()
         fp.readline()
 
@@ -112,6 +125,8 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             live_mass.append(float(data[6]))
             num_star.append(long(data[7]))
             max_star_mass.append(float(data[8]))
+            if extinct:
+                A_V.append(float(data[9]))
 
     elif fname.endswith('.bin'):
 
@@ -121,6 +136,12 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
 
         # Set trial counter
         trialptr = 0
+
+        # Read the first byte to see if we have extinction turned on
+        data = fp.read(struct.calcsize('b'))
+        extinct = struct.unpack('b', data)[0] != 0
+        if extinct:
+            A_V = []
 
         # Go through file
         while True:
@@ -137,8 +158,11 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 continue
 
             # Read the next block of clusters
-            data = fp.read(struct.calcsize('LdddddQd')*ncluster)
-            data_list = struct.unpack('LdddddQd'*ncluster, data)
+            datastr = 'LdddddQd'
+            if extinct:
+                datastr = datastr+'d'
+            data = fp.read(struct.calcsize(datastr)*ncluster)
+            data_list = struct.unpack(datastr*ncluster, data)
 
             # If this time is not bigger than the last one was, this
             # is a new trial
@@ -147,16 +171,22 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                     trialptr = trialptr + 1
 
             # Pack these clusters into the data list
-            cluster_id.extend(data_list[0::8])
+            if extinct:
+                nfield = 9
+            else:
+                nfield = 8
+            cluster_id.extend(data_list[0::nfield])
             time.extend([t]*ncluster)
             trial.extend([trialptr]*ncluster)
-            form_time.extend(data_list[1::8])
-            lifetime.extend(data_list[2::8])
-            target_mass.extend(data_list[3::8])
-            actual_mass.extend(data_list[4::8])
-            live_mass.extend(data_list[5::8])
-            num_star.extend(data_list[6::8])
-            max_star_mass.extend(data_list[7::8])
+            form_time.extend(data_list[1::nfield])
+            lifetime.extend(data_list[2::nfield])
+            target_mass.extend(data_list[3::nfield])
+            actual_mass.extend(data_list[4::nfield])
+            live_mass.extend(data_list[5::nfield])
+            num_star.extend(data_list[6::nfield])
+            max_star_mass.extend(data_list[7::nfield])
+            if extinct:
+                A_V.extend(data_list[8::nfield])
 
     elif fname.endswith('.fits'):
 
@@ -173,6 +203,11 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
         live_mass = fp[1].data.field('LiveMass')
         num_star = fp[1].data.field('NumStar')
         max_star_mass = fp[1].data.field('MaxStarMass')
+        if 'A_V' in fp[1].data.columns.names:
+            extinct = True
+            A_V = fp[1].data.field('A_V')
+        else:
+            extinct = False
 
     # Close file
     fp.close()
@@ -188,15 +223,27 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
     live_mass = np.array(live_mass)
     num_star = np.array(num_star, dtype='ulonglong')
     max_star_mass = np.array(max_star_mass)
+    if extinct:
+        A_V = np.array(A_V)
 
     # Build the namedtuple to hold output
-    out_type = namedtuple('cluster_prop',
-                          ['id', 'trial', 'time', 'form_time', 
-                           'lifetime', 'target_mass', 'actual_mass', 
-                           'live_mass', 'num_star', 'max_star_mass'])
-    out = out_type(cluster_id, trial, time, form_time, lifetime, 
-                   target_mass, actual_mass, live_mass, num_star,
-                   max_star_mass)
+    if extinct:
+        out_type = namedtuple('cluster_prop',
+                              ['id', 'trial', 'time', 'form_time', 
+                               'lifetime', 'target_mass', 'actual_mass', 
+                               'live_mass', 'num_star', 'max_star_mass',
+                               'A_V'])
+        out = out_type(cluster_id, trial, time, form_time, lifetime, 
+                       target_mass, actual_mass, live_mass, num_star,
+                       max_star_mass, A_V)
+    else:
+        out_type = namedtuple('cluster_prop',
+                              ['id', 'trial', 'time', 'form_time', 
+                               'lifetime', 'target_mass', 'actual_mass', 
+                               'live_mass', 'num_star', 'max_star_mass'])
+        out = out_type(cluster_id, trial, time, form_time, lifetime, 
+                       target_mass, actual_mass, live_mass, num_star,
+                       max_star_mass)
 
     # Return
     return out

@@ -30,6 +30,17 @@ def combine_cluster(data):
         if data[i]._fields != data[i+1]._fields:
             raise ValueError("input data must have identical fields")
 
+    # List of fields for which we need only one copy, because they're
+    # the same for every cluster
+    single_fields = ['wl', 'wl_ex', 'filter_names',
+                     'filter_units', 'filter_wl', 'filter_wl_eff',
+                     'filter_response', 'filter_beta', 'filter_wl_c',
+                     'cloudy_linelabel', 'cloudy_linewl',
+                     'cloudy_wl', 'cloudy_filter_names',
+                     'cloudy_filter_units', 'cloudy_filter_wl_eff',
+                     'cloudy_filter_wl', 'cloudy_filter_response',
+                     'cloudy_filter_beta', 'cloudy_filter_wl_c']
+
     # Combine fields
     new_fields = []
     for i, f in enumerate(data[0]._fields):
@@ -53,18 +64,8 @@ def combine_cluster(data):
             new_fields.append(trial)
 
         # For the following fields we just need one copy
-        elif f == 'wl':
-            new_fields.append(data[0].wl)
-        elif f == 'filter_names':
-            new_fields.append(data[0].filter_names)
-        elif f == 'filter_units':
-            new_fields.append(data[0].filter_units)
-        elif f == 'filter_wl_eff':
-            new_fields.append(data[0].filter_wl_eff)
-        elif f == 'filter_wl':
-            new_fields.append(data[0].filter_wl)
-        elif f == 'filter_response':
-            new_fields.append(data[0].filter_response)
+        elif f in single_fields:
+            new_fields.append(data[0][i])
 
         # All other fields can just be concatenated
         else:
