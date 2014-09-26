@@ -864,7 +864,7 @@ void slug_sim::open_integrated_spec() {
     // List of extincted wavelengths
     if (use_extinct) {
       vector<double> lambda_ext = extinct->lambda();
-      vector<double>::size_type nl_ext = lambda.size();
+      vector<double>::size_type nl_ext = lambda_ext.size();
       int_spec_file.write((char *) &nl_ext, sizeof nl_ext);
       int_spec_file.write((char *) &(lambda_ext[0]),
 			  nl_ext*sizeof(double));
@@ -1031,7 +1031,7 @@ void slug_sim::open_cluster_spec() {
     // List of extincted wavelengths
     if (use_extinct) {
       vector<double> lambda_ext = extinct->lambda();
-      vector<double>::size_type nl_ext = lambda.size();
+      vector<double>::size_type nl_ext = lambda_ext.size();
       cluster_spec_file.write((char *) &nl_ext, sizeof nl_ext);
       cluster_spec_file.write((char *) &(lambda_ext[0]),
 			      nl_ext*sizeof(double));
@@ -1090,6 +1090,7 @@ void slug_sim::open_cluster_spec() {
     vector<string> tform2_str = { "1K", "1K", "1D", "" };
     tform2_str[3] = lexical_cast<string>(nl) + "D";
     vector<string> tunit2_str = { "", "", "yr", "erg/s/A" };
+    ncol = 4;
     if (extinct != NULL) {
       ttype2_str.push_back("L_lambda_ex");
       tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
@@ -1226,11 +1227,12 @@ void slug_sim::open_integrated_phot() {
       tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
     }
     int ncol = 2+filter_names.size();
+    vector<string> filter_names_ex(filter_names.size());
     // If using extinction, add columns for filters w/extinction
     if (extinct != NULL) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
-	string tmp = filter_names[i] + "_ex";
-	ttype.push_back(const_cast<char*>(tmp.c_str()));
+	filter_names_ex[i] = filter_names[i] + "_ex";
+	ttype.push_back(const_cast<char*>(filter_names_ex[i].c_str()));
 	tform.push_back(const_cast<char*>(form_str[1].c_str()));
 	tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
       }
@@ -1362,10 +1364,11 @@ void slug_sim::open_cluster_phot() {
     }
     int ncol = 3+filter_names.size();
     // If using extinction, add columns for filters w/extinction
+    vector<string> filter_names_ex(filter_names.size());
     if (extinct != NULL) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
-	string tmp = filter_names[i] + "_ex";
-	ttype.push_back(const_cast<char*>(tmp.c_str()));
+	filter_names_ex[i] = filter_names[i] + "_ex";
+	ttype.push_back(const_cast<char*>(filter_names_ex[i].c_str()));
 	tform.push_back(const_cast<char*>(form_str[2].c_str()));
 	tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
       }
