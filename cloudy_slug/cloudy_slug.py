@@ -42,6 +42,8 @@ except ImportError:
 parser = argparse. \
          ArgumentParser(
              description="Script to run cloudy on slug outputs")
+
+# Positional arguments
 parser.add_argument("slug_model_name", 
                     help="name of the SLUG model output to be " +
                     "processed")
@@ -50,9 +52,12 @@ parser.add_argument("start_spec", nargs="?", type=int, default=0,
 parser.add_argument("end_spec", nargs="?", type=int, default=-1,
                     help="ending cluster or trial number " + 
                     "(default: last spectrum)")
-parser.add_argument("--slugpath", default=None, type=str,
-                    help="path to the SLUG output data (default: "+
-                    "checks cwd, then $SLUG_DIR/output)")
+
+# Optional arguments
+parser.add_argument('-a', '--agemax', default=4, type=float,
+                    help="maximum cluster age in Myr for which to " +
+                    "compute nebular emission; only used in clustermode " +
+                    "(default: 4 Myr)")
 parser.add_argument("--cloudypath", default=None, type=str,
                     help="path to the cloudy executable (default: "+
                     "$CLOUDY_DIR/cloudy.exe)")
@@ -64,19 +69,18 @@ parser.add_argument("-cm", "--clustermode", action='store_true',
                     "each cluster is a separate cloudy run "+
                     "(default: integrated mode, one cloudy run / "
                     "trial)")
-parser.add_argument('-a', '--agemax', default=4, type=float,
-                    help="maximum cluster age in Myr for which to " +
-                    "compute nebular emission; only used in clustermode " +
-                    "(default: 4 Myr)")
-parser.add_argument('-n', '--nproc', default=None, type=int,
-                    help="number of cloudy processes (default: "+
-                    "number of cores)")
 parser.add_argument('-nl', '--nicelevel', default=0, type=int,
                     help="nice level of the cloudy processes " +
                     "(default: 0)")
+parser.add_argument('-n', '--nproc', default=None, type=int,
+                    help="number of cloudy processes (default: "+
+                    "number of cores)")
 parser.add_argument('-s', '--save', default=False,
                     action='store_true', help='save full cloudy ' +
                     'output (default: delete after extracting data)')
+parser.add_argument("--slugpath", default=None, type=str,
+                    help="path to the SLUG output data (default: "+
+                    "checks cwd, then $SLUG_DIR/output)")
 parser.add_argument('-v', '--verbose', action='store_true',
                     default=False, help="produce verbose output")
 args = parser.parse_args()
