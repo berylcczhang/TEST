@@ -26,7 +26,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="Test Problems" href="tests.html" />
-    <link rel="prev" title="cloudy-slug: An Automated Interface to cloudy" href="cloudy.html" /> 
+    <link rel="prev" title="cloudy_slug: An Automated Interface to cloudy" href="cloudy.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,7 +42,7 @@
           <a href="tests.html" title="Test Problems"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="cloudy.html" title="cloudy-slug: An Automated Interface to cloudy"
+          <a href="cloudy.html" title="cloudy_slug: An Automated Interface to cloudy"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
@@ -63,7 +63,7 @@ idata = read_integrated(&#39;SLUG_MODEL_NAME&#39;)
 cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 </pre></div>
 </div>
-<p>The <tt class="docutils literal"><span class="pre">read_integrated</span></tt> function reads all the integrated-light data (i.e., the data stored in the <tt class="docutils literal"><span class="pre">_integrated_*</span></tt> files &#8211; see <a class="reference internal" href="output.html#sec-output"><em>Output Files and Format</em></a>) for a SLUG output whose name is given as the argument. This is the base name specified by the <tt class="docutils literal"><span class="pre">model_name</span></tt> keyword (see <a class="reference internal" href="parameters.html#ssec-basic-keywords"><em>Basic Keywords</em></a>), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a <tt class="docutils literal"><span class="pre">namedtuple</span></tt> containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><em>cloudy-slug: An Automated Interface to cloudy</em></a>) was used to process the SLUG output through cloudy to predict nebular emission. The fields returned are as follows:</p>
+<p>The <tt class="docutils literal"><span class="pre">read_integrated</span></tt> function reads all the integrated-light data (i.e., the data stored in the <tt class="docutils literal"><span class="pre">_integrated_*</span></tt> files &#8211; see <a class="reference internal" href="output.html#sec-output"><em>Output Files and Format</em></a>) for a SLUG output whose name is given as the argument. This is the base name specified by the <tt class="docutils literal"><span class="pre">model_name</span></tt> keyword (see <a class="reference internal" href="parameters.html#ssec-basic-keywords"><em>Basic Keywords</em></a>), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a <tt class="docutils literal"><span class="pre">namedtuple</span></tt> containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><em>cloudy_slug: An Automated Interface to cloudy</em></a>) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:</p>
 <ul class="simple">
 <li>time: output times</li>
 <li>target_mass: target stellar mass at each time</li>
@@ -80,9 +80,18 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>filter_wl_eff: effective wavelength for each photometric filter</li>
 <li>filter_wl: list of wavelengths for each filter at which the response function is given (in Angstrom)</li>
 <li>filter_response: photon response function for each filter at each wavelength (dimensionless)</li>
-<li>filter_beta: index <span class="math">\(\beta\)</span> used to set the normalization for each filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra and Photometry</em></a></li>
-<li>filter_wl_c: pivot wavelength used to set the normalization for each filter for which <span class="math">\(\beta \neq 0\)</span> &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra and Photometry</em></a></li>
+<li>filter_beta: index <span class="math">\(\beta\)</span> used to set the normalization for each filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra, Photometry, and Extinction</em></a></li>
+<li>filter_wl_c: pivot wavelength used to set the normalization for each filter for which <span class="math">\(\beta \neq 0\)</span> &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra, Photometry, and Extinction</em></a></li>
 <li>phot: photometry in each filter</li>
+</ul>
+<p>The following fields are present only if SLUG was run with extinction enabled:</p>
+<ul class="simple">
+<li>wl_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl_ex may contain fewer elements than wl_ex, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.</li>
+<li>spec_ex: same as spec, but for the extincted spectrum. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.</li>
+<li>phot_ex: same as phot, but for the extincted spectrum. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.</li>
+</ul>
+<p>The following fields are present only for runs that have been processed through the cloudy_slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><em>cloudy_slug: An Automated Interface to cloudy</em></a>):</p>
+<ul class="simple">
 <li>cloudy_wl: wavelengths of the output nebular spectra (in Angstrom)</li>
 <li>cloudy_inc: incident stellar radiation field, expressed as a specific luminosity (erg/s/Angstrom) &#8211; should be the same as spec, but binned onto cloudy&#8217;s wavelength grid; provided mainly as a bug-checking diagnostic</li>
 <li>cloudy_trans: the transmitted stellar radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) &#8211; this is the radiation field of the stars after it has passed through the HII region, and is what one would see in an observational aperture centered on the stars with negligible contribution from the nebula</li>
@@ -107,6 +116,7 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>live_mass: the mass of all still-living stars in the cluster</li>
 <li>num_star: the number of stars in the cluster</li>
 <li>max_star_mass: the mass of the single most massive still-living star in the cluster</li>
+<li>A_V: the visual extinction for this cluster, in mag; present only if SLUG was run with extinction enabled</li>
 <li>All the remaining fields are identical to those listed above for integrated quantities, starting with wl</li>
 </ul>
 <p>For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).</p>
@@ -224,7 +234,7 @@ Vega &#8211;&gt; absolute Vega magnitude;</dd>
 
 <dl class="function">
 <dt id="slugpy.photometry_convert">
-<tt class="descclassname">slugpy.</tt><tt class="descname">photometry_convert</tt><big>(</big><em>photsystem</em>, <em>phot</em>, <em>units</em>, <em>wl_cen=None</em>, <em>filter_last=False</em><big>)</big><a class="headerlink" href="#slugpy.photometry_convert" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">slugpy.</tt><tt class="descname">photometry_convert</tt><big>(</big><em>photsystem</em>, <em>phot</em>, <em>units</em>, <em>wl_cen=None</em>, <em>filter_last=False</em>, <em>filter_names=None</em>, <em>filter_dir=None</em><big>)</big><a class="headerlink" href="#slugpy.photometry_convert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to convert photometric data between photometric systems.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -239,7 +249,9 @@ not be None.</dd>
 <dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>array of photometric data; if the array has more than one
 dimension, the first dimension is assumed to represent the
-different photometric filters</dd>
+different photometric filters (unless filter_last is True,
+in which case the last dimension is represents the array of
+filters)</dd>
 <dt>units <span class="classifier-delimiter">:</span> <span class="classifier">iterable of strings</span></dt>
 <dd>iterable listing the units of the input photometric data. On
 return, strings will be changed to the units of the new system.</dd>
@@ -253,6 +265,15 @@ is assumed that the first dimension contains values for the
 different photometric filters. If this keyword is set to True,
 it will instead be assumed that the last dimension contains the
 values for the different filters.</dd>
+<dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">iterable of strings</span></dt>
+<dd>Names of all filters, used to read the filter response
+functions from disk; only needed for conversions to and from
+Vega magnitudes, and ignored otherwise</dd>
+<dt>filter_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Directory where the filter data files can be found. If left as
+None, filters will be looked for in the $SLUG_DIR/lib/filters
+directory. This parameter is used only for conversions to
+and from Vega magnitudes.</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -514,6 +535,9 @@ photometry</dd>
 <dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span></dt>
 <dd>photometric value in each filter for each cluster; units are as
 indicated in the units field</dd>
+<dt>phot_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but after extinction has been applied (present
+only if SLUG was run with extinction enabled)</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
@@ -574,6 +598,9 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dd>number of living stars in cluster being treated stochastically</dd>
 <dt>max_star_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>mass of most massive living star in cluster</dd>
+<dt>A_V <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>A_V value for each cluster, in mag (present only if SLUG was
+run with extinction enabled)</dd>
 </dl>
 </dd>
 </dl>
@@ -621,6 +648,14 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dd>wavelength, in Angstrom</dd>
 <dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
 <dd>specific luminosity of each cluster at each wavelength, in erg/s/A</dd>
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)</dd>
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
@@ -914,6 +949,9 @@ photometry</dd>
 <dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
 <dd>photometric value in each filter at each time in each trial;
 units are as indicated in the units field</dd>
+<dt>phot_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but after extinction has been applied (present
+only if SLUG was run with extinction enabled)</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
@@ -956,7 +994,7 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dl class="last docutils">
 <dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>Times at which data are output</dd>
-<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape</span></dt>
+<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
 <dd>Target stellar mass at each time</dd>
 <dt>actual_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
 <dd>Actual mass of stars created up to each time in each trial</dd>
@@ -1018,6 +1056,14 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
 <dd>specific luminosity at each wavelength and each time for each
 trial, in erg/s/A</dd>
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)</dd>
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)</dd>
 </dl>
 </dd>
 </dl>
@@ -1758,7 +1804,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="cloudy.html"
-                        title="previous chapter">cloudy-slug: An Automated Interface to cloudy</a></p>
+                        title="previous chapter">cloudy_slug: An Automated Interface to cloudy</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="tests.html"
                         title="next chapter">Test Problems</a></p>
@@ -1797,7 +1843,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
           <a href="tests.html" title="Test Problems"
              >next</a> |</li>
         <li class="right" >
-          <a href="cloudy.html" title="cloudy-slug: An Automated Interface to cloudy"
+          <a href="cloudy.html" title="cloudy_slug: An Automated Interface to cloudy"
              >previous</a> |</li>
         <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>

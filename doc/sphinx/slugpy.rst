@@ -14,7 +14,7 @@ SLUG comes with the python module slugpy, which contains an extensive set of rou
    idata = read_integrated('SLUG_MODEL_NAME')
    cdata = read_cluster('SLUG_MODEL_NAME')
 
-The ``read_integrated`` function reads all the integrated-light data (i.e., the data stored in the ``_integrated_*`` files -- see :ref:`sec-output`) for a SLUG output whose name is given as the argument. This is the base name specified by the ``model_name`` keyword (see :ref:`ssec-basic-keywords`), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a ``namedtuple`` containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see :ref:`sec-cloudy-slug`) was used to process the SLUG output through cloudy to predict nebular emission. The fields returned are as follows:
+The ``read_integrated`` function reads all the integrated-light data (i.e., the data stored in the ``_integrated_*`` files -- see :ref:`sec-output`) for a SLUG output whose name is given as the argument. This is the base name specified by the ``model_name`` keyword (see :ref:`ssec-basic-keywords`), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a ``namedtuple`` containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see :ref:`sec-cloudy-slug`) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:
 
 * time: output times
 * target_mass: target stellar mass at each time
@@ -34,6 +34,15 @@ The ``read_integrated`` function reads all the integrated-light data (i.e., the 
 * filter_beta: index :math:`\beta` used to set the normalization for each filter -- see :ref:`ssec-spec-phot`
 * filter_wl_c: pivot wavelength used to set the normalization for each filter for which :math:`\beta \neq 0` -- see :ref:`ssec-spec-phot`
 * phot: photometry in each filter
+
+The following fields are present only if SLUG was run with extinction enabled:
+
+* wl_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl_ex may contain fewer elements than wl_ex, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.
+* spec_ex: same as spec, but for the extincted spectrum. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.
+* phot_ex: same as phot, but for the extincted spectrum. Note that some values may be ``NaN``. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
+
+The following fields are present only for runs that have been processed through the cloudy_slug interface (see :ref:`sec-cloudy-slug`):
+
 * cloudy_wl: wavelengths of the output nebular spectra (in Angstrom)
 * cloudy_inc: incident stellar radiation field, expressed as a specific luminosity (erg/s/Angstrom) -- should be the same as spec, but binned onto cloudy's wavelength grid; provided mainly as a bug-checking diagnostic
 * cloudy_trans: the transmitted stellar radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) -- this is the radiation field of the stars after it has passed through the HII region, and is what one would see in an observational aperture centered on the stars with negligible contribution from the nebula
@@ -59,6 +68,7 @@ The ``read_cluster`` function is analogous, except that instead of reading the w
 * live_mass: the mass of all still-living stars in the cluster
 * num_star: the number of stars in the cluster
 * max_star_mass: the mass of the single most massive still-living star in the cluster
+* A_V: the visual extinction for this cluster, in mag; present only if SLUG was run with extinction enabled
 * All the remaining fields are identical to those listed above for integrated quantities, starting with wl
 
 For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).
