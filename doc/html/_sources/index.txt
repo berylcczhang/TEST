@@ -11,6 +11,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   license
    intro
    compiling
    running
@@ -21,7 +22,7 @@ Contents:
    cloudy
    slugpy
    tests
-
+   acknowledgements
 
 Indices and tables
 ==================
