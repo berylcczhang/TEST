@@ -48,6 +48,8 @@ For ``binary`` output, the file consists of a series of records containing the f
 
 There is one record of this form for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
+.. _ssec-int-spec-file:
+
 The ``integrated_spec`` File
 ----------------------------
 
@@ -55,22 +57,30 @@ This file contains data on the spectra of the entire galaxy, and consists of a s
 
 * ``Time``: evolution time at which the output is produced
 * ``Wavelength``: observed frame wavelength at which the spectrum is evaluated
-* ``L_lambda``: specific luminosity at the specified wavelength
+* ``L_lambda``: specific luminosity at the specified wavelength, without extinction
+* ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
 
+If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for ``L_lambda_ex`` may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.
 
-If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a single field listing the wavelengths at which the spectra are given. The second table has three fields, giving the trial number, the time, and the spectrum ``L_lambda`` at that time. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+ If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum ``L_lambda`` at that time. The final field, ``L_lambda_ex``, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 For binary output, the file is formatted as follows. The file starts with
 
+* ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the spectra
 * ``Wavelength`` (``NWavelength`` entries of type ``double``)
+* ``NWavelength_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extinted spectra; only present if ``Extinct`` is 1
+* ``Wavelength_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
 
 and then contains a series of records in the format
 
 * ``Time`` (``double``)
 * ``L_lambda`` (``NWavelength`` entries of type ``double``)
+* ``L_lambda_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
+
+.. _ssec-int-phot-file:
 
 The ``integrated_phot`` File
 ----------------------------
@@ -82,19 +92,26 @@ This file contains data on the photometric properties of the entire galaxy, and 
 * ``PhotFilter2``
 * ``PhotFilter3``
 * ``...``
+* ``PhotFilter1_ex``: photometric value through filter 1 for the extincted spectrum, in the same units as ``PhotFilter1``; only present if SLUG was run with extinction enabled
+* ``PhotFilter2_ex``
+* ``PhotFilter3_ex``
+* ``...``
 
+If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. The columns for photometry of the extincted spectrum are present only if extinction was enabled when SLUG was run. Entries for some filters may be left blank. If so, this indicates that the photon response function provided for that filter extends beyond the wavelength range covered by the provided extinction curve. Since the extincted spectrum cannot be computed over the full range of the filter in this case, photometry for that filter cannot be computed either.
 
-If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. In addition to the time and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If ``output_mode`` is ``fits``, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. If SLUG was run with extinction enabled, in for each filter ``FILTERNAME`` there is a corresponding column ``FILTERNAME_ex`` containing the photometric value for that filter applied to the extincted spectrum. Some of these values may be ``NaN``; this indicates that the photon response function provided for that filter extends beyond the wavelength range covered by the provided extinction curve. In addition to the time and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
  
 For binary output, the file is formatted as follows. The file starts with
 
 * ``NFilter`` (stored as ``ASCII text``): number of filters used
 * ``FilterName`` ``FilterUnit`` (``NFilter`` entries stored as ``ASCII text``): the name and units for each filter are listed in ASCII, one filter-unit pair per line
+* ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 
 This is followed by a series of entries of the form
 
 * ``Time`` (``double``)
 * ``PhotFilter`` (``NFilter`` entries of type ``double``)
+* ``PhotFilter_ex`` (``NFilter`` entries of type ``double``); only present if ``Extinct`` is 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
@@ -112,11 +129,15 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 * ``LiveMass``: actual mass of stars produced in the cluster at this output time that have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)
 * ``NumStar``: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-phys-keywords`)
 * ``MaxStarMass``: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-phys-keywords`)
-
+* ``A_V``: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled
 
 If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
-For ``binary`` output, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+For ``binary`` output, the first entry in the file is a header containing
+
+* ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
+
+Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
 
 * ``Time`` (``double``)
 * ``NCluster`` (``std::vector<double>::size_type``, usually ``unsigned long long``): number of non-disrupted clusters present at this time
@@ -131,6 +152,7 @@ This is followed by ``NCluster`` entries of the following form:
 * ``LiveMass`` (``double``)
 * ``NumStar`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
 * ``MaxStarMass`` (``double``)
+* ``A_V`` (``double``); present only if ``Extinct`` is 1
 
 
 The ``cluster_spec`` File
@@ -142,14 +164,19 @@ This file contains the spectra of the individual clusters, and each entry contai
 * ``Time``: evolution time at which the output is produced
 * ``Wavelength``: observed frame wavelength at which the spectrum is evaluated
 * ``L_lambda``: specific luminosity at the specified wavelength
+* ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
 
+If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. The column ``L_lambda_ex`` is present only if SLUG was run with extinction enabled. Some entries for ``L_lambda_ex`` may be empty; see :ref:`ssec-int-spec-file`.
 
-If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a single field listing the wavelengths at which the spectra are given. The second table has four fields, giving the trial number, the unique ID of the cluster, the time, and the spectrum ``L_lambda``. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has four fields if SLUG was run without extinction, or five fields if it was run with extinction. The first four fields, always present, give the trial number, unique ID of the cluster, the time, and the spectrum ``L_lambda`` at that time. The final field, ``L_lambda_ex``, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 Output in ``binary`` mode is formatted as follows.  The file starts with
 
+* ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the spectra
 * ``Wavelength`` (``NWavelength`` entries of type ``double``)
+* ``NWavelength_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extinted spectra; only present if ``Extinct`` is 1
+* ``Wavelength_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
 
 and then contains a series of records, one for each output time , with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
 
@@ -160,6 +187,7 @@ This is followed by ``NCluster`` entries of the following form:
 
 * ``UniqueID`` (``unsigned long``)
 * ``L_lambda`` (``NWavelength`` entries of type ``double``)
+* ``L_lambda_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
 
 
 The ``cluster_phot`` File
@@ -173,13 +201,20 @@ This file contains the photometric values for the individual clusters. Each entr
 * ``PhotFilter2``
 * ``PhotFilter3``
 * ``...``
+* ``PhotFilter1_ex``: photometric value through filter 1 for the extincted spectrum, in the same units as ``PhotFilter1``; only present if SLUG was run with extinction enabled
+* ``PhotFilter2_ex``
+* ``PhotFilter3_ex``
+* ``...``
 
-If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. Some of the extincted photometry columns may be blank; see :ref:`ssec-int-phot-file`.
+
+If ``output_mode`` is ``fits``, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. If SLUG was run with extinction enabled, in for each filter ``FILTERNAME`` there is a corresponding column ``FILTERNAME_ex`` containing the photometric value for that filter applied to the extincted spectrum. Some of these values may be ``NaN``; see :ref:`ssec-int-phot-file`. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 In ``binary`` output mode, the binary data file starts with
 
 * ``NFilter`` (stored as ``ASCII text``): number of filters used
 * ``FilterName`` ``FilterUnit`` (``NFilter`` entries stored as ``ASCII text``): the name and units for each filter are listed in ASCII, one filter-unit pair per line
+* ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 
 and then contains a series of records, one for each output time , with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
 
@@ -190,5 +225,7 @@ This is followed by ``NCluster`` entries of the following form:
 
 * ``UniqueID`` (``unsigned long``)
 * ``PhotFilter`` (``NFilter`` entries of type ``double``)
+* ``PhotFilter_ex`` (``NFilter`` entries of type ``double``); only present if ``Extinct`` is 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
+
 
 

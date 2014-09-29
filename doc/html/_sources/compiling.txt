@@ -20,6 +20,12 @@ In addition to the core dependencies, slugpy, the python helper library requires
 * `scipy <http://www.scipy.org/>`_
 * `astropy <http://www.astropy.org/>`_ (optional, only required for FITS capabilities)
 
+Finally, the cloudy coupling capability requires:
+
+* `cloudy <http://nublado.org>`_
+
+This is only required performing cloudy runs, and is not required for any other part of SLUG.
+
 Compiling
 ---------
 

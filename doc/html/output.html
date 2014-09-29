@@ -93,28 +93,35 @@
 <p>There is one record of this form for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
 </div>
 <div class="section" id="the-integrated-spec-file">
-<h2>The <tt class="docutils literal"><span class="pre">integrated_spec</span></tt> File<a class="headerlink" href="#the-integrated-spec-file" title="Permalink to this headline">¶</a></h2>
+<span id="ssec-int-spec-file"></span><h2>The <tt class="docutils literal"><span class="pre">integrated_spec</span></tt> File<a class="headerlink" href="#the-integrated-spec-file" title="Permalink to this headline">¶</a></h2>
 <p>This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
 <li><tt class="docutils literal"><span class="pre">Wavelength</span></tt>: observed frame wavelength at which the spectrum is evaluated</li>
-<li><tt class="docutils literal"><span class="pre">L_lambda</span></tt>: specific luminosity at the specified wavelength</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda</span></tt>: specific luminosity at the specified wavelength, without extinction</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)</li>
 </ul>
-<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the output FITS file has two binary table extensions. The first table contains a single field listing the wavelengths at which the spectra are given. The second table has three fields, giving the trial number, the time, and the spectrum <tt class="docutils literal"><span class="pre">L_lambda</span></tt> at that time. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.</p>
+<blockquote>
+<div>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field <tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum <tt class="docutils literal"><span class="pre">L_lambda</span></tt> at that time. The final field, <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</div></blockquote>
 <p>For binary output, the file is formatted as follows. The file starts with</p>
 <ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
 <li><tt class="docutils literal"><span class="pre">NWavelength</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the spectra</li>
 <li><tt class="docutils literal"><span class="pre">Wavelength</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the extinted spectra; only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
 </ul>
 <p>and then contains a series of records in the format</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">L_lambda</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
 </ul>
 <p>There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
 </div>
 <div class="section" id="the-integrated-phot-file">
-<h2>The <tt class="docutils literal"><span class="pre">integrated_phot</span></tt> File<a class="headerlink" href="#the-integrated-phot-file" title="Permalink to this headline">¶</a></h2>
+<span id="ssec-int-phot-file"></span><h2>The <tt class="docutils literal"><span class="pre">integrated_phot</span></tt> File<a class="headerlink" href="#the-integrated-phot-file" title="Permalink to this headline">¶</a></h2>
 <p>This file contains data on the photometric properties of the entire galaxy, and consists of a series of entries containing the following fields:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
@@ -122,17 +129,24 @@
 <li><tt class="docutils literal"><span class="pre">PhotFilter2</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">PhotFilter3</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">...</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter1_ex</span></tt>: photometric value through filter 1 for the extincted spectrum, in the same units as <tt class="docutils literal"><span class="pre">PhotFilter1</span></tt>; only present if SLUG was run with extinction enabled</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter2_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter3_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">...</span></tt></li>
 </ul>
-<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. In addition to the time and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. The columns for photometry of the extincted spectrum are present only if extinction was enabled when SLUG was run. Entries for some filters may be left blank. If so, this indicates that the photon response function provided for that filter extends beyond the wavelength range covered by the provided extinction curve. Since the extincted spectrum cannot be computed over the full range of the filter in this case, photometry for that filter cannot be computed either.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. If SLUG was run with extinction enabled, in for each filter <tt class="docutils literal"><span class="pre">FILTERNAME</span></tt> there is a corresponding column <tt class="docutils literal"><span class="pre">FILTERNAME_ex</span></tt> containing the photometric value for that filter applied to the extincted spectrum. Some of these values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>; this indicates that the photon response function provided for that filter extends beyond the wavelength range covered by the provided extinction curve. In addition to the time and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
 <p>For binary output, the file is formatted as follows. The file starts with</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">NFilter</span></tt> (stored as <tt class="docutils literal"><span class="pre">ASCII</span> <span class="pre">text</span></tt>): number of filters used</li>
 <li><tt class="docutils literal"><span class="pre">FilterName</span></tt> <tt class="docutils literal"><span class="pre">FilterUnit</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries stored as <tt class="docutils literal"><span class="pre">ASCII</span> <span class="pre">text</span></tt>): the name and units for each filter are listed in ASCII, one filter-unit pair per line</li>
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
 </ul>
 <p>This is followed by a series of entries of the form</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">PhotFilter</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter_ex</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt> if photometry could not be computed for that filter (see above).</li>
 </ul>
 <p>There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
 </div>
@@ -149,9 +163,14 @@
 <li><tt class="docutils literal"><span class="pre">LiveMass</span></tt>: actual mass of stars produced in the cluster at this output time that have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)</li>
 <li><tt class="docutils literal"><span class="pre">NumStar</span></tt>: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter <tt class="docutils literal"><span class="pre">min_stoch_mass</span></tt> in <a class="reference internal" href="parameters.html#ssec-phys-keywords"><em>Physical Model Keywords</em></a>)</li>
 <li><tt class="docutils literal"><span class="pre">MaxStarMass</span></tt>: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter <tt class="docutils literal"><span class="pre">min_stoch_mass</span></tt> in <a class="reference internal" href="parameters.html#ssec-phys-keywords"><em>Physical Model Keywords</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">A_V</span></tt>: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled</li>
 </ul>
 <p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
-<p>For <tt class="docutils literal"><span class="pre">binary</span></tt> output, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
+<p>For <tt class="docutils literal"><span class="pre">binary</span></tt> output, the first entry in the file is a header containing</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
+</ul>
+<p>Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">NCluster</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): number of non-disrupted clusters present at this time</li>
@@ -166,6 +185,7 @@
 <li><tt class="docutils literal"><span class="pre">LiveMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">NumStar</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">MaxStarMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">A_V</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>); present only if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
 </ul>
 </div>
 <div class="section" id="the-cluster-spec-file">
@@ -176,12 +196,17 @@
 <li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
 <li><tt class="docutils literal"><span class="pre">Wavelength</span></tt>: observed frame wavelength at which the spectrum is evaluated</li>
 <li><tt class="docutils literal"><span class="pre">L_lambda</span></tt>: specific luminosity at the specified wavelength</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)</li>
 </ul>
-<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the output FITS file has two binary table extensions. The first table contains a single field listing the wavelengths at which the spectra are given. The second table has four fields, giving the trial number, the unique ID of the cluster, the time, and the spectrum <tt class="docutils literal"><span class="pre">L_lambda</span></tt>. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. The column <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> is present only if SLUG was run with extinction enabled. Some entries for <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> may be empty; see <a class="reference internal" href="#ssec-int-spec-file"><em>The integrated_spec File</em></a>.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field <tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> listing the wavelengths at which the extincted spectrum is computed. The second table has four fields if SLUG was run without extinction, or five fields if it was run with extinction. The first four fields, always present, give the trial number, unique ID of the cluster, the time, and the spectrum <tt class="docutils literal"><span class="pre">L_lambda</span></tt> at that time. The final field, <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
 <p>Output in <tt class="docutils literal"><span class="pre">binary</span></tt> mode is formatted as follows.  The file starts with</p>
 <ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
 <li><tt class="docutils literal"><span class="pre">NWavelength</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the spectra</li>
 <li><tt class="docutils literal"><span class="pre">Wavelength</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the extinted spectra; only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
 </ul>
 <p>and then contains a series of records, one for each output time , with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
 <ul class="simple">
@@ -192,6 +217,7 @@
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">UniqueID</span></tt> (<tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">L_lambda</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
 </ul>
 </div>
 <div class="section" id="the-cluster-phot-file">
@@ -204,12 +230,18 @@
 <li><tt class="docutils literal"><span class="pre">PhotFilter2</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">PhotFilter3</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">...</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter1_ex</span></tt>: photometric value through filter 1 for the extincted spectrum, in the same units as <tt class="docutils literal"><span class="pre">PhotFilter1</span></tt>; only present if SLUG was run with extinction enabled</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter2_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter3_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">...</span></tt></li>
 </ul>
-<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. Some of the extincted photometry columns may be blank; see <a class="reference internal" href="#ssec-int-phot-file"><em>The integrated_phot File</em></a>.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. If SLUG was run with extinction enabled, in for each filter <tt class="docutils literal"><span class="pre">FILTERNAME</span></tt> there is a corresponding column <tt class="docutils literal"><span class="pre">FILTERNAME_ex</span></tt> containing the photometric value for that filter applied to the extincted spectrum. Some of these values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>; see <a class="reference internal" href="#ssec-int-phot-file"><em>The integrated_phot File</em></a>. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
 <p>In <tt class="docutils literal"><span class="pre">binary</span></tt> output mode, the binary data file starts with</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">NFilter</span></tt> (stored as <tt class="docutils literal"><span class="pre">ASCII</span> <span class="pre">text</span></tt>): number of filters used</li>
 <li><tt class="docutils literal"><span class="pre">FilterName</span></tt> <tt class="docutils literal"><span class="pre">FilterUnit</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries stored as <tt class="docutils literal"><span class="pre">ASCII</span> <span class="pre">text</span></tt>): the name and units for each filter are listed in ASCII, one filter-unit pair per line</li>
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
 </ul>
 <p>and then contains a series of records, one for each output time , with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
 <ul class="simple">
@@ -220,6 +252,7 @@
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">UniqueID</span></tt> (<tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span></tt>)</li>
 <li><tt class="docutils literal"><span class="pre">PhotFilter</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter_ex</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt> if photometry could not be computed for that filter (see above).</li>
 </ul>
 </div>
 </div>
