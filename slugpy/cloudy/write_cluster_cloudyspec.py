@@ -100,9 +100,19 @@ def write_cluster_cloudyspec(data, model_name, fmt):
             for j in range(len(times)):
 
                 # Find block of clusters with this time and trial
-                block_end = ptr + np.argmin(
-                    np.logical_and(data.trial[ptr:] == trials[i],
-                                   data.time[ptr:] == times[j]))
+                block_match \
+                    = np.logical_and(data.trial[ptr:] == trials[i],
+                                     data.time[ptr:] == times[j])
+                block_end = ptr + np.argmin(block_match)
+
+                # Special case: if we found no clusters in this
+                # block, make sure that's not because all the
+                # remaining clusters belong in it, and the search
+                # ran off the end of the data. If that is the
+                # case, adjust block_end appropriately.
+                if block_end == ptr:
+                    if np.sum(block_match) > 0:
+                        block_end = len(data.trial)
 
                 # Special case: if block_end is the last entry in
                 # the data, check if the last entry is the same as
