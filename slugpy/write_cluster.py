@@ -62,38 +62,72 @@ def write_cluster(data, model_name, fmt):
             fp = open(model_name+'_cluster_prop.txt', 'w')
 
             # Write header lines
-            fp.write(("{:<14s}"*9).
-                     format('UniqueID', 'Time', 'FormTime',
-                            'Lifetime', 'TargetMass',
-                            'BirthMass', 'LiveMass',
-                            'NumStar', 'MaxStarMass') + "\n")
-            fp.write(("{:<14s}"*9).
-                     format('', '(yr)', '(yr)',
-                            '(yr)', '(Msun)',
-                            '(Msun)', '(Msun)',
-                            '', '(Msun)') + "\n")
-            fp.write(("{:<14s}"*9).
-                     format('-----------', '-----------', '-----------',
-                            '-----------', '-----------',
-                            '-----------', '-----------',
-                            '-----------', '-----------') + "\n")
+            if 'A_V' in data._fields:
+                fp.write(("{:<14s}"*10).
+                         format('UniqueID', 'Time', 'FormTime',
+                                'Lifetime', 'TargetMass',
+                                'BirthMass', 'LiveMass',
+                                'NumStar', 'MaxStarMass', 'A_V') + "\n")
+                fp.write(("{:<14s}"*10).
+                         format('', '(yr)', '(yr)',
+                                '(yr)', '(Msun)',
+                                '(Msun)', '(Msun)',
+                                '', '(Msun)', '(mag)') + "\n")
+                fp.write(("{:<14s}"*10).
+                         format('-----------', '-----------', '-----------',
+                                '-----------', '-----------',
+                                '-----------', '-----------',
+                                '-----------', '-----------',
+                                '-----------') + "\n")
+            else:
+                fp.write(("{:<14s}"*9).
+                         format('UniqueID', 'Time', 'FormTime',
+                                'Lifetime', 'TargetMass',
+                                'BirthMass', 'LiveMass',
+                                'NumStar', 'MaxStarMass') + "\n")
+                fp.write(("{:<14s}"*9).
+                         format('', '(yr)', '(yr)',
+                                '(yr)', '(Msun)',
+                                '(Msun)', '(Msun)',
+                                '', '(Msun)') + "\n")
+                fp.write(("{:<14s}"*9).
+                         format('-----------', '-----------', '-----------',
+                                '-----------', '-----------',
+                                '-----------', '-----------',
+                                '-----------', '-----------') + "\n")
 
             # Write data
             for i in range(len(data.id)):
-                # If this is a new trial, write a separator
-                if i != 0:
-                    if data.trial[i] != data.trial[i-1]:
-                        fp.write("-"*(9*14-3)+"\n")
-                fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
-                         "{:11.5e}   {:11.5e}   {:11.5e}   {:11d}   "
-                         "{:11.5e}\n".
-                         format(data.id[i], data.time[i], 
-                                data.form_time[i], data.lifetime[i],
-                                data.target_mass[i],
-                                data.actual_mass[i],
-                                data.live_mass[i],
-                                data.num_star[i],
-                                data.max_star_mass[i]))
+                if 'A_V' in data._fields:
+                    # If this is a new trial, write a separator
+                    if i != 0:
+                        if data.trial[i] != data.trial[i-1]:
+                            fp.write("-"*(10*14-3)+"\n")
+                    fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
+                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11d}   "
+                             "{:11.5e}   {:11.5e}\n".
+                             format(data.id[i], data.time[i], 
+                                    data.form_time[i], data.lifetime[i],
+                                    data.target_mass[i],
+                                    data.actual_mass[i],
+                                    data.live_mass[i],
+                                    data.num_star[i],
+                                    data.max_star_mass[i],
+                                    data.A_V[i]))
+                else:
+                    if i != 0:
+                        if data.trial[i] != data.trial[i-1]:
+                            fp.write("-"*(9*14-3)+"\n")
+                    fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
+                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11d}   "
+                             "{:11.5e}\n".
+                             format(data.id[i], data.time[i], 
+                                    data.form_time[i], data.lifetime[i],
+                                    data.target_mass[i],
+                                    data.actual_mass[i],
+                                    data.live_mass[i],
+                                    data.num_star[i],
+                                    data.max_star_mass[i]))
 
             # Close
             fp.close()
@@ -106,6 +140,12 @@ def write_cluster(data, model_name, fmt):
 
             fp = open(model_name+'_cluster_prop.bin', 'wb')
 
+            # Write out a byte indicating extinction or no extinction
+            if 'A_V' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+
             # Construct lists of times and trials
             trials = np.unique(data.trial)
             times = np.unique(data.time)
@@ -117,9 +157,19 @@ def write_cluster(data, model_name, fmt):
                 for j in range(len(times)):
 
                     # Find block of clusters with this time and trial
-                    block_end = ptr + np.argmin(
-                        np.logical_and(data.trial[ptr:] == trials[i],
-                                       data.time[ptr:] == times[j]))
+                    block_match \
+                        = np.logical_and(data.trial[ptr:] == trials[i],
+                                         data.time[ptr:] == times[j])
+                    block_end = ptr + np.argmin(block_match)
+
+                    # Special case: if we found no clusters in this
+                    # block, make sure that's not because all the
+                    # remaining clusters belong in it, and the search
+                    # ran off the end of the data. If that is the
+                    # case, adjust block_end appropriately.
+                    if block_end == ptr:
+                        if np.sum(block_match) > 0:
+                            block_end = len(data.trial)
 
                     # Special case: if block_end is the last entry in
                     # the data, check if the last entry is the same as
@@ -145,6 +195,8 @@ def write_cluster(data, model_name, fmt):
                         fp.write(data.live_mass[k])
                         fp.write(data.num_star[k])
                         fp.write(data.max_star_mass[k])
+                        if 'A_V' in data._fields:
+                            fp.write(data.A_V[k])
 
                     # Move pointer
                     ptr = block_end
@@ -180,6 +232,9 @@ def write_cluster(data, model_name, fmt):
                                     unit="", array=data.num_star))
             cols.append(fits.Column(name="MaxStarMass", format="1D",
                                     unit="Msun", array=data.max_star_mass))
+            if 'A_V' in data._fields:
+                cols.append(fits.Column(name="A_V", format="1D",
+                                        unit="mag", array=data.A_V))
             fitscols = fits.ColDefs(cols)
 
             # Create the binary table HDU
@@ -208,27 +263,66 @@ def write_cluster(data, model_name, fmt):
             fp = open(model_name+'_cluster_spec.txt', 'w')
 
             # Write header lines
-            fp.write(("{:<14s}"*4).
-                     format('UniqueID', 'Time', 'Wavelength',
-                            'L_lambda') + "\n")
-            fp.write(("{:<14s}"*4).
-                     format('', '(yr)', '(Angstrom)', '(erg/s/A)')
-                     + "\n")
-            fp.write(("{:<14s}"*4).
-                     format('-----------', '-----------', '-----------',
-                            '-----------') + "\n")
+            if 'spec_ex' in data._fields:
+                fp.write(("{:<14s}"*5).
+                         format('UniqueID', 'Time', 'Wavelength',
+                                'L_lambda', 'L_lambda_ex') + "\n")
+                fp.write(("{:<14s}"*5).
+                         format('', '(yr)', '(Angstrom)', '(erg/s/A)',
+                                '(erg/s/A)')
+                         + "\n")
+                fp.write(("{:<14s}"*5).
+                         format('-----------', '-----------', '-----------',
+                                '-----------', '-----------') + "\n")
+            else:
+                fp.write(("{:<14s}"*4).
+                         format('UniqueID', 'Time', 'Wavelength',
+                                'L_lambda') + "\n")
+                fp.write(("{:<14s}"*4).
+                         format('', '(yr)', '(Angstrom)', '(erg/s/A)')
+                         + "\n")
+                fp.write(("{:<14s}"*4).
+                         format('-----------', '-----------', '-----------',
+                                '-----------') + "\n")
 
             # Write data
+            nl = len(data.wl)
+            if 'spec_ex' in data._fields:
+                offset = np.where(data.wl_ex[0] == data.wl)[0][0]
+                nl_ex = len(data.wl_ex)
             for i in range(len(data.id)):
                 # If this is a new trial, write a separator
-                if i != 0:
-                    if data.trial[i] != data.trial[i-1]:
-                        fp.write("-"*(9*14-3)+"\n")
-                for j in range(len(data.wl)):
-                    fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
-                             .format(data.id[i], data.time[i],
-                                     data.wl[j], data.spec[i,j]) 
-                             + "\n")
+                if 'spec_ex' in data._fields:
+                    if i != 0:
+                        if data.trial[i] != data.trial[i-1]:
+                            fp.write("-"*(5*14-3)+"\n")
+                    for j in range(offset):
+                        fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
+                                 .format(data.id[i], data.time[i],
+                                         data.wl[j], data.spec[i,j]) 
+                                 + "\n")
+                    for j in range(offset, offset+nl_ex):
+                        fp.write(("{:11d}   {:11.5e}   {:11.5e}" +
+                                  "   {:11.5e}   {:11.5e}")
+                                 .format(data.id[i], data.time[i],
+                                         data.wl[j], data.spec[i,j],
+                                         data.spec_ex[i,j-offset]) 
+                                 + "\n")
+                    for j in range(offset+nl_ex, nl):
+                        fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
+                                 .format(data.id[i], data.time[i],
+                                         data.wl[j], data.spec[i,j]) 
+                                 + "\n")
+                else:
+                    if i != 0:
+                        if data.trial[i] != data.trial[i-1]:
+                            fp.write("-"*(4*14-3)+"\n")
+                    for j in range(nl):
+                        fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
+                                 .format(data.id[i], data.time[i],
+                                         data.wl[j], data.spec[i,j]) 
+                                 + "\n")
+
             # Close
             fp.close()
 
@@ -240,9 +334,18 @@ def write_cluster(data, model_name, fmt):
 
             fp = open(model_name+'_cluster_spec.bin', 'wb')
 
+            # Write out a byte indicating extinction or no extinction
+            if 'spec_ex' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+
             # Write out wavelength data
             fp.write(np.int64(len(data.wl)))
             fp.write(data.wl)
+            if 'spec_ex' in data._fields:
+                fp.write(np.int64(len(data.wl_ex)))
+                fp.write(data.wl_ex)
 
             # Construct lists of times and trials
             trials = np.unique(data.trial)
@@ -255,9 +358,19 @@ def write_cluster(data, model_name, fmt):
                 for j in range(len(times)):
 
                     # Find block of clusters with this time and trial
-                    block_end = ptr + np.argmin(
-                        np.logical_and(data.trial[ptr:] == trials[i],
-                                       data.time[ptr:] == times[j]))
+                    block_match \
+                        = np.logical_and(data.trial[ptr:] == trials[i],
+                                         data.time[ptr:] == times[j])
+                    block_end = ptr + np.argmin(block_match)
+
+                    # Special case: if we found no clusters in this
+                    # block, make sure that's not because all the
+                    # remaining clusters belong in it, and the search
+                    # ran off the end of the data. If that is the
+                    # case, adjust block_end appropriately.
+                    if block_end == ptr:
+                        if np.sum(block_match) > 0:
+                            block_end = len(data.trial)
 
                     # Special case: if block_end is the last entry in
                     # the data, check if the last entry is the same as
@@ -277,6 +390,8 @@ def write_cluster(data, model_name, fmt):
                     for k in range(ptr, block_end):
                         fp.write(data.id[k])
                         fp.write(data.spec[k,:])
+                        if 'spec_ex' in data._fields:
+                            fp.write(data.spec_ex[k,:])
 
                     # Move pointer
                     ptr = block_end
@@ -299,6 +414,14 @@ def write_cluster(data, model_name, fmt):
                                   format=fmtstring,
                                   unit="Angstrom", 
                                   array=data.wl.reshape(1,nl))]
+            if 'spec_ex' in data._fields:
+                nl_ex = data.wl_ex.shape[0]
+                fmtstring_ex = str(nl_ex)+"D"
+                wlcols.append(
+                    fits.Column(name="Wavelength_ex",
+                                format=fmtstring_ex,
+                                unit="Angstrom", 
+                                array=data.wl_ex.reshape(1,nl_ex)))
             wlfits = fits.ColDefs(wlcols)
             wlhdu = fits.BinTableHDU.from_columns(wlcols)
 
@@ -315,6 +438,11 @@ def write_cluster(data, model_name, fmt):
                                         format=fmtstring,
                                         unit="erg/s/A",
                                         array=data.spec))
+            if 'spec_ex' in data._fields:
+                speccols.append(fits.Column(name="L_lambda_ex",
+                                            format=fmtstring_ex,
+                                            unit="erg/s/A",
+                                            array=data.spec_ex))
             specfits = fits.ColDefs(speccols)
             spechdu = fits.BinTableHDU.from_columns(specfits)
 
@@ -340,19 +468,28 @@ def write_cluster(data, model_name, fmt):
             fp = open(model_name+'_cluster_phot.txt', 'w')
 
             # Write header lines
-            fp.write(("{:<18s}"*2).format('UniqueID', 'Time'))
+            fp.write(("{:<21s}"*2).format('UniqueID', 'Time'))
             for f in data.filter_names:
-                fp.write("{:<18s}".format(f))
+                fp.write("{:<21s}".format(f))
+            if 'phot_ex' in data._fields:
+                for f in data.filter_names:
+                    fp.write("{:<21s}".format(f+'_ex'))
             fp.write("\n")
-            fp.write(("{:<18s}"*2).format('', '(yr)'))
+            fp.write(("{:<21s}"*2).format('', '(yr)'))
             for f in data.filter_units:
-                fp.write("({:s}".format(f)+")"+" "*(16-len(f)))
+                fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
+            if 'phot_ex' in data._fields:
+                for f in data.filter_units:
+                    fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
             fp.write("\n")
             nf = len(data.filter_names)
-            fp.write(("{:<18s}"*2).
-                     format('---------------', '---------------'))
+            fp.write(("{:<21s}"*2).
+                     format('------------------', '------------------'))
             for i in range(nf):
-                fp.write("{:<18s}".format('---------------'))
+                fp.write("{:<21s}".format('------------------'))
+            if 'phot_ex' in data._fields:
+                for i in range(nf):
+                    fp.write("{:<21s}".format('------------------'))
             fp.write("\n")
 
             # Write data
@@ -360,11 +497,22 @@ def write_cluster(data, model_name, fmt):
                 # If this is a new trial, write a separator
                 if i != 0:
                     if data.trial[i] != data.trial[i-1]:
-                        fp.write("-"*((2+nf)*18-3)+"\n")
-                fp.write("    {:11d}       {:11.5e}"
+                        if 'phot_ex' in data._fields:
+                            fp.write("-"*((2+2*nf)*21-3)+"\n")
+                        else:
+                            fp.write("-"*((2+nf)*21-3)+"\n")
+                fp.write("       {:11d}          {:11.5e}"
                          .format(data.id[i], data.time[i]))
                 for j in range(nf):
-                    fp.write("       {:11.5e}".format(data.phot[i,j]))
+                    fp.write("          {:11.5e}".format(data.phot[i,j]))
+                if 'phot_ex' in data._fields:
+                    for j in range(nf):
+                        if np.isnan(data.phot_ex[i,j]):
+                            fp.write("          {:11s}".
+                                     format(""))
+                        else:
+                            fp.write("          {:11.5e}".
+                                     format(data.phot_ex[i,j]))
                 fp.write("\n")
 
             # Close
@@ -385,6 +533,12 @@ def write_cluster(data, model_name, fmt):
                 fp.write(data.filter_names[i] + " " + 
                          data.filter_units[i] + "\n")
 
+            # Write out a byte indicating extinction or no extinction
+            if 'phot_ex' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+
             # Construct lists of times and trials
             trials = np.unique(data.trial)
             times = np.unique(data.time)
@@ -396,9 +550,19 @@ def write_cluster(data, model_name, fmt):
                 for j in range(len(times)):
 
                     # Find block of clusters with this time and trial
-                    block_end = ptr + np.argmin(
-                        np.logical_and(data.trial[ptr:] == trials[i],
-                                       data.time[ptr:] == times[j]))
+                    block_match \
+                        = np.logical_and(data.trial[ptr:] == trials[i],
+                                         data.time[ptr:] == times[j])
+                    block_end = ptr + np.argmin(block_match)
+
+                    # Special case: if we found no clusters in this
+                    # block, make sure that's not because all the
+                    # remaining clusters belong in it, and the search
+                    # ran off the end of the data. If that is the
+                    # case, adjust block_end appropriately.
+                    if block_end == ptr:
+                        if np.sum(block_match) > 0:
+                            block_end = len(data.trial)
 
                     # Special case: if block_end is the last entry in
                     # the data, check if the last entry is the same as
@@ -418,6 +582,8 @@ def write_cluster(data, model_name, fmt):
                     for k in range(ptr, block_end):
                         fp.write(data.id[k])
                         fp.write(data.phot[k,:])
+                        if 'phot_ex' in data._fields:
+                            fp.write(data.phot_ex[k,:])
 
                     # Move pointer
                     ptr = block_end
@@ -444,6 +610,13 @@ def write_cluster(data, model_name, fmt):
                                         unit=data.filter_units[i],
                                         format="1D",
                                         array=data.phot[:,i]))
+            if 'phot_ex' in data._fields:
+                for i in range(len(data.filter_names)):
+                    cols.append(
+                        fits.Column(name=data.filter_names[i]+'_ex',
+                                    unit=data.filter_units[i],
+                                    format="1D",
+                                    array=data.phot_ex[:,i]))
             fitscols = fits.ColDefs(cols)
 
             # Create the binary table HDU

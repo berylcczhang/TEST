@@ -66,7 +66,7 @@ def write_integrated(data, model_name, fmt):
             # Write header lines
             fp.write(("{:<14s}"*8).
                      format('Time', 'TargetMass', 'ActualMass',
-                            'LiveMass', 'ClusterMas', 'NumClusters',
+                            'LiveMass', 'ClusterMass', 'NumClusters',
                             'NumDisClust', 'NumFldStar') + "\n")
             fp.write(("{:<14s}"*8).
                      format('(yr)', '(Msun)', '(Msun)', '(Msun)',
@@ -200,26 +200,62 @@ def write_integrated(data, model_name, fmt):
             fp = open(model_name+'_integrated_spec.txt', 'w')
 
             # Write header lines
-            fp.write(("{:<14s}"*3).
-                     format('Time', 'Wavelength', 'L_lambda') + "\n")
-            fp.write(("{:<14s}"*3).
-                     format('(yr)', '(Angstrom)', '(erg/s/A)') + "\n")
-            fp.write(("{:<14s}"*3).
-                     format('-----------', '-----------', '-----------')
-                     + "\n")
+            if 'spec_ex' in data._fields:
+                fp.write(("{:<14s}"*4).
+                         format('Time', 'Wavelength', 'L_lambda', 
+                                'L_lambda_ex') + "\n")
+                fp.write(("{:<14s}"*4).
+                         format('(yr)', '(Angstrom)', '(erg/s/A)', 
+                                '(erg/s/A)') + "\n")
+                fp.write(("{:<14s}"*4).
+                         format('-----------', '-----------', '-----------',
+                                '-----------')
+                         + "\n")
+            else:
+                fp.write(("{:<14s}"*3).
+                         format('Time', 'Wavelength', 'L_lambda') + "\n")
+                fp.write(("{:<14s}"*3).
+                         format('(yr)', '(Angstrom)', '(erg/s/A)') + "\n")
+                fp.write(("{:<14s}"*3).
+                         format('-----------', '-----------', '-----------')
+                         + "\n")
 
             # Write data
             ntime = len(data.time)
             ntrial = data.spec.shape[-1]
             nl = len(data.wl)
+            if 'spec_ex' in data._fields:
+                offset = np.where(data.wl_ex[0] == data.wl)[0][0]
+                nl_ex = len(data.wl_ex)
             for i in range(ntrial):
-                if i != 0:
-                    fp.write("-"*(3*14-3)+"\n")
-                for j in range(ntime):
-                    for k in range(nl):
-                        fp.write("{:11.5e}   {:11.5e}   {:11.5e}\n"
-                                 .format(data.time[j], data.wl[k],
-                                         data.spec[k,j,i]))
+                if 'spec_ex' in data._fields:
+                    if i != 0:
+                        fp.write("-"*(4*14-3)+"\n")
+                    for j in range(ntime):
+                        for k in range(offset):
+                            fp.write(("{:11.5e}   {:11.5e}   "+
+                                      "{:11.5e}\n")
+                                     .format(data.time[j], data.wl[k],
+                                             data.spec[k,j,i]))
+                        for k in range(offset, offset+nl_ex):
+                            fp.write(("{:11.5e}   {:11.5e}   "+
+                                      "{:11.5e}   {:11.5e}\n")
+                                     .format(data.time[j], data.wl[k],
+                                             data.spec[k,j,i], 
+                                             data.spec_ex[k-offset,j,i]))
+                        for k in range(offset+nl_ex, nl):
+                            fp.write(("{:11.5e}   {:11.5e}   "+
+                                      "{:11.5e}\n")
+                                     .format(data.time[j], data.wl[k],
+                                             data.spec[k,j,i]))
+                else:
+                    if i != 0:
+                        fp.write("-"*(3*14-3)+"\n")
+                    for j in range(ntime):
+                        for k in range(nl):
+                            fp.write("{:11.5e}   {:11.5e}   {:11.5e}\n"
+                                     .format(data.time[j], data.wl[k],
+                                             data.spec[k,j,i]))
 
             # Close
             fp.close()
@@ -232,9 +268,18 @@ def write_integrated(data, model_name, fmt):
 
             fp = open(model_name+'_integrated_spec.bin', 'wb')
 
+            # Write out a byte indicating extinction or no extinction
+            if 'spec_ex' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+
             # Write out wavelength data
             fp.write(np.int64(len(data.wl)))
             fp.write(data.wl)
+            if 'spec_ex' in data._fields:
+                fp.write(np.int64(len(data.wl_ex)))
+                fp.write(data.wl_ex)
 
             # Write out times and spectra
             ntime = len(data.time)
@@ -246,6 +291,9 @@ def write_integrated(data, model_name, fmt):
                     # contiguous block before writing
                     tmp = np.copy(data.spec[:,j,i])
                     fp.write(tmp)
+                    if 'spec_ex' in data._fields:
+                        tmp = np.copy(data.spec_ex[:,j,i])
+                        fp.write(tmp)
 
             # Close file
             fp.close()
@@ -265,6 +313,14 @@ def write_integrated(data, model_name, fmt):
                                   format=fmtstring,
                                   unit="Angstrom", 
                                   array=data.wl.reshape(1,nl))]
+            if 'spec_ex' in data._fields:
+                nl_ex = data.wl_ex.shape[0]
+                fmtstring_ex = str(nl_ex)+"D"
+                wlcols.append(
+                    fits.Column(name="Wavelength_ex",
+                                format=fmtstring_ex,
+                                unit="Angstrom", 
+                                array=data.wl_ex.reshape(1,nl_ex)))
             wlfits = fits.ColDefs(wlcols)
             wlhdu = fits.BinTableHDU.from_columns(wlcols)
 
@@ -288,6 +344,13 @@ def write_integrated(data, model_name, fmt):
                                         unit="erg/s/A",
                                         array=np.transpose(data.spec).
                                         reshape(ntimes*ntrial, nl)))
+            if 'spec_ex' in data._fields:
+                speccols.append(
+                    fits.Column(name="L_lambda_ex",
+                                format=fmtstring_ex,
+                                unit="erg/s/A",
+                                array=np.transpose(data.spec_ex).
+                                reshape(ntimes*ntrial, nl_ex)))
             specfits = fits.ColDefs(speccols)
             spechdu = fits.BinTableHDU.from_columns(specfits)
 
@@ -313,18 +376,27 @@ def write_integrated(data, model_name, fmt):
             fp = open(model_name+'_integrated_phot.txt', 'w')
 
             # Write header lines
-            fp.write("{:<18s}".format('Time'))
+            fp.write("{:<21s}".format('Time'))
             for f in data.filter_names:
-                fp.write("{:<18s}".format(f))
+                fp.write("{:<21s}".format(f))
+            if 'phot_ex' in data._fields:
+                for f in data.filter_names:
+                    fp.write("{:<21s}".format(f+'_ex'))
             fp.write("\n")
-            fp.write("{:<18s}".format('(yr)'))
+            fp.write("{:<21s}".format('(yr)'))
             for f in data.filter_units:
-                fp.write("({:s}".format(f)+")"+" "*(16-len(f)))
+                fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
+            if 'phot_ex' in data._fields:
+                for f in data.filter_units:
+                    fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
             fp.write("\n")
-            fp.write("{:<18s}".format('---------------'))
+            fp.write("{:<21s}".format('------------------'))
             nf = len(data.filter_names)
             for i in range(nf):
-                fp.write("{:<18s}".format('---------------'))
+                fp.write("{:<21s}".format('------------------'))
+            if 'phot_ex' in data._fields:
+                for i in range(nf):
+                    fp.write("{:<21s}".format('------------------'))
             fp.write("\n")
 
             # Write data
@@ -333,11 +405,22 @@ def write_integrated(data, model_name, fmt):
             for i in range(ntrial):
                 # Write separator between trials
                 if i != 0:
-                    fp.write("-"*((1+nf)*18-3)+"\n")
+                    if 'phot_ex' in data._fields:
+                        fp.write("-"*((1+2*nf)*21-3)+"\n")
+                    else:
+                        fp.write("-"*((1+nf)*21-3)+"\n")
                 for j in range(ntime):
-                    fp.write("    {:11.5e}".format(data.time[j]))
+                    fp.write("       {:11.5e}".format(data.time[j]))
                     for k in range(nf):
-                        fp.write("       {:11.5e}".format(data.phot[k,j,i]))
+                        fp.write("          {:11.5e}".
+                                 format(data.phot[k,j,i]))
+                    if 'phot_ex' in data._fields:
+                        for k in range(nf):
+                            if np.isnan(data.phot_ex[k,j,i]):
+                                fp.write("          {:11s}".format(""))
+                            else:
+                                fp.write("          {:11.5e}".
+                                         format(data.phot_ex[k,j,i]))
                     fp.write("\n")
 
             # Close
@@ -358,6 +441,12 @@ def write_integrated(data, model_name, fmt):
                 fp.write(data.filter_names[i] + " " + 
                          data.filter_units[i] + "\n")
 
+            # Write out a byte indicating extinction or no extinction
+            if 'phot_ex' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+
             # Write data
             ntime = data.phot.shape[1]
             ntrial = data.phot.shape[2]
@@ -368,6 +457,9 @@ def write_integrated(data, model_name, fmt):
                     # contiguous block before writing
                     tmp = np.copy(data.phot[:,j,i])
                     fp.write(tmp)
+                    if 'phot_ex' in data._fields:
+                        tmp = np.copy(data.phot_ex[:,j,i])
+                        fp.write(tmp)
 
             # Close file
             fp.close()
@@ -400,6 +492,14 @@ def write_integrated(data, model_name, fmt):
                                 format="1D",
                                 array=np.transpose(data.phot[i,:,:]).
                                 flatten()))
+            if 'phot_ex' in data._fields:
+                for i in range(len(data.filter_names)):
+                    cols.append(
+                        fits.Column(name=data.filter_names[i]+'_ex',
+                                    unit=data.filter_units[i],
+                                    format="1D",
+                                    array=np.transpose(data.phot_ex[i,:,:]).
+                                    flatten()))
             fitscols = fits.ColDefs(cols)
 
             # Create the binary table HDU
