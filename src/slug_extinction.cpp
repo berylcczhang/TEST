@@ -93,11 +93,11 @@ slug_extinction(const slug_parmParser& pp,
   reverse(filter_response.begin(), filter_response.end());
 
   // Compute the normalization factor 1/(\int kappa_nu R_nu dnu / \int
-  // R_nu dnu)
+  // R_nu dnu) / 1.086
   double num = int_tabulated::integrate(nu, kappa_nu, filter_nu, 
 					filter_response);
   double denom = int_tabulated::integrate(filter_nu, filter_response);
-  double norm = denom / num;
+  double norm = (log(100.0) / 5.0) * (denom / num);
 
   // Normalize the extinction curve to have A_V = 1
   for (vector<double>::size_type i = 0; i<kappa_tab.size(); i++)
