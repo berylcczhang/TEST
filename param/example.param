@@ -64,7 +64,7 @@ verbosity        1
 
 # Number of model galaxies to run
 # Default: 1
-n_trials          48
+n_trials          480
 
 # Logarithmic time stepping? Allowed values:
 # -- 0 (no)
@@ -165,12 +165,12 @@ out_integrated_spec  1
 # -- ascii
 # -- fits
 # Default: ascii
-output_mode      fits
+output_mode      bin
 
 
 #####################################################################
 # Parameters controlling the physical models used for star and star #
-# cluster formation, and stellar properties
+# cluster formation, stellar properties, and extinction             #
 #####################################################################
 
 # IMF (initial mass function) file name
@@ -235,6 +235,21 @@ min_stoch_mass    0.0
 # Default: 0
 redshift             0
 
+# Extinction; to turn on extintion, set the parameter A_V. If set to a
+# number, this extinction will be applied to all spectra and
+# photometry. Default behavior, if the A_V parameter is omitted
+# entirely, is not to apply any extinction. If the parameter A_V is
+# set to a real number, this will be interpreted as a uniform
+# extinction that is applied to all light output. Finally, if this
+# parameter is set to any string that cannot be converted to a real
+# number, it will be interpreted as a file name giving the name of a
+# PDF file specifying the distribution of extinctions.
+A_V                  lib/avdist/slug_default.av
+
+# File specifying the shape fof the extinction curve
+# Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti starburst attenuation
+#          curve)
+#extinction_curve     lib/extinct/SB_ATT_SLUG.dat
 
 #############################################
 # Parameters describing photometric filters #
@@ -252,7 +267,8 @@ redshift             0
 # -- QHe0 : He ionizing photon luminosity, in phot/s
 # -- QHe1 : He+ ionizing photon luminosity, in phot/s
 # -- Lbol : bolometric luminosity, in L_sun
-phot_bands         Johnson_V, Johnson_U, Johnson_B, Cousins_R, Cousins_I, QH0, LBOL, WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F438W, WFC3_UVIS_F555W, WFC3_UVIS_F814W
+#phot_bands         Johnson_V, Johnson_U, Johnson_B, Cousins_R, Cousins_I, QH0, LBOL, WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F438W, WFC3_UVIS_F555W, WFC3_UVIS_F814W
+phot_bands   QH0, WFC3_UVIS_F225W, Johnson_V, Lbol
 
 # Directory containing photometric filter data
 # Default: lib/filters
