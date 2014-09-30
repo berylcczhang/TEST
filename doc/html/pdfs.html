@@ -55,7 +55,7 @@
             
   <div class="section" id="probability-distribution-functions">
 <span id="sec-pdfs"></span><h1>Probability Distribution Functions<a class="headerlink" href="#probability-distribution-functions" title="Permalink to this headline">¶</a></h1>
-<p>The SLUG code regards the IMF, the CMF, the CLF, and the SFH as probability distribution functions &#8211; see <a class="reference internal" href="intro.html#ssec-slugpdfs"><em>Probability Distribution Functions: the IMF, SFH, CMF, and CLF</em></a>. The code provides a generic file format through which PDFs can be specified. Examples can be found in the <tt class="docutils literal"><span class="pre">lib/imf</span></tt>, <tt class="docutils literal"><span class="pre">lib/cmf</span></tt>, <tt class="docutils literal"><span class="pre">lib/clf</span></tt>, and <tt class="docutils literal"><span class="pre">lib/sfh</span></tt> directories of the SLUG distribution.</p>
+<p>The SLUG code regards the IMF, the CMF, the CLF, and the SFH as probability distribution functions &#8211; see <a class="reference internal" href="intro.html#ssec-slugpdfs"><em>Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution</em></a>. The code provides a generic file format through which PDFs can be specified. Examples can be found in the <tt class="docutils literal"><span class="pre">lib/imf</span></tt>, <tt class="docutils literal"><span class="pre">lib/cmf</span></tt>, <tt class="docutils literal"><span class="pre">lib/clf</span></tt>, and <tt class="docutils literal"><span class="pre">lib/sfh</span></tt> directories of the SLUG distribution.</p>
 <p>PDFs in SLUG are generically written as functions</p>
 <div class="math">
 \[\frac{dp}{dx} = n_1 f_1(x; x_{1,a}, x_{1,b}) + n_2 f_2(x; x_{2,a}, x_{2,b}) + n_3 f_3(x; x_{3,a}, x_{3,b}) + \cdots,\]</div>
@@ -96,9 +96,10 @@ type powerlaw
 slope -2.35
 </pre></div>
 </div>
-<p>This example represents a <a class="reference external" href="http://adsabs.harvard.edu/abs/2005ASSL..327...41C">Chabrier (2005)</a> IMF from <span class="math">\(0.08 - 120\)</span> <span class="math">\(M_\odot\)</span>, which is of the functional form
-.. math:: frac{dp}{dm} propto left{begin{array}{ll} exp[-log(m/m_0)^2/(2sigma^2)] (m/m_b)^{-1} , &amp; m &lt; m_b \ exp[-log(m_b/m_0)^2/(2sigma^2)] (m/m_b)^{-2.35}, &amp; m geq m_b end{array} right.,
-where <span class="math">\(m_0 = 0.2\)</span> <span class="math">\(M_\odot\)</span>, <span class="math">\(\sigma = 0.55\)</span>, and <span class="math">\(m_b = 1\)</span> <span class="math">\(M_\odot\)</span>.</p>
+<p>This example represents a <a class="reference external" href="http://adsabs.harvard.edu/abs/2005ASSL..327...41C">Chabrier (2005)</a> IMF from <span class="math">\(0.08 - 120\)</span> <span class="math">\(M_\odot\)</span>, which is of the functional form</p>
+<div class="math">
+\[\begin{split}\frac{dp}{dm} \propto \left\{\begin{array}{ll} \exp[-\log(m/m_0)^2/(2\sigma^2)] (m/m_b)^{-1} , &amp; m &lt; m_b \\ \exp[-\log(m_b/m_0)^2/(2\sigma^2)] (m/m_b)^{-2.35}, &amp; m \geq m_b \end{array} \right.,\end{split}\]</div>
+<p>where <span class="math">\(m_0 = 0.2\)</span> <span class="math">\(M_\odot\)</span>, <span class="math">\(\sigma = 0.55\)</span>, and <span class="math">\(m_b = 1\)</span> <span class="math">\(M_\odot\)</span>.</p>
 <p>Formally, the format of a basic mode file is as follows. Any line beginning with <tt class="docutils literal"><span class="pre">#</span></tt> is a comment and is ignored. The first non-empty, non-comment line in a basic mode PDF file must be of the form:</p>
 <div class="highlight-rest"><div class="highlight"><pre>breakpoints x1 x2 x3 ...
 </pre></div>
@@ -232,9 +233,10 @@ weight   1.0e5
 scale    1.0e7
 </pre></div>
 </div>
-<p>This represents a star formation history that is a series of exponential bursts, separated by 100 Myr, with decay times of 10 Myr. Formally, this SFH follows the functional form
-.. math:: dot{M}_* = n e^{-(t,mathrm{mod}, P)/t_{rm dec}},
-where <span class="math">\(P = 100\)</span> Myr is the period and <span class="math">\(t_{\rm dec} = 10\)</span> Myr is the decay time, from times <span class="math">\(0-500\)</span> Myr. The normalization constant <span class="math">\(n\)</span> is set by the condition that <span class="math">\((1/P) \int_0^P \dot{M}_* \,dt / = 0.001\)</span> <span class="math">\(M_\odot\;\mathrm{yr}^{-1}\)</span>, i.e., that the mean SFR averaged over a single burst period is 0.001 <span class="math">\(M_\odot\;\mathrm{yr}^{-1}\)</span>.</p>
+<p>This represents a star formation history that is a series of exponential bursts, separated by 100 Myr, with decay times of 10 Myr. Formally, this SFH follows the functional form</p>
+<div class="math">
+\[\dot{M}_* = n e^{-(t\,\mathrm{mod}\, P)/t_{\rm dec}},\]</div>
+<p>where <span class="math">\(P = 100\)</span> Myr is the period and <span class="math">\(t_{\rm dec} = 10\)</span> Myr is the decay time, from times <span class="math">\(0-500\)</span> Myr. The normalization constant <span class="math">\(n\)</span> is set by the condition that <span class="math">\((1/P) \int_0^P \dot{M}_* \,dt = 0.001\)</span> <span class="math">\(M_\odot\;\mathrm{yr}^{-1}\)</span>, i.e., that the mean SFR averaged over a single burst period is 0.001 <span class="math">\(M_\odot\;\mathrm{yr}^{-1}\)</span>.</p>
 <p>Formally, the format of an advanced mode file is as follows. First, all advanced mode files must start with the line:</p>
 <div class="highlight-rest"><div class="highlight"><pre>advanced
 </pre></div>
@@ -250,9 +252,10 @@ key1 VAL1
 <span class="gh">...</span>
 </pre></div>
 </div>
-<p>The <tt class="docutils literal"><span class="pre">type</span></tt> keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords <tt class="docutils literal"><span class="pre">key1</span></tt>, <tt class="docutils literal"><span class="pre">key2</span></tt>, <span class="math">\(\ldots\)</span>. The same functional forms, listed in the <a class="reference internal" href="#tab-segtypes"><em>Segment Types</em></a> Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are <tt class="docutils literal"><span class="pre">min</span></tt>, <tt class="docutils literal"><span class="pre">max</span></tt>, and <tt class="docutils literal"><span class="pre">weight</span></tt>. The <tt class="docutils literal"><span class="pre">min</span></tt> and <tt class="docutils literal"><span class="pre">max</span></tt> keywords give the upper and lower limits <span class="math">\(x_{i,a}\)</span> and <span class="math">\(x_{i,b}\)</span> for the segment; the probability is zero outside these limits. The keyword <tt class="docutils literal"><span class="pre">weight</span></tt> specifies the integral under the segment, i.e., the weight <span class="math">\(w_i\)</span> given for segment <span class="math">\(i\)</span> is used to set the normalization <span class="math">\(n_i\)</span> via the equation
-.. math:: w_i = n_i int_{x_{i,a}}^{x_{i,b}} f_i(x) , dx.
-In the case of a star formation history, as in the example above, the weight <span class="math">\(w_i\)</span> of a segment is simply the total mass of stars formed in that segment. In the example given above, the first segment declaration sets up a PDF that with a minimum at 0 Myr, a maximum at 100 Myr, following an exponential functional form with a decay time of <span class="math">\(10^7\)</span> yr. During this time, a total mass of <span class="math">\(10^5\)</span> <span class="math">\(M_\odot\)</span> of stars is formed.</p>
+<p>The <tt class="docutils literal"><span class="pre">type</span></tt> keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords <tt class="docutils literal"><span class="pre">key1</span></tt>, <tt class="docutils literal"><span class="pre">key2</span></tt>, <span class="math">\(\ldots\)</span>. The same functional forms, listed in the <a class="reference internal" href="#tab-segtypes"><em>Segment Types</em></a> Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are <tt class="docutils literal"><span class="pre">min</span></tt>, <tt class="docutils literal"><span class="pre">max</span></tt>, and <tt class="docutils literal"><span class="pre">weight</span></tt>. The <tt class="docutils literal"><span class="pre">min</span></tt> and <tt class="docutils literal"><span class="pre">max</span></tt> keywords give the upper and lower limits <span class="math">\(x_{i,a}\)</span> and <span class="math">\(x_{i,b}\)</span> for the segment; the probability is zero outside these limits. The keyword <tt class="docutils literal"><span class="pre">weight</span></tt> specifies the integral under the segment, i.e., the weight <span class="math">\(w_i\)</span> given for segment <span class="math">\(i\)</span> is used to set the normalization <span class="math">\(n_i\)</span> via the equation</p>
+<div class="math">
+\[w_i = n_i \int_{x_{i,a}}^{x_{i,b}} f_i(x) \, dx.\]</div>
+<p>In the case of a star formation history, as in the example above, the weight <span class="math">\(w_i\)</span> of a segment is simply the total mass of stars formed in that segment. In the example given above, the first segment declaration sets up a PDF that with a minimum at 0 Myr, a maximum at 100 Myr, following an exponential functional form with a decay time of <span class="math">\(10^7\)</span> yr. During this time, a total mass of <span class="math">\(10^5\)</span> <span class="math">\(M_\odot\)</span> of stars is formed.</p>
 <p>Note that, for the IMF, CMF, and CLF, the absolute values of the weights to not matter, only their relative values. On the other hand, for the SFH, the absolute weight does matter.</p>
 </div>
 <div class="section" id="sampling-methods">

@@ -52,7 +52,9 @@ An example of a basic mode PDF file is as follows::
    slope -2.35
 
 This example represents a `Chabrier (2005) <http://adsabs.harvard.edu/abs/2005ASSL..327...41C>`_ IMF from :math:`0.08 - 120` :math:`M_\odot`, which is of the functional form
+
 .. math:: \frac{dp}{dm} \propto \left\{\begin{array}{ll} \exp[-\log(m/m_0)^2/(2\sigma^2)] (m/m_b)^{-1} , & m < m_b \\ \exp[-\log(m_b/m_0)^2/(2\sigma^2)] (m/m_b)^{-2.35}, & m \geq m_b \end{array} \right.,
+
 where :math:`m_0 = 0.2` :math:`M_\odot`, :math:`\sigma = 0.55`, and :math:`m_b = 1` :math:`M_\odot`.
 
 Formally, the format of a basic mode file is as follows. Any line beginning with ``#`` is a comment and is ignored. The first non-empty, non-comment line in a basic mode PDF file must be of the form::
@@ -149,8 +151,10 @@ An example of an advanced mode PDF file is as follows::
    scale    1.0e7
 
 This represents a star formation history that is a series of exponential bursts, separated by 100 Myr, with decay times of 10 Myr. Formally, this SFH follows the functional form
+
 .. math:: \dot{M}_* = n e^{-(t\,\mathrm{mod}\, P)/t_{\rm dec}},
-where :math:`P = 100` Myr is the period and :math:`t_{\rm dec} = 10` Myr is the decay time, from times :math:`0-500` Myr. The normalization constant :math:`n` is set by the condition that :math:`(1/P) \int_0^P \dot{M}_* \,dt / = 0.001` :math:`M_\odot\;\mathrm{yr}^{-1}`, i.e., that the mean SFR averaged over a single burst period is 0.001 :math:`M_\odot\;\mathrm{yr}^{-1}`.
+
+where :math:`P = 100` Myr is the period and :math:`t_{\rm dec} = 10` Myr is the decay time, from times :math:`0-500` Myr. The normalization constant :math:`n` is set by the condition that :math:`(1/P) \int_0^P \dot{M}_* \,dt = 0.001` :math:`M_\odot\;\mathrm{yr}^{-1}`, i.e., that the mean SFR averaged over a single burst period is 0.001 :math:`M_\odot\;\mathrm{yr}^{-1}`.
 
 Formally, the format of an advanced mode file is as follows. First, all advanced mode files must start with the line::
 
@@ -168,7 +172,9 @@ to declare that the file is in advanced mode. After that, there must be a series
    ...
 
 The ``type`` keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords ``key1``, ``key2``, :math:`\ldots`. The same functional forms, listed in the :ref:`tab-segtypes` Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are ``min``, ``max``, and ``weight``. The ``min`` and ``max`` keywords give the upper and lower limits :math:`x_{i,a}` and :math:`x_{i,b}` for the segment; the probability is zero outside these limits. The keyword ``weight`` specifies the integral under the segment, i.e., the weight :math:`w_i` given for segment :math:`i` is used to set the normalization :math:`n_i` via the equation
+
 .. math:: w_i = n_i \int_{x_{i,a}}^{x_{i,b}} f_i(x) \, dx.
+
 In the case of a star formation history, as in the example above, the weight :math:`w_i` of a segment is simply the total mass of stars formed in that segment. In the example given above, the first segment declaration sets up a PDF that with a minimum at 0 Myr, a maximum at 100 Myr, following an exponential functional form with a decay time of :math:`10^7` yr. During this time, a total mass of :math:`10^5` :math:`M_\odot` of stars is formed.
 
 Note that, for the IMF, CMF, and CLF, the absolute values of the weights to not matter, only their relative values. On the other hand, for the SFH, the absolute weight does matter.
