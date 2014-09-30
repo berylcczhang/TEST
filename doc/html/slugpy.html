@@ -1784,6 +1784,273 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
 </dd></dl>
 
 </div>
+<div class="section" id="full-documentation-of-slugpy-sfr-slug">
+<h2>Full Documentation of slugpy.sfr_slug<a class="headerlink" href="#full-documentation-of-slugpy-sfr-slug" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="slugpy.sfr_slug.sfr_slug">
+<em class="property">class </em><tt class="descclassname">slugpy.sfr_slug.</tt><tt class="descname">sfr_slug</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>bandwidth=0.1</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that can be used to estimate the PDF of true star
+formation rate from a set of input point mass estimates of the
+star formation rate.</p>
+<dl class="docutils">
+<dt>Attributes</dt>
+<dd><dl class="first last docutils">
+<dt>dataset <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>the training dataset to be used for KDE estimation</dd>
+<dt>dataset_filters <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>filters represented in the training data set</dd>
+<dt>conversions <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>conversions between luminosity and SFR in the point mass
+estimate</dd>
+<dt>kde <span class="classifier-delimiter">:</span> <span class="classifier">KernelDensity object</span></dt>
+<dd>a KernelDensity estimator constructed from the dataset</dd>
+<dt>kde_filters <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>filters represented in the KDE object</dd>
+<dt>kde_limits <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>range over which KDE is non-zero</dd>
+<dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of the SLUG model from which the data set was read</dd>
+<dt>detname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of a SLUG model run with the same parameters as
+libname, but with no stochasticity</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>logsfr_est</em>, <em>logsfr_err=None</em>, <em>filter_name=None</em>, <em>nmesh=100</em>, <em>logsfr_lim=None</em>, <em>prior=None</em>, <em>error_est=False</em>, <em>gkorder=None</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an estimate of the PDF of true star formation rate for
+one or more point mass estimates of the SFR using a particular
+photometric filter.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>logsfr_est <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span></dt>
+<dd>a point mass estimate of log_10 SFR; can be a float, 1D
+array or 2D array. For a 1D array the data are taken to
+be a series of point mass estimates of log_10 SFR. For a
+2D array, the trailing dimension must match the length
+of filter_name, and the data are taken to represent one
+or more log_10 SFR point mass estimates using different
+filters</dd>
+<dt>logsfr_err <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span></dt>
+<dd>error on logsfr_est; must be the same shape as
+logsfr_est; if left as None, data are assumed to have
+negligible errors and are treated as delta functions</dd>
+<dt>filter_name <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable</span></dt>
+<dd>name or names of filters used for photometric SFR
+estimates; if left as None, stored values are used</dd>
+<dt>nmesh <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of mesh points at which to evaluate the SFR; note
+that accurate normalization requires that this not be
+too small</dd>
+<dt>logsfr_lim <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (2)</span></dt>
+<dd>limit the log SFR values considered to lie in the range
+logsfr_lim[0] to logsfr_lim[1]</dd>
+<dt>prior <span class="classifier-delimiter">:</span> <span class="classifier">callable</span></dt>
+<dd>a callable that returns the prior probability
+distribution of log SFR; if set to None, the prior
+simply matches the distribution of input models</dd>
+<dt>error_est: bool</dt>
+<dd>if True, an estimate of the error in the numerical
+convolution of the observaitonal uncertainties with the
+model is returned; ignored if logsfr_err is None</dd>
+<dt>gkorder <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>order Gauss-Kronrod quadrature; allowed values are &#8216;15&#8217;,
+&#8216;21&#8217;, &#8216;31&#8217;, &#8216;41&#8217;, &#8216;51&#8217;, &#8216;61&#8217;; default is &#8216;61&#8217; for a
+single filter, and &#8216;15&#8217; for &gt;1 filter; this parameter
+has no effect unless logsfr_err is not None</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd><p class="first">A namedtuple consisting of:</p>
+<dl class="last docutils">
+<dt>logsfr <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (nmesh)</span></dt>
+<dd>an array of log_10 SFR values at which the PDF is evaluated</dd>
+<dt>sfrpdf <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (nmesh) or shape (nmesh, ndata)</span></dt>
+<dd>the PDF of log_10 SFR evaluate at the points in the
+logsfr array; if logsfr_est is a float, this will be a
+1D array, while if logsr_est is an array whose leading
+dimension has ndata elements, it will be a 2D array
+where entry [:,M] gives the PDF for the Mth input data
+value</dd>
+<dt>pdf_err <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (nmesh) or shape (nmesh, ndata)</span></dt>
+<dd>an estimate of the numerical error in pdf; returned only
+if error_est is True</dd>
+</dl>
+</dd>
+<dt>Raises</dt>
+<dd>ValueError, if filter_name is not one of the filters
+available in dataset_filters</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>bandwidth=0.1</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize an sfr_slug object.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of the SLUG model to load; if left as None, the default
+is $SLUG_DIR/sfr_slug/SFR_SLUG</dd>
+<dt>detname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of a SLUG model run with the same parameters but no
+stochasticity; used to establish the non-stochastic
+photometry to SFR conversions; if left as None, the default
+is libname_DET</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>bandwidth of the kernel to use in density estimates</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
+<dt>Raises</dt>
+<dd>IOError, if the library cannot be found</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="slugpy.sfr_slug.sfr_slug.__weakref__">
+<tt class="descname">__weakref__</tt><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.get_kde">
+<tt class="descname">get_kde</tt><big>(</big><em>filter_name</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.get_kde" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a KernelDensity object to estimate the joint PDF of the
+dataset in one or more filters, then returns it. Same as
+set_kde, but the kde is returned rather than being stored
+interally.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filter_name <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable</span></dt>
+<dd>name or names of filters; the string &#8216;SFR&#8217; corresponds
+to the true star formation rate</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd><dl class="first last docutils">
+<dt>kde <span class="classifier-delimiter">:</span> <span class="classifier">KernelDensity object</span></dt>
+<dd>the computed KernelDensity object</dd>
+<dt>kde_limts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_dim, 2)</span></dt>
+<dd>range over which the kde is non-zero; element [:,0]
+gives the minimum in each dimension, and [:,1] gives the
+maximum</dd>
+</dl>
+</dd>
+<dt>Raises</dt>
+<dd>ValueError, if filter_name is not one of the filters
+available in dataset_filters</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.pdf">
+<tt class="descname">pdf</tt><big>(</big><em>x</em>, <em>filter_name=None</em>, <em>nosave=False</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the PDF of the data set in one or more filters.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>point or points at which the PDF is to be evaluated; the
+trailing dimension of x must match the number of
+elements in filter_name</dd>
+<dt>filter_name <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable</span></dt>
+<dd>name or names of filters used for photometric SFR
+estimates, or &#8216;SFR&#8217; for the true SFR; if left as None,
+the currently-stored filters are used</dd>
+<dt>nosave <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the KDE constructed as part of the computation
+is not saved; if False, it is saved and overwrites the
+existing KDE</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd><dl class="first last docutils">
+<dt>logpdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>log of the value of the PDF evaluated at each of the
+input points</dd>
+</dl>
+</dd>
+<dt>Raises</dt>
+<dd>ValueError, if filter_name is left as None and no filters
+are set</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.pdfgrid">
+<tt class="descname">pdfgrid</tt><big>(</big><em>filter_name=None</em>, <em>nmesh=50</em>, <em>lim=None</em>, <em>nosave=False</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.pdfgrid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the PDF of the data set in one or more filters,
+evaluated on a uniformly-spaced grid over the data.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filter_name <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable</span></dt>
+<dd>name or names of filters used for photometric SFR
+estimates; if left as None, the currently-stored filters
+are used</dd>
+<dt>nmesh <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of sample points per dimension to use in
+constructing a sampling grid</dd>
+<dt>lim <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (Ndim, 2)</span></dt>
+<dd>limits of the sampling grid; element [i,0] gives the
+lower limit in the dimension corresponding to
+filter_name[i], and element [i,1] gives the upper
+limit; if left as None, limits are chosen automatically
+to fit the data set</dd>
+<dt>nosave <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the KDE constructed as part of the computation
+is not saved; if False, it is saved and overwrites the
+existing KDE</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd><dl class="first last docutils">
+<dt>xlim <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (Ndim, 2)</span></dt>
+<dd>limits of the grid over which the data was evaluated;
+Ndim is the number of dimensions of the data, which is
+equal to the number of elements in filter_name</dd>
+<dt>logpdf <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd>log of the value of the PDF evaluated at each of the
+input points</dd>
+</dl>
+</dd>
+<dt>Raises</dt>
+<dd>ValueError, if filter_name is left as None and no filters
+are set</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.set_kde">
+<tt class="descname">set_kde</tt><big>(</big><em>filter_name</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.set_kde" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds a KernelDensity object to estimate the joint PDF of the
+dataset in one or more filters</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filter_name <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable</span></dt>
+<dd>name or names of filters used for photometric SFR
+estimates, or &#8216;SFR&#8217; for the true SFR; if left as None,
+the currently-stored filters are used</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
+<dt>Raises</dt>
+<dd>ValueError, if filter_name is not one of the filters
+available in dataset_filters</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -1798,6 +2065,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
 <li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 <li><a class="reference internal" href="#module-slugpy">Full Documentation of slugpy</a></li>
 <li><a class="reference internal" href="#module-slugpy.cloudy">Full Documentation of slugpy.cloudy</a></li>
+<li><a class="reference internal" href="#full-documentation-of-slugpy-sfr-slug">Full Documentation of slugpy.sfr_slug</a></li>
 </ul>
 </li>
 </ul>

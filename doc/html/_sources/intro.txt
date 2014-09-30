@@ -49,13 +49,13 @@ where :math:`L_\lambda` is the specific luminosity per unit wavelength, :math:`R
 
 .. math:: M_{\rm AB} = -2.5 \log_{10} \left[\frac{\langle L_\nu\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 48.6,
 
-where :math:`\langle L_\nu\rangle_R` is in units of erg s:math:`^{-1}` Hz:math:`^{-1}`.
+where :math:`\langle L_\nu\rangle_R` is in units of :math:`\mathrm{erg\,s}^{-1}\,\mathrm{Hz}^{-1}`.
 
 * The ST magnitude, defined by
 
 .. math:: M_{\rm ST} = -2.5 \log_{10} \left[\frac{\langle L_\lambda\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 21.1,
 
-where :math:`\langle L_\lambda\rangle_R` is in units of erg s:math:`^{-1}` \AA:math:`^{-1}`.
+where :math:`\langle L_\lambda\rangle_R` is in units of :math:`\mathrm{erg\, s}^{-1}\,\mathrm{Angstrom}^{-1}`.
 
 * The Vega magnitude, defined by
 

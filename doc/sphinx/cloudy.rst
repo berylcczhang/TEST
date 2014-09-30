@@ -166,7 +166,7 @@ radius is computed from the ionizing luminosity
 where :math:`\alpha_B = 2.59\times
 10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}` is the case B recombination
 coefficient, :math:`\phi = 0.73` is the fraction of ionizing photons absorbed
-by hydrogen atoms rather than dust, :math:`epsilon_0 =
+by hydrogen atoms rather than dust, :math:`\epsilon_0 =
 13.6\;\mathrm{eV}` is the hydrogen ionization potential,
 :math:`T_{\mathrm{II}} = 10^4\;\mathrm{K}` is the temperature inside
 the HII region, :math:`f_{\mathrm{trap}} = 2` is the trapping factor

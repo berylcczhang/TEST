@@ -85,3 +85,10 @@ Full Documentation of slugpy.cloudy
 
 .. automodule:: slugpy.cloudy
    :members:
+
+Full Documentation of slugpy.sfr_slug
+-------------------------------------
+
+.. autoclass:: slugpy.sfr_slug.sfr_slug
+   :members:
+   :special-members:
