@@ -14,7 +14,7 @@
 
 
 \title{slug Documentation}
-\date{September 16, 2014}
+\date{October 03, 2014}
 \release{2.0}
 \author{Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers}
 \newcommand{\sphinxlogo}{}
@@ -124,14 +124,19 @@
 Contents:
 
 
+\chapter{License}
+\label{license::doc}\label{license:welcome-to-slug-s-documentation}\label{license:license}
+SLUG is distributed under the terms of the \href{http://www.gnu.org/copyleft/gpl.html}{GNU General Public License version 3.0}. The text of the license is included in the main directory of the repository as \code{GPL-3.0.txt}.
+
+
 \chapter{Introduction to SLUG}
-\label{intro::doc}\label{intro:introduction-to-slug}\label{intro:welcome-to-slug-s-documentation}
+\label{intro:introduction-to-slug}\label{intro::doc}
 This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the \href{http://www.gnu.org/licenses/gpl.html}{GNU General Public License v. 3.0}. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method paper, \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, R. L., Fumagalli, M., \& Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145}. A second method paper, describing the upgraded version 2 code and a set of ancillary tools, is in preparation at this time.
 
 
 \section{What Does SLUG Do?}
 \label{intro:what-does-slug-do}
-SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), and cluster lifetime function (CLF), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. In this regard, SLUG operates much like any other SPS code. The main difference is that SLUG regards the IMF, SFH, CMF, and CLF as probability distributions, and the resulting stellar population as being the result of a draw from them. SLUG performs a Monte Carlo simulation to determine the PDF of the light produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a SLUG simulation. For a more detailed description, readers are referred to \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, Fumagalli, \& Krumholz (2012)}.
+SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), cluster lifetime function (CLF), and (optionally) distribution of extinctions (A\_V), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. In this regard, SLUG operates much like any other SPS code. The main difference is that SLUG regards the functions describing the stellar population as probability distributions, and the resulting stellar population as being the result of a draw from them. SLUG performs a Monte Carlo simulation to determine the PDF of the light produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a SLUG simulation. For a more detailed description, readers are referred to \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, Fumagalli, \& Krumholz (2012)}.
 
 
 \section{Cluster Simulations and Galaxy Simulations}
@@ -139,18 +144,18 @@ SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified
 SLUG can simulate either a simple stellar population (i.e., a group of stars all born at one time) or a composite stellar population, consisting of stars born at a distribution of times. We refer to the former case as a ``cluster'' simulation, and the latter as a ``galaxy'' simulation, since one can be thought of as approximating the behavior of a single star cluster, and the other as approximating a whole galaxy.
 
 
-\section{Probability Distribution Functions: the IMF, SFH, CMF, and CLF}
-\label{intro:probability-distribution-functions-the-imf-sfh-cmf-and-clf}\label{intro:ssec-slugpdfs}
-As mentioned above, SLUG regards the IMF, SFH, CMF, and CLF as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}} for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}.
+\section{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}
+\label{intro:probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution}\label{intro:ssec-slugpdfs}
+As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A\_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}} for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. SLUG will also, upon user request, randomly draw a visual extinction A\_V to be applied to the light.
 
-For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction \(f_c\) of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction \(1-f_c\) of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars \(M_*\) that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses \((1-f_c)M_*\) and \(f_c M_*\). For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.
+For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction \(f_c\) of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction \(1-f_c\) of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars \(M_*\) that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses \((1-f_c)M_*\) and \(f_c M_*\). For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case, and each star is given its own randomly-generated extinction. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. Again, each cluster gets its own extinction. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.
 
 Finally, star clusters can be disrupted independent of the fate of their parent stars. When each cluster is formed, it is assigned a lifetime drawn from the CLF. Once that time has passed, the cluster ceases to be entered in the lists of individual cluster spectra and photometry (see next section), although the individual stars continue to contribute to the integrated light of the galaxy.
 
 
-\section{Spectra and Photometry}
-\label{intro:ssec-spec-phot}\label{intro:spectra-and-photometry}
-Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength \(L_\lambda\). Third and finally, it computes photometry for the stellar population by integrating the computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:
+\section{Spectra, Photometry, and Extinction}
+\label{intro:ssec-spec-phot}\label{intro:spectra-photometry-and-extinction}
+Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength \(L_\lambda\). Third, it computes photometry for the stellar population by integrating the computed spectra over a set of specified photometric filters. If extinction is enabled, photometric values are computed for both the unextincted and the extincted spectrum. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:
 \begin{itemize}
 \item {} 
 The frequency-averaged luminosity across the filter, defined as
@@ -175,7 +180,7 @@ The AB magnitude, defined by
 \begin{gather}
 \begin{split}M_{\rm AB} = -2.5 \log_{10} \left[\frac{\langle L_\nu\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 48.6,\end{split}\notag
 \end{gather}
-where \(\langle L_\nu\rangle_R\) is in units of erg s:math:\emph{\textasciicircum{}\{-1\}} Hz:math:\emph{\textasciicircum{}\{-1\}}.
+where \(\langle L_\nu\rangle_R\) is in units of \(\mathrm{erg\,s}^{-1}\,\mathrm{Hz}^{-1}\).
 \begin{itemize}
 \item {} 
 The ST magnitude, defined by
@@ -184,7 +189,7 @@ The ST magnitude, defined by
 \begin{gather}
 \begin{split}M_{\rm ST} = -2.5 \log_{10} \left[\frac{\langle L_\lambda\rangle_R}{4\pi\left(10\,\mathrm{pc}\right)^2}\right] - 21.1,\end{split}\notag
 \end{gather}
-where \(\langle L_\lambda\rangle_R\) is in units of erg s:math:\emph{\textasciicircum{}\{-1\}} AA:math:\emph{\textasciicircum{}\{-1\}}.
+where \(\langle L_\lambda\rangle_R\) is in units of \(\mathrm{erg\, s}^{-1}\,\mathrm{Angstrom}^{-1}\).
 \begin{itemize}
 \item {} 
 The Vega magnitude, defined by
@@ -209,6 +214,16 @@ The bolometric luminosity,
 \begin{gather}
 \begin{split}L_{\rm bol} = \int_0^\infty L_\nu \, d\nu.\end{split}\notag
 \end{gather}
+Fourth and finally, if extinction is enabled, SLUG also computes an extincted spectrum
+\begin{gather}
+\begin{split}L_{\lambda,\mathrm{ex}} = L_{\lambda} e^{-\tau_\lambda}\end{split}\notag
+\end{gather}
+where the optical depth \(\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1.086)\), \(A_V\) is the visual extinction in mag, the factor 1.086 is the conversion between magnitudes and the true dimensionless optical depth, \(\kappa_\lambda\) is a user-specified input extinction at wavelength \(\lambda\), and the V-band mean opacity is defined by
+\begin{gather}
+\begin{split}\kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}\end{split}\notag
+\end{gather}
+where \(R_\nu(V)\) is the filter response function as frequency \(\nu\) for the Johnson V filter. Photometric values for the extincted spectrum are computed exactly as for the unextincted one.
+
 For a cluster simulation, this procedure is applied to the star cluster being simulated at a user-specified set of output times. For a galaxy simulation, the procedure is much the same, but it can be done both for all the stars in the galaxy taken as a whole, and individually for each star cluster that is still present (i.e., that has not been disrupted).
 
 
@@ -249,6 +264,15 @@ In addition to the core dependencies, slugpy, the python helper library requires
 \href{http://www.astropy.org/}{astropy} (optional, only required for FITS capabilities)
 
 \end{itemize}
+
+Finally, the cloudy coupling capability requires:
+\begin{itemize}
+\item {} 
+\href{http://nublado.org}{cloudy}
+
+\end{itemize}
+
+This is only required performing cloudy runs, and is not required for any other part of SLUG.
 
 
 \section{Compiling}
@@ -404,7 +428,7 @@ These control the operation of the simulation.
 \code{sfh}: name of star formation history file. This file is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. This is ignored, and can be omitted, if \code{sim\_type} is \code{cluster}, or if \code{sfr} is not set to \code{sfh}.
 
 \item {} 
-\code{cluster\_mass}: mass of the star cluster for simulations with \code{sim\_type} set to \code{cluster}. This can be omitted, and will be ignored, if \code{sim\_type} is \code{galaxy}.
+\code{cluster\_mass}: mass of the star cluster for simulations with \code{sim\_type} set to \code{cluster}. This can be omitted, and will be ignored, if \code{sim\_type} is \code{galaxy}. This parameter can be set to either a positive number or to the string \code{cmf}. If it is set to a numerical value, that value will be used as the cluster mass, in \(M_\odot\) for each trial. If it is set to \code{cmf}, then a new cluster mass will be drawn from the CMF for each trial.
 
 \item {} 
 \code{redshift} (default: \code{0}): place the system at the specified redshift. The computed spectra and photometry will then be computed in the observed rather than the rest frame of the system.
@@ -442,7 +466,7 @@ These control what quantities are computed and written to disk. Full a full desc
 
 \section{Physical Model Keywords}
 \label{parameters:ssec-phys-keywords}\label{parameters:physical-model-keywords}
-These specify the physical models to be used for stellar evolution, atmospheres, the IMF, etc.
+These specify the physical models to be used for stellar evolution, atmospheres, the IMF, extinction, etc.
 \begin{itemize}
 \item {} \begin{description}
 \item[{\code{imf} (default: \code{lib/imf/chabrier.imf}): name of the IMF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. Note that SLUG ships with the following IMF files pre-defined (in the directory \code{lib/imf})}] \leavevmode\begin{itemize}
@@ -466,7 +490,7 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \end{description}
 
 \item {} 
-\code{cmf} (default: \code{lib/cmf/slug\_default.cmf}): name of the CMF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. The default selection is a power law \(dN/dM \propto M^{-2}\) from \(M = 10^2 - 10^7\;M_\odot\). This is ignored, and may be omitted, if \code{sim\_type} is set to \code{cluster}.
+\code{cmf} (default: \code{lib/cmf/slug\_default.cmf}): name of the CMF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. The default selection is a power law \(dN/dM \propto M^{-2}\) from \(M = 10^2 - 10^7\;M_\odot\). This is ignored, and may be omitted, if \code{sim\_type} is set to \code{cluster} and \code{cluster\_mass} is set to a numerical value.
 
 \item {} 
 \code{clf} (default: \code{lib/clf/slug\_default.clf}): name of the CLF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. The default gives a power law distribution of lifetimes \(t\) with \(dN/dt\propto t^{-1.9}\) from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The SLUG source also ships with an alternative CLF file, \code{lib/clf/nodisrupt.clf}, which disables cluster disruption entirely (by setting the lifetime distribution to a \(\delta\) function at \(10^{300}\) yr).
@@ -528,6 +552,27 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \item {} 
 \code{WR\_mass}: minimum starting mass that stars must have in order to pass through a Wolf-Rayet phase. This can be omitted if \code{tracks} is set to one of the default sets of tracks that ships with SLUG, as the WR cutoff masses for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.
 
+\item {} 
+\code{A\_V} (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter \code{A\_V} is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value \(A_V\), in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}, specifying the probability distribution of \(A_V\) values, in mag.
+
+\item {} \begin{description}
+\item[{\code{extinction\_curve} (default: \code{lib/extinct/SB\_ATT\_SLUG.dat}) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction \(\kappa_\nu\) at that wavelength / frequency in \(\mathrm{cm}^2\). Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra, Photometry, and Extinction}}}). SLUG ships with the following extinction curves (all in \code{lib/extinct}):}] \leavevmode\begin{itemize}
+\item {} 
+\code{LMC\_EXT\_SLUG.dat} : LMC extinction curve; optical-UV from \href{http://adsabs.harvard.edu/abs/1999PASP..111...63F}{Fitzpatrick, E. L., 1999, PASP, 111, 63}, IR from \href{http://adsabs.harvard.edu/abs/1984A\%26A...134..284L}{Landini, M., et al., 1984, A\&A, 134, 284}; parts combined by D. Calzetti
+
+\item {} 
+\code{MW\_EXT\_SLUG.dat} : MW extinction curve; optical-UV from \href{http://adsabs.harvard.edu/abs/1999PASP..111...63F}{Fitzpatrick, E. L., 1999 PASP, 111, 63}, IR from \href{http://adsabs.harvard.edu/abs/1984A\%26A...134..284L}{Landini, M., et al., 1984, A\&A, 134, 284}; parts combined by D. Calzetti
+
+\item {} 
+\code{SB\_ATT\_SLUG.dat} : ``starburst'' extinction curve from \href{http://adsabs.harvard.edu/abs/2000ApJ...533..682C}{Calzetti, D., et al., 2000, ApJ, 533, 682}
+
+\item {} 
+\code{SMC\_EXT\_SLUG.dat} : SMC extinction curve from \href{http://adsabs.harvard.edu/abs/1985A\%26A...149..330B}{Bouchet, P., et al., 1985, A\&A, 149, 330}
+
+\end{itemize}
+
+\end{description}
+
 \end{itemize}
 
 
@@ -557,7 +602,7 @@ These describe the photometry to be computed. Note that none of these keywords h
 \code{filters} (default: \code{lib/filters}): directory containing photometric filter data
 
 \item {} \begin{description}
-\item[{\code{phot\_mode} (default: \code{L\_nu}): photometric system to be used when writing photometric outputs. Full definitions of the quantities computed for each of the choices listed below are given in {\hyperref[intro:ssec-spec-phot]{\emph{Spectra and Photometry}}}. Note that these values are ignored for the four special bands \code{QH0}, \code{QHe0}, \code{QHe1}, and \code{Lbol}. These four bands are always written out in the units specified above. Allowed values are:}] \leavevmode\begin{itemize}
+\item[{\code{phot\_mode} (default: \code{L\_nu}): photometric system to be used when writing photometric outputs. Full definitions of the quantities computed for each of the choices listed below are given in {\hyperref[intro:ssec-spec-phot]{\emph{Spectra, Photometry, and Extinction}}}. Note that these values are ignored for the four special bands \code{QH0}, \code{QHe0}, \code{QHe1}, and \code{Lbol}. These four bands are always written out in the units specified above. Allowed values are:}] \leavevmode\begin{itemize}
 \item {} 
 \code{L\_nu}: report frequency-averaged luminosity in the band, in units of erg/s/Hz
 
@@ -582,7 +627,7 @@ These describe the photometry to be computed. Note that none of these keywords h
 
 \chapter{Probability Distribution Functions}
 \label{pdfs:probability-distribution-functions}\label{pdfs::doc}\label{pdfs:sec-pdfs}
-The SLUG code regards the IMF, the CMF, the CLF, and the SFH as probability distribution functions -- see {\hyperref[intro:ssec-slugpdfs]{\emph{Probability Distribution Functions: the IMF, SFH, CMF, and CLF}}}. The code provides a generic file format through which PDFs can be specified. Examples can be found in the \code{lib/imf}, \code{lib/cmf}, \code{lib/clf}, and \code{lib/sfh} directories of the SLUG distribution.
+The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction \(A_V\) as probability distribution functions -- see {\hyperref[intro:ssec-slugpdfs]{\emph{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}}}. The code provides a generic file format through which PDFs can be specified. Examples can be found in the \code{lib/imf}, \code{lib/cmf}, \code{lib/clf}, and \code{lib/sfh} directories of the SLUG distribution.
 
 PDFs in SLUG are generically written as functions
 \begin{gather}
@@ -638,7 +683,9 @@ slope \PYGZhy{}2.35
 \end{Verbatim}
 
 This example represents a \href{http://adsabs.harvard.edu/abs/2005ASSL..327...41C}{Chabrier (2005)} IMF from \(0.08 - 120\) \(M_\odot\), which is of the functional form
-.. math:: frac\{dp\}\{dm\} propto left\{begin\{array\}\{ll\} exp{[}-log(m/m\_0)\textasciicircum{}2/(2sigma\textasciicircum{}2){]} (m/m\_b)\textasciicircum{}\{-1\} , \& m \textless{} m\_b \textbackslash{} exp{[}-log(m\_b/m\_0)\textasciicircum{}2/(2sigma\textasciicircum{}2){]} (m/m\_b)\textasciicircum{}\{-2.35\}, \& m geq m\_b end\{array\} right.,
+\begin{gather}
+\begin{split}\frac{dp}{dm} \propto \left\{\begin{array}{ll} \exp[-\log(m/m_0)^2/(2\sigma^2)] (m/m_b)^{-1} , & m < m_b \\ \exp[-\log(m_b/m_0)^2/(2\sigma^2)] (m/m_b)^{-2.35}, & m \geq m_b \end{array} \right.,\end{split}\notag
+\end{gather}
 where \(m_0 = 0.2\) \(M_\odot\), \(\sigma = 0.55\), and \(m_b = 1\) \(M_\odot\).
 
 Formally, the format of a basic mode file is as follows. Any line beginning with \code{\#} is a comment and is ignored. The first non-empty, non-comment line in a basic mode PDF file must be of the form:
@@ -699,7 +746,7 @@ Scale length, \(x_*\)
 
 \code{lognormal}
  & 
-\(x^{-1} \exp[-\log_{10}(x/x_0)^2/2\sigma^2]\)
+\(x^{-1} \exp\{-[\log_{10}(x/x_0)]^2/2\sigma^2\}\)
  & 
 \code{mean}
  & 
@@ -807,8 +854,10 @@ scale    1.0e7
 \end{Verbatim}
 
 This represents a star formation history that is a series of exponential bursts, separated by 100 Myr, with decay times of 10 Myr. Formally, this SFH follows the functional form
-.. math:: dot\{M\}\_* = n e\textasciicircum{}\{-(t,mathrm\{mod\}, P)/t\_\{rm dec\}\},
-where \(P = 100\) Myr is the period and \(t_{\rm dec} = 10\) Myr is the decay time, from times \(0-500\) Myr. The normalization constant \(n\) is set by the condition that \((1/P) \int_0^P \dot{M}_* \,dt / = 0.001\) \(M_\odot\;\mathrm{yr}^{-1}\), i.e., that the mean SFR averaged over a single burst period is 0.001 \(M_\odot\;\mathrm{yr}^{-1}\).
+\begin{gather}
+\begin{split}\dot{M}_* = n e^{-(t\,\mathrm{mod}\, P)/t_{\rm dec}},\end{split}\notag
+\end{gather}
+where \(P = 100\) Myr is the period and \(t_{\rm dec} = 10\) Myr is the decay time, from times \(0-500\) Myr. The normalization constant \(n\) is set by the condition that \((1/P) \int_0^P \dot{M}_* \,dt = 0.001\) \(M_\odot\;\mathrm{yr}^{-1}\), i.e., that the mean SFR averaged over a single burst period is 0.001 \(M_\odot\;\mathrm{yr}^{-1}\).
 
 Formally, the format of an advanced mode file is as follows. First, all advanced mode files must start with the line:
 
@@ -830,14 +879,16 @@ key1 VAL1
 \end{Verbatim}
 
 The \code{type} keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords \code{key1}, \code{key2}, \(\ldots\). The same functional forms, listed in the {\hyperref[pdfs:tab-segtypes]{\emph{Segment Types}}} Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are \code{min}, \code{max}, and \code{weight}. The \code{min} and \code{max} keywords give the upper and lower limits \(x_{i,a}\) and \(x_{i,b}\) for the segment; the probability is zero outside these limits. The keyword \code{weight} specifies the integral under the segment, i.e., the weight \(w_i\) given for segment \(i\) is used to set the normalization \(n_i\) via the equation
-.. math:: w\_i = n\_i int\_\{x\_\{i,a\}\}\textasciicircum{}\{x\_\{i,b\}\} f\_i(x) , dx.
+\begin{gather}
+\begin{split}w_i = n_i \int_{x_{i,a}}^{x_{i,b}} f_i(x) \, dx.\end{split}\notag
+\end{gather}
 In the case of a star formation history, as in the example above, the weight \(w_i\) of a segment is simply the total mass of stars formed in that segment. In the example given above, the first segment declaration sets up a PDF that with a minimum at 0 Myr, a maximum at 100 Myr, following an exponential functional form with a decay time of \(10^7\) yr. During this time, a total mass of \(10^5\) \(M_\odot\) of stars is formed.
 
 Note that, for the IMF, CMF, and CLF, the absolute values of the weights to not matter, only their relative values. On the other hand, for the SFH, the absolute weight does matter.
 
 
 \section{Sampling Methods}
-\label{pdfs:sampling-methods}
+\label{pdfs:sampling-methods}\label{pdfs:sampling-metod-label}
 A final option allowed in both basic and advanced mode is a specification of the sampling method. The sampling method is a description of how to draw a population of objects from the PDF, when the population is specified as having a total sum \(M_{\rm target}\) (usually but not necessarily a total mass) rather than a total number of members \(N\); there are a number of ways to do this, which do not necessarily yield identical distributions, even for the same underlying PDF. To specify a sampling method, simply add the line:
 
 \begin{Verbatim}[commandchars=\\\{\}]
@@ -874,7 +925,9 @@ See the file \code{lib/imf/wk06.imf} for an example of a PDF file with a \code{m
 
 \chapter{Output Files and Format}
 \label{output:output-files-and-format}\label{output::doc}\label{output:sec-output}
-SLUG can produce 7 output files, though the actual number produced depends on the setting for the \code{out\_*} keywords in the parameter file. The only file that is always produced is the summary file, which is named \code{MODEL\_NAME\_summary.txt}, where \code{MODEL\_NAME} is the value given by the \code{model\_name} keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.
+SLUG can produce 7 output files, though the actual number produced depends on the setting for the \code{out\_*} keywords in the parameter file. (Additional output files can be produced by {\hyperref[cloudy:sec-cloudy-slug]{\emph{cloudy\_slug: An Automated Interface to cloudy}}}, and are documented in that section rather than here.)
+
+The only file that is always produced is the summary file, which is named \code{MODEL\_NAME\_summary.txt}, where \code{MODEL\_NAME} is the value given by the \code{model\_name} keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.
 
 The other six output files all have names of the form \code{MODEL\_NAME\_xxx.ext}, where the extension \code{.ext} is one of \code{.txt}, \code{.bin}, or \code{.fits} depending on the \code{output\_mode} specified in the parameter file, and \code{xxx} is \code{integrated\_prop}, \code{integrated\_spec}, \code{integrated\_phot}, \code{cluster\_prop}, \code{cluster\_spec}, or \code{cluster\_phot}. The production of these output files is controlled by the parameters \code{out\_integrated}, \code{out\_integrated\_spec}, \code{out\_integrated\_phot}, \code{out\_cluster}, \code{out\_cluster\_spec}, and \code{out\_cluster\_phot} in the parameter file. The files are formatted as described below.
 
@@ -962,7 +1015,7 @@ There is one record of this form for each output time, with different trials ord
 
 
 \section{The \texttt{integrated\_spec} File}
-\label{output:the-integrated-spec-file}
+\label{output:the-integrated-spec-file}\label{output:ssec-int-spec-file}
 This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:
 \begin{itemize}
 \item {} 
@@ -972,19 +1025,35 @@ This file contains data on the spectra of the entire galaxy, and consists of a s
 \code{Wavelength}: observed frame wavelength at which the spectrum is evaluated
 
 \item {} 
-\code{L\_lambda}: specific luminosity at the specified wavelength
+\code{L\_lambda}: specific luminosity at the specified wavelength, without extinction
+
+\item {} 
+\code{L\_lambda\_ex}: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
 
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a single field listing the wavelengths at which the spectra are given. The second table has three fields, giving the trial number, the time, and the spectrum \code{L\_lambda} at that time. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for \code{L\_lambda\_ex} may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.
+\begin{quote}
+
+If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field \code{Wavelength\_ex} listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum \code{L\_lambda} at that time. The final field, \code{L\_lambda\_ex}, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+\end{quote}
 
 For binary output, the file is formatted as follows. The file starts with
 \begin{itemize}
+\item {} 
+\code{Extinct} (\code{byte}): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
+
 \item {} 
 \code{NWavelength} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the spectra
 
 \item {} 
 \code{Wavelength} (\code{NWavelength} entries of type \code{double})
+
+\item {} 
+\code{NWavelength\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extinted spectra; only present if \code{Extinct} is 1
+
+\item {} 
+\code{Wavelength\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
 
 \end{itemize}
 
@@ -996,13 +1065,16 @@ and then contains a series of records in the format
 \item {} 
 \code{L\_lambda} (\code{NWavelength} entries of type \code{double})
 
+\item {} 
+\code{L\_lambda\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
+
 \end{itemize}
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
 
 \section{The \texttt{integrated\_phot} File}
-\label{output:the-integrated-phot-file}
+\label{output:the-integrated-phot-file}\label{output:ssec-int-phot-file}
 This file contains data on the photometric properties of the entire galaxy, and consists of a series of entries containing the following fields:
 \begin{itemize}
 \item {} 
@@ -1020,9 +1092,43 @@ This file contains data on the photometric properties of the entire galaxy, and 
 \item {} 
 \code{...}
 
+\item {} 
+\code{PhotFilter1\_ex}: photometric value through filter 1 for the extincted spectrum, in the same units as \code{PhotFilter1}; only present if SLUG was run with extinction enabled
+
+\item {} 
+\code{PhotFilter2\_ex}
+
+\item {} 
+\code{PhotFilter3\_ex}
+
+\item {} 
+\code{...}
+
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. If \code{output\_mode} is \code{fits}, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. In addition to the time and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If \code{output\_mode} is \code{ascii}, these data are output in a series of
+columns, with different trials separated by lines of dashes. The
+columns for photometry of the extincted spectrum are present only if
+extinction was enabled when SLUG was run. Entries for some filters may
+be left blank. If so, this indicates that the photon response function
+provided for that filter extends beyond the wavelength range covered
+by the provided extinction curve. Since the extincted spectrum cannot
+be computed over the full range of the filter in this case, photometry
+for that filter cannot be computed either.
+
+If \code{output\_mode} is \code{fits}, the data are stored as a series of
+columns in a binary table extension to the FITS file; the filter names
+and units are included in the header information for the columns. If
+SLUG was run with extinction enabled, in for each filter
+\code{FILTERNAME} there is a corresponding column \code{FILTERNAME\_ex}
+containing the photometric value for that filter applied to the
+extincted spectrum. Some of these values may be \code{NaN}; this
+indicates that the photon response function provided for that filter
+extends beyond the wavelength range covered by the provided extinction
+curve. In addition to the time and photometric filter values, the FITS
+file contains a column specifying the trial number for that
+entry. Both the ASCII- and FITS-formatted output should be fairly
+self-documenting.
 
 For binary output, the file is formatted as follows. The file starts with
 \begin{itemize}
@@ -1030,7 +1136,14 @@ For binary output, the file is formatted as follows. The file starts with
 \code{NFilter} (stored as \code{ASCII text}): number of filters used
 
 \item {} 
-\code{FilterName} \code{FilterUnit} (\code{NFilter} entries stored as \code{ASCII text}): the name and units for each filter are listed in ASCII, one filter-unit pair per line
+\code{FilterName} \code{FilterUnit} (\code{NFilter} entries stored as \code{ASCII
+text}): the name and units for each filter are listed in ASCII, one
+filter-unit pair per line
+
+\item {} 
+\code{Extinct} (\code{byte}): a single byte, with a value of 0 indicating
+that extinction was not enabled for this run, and a value of 1
+indicating that it was enabled
 
 \end{itemize}
 
@@ -1041,6 +1154,9 @@ This is followed by a series of entries of the form
 
 \item {} 
 \code{PhotFilter} (\code{NFilter} entries of type \code{double})
+
+\item {} 
+\code{PhotFilter\_ex} (\code{NFilter} entries of type \code{double}); only present if \code{Extinct} is 1. Note that some values may be \code{NaN} if photometry could not be computed for that filter (see above).
 
 \end{itemize}
 
@@ -1078,11 +1194,21 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 \item {} 
 \code{MaxStarMass}: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-phys-keywords]{\emph{Physical Model Keywords}}})
 
+\item {} 
+\code{A\_V}: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled
+
 \end{itemize}
 
 If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. If \code{output\_mode} is \code{fits}, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
-For \code{binary} output, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+For \code{binary} output, the first entry in the file is a header containing
+\begin{itemize}
+\item {} 
+\code{Extinct} (\code{byte}): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
+
+\end{itemize}
+
+Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
 \begin{itemize}
 \item {} 
 \code{Time} (\code{double})
@@ -1118,6 +1244,9 @@ This is followed by \code{NCluster} entries of the following form:
 \item {} 
 \code{MaxStarMass} (\code{double})
 
+\item {} 
+\code{A\_V} (\code{double}); present only if \code{Extinct} is 1
+
 \end{itemize}
 
 
@@ -1137,21 +1266,35 @@ This file contains the spectra of the individual clusters, and each entry contai
 \item {} 
 \code{L\_lambda}: specific luminosity at the specified wavelength
 
+\item {} 
+\code{L\_lambda\_ex}: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
+
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a single field listing the wavelengths at which the spectra are given. The second table has four fields, giving the trial number, the unique ID of the cluster, the time, and the spectrum \code{L\_lambda}. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. The column \code{L\_lambda\_ex} is present only if SLUG was run with extinction enabled. Some entries for \code{L\_lambda\_ex} may be empty; see {\hyperref[output:ssec-int-spec-file]{\emph{The integrated\_spec File}}}.
+
+If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field \code{Wavelength\_ex} listing the wavelengths at which the extincted spectrum is computed. The second table has four fields if SLUG was run without extinction, or five fields if it was run with extinction. The first four fields, always present, give the trial number, unique ID of the cluster, the time, and the spectrum \code{L\_lambda} at that time. The final field, \code{L\_lambda\_ex}, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 Output in \code{binary} mode is formatted as follows.  The file starts with
 \begin{itemize}
+\item {} 
+\code{Extinct} (\code{byte}): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
+
 \item {} 
 \code{NWavelength} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the spectra
 
 \item {} 
 \code{Wavelength} (\code{NWavelength} entries of type \code{double})
 
+\item {} 
+\code{NWavelength\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extinted spectra; only present if \code{Extinct} is 1
+
+\item {} 
+\code{Wavelength\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
+
 \end{itemize}
 
-and then contains a series of records, one for each output time , with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+and then contains a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
 \begin{itemize}
 \item {} 
 \code{Time} (\code{double})
@@ -1169,11 +1312,14 @@ This is followed by \code{NCluster} entries of the following form:
 \item {} 
 \code{L\_lambda} (\code{NWavelength} entries of type \code{double})
 
+\item {} 
+\code{L\_lambda\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
+
 \end{itemize}
 
 
 \section{The \texttt{cluster\_phot} File}
-\label{output:the-cluster-phot-file}
+\label{output:the-cluster-phot-file}\label{output:ssec-cluster-phot-file}
 This file contains the photometric values for the individual clusters. Each entry contains the following fields:
 \begin{itemize}
 \item {} 
@@ -1194,9 +1340,23 @@ This file contains the photometric values for the individual clusters. Each entr
 \item {} 
 \code{...}
 
+\item {} 
+\code{PhotFilter1\_ex}: photometric value through filter 1 for the extincted spectrum, in the same units as \code{PhotFilter1}; only present if SLUG was run with extinction enabled
+
+\item {} 
+\code{PhotFilter2\_ex}
+
+\item {} 
+\code{PhotFilter3\_ex}
+
+\item {} 
+\code{...}
+
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. If \code{output\_mode} is \code{fits}, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. Some of the extincted photometry columns may be blank; see {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}.
+
+If \code{output\_mode} is \code{fits}, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. If SLUG was run with extinction enabled, in for each filter \code{FILTERNAME} there is a corresponding column \code{FILTERNAME\_ex} containing the photometric value for that filter applied to the extincted spectrum. Some of these values may be \code{NaN}; see {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 In \code{binary} output mode, the binary data file starts with
 \begin{itemize}
@@ -1205,6 +1365,9 @@ In \code{binary} output mode, the binary data file starts with
 
 \item {} 
 \code{FilterName} \code{FilterUnit} (\code{NFilter} entries stored as \code{ASCII text}): the name and units for each filter are listed in ASCII, one filter-unit pair per line
+
+\item {} 
+\code{Extinct} (\code{byte}): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 
 \end{itemize}
 
@@ -1226,6 +1389,9 @@ This is followed by \code{NCluster} entries of the following form:
 \item {} 
 \code{PhotFilter} (\code{NFilter} entries of type \code{double})
 
+\item {} 
+\code{PhotFilter\_ex} (\code{NFilter} entries of type \code{double}); only present if \code{Extinct} is 1. Note that some values may be \code{NaN} if photometry could not be computed for that filter (see above).
+
 \end{itemize}
 
 
@@ -1233,9 +1399,922 @@ This is followed by \code{NCluster} entries of the following form:
 \label{filters:sec-filters}\label{filters::doc}\label{filters:filters-and-filter-data}
 SLUG comes with a fairly extensive list of filters, adapted from the list maintained by Charlie Conroy as part of \href{https://code.google.com/p/fsps/}{fsps}. However, users may wish to add additional filters, and so the format of the filter list is documented here for convenience.
 
-Filter data is stored in two ASCII text files, \code{FILTER\_LIST} and \code{allfilters.dat}, which are stored in the \code{lib/filters} directory. The \code{FILTER\_LIST} file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the \code{phot\_bands} keyword (see {\hyperref[parameters:ssec-phot-keywords]{\emph{Photometric Filter Keywords}}}) to request photometry in that filter. The third and fourth columns the value of \(\beta\) and \(\lambda_c\) (the central wavelength) for that filter -- see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra and Photometry}}} for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.
+Filter data is stored in two ASCII text files, \code{FILTER\_LIST} and \code{allfilters.dat}, which are stored in the \code{lib/filters} directory. The \code{FILTER\_LIST} file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the \code{phot\_bands} keyword (see {\hyperref[parameters:ssec-phot-keywords]{\emph{Photometric Filter Keywords}}}) to request photometry in that filter. The third and fourth columns the value of \(\beta\) and \(\lambda_c\) (the central wavelength) for that filter -- see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra, Photometry, and Extinction}}} for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.
 
 The \code{allfilters.dat} file contains the filter responses. The file contains a series of entires for different filters, each delineated by a header line that begins with \code{\#}. The order in which filters appear in this file matches that in which they appear in the \code{FILTER\_LIST}. After the header line, are a series of lines each containing two numbers. The first is the wavelength in Angstrom, and the second is the filter response function at that wavelength.
+
+
+\chapter{cloudy\_slug: An Automated Interface to cloudy}
+\label{cloudy:cloudy-slug-an-automated-interface-to-cloudy}\label{cloudy::doc}\label{cloudy:sec-cloudy-slug}
+SLUG stochastically generates stellar spectra, but it does not compute
+the nebular lines produced when those photons interact with the
+interstellar medium. To perform such calculations, SLUG includes an
+automated interface to \href{http://nublado.org/}{cloudy} (\href{http://adsabs.harvard.edu/abs/2013RMxAA..49..137F}{Ferland et
+al., 2013, RMxAA, 49, 137}). This can be
+used to post-process the output of a SLUG run in order to compute
+nebular emission.
+
+
+\section{cloudy\_slug Basics}
+\label{cloudy:cloudy-slug-basics}
+The basic steps (described in greater detail below) are as follows:
+\begin{enumerate}
+\item {} 
+Get cloudy installed and compiled, following the directions on the
+\href{http://nublado.org/}{cloudy website}.
+
+\item {} 
+Set the environment variable \code{\$CLOUDY\_DIR} to the directory where
+the cloudy executable \code{cloudy.exe} is located.  If you are using
+a \code{bash}-like shell, the syntax for this is:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+export CLOUDY\PYGZus{}DIR = /path/to/cloudy
+\end{Verbatim}
+
+while for a \code{csh}-like shell, it is:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+setenv CLOUDY\PYGZus{}DIR /path/to/cloudy
+\end{Verbatim}
+
+\item {} 
+If you desire, edit the cloudy input template
+\code{cloudy\_slug/cloudy.in\_template} and the line list
+\code{cloudy\_slug/LineList\_HII.dat}. There are the template input files
+that will be used for all the cloudy runs, and their syntax follows
+the standard cloudy syntax. They control things like the density and
+element abundances in the nebula -- see {\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}}
+for more details.
+
+\item {} 
+Perform the desired SLUG simulation. The SLUG simulation outputs
+must include spectra and photometry, and one of the photometric
+bands output must be \code{QH0} (see {\hyperref[parameters:ssec-phot-keywords]{\emph{Photometric Filter Keywords}}}). If
+running in integrated mode (the default -- see
+{\hyperref[cloudy:ssec-cloudy-cluster]{\emph{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}}), integrated specta and photometry are
+required, and if running in cluster mode, cluster spectra and
+photometry are required.
+
+\item {} 
+Invoke the cloudy\_slug interface script via:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+python cloudy\PYGZus{}slug/cloudy\PYGZus{}slug.py SLUG\PYGZus{}MODEL\PYGZus{}NAME
+\end{Verbatim}
+
+where \code{SLUG\_MODEL\_NAME} is the name of the SLUG run to be
+processed. See {\hyperref[cloudy:ssec-cloudy-cluster]{\emph{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}} for more information on
+the underlying physical model assumed in the calculation, and
+{\hyperref[cloudy:ssec-cloudy-slug-options]{\emph{The cloudy\_slug Interface Script}}} for more details on the python
+script and its options.
+
+\item {} 
+The output will be stored as a series of additional output files of
+with names of the form SLUG\_MODEL\_NAME\_*cloudy*.ext, where the
+extension is .txt, .bin, or .fits, depending on the format in which
+the orignal SLUG output was stored. These files can be processed
+automatically by the slugpy helper routines (see
+{\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}}). See {\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}} for a description
+of the outputs.
+
+\end{enumerate}
+
+
+\section{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}
+\label{cloudy:ssec-cloudy-cluster}\label{cloudy:the-cloudy-slug-physical-model-integrated-mode-versus-cluster-mode}
+Associating nebular emission with the stellar populations produced by
+SLUG requires some assumptions about geometry, and some choices about
+what quantities one is interested in computed. SLUG outputs both
+integrated spectra for all the stars in a galaxy, and spectra for
+individual clusters. One on hand, one could make the exteme assumption
+that all the star clusters are spatially close enough to one another
+that one can think of the entire galaxy as a single giant HII region,
+and compute the nebular emission for the galaxy as a whole. This may
+be a reasonable assumption for galaxies where the star formation is
+highly spatially-concentrated. At the other extreme, one may assume that
+there is no overlap whatsoever between the HII regions surrounding
+different star clusters, so that nebular emission should be computed
+for each one independently. This may be a reasonable assumption for
+extended, slowly star-forming systems like the outer disk of the Milky
+Way. Each of these assumptions entails somewhat different choices
+about how to set the inner radius and inner density the HII region, as
+required by cloudy. The cloudy\_slug interface can compute nebular
+emission under either of these scenarios; we refer to the former as
+integrated mode, and to the latter as cluster mode. Note that, in
+either mode, the spectrum that is used to compute the nebular emission
+will be the \emph{unextincted, non-redshifted} spectrum computed by SLUG.
+
+
+\subsection{Integrated Mode}
+\label{cloudy:sssec-cloudy-integrated-mode}\label{cloudy:integrated-mode}
+In integrated mode, cloudy\_slug will read all the spectra contained in
+the SLUG integrated\_spec output file, and for each stellar spectrum it
+will perform a cloudy run to produce a calculation of the nebular
+emission produced by that stellar spectrum interacting with a
+surrounding HII region. The density in the first zone of the HII
+region will be as specified by the standard \code{hden} keyword in the
+cloudy input template (see {\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}}). The inner
+radius of the HII region will be computed automatically, and will be
+set to \(10^{-3}\) of the Stromgren radius for that density, where
+\begin{gather}
+\begin{split}r_{\mathrm{St}} = \left(\frac{3.0 Q(\mathrm{H}^0)}{4\pi
+\alpha_B n_{\mathrm{H}}^2}\right)^{1/3}\end{split}\notag
+\end{gather}
+where \(Q(\mathrm{H}^0)\) is the ionizing luminosity computed by
+SLUG, \(n_{\mathrm{H}}\) is the hydrogen number density stored in
+the cloudy input template, and \(\alpha_B\) is the case B
+recombination coefficient, which is taken to have a value of
+\(2.59\times 10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}\).
+
+
+\subsection{Cluster Mode}
+\label{cloudy:cluster-mode}\label{cloudy:sssec-cloudy-cluster-mode}
+In cluster mode, cloudy\_slug will read all the individual cluster
+spectra contained in the SLUG cluster\_spec file, and for each one it
+will perform a cloudy calculation to determine the corresponding
+nebular emission. The density and radius are handled somewhat
+differently in this case, since, for a mono-age stellar population, it
+is possible to compute the time evolution of the HII region radius and
+density.
+
+In cluster mode, the hydrogen number density \(n_{\mathrm{H}}\)
+stored in the cloudy input template (see {\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}})
+is taken to specify the density of the \emph{neutral} gas around the HII
+region, not the density of the gas inside the HII region. The outer
+radius of the HII region is then computed using the approximate
+analytic solution for the expansion of an HII region into a uniform
+medium, including the effects of radiation presssure and stellar wind
+momentum deposition, given by \href{http://adsabs.harvard.edu/abs/2009ApJ...703.1352K}{Krumholz \& Matzner (2009, ApJ,
+703, 1352)}. The
+radius is computed from the ionizing luminosity
+\(Q(\mathrm{H}^0)\), hydrogen number density
+\(n_{\mathrm{H}}\), and star cluster age \(t\) as
+\begin{gather}
+\begin{split}r_{\mathrm{II}} & = r_{\mathrm{ch}}
+\left(x_{\mathrm{II,rad}}^{7/2} +
+x_{\mathrm{II,gas}}^{7/2}\right)^{2/7} \\\end{split}\notag\\\begin{split}x_{\mathrm{II,rad}} &= (2\tau^2)^{1/4} \\\end{split}\notag\\\begin{split}x_{\mathrm{II,gas}} &= (49\tau^2/36)^{2/7} \\\end{split}\notag\\\begin{split}\tau &= t/t_{\mathrm{ch}} \\\end{split}\notag\\\begin{split}r_{\mathrm{ch}} & = \frac{\alpha_B}{12\pi\phi}
+\left(\frac{\epsilon_0}{2.2 k_B T_{\mathrm{II}}}\right)^2
+f_{\mathrm{trap}}^2 \frac{\psi^2 Q(\mathrm{H}^0)}{c^2} \\\end{split}\notag\\\begin{split}t_{\mathrm{ch}} & = \left(\frac{4\pi \mu m_{\mathrm{H}}
+n_{\mathrm{H}} c r_{\mathrm{ch}}^4}{3 f_{\mathrm{trap}}
+Q(\mathrm{H}^0) \psi \epsilon_0}\right)^{1/2}\end{split}\notag
+\end{gather}
+where \(\alpha_B = 2.59\times
+10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}\) is the case B recombination
+coefficient, \(\phi = 0.73\) is the fraction of ionizing photons absorbed
+by hydrogen atoms rather than dust, \(\epsilon_0 =
+13.6\;\mathrm{eV}\) is the hydrogen ionization potential,
+\(T_{\mathrm{II}} = 10^4\;\mathrm{K}\) is the temperature inside
+the HII region, \(f_{\mathrm{trap}} = 2\) is the trapping factor
+that accounts for stellar wind and trapped infrared radiation
+pressure, \(\psi = 3.2\) is the mean photon energy in Rydberg for
+a fully sampled IMF at zero age, and \(\mu = 1.33\) is the mean
+mass per hydrogen nucleus for gas of the standard cosmic
+composition. See \href{http://adsabs.harvard.edu/abs/2009ApJ...703.1352K}{Krumholz \& Matzner (2009)} for a discussion
+of the fiducial choices of these factors.
+
+Once the outer radius is known, cloudy\_slug sets the starting radius
+for the cloudy calculation to \(10^{-3} r_{\mathrm{II}}\), and
+sets the starting density to the value expected for photoionization
+equilibrum in a uniform HII region,
+\begin{gather}
+\begin{split}n_{\mathrm{II}} = \left(\frac{3
+Q(\mathrm{H}^0)}{4\pi\alpha_B
+r_{\mathrm{II}}^3}\right)^{1/2}\end{split}\notag
+\end{gather}
+Note that this approximation will be highly inaccurate if
+\(r_{\mathrm{II}} \ll r_{\mathrm{ch}}\), but no better analytic
+approximation is available, and this phase should be very short-lived
+for most clusters.
+
+
+\section{The cloudy\_slug Input Template}
+\label{cloudy:the-cloudy-slug-input-template}\label{cloudy:ssec-cloudy-template}
+The cloudy\_slug interface operates by reading SLUG output spectra and
+using them as inputs to a cloudy calculation. However, cloudy
+obviously requires many input parameters beyond simply the spectrum of
+the input radiation field. These parameters are normally provided by
+an input file whose format is as described in the \href{http://nublado.org}{cloudy documentation}. The cloudy\_slug interface works by reading a
+\emph{template} input file that specifies all these parameter, and which
+will be used as a basis for the final cloudy input files that will
+contain the SLUG spectra.
+
+In general the template input file looks just like an ordinary cloudy
+input file, subject to the following restrictions:
+\begin{enumerate}
+\item {} 
+The input file \emph{must not} contain any commands that specify the
+luminosity, intensity, or the spectral shape. These will be
+inserted automatically by the cloudy\_slug script.
+
+\item {} 
+The input file \emph{must not} contain a radius command. This too will
+be computed automatically by the cloudy\_slug script.
+
+\item {} 
+The input file \emph{must} contain an entry \code{hden N} where \code{N} is
+the log base 10 of the hydrogen density. This will be interpreted
+differently depending on whether cloudy\_slug is being run in
+cluster mode or integrated mode -- see {\hyperref[cloudy:ssec-cloudy-cluster]{\emph{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}}.
+
+\item {} 
+Any outputs to be written (specified using the \code{save} or
+\code{punch} keywords) must give file names containing the string
+\code{OUTPUT\_FILENAME}. This string will be replaced by the
+cloudy\_slug script to generate a unique file name for each cloudy
+run, and to read back these outputs for post-processing.
+
+\item {} 
+The cloudy\_slug output will contain output spectra only if the
+cloudy input file contains a \code{save last continuum} command. See
+{\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}}.
+
+\item {} 
+The cloudy\_slug output will contain output line luminosities only
+if the cloudy input file contains a \code{save last line list emergent
+absolute column} command. See {\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}}.
+
+\item {} 
+If any other outputs are produced by the input file, they will
+neither be processed nor moved, deleted, or otherwise changed by
+the cloudy\_slug script.
+
+\item {} 
+Running cloudy in grid mode is not currently supported.
+
+\end{enumerate}
+
+An example cloudy input file with reasonable parameter choices is
+provided as \code{cloudy\_slug/cloudy\_in.template} in the main directory
+of the SLUG repository.
+
+In addition to the input file, the default template makes use of a
+cloudy line list file to specify which line luminosities should be
+output (see the \href{http://nublado.org}{cloudy documentation} for
+details). The template points to the file
+\code{cloudy\_slug/LineList\_HII.data} (which is identical to cloudy's
+default line list for HII regions), but any other valid cloudy line
+list file would work as well.
+
+
+\section{The cloudy\_slug Interface Script}
+\label{cloudy:ssec-cloudy-slug-options}\label{cloudy:the-cloudy-slug-interface-script}
+The \code{cloudy\_slug.py} script provides the interface between SLUG and
+cloudy. Usage for this script is as follows:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+cloudy\PYGZus{}slug.py [\PYGZhy{}h] [\PYGZhy{}a AGEMAX] [\PYGZhy{}\PYGZhy{}cloudypath CLOUDYPATH]
+               [\PYGZhy{}\PYGZhy{}cloudytemplate CLOUDYTEMPLATE] [\PYGZhy{}cm] [\PYGZhy{}nl NICELEVEL]
+               [\PYGZhy{}n NPROC] [\PYGZhy{}s] [\PYGZhy{}\PYGZhy{}slugpath SLUGPATH] [\PYGZhy{}v]
+               slug\PYGZus{}model\PYGZus{}name [start\PYGZus{}spec] [end\PYGZus{}spec]
+\end{Verbatim}
+
+The positional arguments are as follows:
+\begin{itemize}
+\item {} 
+\code{slug\_model\_name}: this is the name of the SLUG output to be used
+as a basis for the cloudy calculation. This should be the same as
+the \code{model\_name} parameter used in the SLUG simulation, with the
+optional addition of a path specification in front.
+
+\item {} 
+\code{start\_spec}: default behavior is to run cloudy on all the
+integrated spectra (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}) or
+cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}). If this
+argument is set, cloudy will only be run in spectra starting with
+the specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}})
+or cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}); numbers are
+0-offset, to the first trial/cluster is 0, the next is 1, etc.
+
+\item {} 
+\code{end\_spec}: default behavior is to run cloudy on all the
+integrated spectra (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}) or
+cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}). If this
+argument is set, cloudy will only be run on spectra up to the
+specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}) or
+cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}); numbers are
+0-offset, to the first trial/cluster is 0, the next is 1, etc.
+
+\end{itemize}
+
+The optional arguments are as follows:
+\begin{itemize}
+\item {} 
+\code{-h, -{-}help}: prints a help message and then exits
+
+\item {} 
+\code{-a AGEMAX, -{-}agemax AGEMAX}: maximum cluster age in Myr for
+cloudy computation. Cloudy will not be run on clusters older than
+this value, and the predicted nebular emission for such clusters
+will be recorded as zero. Default value is 4 Myr. This argument only
+has an effect if running in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}};
+otherwise it is ignored.
+
+\item {} 
+\code{-{-}cloudypath CLOUDYPATH}: path to the cloudy executable; default
+is \code{\$CLOUDY\_DIR/cloudy.exe}
+
+\item {} 
+\code{-{-}cloudytemplate CLOUDYTEMPLATE}: cloudy input file template (see
+{\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}}); default is
+\code{\$SLUG\_DIR/cloudy\_slug/cloudy.in\_template}
+
+\item {} 
+\code{-cm, -{-}clustermode}: if this argument is set, then cloudy\_slug
+will run in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}; default behavior is to
+run in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}
+
+\item {} 
+\code{-nl NICELEVEL, -{-}nicelevel NICELEVEL}: if this is set, then the
+cloudy processes launched by the script will be run at this nice
+level. If it is not set, they will not be nice'd. Note that this
+option will only work correctly on platforms that support nice.
+
+\item {} 
+\code{-n NPROC, -{-}nproc NPROC}: number of simultaneous cloudy processes
+to run; default is the number of cores available on the system
+
+\item {} 
+\code{-s, -{-}save}: by default, cloudy\_slug will extract line and
+spectral data from the cloudy outputs and store them as described in
+{\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}}, then delete the cloudy output files. If
+this option is set, the cloudy output files will NOT be deleted, and
+will be left in place. WARNING: cloudy's outputs are written in
+ASCII and are quite voluminous, so only choose this option if you
+are only running cloudy on a small number of SLUG spectra and/or you
+are prepared to store hundreds of GB more more.
+
+\item {} 
+\code{-{-}slugpath SLUGPATH}: path to the SLUG output data. If not set,
+cloudy\_slug searches for an appropriately-named set of output files
+first in the current working directory, and next in
+\code{\$SLUG\_DIR/output}
+
+\item {} 
+\code{-v, -{-}verbose}: if this option is set, cloudy\_slug produces
+verbose output as it runs
+
+\end{itemize}
+
+
+\section{Full Description of cloudy\_slug Output}
+\label{cloudy:ssec-cloudy-output}\label{cloudy:full-description-of-cloudy-slug-output}
+The cloudy\_slug script will automatically process the cloudy output
+and produce a series of new output files, which will be written to the
+same directory where the input SLUG files are located, and using the
+same output mode (ASCII text, raw binary, or FITS -- see
+{\hyperref[output:sec-output]{\emph{Output Files and Format}}}). If cloudy\_slug is run in
+{\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}, the three output files will be
+\code{MODEL\_NAME\_integrated\_cloudylines.ext},
+\code{MODEL\_NAME\_integrated\_cloudyphot.ext}, and
+\code{MODEL\_NAME\_integrated\_cloudyspec.ext}, where the extension \code{.ext}
+is one of \code{.txt}, \code{.bin}, or \code{.fits}, depending on the
+\code{output\_mode}. If cloudy\_slug is run in
+{\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}, the three output files will be
+\code{MODEL\_NAME\_cluster\_cloudylines.ext},
+\code{MODEL\_NAME\_cluster\_cloudyphot.ext}, and
+\code{MODEL\_NAME\_cluster\_cloudyspec.ext}. All of these output files will
+be read and processed automatically if the outputs are read using
+\code{read\_integrated} or \code{read\_cluster} in the {\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}}
+library.
+
+The format of those files is described below.
+
+
+\subsection{The \texttt{integrated\_cloudylines} File}
+\label{cloudy:the-integrated-cloudylines-file}
+This file contains data on the nebular line emission produced by the
+interaction of the stellar radiation field with the ISM. It consists
+of a series of entries containing the following fields:
+\begin{itemize}
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{LineLabel}: four letter code labeling each line. These codes
+are the codes used by cloudy (see the \href{http://nublado.org}{cloudy documentation})
+
+\item {} 
+{}`{}` Wavelength{}`{}`: wavelength of the line, in Angstrom. Note that
+default cloudy behavior is to round wavelengths to the nearest
+Angstrom.
+
+\item {} 
+\code{Luminosity}: line luminosity, in erg/s
+
+\end{itemize}
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+the data are written in a FITS file containing two binary table
+extensions. The first extension contains two fields, \code{Line\_label} and
+\code{Wavelength}, giving the four-letter cloudy line codes and central
+wavelengths. The second extension contains three columns, giving the
+trial number, time, and line luminosity for each line at each time in
+each trial.
+
+If the SLUG data input to cloudy\_slug were written in \code{binary} mode,
+the data are written in a raw binary file. The file starts with a
+header consisting of
+\begin{itemize}
+\item {} 
+\code{NLine} (python \code{int}, equivalent to C \code{long}): number of lines
+
+\item {} 
+\code{LineLabel} (\code{NLine} entries stored as \code{ASCII text}): line
+labels listed in ASCII, one label per line
+
+\end{itemize}
+
+This is followed by a series of entries of the form
+\begin{itemize}
+\item {} 
+\code{Time} (\code{double})
+
+\item {} 
+\code{LineLum} (\code{NLine} entries of type numpy \code{float64})
+
+\end{itemize}
+
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
+
+
+\subsection{The \texttt{integrated\_cloudyspec} File}
+\label{cloudy:the-integrated-cloudyspec-file}\label{cloudy:sssec-int-cloudyspec-file}
+This file contains data on the spectrum produced by interaction
+between the stellar radiation field and the nebula. Each entry in the
+output file contains the folling fields:
+\begin{itemize}
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{Wavelength}: the wavelength at which the spectrum is evaluated,
+in Angstrom
+
+\item {} 
+\code{Incident}: specific luminosity in erg/s/Angstrom at the specified
+wavelength. In cloudy's terminology, this is the \emph{incident}
+spectrum, i.e., the stellar radiation field entering the nebula. It
+should be the same as the spectrum contained in the SLUG
+\code{integrated\_spec} file for the corresponding time and trial,
+except interpolated onto the wavelength grid used by cloudy.
+
+\item {} 
+\code{Transmitted}:  specific luminosity in erg/s/Angstrom at the specified
+wavelength. In cloudy's terminology, this is the \emph{transmitted}
+spectrum, i.e., the stellar spectrum exiting the HII region, not
+including any emission produced within the nebula. This is what
+would be detected by an observing aperture that included only the
+stars, and none of the nebula.
+
+\item {} 
+\code{Emitted}:  specific luminosity in erg/s/Angstrom at the specified
+wavelength. In cloudy's terminology, this is the \emph{emitted}
+spectrum, i.e., the spectrum emitted by the diffuse gas in the HII
+region, excluding any light from the stars themselves. This is what
+would be seen by an observer whose aperture covered the nebula, but
+masked the stars.
+
+\item {} 
+\code{Transmitted\_plus\_emitted}: this is just the sum of
+\code{Transmitted} and \code{Emitted}. It represents what would be
+observed in an aperture including both the stars and the HII
+region.
+
+\end{itemize}
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+these data are written in a FITS file containing two binary table
+extensions. The first extension contains one field, \code{Wavelength},
+which gives the wavelengths of the spectra in Angstrom. The second
+extension contains six fields: \code{Trial}, \code{Time},
+\code{Incident\_spectrum}, \code{Transmitted\_spectrum}, \code{Emitted\_spectrum},
+and \code{Transmitted\_plus\_emitted\_spectrum}. The first two of these give
+the trial number and time, and the remaining four give the incident,
+transmitted, emitted, and transmitted plus emitted spectra for the
+corresponding time and trial.
+
+If the SLUG data input to cloudy\_slug were written in \code{binary} mode,
+these data are written in a raw binary file that is formatted as
+follows. The file begins with a header consisting of
+\begin{itemize}
+\item {} 
+\code{NWavelength} (numpy \code{int64}): number of wavelengths
+
+\item {} 
+\code{Wavelength} (\code{NWavelength} entries of numpy \code{float64})
+
+\end{itemize}
+
+and then contains a series of records of the form
+\begin{itemize}
+\item {} 
+\code{Time} (numpy \code{float64})
+
+\item {} 
+\code{Incident} (\code{NWavelength} entries of numpy \code{float64})
+
+\item {} 
+\code{Transmitted} (\code{NWavelength} entries of numpy \code{float64})
+
+\item {} 
+\code{Emitted} (\code{NWavelength} entries of numpy \code{float64})
+
+\item {} 
+\code{Transmitted\_plus\_emitted} (\code{NWavelength} entries of numpy
+\code{float64})
+
+\end{itemize}
+
+There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
+
+
+\subsection{The \texttt{integrated\_cloudyphot} File}
+\label{cloudy:the-integrated-cloudyphot-file}
+This file contains photometric data computed for the spectra produced
+by the interaction between the stellar radiation field and the HII
+region. The file consists of a series of entries containing the
+following fields:
+\begin{itemize}
+\item {} 
+\code{Time}: evolution time at which the output is computed
+
+\item {} 
+\code{PhotFilter1\_trans}: photometric value for the \emph{Transmitted}
+radiation field through filter 1, where filter 1 here is the same as
+filter 1 in {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}; units are also the same as
+in that file.
+
+\item {} 
+\code{PhotFilter1\_emit}: photometric value for the \emph{Emitted}
+radiation field through filter 1
+
+\item {} 
+\code{PhotFilter1\_trans\_emit}: photometric value for the
+\emph{Transmitted\_plus\_emitted} radiation field through filter 1
+
+\item {} 
+\code{PhotFilter2\_trans}
+
+\item {} 
+\code{PhotFilter2\_emit}
+
+\item {} 
+\code{PhotFilter2\_trans\_emit}
+
+\item {} 
+\code{...}
+
+\end{itemize}
+
+For distinctions between the \emph{Transmitted}, \emph{Emitted}, and
+\emph{Transmitted\_plus\_emitted} radiation fields, see
+{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{The integrated\_cloudyspec File}}}, or the \href{http://nublado.org}{cloudy documentaiton}. Note that we do not record photometry for the
+incident spectrum, since that would be, up to the accuracy of the
+numerical integration, identical to the photometry already recorded in
+the {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}.
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+these data are written in a FITS file containing one binary table
+extension, consisting of a series of columns. The columns are
+\code{Trial}, \code{Time}, \code{Filter1\_Transmitted}, \code{Filter1\_Emitted},
+\code{Filter1\_Transmitted\_plus\_emitted}, \code{...}. The first two columns
+give the trial number and the time, and the remainder give the
+photometric values for the transmitted, emitted, and transmitted plus
+emitted spectra in each filter.
+
+If the SLUG data input to cloudy\_slug were written in \code{binary} mode,
+these data are written to a raw binary file that is formatted as
+follows. The file starts with an ASCII header consisting of the
+following, each on a separate line:
+\begin{itemize}
+\item {} 
+\code{NFilter} (stored as \code{ASCII text}): number of filters used
+
+\item {} 
+\code{FilterName} \code{FilterUnit} (\code{NFilter} entries stored as \code{ASCII
+text}): the name and units for each filter are listed in ASCII, one
+filter-unit pair per line
+
+\end{itemize}
+
+This is followed by a series of entries of the form:
+\begin{itemize}
+\item {} 
+\code{PhotFilter\_Transmitted} (\code{NFilter} entries of numpy
+\code{float64}), giving the transmitted photometry in each filter
+
+\item {} 
+\code{PhotFilter\_Emitted} (\code{NFilter} entries of numpy
+\code{float64}), giving the emitted photometry in each filter
+
+\item {} 
+\code{PhotFilter\_Transmitted\_plus\_emitted} (\code{NFilter} entries of numpy
+\code{float64}), giving the transmitted plus emitted photometry in each
+filter
+
+\end{itemize}
+
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
+
+
+\subsection{The \texttt{cluster\_cloudylines} File}
+\label{cloudy:the-cluster-cloudylines-file}
+This file contains data on the nebular line emission produced by the
+interaction of the stellar radiation field with the ISM around each
+cluster. It consists of a series of entries containing the following
+fields:
+\begin{itemize}
+\item {} 
+\code{UniqueID}: a unique identifier number for each cluster that is
+preserved across times and output files
+
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{LineLabel}: four letter code labeling each line. These codes
+are the codes used by cloudy (see the \href{http://nublado.org}{cloudy documentation})
+
+\item {} 
+{}`{}` Wavelength{}`{}`: wavelength of the line, in Angstrom. Note that
+default cloudy behavior is to round wavelengths to the nearest
+Angstrom.
+
+\item {} 
+\code{Luminosity}: line luminosity, in erg/s
+
+\end{itemize}
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+the data are written in a FITS file containing two binary table
+extensions. The first extension contains two fields, \code{Line\_label} and
+\code{Wavelength}, giving the four-letter cloudy line codes and central
+wavelengths. The second extension contains four columns, giving the
+unique ID, trial number, time, and line luminosity for each line at
+each time in each trial.
+
+If the SLUG data input to cloudy\_slug were written in \code{binary} mode,
+the data are written in a raw binary file. The file starts with a
+header consisting of
+\begin{itemize}
+\item {} 
+\code{NLine} (python \code{int}, equivalent to C \code{long}): number of lines
+
+\item {} 
+\code{LineLabel} (\code{NLine} entries stored as \code{ASCII text}): line
+labels listed in ASCII, one label per line
+
+\end{itemize}
+
+This is followed by a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+\begin{itemize}
+\item {} 
+\code{Time} (\code{double})
+
+\item {} 
+\code{NCluster} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): number of non-disrupted clusters present at this time
+
+\end{itemize}
+
+This is followed by \code{NCluster} entries of the following form:
+\begin{itemize}
+\item {} 
+\code{UniqueID} (numpy \code{uint64})
+
+\item {} 
+\code{LineLum} (\code{NLine} entries of numpy \code{float64})
+
+\end{itemize}
+
+
+\subsection{The \texttt{cluster\_cloudyspec} File}
+\label{cloudy:the-cluster-cloudyspec-file}
+This file contains data on the spectra produced by the interaction of
+the stellar radiation field with the ISM around each cluster. It
+consists of a series of entries containing the following fields:
+\begin{itemize}
+\item {} 
+\code{UniqueID}: a unique identifier number for each cluster that is
+preserved across times and output files
+
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{Wavelength}: observed frame wavelength at which the spectrum is evaluated
+
+\item {} 
+\code{Incident}: specific luminosity in erg/s/Angstrom at the specified
+wavelength for the \emph{incident} radiation field
+
+\item {} 
+\code{Transmitted}: specific luminosity in erg/s/Angstrom at the specified
+wavelength for the \emph{transmitted} radiation field
+
+\item {} 
+\code{Emitted}: specific luminosity in erg/s/Angstrom at the specified
+wavelength for the \emph{emitted} radiation field
+
+\item {} 
+\code{Transmitted\_plus\_emitted}: specific luminosity in erg/s/Angstrom
+at the specified wavelength for the \emph{transmitted plus emitted}
+radiation field
+
+\end{itemize}
+
+For explanations of the distinction between the incident, transmitted,
+emitted, and transmitted plus emitted radiation fields, see
+{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{The integrated\_cloudyspec File}}}.
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+these data are written in a FITS file containing two binary table
+extensions. The first table contains a column \code{Wavelength} listing
+the wavelengths at which the spectra are given. The second table
+consists of seven columns: \code{Trial}, \code{UniqueID}, \code{Time},
+\code{Incident\_spectrum}, \code{Transmitted\_spectrum}, \code{Emitted\_spectrum},
+and \code{Transmitted\_plus\_emitted\_spectrum}. The first three of these
+give the trial number, unique ID of the cluster, and the time. The
+remaining four give the incident, transmitted, emitted, and
+transmitted plus emitted spectra for the corresponding cluster.
+
+If the SLUG data input to cloudy\_slug were written in \code{binary} mode,
+these data are written to a raw binary file formatted as follows. The
+file starts with
+\begin{itemize}
+\item {} 
+\code{NWavelength} (numpy \code{int64}): the number of wavelength entries in the spectra
+
+\item {} 
+\code{Wavelength} (\code{NWavelength} entries of type \code{double})
+
+\end{itemize}
+
+and then contains a series of records, one for each output time, with
+different trials ordered sequentially, so that all the times for one
+trial are output before the first time for the next trial. Each record
+consists of a header containing
+\begin{itemize}
+\item {} 
+\code{Time} (\code{double})
+
+\item {} 
+\code{NCluster} (python \code{int}): number of non-disrupted clusters present at this time
+
+\end{itemize}
+
+This is followed by \code{NCluster} entries of the following form:
+\begin{itemize}
+\item {} 
+\code{UniqueID} (\code{unsigned long})
+
+\item {} 
+\code{Incident} (\code{NWavelength} entries of numpy \code{float64})
+
+\item {} 
+\code{Transmitted} (\code{NWavelength} entries of numpy \code{float64})
+
+\item {} 
+\code{Emitted} (\code{NWavelength} entries of numpy \code{float64})
+
+\item {} 
+\code{Transmitted\_plus\_emitted} (\code{NWavelength} entries of numpy
+\code{float64})
+
+\end{itemize}
+
+
+\subsection{The \texttt{cluster\_cloudyphot} File}
+\label{cloudy:the-cluster-cloudyphot-file}
+This file contains data on the photometry of the spectra produced by
+the interaction of the stellar radiation field with the ISM around
+each cluster. It consists of a series of entries containing the
+following fields:
+\begin{itemize}
+\item {} 
+\code{UniqueID}: a unique identifier number for each cluster that is
+preserved across times and output files
+
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{PhotFilter1\_trans}: photometric value for the \emph{Transmitted}
+radiation field through filter 1, where filter 1 here is the same as
+filter 1 in {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}; units are also the same as
+in that file.
+
+\item {} 
+\code{PhotFilter1\_emit}: photometric value for the \emph{Emitted}
+radiation field through filter 1
+
+\item {} 
+\code{PhotFilter1\_trans\_emit}: photometric value for the
+\emph{Transmitted\_plus\_emitted} radiation field through filter 1
+
+\item {} 
+\code{PhotFilter2\_trans}
+
+\item {} 
+\code{PhotFilter2\_emit}
+
+\item {} 
+\code{PhotFilter2\_trans\_emit}
+
+\item {} 
+\code{...}
+
+\end{itemize}
+
+For distinctions between the \emph{Transmitted}, \emph{Emitted}, and
+\emph{Transmitted\_plus\_emitted} radiation fields, see
+{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{The integrated\_cloudyspec File}}}, or the \href{http://nublado.org}{cloudy documentaiton}. Note that we do not record photometry for the
+incident spectrum, since that would be, up to the accuracy of the
+numerical integration, identical to the photometry already recorded in
+the {\hyperref[output:ssec-cluster-phot-file]{\emph{The cluster\_phot File}}}.
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+these data are written in a FITS file containing one binary table
+extension. The columns in this FITS file are \code{Trial}, \code{UniqueID},
+\code{Time}, \code{Filter1\_Transmitted}, \code{Filter1\_Emitted},
+\code{Filter1\_Transmitted\_plus\_emitted}, \code{...}. The first three columns
+give the trial number, cluster unique ID, and the time, and the
+remainder give the photometric values for the transmitted, emitted,
+and transmitted plus emitted spectra in each filter.
+
+If the SLUG data input to cloudy\_slug were written in \code{binary} mode,
+these data are written in a raw binary file that is formatted as
+follows. The file starts with an ASCII text header consisting of the
+following, each on a separate line:
+\begin{itemize}
+\item {} 
+\code{NFilter} (stored as \code{ASCII text}): number of filters used
+
+\item {} 
+\code{FilterName} \code{FilterUnit} (\code{NFilter} entries stored as \code{ASCII
+text}): the name and units for each filter are listed in ASCII, one
+filter-unit pair per line
+
+\end{itemize}
+
+This is followed by a series of entries of that each begin with a
+header
+\begin{itemize}
+\item {} 
+\code{Time} (\code{double})
+
+\item {} 
+\code{NCluster} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): number of non-disrupted clusters present at this time
+
+\end{itemize}
+
+This is followed by \code{NCluster} entries of the following form:
+\begin{itemize}
+\item {} 
+\code{UniqueID} (\code{unsigned long})
+
+\item {} 
+\code{PhotFilter\_Transmitted} (\code{NFilter} entries of numpy
+\code{float64}), giving the transmitted photometry in each filter
+
+\item {} 
+\code{PhotFilter\_Emitted} (\code{NFilter} entries of numpy
+\code{float64}), giving the emitted photometry in each filter
+
+\item {} 
+\code{PhotFilter\_Transmitted\_plus\_emitted} (\code{NFilter} entries of numpy
+\code{float64}), giving the transmitted plus emitted photometry in each
+filter
+
+\end{itemize}
 
 
 \chapter{slugpy -- The Python Helper Library}
@@ -1251,11 +2330,158 @@ idata = read\PYGZus{}integrated(\PYGZsq{}SLUG\PYGZus{}MODEL\PYGZus{}NAME\PYGZsq{
 cdata = read\PYGZus{}cluster(\PYGZsq{}SLUG\PYGZus{}MODEL\PYGZus{}NAME\PYGZsq{})
 \end{Verbatim}
 
-The \code{read\_integrated} function reads all the integrated-light data (i.e., the data stored in the \code{\_integrated\_*} files -- see {\hyperref[output:sec-output]{\emph{Output Files and Format}}}) for a SLUG output whose name is given as the argument. This is the base name specified by the \code{model\_name} keyword (see {\hyperref[parameters:ssec-basic-keywords]{\emph{Basic Keywords}}}), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a \code{namedtuple} containing all the output data available for that simulation. The \code{read\_cluster} function is analogous, except that instead of reading the whole-galaxy data, it reads data on the individual star clusters, as stored in the \code{\_cluster\_*} output files.
+The \code{read\_integrated} function reads all the integrated-light data (i.e., the data stored in the \code{\_integrated\_*} files -- see {\hyperref[output:sec-output]{\emph{Output Files and Format}}}) for a SLUG output whose name is given as the argument. This is the base name specified by the \code{model\_name} keyword (see {\hyperref[parameters:ssec-basic-keywords]{\emph{Basic Keywords}}}), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a \code{namedtuple} containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see {\hyperref[cloudy:sec-cloudy-slug]{\emph{cloudy\_slug: An Automated Interface to cloudy}}}) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:
+\begin{itemize}
+\item {} 
+time: output times
+
+\item {} 
+target\_mass: target stellar mass at each time
+
+\item {} 
+actual\_mass: actual stellar mass at each time
+
+\item {} 
+live\_mass: mass of currently-alive stars
+
+\item {} 
+cluster\_mass: mass of living stars in non-disrupted clusters
+
+\item {} 
+num\_clusters: number of non-disrupted clusters
+
+\item {} 
+num\_dis\_clusters: number of disrupted clusters
+
+\item {} 
+num\_fld\_stars: number of still-living stars that formed in the field
+
+\item {} 
+wl: wavelengths of output stellar spectra (in Angstrom)
+
+\item {} 
+spec: integrated spectrum of all stars, expressed as a specific luminosity (erg/s/Angstrom)
+
+\item {} 
+filter\_names: list of photometric filter names
+
+\item {} 
+filter\_units: list of units for photometric outputs
+
+\item {} 
+filter\_wl\_eff: effective wavelength for each photometric filter
+
+\item {} 
+filter\_wl: list of wavelengths for each filter at which the response function is given (in Angstrom)
+
+\item {} 
+filter\_response: photon response function for each filter at each wavelength (dimensionless)
+
+\item {} 
+filter\_beta: index \(\beta\) used to set the normalization for each filter -- see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra, Photometry, and Extinction}}}
+
+\item {} 
+filter\_wl\_c: pivot wavelength used to set the normalization for each filter for which \(\beta \neq 0\) -- see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra, Photometry, and Extinction}}}
+
+\item {} 
+phot: photometry in each filter
+
+\end{itemize}
+
+The following fields are present only if SLUG was run with extinction enabled:
+\begin{itemize}
+\item {} 
+wl\_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl\_ex may contain fewer elements than wl\_ex, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.
+
+\item {} 
+spec\_ex: same as spec, but for the extincted spectrum. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.
+
+\item {} 
+phot\_ex: same as phot, but for the extincted spectrum. Note that some values may be \code{NaN}. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
+
+\end{itemize}
+
+The following fields are present only for runs that have been processed through the cloudy\_slug interface (see {\hyperref[cloudy:sec-cloudy-slug]{\emph{cloudy\_slug: An Automated Interface to cloudy}}}):
+\begin{itemize}
+\item {} 
+cloudy\_wl: wavelengths of the output nebular spectra (in Angstrom)
+
+\item {} 
+cloudy\_inc: incident stellar radiation field, expressed as a specific luminosity (erg/s/Angstrom) -- should be the same as spec, but binned onto cloudy's wavelength grid; provided mainly as a bug-checking diagnostic
+
+\item {} 
+cloudy\_trans: the transmitted stellar radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) -- this is the radiation field of the stars after it has passed through the HII region, and is what one would see in an observational aperture centered on the stars with negligible contribution from the nebula
+
+\item {} 
+cloudy\_emit: the emitted nebular radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) -- this is the radiation emitted by the nebula excluding the stars, and is what one would see in an observational aperture that included the nebula but masked out the stars
+
+\item {} 
+cloudy\_trans\_emit: the sum of the transmitted stellar and emitted nebular radiation, expressed as a specific luminosity (erg/s/Angstrom) -- this is what one would see in an observational aperture covering the both the stars and the nebula
+
+\item {} 
+cloudy\_linelabel: list of emitting species for the line luminosities computed by cloudy, following cloudy's 4-letter notation
+
+\item {} 
+cloudy\_linewl: wavelengths of all the lines computed by cloudy (in Angstrom)
+
+\item {} 
+cloudy\_linelum: luminosities of the lines computed by cloudy (in erg/s)
+
+\item {} 
+cloudy\_filter\_names, cloudy\_filter\_units, cloudy\_filter\_wl\_eff, cloudy\_filter\_wl, cloudy\_filter\_response, cloudy\_filter\_beta, cloudy\_filter\_wl\_c: exactly the same as the corresponding fields without the cloudy prefix, but for the photometric filters applied to the cloudy output
+
+\item {} 
+cloudy\_phot\_trans, cloudy\_phot\_emit, and cloudy\_phot\_trans\_emit: photometry of the transmitted, emitted, and transmitted+emitted radiation field provided by cloudy\_trans, cloudy\_emit, and cloudy\_trans\_emit
+
+\end{itemize}
+
+For the above fields, quantities that are different for each trial and each time are stored as numpy arrays with a shape (N\_times, N\_trials) for scalar quantities (e.g., actual\_mass), or a shape (N, N\_times, N\_trials) for quantities that are vectors of length N (e.g., the spectrum).
+
+The \code{read\_cluster} function is analogous, except that instead of reading the whole-galaxy data, it reads data on the individual star clusters, as stored in the \code{\_cluster\_*} output files. It returns the following fields:
+\begin{itemize}
+\item {} 
+id: a unique identifier number for each cluster; this is guaranteed to be unique across both times and trials, so that if two clusters in the list have the same id number, that means that the data given are for the same cluster at two different times in its evolution
+
+\item {} 
+trial: the trial number in which that cluster appeared
+
+\item {} 
+time: the time at which the data for that cluster are computed
+
+\item {} 
+form\_time: the time at which that cluster formed
+
+\item {} 
+lifetime: the between when the cluster formed and when it will disrupt
+
+\item {} 
+target\_mass: the target stellar mass of the cluster
+
+\item {} 
+actual\_mass: the actual stellar mass of the cluter
+
+\item {} 
+live\_mass: the mass of all still-living stars in the cluster
+
+\item {} 
+num\_star: the number of stars in the cluster
+
+\item {} 
+max\_star\_mass: the mass of the single most massive still-living star in the cluster
+
+\item {} 
+A\_V: the visual extinction for this cluster, in mag; present only if SLUG was run with extinction enabled
+
+\item {} 
+All the remaining fields are identical to those listed above for integrated quantities, starting with wl
+
+\end{itemize}
+
+For all these fields, scalar quantities that are different for each cluster (e.g., actual\_mass) will be stored as arrays of shape (N\_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N\_cluster, N).
 
 
-\section{Full Documentation}
-\label{slugpy:full-documentation}\label{slugpy:module-slugpy}\index{slugpy (module)}\index{combine\_cluster() (in module slugpy)}
+\section{Full Documentation of slugpy}
+\label{slugpy:module-slugpy}\label{slugpy:full-documentation-of-slugpy}\index{slugpy (module)}\index{combine\_cluster() (in module slugpy)}
 
 \begin{fulllineitems}
 \phantomsection\label{slugpy:slugpy.combine_cluster}\pysiglinewithargsret{\code{slugpy.}\bfcode{combine\_cluster}}{\emph{data}}{}
@@ -1381,7 +2607,7 @@ Vega --\textgreater{} absolute Vega magnitude;
 \index{photometry\_convert() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.photometry_convert}\pysiglinewithargsret{\code{slugpy.}\bfcode{photometry\_convert}}{\emph{photsystem}, \emph{phot}, \emph{units}, \emph{wl\_cen=None}, \emph{filter\_last=False}}{}
+\phantomsection\label{slugpy:slugpy.photometry_convert}\pysiglinewithargsret{\code{slugpy.}\bfcode{photometry\_convert}}{\emph{photsystem}, \emph{phot}, \emph{units}, \emph{wl\_cen=None}, \emph{filter\_last=False}, \emph{filter\_names=None}, \emph{filter\_dir=None}}{}
 Function to convert photometric data between photometric systems.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -1396,7 +2622,9 @@ not be None.
 \item[{phot}] \leavevmode{[}array{]}
 array of photometric data; if the array has more than one
 dimension, the first dimension is assumed to represent the
-different photometric filters
+different photometric filters (unless filter\_last is True,
+in which case the last dimension is represents the array of
+filters)
 
 \item[{units}] \leavevmode{[}iterable of strings{]}
 iterable listing the units of the input photometric data. On
@@ -1413,6 +2641,17 @@ is assumed that the first dimension contains values for the
 different photometric filters. If this keyword is set to True,
 it will instead be assumed that the last dimension contains the
 values for the different filters.
+
+\item[{filter\_names}] \leavevmode{[}iterable of strings{]}
+Names of all filters, used to read the filter response
+functions from disk; only needed for conversions to and from
+Vega magnitudes, and ignored otherwise
+
+\item[{filter\_dir}] \leavevmode{[}string{]}
+Directory where the filter data files can be found. If left as
+None, filters will be looked for in the \$SLUG\_DIR/lib/filters
+directory. This parameter is used only for conversions to
+and from Vega magnitudes.
 
 \end{description}
 
@@ -1559,6 +2798,94 @@ indicated in the units field
 
 \end{description}
 
+(Present if the run being read contains a cluster\_cloudyspec file)
+\begin{description}
+\item[{cloudy\_wl}] \leavevmode{[}array{]}
+wavelength, in Angstrom
+
+\item[{cloudy\_inc}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity of the cluster's stellar radiation field at
+each wavelength, in erg/s/A
+
+\item[{cloudy\_trans}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity of the stellar radiation field after it has
+passed through the HII region, at each wavelength, in erg/s/A
+
+\item[{cloudy\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity of the radiation field emitted by the HII
+region, at each wavelength, in erg/s/A
+
+\item[{cloudy\_trans\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+the sum of the emitted and transmitted fields; this is what
+would be seen by an observer looking at both the star cluster
+and its nebula
+
+\end{description}
+
+(Present if the run being read contains a cluster\_cloudylines file)
+\begin{description}
+\item[{cloudy\_linelabel}] \leavevmode{[}array, dtype='S4', shape (N\_lines){]}
+labels for the lines, following cloudy's 4 character line label
+notation
+
+\item[{cloudy\_linewl}] \leavevmode{[}array, shape (N\_lines){]}
+rest wavelength for each line, in Angstrom
+
+\item[{cloudy\_linelum}] \leavevmode{[}array, shape (N\_cluster, N\_lines){]}
+luminosity of each line at each time for each trial, in erg/s
+
+\end{description}
+
+(Present if the run being read contains a cluster\_cloudyphot file)
+\begin{description}
+\item[{cloudy\_filter\_names}] \leavevmode{[}list of string{]}
+a list giving the name for each filter
+
+\item[{cloudy\_filter\_units}] \leavevmode{[}list of string{]}
+a list giving the units for each filter
+
+\item[{cloudy\_filter\_wl\_eff}] \leavevmode{[}list{]}
+effective wavelength of each filter; this is set to None for the
+filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
+True
+
+\item[{cloudy\_filter\_wl}] \leavevmode{[}list of arrays{]}
+a list giving the wavelength table for each filter; this is
+None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
+nofilterdata is True
+
+\item[{cloudy\_filter\_response}] \leavevmode{[}list of arrays{]}
+a list giving the photon response function for each filter;
+this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
+if nofilterdata is True
+
+\item[{cloudy\_filter\_beta}] \leavevmode{[}list{]}
+powerlaw index beta for each filter; used to normalize the
+photometry
+
+\item[{cloudy\_filter\_wl\_c}] \leavevmode{[}list{]}
+pivot wavelength for each filter; used to normalize the photometry
+
+\item[{cloudy\_phot\_trans}] \leavevmode{[}array, shape (N\_cluster, N\_filter){]}
+photometric value for each cluster in each filter for the
+transmitted light (i.e., the starlight remaining after it has
+passed through the HII region); units are as indicated in
+the units field
+
+\item[{cloudy\_phot\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_filter){]}
+photometric value for each cluster in each filter for the
+emitted light (i.e., the diffuse light emitted by the HII
+region); units are as indicated in the units field
+
+\item[{cloudy\_phot\_trans\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_filter){]}
+photometric value in each filter for each cluster for the
+transmitted plus emitted light (i.e., the light coming
+directly from the stars after absorption by the HII region,
+plus the diffuse light emitted by the HII region); units are as
+indicated in the units field
+
+\end{description}
+
 \item[{Raises}] \leavevmode
 IOError, if no photometry file can be opened
 ValueError, if photsystem is set to an unknown values
@@ -1660,6 +2987,10 @@ pivot wavelength for each filter; used to normalize the photometry
 photometric value in each filter for each cluster; units are as
 indicated in the units field
 
+\item[{phot\_ex}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+same as phot, but after extinction has been applied (present
+only if SLUG was run with extinction enabled)
+
 \end{description}
 
 \item[{Raises}] \leavevmode
@@ -1737,6 +3068,10 @@ number of living stars in cluster being treated stochastically
 \item[{max\_star\_mass}] \leavevmode{[}array{]}
 mass of most massive living star in cluster
 
+\item[{A\_V}] \leavevmode{[}array{]}
+A\_V value for each cluster, in mag (present only if SLUG was
+run with extinction enabled)
+
 \end{description}
 
 \end{description}
@@ -1794,6 +3129,16 @@ wavelength, in Angstrom
 
 \item[{spec}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
 specific luminosity of each cluster at each wavelength, in erg/s/A
+
+\item[{wl\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)
+
+\item[{spec\_ex}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity at each wavelength in wl\_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)
 
 \end{description}
 
@@ -1984,6 +3329,95 @@ units are as indicated in the units field
 
 \end{description}
 
+(Only present if an integrated\_cloudyspec file is found)
+\begin{description}
+\item[{cloudy\_wl}] \leavevmode{[}array{]}
+wavelength, in Angstrom
+
+\item[{cloudy\_inc}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity of the stellar radiation field at each
+wavelength and each time for each trial, in erg/s/A
+
+\item[{cloudy\_trans}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity of the stellar radiation field after it has
+passed through the HII region, at each wavelength and each time
+for each trial, in erg/s/A
+
+\item[{cloudy\_emit}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity of the radiation field emitted by the HII
+region, at each wavelength and each time for each trial, in
+erg/s/A
+
+\item[{cloudy\_trans\_emit}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+the sum of emitted and transmitted; this is what would be seen
+by an observer looking at both the star cluster and its nebula
+
+\end{description}
+
+(Only present if an integrated\_cloudylines file is found)
+\begin{description}
+\item[{cloudy\_linelabel}] \leavevmode{[}array, dtype='S4', shape (N\_lines){]}
+labels for the lines, following cloudy's 4 character line label
+notation
+
+\item[{cloudy\_linewl}] \leavevmode{[}array, shape (N\_lines){]}
+rest wavelength for each line, in Angstrom
+
+\item[{cloudy\_linelum}] \leavevmode{[}array, shape (N\_lines, N\_times, N\_trials){]}
+luminosity of each line at each time for each trial, in erg/s
+
+\end{description}
+
+(Only present if an integrated\_cloudyphot file is found)
+\begin{description}
+\item[{cloudy\_filter\_names}] \leavevmode{[}list of string{]}
+a list giving the name for each filter
+
+\item[{cloudy\_filter\_units}] \leavevmode{[}list of string{]}
+a list giving the units for each filter
+
+\item[{cloudy\_filter\_wl\_eff}] \leavevmode{[}list{]}
+effective wavelength of each filter; this is set to None for the
+filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
+True
+
+\item[{cloudy\_filter\_wl}] \leavevmode{[}list of arrays{]}
+a list giving the wavelength table for each filter; this is
+None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
+nofilterdata is True
+
+\item[{cloudy\_filter\_response}] \leavevmode{[}list of arrays{]}
+a list giving the photon response function for each filter;
+this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
+if nofilterdata is True
+
+\item[{cloudy\_filter\_beta}] \leavevmode{[}list{]}
+powerlaw index beta for each filter; used to normalize the
+photometry
+
+\item[{cloudy\_filter\_wl\_c}] \leavevmode{[}list{]}
+pivot wavelength for each filter; used to normalize the photometry
+
+\item[{cloudy\_phot\_trans}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+photometric value in each filter at each time in each trial for
+the transmitted light (i.e., the starlight remaining after it
+has passed through the HII region); units are as indicated in
+the units field
+
+\item[{cloudy\_phot\_emit}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+photometric value in each filter at each time in each trial for
+the emitted light (i.e., the diffuse light emitted by the HII
+region); units are as indicated in the units field
+
+\item[{cloudy\_phot\_trans\_emit}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+photometric value in each filter at each time in each trial for
+the transmitted plus emitted light (i.e., the light coming
+directly from the stars after absorption by the HII region,
+plus the diffuse light emitted by the HII region); units are as
+indicated in the units field
+
+\end{description}
+
 \end{description}
 
 \end{fulllineitems}
@@ -2075,6 +3509,10 @@ pivot wavelength for each filter; used to normalize the photometry
 photometric value in each filter at each time in each trial;
 units are as indicated in the units field
 
+\item[{phot\_ex}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+same as phot, but after extinction has been applied (present
+only if SLUG was run with extinction enabled)
+
 \end{description}
 
 \item[{Raises}] \leavevmode
@@ -2125,7 +3563,7 @@ A namedtuple containing the following fields:
 \item[{time}] \leavevmode{[}array{]}
 Times at which data are output
 
-\item[{target\_mass}] \leavevmode{[}array, shape{]}
+\item[{target\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
 Target stellar mass at each time
 
 \item[{actual\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
@@ -2202,6 +3640,16 @@ wavelength, in Angstrom
 \item[{spec}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
 specific luminosity at each wavelength and each time for each
 trial, in erg/s/A
+
+\item[{wl\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)
+
+\item[{spec\_ex}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity at each wavelength in wl\_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)
 
 \end{description}
 
@@ -2344,16 +3792,1074 @@ Nothing
 
 
 
+\section{Full Documentation of slugpy.cloudy}
+\label{slugpy:module-slugpy.cloudy}\label{slugpy:full-documentation-of-slugpy-cloudy}\index{slugpy.cloudy (module)}\index{read\_cloudy\_continuum() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_cloudy_continuum}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_cloudy\_continuum}}{\emph{filename}, \emph{r0=None}}{}
+Reads a cloudy continuum output, produced by save last continuum
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{filename}] \leavevmode{[}string{]}
+name of the file to be read
+
+\item[{r0}] \leavevmode{[}float{]}
+inner radius, in cm; if included, the quantities returned will
+be total energies instead of energy emission rates instead of
+rates per unit area
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{wl}] \leavevmode{[}array{]}
+wavelengths in Angstrom
+
+\item[{incident}] \leavevmode{[}array{]}
+incident radiation field intensity
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_cloudy\_linelist() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_cloudy_linelist}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_cloudy\_linelist}}{\emph{filename}}{}
+Reads a cloudy line list output, produced by save last line list
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{filename}] \leavevmode{[}string{]}
+name of the file to be read
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{labels}] \leavevmode{[}array, dtype `S4'{]}
+list of line labels
+
+\item[{wl}] \leavevmode{[}array{]}
+array of line wavelengths, in Angstrom
+
+\item[{lum}] \leavevmode{[}array{]}
+array of line luminosities; this will be in whatever units the
+cloudy output is in
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_cluster\_cloudyphot() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_cluster_cloudyphot}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_cluster\_cloudyphot}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 cluster\_cloudyphot file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the SLUG2 output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the file to be read. Allowed values are `ascii',
+`bin' or `binary, and `fits'. If one of these is set, the code
+will only attempt to open ASCII-, binary-, or FITS-formatted
+output, ending in .txt., .bin, or .fits, respectively. If set
+to None, the code will try to open ASCII files first, then if
+it fails try binary files, and if it fails again try FITS
+files.
+
+\item[{nofilterdata}] \leavevmode{[}bool{]}
+If True, the routine does not attempt to read the filter
+response data from the standard location
+
+\item[{photsystem}] \leavevmode{[}None or string{]}
+If photsystem is None, the data will be returned in the same
+photometric system in which they were read. Alternately, if it
+is a string, the data will be converted to the specified
+photometric system. Allowable values are `L\_nu', `L\_lambda',
+`AB', `STMAG', and `Vega', corresponding to the options defined
+in the SLUG code. If this is set and the conversion requested
+involves a conversion from a wavelength-based system to a
+frequency-based one, nofilterdata must be False so that the
+central wavelength of the photometric filters is available.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{id}] \leavevmode{[}array, dtype uint{]}
+unique ID of cluster
+
+\item[{trial: array, dtype uint}] \leavevmode
+which trial was this cluster part of
+
+\item[{time}] \leavevmode{[}array{]}
+times at which cluster spectra are output, in yr
+
+\item[{cloudy\_filter\_names}] \leavevmode{[}list of string{]}
+a list giving the name for each filter
+
+\item[{cloudy\_filter\_units}] \leavevmode{[}list of string{]}
+a list giving the units for each filter
+
+\item[{cloudy\_filter\_wl\_eff}] \leavevmode{[}list{]}
+effective wavelength of each filter; this is set to None for the
+filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
+True
+
+\item[{cloudy\_filter\_wl}] \leavevmode{[}list of arrays{]}
+a list giving the wavelength table for each filter; this is
+None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
+nofilterdata is True
+
+\item[{cloudy\_filter\_response}] \leavevmode{[}list of arrays{]}
+a list giving the photon response function for each filter;
+this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
+if nofilterdata is True
+
+\item[{cloudy\_filter\_beta}] \leavevmode{[}list{]}
+powerlaw index beta for each filter; used to normalize the
+photometry
+
+\item[{cloudy\_filter\_wl\_c}] \leavevmode{[}list{]}
+pivot wavelength for each filter; used to normalize the photometry
+
+\item[{cloudy\_phot\_trans}] \leavevmode{[}array, shape (N\_cluster, N\_filter){]}
+photometric value for each cluster in each filter for the
+transmitted light (i.e., the starlight remaining after it has
+passed through the HII region); units are as indicated in
+the units field
+
+\item[{cloudy\_phot\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_filter){]}
+photometric value for each cluster in each filter for the
+emitted light (i.e., the diffuse light emitted by the HII
+region); units are as indicated in the units field
+
+\item[{cloudy\_phot\_trans\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_filter){]}
+photometric value in each filter for each cluster for the
+transmitted plus emitted light (i.e., the light coming
+directly from the stars after absorption by the HII region,
+plus the diffuse light emitted by the HII region); units are as
+indicated in the units field
+
+\end{description}
+
+\item[{Raises}] \leavevmode
+IOError, if no photometry file can be opened;
+ValueError, if photsystem is set to an unknown value
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_cluster\_cloudylines() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_cluster_cloudylines}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_cluster\_cloudylines}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 cluster\_cloudylines file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the SLUG2 output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the file to be read. Allowed values are `ascii',
+`bin' or `binary, and `fits'. If one of these is set, the code
+will only attempt to open ASCII-, binary-, or FITS-formatted
+output, ending in .txt., .bin, or .fits, respectively. If set
+to None, the code will try to open ASCII files first, then if
+it fails try binary files, and if it fails again try FITS
+files.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{id}] \leavevmode{[}array, dtype uint{]}
+unique ID of cluster
+
+\item[{trial: array, dtype uint}] \leavevmode
+which trial was this cluster part of
+
+\item[{time}] \leavevmode{[}array{]}
+times at which cluster spectra are output, in yr
+
+\item[{cloudy\_linelabel}] \leavevmode{[}array, dtype='S4', shape (N\_lines){]}
+labels for the lines, following cloudy's 4 character line label
+notation
+
+\item[{cloudy\_linewl}] \leavevmode{[}array, shape (N\_lines){]}
+rest wavelength for each line, in Angstrom
+
+\item[{cloudy\_linelum}] \leavevmode{[}array, shape (N\_cluster, N\_lines){]}
+luminosity of each line at each time for each trial, in erg/s
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_cluster\_cloudyspec() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_cluster_cloudyspec}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_cluster\_cloudyspec}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 cluster\_cloudyspec file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the SLUG2 output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the file to be read. Allowed values are `ascii',
+`bin' or `binary, and `fits'. If one of these is set, the code
+will only attempt to open ASCII-, binary-, or FITS-formatted
+output, ending in .txt., .bin, or .fits, respectively. If set
+to None, the code will try to open ASCII files first, then if
+it fails try binary files, and if it fails again try FITS
+files.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{id}] \leavevmode{[}array, dtype uint{]}
+unique ID of cluster
+
+\item[{trial: array, dtype uint}] \leavevmode
+which trial was this cluster part of
+
+\item[{time}] \leavevmode{[}array{]}
+times at which cluster spectra are output, in yr
+
+\item[{cloudy\_wl}] \leavevmode{[}array{]}
+wavelength, in Angstrom
+
+\item[{cloudy\_inc}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity of the cluster's stellar radiation field at
+each wavelength, in erg/s/A
+
+\item[{cloudy\_trans}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity of the stellar radiation field after it has
+passed through the HII region, at each wavelength, in erg/s/A
+
+\item[{cloudy\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity of the radiation field emitted by the HII
+region, at each wavelength, in erg/s/A
+
+\item[{cloudy\_trans\_emit}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+the sum of the emitted and transmitted fields; this is what
+would be seen by an observer looking at both the star cluster
+and its nebula
+
+\end{description}
+
+\item[{Raises}] \leavevmode
+IOError, if no spectrum file can be opened
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_integrated\_cloudylines() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_integrated_cloudylines}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_integrated\_cloudylines}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 integrated\_cloudylines file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the SLUG2 output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the file to be read. Allowed values are `ascii',
+`bin' or `binary, and `fits'. If one of these is set, the code
+will only attempt to open ASCII-, binary-, or FITS-formatted
+output, ending in .txt., .bin, or .fits, respectively. If set
+to None, the code will try to open ASCII files first, then if
+it fails try binary files, and if it fails again try FITS
+files.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{time}] \leavevmode{[}array{]}
+times at which line luminosities are output, in yr
+
+\item[{cloudy\_linelabel}] \leavevmode{[}array, dtype='S4', shape (N\_lines){]}
+labels for the lines, following cloudy's 4 character line label
+notation
+
+\item[{cloudy\_linewl}] \leavevmode{[}array, shape (N\_lines){]}
+rest wavelength for each line, in Angstrom
+
+\item[{cloudy\_linelum}] \leavevmode{[}array, shape (N\_lines, N\_times, N\_trials){]}
+luminosity of each line at each time for each trial, in erg/s
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_integrated\_cloudyphot() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_integrated_cloudyphot}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_integrated\_cloudyphot}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 integrated\_cloudyphot file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the SLUG2 output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the file to be read. Allowed values are `ascii',
+`bin' or `binary, and `fits'. If one of these is set, the code
+will only attempt to open ASCII-, binary-, or FITS-formatted
+output, ending in .txt., .bin, or .fits, respectively. If set
+to None, the code will try to open ASCII files first, then if
+it fails try binary files, and if it fails again try FITS
+files.
+
+\item[{nofilterdata}] \leavevmode{[}bool{]}
+If True, the routine does not attempt to read the filter
+response data from the standard location
+
+\item[{photsystem}] \leavevmode{[}None or string{]}
+If photsystem is None, the data will be returned in the same
+photometric system in which they were read. Alternately, if it
+is a string, the data will be converted to the specified
+photometric system. Allowable values are `L\_nu', `L\_lambda',
+`AB', `STMAG', and `Vega', corresponding to the options defined
+in the SLUG code. If this is set and the conversion requested
+involves a conversion from a wavelength-based system to a
+frequency-based one, nofilterdata must be False so that the
+central wavelength of the photometric filters is available.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{time}] \leavevmode{[}array{]}
+times at which spectra are output, in yr
+
+\item[{cloudy\_filter\_names}] \leavevmode{[}list of string{]}
+a list giving the name for each filter
+
+\item[{cloudy\_filter\_units}] \leavevmode{[}list of string{]}
+a list giving the units for each filter
+
+\item[{cloudy\_filter\_wl\_eff}] \leavevmode{[}list{]}
+effective wavelength of each filter; this is set to None for the
+filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
+True
+
+\item[{cloudy\_filter\_wl}] \leavevmode{[}list of arrays{]}
+a list giving the wavelength table for each filter; this is
+None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
+nofilterdata is True
+
+\item[{cloudy\_filter\_response}] \leavevmode{[}list of arrays{]}
+a list giving the photon response function for each filter;
+this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
+if nofilterdata is True
+
+\item[{cloudy\_filter\_beta}] \leavevmode{[}list{]}
+powerlaw index beta for each filter; used to normalize the
+photometry
+
+\item[{cloudy\_filter\_wl\_c}] \leavevmode{[}list{]}
+pivot wavelength for each filter; used to normalize the photometry
+
+\item[{cloudy\_phot\_trans}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+photometric value in each filter at each time in each trial for
+the transmitted light (i.e., the starlight remaining after it
+has passed through the HII region); units are as indicated in
+the units field
+
+\item[{cloudy\_phot\_emit}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+photometric value in each filter at each time in each trial for
+the emitted light (i.e., the diffuse light emitted by the HII
+region); units are as indicated in the units field
+
+\item[{cloudy\_phot\_trans\_emit}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
+photometric value in each filter at each time in each trial for
+the transmitted plus emitted light (i.e., the light coming
+directly from the stars after absorption by the HII region,
+plus the diffuse light emitted by the HII region); units are as
+indicated in the units field
+
+\end{description}
+
+\item[{Raises}] \leavevmode
+IOError, if no photometry file can be opened;
+ValueError, if photsystem is set to an unknown value
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_integrated\_cloudyspec() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.read_integrated_cloudyspec}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_integrated\_cloudyspec}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 integrated\_cloudyspec file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the SLUG2 output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the file to be read. Allowed values are `ascii',
+`bin' or `binary, and `fits'. If one of these is set, the code
+will only attempt to open ASCII-, binary-, or FITS-formatted
+output, ending in .txt., .bin, or .fits, respectively. If set
+to None, the code will try to open ASCII files first, then if
+it fails try binary files, and if it fails again try FITS
+files.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{time}] \leavevmode{[}array{]}
+times at which spectra are output, in yr
+
+\item[{cloudy\_wl}] \leavevmode{[}array{]}
+wavelength, in Angstrom
+
+\item[{cloudy\_inc}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity of the stellar radiation field at each
+wavelength and each time for each trial, in erg/s/A
+
+\item[{cloudy\_trans}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity of the stellar radiation field after it has
+passed through the HII region, at each wavelength and each time
+for each trial, in erg/s/A
+
+\item[{cloudy\_emit}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity of the radiation field emitted by the HII
+region, at each wavelength and each time for each trial, in
+erg/s/A
+
+\item[{cloudy\_trans\_emit}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+the sum of emitted and transmitted; this is what would be seen
+by an observer looking at both the star cluster and its nebula
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{write\_cluster\_cloudyphot() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.write_cluster_cloudyphot}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_cluster\_cloudyphot}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out photometry for nebular emission computed by cloudy on a
+slug spectrum for a series of clusters
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Cluster cloudy photometry data to be written; a namedtuple
+containing the fields id, time, cloudy\_filter\_names, 
+cloudy\_filter\_units, cloudy\_phot\_trans, cloudy\_phot\_emit,
+and cloudy\_phot\_trans\_emit
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{write\_cluster\_cloudylines() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.write_cluster_cloudylines}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_cluster\_cloudylines}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out data computed by cloudy on a slug spectrum
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Cloudy spectral data for clusters to be written; a namedtuple
+containing the fields time, cloudy\_linelist, cloudy\_linewl, 
+cloudy\_linelum
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{write\_cluster\_cloudyspec() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.write_cluster_cloudyspec}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_cluster\_cloudyspec}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out data computed by cloudy on a slug spectrum
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Cloudy spectral data for clusters to be written; a namedtuple
+containing the fields id, time, cloudy\_wl, cloudy\_inc, cloudy\_trans,
+cloudy\_emit, and cloudy\_trans\_emit
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{write\_integrated\_cloudylines() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.write_integrated_cloudylines}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_integrated\_cloudylines}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out line luminosities computed by cloudy on a slug spectrum
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Integrated cloudy line data to be written; a namedtuple
+containing the fields time, cloudy\_linelist, cloudy\_linewl, 
+cloudy\_linelum
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{write\_integrated\_cloudyphot() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.write_integrated_cloudyphot}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_integrated\_cloudyphot}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out photometry for nebular emission computed by cloudy on a
+slug spectrum
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Integrated cloudy photometry data to be written; a namedtuple
+containing the fields time, cloudy\_filter\_names, 
+cloudy\_filter\_units, cloudy\_phot\_trans, cloudy\_phot\_emit,
+and cloudy\_phot\_trans\_emit
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{write\_integrated\_cloudyspec() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.cloudy.write_integrated_cloudyspec}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_integrated\_cloudyspec}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out data computed by cloudy on a slug spectrum
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Integrated cloudy spectral data to be written; a namedtuple
+containing the field time, cloudy\_wl, cloudy\_inc, cloudy\_trans,
+cloudy\_emit, and cloudy\_trans\_emit
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+
+
+\section{Full Documentation of slugpy.sfr\_slug}
+\label{slugpy:full-documentation-of-slugpy-sfr-slug}\index{sfr\_slug (class in slugpy.sfr\_slug)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.sfr\_slug.}\bfcode{sfr\_slug}}{\emph{libname=None}, \emph{detname=None}, \emph{bandwidth=0.1}}{}
+A class that can be used to estimate the PDF of true star
+formation rate from a set of input point mass estimates of the
+star formation rate.
+\begin{description}
+\item[{Attributes}] \leavevmode\begin{description}
+\item[{dataset}] \leavevmode{[}array{]}
+the training dataset to be used for KDE estimation
+
+\item[{dataset\_filters}] \leavevmode{[}list of string{]}
+filters represented in the training data set
+
+\item[{conversions}] \leavevmode{[}array{]}
+conversions between luminosity and SFR in the point mass
+estimate
+
+\item[{kde}] \leavevmode{[}KernelDensity object{]}
+a KernelDensity estimator constructed from the dataset
+
+\item[{kde\_filters}] \leavevmode{[}list of string{]}
+filters represented in the KDE object
+
+\item[{kde\_limits}] \leavevmode{[}array{]}
+range over which KDE is non-zero
+
+\item[{libname}] \leavevmode{[}string{]}
+name of the SLUG model from which the data set was read
+
+\item[{detname}] \leavevmode{[}string{]}
+name of a SLUG model run with the same parameters as
+libname, but with no stochasticity
+
+\end{description}
+
+\end{description}
+\index{\_\_call\_\_() (slugpy.sfr\_slug.sfr\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug.__call__}\pysiglinewithargsret{\bfcode{\_\_call\_\_}}{\emph{logsfr\_est}, \emph{logsfr\_err=None}, \emph{filter\_name=None}, \emph{nmesh=100}, \emph{logsfr\_lim=None}, \emph{prior=None}, \emph{error\_est=False}, \emph{gkorder=None}}{}
+Return an estimate of the PDF of true star formation rate for
+one or more point mass estimates of the SFR using a particular
+photometric filter.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{logsfr\_est}] \leavevmode{[}float or array{]}
+a point mass estimate of log\_10 SFR; can be a float, 1D
+array or 2D array. For a 1D array the data are taken to
+be a series of point mass estimates of log\_10 SFR. For a
+2D array, the trailing dimension must match the length
+of filter\_name, and the data are taken to represent one
+or more log\_10 SFR point mass estimates using different
+filters
+
+\item[{logsfr\_err}] \leavevmode{[}float or array{]}
+error on logsfr\_est; must be the same shape as
+logsfr\_est; if left as None, data are assumed to have
+negligible errors and are treated as delta functions
+
+\item[{filter\_name}] \leavevmode{[}string or iterable{]}
+name or names of filters used for photometric SFR
+estimates; if left as None, stored values are used
+
+\item[{nmesh}] \leavevmode{[}int{]}
+number of mesh points at which to evaluate the SFR; note
+that accurate normalization requires that this not be
+too small
+
+\item[{logsfr\_lim}] \leavevmode{[}array, shape (2){]}
+limit the log SFR values considered to lie in the range
+logsfr\_lim{[}0{]} to logsfr\_lim{[}1{]}
+
+\item[{prior}] \leavevmode{[}callable{]}
+a callable that returns the prior probability
+distribution of log SFR; if set to None, the prior
+simply matches the distribution of input models
+
+\item[{error\_est: bool}] \leavevmode
+if True, an estimate of the error in the numerical
+convolution of the observaitonal uncertainties with the
+model is returned; ignored if logsfr\_err is None
+
+\item[{gkorder}] \leavevmode{[}string{]}
+order Gauss-Kronrod quadrature; allowed values are `15',
+`21', `31', `41', `51', `61'; default is `61' for a
+single filter, and `15' for \textgreater{}1 filter; this parameter
+has no effect unless logsfr\_err is not None
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple consisting of:
+\begin{description}
+\item[{logsfr}] \leavevmode{[}array, shape (nmesh){]}
+an array of log\_10 SFR values at which the PDF is evaluated
+
+\item[{sfrpdf}] \leavevmode{[}array, shape (nmesh) or shape (nmesh, ndata){]}
+the PDF of log\_10 SFR evaluate at the points in the
+logsfr array; if logsfr\_est is a float, this will be a
+1D array, while if logsr\_est is an array whose leading
+dimension has ndata elements, it will be a 2D array
+where entry {[}:,M{]} gives the PDF for the Mth input data
+value
+
+\item[{pdf\_err}] \leavevmode{[}array, shape (nmesh) or shape (nmesh, ndata){]}
+an estimate of the numerical error in pdf; returned only
+if error\_est is True
+
+\end{description}
+
+\item[{Raises}] \leavevmode
+ValueError, if filter\_name is not one of the filters
+available in dataset\_filters
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{\_\_init\_\_() (slugpy.sfr\_slug.sfr\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{detname=None}, \emph{bandwidth=0.1}}{}
+Initialize an sfr\_slug object.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{libname}] \leavevmode{[}string{]}
+name of the SLUG model to load; if left as None, the default
+is \$SLUG\_DIR/sfr\_slug/SFR\_SLUG
+
+\item[{detname}] \leavevmode{[}string{]}
+name of a SLUG model run with the same parameters but no
+stochasticity; used to establish the non-stochastic
+photometry to SFR conversions; if left as None, the default
+is libname\_DET
+
+\item[{bandwidth}] \leavevmode{[}float{]}
+bandwidth of the kernel to use in density estimates
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\item[{Raises}] \leavevmode
+IOError, if the library cannot be found
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{\_\_weakref\_\_ (slugpy.sfr\_slug.sfr\_slug attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug.__weakref__}\pysigline{\bfcode{\_\_weakref\_\_}}
+list of weak references to the object (if defined)
+
+\end{fulllineitems}
+
+\index{get\_kde() (slugpy.sfr\_slug.sfr\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug.get_kde}\pysiglinewithargsret{\bfcode{get\_kde}}{\emph{filter\_name}}{}
+Builds a KernelDensity object to estimate the joint PDF of the
+dataset in one or more filters, then returns it. Same as
+set\_kde, but the kde is returned rather than being stored
+interally.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{filter\_name}] \leavevmode{[}string or iterable{]}
+name or names of filters; the string `SFR' corresponds
+to the true star formation rate
+
+\end{description}
+
+\item[{Returns}] \leavevmode\begin{description}
+\item[{kde}] \leavevmode{[}KernelDensity object{]}
+the computed KernelDensity object
+
+\item[{kde\_limts}] \leavevmode{[}array, shape (N\_dim, 2){]}
+range over which the kde is non-zero; element {[}:,0{]}
+gives the minimum in each dimension, and {[}:,1{]} gives the
+maximum
+
+\end{description}
+
+\item[{Raises}] \leavevmode
+ValueError, if filter\_name is not one of the filters
+available in dataset\_filters
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{pdf() (slugpy.sfr\_slug.sfr\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug.pdf}\pysiglinewithargsret{\bfcode{pdf}}{\emph{x}, \emph{filter\_name=None}, \emph{nosave=False}}{}
+Return the PDF of the data set in one or more filters.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array{]}
+point or points at which the PDF is to be evaluated; the
+trailing dimension of x must match the number of
+elements in filter\_name
+
+\item[{filter\_name}] \leavevmode{[}string or iterable{]}
+name or names of filters used for photometric SFR
+estimates, or `SFR' for the true SFR; if left as None,
+the currently-stored filters are used
+
+\item[{nosave}] \leavevmode{[}bool{]}
+if True, the KDE constructed as part of the computation
+is not saved; if False, it is saved and overwrites the
+existing KDE
+
+\end{description}
+
+\item[{Returns}] \leavevmode\begin{description}
+\item[{logpdf}] \leavevmode{[}array{]}
+log of the value of the PDF evaluated at each of the
+input points
+
+\end{description}
+
+\item[{Raises}] \leavevmode
+ValueError, if filter\_name is left as None and no filters
+are set
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{pdfgrid() (slugpy.sfr\_slug.sfr\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug.pdfgrid}\pysiglinewithargsret{\bfcode{pdfgrid}}{\emph{filter\_name=None}, \emph{nmesh=50}, \emph{lim=None}, \emph{nosave=False}}{}
+Return the PDF of the data set in one or more filters,
+evaluated on a uniformly-spaced grid over the data.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{filter\_name}] \leavevmode{[}string or iterable{]}
+name or names of filters used for photometric SFR
+estimates; if left as None, the currently-stored filters
+are used
+
+\item[{nmesh}] \leavevmode{[}int{]}
+number of sample points per dimension to use in
+constructing a sampling grid
+
+\item[{lim}] \leavevmode{[}array, shape (Ndim, 2){]}
+limits of the sampling grid; element {[}i,0{]} gives the
+lower limit in the dimension corresponding to
+filter\_name{[}i{]}, and element {[}i,1{]} gives the upper
+limit; if left as None, limits are chosen automatically
+to fit the data set
+
+\item[{nosave}] \leavevmode{[}bool{]}
+if True, the KDE constructed as part of the computation
+is not saved; if False, it is saved and overwrites the
+existing KDE
+
+\end{description}
+
+\item[{Returns}] \leavevmode\begin{description}
+\item[{xlim}] \leavevmode{[}array, shape (Ndim, 2){]}
+limits of the grid over which the data was evaluated;
+Ndim is the number of dimensions of the data, which is
+equal to the number of elements in filter\_name
+
+\item[{logpdf}] \leavevmode{[}ndarray{]}
+log of the value of the PDF evaluated at each of the
+input points
+
+\end{description}
+
+\item[{Raises}] \leavevmode
+ValueError, if filter\_name is left as None and no filters
+are set
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{set\_kde() (slugpy.sfr\_slug.sfr\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.sfr_slug.sfr_slug.set_kde}\pysiglinewithargsret{\bfcode{set\_kde}}{\emph{filter\_name}}{}
+Builds a KernelDensity object to estimate the joint PDF of the
+dataset in one or more filters
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{filter\_name}] \leavevmode{[}string or iterable{]}
+name or names of filters used for photometric SFR
+estimates, or `SFR' for the true SFR; if left as None,
+the currently-stored filters are used
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\item[{Raises}] \leavevmode
+ValueError, if filter\_name is not one of the filters
+available in dataset\_filters
+
+\end{description}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
+
+
 \chapter{Test Problems}
 \label{tests:test-problems}\label{tests::doc}\label{tests:sec-tests}
-This section describes a set of problems that can be used to test and explore the different capabilities of SLUG. SLUG ships a set of problems \code{problemname} that are specified by a parameter file \code{param/problemname.param}. Problems that require multiple simulations are described instead by multiple paramater files, each with unique ID XX:  \code{param/problemnameXX.param}. Users can reproduce the output of the test problems with the provided executable scripts  \code{test/run\_problemname.sh}. For each problem, a script for analysis is distributed  in \code{test/problemname.py}. Details for each test problem are given below.  Throughout this section, it is assumed that the \code{SLUG\_DIR} has been properly set.
+This section describes a set of problems that can be used to test and explore the different capabilities of SLUG. SLUG ships a
+set of problems \code{problemname} that are specified by a parameter file \code{param/problemname.param}. Problems that require
+multiple simulations are described instead by multiple paramater files, each with unique ID XX:  \code{param/problemnameXX.param}.
+Users can reproduce the output of the test problems with the provided executable scripts  \code{test/run\_problemname.sh}.
+For each problem, a script for analysis is distributed  in \code{test/problemname.py}. Details for each test problem are given below.
+Throughout this section, it is assumed that the \code{SLUG\_DIR} has been properly set.
 
 
 \section{Problem \texttt{example}: basic galaxy simulation}
 \label{tests:problem-example-basic-galaxy-simulation}
-This problem illustrates the basic usage of slugin \code{galaxy} mode by running 48 realizations of a galaxy with constant \(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\), up to a maximum time of \(2\times 10^8\) yr. By issuing the command \code{test/run\_example.sh} the output files \code{SLUG\_EXAMPLE*} are generated. Once the models are ready, \code{python test/plot\_example.py} produces a multi-panel figure \code{test/SLUG\_EXAMPLE\_f1.pdf}.
+This problem illustrates the basic usage of slugin \code{galaxy} mode by running 48 realizations of a galaxy with constant
+\(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\), up to a maximum time of \(2\times 10^8\) yr. By issuing the
+command \code{test/run\_example.sh} the output files \code{SLUG\_EXAMPLE*} are generated. Once the models are ready,
+\code{python test/plot\_example.py} produces a multi-panel figure \code{test/SLUG\_EXAMPLE\_f1.pdf}.
 
-The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence
+The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a
+function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence
 of SLUG core algorithm. The 1:1 relation is shown by a red dashed line.
 The remaining panels show examples of integrated photometry (as labeled) of all simulated galaxies
 at different time steps, as a function of the actual mass. Due to its stochastic nature, SLUG produces
@@ -2365,12 +4871,15 @@ by red dashed lines in the relevant panels.
 
 \section{Problem \texttt{example\_cluster}: basic cluster simulation}
 \label{tests:problem-example-cluster-basic-cluster-simulation}
-This problem illustrates the basic usage of SLUG in \code{cluster} mode by running 1000 realizations of a cluster with mass 500 \(M_\odot\),
-up to a maximum time of 10 Myr. By issuing the command
+This problem illustrates the basic usage of SLUG in \code{cluster} mode by running 1000 realizations of a cluster
+with mass 500 \(M_\odot\), up to a maximum time of 10 Myr. By issuing the command
 \code{test/run\_example\_cluster.sh} the output files \code{SLUG\_CLUSTER\_EXAMPLE*} are
-generated. Once the models are ready, \code{python test/plot\_example\_cluster.py} produces a multi-panel figure \code{test/SLUG\_CLUSTER\_EXAMPLE\_f1.pdf}.
+generated. Once the models are ready, \code{python test/plot\_example\_cluster.py} produces a multi-panel
+figure \code{test/SLUG\_CLUSTER\_EXAMPLE\_f1.pdf}.
 
-This figure is divided in two columns: the left one shows outputs at the first time step, 1 Myr, while the second one shows outputs at the last time step, 10 Myr.  The top row shows the actual cluster mass for an input mass of \(500\;M_\odot\).
+This figure is divided in two columns: the left one shows outputs at the first time step, 1 Myr, while
+the second one shows outputs at the last time step, 10 Myr.  The top row shows the actual cluster mass for an
+input mass of \(500\;M_\odot\).
 In \code{cluster} mode, all clusters are generated at the first time step and they evolve
 passively after that. Thus, the mass does not change. As a consequence of the
 random drawing from the IMF, masses are distributed around the input mass.
@@ -2388,14 +4897,56 @@ most sensitive to the presence of massive stars, change accordingly
 
 \section{Problem \texttt{constsampl}: importance of constrained sampling}
 \label{tests:problem-constsampl-importance-of-constrained-sampling}
-This problem illustrates in more details the effects of constrained sampling on SLUG simulations,
-which is the first key ingredient in the core algorithm of SLUG.
+This problem illustrates in more detail the effects of constrained sampling on SLUG simulations.
+This is the first key ingredient in the core algorithm of SLUG. With the command \code{test/run\_constsampl.sh},
+three different \code{cluster} simulations are run, each with 1000 trials, but with masses of \(50\;M_\odot\),
+\(250\;M_\odot\), and \(500\;M_\odot\). A single timestep of \(10^6\) yr is generated.
+The analysis script \code{python test/plot\_constsampl.py} produces a multi-panel
+figure \code{test/SLUG\_CONSTSAMPL\_f1.pdf}.
 
-{[}change cluster mass to show how max mass changes{]}
+This figure shows the maximum mass of the stars in these realizations (top row), the
+rate of ionizing photons \(Q_{H_0}\) (central row), and the FUV luminosity (bottom row).
+Histograms refer, form left to right, to clusters with \(50\;M_\odot\), \(250\;M_\odot\),
+and \(500\;M_\odot\).
+
+Due to the small timestep, the distributions of stellar masses shown in the top panels reflect
+to good approximation the distribution of the maximum stellar masses that are drawn from the IMF by
+SLUG in each realization. For a cluster of \(50\;M_\odot\), the vast majority of the
+stars are drawn below  \(20-50\;M_\odot\). This is an obvious consequence of the
+fact that a cluster cannot contain stars much more massive than its own mass. However, stars
+more massive then the targeted mass are not impossible realizations for the default
+sampling algorithm (see below). For instance, if the first star to be drawn has
+mass \(60\;M_\odot\), then SLUG would add it to the cluster and stop. Leaving this star out
+would indeed be a worse approximation than overshooting the targeted cluster mass by only
+\(10\;M_\odot\).  From left to right, one can see that, as the targeted cluster mass increases, the
+histogram shifts to progressively higher masses. In the limit of an infinite cluster,
+all stellar masses would be represented, and the histogram would peak at \(120\;M_\odot\).
+Essentially, this constrained sampling introduces a stochastic (and not deterministic)
+variation in the IMF. An IMF truncated above \(60\;M_\odot\) would roughly
+approximate the results of the left column; however, a deterministic cut-off
+would not correctly reproduce the non-zero tail at higher masses, thus artificially
+reducing the scatter introduced by random sampling.
+
+The second and third row simply reflect what said above: for large clusters that can host
+stars at all masses, the luminosity peaks around what is expected according to a deterministic
+stellar population synthesis codes. At lower cluster masses, ionizing and UV fluxes
+are instead suppresses, due to the lack of massive stars. However, tails to high values exist
+in all cases.
 
 
 \section{Problem \texttt{sampling}: different sampling techniques}
 \label{tests:problem-sampling-different-sampling-techniques}
+As highlighted in the previous section, the method with which stars are sampled from the
+IMF has a great influence on the final output. Starting from v2, SLUG has the capability of
+specifying the desired sampling algorithm for a given PDF.
+The command  \code{test/run\_sampling.sh} runs four \code{cluster} simulations, each with 1000 trials
+of masses of \(50\;M_\odot\), and a Kroupa (2002) IMF.
+The following four sampling methods are chosen for each simulation: 1) \code{stop\_nearest},
+the default in SLUG; 2) \code{stop\_before}; 3) \code{stop\_after}; 4) \code{sorted\_sampling}.
+A description of each method is provided in Section {\hyperref[pdfs:sampling-metod-label]{\emph{Sampling Methods}}}.
+The analysis script \code{python test/plot\_sampling.py} produces a multi-panel
+figure \code{test/SLUG\_SAMPLING\_f1.pdf}.
+
 This problem highlights the flexible choice of sampling techniques in SLUG, which is
 a new capability of v2.
 
@@ -2453,6 +5004,22 @@ This problem shows a trivial example of the redshift capability in SLUG v2.
 {[}basic run with full spectra out at a different redshift{]}
 
 
+\chapter{Acknowledgements}
+\label{acknowledgements:acknowledgements}\label{acknowledgements::doc}
+SLUG was made possible by contributions from a number of people. The original SLUG v1 code was written by Robert da Silva and Michele Fumagalli. This reimplementation was primarily written by Mark Krumholz and Michele Fumagalli, with contributions from Jonathan Parra. The slugpy library was written by Mark Krumholz, with contributions from Teddy Rendahl (who wrote the first version of cloudy\_slug) and Robert da Silva (who wrote the first version of sfr\_slug). In addition to these contributors, several other people provided some of the data on which SLUG relies.
+\begin{itemize}
+\item {} 
+The library of stellar evolutionary tracks and stellar atmospheres is taken from Claus Leitherer's \href{http://www.stsci.edu/science/starburst99/docs/default.htm}{starburst99} package.
+
+\item {} 
+The library of photometric filters is taken from Charlie Conroy's \href{https://code.google.com/p/fsps/}{FSPS} package.
+
+\item {} 
+Daniela Calzetti provided the extinction curves
+
+\end{itemize}
+
+
 \chapter{Indices and tables}
 \label{index:indices-and-tables}\begin{itemize}
 \item {} 
@@ -2472,6 +5039,7 @@ This problem shows a trivial example of the redshift capability in SLUG v2.
 \def\bigletter#1{{\Large\sffamily#1}\nopagebreak\vspace{1mm}}
 \bigletter{s}
 \item {\texttt{slugpy}}, \pageref{slugpy:module-slugpy}
+\item {\texttt{slugpy.cloudy}}, \pageref{slugpy:module-slugpy.cloudy}
 \end{theindex}
 
 \renewcommand{\indexname}{Index}

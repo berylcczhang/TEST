@@ -5,7 +5,7 @@
 Probability Distribution Functions
 ==================================
 
-The SLUG code regards the IMF, the CMF, the CLF, and the SFH as probability distribution functions -- see :ref:`ssec-slugpdfs`. The code provides a generic file format through which PDFs can be specified. Examples can be found in the ``lib/imf``, ``lib/cmf``, ``lib/clf``, and ``lib/sfh`` directories of the SLUG distribution.
+The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction :math:`A_V` as probability distribution functions -- see :ref:`ssec-slugpdfs`. The code provides a generic file format through which PDFs can be specified. Examples can be found in the ``lib/imf``, ``lib/cmf``, ``lib/clf``, and ``lib/sfh`` directories of the SLUG distribution.
 
 PDFs in SLUG are generically written as functions
 
