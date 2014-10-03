@@ -120,6 +120,7 @@ slug_parmParser::setDefaults() {
   constantSFR = false;
   constantAV = false;
   randomSFR = false;
+  randomClusterMass = false;
   save_seed = read_seed = false;
   use_extinct = false;
 
@@ -238,7 +239,12 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	  }
 	}
       } else if (!(tokens[0].compare("cluster_mass"))) {
-	cluster_mass = lexical_cast<double>(tokens[1]);
+	string tmp = tokens[1];
+	to_lower(tmp);
+	if (tmp.compare("cmf") == 0)
+	  randomClusterMass = true;
+	else
+	  cluster_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("sfh"))) {
 	sfh = tokens[1];
       } else if (!(tokens[0].compare("imf"))) {
@@ -465,8 +471,8 @@ slug_parmParser::checkParams() {
       exit(1);
     }    
   }
-  if (!run_galaxy_sim && cluster_mass < 0) {
-    cerr << "slug: error: cluster mass must be set to > 0 for cluster sim"
+  if (!run_galaxy_sim && cluster_mass < 0 && !randomClusterMass) {
+    cerr << "slug: error: cluster_mass must be either cmf or a number > 0 for cluster sim"
 	 << endl;
     exit(1);
   }
@@ -572,8 +578,10 @@ slug_parmParser::writeParams() const {
       paramFile << "SFH                  " << sfh << endl;
   }
   paramFile << "IMF                  " << imf << endl;
-  if (run_galaxy_sim)
+  if (run_galaxy_sim || randomClusterMass)
     paramFile << "CMF                  " << cmf << endl;
+  if (!run_galaxy_sim && !randomClusterMass)
+    paramFile << "cluster_mass         " << cluster_mass << endl;
   paramFile << "CLF                  " << clf << endl;
   paramFile << "tracks               " << track << endl;
   paramFile << "atmos_dir            " << atmos_dir << endl;
@@ -701,6 +709,8 @@ specsynMode slug_parmParser::get_specsynMode() const { return specsyn_mode; }
 photMode slug_parmParser::get_photMode() const { return phot_mode; }
 bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
 double slug_parmParser::get_cluster_mass() const { return cluster_mass; }
+bool slug_parmParser::get_random_cluster_mass() const 
+{ return randomClusterMass;}
 const vector<string>& slug_parmParser::get_photBand() const
 { return photBand; }
 unsigned int slug_parmParser::get_rng_offset() const

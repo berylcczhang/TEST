@@ -79,6 +79,7 @@ public:
   outputMode get_outputMode() const;      // Output mode
   specsynMode get_specsynMode() const;    // Spectral synthesis mode
   bool galaxy_sim() const;                // Galaxy sim or cluster sim?
+  bool get_random_cluster_mass() const;   // Is cluster mass randomly drawn?
   double get_cluster_mass() const;        // Cluster mass for cluster sims
   unsigned int get_rng_offset() const;    // Offset for rng
   const std::string rng_seed_file() const; // Name of rng seed file
@@ -111,6 +112,7 @@ private:
   bool constantSFR;                       // Is SFR constant?
   bool randomSFR;                         // Is SFR drawn randomly?
   bool constantAV;                        // Is A_V constant?
+  bool randomClusterMass;                 // Is cluster mass drawn randomly?
   bool writeClusterProp;                  // Write out cluster properties?
   bool writeClusterPhot;                  // Write out cluster photometry?
   bool writeClusterSpec;                  // Write out cluster spectra?

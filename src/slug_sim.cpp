@@ -159,12 +159,16 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // Set the cluster lifetime function
   clf = new slug_PDF(pp.get_CLF(), rng);
 
-  // If we're running a galaxy simulation instead of a single cluster
-  // simulation, set the CMF and the SFH.
-  if (!pp.galaxy_sim()) {
-    cmf = sfh = NULL;
-  } else {
+  // Set the cluster mass function
+  if (pp.galaxy_sim() || pp.get_random_cluster_mass())
     cmf = new slug_PDF(pp.get_CMF(), rng);
+  else
+    cmf = NULL;
+
+  // Set the star formation history
+  if (!pp.galaxy_sim()) {
+    sfh = NULL;
+  } else {
     if (pp.get_constantSFR()) {
       // SFR is constant, so create a powerlaw segment of slope 0 with
       // the correct normalization
@@ -224,8 +228,13 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 			     specsyn, filters, extinct);
     cluster = NULL;
   } else {
-    cluster = new slug_cluster(0, pp.get_cluster_mass(), 0.0,
-			       imf, tracks, specsyn, filters,
+    double cluster_mass;
+    if (pp.get_random_cluster_mass())
+      cluster_mass = cmf->draw();
+    else
+      cluster_mass = pp.get_cluster_mass();
+    cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
+			       tracks, specsyn, filters,
 			       extinct, clf);
     galaxy = NULL;
   }
@@ -461,8 +470,17 @@ void slug_sim::cluster_sim() {
       std::cout << "slug: starting trial " << i+1 << " of "
 		<< pp.get_nTrials() << endl;
 
-    // Reset the cluster
-    cluster->reset();
+    // Reset the cluster if the mass is constant, destroy it and build
+    // a new one if not
+    if (pp.get_random_cluster_mass()) {
+      unsigned long id = cluster->get_id();
+      delete cluster;
+      cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
+				 tracks, specsyn, filters,
+				 extinct, clf);
+    } else {
+      cluster->reset();
+    }
 
     // Write trial separator to ASCII files if operating in ASCII
     // mode
