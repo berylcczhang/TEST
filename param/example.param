@@ -179,6 +179,7 @@ output_mode      bin
 imf   	          lib/imf/chabrier.imf
 
 # CMF (cluster mass function) file name; ignored if sim_type = cluster
+# and cluster_mass is not "cmf"
 # Default: lib/cmf/slug_default.cmf (dN/dM ~ M^-2)
 cmf               lib/cmf/slug_default.cmf
 
