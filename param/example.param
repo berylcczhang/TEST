@@ -95,8 +95,9 @@ sfr    		  0.001
 # sim_type = cluster or if sfr is not equal to the special string sfh.
 #sfh              sfh.txt
 
-# Mass of cluster for cluster mode simulation, in Msun; can be omitted,
-# and will be ignored, if sim_type = galaxy
+# Mass of cluster for cluster mode simulation, in Msun; if this set to
+# "cmf", then a new cluster mass will be drawn for each trial from the
+# cmf; can be omitted, and will be ignored, if sim_type = galaxy
 #cluster_mass      1e3
 
 # Read a random number generator seed from a file?

@@ -96,8 +96,9 @@ end_time	  1.0e7
 # sim_type = cluster or if sfr is not equal to the special string sfh.
 #sfh              sfh.txt
 
-# Mass of cluster for cluster mode simulation, in Msun; can be omitted,
-# and will be ignored, if sim_type = galaxy
+# Mass of cluster for cluster mode simulation, in Msun; if this set to
+# "cmf", then a new cluster mass will be drawn for each trial from the
+# cmf; can be omitted, and will be ignored, if sim_type = galaxy
 cluster_mass      5e2
 
 # Read a random number generator seed from a file?
@@ -236,6 +237,21 @@ specsyn_mode	   sb99
 # Default: 0
 #redshift             0
 
+# Extinction; to turn on extintion, set the parameter A_V. If set to a
+# number, this extinction will be applied to all spectra and
+# photometry. Default behavior, if the A_V parameter is omitted
+# entirely, is not to apply any extinction. If the parameter A_V is
+# set to a real number, this will be interpreted as a uniform
+# extinction that is applied to all light output. Finally, if this
+# parameter is set to any string that cannot be converted to a real
+# number, it will be interpreted as a file name giving the name of a
+# PDF file specifying the distribution of extinctions.
+A_V                  lib/avdist/slug_default.av
+
+# File specifying the shape fof the extinction curve
+# Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti+ 2000 starburst
+# attenuation curve)
+#extinction_curve     lib/extinct/SB_ATT_SLUG.dat
 
 #############################################
 # Parameters describing photometric filters #
