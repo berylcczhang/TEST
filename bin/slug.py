@@ -291,17 +291,15 @@ while completed_trials < ntrials:
 # Step 6: wait for final processes to complete; we do this because we
 # don't want to kill the output threads or do file cleanup before all
 # processes are done
-while True:
-    nrunning = len(proc_list)
+running = [True]*len(proc_list)
+while True in running:
     for i, proc in enumerate(proc_list):
-        if proc is None:
-            # Process never started
-            nrunning = nrunning - 1
-        elif proc.poll() != None:
-            # Process completed
-            nrunning = nrunning - 1
-    if nrunning == 0:
-        break
+        if running[i]:
+            if proc is None:
+                # Process never started
+                running[i] = False
+            elif proc.poll() != None:
+                running[i] = False
 
 # Step 7: consolidate output files if requested; just move them if not
 if output_mode == 'ascii':
