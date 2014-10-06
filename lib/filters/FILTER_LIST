@@ -45,11 +45,11 @@
 45	WFC3_UVIS_F814W     0.0   --        HST WFC3 UVIS F814W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/) Chip #1
 46	WFC3_UVIS_F850LP    0.0   --        HST WFC3 UVIS F850LP (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/) Chip #1
 47	WFC3_IR_F098M       0.0   --        HST WFC3 IR F098M (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
-48	WFC3_IR_F105M       0.0   --        HST WFC3 IR F105W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
-49	WFC3_IR_F110M       0.0   --        HST WFC3 IR F110W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
-50	WFC3_IR_F125M       0.0   --        HST WFC3 IR F125W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
-51	WFC3_IR_F140M       0.0   --        HST WFC3 IR F140W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
-52	WFC3_IR_F160M       0.0   --        HST WFC3 IR F160W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
+48	WFC3_IR_F105W       0.0   --        HST WFC3 IR F105W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
+49	WFC3_IR_F110W       0.0   --        HST WFC3 IR F110W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
+50	WFC3_IR_F125W       0.0   --        HST WFC3 IR F125W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
+51	WFC3_IR_F140W       0.0   --        HST WFC3 IR F140W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
+52	WFC3_IR_F160W       0.0   --        HST WFC3 IR F160W (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/)
 53	IRAC_3.6            1.0   3.550e4   Spitzer IRAC Channel 1 (3.6um)
 54	IRAC_4.5            1.0   4.493e4   Spitzer IRAC Channel 2 (4.5um)
 55	IRAC_5.8            1.0   5.731e4   Spitzer IRAC Channel 3 (5.8um)
@@ -120,3 +120,4 @@
 120	JWST_F227W	    0.0   --        JWST F277W (http://www.stsci.edu/jwst/instruments/nircam/instrumentdesign/filters/)
 121	JWST_F356W	    0.0   --        JWST F356W (http://www.stsci.edu/jwst/instruments/nircam/instrumentdesign/filters/)
 122	JWST_F444W	    0.0   --        JWST F444W (http://www.stsci.edu/jwst/instruments/nircam/instrumentdesign/filters/)
+123	WFC3_UVIS_F547M	    0.0	  --	    HST UVIS WFC3 F547M (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/) Chip #1
