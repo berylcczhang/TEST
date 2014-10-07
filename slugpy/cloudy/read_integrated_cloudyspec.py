@@ -37,8 +37,10 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
     Returns
        A namedtuple containing the following fields:
 
-       time : array
-          times at which spectra are output, in yr
+       time : array, shape (N_times) or shape (N_trials)
+          Times at which data are output; shape is either N_times (if
+          the run was done with fixed output times) or N_trials (if
+          the run was done with random output times)
        cloudy_wl : array
           wavelength, in Angstrom
        cloudy_inc : array, shape (N_wavelength, N_times, N_trials)
@@ -76,6 +78,7 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
             read_info['format'] = 'ascii'
 
         # Prepare output holders
+        trial = []
         wavelength = []
         time = []
         inc = []
@@ -89,13 +92,16 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         fp.readline()
 
         # Read data
+        trialptr = 0
         for entry in fp:
 
             if entry[:3] == '---':
+                trialptr = trialptr+1
                 continue       # Skip separator lines
 
             # Split up the line
             data = entry.split()
+            trial.append(trialptr)
             time.append(float(data[0]))
             wavelength.append(float(data[1]))
             inc.append(float(data[2]))
@@ -104,6 +110,7 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
             trans_emit.append(float(data[5]))
 
         # Convert to arrays
+        trial = np.array(trial)
         time = np.array(time)
         wavelength = np.array(wavelength)
         inc = np.array(inc)
@@ -123,12 +130,12 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
             nl = len(wavelength)
             time = [time[0]]
 
-        # Figure out how many trials there are from how many times the
-        # time array decreases instead of increasing. Truncate the
-        # time array appropriately.
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        # Figure out how many trials there are and reshape the time
+        # array appropriately
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Reshape the spectral arrays
         inc = np.transpose(np.reshape(inc, (ntrial, ntime, nl)))
@@ -148,17 +155,19 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         data = fp.read(struct.calcsize('d')*nl)
         wavelength = np.array(struct.unpack('d'*nl, data))
 
-        # Now read the rest of the file and convert to doubles
+        # Now read the rest of the file and convert to correct type
         data = fp.read()
-        ndata = len(data)/struct.calcsize('d')
-        nchunk = ndata/(4*nl+1)
-        data_list = struct.unpack('d'*ndata, data)
+        nchunk = len(data) / \
+                 (struct.calcsize('L')+(4*nl+1)*struct.calcsize('d'))
+        data_list = struct.unpack(('L'+'d'*(4*nl+1))*nchunk, data)
 
-        # Figure out how many times we have, and get unique times
-        time = np.array(data_list[::4*nl+1])
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        # Get time and trial arrays, and get number of times and trials
+        trial = np.array(data_list[::4*nl+2], dtype='uint')
+        time = np.array(data_list[1::4*nl+2])
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Put spectra into arrays
         inc = np.zeros((nl, ntime, ntrial))
@@ -168,7 +177,7 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         ptr = 0
         for i in range(ntrial):
             for j in range(ntime):
-                recptr = ptr*(4*nl+1)+1
+                recptr = ptr*(4*nl+2)+2
                 inc[:,j,i] = np.array(data_list[recptr:recptr+nl])
                 trans[:,j,i] = np.array(data_list[recptr+nl:recptr+2*nl])
                 emit[:,j,i] = np.array(data_list[recptr+2*nl:recptr+3*nl])
@@ -194,7 +203,8 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
         inc \
             = np.transpose(
                 np.reshape(inc, (ntrial, ntime, len(wavelength))))

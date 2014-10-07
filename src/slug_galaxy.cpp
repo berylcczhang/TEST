@@ -477,7 +477,8 @@ slug_galaxy::set_photometry(const bool del_cluster) {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_integrated_prop(ofstream& int_prop_file, 
-				   const outputMode out_mode) {
+				   const outputMode out_mode, 
+				   const unsigned long trial) {
 
   if (out_mode == ASCII) {
     int_prop_file << setprecision(5) << scientific 
@@ -491,6 +492,7 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 		  << setw(11) << right << field_stars.size()
 		  << endl;
   } else {
+    int_prop_file.write((char *) &trial, sizeof trial);
     int_prop_file.write((char *) &curTime, sizeof curTime);
     int_prop_file.write((char *) &targetMass, sizeof targetMass);
     int_prop_file.write((char *) &mass, sizeof mass);
@@ -511,7 +513,8 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 ////////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_FITS
 void
-slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, int trial) {
+slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, 
+				   unsigned long trial) {
 
   // Get current number of entries
   int fits_status = 0;
@@ -519,7 +522,7 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, int trial) {
   fits_get_num_rows(int_prop_fits, &nrows, &fits_status);
 
   // Write a new entry
-  fits_write_col(int_prop_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(int_prop_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(int_prop_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
@@ -548,11 +551,13 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, int trial) {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file, 
-				const outputMode out_mode) {
+				const outputMode out_mode,
+				const unsigned long trial) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
   if (out_mode == BINARY) {
+    cluster_prop_file.write((char *) &trial, sizeof trial);
     cluster_prop_file.write((char *) &curTime, sizeof curTime);
     vector<double>::size_type n = clusters.size();
     cluster_prop_file.write((char *) &n, sizeof n);
@@ -561,7 +566,7 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
   // Now write out each cluster
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_prop(cluster_prop_file, out_mode);
+    (*it)->write_prop(cluster_prop_file, out_mode, trial);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -570,7 +575,7 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits, 
-				int trial) {
+				unsigned long trial) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_prop(cluster_prop_fits, trial);
@@ -584,6 +589,7 @@ slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits,
 void
 slug_galaxy::write_integrated_spec(ofstream& int_spec_file, 
 				   const outputMode out_mode,
+				   const unsigned long trial,
 				   const bool del_cluster) {
 
   // Make sure spectrum information is current. If not, compute it.
@@ -606,6 +612,7 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
       int_spec_file << endl;
     }
   } else {
+    int_spec_file.write((char *) &trial, sizeof trial);
     int_spec_file.write((char *) &curTime, sizeof curTime);
     int_spec_file.write((char *) L_lambda.data(), 
 			sizeof(double)*L_lambda.size());
@@ -622,7 +629,7 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits, 
-				   int trial,
+				   unsigned long trial,
 				   const bool del_cluster) {
 
   // Make sure spectrum information is current. If not, compute it.
@@ -634,7 +641,7 @@ slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits,
   fits_get_num_rows(int_spec_fits, &nrows, &fits_status);
 
   // Write data
-  fits_write_col(int_spec_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(int_spec_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(int_spec_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
@@ -652,11 +659,13 @@ slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file, 
-				const outputMode out_mode) {
+				const outputMode out_mode,
+				const unsigned long trial) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
   if (out_mode == BINARY) {
+    cluster_spec_file.write((char *) &trial, sizeof trial);
     cluster_spec_file.write((char *) &curTime, sizeof curTime);
     vector<double>::size_type n = clusters.size();
     cluster_spec_file.write((char *) &n, sizeof n);
@@ -665,7 +674,7 @@ slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file,
   // Now have each cluster write
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_spectrum(cluster_spec_file, out_mode);
+    (*it)->write_spectrum(cluster_spec_file, out_mode, trial);
 }
 
 
@@ -675,7 +684,7 @@ slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_spec(fitsfile* cluster_spec_fits, 
-				int trial) {
+				unsigned long trial) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_spectrum(cluster_spec_fits, trial);
@@ -688,6 +697,7 @@ slug_galaxy::write_cluster_spec(fitsfile* cluster_spec_fits,
 void
 slug_galaxy::write_integrated_phot(ofstream& outfile, 
 				   const outputMode out_mode,
+				   const unsigned long trial,
 				   const bool del_cluster) {
 
   // Make sure photometric information is current. If not, compute it.
@@ -708,6 +718,7 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
     }
     outfile << endl;
   } else {
+    outfile.write((char *) &trial, sizeof trial);
     outfile.write((char *) &curTime, sizeof curTime);
     outfile.write((char *) phot.data(), 
 			sizeof(double)*phot.size());
@@ -723,7 +734,7 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits, 
-				   int trial,
+				   unsigned long trial,
 				   const bool del_cluster) {
 
   // Make sure photometric information is current. If not, compute it.
@@ -735,7 +746,7 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
   fits_get_num_rows(int_phot_fits, &nrows, &fits_status);
 
   // Write data
-  fits_write_col(int_phot_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(int_phot_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(int_phot_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
@@ -760,11 +771,13 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_phot(ofstream& outfile, 
-				const outputMode out_mode) {
+				const outputMode out_mode,
+				const unsigned long trial) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
   if (out_mode == BINARY) {
+    outfile.write((char *) &trial, sizeof trial);
     outfile.write((char *) &curTime, sizeof curTime);
     vector<double>::size_type n = clusters.size();
     outfile.write((char *) &n, sizeof n);
@@ -773,7 +786,7 @@ slug_galaxy::write_cluster_phot(ofstream& outfile,
   // Now have each cluster write
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_photometry(outfile, out_mode);
+    (*it)->write_photometry(outfile, out_mode, trial);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -782,7 +795,7 @@ slug_galaxy::write_cluster_phot(ofstream& outfile,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_phot(fitsfile* cluster_phot_fits, 
-				int trial) {
+				unsigned long trial) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_photometry(cluster_phot_fits, trial);

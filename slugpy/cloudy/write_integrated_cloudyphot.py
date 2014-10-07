@@ -52,6 +52,10 @@ def write_integrated_cloudyphot(data, model_name, fmt):
         # Get shape of output
         ntime = data.cloudy_phot_trans.shape[1]
         ntrial = data.cloudy_phot_trans.shape[2]
+        if len(data.time) > ntime:
+            random_time = True
+        else:
+            random_time = False
 
         # Write header lines
         fp.write("{:<18s}".format('Time'))
@@ -81,7 +85,11 @@ def write_integrated_cloudyphot(data, model_name, fmt):
             if i != 0:
                 fp.write("-"*((1+3*nf)*18-3)+"\n")
             for j in range(ntime):
-                fp.write("    {:11.5e}".format(data.time[j]))
+                if random_time:
+                    t_out = data.time[i]
+                else:
+                    t_out = data.time[j]
+                fp.write("    {:11.5e}".format(t_out))
                 for k in range(nf):
                     fp.write("       {:11.5e}".
                              format(data.cloudy_phot_trans[k,j,i]))
@@ -109,9 +117,17 @@ def write_integrated_cloudyphot(data, model_name, fmt):
         # Write data
         ntime = data.cloudy_phot_trans.shape[1]
         ntrial = data.cloudy_phot_trans.shape[2]
+        if len(data.time) > ntime:
+            random_time = True
+        else:
+            random_time = False
         for i in range(ntrial):
             for j in range(ntime):
-                fp.write(data.time[j])
+                fp.write(np.uint(i))
+                if random_time:
+                    fp.write(data.time[i])
+                else:
+                    fp.write(data.time[j])
                 # This next line is needed to put the data into a
                 # contiguous block before writing
                 tmp = np.copy(data.cloudy_phot_trans[:,j,i])
@@ -134,7 +150,10 @@ def write_integrated_cloudyphot(data, model_name, fmt):
         trial = np.transpose(np.tile(
             np.arange(ntrial, dtype='int64'), (ntimes,1))).\
             flatten()
-        times = np.tile(data.time, ntrial)
+        if len(data.time) > ntimes:
+            times = data.time
+        else:
+            times = np.tile(data.time, ntrial)
         nf = len(data.cloudy_filter_names)
 
         # Convert data to FITS columns

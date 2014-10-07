@@ -139,6 +139,7 @@ def write_cluster_cloudyphot(data, model_name, fmt):
 
                 # Write out time and number of clusters
                 ncluster = block_end - ptr
+                fp.write(np.uint(i))
                 fp.write(times[j])
                 fp.write(ncluster)
 

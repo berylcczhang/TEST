@@ -121,6 +121,7 @@ slug_parmParser::setDefaults() {
   constantAV = false;
   randomSFR = false;
   randomClusterMass = false;
+  randomOutputTime = false;
   save_seed = read_seed = false;
   use_extinct = false;
 
@@ -215,7 +216,13 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       } else if (!(tokens[0].compare("start_time"))) {
 	startTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
-	timeStep = lexical_cast<double>(tokens[1]);
+	// See if timeStep is a number, indicating definite output times
+	try {
+	  timeStep = lexical_cast<double>(tokens[1]);
+	} catch (const bad_lexical_cast& ia) {
+	  out_time_dist = tokens[1];
+	  randomOutputTime = true;
+	}
       } else if (!(tokens[0].compare("end_time"))) {
 	endTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("log_time"))) {
@@ -227,7 +234,7 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	  constantSFR = false;
 	else {
 	  try {
-	    // See if the SFR is a number, indicated a constant SFR
+	    // See if the SFR is a number, indicating a constant SFR
 	    sfr = lexical_cast<double>(tokens[1]);
 	    constantSFR = true;
 	  } catch (const bad_lexical_cast& ia) {
@@ -446,7 +453,7 @@ slug_parmParser::checkParams() {
     cerr << "slug: error: startTime must be > 0" << endl;
     exit(1);
   }
-  if (timeStep <= 0) {
+  if ((timeStep <= 0) && !randomOutputTime) {
     if (timeStep == -constants::big) {
       cerr << "slug: error: parameter timeStep must be set" 
 		<< endl;
@@ -515,6 +522,7 @@ slug_parmParser::checkParams() {
   path filter_path(filter_dir);
   path extinct_path(extinct_curve);
   path AV_path(AV_dist);
+  path out_time_path(out_time_dist);
   if (!out_path.is_absolute())
     outDir = (slug_path / out_path).string();
   if (!imf_path.is_absolute()) 
@@ -533,6 +541,8 @@ slug_parmParser::checkParams() {
     extinct_curve = (slug_path / extinct_path).string();
   if (!AV_path.is_absolute())
     AV_path = (slug_path / AV_path).string();
+  if (!out_time_path.is_absolute())
+    out_time_dist = (slug_path / out_time_path).string();
 }
 
 
@@ -567,8 +577,12 @@ slug_parmParser::writeParams() const {
   else
     paramFile << "cluster" << endl;
   paramFile << "n_trials             " << nTrials << endl;
-  paramFile << "time_step            " << timeStep << endl;
-  paramFile << "end_time             " << endTime << endl;
+  if (!randomOutputTime) {
+    paramFile << "time_step            " << timeStep << endl;
+    paramFile << "end_time             " << endTime << endl;
+  } else {
+    paramFile << "output_time_dist     " << out_time_dist << endl;
+  }
   if (run_galaxy_sim) {
     if (constantSFR)
       paramFile << "SFR                  " << sfr << endl;
@@ -682,6 +696,8 @@ const char *slug_parmParser::get_extinct_curve() const
 { return extinct_curve.c_str(); }
 const char *slug_parmParser::get_AV_dist() const 
 { return AV_dist.c_str(); }
+const char *slug_parmParser::get_outtime_dist() const 
+{ return out_time_dist.c_str(); }
 const char *slug_parmParser::get_filter_dir() const 
 { return filter_dir.c_str(); }
 const char *slug_parmParser::get_modelName() const { return model.c_str(); }
@@ -719,3 +735,5 @@ bool slug_parmParser::save_rng_seed() const { return save_seed; }
 bool slug_parmParser::read_rng_seed() const { return read_seed; }
 const string slug_parmParser::rng_seed_file() const { return seed_file; }
 bool slug_parmParser::get_use_extinct() const { return use_extinct; }
+bool slug_parmParser::get_random_output_time() const 
+{ return randomOutputTime; }

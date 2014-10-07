@@ -37,8 +37,10 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
     Returns
        A namedtuple containing the following fields:
 
-       time : array
-          times at which spectra are output, in yr
+       time : array, shape (N_times) or shape (N_trials)
+          Times at which data are output; shape is either N_times (if
+          the run was done with fixed output times) or N_trials (if
+          the run was done with random output times)
        wl : array
           wavelength, in Angstrom
        spec : array, shape (N_wavelength, N_times, N_trials)
@@ -76,6 +78,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         wavelength = []
         time = []
         L_lambda = []
+        trial = []
 
         # Read the first header line
         hdr = fp.readline()
@@ -94,13 +97,16 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         fp.readline()
 
         # Read data
+        trialptr = 0
         for entry in fp:
 
             if entry[:3] == '---':
+                trialptr = trialptr+1
                 continue       # Skip separator lines
 
             # Split up the line
             data = entry.split()
+            trial.append(trialptr)
             time.append(float(data[0]))
             wavelength.append(float(data[1]))
             L_lambda.append(float(data[2]))
@@ -109,6 +115,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                 L_lambda_ex.append(float(data[3]))
 
         # Convert to arrays
+        trial = np.array(trial)
         time = np.array(time)
         wavelength = np.array(wavelength)
         L_lambda = np.array(L_lambda)
@@ -124,21 +131,23 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
             nl = repeats[1]
             wavelength = wavelength[:nl]
             time = time[::nl]
+            trial = trial[::nl]
         else:
             nl = len(wavelength)
             time = [time[0]]
+            trial = [trial[0]]
         if extinct:
             repeats = np.where(wl_ex == wl_ex[0])[0]
             if len(repeats) > 1:
                 nl_ex = repeats[1]
                 wl_ex = wl_ex[:nl_ex]
 
-        # Figure out how many trials there are from how many times the
-        # time array decreases instead of increasing. Truncate the
-        # time array appropriately.
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        # Figure out how many trials there are and reshape the time
+        # array appropriately
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Reshape the L_lambda array
         L_lambda = np.transpose(np.reshape(L_lambda, 
@@ -171,17 +180,19 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         else:
             nl_ex = 0
 
-        # Now read the rest of the file and convert to doubles
+        # Now read the rest of the file and convert to correct type
         data = fp.read()
-        ndata = len(data)/struct.calcsize('d')
-        nchunk = ndata/(nl+nl_ex+1)
-        data_list = struct.unpack('d'*ndata, data)
+        nchunk = len(data) / \
+                 (struct.calcsize('L')+(nl+nl_ex+1)*struct.calcsize('d'))
+        data_list = struct.unpack(('L'+'d'*(nl+nl_ex+1))*nchunk, data)
 
-        # Figure out how many times we have, and get unique times
-        time = np.array(data_list[::nl+nl_ex+1])
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        # Get time and trial arrays, and get number of times and trials
+        trial = np.array(data_list[::nl+nl_ex+2], dtype='uint')
+        time = np.array(data_list[1::nl+nl_ex+2])
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Put L_lambda into array
         L_lambda = np.zeros((nl, ntime, ntrial))
@@ -190,7 +201,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         ptr = 0
         for i in range(ntrial):
             for j in range(ntime):
-                ptr1 = ptr*(nl+nl_ex+1)+1
+                ptr1 = ptr*(nl+nl_ex+2)+2
                 L_lambda[:,j,i] \
                     = np.array(data_list[ptr1:ptr1+nl])
                 if extinct:
@@ -214,7 +225,8 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
         L_lambda \
             = np.transpose(
                 np.reshape(L_lambda, (ntrial, ntime, len(wavelength))))

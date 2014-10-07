@@ -78,16 +78,24 @@ def write_integrated(data, model_name, fmt):
                             '-----------') + "\n")
 
             # Write data
-            ntime = len(data.time)
+            ntime = data.actual_mass.shape[-2]
             ntrial = data.actual_mass.shape[-1]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
             for i in range(ntrial):
                 if i != 0:
                     fp.write("-"*(8*14-3)+"\n")
                 for j in range(ntime):
+                    if random_time:
+                        t_out = data.time[i]
+                    else:
+                        t_out = data.time[j]
                     fp.write(("{:11.5e}   {:11.5e}   {:11.5e}   " +
                               "{:11.5e}   {:11.5e}   {:11d}   " +
                               "{:11d}   {:11d}\n")
-                             .format(data.time[j], 
+                             .format(t_out, 
                                      data.target_mass[j,i],
                                      data.actual_mass[j,i],
                                      data.live_mass[j,i],
@@ -108,11 +116,20 @@ def write_integrated(data, model_name, fmt):
             fp = open(model_name+'_integrated_prop.bin', 'wb')
 
             # Write data
-            ntime = len(data.time)
+            ntime = data.actual_mass.shape[-2]
             ntrial = data.actual_mass.shape[-1]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
             for i in range(ntrial):
                 for j in range(ntime):
-                    fp.write(data.time[j])
+                    if random_time:
+                        t_out = data.time[i]
+                    else:
+                        t_out = data.time[j]
+                    fp.write(np.uint(i))
+                    fp.write(t_out)
                     fp.write(data.target_mass[j,i])
                     fp.write(data.actual_mass[j,i])
                     fp.write(data.live_mass[j,i])
@@ -132,11 +149,14 @@ def write_integrated(data, model_name, fmt):
 
             # Figure out number of trials, and tile arrays
             ntrial = data.actual_mass.shape[-1]
-            ntimes = len(data.time)
+            ntimes = data.actual_mass.shape[-2]
             trial = np.transpose(np.tile(
                 np.arange(ntrial, dtype='int64'), (ntimes,1))).\
                 flatten()
-            times = np.tile(data.time, ntrial)
+            if len(data.time) > ntimes:
+                times = data.time
+            else:
+                times = np.tile(data.time, ntrial)
 
             # Convert data to FITS columns
             cols = []
@@ -221,8 +241,12 @@ def write_integrated(data, model_name, fmt):
                          + "\n")
 
             # Write data
-            ntime = len(data.time)
+            ntime = data.spec.shape[-2]
             ntrial = data.spec.shape[-1]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
             nl = len(data.wl)
             if 'spec_ex' in data._fields:
                 offset = np.where(data.wl_ex[0] == data.wl)[0][0]
@@ -232,10 +256,14 @@ def write_integrated(data, model_name, fmt):
                     if i != 0:
                         fp.write("-"*(4*14-3)+"\n")
                     for j in range(ntime):
+                        if random_time:
+                            t_out = data.time[i]
+                        else:
+                            t_out = data.time[j]
                         for k in range(offset):
                             fp.write(("{:11.5e}   {:11.5e}   "+
                                       "{:11.5e}\n")
-                                     .format(data.time[j], data.wl[k],
+                                     .format(t_out, data.wl[k],
                                              data.spec[k,j,i]))
                         for k in range(offset, offset+nl_ex):
                             fp.write(("{:11.5e}   {:11.5e}   "+
@@ -252,9 +280,13 @@ def write_integrated(data, model_name, fmt):
                     if i != 0:
                         fp.write("-"*(3*14-3)+"\n")
                     for j in range(ntime):
+                        if random_time:
+                            t_out = data.time[i]
+                        else:
+                            t_out = data.time[j]
                         for k in range(nl):
                             fp.write("{:11.5e}   {:11.5e}   {:11.5e}\n"
-                                     .format(data.time[j], data.wl[k],
+                                     .format(t_out, data.wl[k],
                                              data.spec[k,j,i]))
 
             # Close
@@ -282,11 +314,19 @@ def write_integrated(data, model_name, fmt):
                 fp.write(data.wl_ex)
 
             # Write out times and spectra
-            ntime = len(data.time)
+            ntime = data.spec.shape[-2]
             ntrial = data.spec.shape[-1]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
             for i in range(ntrial):
                 for j in range(ntime):
-                    fp.write(data.time[j])
+                    fp.write(np.uint(i))
+                    if random_time:
+                        fp.write(data.time[i])
+                    else:
+                        fp.write(data.time[j])
                     # This next line is needed to put the data into a
                     # contiguous block before writing
                     tmp = np.copy(data.spec[:,j,i])
@@ -325,12 +365,15 @@ def write_integrated(data, model_name, fmt):
             wlhdu = fits.BinTableHDU.from_columns(wlcols)
 
             # Figure out number of trials, and tile arrays
-            ntrial = data.actual_mass.shape[-1]
-            ntimes = len(data.time)
+            ntrial = data.spec.shape[-1]
+            ntimes = data.spec.shape[-2]
             trial = np.transpose(np.tile(
                 np.arange(ntrial, dtype='int64'), (ntimes,1))).\
                 flatten()
-            times = np.tile(data.time, ntrial)
+            if len(data.time) > ntimes:
+                times = data.time
+            else:
+                times = np.tile(data.time, ntrial)
 
             # Convert spectra to FITS columns, and make an HDU from
             # them
@@ -402,6 +445,10 @@ def write_integrated(data, model_name, fmt):
             # Write data
             ntime = data.phot.shape[1]
             ntrial = data.phot.shape[2]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
             for i in range(ntrial):
                 # Write separator between trials
                 if i != 0:
@@ -410,7 +457,11 @@ def write_integrated(data, model_name, fmt):
                     else:
                         fp.write("-"*((1+nf)*21-3)+"\n")
                 for j in range(ntime):
-                    fp.write("       {:11.5e}".format(data.time[j]))
+                    if random_time:
+                        t_out = data.time[i]
+                    else:
+                        t_out = data.time[j]
+                    fp.write("       {:11.5e}".format(t_out))
                     for k in range(nf):
                         fp.write("          {:11.5e}".
                                  format(data.phot[k,j,i]))
@@ -450,9 +501,17 @@ def write_integrated(data, model_name, fmt):
             # Write data
             ntime = data.phot.shape[1]
             ntrial = data.phot.shape[2]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
             for i in range(ntrial):
                 for j in range(ntime):
-                    fp.write(data.time[j])
+                    fp.write(np.uint(i))
+                    if random_time:
+                        fp.write(data.time[i])
+                    else:
+                        fp.write(data.time[j])
                     # This next line is needed to put the data into a
                     # contiguous block before writing
                     tmp = np.copy(data.phot[:,j,i])
@@ -476,7 +535,10 @@ def write_integrated(data, model_name, fmt):
             trial = np.transpose(np.tile(
                 np.arange(ntrial, dtype='int64'), (ntimes,1))).\
                 flatten()
-            times = np.tile(data.time, ntrial)
+            if len(data.time) > ntimes:
+                times = data.time
+            else:
+                times = np.tile(data.time, ntrial)
             nf = len(data.filter_names)
 
             # Convert data to FITS columns

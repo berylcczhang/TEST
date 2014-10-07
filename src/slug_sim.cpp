@@ -47,16 +47,6 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   
-  // Set up the time stepping
-  double t = pp.get_startTime();
-  while (t <= pp.get_endTime()) {
-    outTimes.push_back(t);
-    if (!pp.get_logTime())
-      t += pp.get_timeStep();
-    else
-      t *= pow(10.0, pp.get_timeStep());
-  }
-
   // Either read a random seed from a file, or generate one
   unsigned int seed;
   if (pp.read_rng_seed()) {
@@ -115,6 +105,21 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   boost::random::uniform_int_distribution<> six_sided_die(1,6);
   for (int i=0; i<1000; i++) six_sided_die(*rng);
 
+  // Set up the time stepping
+  if (!pp.get_random_output_time()) {
+    out_time_pdf = NULL;
+    double t = pp.get_startTime();
+    while (t <= pp.get_endTime()) {
+      outTimes.push_back(t);
+      if (!pp.get_logTime())
+	t += pp.get_timeStep();
+      else
+	t *= pow(10.0, pp.get_timeStep());
+    }
+  } else {
+    out_time_pdf = new slug_PDF(pp.get_outtime_dist(), rng);
+  }
+
   // Set up the photometric filters
   if (pp.get_nPhot() > 0) {
     if (pp.get_verbosity() > 1)
@@ -168,6 +173,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // Set the star formation history
   if (!pp.galaxy_sim()) {
     sfh = NULL;
+    sfr_pdf = NULL;
   } else {
     if (pp.get_constantSFR()) {
       // SFR is constant, so create a powerlaw segment of slope 0 with
@@ -176,6 +182,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng);
       sfh = new slug_PDF(sfh_segment, rng, 
 			 outTimes.back()*pp.get_SFR());
+      sfr_pdf = NULL;
     } else if (pp.get_randomSFR()) {
       // SFR is to be drawn from a PDF, so read the PDF, and
       // initialize the SFH from it
@@ -187,6 +194,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     } else {
       // SFR is not constant, so read SFH from file
       sfh = new slug_PDF(pp.get_SFH(), rng);
+      sfr_pdf = NULL;
     }
   }
 
@@ -281,6 +289,8 @@ slug_sim::~slug_sim() {
   if (tracks != NULL) delete tracks;
   if (rng != NULL) delete rng;
   if (filters != NULL) delete filters;
+  if (out_time_pdf != NULL) delete out_time_pdf;
+  if (sfr_pdf != NULL) delete sfr_pdf;
 
   // Close open files
   if (int_prop_file.is_open()) int_prop_file.close();
@@ -317,7 +327,7 @@ slug_sim::~slug_sim() {
 void slug_sim::galaxy_sim() {
 
   // Loop over number of trials
-  for (int i=0; i<pp.get_nTrials(); i++) {
+  for (unsigned long i=0; i<pp.get_nTrials(); i++) {
 
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
@@ -357,6 +367,13 @@ void slug_sim::galaxy_sim() {
       }
     }
 
+    // If the output time is randomly changing, draw a new output time
+    // for this trial
+    if (pp.get_random_output_time()) {
+      outTimes.resize(0);
+      outTimes.push_back(out_time_pdf->draw());
+    }
+
     // If the SFR is randomly changing, draw a new SFR for this trial
     if (pp.get_randomSFR()) {
       double sfr = sfr_pdf->draw();
@@ -383,7 +400,7 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_prop(int_prop_file, out_mode);
+	  galaxy->write_integrated_prop(int_prop_file, out_mode, i);
 #ifdef ENABLE_FITS
 	} else {
 	  galaxy->write_integrated_prop(int_prop_fits, i);
@@ -394,7 +411,7 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_prop(cluster_prop_file, out_mode);
+	  galaxy->write_cluster_prop(cluster_prop_file, out_mode, i);
 #ifdef ENABLE_FITS
 	} else {
 	  galaxy->write_cluster_prop(cluster_prop_fits, i);
@@ -407,7 +424,7 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_spec(int_spec_file, out_mode,
+	  galaxy->write_integrated_spec(int_spec_file, out_mode, i,
 					del_cluster);
 #ifdef ENABLE_FITS
 	} else {
@@ -419,7 +436,7 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_spec(cluster_spec_file, out_mode);
+	  galaxy->write_cluster_spec(cluster_spec_file, out_mode, i);
 #ifdef ENABLE_FITS
 	} else {
 	  galaxy->write_cluster_spec(cluster_spec_fits, i);
@@ -432,7 +449,7 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_phot(int_phot_file, out_mode, 
+	  galaxy->write_integrated_phot(int_phot_file, out_mode, i,
 					del_cluster);
 #ifdef ENABLE_FITS
 	} else {
@@ -445,7 +462,7 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_phot(cluster_phot_file, out_mode);
+	  galaxy->write_cluster_phot(cluster_phot_file, out_mode, i);
 #ifdef ENABLE_FITS
 	} else {
 	  galaxy->write_cluster_phot(cluster_phot_fits, i);
@@ -463,12 +480,19 @@ void slug_sim::galaxy_sim() {
 void slug_sim::cluster_sim() {
 
   // Loop over number of trials
-  for (int i=0; i<pp.get_nTrials(); i++) {
+  for (unsigned long i=0; i<pp.get_nTrials(); i++) {
 
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
       std::cout << "slug: starting trial " << i+1 << " of "
 		<< pp.get_nTrials() << endl;
+
+    // If the output time is randomly changing, draw a new output time
+    // for this trial
+    if (pp.get_random_output_time()) {
+      outTimes.resize(0);
+      outTimes.push_back(out_time_pdf->draw());
+    }
 
     // Reset the cluster if the mass is constant, destroy it and build
     // a new one if not
@@ -485,8 +509,11 @@ void slug_sim::cluster_sim() {
     // Write trial separator to ASCII files if operating in ASCII
     // mode
     if ((out_mode == ASCII) && (i != 0)) {
-      if (pp.get_writeClusterProp())
-	write_separator(cluster_prop_file, 9*14-3);
+      if (pp.get_writeClusterProp()) {
+	int ncol = 9*14-3;
+	if (pp.get_use_extinct()) ncol += 14;
+	write_separator(cluster_prop_file, ncol);
+      }
       if (pp.get_writeClusterSpec())
 	write_separator(cluster_spec_file, 4*14-3);
       if (pp.get_writeClusterPhot())
@@ -517,7 +544,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_prop(cluster_prop_file, out_mode);
+	  cluster->write_prop(cluster_prop_file, out_mode, i);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_prop(cluster_prop_fits, i);
@@ -530,7 +557,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_spectrum(cluster_spec_file, out_mode);
+	  cluster->write_spectrum(cluster_spec_file, out_mode, i);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_spectrum(cluster_spec_fits, i);
@@ -543,7 +570,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_photometry(cluster_phot_file, out_mode);
+	  cluster->write_photometry(cluster_phot_file, out_mode, i);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_photometry(cluster_phot_fits, i);

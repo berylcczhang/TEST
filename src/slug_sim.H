@@ -96,6 +96,7 @@ private:
   slug_PDF *clf;              // Cluster lifetime function
   slug_PDF *sfh;              // Star formation history
   slug_PDF *sfr_pdf;          // PDF of constant SFRs
+  slug_PDF *out_time_pdf;     // PDF of output times
   slug_specsyn *specsyn;      // Spectral synthesizer
   slug_filter_set *filters;   // Photometric filters
   slug_extinction *extinct;   // Extinction class

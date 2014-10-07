@@ -187,20 +187,14 @@ def read_cluster_cloudylines(model_name, output_dir=None, fmt=None,
 
             # Read number of clusters and time in next block, checking
             # if we've hit eof
-            data = fp.read(struct.calcsize('dL'))
-            if len(data) < struct.calcsize('dL'):
+            data = fp.read(struct.calcsize('LdL'))
+            if len(data) < struct.calcsize('LdL'):
                 break
-            t, ncluster = struct.unpack('dL', data)
+            trialptr, t, ncluster = struct.unpack('LdL', data)
 
             # Skip if no clusters
             if ncluster == 0:
                 continue
-
-            # If this time is not bigger than the last one was, this
-            # is a new trial
-            if len(time) > 0:
-                if t <= time[-1]:
-                    trialptr = trialptr + 1
 
             # Add to time and trial arrays
             time.extend([t]*ncluster)

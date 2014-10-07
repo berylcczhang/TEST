@@ -341,7 +341,7 @@ slug_cluster::set_photometry() {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
-			 bool cluster_only) const {
+			 const unsigned long trial, bool cluster_only) const {
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific
 	    << setw(11) << right << id << "   "
@@ -361,6 +361,7 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
     outfile << endl;
   } else if (out_mode == BINARY) {
     if (cluster_only) {
+      outfile.write((char *) &trial, sizeof trial);
       outfile.write((char *) &curTime, sizeof curTime);
       vector<double>::size_type n = 1;
       outfile.write((char *) &n, sizeof n);
@@ -391,7 +392,7 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
 ////////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_FITS
 void
-slug_cluster::write_prop(fitsfile *out_fits, int trial) {
+slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial) {
 
   // Get current number of entries
   int fits_status = 0;
@@ -399,7 +400,7 @@ slug_cluster::write_prop(fitsfile *out_fits, int trial) {
   fits_get_num_rows(out_fits, &nrows, &fits_status);
 
   // Write a new entry
-  fits_write_col(out_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(out_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id,
 		 &fits_status);
@@ -437,6 +438,7 @@ slug_cluster::write_prop(fitsfile *out_fits, int trial) {
 void
 slug_cluster::
 write_spectrum(ofstream& outfile, const outputMode out_mode,
+	       const unsigned long trial,
 	       bool cluster_only) {
 
   // Make sure information is current
@@ -461,6 +463,7 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
     }
   } else {
     if (cluster_only) {
+      outfile.write((char *) &trial, sizeof trial);
       outfile.write((char *) &curTime, sizeof curTime);
       vector<double>::size_type n = 1;
       outfile.write((char *) &n, sizeof n);
@@ -480,7 +483,7 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
 #ifdef ENABLE_FITS
 void
 slug_cluster::
-write_spectrum(fitsfile *out_fits, int trial) {
+write_spectrum(fitsfile *out_fits, unsigned long trial) {
 
   // Make sure information is current
   if (!spec_set) set_spectrum();
@@ -491,7 +494,7 @@ write_spectrum(fitsfile *out_fits, int trial) {
   fits_get_num_rows(out_fits, &nrows, &fits_status);
 
   // Write data
-  fits_write_col(out_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(out_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id, 
 		 &fits_status);
@@ -512,6 +515,7 @@ write_spectrum(fitsfile *out_fits, int trial) {
 void
 slug_cluster::
 write_photometry(ofstream& outfile, const outputMode out_mode,
+		 const unsigned long trial,
 		 bool cluster_only) {
 
   // Make sure information is current
@@ -534,6 +538,7 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
     outfile << endl;
   } else {
     if (cluster_only) {
+      outfile.write((char *) &trial, sizeof trial);
       outfile.write((char *) &curTime, sizeof curTime);
       vector<double>::size_type n = 1;
       outfile.write((char *) &n, sizeof n);
@@ -554,7 +559,7 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
 #ifdef ENABLE_FITS
 void
 slug_cluster::
-write_photometry(fitsfile *out_fits, int trial) {
+write_photometry(fitsfile *out_fits, unsigned long trial) {
 
   // Make sure information is current
   if (!phot_set) set_photometry();
@@ -565,7 +570,7 @@ write_photometry(fitsfile *out_fits, int trial) {
   fits_get_num_rows(out_fits, &nrows, &fits_status);
 
   // Write data
-  fits_write_col(out_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(out_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id, 
 		 &fits_status);

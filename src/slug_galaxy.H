@@ -81,30 +81,36 @@ public:
 
   // Output functions
   void write_integrated_prop(std::ofstream& int_prop_file, 
-			     const outputMode out_mode);
-  void write_cluster_prop(std::ofstream& cluster_prop_file,
-			  const outputMode out_mode);
+			     const outputMode out_mode, 
+			     const unsigned long trial);
+  void write_cluster_prop(std::ofstream& cluster_prop_file, 
+			  const outputMode out_mode,
+			  const unsigned long trial);
   void write_integrated_spec(std::ofstream& int_spec_file,
 			     const outputMode out_mode,
+			     const unsigned long trial,
 			     const bool del_cluster = false);
   void write_cluster_spec(std::ofstream& cluster_spec_file,
-			  const outputMode out_mode);
+			  const outputMode out_mode,
+			  const unsigned long trial);
   void write_integrated_phot(std::ofstream& outfile,
 			     const outputMode out_mode,
+			     const unsigned long trial,
 			     const bool del_cluster = false);
   void write_cluster_phot(std::ofstream& outfile,
-			  const outputMode out_mode);
+			  const outputMode out_mode,
+			  const unsigned long trial);
 
 #ifdef ENABLE_FITS
   // FITS output functions
-  void write_integrated_prop(fitsfile* int_prop_fits, int trial);
-  void write_cluster_prop(fitsfile* cluster_prop_fits, int trial);
-  void write_integrated_spec(fitsfile* int_spec_fits, int trial,
+  void write_integrated_prop(fitsfile* int_prop_fits, unsigned long trial);
+  void write_cluster_prop(fitsfile* cluster_prop_fits, unsigned long trial);
+  void write_integrated_spec(fitsfile* int_spec_fits, unsigned long trial,
 			     const bool del_cluster = false);
-  void write_cluster_spec(fitsfile* cluster_spec_fits, int trial);
-  void write_integrated_phot(fitsfile* int_phot_fits, int trial,
+  void write_cluster_spec(fitsfile* cluster_spec_fits, unsigned long trial);
+  void write_integrated_phot(fitsfile* int_phot_fits, unsigned long trial,
 			     const bool del_cluster = false);
-  void write_cluster_phot(fitsfile* cluster_phot_fits, int trial);
+  void write_cluster_phot(fitsfile* cluster_phot_fits, unsigned long trial);
 #endif
 
 private:

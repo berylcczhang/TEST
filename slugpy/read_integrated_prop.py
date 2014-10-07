@@ -37,8 +37,10 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     Returns
        A namedtuple containing the following fields:
 
-       time : array
-          Times at which data are output
+       time : array, shape (N_times) or shape (N_trials)
+          Times at which data are output; shape is either N_times (if
+          the run was done with fixed output times) or N_trials (if
+          the run was done with random output times)
        target_mass : array, shape (N_times, N_trials)
           Target stellar mass at each time
        actual_mass : array, shape (N_times, N_trials)
@@ -93,9 +95,13 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         fp.readline()
 
         # Read data
+        trial = []
+        trialptr = 0
         for entry in fp:
             if entry[:3] == '---':
+                trialptr = trialptr+1
                 continue       # Skip separator lines
+            trial.append(trialptr)
             data = entry.split()
             time.append(float(data[0]))
             target_mass.append(float(data[1]))
@@ -116,24 +122,26 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         data = fp.read()
 
         # Interpret data
-        nentry = len(data)/struct.calcsize('dddddQQQ')
-        data_list = struct.unpack('dddddQQQ'*nentry, data)
+        nentry = len(data)/struct.calcsize('LdddddQQQ')
+        data_list = struct.unpack('LdddddQQQ'*nentry, data)
 
         # Stick data into correctly-named lists
-        time = data_list[0::8]
-        target_mass = data_list[1::8]
-        actual_mass = data_list[2::8]
-        live_mass = data_list[3::8]
-        cluster_mass = data_list[4::8]
-        num_clusters = data_list[5::8]
-        num_dis_clusters = data_list[6::8]
-        num_fld_stars = data_list[7::8]
+        trial = data_list[0::9]
+        time = data_list[1::9]
+        target_mass = data_list[2::9]
+        actual_mass = data_list[3::9]
+        live_mass = data_list[4::9]
+        cluster_mass = data_list[5::9]
+        num_clusters = data_list[6::9]
+        num_dis_clusters = data_list[7::9]
+        num_fld_stars = data_list[8::9]
 
     elif fname.endswith('fits'):
 
         # FITS mode
         if read_info is not None:
             read_info['format'] = 'fits'
+        trial = fp[1].data.field('Trial')
         time = fp[1].data.field('Time')
         target_mass = fp[1].data.field('TargetMass')
         actual_mass = fp[1].data.field('ActualMass')
@@ -147,6 +155,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     fp.close()
 
     # Convert lists to arrays
+    trial = np.array(trial)
     time = np.array(time)
     target_mass = np.array(target_mass)
     actual_mass = np.array(actual_mass)
@@ -156,14 +165,15 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     num_dis_clusters = np.array(num_dis_clusters, dtype='ulonglong')
     num_fld_stars = np.array(num_fld_stars, dtype='ulonglong')
 
-    # Deduce number of times and trials by finding the first repeated
-    # entry in the time data
-    idx = np.where(time == time[0])
-    ntrial = len(idx[0])
+    # Figure out if we have a number of trials with identical times,
+    # indicating fixed output times, or if each trial has random times;
+    # reshape time array appropriately
+    ntrial = len(np.unique(trial))
     ntime = len(time)/ntrial
+    if np.amin(time[:ntime] == time[ntime:2*ntime]):
+        time = time[:ntime]
 
     # Prune / reshape the output arrays
-    time = time[0:ntime]
     target_mass = np.transpose(target_mass.reshape(ntrial, ntime))
     actual_mass = np.transpose(actual_mass.reshape(ntrial, ntime))
     live_mass = np.transpose(live_mass.reshape(ntrial, ntime))

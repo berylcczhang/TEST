@@ -54,8 +54,10 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
     Returns
        A namedtuple containing the following fields:
 
-       time : array
-          times at which colors are output, in yr
+       time : array, shape (N_times) or shape (N_trials)
+          Times at which data are output; shape is either N_times (if
+          the run was done with fixed output times) or N_trials (if
+          the run was done with random output times)
        filter_names : list of string
           a list giving the name for each filter
        filter_units : list of string
@@ -143,16 +145,20 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         line = fp.readline()
 
         # Prepare holders for data
+        trial = []
         time = []
         phot = []
         if extinct:
             phot_ex = []
 
         # Read through data
+        trialptr = 0
         for line in fp:
             if line[:3] == '---':
+                trialptr = trialptr + 1
                 continue       # Skip separator lines
             linesplit = line.split()
+            trial.append(trialptr)
             time.append(float(linesplit[0]))
             phot.append(np.array(linesplit[1:nfilter+1],
                                  dtype='float'))
@@ -167,6 +173,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
                 phot_ex.append(np.array(tmp_ex))
 
         # Convert to arrays
+        trial = np.array(trial)
         time = np.array(time)
         phot = np.array(phot)
         if extinct:
@@ -197,28 +204,29 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         data = fp.read()
 
         # Unpack the data
-        ndata = len(data)/struct.calcsize('d')
+        chunkstr = 'L'+(nfilter+1)*'d'
         if extinct:
-            ntime = ndata/(2*nfilter+1)
-        else:
-            ntime = ndata/(nfilter+1)
-        data_list = struct.unpack('d'*ndata, data)
+            chunkstr = chunkstr + nfilter*'d'
+        nchunk = len(data)/struct.calcsize(chunkstr)
+        data_list = struct.unpack(nchunk*chunkstr, data)
 
         # Parse into arrays
         if extinct:
-            time = np.array(data_list[::2*nfilter+1])
-            phot = np.zeros((ntime, nfilter))
-            phot_ex = np.zeros((ntime, nfilter))
-            for i in range(ntime):
-                phot[i,:] = data_list[(2*nfilter+1)*i+1:
-                                      (2*nfilter+1)*i+1+nfilter]
-                phot_ex[i,:] = data_list[(2*nfilter+1)*i+1+nfilter:
-                                      (2*nfilter+1)*i+1+2*nfilter]
+            trial = np.array(data_list[::2*nfilter+2], dtype=np.uint64)
+            time = np.array(data_list[1::2*nfilter+2])
+            phot = np.zeros((nchunk, nfilter))
+            phot_ex = np.zeros((nchunk, nfilter))
+            for i in range(nchunk):
+                phot[i,:] = data_list[(2*nfilter+2)*i+2:
+                                      (2*nfilter+2)*i+2+nfilter]
+                phot_ex[i,:] = data_list[(2*nfilter+2)*i+2+nfilter:
+                                         (2*nfilter+2)*i+2+2*nfilter]
         else:
-            time = np.array(data_list[::nfilter+1])
-            phot = np.zeros((ntime, nfilter))
-            for i in range(ntime):
-                phot[i,:] = data_list[(nfilter+1)*i+1:(nfilter+1)*(i+1)]
+            trial = np.array(data_list[::nfilter+2], dtype='uint')
+            time = np.array(data_list[1::nfilter+2])
+            phot = np.zeros((nchunk, nfilter))
+            for i in range(nchunk):
+                phot[i,:] = data_list[(nfilter+2)*i+2:(nfilter+2)*(i+1)]
 
     elif fname.endswith('.fits'):
 
@@ -271,9 +279,10 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
     fp.close()
 
     # Reshape time and photometry arrays
-    ntrial = 1 + np.sum(time[1:] <= time[:-1])
+    ntrial = len(np.unique(trial))
     ntime = len(time)/ntrial
-    time = time[:ntime]
+    if np.amin(time[:ntime] == time[ntime:2*ntime]):
+        time = time[:ntime]
     phot = np.transpose(np.reshape(phot, (ntrial, ntime, nfilter)))
     if extinct:
         phot_ex = np.transpose(np.reshape(phot_ex, (ntrial, ntime, nfilter)))

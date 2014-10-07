@@ -52,8 +52,10 @@ def read_integrated_cloudyphot(model_name, output_dir=None, fmt=None,
     Returns
        A namedtuple containing the following fields:
 
-       time : array
-          times at which spectra are output, in yr
+       time : array, shape (N_times) or shape (N_trials)
+          Times at which data are output; shape is either N_times (if
+          the run was done with fixed output times) or N_trials (if
+          the run was done with random output times)
        cloudy_filter_names : list of string
           a list giving the name for each filter
        cloudy_filter_units : list of string
@@ -136,16 +138,20 @@ def read_integrated_cloudyphot(model_name, output_dir=None, fmt=None,
         line = fp.readline()
 
         # Prepare holders for data
+        trial = []
         time = []
         phot_trans = []
         phot_emit = []
         phot_trans_emit = []
 
         # Read through data
+        trialptr = 0
         for line in fp:
             if line[:3] == '---':
+                trialptr = trialptr + 1
                 continue       # Skip separator lines
             linesplit = line.split()
+            trial.append(trialptr)
             time.append(float(linesplit[0]))
             phot_trans.append(np.array(linesplit[1::3], dtype='float'))
             phot_emit.append(np.array(linesplit[2::3], dtype='float'))
@@ -153,6 +159,7 @@ def read_integrated_cloudyphot(model_name, output_dir=None, fmt=None,
                                             dtype='float'))
 
         # Convert to arrays
+        trial = np.array(trialptr)
         time = np.array(time)
         phot_trans = np.array(phot_trans)
         phot_emit = np.array(phot_emit)
@@ -183,20 +190,23 @@ def read_integrated_cloudyphot(model_name, output_dir=None, fmt=None,
         fp.close()
 
         # Unpack the data
-        ndata = len(data)/struct.calcsize('d')
-        ntime = ndata/(3*nfilter+1)
-        data_list = struct.unpack('d'*ndata, data)
+        chunkstr = 'L'+(nfilter+1)*'d'
+        if extinct:
+            chunkstr = chunkstr + 3*nfilter*'d'
+        nchunk = len(data)/struct.calcsize(chunkstr)
+        data_list = struct.unpack(nchunk*chunkstr, data)
 
         # Parse into arrays
-        time = np.array(data_list[::3*nfilter+1])
+        trial = np.array(data_list[::3*nfilter+2])
+        time = np.array(data_list[1::3*nfilter+2])
         phot_trans = np.zeros((ntime, nfilter))
         phot_emit = np.zeros((ntime, nfilter))
         phot_trans_emit = np.zeros((ntime, nfilter))
         for i in range(ntime):
-            ptr = (3*nfilter+1)*i
-            phot_trans[i,:] = data_list[ptr+1:ptr+1+nfilter]
-            phot_emit[i,:] = data_list[ptr+1+nfilter:ptr+1+2*nfilter]
-            phot_trans_emit[i,:] = data_list[ptr+1+2*nfilter:ptr+1+3*nfilter]
+            ptr = (3*nfilter+2)*i
+            phot_trans[i,:] = data_list[ptr+2:ptr+2+nfilter]
+            phot_emit[i,:] = data_list[ptr+2+nfilter:ptr+2+2*nfilter]
+            phot_trans_emit[i,:] = data_list[ptr+2+2*nfilter:ptr+2+3*nfilter]
 
     elif fname.endswith('.fits'):
 
@@ -231,9 +241,10 @@ def read_integrated_cloudyphot(model_name, output_dir=None, fmt=None,
                                    '_Transmitted_plus_emitted')
 
     # Reshape time and photometry arrays
-    ntrial = 1 + np.sum(time[1:] <= time[:-1])
+    ntrial = len(np.unique(trial))
     ntime = len(time)/ntrial
-    time = time[:ntime]
+    if np.amin(time[:ntime] == time[ntime:2*ntime]):
+        time = time[:ntime]
     phot_trans = np.transpose(np.reshape(phot_trans, 
                                          (ntrial, ntime, nfilter)))
     phot_emit = np.transpose(np.reshape(phot_emit, 
