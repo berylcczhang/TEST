@@ -127,4 +127,7 @@
 127	ACS_F550M	    0.0	  --	    HST ACS WFC F550M (http://www.stsci.edu/hst/acs/analysis/throughputs)
 128	ACS_F658N	    0.0	  --	    HST ACS WFC F658N (http://www.stsci.edu/hst/acs/analysis/throughputs)
 129	ACS_F660N	    0.0	  --	    HST ACS WFC F660N (http://www.stsci.edu/hst/acs/analysis/throughputs)
-130	ACS_F
+130	ACS_HRC_F330W	    0.0	  --	    HST ACS HRC F330W (http://www.stsci.edu/hst/acs/analysis/throughputs)
+131	ACS_SBC_F125LP	    0.0	  --	    HST ACS SBC F125LP (http://www.stsci.edu/hst/acs/analysis/throughputs)
+132	ACS_SBC_F150LP	    0.0	  --	    HST ACS SBC F150LP (http://www.stsci.edu/hst/acs/analysis/throughputs)
+133	ACS_SBC_F165LP	    0.0	  --	    HST ACS SBC F165LP (http://www.stsci.edu/hst/acs/analysis/throughputs)
