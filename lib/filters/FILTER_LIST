@@ -121,3 +121,9 @@
 121	JWST_F356W	    0.0   --        JWST F356W (http://www.stsci.edu/jwst/instruments/nircam/instrumentdesign/filters/)
 122	JWST_F444W	    0.0   --        JWST F444W (http://www.stsci.edu/jwst/instruments/nircam/instrumentdesign/filters/)
 123	WFC3_UVIS_F547M	    0.0	  --	    HST UVIS WFC3 F547M (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/) Chip #1
+124	WFC3_UVIS_F657N	    0.0	  --	    HST UVIS WFC3 F657N (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/) Chip #1
+125	WFC3_UVIS_F658N	    0.0	  --	    HST UVIS WFC3 F658N (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/) Chip #1
+126	WFC3_IR_F128N	    0.0	  --	    HST WFC3 IR F128N (http://www.stsci.edu/~WFC3/UVIS/SystemThroughput/) Chip #1
+127	ACS_F550M	    0.0	  --	    HST ACS F550M (http://www.stsci.edu/hst/acs/analysis/throughputs)
+128	ACS_F658N	    0.0	  --	    HST ACS F658N (http://www.stsci.edu/hst/acs/analysis/throughputs)
+129	ACS_F660N	    0.0	  --	    HST ACS F660N (http://www.stsci.edu/hst/acs/analysis/throughputs)
