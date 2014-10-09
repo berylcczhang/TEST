@@ -280,7 +280,7 @@ slug_galaxy::set_field_data() {
     vector<double> m(1, field_stars[i].mass);
     const vector<slug_stardata> &stardata = 
       tracks->get_isochrone(curTime - field_stars[i].birth_time, m);
-    field_data.push_back(stardata[0]);
+    if (stardata.size() > 0) field_data.push_back(stardata[0]);
   }
 
   // Set status flag
