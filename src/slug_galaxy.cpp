@@ -148,6 +148,7 @@ slug_galaxy::advance(double time) {
   double mass_to_draw = new_mass + targetMass - mass;
   targetMass += new_mass;
 
+
   // Create new clusters
   if (fc != 0) {
 
@@ -240,6 +241,7 @@ slug_galaxy::advance(double time) {
     }
   }
 
+  
   // Go through the field star list and remove any field stars that
   // have died
   while (field_stars.size() > 0) {
@@ -257,6 +259,7 @@ slug_galaxy::advance(double time) {
 
   // Store new time
   curTime = time;
+
 }
 
 

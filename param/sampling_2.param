@@ -1,10 +1,10 @@
 #######################################
-# Paramater for constsampl problem    #
+# Paramater for sampling problem      #
 #######################################
 
 # This parameter file provides a setup for simulating a
 # single star cluster to highligh the importance of 
-# constrained sampling 
+# sampling choice 
 
 #######################
 # Relevant parameter  #

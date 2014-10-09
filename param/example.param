@@ -166,7 +166,7 @@ out_integrated_spec  1
 # -- ascii
 # -- fits
 # Default: ascii
-output_mode      bin
+output_mode      binary
 
 
 #####################################################################
@@ -246,7 +246,7 @@ redshift             0
 # parameter is set to any string that cannot be converted to a real
 # number, it will be interpreted as a file name giving the name of a
 # PDF file specifying the distribution of extinctions.
-A_V                  lib/avdist/slug_default.av
+#A_V                  lib/avdist/slug_default.av
 
 # File specifying the shape fof the extinction curve
 # Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti+ 2000 starburst

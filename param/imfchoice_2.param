@@ -1,10 +1,10 @@
 #######################################
-# Paramater for sampling problem      #
+# Paramater for imfchoice problem    #
 #######################################
 
 # This parameter file provides a setup for simulating a
-# single star cluster to highligh the importance of 
-# sampling choice 
+# single star cluster to highligh the flexible IMF choice 
+
 
 #######################
 # Relevant parameter  #
@@ -13,7 +13,7 @@
 # Name of the model; this will become the base name for all output
 # files
 # Default: SLUG_DEF
-model_name        SLUG_SAMPLING_3
+model_name        SLUG_IMFCHOICE_2
 
 # Type of simulation. Allowed values:
 # -- cluster (simulate a simple stellar population all formed at time
@@ -35,7 +35,7 @@ end_time	  1.0e6
 
 # Mass of cluster for cluster mode simulation, in Msun; can be omitted,
 # and will be ignored, if sim_type = galaxy
-cluster_mass        50
+cluster_mass        500
 
 
 #############################################
@@ -69,7 +69,7 @@ output_mode      fits
 
 # IMF (initial mass function) file name
 # Default: lib/imf/chabrier.imf (Chabrier 2005 IMF)
-imf   	          lib/imf/kroupa_after.imf
+imf   	          lib/imf/chabrier.imf
 
 # CLF (cluster lifetime function) file name
 # Default: lib/clf/slug_default.clf (dN/dt ~ t^-1.9)
@@ -83,5 +83,5 @@ clf               lib/clf/nodisrupt.clf
 # -- QHe0 : He ionizing photon luminosity, in phot/s
 # -- QHe1 : He+ ionizing photon luminosity, in phot/s
 # -- Lbol : bolometric luminosity, in L_sun
-phot_bands    QH0, LBOL,GALEX_FUV
+phot_bands    QH0,LBOL,GALEX_FUV
 

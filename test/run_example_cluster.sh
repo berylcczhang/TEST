@@ -1,5 +1,5 @@
 #
-# Simple script to run the slug problem: example
+# Simple script to run the slug problem: example_cluster
 # See section 10 of the SLUG manual. 
 #
 
