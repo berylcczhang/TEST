@@ -1,16 +1,24 @@
 # Users can override default options here. Just uncomment and fill in
 # the appropriate line.
 
-# c++ compiler
+# c++ and c compilers
 #CXX           =
+#CC	       =
 
 # Optimization flags for compile and link stages
 #CXXOPTFLAGS   =
+#COPTFLAGS     =
 #LDOPTFLAGS    =
 
 # Debug flags for compile and link stages
 #CXXDEBFLAGS   =
+#CDEBFLAGS     =
 #LDDEBFLAGS    =
+
+# Flags to compile shared libaries
+#LIB_EXTENSION	   = 
+#CLIBFLAGS	   = 
+#DYNLIBFLAG	   = 
 
 # Locations of boost and GSL libraries. Can be left blank if these are
 # in the default link/include paths.
