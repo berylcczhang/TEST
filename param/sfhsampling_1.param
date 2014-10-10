@@ -3,7 +3,7 @@
 ####################################################
 
 # This parameter file provides an example setup for simulating a
-# galaxy with a constant SFR and specified f_c
+# galaxy with a constant SFH and two f_c
 #
 
 ##############
@@ -13,7 +13,7 @@
 # Name of the model; this will become the base name for all output
 # files
 # Default: SLUG_DEF
-model_name        SLUG_CLFRACTION_3
+model_name        SLUG_SFHSAMPLING_1
 
 
 ##################################################################
@@ -29,14 +29,14 @@ n_trials          500
 time_step    	  2.0e6
 
 # Maximum evolution time, in yr.
-end_time	  2.0e6
+end_time	  2.0e7
 
 # Star formation rate in case where sim_type = galaxy, in Msun/yr; can
 # be omitted, and will be ignored, if sim_type = cluster. If, instead
 # of a numerical value, the string "sfh" appears, this indicates that
 # the star formation history should be read from a star formation
 # history file.
-sfr    		  0.001
+sfr    		  0.0001
 
 
 #############################################
@@ -111,7 +111,7 @@ clf               lib/clf/nodisrupt.clf
 # Fraction of stars born in clusters (must be 0 - 1); can be omitted
 # if sim_type = cluster
 # Default: 1.0
-clust_frac        0.01
+clust_frac        1.0
 
 #############################################
 # Parameters describing photometric filters #

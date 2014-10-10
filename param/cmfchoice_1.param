@@ -3,7 +3,7 @@
 ####################################################
 
 # This parameter file provides an example setup for simulating a
-# galaxy with a constant SFR and specified f_c
+# galaxy with a constant SFR and specified cluster mass function 
 #
 
 ##############
@@ -13,8 +13,7 @@
 # Name of the model; this will become the base name for all output
 # files
 # Default: SLUG_DEF
-model_name        SLUG_CLFRACTION_3
-
+model_name        SLUG_CMFCHOICE_1
 
 ##################################################################
 # Parameters controlling simulation execution and physical model #
@@ -111,7 +110,7 @@ clf               lib/clf/nodisrupt.clf
 # Fraction of stars born in clusters (must be 0 - 1); can be omitted
 # if sim_type = cluster
 # Default: 1.0
-clust_frac        0.01
+clust_frac        1.0
 
 #############################################
 # Parameters describing photometric filters #

@@ -50,7 +50,7 @@ random drawing from the IMF, masses are distributed around the input mass.
 As the wanted mass is large enough to allow for many stars to be drawn, the 
 actual mass distribution is narrow. 
 
-The second raw shows instead the distribution of the maximum mass of all stars that are still 
+The second row shows instead the distribution of the maximum mass of all stars that are still 
 alive at a given time step. At 1 Myr, this distribution is a good approximation of the 
 input distribution, which is the result of random draws from the IMF. At 10 Myr, which is the 
 typical lifetime of a 15-20 :math:`M_\odot` star, the most massive stars have died, and 
@@ -130,6 +130,8 @@ shape of the IMF. The second and third row show how the sampling techniques affe
 photometry. 
 
 
+.. _probimf-label:
+
 Problem ``imfchoice``: different IMF implementations
 ====================================================
 
@@ -151,40 +153,98 @@ Problem ``clfraction``: cluster fraction at work
 
 With the exception of the first example, these test problems have focused on how SLUG handles 
 cluster simulations, and how these clusters are filled with stars drawn from the IMF. 
-This new problem highlight instead the additional stochasiticy induced by the second level in the 
-hierarchy of ``galaxy`` simulations: how clusters are drawn from the CMF to satisfy the 
-target mass. Although may not seem obvious at first, a very important parameter that regulates the 
-stochastic behavior of SLUG simulation is the fraction of stars that are formed in clusters, 
-:math:`f_c`. In the limit :math:`f_c \rightarrow 0`, SLUG fills a galaxy by drawing stars from the 
+This new problem highlights instead the presence of additional stochasticity induced by a 
+second level in the hierarchy of ``galaxy`` simulations: how clusters are drawn from the CMF to satisfy the 
+targeted galaxy mass. Although it may not appear obvious at first, 
+the fraction of stars that are formed in clusters, :math:`f_c`, is a very important parameter that regulates 
+the stochastic behavior of SLUG. This can be understood by considering two limiting cases.
+In the limit :math:`f_c \rightarrow 0`, SLUG fills a galaxy by drawing stars from the 
 IMF. Thus, because the mass of a galaxy is typically much larger than the mass of the upper 
 end of the IMF, the effects of mass-constrained sampling highlighted in :ref:`probsampl-label` are simply
-not relevant anymore. Conversely, in the limit :math:`f_c \rightarrow 1`, not only the IMF sampling 
-plays a role, but clusters themselves contribute to the stochastic behavior. Indeed, similarly 
-to the sampling of stars to fill clusters, now clusters are drawn from the CMF to fill the target
-galaxy mass. Thus, the same problem of constrained mass sampling applies, inducing additional 
-stochasticity.  
+not relevant anymore. In this case, stochasticity is minimal.  
+Conversely, in the limit :math:`f_c \rightarrow 1`, not only the IMF sampling contributes to the
+stochastic behavior of SLUG, but also clusters themselves contribute to additional stochasticity,
+as clusters are now drawn from the CMF to fill the targeted galaxy mass following the similar rules 
+to those specified for the IMF draws. Thus, in this case, constrained mass sampling applies to both 
+stars in clusters and clusters in galaxies, and stochasticity is amplified.  
 
+The command  ``test/run_clfraction.sh`` runs three ``galaxy`` simulations, each with 500 trials
+of continuous  SFR :math:`=0.001\rm\;M_\odot\;yr^{-1}` which are evolved for a 
+single timestep of  :math:`2\times 10^6\rm\;yr`. A Chabrier IMF and a cluster mass function 
+:math:`\propto M^{-2}` are adopted. Cluster disruption is disabled. The three simulations
+differ only for the fraction of stars formed in clusters, respectively :math:`f_c=1,0.5,0.01`.
+The analysis script ``python test/plot_clfraction.py`` produces a multi-panel figure 
+``test/SLUG_CLFRACTION_f1.pdf``. Each column shows properties of simulations for different 
+fractions of stars formed in clusters. 
 
-
-
-This problem highlights the flexible choice of cluster fraction during SLUG simulations.
-Introduce importance of this parameter. 
-
-[basic run with different fc]
+The top row shows the maximum stellar mass in clusters. Clearly, :math:`f_c` has no effect on the way 
+clusters are filled up with stars, but the normalization changes. Thus,  the least probable realizations 
+in the tail of the distribution simply do not appear for :math:`f_c \rightarrow 0`. The second row 
+shows the number of stars in clusters. Obviously, this scales directly with  :math:`f_c`, as it does the number 
+of field stars in the third row. This is expected as, by definition, :math:`f_c` regulates the number of stars in 
+clusters versus the field. However, as discussed, :math:`f_c` also affects the stochastic behavior of the 
+simulation. The fourth row shows histograms of the actual galaxy mass versus the targeted mass (red line).
+As :math:`f_c` increases, one can see that the spread around the targeted mass increase. This is again 
+a consequence of the mass-constrained sampling and the stop-nearest condition. For :math:`f_c \rightarrow 0`,
+the code tries to fill a galaxy of mass :math:`0.001\rm\;M_\odot\;yr^{-1} \times 2\times 10^6\rm\;yr`
+with stars. Thus, since the targeted mass is at least a factor of 10 larger than the mass of the 
+building block, SLUG can approximate the desired mass very well (to better than :math:`120\rm\;M_\odot`, in fact).
+Conversely, for :math:`f_c \rightarrow 1`, SLUG is using clusters as building blocks. As the typical 
+mass of the building blocks is now more comparable to the targeted galaxy mass, the problem of the 
+mass constrained sampling becomes a relevant one. Not only :math:`f_c` affects the precision with which 
+SLUG builds galaxies, but, as shown in the bottom row, it also affects photometry. One can see that 
+:math:`Q_{H_0}` increases as :math:`f_c` decreases (the red lines indicate medians). 
+The reason for this behavior should now be clear: 
+in the case of clustered star formation (:math:`f_c \rightarrow 1`), the mass of the most massive stars 
+is subject to the mass constrained sampling of the IMF at the cluster level, reducing the occurrence of 
+very massive stars and thus suppressing the flux of ionizing radiation. Conversely, for non clustered star formation 
+(:math:`f_c \rightarrow 0`), the sampling of the IMF is constrained only at the galaxy mass level, and since this 
+is typically much greater than the mass of the most massive stars, one recovers higher fluxes on average.  
 
 
 Problem ``cmfchoice``: different CMF implementations
 ====================================================
 
-This problem highlights the flexible choice of CMF implementations in SLUG.
+Given the ability of SLUG v2 to handle generic PDFs, the user can specify arbitrary CMF, 
+similarly to what shown in  :ref:`probimf-label`.
+The command  ``test/run_cmfchoice.sh`` runs three ``galaxy`` simulations, each with 500 trials
+of continuous  SFR :math:`=0.001\rm\;M_\odot\;yr^{-1}` which are evolved for a 
+single timestep of  :math:`2\times 10^6\rm\;yr`. A Chabrier IMF and :math:`f_c=1`
+are adopted. Cluster disruption is disabled. The three simulations
+differ only for the cluster mass function, which are: 
+1) the default powerlaw :math:`M^{-2}` between :math:`20-10^{7}~\rm M_\odot`; 
+2) a truncated powerlaw :math:`M^{-2}` between :math:`20-100~\rm M_\odot`;
+3) a mass-independent CMF :math:`M^{0}` between :math:`20-10^3~\rm M_\odot`.
+The analysis script ``python test/plot_cmfchoice.py`` produces a multi-panel figure 
+``test/SLUG_CMFCHOICE_f1.pdf``. Each column shows properties of simulations for the different 
+cluster mass functions.
 
-[basic run with different cmfs]
+The top row shows the maximum stellar mass in clusters. Compared to the default case, 
+the histogram of the truncated CMF is steeper towards low masses. Given that the upper end of the 
+CMF is comparable to the maximum stellar mass of the chosen IMF, low stellar masses are typically 
+preferred  as a result of the stop-nearest condition. A flat CMF
+prefers instead more massive clusters on average, which in turn results in higher probabilities 
+of drawing massive stars. In this case, the residual slope of the distribution towards 
+low stellar masses is a result of the shape of the IMF. A reflection of the effects induced by the 
+shape of the CMF are also apparent in the bottom row, which shows the distribution of 
+ionizing photons from these simulations. The second row shows instead the difference 
+between the targeted galaxy mass (red line), and the distribution of actual masses.
+The spread is minimal for the truncated CMF because, as discussed above, SLUG is using 
+small building blocks, and it can approximate the targeted galaxy mass very well. 
+Larger spread is visible in the case of the flat CMF, as this choice allows for clusters with masses 
+up to :math:`10^3~\rm M_\odot`, without imposing an excess of probability at the low 
+mass end. The largest scatter is visible for the default case, as this CMF is virtually 
+a pure powerlaw without cutoff at the high mass end, and thus clusters as massive as the entire galaxy 
+are accessible to SLUG.  
+
 
 Problem ``sfhsampling``: realizations of SFH
 ============================================
 
 This problem illustrates the conceptual difference between an input SFH and the effective 
 realizations produced by SLUG, in comparison to deterministic codes.
+
+
 
 [show how a input SFH gets implemented in different realizations]
 

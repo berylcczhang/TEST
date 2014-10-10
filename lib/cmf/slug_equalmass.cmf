@@ -1,0 +1,16 @@
+###############################################################
+# This is an CMF definition file for SLUG v2.
+# This file defines a slug CMF constant with mass
+# with a minimum at 20 Msun, a maximum at 1e3 Msun,
+#
+###############################################################
+
+# Breakpoints: mass values where the functional form changes
+# The first and last breakpoint will define the minimum and
+# maximum mass
+breakpoints 20.0 1e3
+
+# Definitions of segments between the breakpoints
+segment
+type powerlaw
+slope 0
