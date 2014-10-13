@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_sf_gamma.h>
 #include "kernel_density.h"
@@ -65,9 +66,11 @@ kernel_density* build_kd(double *x, unsigned int ndim,
     exit(1);
   }
 
-  /* Record bandwidth and kernel type */
+  /* Record miscellaneous data */
   kd->h = bandwidth;
+  kd->scalefac = NULL;
   kd->ktype = ktype;
+  kd->copy_pos = false;
 
   /* Surface element factor for an n-sphere */
   ds_n = ds(ndim);
@@ -76,11 +79,18 @@ kernel_density* build_kd(double *x, unsigned int ndim,
      point; this is defined as norm = 1/ \int K(z,h) dV */
   switch (ktype) {
   case epanechnikov: {
+    /* K(z, h) = 1 - z^2/h^2, z < h */
     kd->norm = ndim*(ndim+2) / (2.0*ds_n*pow(kd->h, ndim));
     break;
   }
+    /* K(z, h) = 1, z < h */
   case tophat: {
-    kd->norm = ds_n/ndim * pow(kd->h, ndim);
+    kd->norm = ndim / (pow(kd->h, ndim) * ds_n);
+    break;
+  }
+    /* K(z, h) = exp[ -z^2/(2h^2) ], all z */
+  case gaussian: {
+    kd->norm = 1.0 / pow(sqrt(2.0*M_PI)*kd->h, ndim);
     break;
   }
   }
@@ -107,6 +117,54 @@ kernel_density* build_kd(double *x, unsigned int ndim,
 
 
 /*********************************************************************/
+/* Function to build a kernel_density object where the bandwidth is  */
+/* not the same in all dimensions                                    */
+/*********************************************************************/
+kernel_density* build_kd_bvec(double *x, unsigned int ndim, 
+			      unsigned int npt, double *wgt, 
+			      unsigned int leafsize, 
+			      double *bandwidth, 
+			      kernel_type ktype) {
+
+  unsigned int i, j;
+  unsigned long ndata;
+  double *xcopy, *scalefac;
+  kernel_density *kd;
+
+  /* Make a copy of the positions */
+  ndata = ndim*npt;
+  if (!(xcopy = calloc(ndata, sizeof(double)))) {
+    fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_kernel_density_bvec\n");
+    exit(1);
+  }
+  memcpy(xcopy, x, ndata*sizeof(double));
+
+  /* Compute scale factors that will be used to render the bandwidth
+     equal size in all dimensions */
+  if (!(scalefac = calloc(ndim, sizeof(double)))) {
+    fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_kernel_density_bvec\n");
+    exit(1);
+  }
+  scalefac[0] = 1.0;
+  for (i=1; i<ndim; i++) scalefac[i] = bandwidth[0] / bandwidth[i];
+
+  /* Rescale positions */
+  for (i=0; i<npt; i++)
+    for (j=1; j<ndim; j++) xcopy[i*ndim+j] *= scalefac[j];
+
+  /* Now call the scalar build routine on the rescaled data */
+  kd = build_kd(xcopy, ndim, npt, wgt, leafsize, bandwidth[0], ktype);
+
+  /* Store the scale factors, and that we have copied the positions */
+  kd->scalefac = scalefac;
+  kd->copy_pos = true;
+
+  /* Return */
+  return(kd);
+}
+
+
+/*********************************************************************/
 /* Finds nearest neighbors to a specified input point                */
 /*********************************************************************/
 void find_neighbors(const double *xpt, const unsigned int *dims,
@@ -114,7 +172,36 @@ void find_neighbors(const double *xpt, const unsigned int *dims,
 		    const unsigned int nneighbor, 
 		    kernel_density *kd, double *pos,
 		    double *wgt, double *dist2) {
-  neighbors(kd->tree, xpt, dims, ndim, nneighbor, pos, wgt, dist2);
+
+  unsigned int i, j;
+  double dist2_tmp;
+  double *xpt_copy;
+
+  /* Rescale coordinates if necessary */
+  if (kd->scalefac != NULL) {
+    if (!(xpt_copy = calloc(ndim, sizeof(double)))) {
+      fprintf(stderr, "cluster_slug: error: unable to allocate memory in find_neighbors\n");
+      exit(1);
+    }
+    for (i=0; i<ndim; i++) xpt_copy[i] = xpt[i] * kd->scalefac[dims[i]];
+  } else {
+    xpt_copy = (double *) xpt;
+  }
+
+  /* Call KDtree neighbor finding routine */
+  neighbors(kd->tree, xpt_copy, dims, ndim, nneighbor, pos, wgt, dist2);
+
+  /* Rescale coordinates if necessary */
+  if (kd->scalefac != NULL) {
+    for (i=0; i<nneighbor; i++) {
+      for (j=0; j<kd->tree->ndim; j++)
+	pos[i*kd->tree->ndim+j] /= kd->scalefac[j];
+      for (dist2_tmp=0.0, j=0; j<ndim; j++) 
+	dist2_tmp += SQR(xpt[j] - pos[i*kd->tree->ndim+dims[j]]);
+      dist2[i] = dist2_tmp;
+    }
+    free(xpt_copy);
+  }
 }
 
 
@@ -122,6 +209,7 @@ void find_neighbors(const double *xpt, const unsigned int *dims,
 /* De-allocates a kernel_density object                              */
 /*********************************************************************/
 void free_kd(kernel_density **kd) {
+  if ((*kd)->copy_pos) free((*kd)->tree->tree[1].x);
   free_tree(&((*kd)->tree));
   free(*kd);
   *kd = NULL;
@@ -133,11 +221,22 @@ void free_kd(kernel_density **kd) {
 double kd_pdf(const double *x, const kernel_density* kd) {
 
   unsigned int i, npt;
-  double *xsample, *wsample, *dist2;
+  double *xsample, *wsample, *dist2, *x_copy;
   double h2, sum;
 
+  /* Rescale coordinates if necessary */
+  if (kd->scalefac != NULL) {
+    if (!(x_copy = calloc(kd->tree->ndim, sizeof(double)))) {
+      fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf\n");
+      exit(1);
+    }
+    for (i=0; i<kd->tree->ndim; i++) x_copy[i] = x[i] * kd->scalefac[i];
+  } else {
+    x_copy = (double *) x;
+  }
+
   /* Find all the points within a distance h of the requested point */
-  npt = query_sphere(kd->tree, x, kd->h, &xsample, 
+  npt = query_sphere(kd->tree, x_copy, kd->h, &xsample, 
 		     (void *) &wsample, &dist2);
 
   /* Evaluate the kernel at the returned points */
@@ -160,12 +259,17 @@ double kd_pdf(const double *x, const kernel_density* kd) {
   }
   sum = sum * kd->norm_tot;
 
+  /* Renormalize if using scaled coordinates */
+  if (kd->scalefac != NULL)
+    for (i=1; i<kd->tree->ndim; i++) sum *= kd->scalefac[i];
+
   /* Free */
   if (npt > 0) {
     free(xsample);
     if (kd->tree->tree[1].dptr != NULL) free(wsample);
     free(dist2);
   }
+  if (kd->scalefac != NULL) free(x_copy);
 
   /* Return */
   return(sum);
@@ -189,16 +293,27 @@ void kd_pdf_vec(const double *x, const unsigned int npt,
 double kd_pdf_int(const double *q, const unsigned int *qdim, 
 		  unsigned int nqdim, const kernel_density *kd) {
   unsigned int i, npt, nint;
-  double *xsample, *wsample, *dist2;
+  double *xsample, *wsample, *dist2, *q_copy;
   double ds_n, h2, r2, sum;
 
   /* Safety assertion */
   assert(nqdim > 0);
   assert(nqdim < kd->tree->ndim);
 
+  /* Rescale coordinates if necessary */
+  if (kd->scalefac != NULL) {
+    if (!(q_copy = calloc(nqdim, sizeof(double)))) {
+      fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_int\n");
+      exit(1);
+    }
+    for (i=0; i<nqdim; i++) q_copy[i] = q[i] * kd->scalefac[qdim[i]];
+  } else {
+    q_copy = (double *) q;
+  }
+
   /* Find all the sample points within a distance h of the requested
      projection plane */
-  npt = query_slab(kd->tree, q, qdim, nqdim, kd->h, &xsample, 
+  npt = query_slab(kd->tree, q_copy, qdim, nqdim, kd->h, &xsample, 
 		     (void *) &wsample, &dist2);
 
   /* Get the volume element in spherical coordinates for the
@@ -240,12 +355,17 @@ double kd_pdf_int(const double *q, const unsigned int *qdim,
   }
   sum = sum * kd->norm_tot;
 
+  /* Renormalize if using scaled coordinates */
+  if (kd->scalefac != NULL)
+    for (i=1; i<nqdim; i++) sum *= kd->scalefac[qdim[i]];
+
   /* Free */
   if (npt > 0) {
     free(xsample);
     if (kd->tree->tree[1].dptr != NULL) free(wsample);
     free(dist2);
   }
+  if (kd->scalefac != NULL) free(q_copy);
 
   /* Return */
   return(sum);
@@ -258,27 +378,10 @@ double kd_pdf_int(const double *q, const unsigned int *qdim,
 void reweight_kd(const double *wgt, kernel_density *kd) {
 
   int i;
-  double ds_n, wgttot;
+  double wgttot;
 
   /* Change the weights */
   kd->tree->tree[1].dptr = (void *) wgt;
-
-  /* Surface element factor for an n-sphere */
-  ds_n = ds(kd->tree->ndim);
-
-  /* Compute the normalization factor for the kernel around each
-     point; this is defined as norm = 1/ \int K(z,h) dV */
-  switch (kd->ktype) {
-  case epanechnikov: {
-    kd->norm = kd->tree->ndim*(kd->tree->ndim+2) 
-      / (2.0*ds_n*pow(kd->h, kd->tree->ndim));
-    break;
-  }
-  case tophat: {
-    kd->norm = ds_n/kd->tree->ndim * pow(kd->h, kd->tree->ndim);
-    break;
-  }
-  }
 
   /* Compute the normalization factor for the entire PDF */
   if (wgt == NULL) {
