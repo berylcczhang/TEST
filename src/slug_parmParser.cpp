@@ -501,6 +501,21 @@ slug_parmParser::checkParams() {
     exit(1);
   }
 
+  // Make sure filter names are unique; if not, eliminate duplicates
+  // and spit out a warning
+  vector<vector<double>::size_type> duplicates;
+  for (vector<double>::size_type i=0; i<photBand.size(); i++)
+    for (vector<double>::size_type j=i+1; j<photBand.size(); j++)
+      if (photBand[i] == photBand[j]) duplicates.push_back(j);
+  vector<vector<double>::size_type>::reverse_iterator 
+    rit = duplicates.rbegin();
+  for ( ; rit != duplicates.rend(); ++rit) {
+    vector<double>::size_type i = *rit;
+    cerr << "slug: warning: ignoring duplicate photometric band "
+	 << photBand[i] << endl;
+    photBand.erase(photBand.begin() + i);
+  }
+
   // See if the SLUG_DIR environment variable is set, for use in
   // setting up default paths. If not, set it to current working
   // directory.

@@ -219,11 +219,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     } else if (recordptr >= 0) {
 
       // This is a filter we're interested in, so tokenize the line
-      // and record the data
+      // and record the data; skip repeated entries
       split(tokens, line, is_any_of("\t "), token_compress_on);
-      lambda.push_back(lexical_cast<double>(tokens[0]));
-      response.push_back(lexical_cast<double>(tokens[1]));
-
+      if (lambda.size() == 0) {
+	  lambda.push_back(lexical_cast<double>(tokens[0]));
+	  response.push_back(lexical_cast<double>(tokens[1]));
+      } else if (lambda.back() != lexical_cast<double>(tokens[0])) {
+	lambda.push_back(lexical_cast<double>(tokens[0]));
+	response.push_back(lexical_cast<double>(tokens[1]));
+      }
     }
 
   }
@@ -238,7 +242,11 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     filters[recordptr] = 
       new slug_filter(lambda, response, beta[filterptr], 
 		      lambda_c[filterptr]);
+    nrecorded++;
   }
+
+  // Safety check
+  assert(nrecorded == filters.size());
 
   // If we've been asked to write output in Vega magnitudes, read in
   // the spectrum of Vega and integrate it over all our filters to get
