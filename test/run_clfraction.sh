@@ -1,6 +1,6 @@
 #
 # Simple script to run the slug problem: clfraction
-# See section 10 of the SLUG manual. 
+# See section 11 of the SLUG manual. 
 #
 
 $SLUG_DIR/bin/slug $SLUG_DIR/param/clfraction_1.param 

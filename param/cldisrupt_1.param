@@ -1,9 +1,9 @@
 ####################################################
-# An example parameter file for clfraction problem #
+# An example parameter file for cldisrupt problem #
 ####################################################
 
 # This parameter file provides an example setup for simulating a
-# galaxy with a constant SFH and two f_c
+# galaxy with a burst of SF and passive cluster evolution
 #
 
 ##############
@@ -13,7 +13,7 @@
 # Name of the model; this will become the base name for all output
 # files
 # Default: SLUG_DEF
-model_name        SLUG_SFHSAMPLING_1
+model_name        SLUG_CLDISRUPT_1
 
 
 ##################################################################
@@ -22,11 +22,11 @@ model_name        SLUG_SFHSAMPLING_1
 
 # Number of model galaxies to run
 # Default: 1
-n_trials          100
+n_trials          10
 
 # Length of time step (in yr for linear time step, in dex for
 # logarithmic)
-time_step    	  5.0e6
+time_step    	  1.0e6
 
 # Maximum evolution time, in yr.
 end_time	  5.0e7
@@ -36,7 +36,7 @@ end_time	  5.0e7
 # of a numerical value, the string "sfh" appears, this indicates that
 # the star formation history should be read from a star formation
 # history file.
-sfr    		  0.0001
+sfh               lib/sfh/sfh_burst.sfh 
 
 
 #############################################

@@ -241,12 +241,42 @@ are accessible to SLUG.
 Problem ``sfhsampling``: realizations of SFH
 ============================================
 
-This problem illustrates the conceptual difference between an input SFH and the effective 
-realizations produced by SLUG, in comparison to deterministic codes.
+The algorithm at the heart of SLUG is quite simple: for a given star formation history 
+:math:`\dot\psi(t)` a stellar population with mass :math:`\dot\psi(t)\times \Delta t`
+is generated at each timestep, according to the constraints set by IMF, CMF and other 
+controlling parameters. As discussed in the previous examples, SLUG builds a best 
+approximation for the targeted mass :math:`\dot\psi(t)\times \Delta t`. This means that 
+the input SFH and the output SFHs are not identical. SLUG receives an input SFH which 
+is used to constrain the rate with which clusters and stars are drawn to achieve the 
+desired targeted mass in each timestep. However, the output SFHs are only realizations
+and not exact copies  of the input SFH. This problem is designed to illustrate this behavior.  
 
+The command  ``test/run_sfhsampling.sh`` runs two ``galaxy`` simulations, each with 100 trials
+of continuous  SFR :math:`=0.0001\rm\;M_\odot\;yr^{-1}` which are evolved for a 
+10 timesteps of  :math:`5\times 10^6\rm\;yr`. A Chabrier IMF and a :math:`M^{-2}`
+CMF are adopted. Cluster disruption is disabled. The two simulations
+differ only for the fraction of stars in clusters, :math:`f_c = 1` and :math:`f_c = 0` respectively. 
+The analysis script ``python test/plot_sfhsampling.py`` produces a two-panel figure 
+``test/SLUG_SFHSAMPLING_f1.pdf``, showing the box plot for the output SFH of the two simulations
+(:math:`f_c = 1` top, and :math:`f_c = 0` bottom).
 
+In each panel, the median SFH over 100 trials is represented by the red lines, while the red squares 
+show the mean. The box sizes represent instead the first and third quartile, with the 
+ends of the whiskers representing the 5th and 95th percentiles. One can see that the input 
+SFH at :math:`\dot\psi(t)=10^{-4}\rm\;M_\odot\;yr^{-1}` is recovered on average, albeit with 
+significant variation in each realization. The reason for this variation lies in the fact that, 
+at low SFRs, SLUG samples the input SFH with coarse sampling points, which are clusters and stars. 
+One can also notice a widely different scatter between the :math:`f_c = 1` and :math:`f_c = 0` 
+case. In the former case, the basic elements used by SLUG to sample the targeted mass in  a
+given interval are clusters. In the latter case, they are stars. Given that the typical mass of a 
+cluster is of the same order of the targeted mass in each interval, the output SFH for 
+the :math:`f_c = 1` case are more sensitive to the history of drawings from the CMF. 
+Conversely, for  :math:`f_c = 0`, the sampling elements are less massive than the 
+targeted mass in a given interval, resulting in an output SFH distribution which is 
+better converged towards the input value. Clearly, a comparable amplitude in the scatter 
+will be present in the output photometry, especially for the traces that are more sensitive
+to variations in the SFHs on short timescales. 
 
-[show how a input SFH gets implemented in different realizations]
 
 Problem ``cldisrupt``: cluster disruption at work
 =================================================
@@ -254,6 +284,8 @@ Problem ``cldisrupt``: cluster disruption at work
 This problem highlights the flexible choice of CLF implementations in SLUG.
 
 [basic run with different clfs]
+
+
 
 Problem ``spectra``: full spectra
 =================================
@@ -263,8 +295,6 @@ full spectra and implement dust extinction.
 
 [basic run with full spectra out: shows stochasticity applied to spectra]
 
-Problem ``redshift``: trivial redshift example
-==============================================
 
 This problem shows a trivial example of the redshift capability in SLUG v2.
 
