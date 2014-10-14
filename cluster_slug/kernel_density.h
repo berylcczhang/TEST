@@ -49,6 +49,10 @@ typedef struct {
   kernel_type ktype;
   /* Do we have our own copy of the data positions? */
   bool copy_pos;
+  /* Center of mass positions of nodes */
+  double *nodecm;
+  /* Sums of weights in nodes of the tree */
+  double *nodewgt;
 } kernel_density;
 
 
@@ -184,7 +188,9 @@ void free_kd(kernel_density **kd);
 double kd_pdf(const double *x, const kernel_density *kd);
 /* This routine returns the value of the probability distribution
    function for a kernel_density object evaluated at a specified
-   position.
+   position. For compact kernels the evaluate is exact, while for
+   non-compact ones it is computed with a relative error tolerance of
+   10^-6, and an absolute error tolerance of 0.
 
    Parameters:
       INPUT x
@@ -196,6 +202,35 @@ double kd_pdf(const double *x, const kernel_density *kd);
    Returns:
       OUT pdf
          the PDF evaluated at x
+*/
+
+
+double kd_pdf_tol(const double *x, const kernel_density *kd,
+		  const double reltol, const double abstol);
+/* This routine returns the value of the probability distribution
+   function for a kernel_density object evaluated at a specified
+   position, evaluated with some specified relative and absolute
+   tolerances.
+
+   Parameters:
+      INPUT x
+         an ndim element array giving the position at which the PDF is
+         to be evaluated
+      INPUT kd
+         the kernel_density object to be used to evaluate the PDF
+      INPUT reltol
+         Relative error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | / pdf_true < reltol.
+      INPUT abstol
+         Absolute error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | < abstol.
+
+   Returns:
+      OUT pdf_approx
+         an approximation to the PDF evaluated at x, satisfying the
+         input error tolerances
 */
 
 
@@ -216,6 +251,36 @@ void kd_pdf_vec(const double *x, const unsigned int npt,
          number of input positions
       INPUT kd
          the kernel_density object to be used to evaluate the PDF
+      OUTPUT pdf
+         the computed values of the PDF; array must point to npt
+         elements of allocated, writeable memory on input
+
+   Returns:
+      Nothing
+*/
+
+void kd_pdf_vec_tol(const double *x, const unsigned int npt, 
+		    const kernel_density *kd, const double reltol,
+		    const double abstol, double *pdf);
+/* This routine returns the value of the probability distribution
+   function for a kernel_density object evaluated at a serires of
+   specified positions, with a specified relative tolerance. The
+   computation is identical to that in kd_pdf_tol, just computed on a
+   vector of points instead of a single one.
+
+   Parameters:
+      INPUT x
+         an ndim*npt element array giving the positions at which the
+         PDF is to be evaluated; element x[i*ndim+j] is the jth
+         coordinate of the ith input data point
+      INPUT npt
+         number of input positions
+      INPUT kd
+         the kernel_density object to be used to evaluate the PDF
+      INPUT reltol
+         the relative tolerance for the computation; see kd_pdf_tol
+      INPUT abstol
+         the absolute tolerance for the computation; see kd_pdf_tol
       OUTPUT pdf
          the computed values of the PDF; array must point to npt
          elements of allocated, writeable memory on input

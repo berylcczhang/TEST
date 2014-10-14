@@ -73,6 +73,71 @@ typedef struct {
 /* Function definitions                                              */
 /*********************************************************************/
 
+double box_max_dist2(const double *x, const double *xbox[2],
+		     const unsigned int ndim_x, 
+		     const unsigned int ndim_xbox,
+		     const unsigned int *dim_x,
+		     double *swap);
+/* Returns the squared distance between an input point and the
+   most distant point in the box whose corners are at positions xbox.
+
+   Parameters:
+      INPUT x
+         Array of ndim_x elements giving the position of the point
+      INPUT xbox
+         2D array of 2 x ndim_xbox elements giving positions of box
+         corners
+      INPUT ndim_x
+         number of dimensions in x
+      INPUT ndim_xbox
+         number of dimensions in xbox
+      INPUT dim_x
+         Array of ndim_x elements specifying which coordinates are
+         given in x; for example, if ndim_xbox = 3, ndim_x = 2, and
+	 dim_x = [0, 2], then the box is a 3d cube, and x specifies
+         the position of a line at constant (x, z) in 3-space. If this
+         is left as NULL, then the dimensions of x are assumed to
+         correspond to the first ndim_x dimensions of xbox
+      INPUT/OUTPUT swap
+         Array of at least ndim_xbox elements to use as swap space
+
+   Returns:
+      OUTPUT dist2
+         the squared distance between x and the nearest point in the
+         box
+*/
+
+double box_min_dist2(const double *x, const double *xbox[2],
+		     const unsigned int ndim_x, 
+		     const unsigned int ndim_xbox,
+		     const unsigned int *dim_x);
+/* Returns the squared distance between an input point and the
+   nearest point in the box whose corners are at positions xbox.
+
+   Parameters:
+      INPUT x
+         Array of ndim_x elements giving the position of the point
+      INPUT xbox
+         2D array of 2 x ndim_xbox elements giving positions of box
+         corners
+      INPUT ndim_x
+         number of dimensions in x
+      INPUT ndim_xbox
+         number of dimensions in xbox
+      INPUT dim_x
+         Array of ndim_x elements specifying which coordinates are
+         given in x; for example, if ndim_xbox = 3, ndim_x = 2, and
+	 dim_x = [0, 2], then the box is a 3d cube, and x specifies
+         the position of a line at constant (x, z) in 3-space. If this
+         is left as NULL, then the dimensions of x are assumed to
+         correspond to the first ndim_x dimensions of xbox
+
+   Returns:
+      OUTPUT dist2
+         the squared distance between x and the nearest point in the
+         box
+*/
+
 KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt, 
 		   unsigned int leafsize, void *dptr, size_t dsize);
 /* This routine builds a KD tree from the input data.
@@ -96,6 +161,60 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
    Returns:
       tree : OUTPUT
          a KD tree decomposition of the data
+*/
+
+
+double euclidean_metric2(const double *x1, const double *x2,
+			 const unsigned int ndim);
+/* Returns the squared distance between two points computed using the
+   N-dimensional Euclidean.
+
+   Parameters:
+      INPUT x1
+         Array giving position of first point
+      INPUT x2
+         Array giving position of second point
+      INPUT ndim
+         Number of dimensions
+
+   Returns:
+      OUTPUT dist2
+         The square of the Euclidean distance between the two points
+*/
+
+double euclidean_metric2_dim(const double *x1, const double *x2,
+			     const unsigned int ndim1,
+			     const unsigned int ndim2,
+			     const unsigned int *dim2);
+/* Returns the squared distance between a point and a point, line,
+   plane, or similar higher dimensional object using the N-dimensional
+   Euclidean metrc.
+
+   Parameters:
+      INPUT x1
+         Array of ndim1 elements giving position of the point
+      INPUT x2
+         Array of ndim2 elements giving position of the second object
+         (point, line, etc.)
+      INPUT ndim1
+         Number of dimensions in the space
+      INPUT ndim2
+         Number of coordinates in x2; ndim2 = ndim1 corresponds to
+         finding the distance between two points, ndim2 = ndim1 - 1
+         corresponds to finding the distance between a point and a
+         line, ndim2 = ndim1 - 2 corresponds to finding the distance
+         between a point and a plane, etc.
+      INPUT dim2
+         Array of ndim2 elements specifying which dimensions of the
+         space are specified by the entries in x2; for example, if
+         ndim1 = 3, ndim2 = 2, and dim2 = [0, 2], then x2[0] gives the
+         x coordinate and x2[1] gives the z coordinate, and thus we
+         are finding the distance between the point x1 and the line x2
+         that is located at a constant (x,z) point.
+
+   Returns:
+      OUTPUT dist2
+         The square of the Euclidean distance between
 */
 
 
