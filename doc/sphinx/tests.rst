@@ -285,6 +285,7 @@ This problem highlights the flexible choice of CLF implementations in SLUG.
 
 [basic run with different clfs]
 
+- pending investigation in SFH - 
 
 
 Problem ``spectra``: full spectra
@@ -293,8 +294,19 @@ Problem ``spectra``: full spectra
 This problem highlights the power of the new feature offered in SLUG v2: the ability to produce 
 full spectra and implement dust extinction. 
 
-[basic run with full spectra out: shows stochasticity applied to spectra]
+- one run with spectra [single timestep]
+  shows cluster spectra and galaxy spectra
 
+- one run with spectra redshifted
+
+- one run with spectra dust det
+
+- one run with spectra dust  stoch
+
+
+
+
+[basic run with full spectra out: shows stochasticity applied to spectra]
 
 This problem shows a trivial example of the redshift capability in SLUG v2.
 
