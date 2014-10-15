@@ -64,8 +64,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
 
        (Only present if an integrated_prop file is found)
 
-       target_mass : array, shape (N_times)
-          Target stellar mass at each time
+       target_mass : array, shape (N_times, N_trials)
+          Target stellar mass at each time in each trial
        actual_mass : array, shape (N_times, N_trials)
           Actual mass of stars created up to each time in each trial
        live_mass : array, shape (N_times, N_trials)
