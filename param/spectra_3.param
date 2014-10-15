@@ -121,7 +121,7 @@ clust_frac        1.0
 # parameter is set to any string that cannot be converted to a real
 # number, it will be interpreted as a file name giving the name of a
 # PDF file specifying the distribution of extinctions.
-A_V                  100.0
+A_V                  0.5
 
 # File specifying the shape fof the extinction curve
 # Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti+ 2000 starburst

@@ -90,6 +90,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
        spec : array, shape (N_wavelength, N_times, N_trials)
           specific luminosity at each wavelength and each time for each
           trial, in erg/s/A
+          
+       If extinction is enabled, wl_ex and spec_ex will contain the spectra 
+       after extinction has been applied. 
 
        (Only present if an integrated_phot file is found)
 
@@ -112,6 +115,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
        phot : array, shape (N_filter, N_times, N_trials)
           photometric value in each filter at each time in each trial;
           units are as indicated in the units field
+
+       If extinction is enabled, phot_ex will contain photometry  
+       after extinction has been applied.     
 
        (Only present if an integrated_cloudyspec file is found)
 
