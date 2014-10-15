@@ -757,8 +757,8 @@ _name key will be omitted from the dict.</dd>
 </dl>
 <p>(Only present if an integrated_prop file is found)</p>
 <dl class="docutils">
-<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times)</span></dt>
-<dd>Target stellar mass at each time</dd>
+<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Target stellar mass at each time in each trial</dd>
 <dt>actual_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
 <dd>Actual mass of stars created up to each time in each trial</dd>
 <dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
@@ -923,8 +923,10 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>times at which colors are output, in yr</dd>
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
+the run was done with fixed output times) or N_trials (if
+the run was done with random output times)</dd>
 <dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
 <dd>a list giving the name for each filter</dd>
 <dt>filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
@@ -992,8 +994,10 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>Times at which data are output</dd>
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
+the run was done with fixed output times) or N_trials (if
+the run was done with random output times)</dd>
 <dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
 <dd>Target stellar mass at each time</dd>
 <dt>actual_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
@@ -1049,8 +1053,10 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>times at which spectra are output, in yr</dd>
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
+the run was done with fixed output times) or N_trials (if
+the run was done with random output times)</dd>
 <dt>wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>wavelength, in Angstrom</dd>
 <dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
@@ -1475,8 +1481,10 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>times at which line luminosities are output, in yr</dd>
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
+the run was done with fixed output times) or N_trials (if
+the run was done with random output times)</dd>
 <dt>cloudy_linelabel <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype=&#8217;S4&#8217;, shape (N_lines)</span></dt>
 <dd>labels for the lines, following cloudy&#8217;s 4 character line label
 notation</dd>
@@ -1534,8 +1542,10 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>times at which spectra are output, in yr</dd>
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
+the run was done with fixed output times) or N_trials (if
+the run was done with random output times)</dd>
 <dt>cloudy_filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
 <dd>a list giving the name for each filter</dd>
 <dt>cloudy_filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
@@ -1612,8 +1622,10 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>times at which spectra are output, in yr</dd>
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
+the run was done with fixed output times) or N_trials (if
+the run was done with random output times)</dd>
 <dt>cloudy_wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>wavelength, in Angstrom</dd>
 <dt>cloudy_inc <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
@@ -2117,7 +2129,7 @@ available in dataset_filters</dd>
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2014, Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers.
+        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
       Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
     </div>
   </body>

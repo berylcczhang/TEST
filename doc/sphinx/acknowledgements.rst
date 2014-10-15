@@ -1,10 +1,19 @@
 .. highlight:: rest
 
-Acknowledgements
-================
+Contributors and Acknowledgements
+=================================
 
-SLUG was made possible by contributions from a number of people. The original SLUG v1 code was written by Robert da Silva and Michele Fumagalli. This reimplementation was primarily written by Mark Krumholz and Michele Fumagalli, with contributions from Jonathan Parra. The slugpy library was written by Mark Krumholz, with contributions from Teddy Rendahl (who wrote the first version of cloudy_slug) and Robert da Silva (who wrote the first version of sfr_slug). In addition to these contributors, several other people provided some of the data on which SLUG relies.
+The following people contributed to slug2:
+
+   * Mark Krumholz: primary author of slug2
+   * Michele Fumagalli: primary author of the slug2 test suite, co-author of version 1 of slug
+   * Robert da Silva: primary author of version 1 of slug and of sfr_slug, wrote the first prototype version of slug2 and sfr_slug
+   * Jonathan Parra: contributed code that become part of the slug_PDF module
+   * Teddy Rendahl: wrote the first version of cloudy_slug
+   * Michelle Myers: contributed to the development of cluster_slug
+
+In addition to these direct contributors, we gratefully acknowledge the following people who provided some of the data on which slug relies:
 
    * The library of stellar evolutionary tracks and stellar atmospheres is taken from Claus Leitherer's `starburst99 <http://www.stsci.edu/science/starburst99/docs/default.htm>`_ package.
-   * The library of photometric filters is taken from Charlie Conroy's `FSPS <https://code.google.com/p/fsps/>`_ package.
+   * Much of the library of photometric filters is taken from Charlie Conroy's `FSPS <https://code.google.com/p/fsps/>`_ package.
    * Daniela Calzetti provided the extinction curves

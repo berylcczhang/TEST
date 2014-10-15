@@ -14,9 +14,9 @@
 
 
 \title{slug Documentation}
-\date{October 03, 2014}
+\date{October 15, 2014}
 \release{2.0}
-\author{Mark Krumholz, Robert da Silva, Michele Fumagalli, Jonathan Parra, Teddy Rendahl, Michelle Myers}
+\author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
 \renewcommand{\releasename}{Release}
 \makeindex
@@ -3262,8 +3262,8 @@ Times at which data are output
 
 (Only present if an integrated\_prop file is found)
 \begin{description}
-\item[{target\_mass}] \leavevmode{[}array, shape (N\_times){]}
-Target stellar mass at each time
+\item[{target\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
+Target stellar mass at each time in each trial
 
 \item[{actual\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
 Actual mass of stars created up to each time in each trial
@@ -3474,8 +3474,10 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{time}] \leavevmode{[}array{]}
-times at which colors are output, in yr
+\item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
+Times at which data are output; shape is either N\_times (if
+the run was done with fixed output times) or N\_trials (if
+the run was done with random output times)
 
 \item[{filter\_names}] \leavevmode{[}list of string{]}
 a list giving the name for each filter
@@ -3560,8 +3562,10 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{time}] \leavevmode{[}array{]}
-Times at which data are output
+\item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
+Times at which data are output; shape is either N\_times (if
+the run was done with fixed output times) or N\_trials (if
+the run was done with random output times)
 
 \item[{target\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
 Target stellar mass at each time
@@ -3631,8 +3635,10 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{time}] \leavevmode{[}array{]}
-times at which spectra are output, in yr
+\item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
+Times at which data are output; shape is either N\_times (if
+the run was done with fixed output times) or N\_trials (if
+the run was done with random output times)
 
 \item[{wl}] \leavevmode{[}array{]}
 wavelength, in Angstrom
@@ -4147,8 +4153,10 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{time}] \leavevmode{[}array{]}
-times at which line luminosities are output, in yr
+\item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
+Times at which data are output; shape is either N\_times (if
+the run was done with fixed output times) or N\_trials (if
+the run was done with random output times)
 
 \item[{cloudy\_linelabel}] \leavevmode{[}array, dtype='S4', shape (N\_lines){]}
 labels for the lines, following cloudy's 4 character line label
@@ -4218,8 +4226,10 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{time}] \leavevmode{[}array{]}
-times at which spectra are output, in yr
+\item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
+Times at which data are output; shape is either N\_times (if
+the run was done with fixed output times) or N\_trials (if
+the run was done with random output times)
 
 \item[{cloudy\_filter\_names}] \leavevmode{[}list of string{]}
 a list giving the name for each filter
@@ -4314,8 +4324,10 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{time}] \leavevmode{[}array{]}
-times at which spectra are output, in yr
+\item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
+Times at which data are output; shape is either N\_times (if
+the run was done with fixed output times) or N\_trials (if
+the run was done with random output times)
 
 \item[{cloudy\_wl}] \leavevmode{[}array{]}
 wavelength, in Angstrom
@@ -4886,7 +4898,7 @@ random drawing from the IMF, masses are distributed around the input mass.
 As the wanted mass is large enough to allow for many stars to be drawn, the
 actual mass distribution is narrow.
 
-The second raw shows instead the distribution of the maximum mass of all stars that are still
+The second row shows instead the distribution of the maximum mass of all stars that are still
 alive at a given time step. At 1 Myr, this distribution is a good approximation of the
 input distribution, which is the result of random draws from the IMF. At 10 Myr, which is the
 typical lifetime of a 15-20 \(M_\odot\) star, the most massive stars have died, and
@@ -4896,7 +4908,7 @@ most sensitive to the presence of massive stars, change accordingly
 
 
 \section{Problem \texttt{constsampl}: importance of constrained sampling}
-\label{tests:problem-constsampl-importance-of-constrained-sampling}
+\label{tests:probsampl-label}\label{tests:problem-constsampl-importance-of-constrained-sampling}
 This problem illustrates in more detail the effects of constrained sampling on SLUG simulations.
 This is the first key ingredient in the core algorithm of SLUG. With the command \code{test/run\_constsampl.sh},
 three different \code{cluster} simulations are run, each with 1000 trials, but with masses of \(50\;M_\odot\),
@@ -4942,37 +4954,167 @@ specifying the desired sampling algorithm for a given PDF.
 The command  \code{test/run\_sampling.sh} runs four \code{cluster} simulations, each with 1000 trials
 of masses of \(50\;M_\odot\), and a Kroupa (2002) IMF.
 The following four sampling methods are chosen for each simulation: 1) \code{stop\_nearest},
-the default in SLUG; 2) \code{stop\_before}; 3) \code{stop\_after}; 4) \code{sorted\_sampling}.
+which is the default in SLUG; 2) \code{stop\_before}; 3) \code{stop\_after}; 4) \code{sorted\_sampling}.
 A description of each method is provided in Section {\hyperref[pdfs:sampling-metod-label]{\emph{Sampling Methods}}}.
 The analysis script \code{python test/plot\_sampling.py} produces a multi-panel
 figure \code{test/SLUG\_SAMPLING\_f1.pdf}.
 
-This problem highlights the flexible choice of sampling techniques in SLUG, which is
-a new capability of v2.
-
-{[}basic run with different sampling{]}
+By comparing the panels in each column, one can understand the fundamental differences
+induced by the sampling technique. The top row shows the maximum stellar mass drawn from the
+IMF in each realization. The targeted cluster mass is also shown with red vertical lines.
+In the default mode, SLUG is allowed to overshoot the targeted mass if that constitutes
+a good approximation for the total cluster mass. Thus, a tail at stellar masses above the
+targeted cluster mass is visible. This tail is accentuated when the stop after method
+is selected (third column). In this case, SLUG always overshoots the cluster mass, and thus
+extreme realizations above \(100\;M_\odot\)  are possible. Conversely, in the
+stop after method (second column), SLUG always under-fills the clusters, and (in this case)
+the cluster mass becomes a limit to the maximum stellar mass that can be drawn. A similar effect
+is seen when sorted sampling is enable (fourth column). However, the correspondence between the
+cluster mass and the maximum stellar mass is not trivially established, as it depends on the
+shape of the IMF. The second and third row show how the sampling techniques affect the output
+photometry.
 
 
 \section{Problem \texttt{imfchoice}: different IMF implementations}
-\label{tests:problem-imfchoice-different-imf-implementations}
-This problem highlights the flexible choice of IMF implementations in SLUG.
+\label{tests:problem-imfchoice-different-imf-implementations}\label{tests:probimf-label}
+This problem highlights how SLUG can handle different IMF implementations by running
+three simulations with a Kroupa, a Salpeter, and a Chabrier IMF. However, SLUG is not
+restricted to these choices, as the user can in fact easily input an arbitrary IMF.
+The command  \code{test/run\_imfchoice.sh} runs three \code{cluster} simulations, each with 1000 trials
+of masses of \(500\;M_\odot\) and different IMF. The analysis script
+\code{python test/plot\_imfchoice.py} produces a multi-panel figure \code{test/SLUG\_IMFCHOICE\_f1.pdf}.
+Each column shows different statistics for the three IMF. From top to bottom, these are:
+the maximum stellar mass in a cluster, the number of stars that SLUG treats stochastically,
+and the distributions of \(Q_{H_0}\)  and bolometric luminosities.
+As expected for a steep lower-end of the IMF, in the Salpeter case SLUG prefers to fill the
+clusters with a higher number of low mass stars.
 
-{[}basic run with different imfs{]}
+
+\section{Problem \texttt{clfraction}: cluster fraction at work}
+\label{tests:problem-clfraction-cluster-fraction-at-work}
+With the exception of the first example, these test problems have focused on how SLUG handles
+cluster simulations, and how these clusters are filled with stars drawn from the IMF.
+This new problem highlights instead the presence of additional stochasticity induced by a
+second level in the hierarchy of \code{galaxy} simulations: how clusters are drawn from the CMF to satisfy the
+targeted galaxy mass. Although it may not appear obvious at first,
+the fraction of stars that are formed in clusters, \(f_c\), is a very important parameter that regulates
+the stochastic behavior of SLUG. This can be understood by considering two limiting cases.
+In the limit \(f_c \rightarrow 0\), SLUG fills a galaxy by drawing stars from the
+IMF. Thus, because the mass of a galaxy is typically much larger than the mass of the upper
+end of the IMF, the effects of mass-constrained sampling highlighted in {\hyperref[tests:probsampl-label]{\emph{Problem constsampl: importance of constrained sampling}}} are simply
+not relevant anymore. In this case, stochasticity is minimal.
+Conversely, in the limit \(f_c \rightarrow 1\), not only the IMF sampling contributes to the
+stochastic behavior of SLUG, but also clusters themselves contribute to additional stochasticity,
+as clusters are now drawn from the CMF to fill the targeted galaxy mass following the similar rules
+to those specified for the IMF draws. Thus, in this case, constrained mass sampling applies to both
+stars in clusters and clusters in galaxies, and stochasticity is amplified.
+
+The command  \code{test/run\_clfraction.sh} runs three \code{galaxy} simulations, each with 500 trials
+of continuous  SFR \(=0.001\rm\;M_\odot\;yr^{-1}\) which are evolved for a
+single timestep of  \(2\times 10^6\rm\;yr\). A Chabrier IMF and a cluster mass function
+\(\propto M^{-2}\) are adopted. Cluster disruption is disabled. The three simulations
+differ only for the fraction of stars formed in clusters, respectively \(f_c=1,0.5,0.01\).
+The analysis script \code{python test/plot\_clfraction.py} produces a multi-panel figure
+\code{test/SLUG\_CLFRACTION\_f1.pdf}. Each column shows properties of simulations for different
+fractions of stars formed in clusters.
+
+The top row shows the maximum stellar mass in clusters. Clearly, \(f_c\) has no effect on the way
+clusters are filled up with stars, but the normalization changes. Thus,  the least probable realizations
+in the tail of the distribution simply do not appear for \(f_c \rightarrow 0\). The second row
+shows the number of stars in clusters. Obviously, this scales directly with  \(f_c\), as it does the number
+of field stars in the third row. This is expected as, by definition, \(f_c\) regulates the number of stars in
+clusters versus the field. However, as discussed, \(f_c\) also affects the stochastic behavior of the
+simulation. The fourth row shows histograms of the actual galaxy mass versus the targeted mass (red line).
+As \(f_c\) increases, one can see that the spread around the targeted mass increase. This is again
+a consequence of the mass-constrained sampling and the stop-nearest condition. For \(f_c \rightarrow 0\),
+the code tries to fill a galaxy of mass \(0.001\rm\;M_\odot\;yr^{-1} \times 2\times 10^6\rm\;yr\)
+with stars. Thus, since the targeted mass is at least a factor of 10 larger than the mass of the
+building block, SLUG can approximate the desired mass very well (to better than \(120\rm\;M_\odot\), in fact).
+Conversely, for \(f_c \rightarrow 1\), SLUG is using clusters as building blocks. As the typical
+mass of the building blocks is now more comparable to the targeted galaxy mass, the problem of the
+mass constrained sampling becomes a relevant one. Not only \(f_c\) affects the precision with which
+SLUG builds galaxies, but, as shown in the bottom row, it also affects photometry. One can see that
+\(Q_{H_0}\) increases as \(f_c\) decreases (the red lines indicate medians).
+The reason for this behavior should now be clear:
+in the case of clustered star formation (\(f_c \rightarrow 1\)), the mass of the most massive stars
+is subject to the mass constrained sampling of the IMF at the cluster level, reducing the occurrence of
+very massive stars and thus suppressing the flux of ionizing radiation. Conversely, for non clustered star formation
+(\(f_c \rightarrow 0\)), the sampling of the IMF is constrained only at the galaxy mass level, and since this
+is typically much greater than the mass of the most massive stars, one recovers higher fluxes on average.
 
 
 \section{Problem \texttt{cmfchoice}: different CMF implementations}
 \label{tests:problem-cmfchoice-different-cmf-implementations}
-This problem highlights the flexible choice of CMF implementations in SLUG.
+Given the ability of SLUG v2 to handle generic PDFs, the user can specify arbitrary CMF,
+similarly to what shown in  {\hyperref[tests:probimf-label]{\emph{Problem imfchoice: different IMF implementations}}}.
+The command  \code{test/run\_cmfchoice.sh} runs three \code{galaxy} simulations, each with 500 trials
+of continuous  SFR \(=0.001\rm\;M_\odot\;yr^{-1}\) which are evolved for a
+single timestep of  \(2\times 10^6\rm\;yr\). A Chabrier IMF and \(f_c=1\)
+are adopted. Cluster disruption is disabled. The three simulations
+differ only for the cluster mass function, which are:
+1) the default powerlaw \(M^{-2}\) between \(20-10^{7}~\rm M_\odot\);
+2) a truncated powerlaw \(M^{-2}\) between \(20-100~\rm M_\odot\);
+3) a mass-independent CMF \(M^{0}\) between \(20-10^3~\rm M_\odot\).
+The analysis script \code{python test/plot\_cmfchoice.py} produces a multi-panel figure
+\code{test/SLUG\_CMFCHOICE\_f1.pdf}. Each column shows properties of simulations for the different
+cluster mass functions.
 
-{[}basic run with different cmfs{]}
+The top row shows the maximum stellar mass in clusters. Compared to the default case,
+the histogram of the truncated CMF is steeper towards low masses. Given that the upper end of the
+CMF is comparable to the maximum stellar mass of the chosen IMF, low stellar masses are typically
+preferred  as a result of the stop-nearest condition. A flat CMF
+prefers instead more massive clusters on average, which in turn results in higher probabilities
+of drawing massive stars. In this case, the residual slope of the distribution towards
+low stellar masses is a result of the shape of the IMF. A reflection of the effects induced by the
+shape of the CMF are also apparent in the bottom row, which shows the distribution of
+ionizing photons from these simulations. The second row shows instead the difference
+between the targeted galaxy mass (red line), and the distribution of actual masses.
+The spread is minimal for the truncated CMF because, as discussed above, SLUG is using
+small building blocks, and it can approximate the targeted galaxy mass very well.
+Larger spread is visible in the case of the flat CMF, as this choice allows for clusters with masses
+up to \(10^3~\rm M_\odot\), without imposing an excess of probability at the low
+mass end. The largest scatter is visible for the default case, as this CMF is virtually
+a pure powerlaw without cutoff at the high mass end, and thus clusters as massive as the entire galaxy
+are accessible to SLUG.
 
 
 \section{Problem \texttt{sfhsampling}: realizations of SFH}
 \label{tests:problem-sfhsampling-realizations-of-sfh}
-This problem illustrates the conceptual difference between an input SFH and the effective
-realizations produced by SLUG, in comparison to deterministic codes.
+The algorithm at the heart of SLUG is quite simple: for a given star formation history
+\(\dot\psi(t)\) a stellar population with mass \(\dot\psi(t)\times \Delta t\)
+is generated at each timestep, according to the constraints set by IMF, CMF and other
+controlling parameters. As discussed in the previous examples, SLUG builds a best
+approximation for the targeted mass \(\dot\psi(t)\times \Delta t\). This means that
+the input SFH and the output SFHs are not identical. SLUG receives an input SFH which
+is used to constrain the rate with which clusters and stars are drawn to achieve the
+desired targeted mass in each timestep. However, the output SFHs are only realizations
+and not exact copies  of the input SFH. This problem is designed to illustrate this behavior.
 
-{[}show how a input SFH gets implemented in different realizations{]}
+The command  \code{test/run\_sfhsampling.sh} runs two \code{galaxy} simulations, each with 100 trials
+of continuous  SFR \(=0.0001\rm\;M_\odot\;yr^{-1}\) which are evolved for a
+10 timesteps of  \(5\times 10^6\rm\;yr\). A Chabrier IMF and a \(M^{-2}\)
+CMF are adopted. Cluster disruption is disabled. The two simulations
+differ only for the fraction of stars in clusters, \(f_c = 1\) and \(f_c = 0\) respectively.
+The analysis script \code{python test/plot\_sfhsampling.py} produces a two-panel figure
+\code{test/SLUG\_SFHSAMPLING\_f1.pdf}, showing the box plot for the output SFH of the two simulations
+(\(f_c = 1\) top, and \(f_c = 0\) bottom).
+
+In each panel, the median SFH over 100 trials is represented by the red lines, while the red squares
+show the mean. The box sizes represent instead the first and third quartile, with the
+ends of the whiskers representing the 5th and 95th percentiles. One can see that the input
+SFH at \(\dot\psi(t)=10^{-4}\rm\;M_\odot\;yr^{-1}\) is recovered on average, albeit with
+significant variation in each realization. The reason for this variation lies in the fact that,
+at low SFRs, SLUG samples the input SFH with coarse sampling points, which are clusters and stars.
+One can also notice a widely different scatter between the \(f_c = 1\) and \(f_c = 0\)
+case. In the former case, the basic elements used by SLUG to sample the targeted mass in  a
+given interval are clusters. In the latter case, they are stars. Given that the typical mass of a
+cluster is of the same order of the targeted mass in each interval, the output SFH for
+the \(f_c = 1\) case are more sensitive to the history of drawings from the CMF.
+Conversely, for  \(f_c = 0\), the sampling elements are less massive than the
+targeted mass in a given interval, resulting in an output SFH distribution which is
+better converged towards the input value. Clearly, a comparable amplitude in the scatter
+will be present in the output photometry, especially for the traces that are more sensitive
+to variations in the SFHs on short timescales.
 
 
 \section{Problem \texttt{cldisrupt}: cluster disruption at work}
@@ -4980,39 +5122,71 @@ realizations produced by SLUG, in comparison to deterministic codes.
 This problem highlights the flexible choice of CLF implementations in SLUG.
 
 {[}basic run with different clfs{]}
+\begin{itemize}
+\item {} 
+pending investigation in SFH -
 
-
-\section{Problem \texttt{clfraction}: cluster fraction at work}
-\label{tests:problem-clfraction-cluster-fraction-at-work}
-This problem highlights the flexible choice of cluster fraction during SLUG simulations.
-
-{[}basic run with different fc{]}
+\end{itemize}
 
 
 \section{Problem \texttt{spectra}: full spectra}
 \label{tests:problem-spectra-full-spectra}
 This problem highlights the power of the new feature offered in SLUG v2: the ability to produce
-full spectra.
+full spectra and implement dust extinction.
+\begin{itemize}
+\item {} 
+one run with spectra {[}single timestep{]}
+shows cluster spectra and galaxy spectra
+
+\item {} 
+one run with spectra redshifted
+
+\item {} 
+one run with spectra dust det
+
+\item {} 
+one run with spectra dust  stoch
+
+\end{itemize}
 
 {[}basic run with full spectra out: shows stochasticity applied to spectra{]}
 
-
-\section{Problem \texttt{redshift}: trivial redshift example}
-\label{tests:problem-redshift-trivial-redshift-example}
 This problem shows a trivial example of the redshift capability in SLUG v2.
 
 {[}basic run with full spectra out at a different redshift{]}
 
 
-\chapter{Acknowledgements}
-\label{acknowledgements:acknowledgements}\label{acknowledgements::doc}
-SLUG was made possible by contributions from a number of people. The original SLUG v1 code was written by Robert da Silva and Michele Fumagalli. This reimplementation was primarily written by Mark Krumholz and Michele Fumagalli, with contributions from Jonathan Parra. The slugpy library was written by Mark Krumholz, with contributions from Teddy Rendahl (who wrote the first version of cloudy\_slug) and Robert da Silva (who wrote the first version of sfr\_slug). In addition to these contributors, several other people provided some of the data on which SLUG relies.
+\chapter{Contributors and Acknowledgements}
+\label{acknowledgements::doc}\label{acknowledgements:contributors-and-acknowledgements}
+The following people contributed to slug2:
+\begin{itemize}
+\item {} 
+Mark Krumholz: primary author of slug2
+
+\item {} 
+Michele Fumagalli: primary author of the slug2 test suite, co-author of version 1 of slug
+
+\item {} 
+Robert da Silva: primary author of version 1 of slug and of sfr\_slug, wrote the first prototype version of slug2 and sfr\_slug
+
+\item {} 
+Jonathan Parra: contributed code that become part of the slug\_PDF module
+
+\item {} 
+Teddy Rendahl: wrote the first version of cloudy\_slug
+
+\item {} 
+Michelle Myers: contributed to the development of cluster\_slug
+
+\end{itemize}
+
+In addition to these direct contributors, we gratefully acknowledge the following people who provided some of the data on which slug relies:
 \begin{itemize}
 \item {} 
 The library of stellar evolutionary tracks and stellar atmospheres is taken from Claus Leitherer's \href{http://www.stsci.edu/science/starburst99/docs/default.htm}{starburst99} package.
 
 \item {} 
-The library of photometric filters is taken from Charlie Conroy's \href{https://code.google.com/p/fsps/}{FSPS} package.
+Much of the library of photometric filters is taken from Charlie Conroy's \href{https://code.google.com/p/fsps/}{FSPS} package.
 
 \item {} 
 Daniela Calzetti provided the extinction curves
