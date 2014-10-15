@@ -90,6 +90,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
        spec : array, shape (N_cluster, N_wavelength)
           specific luminosity of each cluster at each wavelength, in erg/s/A
 
+       If extinction is enabled, wl_ex and spec_ex will contain the spectra 
+       after extinction has been applied. 
+
        (Present if the run being read contains a cluster_phot file)
 
        filter_names : list of string
@@ -111,6 +114,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
        phot : array, shape (N_cluster, N_filter)
           photometric value in each filter for each cluster; units are as
           indicated in the units field
+
+       If extinction is enabled, phot_ex will contain photometry  
+       after extinction has been applied.     
 
        (Present if the run being read contains a cluster_cloudyspec file)
 

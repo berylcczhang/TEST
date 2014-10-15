@@ -45,54 +45,107 @@ for mm in allmodel:
 
 #start a bunch of display options
 ncol=2
-nraw=3
+nraw=4
 
-ntime=len(cluster[0].time)
-
-print cluster[0].time
-print cluster[1].time
-
-print integrated[0].target_mass
-print integrated[0].actual_mass
+ntime=len(integrated[0].time)
+nmodel=len(allmodel)
 
 # Plot integrated quantities 
-plt.figure(1, figsize=(12,12))
+plt.figure(1, figsize=(12,20))
 plt.subplots_adjust(hspace=0.2, wspace=0.25, bottom=0.05, top=0.95, 
                     left=0.10, right=0.98)
 
 #plot masses in cluster 
 
-loop=0
-for mm in allmodel:
-    sbpn=plt.subplot(nraw,ncol,loop+1)
-    plt.title(alllab[loop],fontsize=15)
+for mm in range(nmodel):
     
     #find median, quartiles of mass in clusters 
-    #cluster[loop].max_star_mass
-
-
-
-#    plt.hist(cluster[loop].max_star_mass,bins=20,range=(0,120))
-#    plt.xlabel('Max Stellar Mass in clusters (M$_\odot$)')
-#    plt.ylabel('Number')
-#    plt.xlim(0,150)
-#    plt.ylim(1,5000)
-#    plt.yscale('log')
-    loop=loop+1
+    median_cluster=np.zeros(shape=(ntime))
+    first_cluster=np.zeros(shape=(ntime))
+    third_cluster=np.zeros(shape=(ntime))
+    median_galaxy=np.zeros(shape=(ntime))
+    median_ncluster=np.zeros(shape=(ntime))
+    median_ndistcluster=np.zeros(shape=(ntime))
     
-#plot photometry 
-#loop=0
-#for mm in allmodel:
-#    sbpn=plt.subplot(nraw,ncol,loop+7)
-#    indx=integrated[loop].filter_names.index('QH0')
-#    plt.hist(integrated[loop].phot[indx,0,:]/1e49,bins=20,range=(0,35))
-#    plt.xlabel('QH0 (10$^{49}$ erg s$^{-1}$)')
-#    plt.ylabel('Number')
-#    plt.xlim(0,35)
-#    plt.ylim(1,1e2)
-#    plt.yscale('log')
-#    plt.axvline(x=np.median(integrated[loop].phot[indx,0,:]/1e49),color='red',linewidth=2.5,linestyle='--')
-#    loop=loop+1
+    median_lbol=np.zeros(shape=(ntime))
+    first_lbol=np.zeros(shape=(ntime))
+    third_lbol=np.zeros(shape=(ntime))
+    median_fuv=np.zeros(shape=(ntime))
+    first_fuv=np.zeros(shape=(ntime))
+    third_fuv=np.zeros(shape=(ntime))
+
+
+    #grab UV and Lbol
+    indx_fuv=integrated[mm].filter_names.index('GALEX_FUV')
+    indx_lbol=integrated[mm].filter_names.index('Lbol')
+
+    for tt in range(ntime):
+        median_cluster[tt]=np.median(integrated[mm].cluster_mass[tt,:])
+        first_cluster[tt]=np.percentile(integrated[mm].cluster_mass[tt,:],25)
+        third_cluster[tt]=np.percentile(integrated[mm].cluster_mass[tt,:],75)
+        median_galaxy[tt]=np.median(integrated[mm].actual_mass[tt,:])
+        median_ncluster[tt]=np.median(integrated[mm].num_clusters[tt,:])
+        median_ndistcluster[tt]=np.median(integrated[mm].num_dis_clusters[tt,:])
+        median_lbol[tt]=np.median(integrated[mm].phot[indx_lbol,tt,:])
+        first_lbol[tt]=np.percentile(integrated[mm].phot[indx_lbol,tt,:],25)
+        third_lbol[tt]=np.percentile(integrated[mm].phot[indx_lbol,tt,:],75)
+        median_fuv[tt]=np.median(integrated[mm].phot[indx_fuv,tt,:])
+        first_fuv[tt]=np.percentile(integrated[mm].phot[indx_fuv,tt,:],25)
+        third_fuv[tt]=np.percentile(integrated[mm].phot[indx_fuv,tt,:],75)
+     
+    #plot cluster/galaxy mass
+    sbpn=plt.subplot(nraw,ncol,mm+1)
+    plt.title(alllab[mm],fontsize=15)
+  
+    time=integrated[mm].time/1e6
+
+    plt.fill_between(time,first_cluster,third_cluster,facecolor='red', alpha=0.5)
+    plt.plot(time,first_cluster,color='red', linewidth=3)
+    plt.plot(time,third_cluster,color='red', linewidth=3)
+    plt.plot(time,median_cluster,color='black', linewidth=3)
+    plt.plot(time,median_galaxy,color='blue', linewidth=3, linestyle='--')
+
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('Mass (M$_\odot$)')
+    plt.yscale('log')
+    plt.ylim(100,2000)
+    
+    #plot cluster/galaxy number
+    sbpn=plt.subplot(nraw,ncol,mm+3)
+  
+    plt.plot(time,median_ncluster,color='black', linewidth=3)
+    plt.plot(time,median_ndistcluster,color='blue', linewidth=3, linestyle='--')
+
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('Number')
+    plt.ylim(-2,18)
+ 
+    #plot Lbol
+    sbpn=plt.subplot(nraw,ncol,mm+5)
+  
+    plt.fill_between(time,first_lbol,third_lbol,facecolor='red', alpha=0.5)
+    plt.plot(time,first_lbol,color='red', linewidth=3)
+    plt.plot(time,third_lbol,color='red', linewidth=3)
+    plt.plot(time,median_lbol,color='black', linewidth=3)
+
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('Lbol'+' ('+integrated[mm].filter_units[indx_lbol]+')')
+    plt.yscale('log')
+    plt.ylim(1e5,1e6)
+
+    #plot UV
+    sbpn=plt.subplot(nraw,ncol,mm+7)
+  
+    plt.fill_between(time,first_fuv,third_fuv,facecolor='red', alpha=0.5)
+    plt.plot(time,first_fuv,color='red', linewidth=3)
+    plt.plot(time,third_fuv,color='red', linewidth=3)
+    plt.plot(time,median_fuv,color='black', linewidth=3)
+
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('FUV'+' ('+integrated[mm].filter_units[indx_fuv]+')')
+    plt.yscale('log')
+    plt.ylim(1e23,2e24)
+    
   
 # Save
 plt.savefig('test/'+modname+'_f1.pdf')

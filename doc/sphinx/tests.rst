@@ -10,16 +10,24 @@ This section describes a set of problems that can be used to test and explore th
 set of problems ``problemname`` that are specified by a parameter file ``param/problemname.param``. Problems that require 
 multiple simulations are described instead by multiple paramater files, each with unique ID XX:  ``param/problemnameXX.param``. 
 Users can reproduce the output of the test problems with the provided executable scripts  ``test/run_problemname.sh``. 
-For each problem, a script for analysis is distributed  in ``test/problemname.py``. Details for each test problem are given below.  
-Throughout this section, it is assumed that the ``SLUG_DIR`` has been properly set. 
+For each problem, a script for analysis is distributed  in ``test/problemname.py``. Details for each test problem are given below. Throughout this section, it is assumed that the ``SLUG_DIR`` has been properly set.
+These test problems are designed to work with outputs in FITS format, but that can be easily changed in the 
+``.param`` files. To run all the problems and the analysis scripts in one go, the user can simply 
+run ``test/run_alltest.sh``. It will take around 15 minutes 
+for the script to complete on a standard laptop. About 700MB of data are generated. 
+If SLUG is correctly installed and working, the first part of the script (i.e. the SLUG
+simulations) should run flawlessly. The second part of the script relies instead on external python procedures, 
+including slugpy, numpy, and matplotlib. While these packages are fairly standard, the user needs to ensure that 
+they are properly installed and visible to the script. This script has been written for and tested with Python 2.7.
+ 
 
-Problem ``example``: basic galaxy simulation
+Problem ``example_galaxy``: basic galaxy simulation
 ============================================
 
 This problem illustrates the basic usage of \slug\ in ``galaxy`` mode by running 48 realizations of a galaxy with constant 
 :math:`\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}`, up to a maximum time of :math:`2\times 10^8` yr. By issuing the 
-command ``test/run_example.sh`` the output files ``SLUG_EXAMPLE*`` are generated. Once the models are ready, 
-``python test/plot_example.py`` produces a multi-panel figure ``test/SLUG_EXAMPLE_f1.pdf``. 
+command ``test/run_example_galaxy.sh`` the output files ``SLUG_GALAXY_EXAMPLE*`` are generated. Once the models are ready, 
+``python test/plot_example_galaxy.py`` produces a multi-panel figure ``test/SLUG_GALAXY_EXAMPLE_f1.pdf``. 
 
 The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a 
 function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence 
@@ -281,34 +289,70 @@ to variations in the SFHs on short timescales.
 Problem ``cldisrupt``: cluster disruption at work
 =================================================
 
-This problem highlights the flexible choice of CLF implementations in SLUG.
+One additional ingredient in SLUG is the lifetime distribution for clusters. Since v2, SLUG is flexible in 
+controlling the rate with which clusters are disrupted. This problem shows a comparison between 
+two simulations with and without cluster disruption. 
 
-[basic run with different clfs]
+The command  ``test/run_cldisrup.sh`` runs two ``galaxy`` simulations, each with 100 trials
+which are evolved in timesteps of  :math:`5\times 10^5\rm\;yr` up to a maximum age of
+:math:`1\times 10^7\rm\;yr`. Both simulations are characterized by a burst of star formation 
+:math:`=0.001\rm\;M_\odot\;yr^{-1}` within the first Myr. A Chabrier IMF and a :math:`M^{-2}`
+CMF are adopted, and :math:`f_c = 1`. For the first simulation, cluster disruption is 
+disabled. In the second simulation, cluster disruption operates at times :math:`>1\rm\;Myr`,
+with a cluster lifetime function which is a powerlaw of index -1.9. 
+The analysis script ``python test/plot_cldisrup.py`` produces the figure ``test/SLUG_CLDISRUP_f1.pdf``.
+The two columns show results with (right) and without (left) cluster disruption. 
 
-- pending investigation in SFH - 
+The first row shows the median stellar mass of the 100 trials as a function of time.
+The blue dashed lines show the mass inside the galaxy, while the black solid lines show the 
+median mass in clusters. The red band shows the first and fourth quartile of the distribution. 
+One can see that in both cases the galaxy mass rises in the first Myr up to the desired 
+targeted mass of :math:`=1000\rm\;M_\odot` given the input SFH. After 1Myr, star formation 
+stops and the galaxy mass does not evolve with time. Conversely, the cluster mass (black line, red
+regions) evolves differently. In the case without cluster disruption, because :math:`f_c = 1`, 
+the cluster mass tracks the galaxy mass at all time. When cluster disruption is enabled (right), 
+one can see that the mass in clusters rise following the galaxy mass in the first Myr. Past that time, 
+clusters start being disrupted and the mass in clusters declines. 
+The same behavior is visible in the second row, which shows the median number of alive (black) and 
+disrupted (black) clusters. To the left, without cluster disruption, the number of clusters alive
+tracks the galaxy mass. Conversely, this distribution declines with time to the right when cluster disruption is
+enabled. The complementary quantity (number of disrupted clusters) rises accordingly. 
+The last two rows show instead the integrated fluxes in FUV and bolometric luminosity. 
+Again, medians are in black and the first and third quartiles in red. One can see a nearly identical distribution 
+in the left and right panels. In these simulations, the controlling factors of the integrated photometry 
+are the SFH and the sampling techniques, which do not depend on the cluster disruption rate. Clearly, the 
+photometry of stars in cluster would exhibit instead a similar dependence to what shown in the top panels. 
+
 
 
 Problem ``spectra``: full spectra
 =================================
 
-This problem highlights the power of the new feature offered in SLUG v2: the ability to produce 
-full spectra and implement dust extinction. 
+Since v2, SLUG is able to generate spectra for star clusters and for galaxies, which can also be computed for 
+arbitrary redshifts. This problem highlights the new features. 
+It also demonstrates how SLUG can handle dust extinction, both in a deterministic and stochastic way. 
 
-- one run with spectra [single timestep]
-  shows cluster spectra and galaxy spectra
+The command  ``test/run_spectra.sh`` runs four ``galaxy`` simulations, each with 500 trials
+of continuous SFR :math:`=0.001\rm\;M_\odot\;yr^{-1}` which are evolved for a 
+single timestep of  :math:`2\times 10^6\rm\;yr`. A Chabrier IMF and a :math:`M^{-2}`
+CMF are adopted, cluster disruption is disabled, and :math:`f_c = 1`.
+The simulations differ in the following way:
+1) the reference model, computed without extinction and at :math:`z = 0`;
+2) same as the reference model, but at :math:`z = 3`;
+3) same as the reference model at :math:`z = 0`, but with a deterministic extinction of :math:`A_V = 0.5` and
+a Calzetti+2000 starburst attenuation curve;
+4) same as model number 3, but with stochastic extinction.
+The analysis script ``python test/plot_spectra.py`` produces the figure ``test/SLUG_SPECTRA_f1.pdf``, 
+which shows a gallery of galaxy SEDs for each model. The median SED is shown in black, the blue region 
+corresponds to the first and third quartile of the distribution, and the red shaded region 
+marks the 5 and 95 percentiles. 
 
-- one run with spectra redshifted
-
-- one run with spectra dust det
-
-- one run with spectra dust  stoch
-
-
-
-
-[basic run with full spectra out: shows stochasticity applied to spectra]
-
-This problem shows a trivial example of the redshift capability in SLUG v2.
-
-[basic run with full spectra out at a different redshift]
-
+The top panel shows the default model, where stochasticity occurs as detailed in the previous examples. 
+The second panel from the top shows instead a model with deterministic extinction. This is simply 
+a scaled-down version of the reference model, according to the input dust law and normalization 
+coefficient :math:`A_V`. As the dust law extends only to 915 Angstrom the output SED is truncated. 
+The third panel shows that, once SLUG handles dust  in a stochastic way, the intrinsic scatter is 
+amplified. This is a simple consequence of applying dust extinction with varying normalizations, which 
+enhances the final scatter about the median. Finally, the bottom panel shows the trivial case in which 
+the spectrum is shifted in wavelength by a constant factor :math:`(1+z)`. Obviously, redshift enhances
+the stochasticity in the optical due to a simple shift of wavelengths. 
