@@ -529,7 +529,7 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
       outfile << "   " << setw(18) << right << phot[i];
     if (extinct != NULL) {
       for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
-	if (!isnan(phot_ext[i]))
+	if (!std::isnan(phot_ext[i]))
 	  outfile << "   " << setw(18) << right << phot_ext[i];
 	else
 	  outfile << "   " << setw(18) << right << " ";
