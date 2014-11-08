@@ -1,0 +1,36 @@
+\begin{theindex}
+\def\bigletter#1{{\Large\sffamily#1}\nopagebreak\vspace{1mm}}
+
+  \bigletter C
+  \item combine\_cluster() (in module slugpy), \hyperpage{29}
+  \item combine\_integrated() (in module slugpy), \hyperpage{29}
+  \item compute\_photometry() (in module slugpy), \hyperpage{29}
+
+  \indexspace
+  \bigletter P
+  \item photometry\_convert() (in module slugpy), \hyperpage{30}
+
+  \indexspace
+  \bigletter R
+  \item read\_cluster() (in module slugpy), \hyperpage{31}
+  \item read\_cluster\_phot() (in module slugpy), \hyperpage{32}
+  \item read\_cluster\_prop() (in module slugpy), \hyperpage{33}
+  \item read\_cluster\_spec() (in module slugpy), \hyperpage{33}
+  \item read\_filter() (in module slugpy), \hyperpage{34}
+  \item read\_integrated() (in module slugpy), \hyperpage{34}
+  \item read\_integrated\_phot() (in module slugpy), \hyperpage{36}
+  \item read\_integrated\_prop() (in module slugpy), \hyperpage{37}
+  \item read\_integrated\_spec() (in module slugpy), \hyperpage{37}
+  \item read\_summary() (in module slugpy), \hyperpage{38}
+
+  \indexspace
+  \bigletter S
+  \item slug\_open() (in module slugpy), \hyperpage{38}
+  \item slugpy (module), \hyperpage{29}
+
+  \indexspace
+  \bigletter W
+  \item write\_cluster() (in module slugpy), \hyperpage{38}
+  \item write\_integrated() (in module slugpy), \hyperpage{38}
+
+\end{theindex}

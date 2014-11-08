@@ -1,0 +1,355 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Output Files and Format &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="Filters and Filter Data" href="filters.html" />
+    <link rel="prev" title="Probability Distribution Functions" href="pdfs.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="filters.html" title="Filters and Filter Data"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pdfs.html" title="Probability Distribution Functions"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="output-files-and-format">
+<span id="sec-output"></span><h1>Output Files and Format<a class="headerlink" href="#output-files-and-format" title="Permalink to this headline">¶</a></h1>
+<p>SLUG can produce 7 output files, though the actual number produced depends on the setting for the <tt class="docutils literal"><span class="pre">out_*</span></tt> keywords in the parameter file. (Additional output files can be produced by <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><em>cloudy_slug: An Automated Interface to cloudy</em></a>, and are documented in that section rather than here.)</p>
+<p>The only file that is always produced is the summary file, which is named <tt class="docutils literal"><span class="pre">MODEL_NAME_summary.txt</span></tt>, where <tt class="docutils literal"><span class="pre">MODEL_NAME</span></tt> is the value given by the <tt class="docutils literal"><span class="pre">model_name</span></tt> keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.</p>
+<p>The other six output files all have names of the form <tt class="docutils literal"><span class="pre">MODEL_NAME_xxx.ext</span></tt>, where the extension <tt class="docutils literal"><span class="pre">.ext</span></tt> is one of <tt class="docutils literal"><span class="pre">.txt</span></tt>, <tt class="docutils literal"><span class="pre">.bin</span></tt>, or <tt class="docutils literal"><span class="pre">.fits</span></tt> depending on the <tt class="docutils literal"><span class="pre">output_mode</span></tt> specified in the parameter file, and <tt class="docutils literal"><span class="pre">xxx</span></tt> is <tt class="docutils literal"><span class="pre">integrated_prop</span></tt>, <tt class="docutils literal"><span class="pre">integrated_spec</span></tt>, <tt class="docutils literal"><span class="pre">integrated_phot</span></tt>, <tt class="docutils literal"><span class="pre">cluster_prop</span></tt>, <tt class="docutils literal"><span class="pre">cluster_spec</span></tt>, or <tt class="docutils literal"><span class="pre">cluster_phot</span></tt>. The production of these output files is controlled by the parameters <tt class="docutils literal"><span class="pre">out_integrated</span></tt>, <tt class="docutils literal"><span class="pre">out_integrated_spec</span></tt>, <tt class="docutils literal"><span class="pre">out_integrated_phot</span></tt>, <tt class="docutils literal"><span class="pre">out_cluster</span></tt>, <tt class="docutils literal"><span class="pre">out_cluster_spec</span></tt>, and <tt class="docutils literal"><span class="pre">out_cluster_phot</span></tt> in the parameter file. The files are formatted as described below.</p>
+<p>The following conventions are used throughout, unless noted otherwise:</p>
+<ul class="simple">
+<li>Masses are in <span class="math">\(M_\odot\)</span></li>
+<li>Times in year</li>
+<li>Wavelengths are in Angstrom</li>
+<li>Specific luminosities are in erg/s/Angstrom</li>
+<li>For <tt class="docutils literal"><span class="pre">binary</span></tt> outputs, variable types refer to C++ types</li>
+</ul>
+<div class="section" id="the-integrated-prop-file">
+<h2>The <tt class="docutils literal"><span class="pre">integrated_prop</span></tt> File<a class="headerlink" href="#the-integrated-prop-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains data on the bulk physical properties of the galaxy as a whole. It consists of a series of entries containing the following fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
+<li><tt class="docutils literal"><span class="pre">TargetMass</span></tt>: target mass of stars in the galaxy up that time, if the IMF and SFH were perfectly sampled</li>
+<li><tt class="docutils literal"><span class="pre">ActualMass</span></tt>: actual mass of stars produced in the galaxy up to that time; generally not exactly equal to <tt class="docutils literal"><span class="pre">TargetMass</span></tt> due to finite sampling of the IMF and SFH</li>
+<li><tt class="docutils literal"><span class="pre">LiveMass</span></tt>: actual mass of stars produced in the galaxy up to that time, and which have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)</li>
+<li><tt class="docutils literal"><span class="pre">ClusterMass</span></tt>: actual mass of stars produced in the galaxy up to that time that are still members of non-disrupted clusters</li>
+<li><tt class="docutils literal"><span class="pre">NumClusters</span></tt>: number of non-disrupted clusters present in the galaxy at this time</li>
+<li><tt class="docutils literal"><span class="pre">NumDisClust</span></tt>: number of disrupted clusters present in the galaxy at this time</li>
+<li><tt class="docutils literal"><span class="pre">NumFldStars</span></tt>: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter <tt class="docutils literal"><span class="pre">min_stoch_mass</span></tt> in <a class="reference internal" href="parameters.html#ssec-phys-keywords"><em>Physical Model Keywords</em></a>)</li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>For <tt class="docutils literal"><span class="pre">binary</span></tt> output, the file consists of a series of records containing the following variables</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">TargetMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">ActualMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">LiveMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">ClusterMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NumClusters</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NumDisClust</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NumFldStars</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>)</li>
+</ul>
+<p>There is one record of this form for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
+</div>
+<div class="section" id="the-integrated-spec-file">
+<span id="ssec-int-spec-file"></span><h2>The <tt class="docutils literal"><span class="pre">integrated_spec</span></tt> File<a class="headerlink" href="#the-integrated-spec-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength</span></tt>: observed frame wavelength at which the spectrum is evaluated</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda</span></tt>: specific luminosity at the specified wavelength, without extinction</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)</li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.</p>
+<blockquote>
+<div>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field <tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum <tt class="docutils literal"><span class="pre">L_lambda</span></tt> at that time. The final field, <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</div></blockquote>
+<p>For binary output, the file is formatted as follows. The file starts with</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
+<li><tt class="docutils literal"><span class="pre">NWavelength</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the spectra</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the extinted spectra; only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+</ul>
+<p>and then contains a series of records in the format</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+</ul>
+<p>There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
+</div>
+<div class="section" id="the-integrated-phot-file">
+<span id="ssec-int-phot-file"></span><h2>The <tt class="docutils literal"><span class="pre">integrated_phot</span></tt> File<a class="headerlink" href="#the-integrated-phot-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains data on the photometric properties of the entire galaxy, and consists of a series of entries containing the following fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter1</span></tt>: photometric value through filter 1, where filters follow the order in which they are specified by the <tt class="docutils literal"><span class="pre">phot_bands</span></tt> keyword; units depend on the value of <tt class="docutils literal"><span class="pre">phot_mode</span></tt> (see <a class="reference internal" href="parameters.html#ssec-phot-keywords"><em>Photometric Filter Keywords</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter2</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter3</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">...</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter1_ex</span></tt>: photometric value through filter 1 for the extincted spectrum, in the same units as <tt class="docutils literal"><span class="pre">PhotFilter1</span></tt>; only present if SLUG was run with extinction enabled</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter2_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter3_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">...</span></tt></li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of
+columns, with different trials separated by lines of dashes. The
+columns for photometry of the extincted spectrum are present only if
+extinction was enabled when SLUG was run. Entries for some filters may
+be left blank. If so, this indicates that the photon response function
+provided for that filter extends beyond the wavelength range covered
+by the provided extinction curve. Since the extincted spectrum cannot
+be computed over the full range of the filter in this case, photometry
+for that filter cannot be computed either.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a series of
+columns in a binary table extension to the FITS file; the filter names
+and units are included in the header information for the columns. If
+SLUG was run with extinction enabled, in for each filter
+<tt class="docutils literal"><span class="pre">FILTERNAME</span></tt> there is a corresponding column <tt class="docutils literal"><span class="pre">FILTERNAME_ex</span></tt>
+containing the photometric value for that filter applied to the
+extincted spectrum. Some of these values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>; this
+indicates that the photon response function provided for that filter
+extends beyond the wavelength range covered by the provided extinction
+curve. In addition to the time and photometric filter values, the FITS
+file contains a column specifying the trial number for that
+entry. Both the ASCII- and FITS-formatted output should be fairly
+self-documenting.</p>
+<p>For binary output, the file is formatted as follows. The file starts with</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">NFilter</span></tt> (stored as <tt class="docutils literal"><span class="pre">ASCII</span> <span class="pre">text</span></tt>): number of filters used</li>
+<li><tt class="docutils literal"><span class="pre">FilterName</span></tt> <tt class="docutils literal"><span class="pre">FilterUnit</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries stored as <tt class="docutils literal"><span class="pre">ASCII</span>
+<span class="pre">text</span></tt>): the name and units for each filter are listed in ASCII, one
+filter-unit pair per line</li>
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating
+that extinction was not enabled for this run, and a value of 1
+indicating that it was enabled</li>
+</ul>
+<p>This is followed by a series of entries of the form</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter_ex</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt> if photometry could not be computed for that filter (see above).</li>
+</ul>
+<p>There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
+</div>
+<div class="section" id="the-cluster-prop-file">
+<h2>The <tt class="docutils literal"><span class="pre">cluster_prop</span></tt> File<a class="headerlink" href="#the-cluster-prop-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains data on the bulk physical properties of the non-disrupted star clusters in the galaxy, with one entry per cluster per time at which that cluster exists. Each entry contains the following fields</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">UniqueID</span></tt>: a unique identifier number for each cluster that is preserved across times and output files</li>
+<li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
+<li><tt class="docutils literal"><span class="pre">FormTime</span></tt>: time at which that cluster formed</li>
+<li><tt class="docutils literal"><span class="pre">Lifetime</span></tt>: amount of time from birth to when the cluster will disrupt</li>
+<li><tt class="docutils literal"><span class="pre">TargetMass</span></tt>: target mass of stars in the cluster, if the IMF were perfectly sampled</li>
+<li><tt class="docutils literal"><span class="pre">BirthMass</span></tt>: actual mass of stars present in the cluster at formation</li>
+<li><tt class="docutils literal"><span class="pre">LiveMass</span></tt>: actual mass of stars produced in the cluster at this output time that have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)</li>
+<li><tt class="docutils literal"><span class="pre">NumStar</span></tt>: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter <tt class="docutils literal"><span class="pre">min_stoch_mass</span></tt> in <a class="reference internal" href="parameters.html#ssec-phys-keywords"><em>Physical Model Keywords</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">MaxStarMass</span></tt>: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter <tt class="docutils literal"><span class="pre">min_stoch_mass</span></tt> in <a class="reference internal" href="parameters.html#ssec-phys-keywords"><em>Physical Model Keywords</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">A_V</span></tt>: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled</li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>For <tt class="docutils literal"><span class="pre">binary</span></tt> output, the first entry in the file is a header containing</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
+</ul>
+<p>Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NCluster</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): number of non-disrupted clusters present at this time</li>
+</ul>
+<p>This is followed by <tt class="docutils literal"><span class="pre">NCluster</span></tt> entries of the following form:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">UniqueID</span></tt> (<tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">FormationTime</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">Lifetime</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">TargetMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">BirthMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">LiveMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NumStar</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">MaxStarMass</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">A_V</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>); present only if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+</ul>
+</div>
+<div class="section" id="the-cluster-spec-file">
+<h2>The <tt class="docutils literal"><span class="pre">cluster_spec</span></tt> File<a class="headerlink" href="#the-cluster-spec-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains the spectra of the individual clusters, and each entry contains the following fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">UniqueID</span></tt>: a unique identifier number for each cluster that is preserved across times and output files</li>
+<li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength</span></tt>: observed frame wavelength at which the spectrum is evaluated</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda</span></tt>: specific luminosity at the specified wavelength</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)</li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. The column <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> is present only if SLUG was run with extinction enabled. Some entries for <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> may be empty; see <a class="reference internal" href="#ssec-int-spec-file"><em>The integrated_spec File</em></a>.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field <tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> listing the wavelengths at which the extincted spectrum is computed. The second table has four fields if SLUG was run without extinction, or five fields if it was run with extinction. The first four fields, always present, give the trial number, unique ID of the cluster, the time, and the spectrum <tt class="docutils literal"><span class="pre">L_lambda</span></tt> at that time. The final field, <tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt>, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>Output in <tt class="docutils literal"><span class="pre">binary</span></tt> mode is formatted as follows.  The file starts with</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
+<li><tt class="docutils literal"><span class="pre">NWavelength</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the spectra</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): the number of wavelength entries in the extinted spectra; only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+<li><tt class="docutils literal"><span class="pre">Wavelength_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+</ul>
+<p>and then contains a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NCluster</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): number of non-disrupted clusters present at this time</li>
+</ul>
+<p>This is followed by <tt class="docutils literal"><span class="pre">NCluster</span></tt> entries of the following form:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">UniqueID</span></tt> (<tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">L_lambda_ex</span></tt> (<tt class="docutils literal"><span class="pre">NWavelength_ex</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1</li>
+</ul>
+</div>
+<div class="section" id="the-cluster-phot-file">
+<span id="ssec-cluster-phot-file"></span><h2>The <tt class="docutils literal"><span class="pre">cluster_phot</span></tt> File<a class="headerlink" href="#the-cluster-phot-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains the photometric values for the individual clusters. Each entry contains the following fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">UniqueID</span></tt>: a unique identifier number for each cluster that is preserved across times and output files</li>
+<li><tt class="docutils literal"><span class="pre">Time</span></tt>: evolution time at which the output is produced</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter1</span></tt>: photometric value through filter 1, where filters follow the order in which they are specified by the <tt class="docutils literal"><span class="pre">phot_bands</span></tt> keyword; units depend on the value of <tt class="docutils literal"><span class="pre">phot_mode</span></tt> (see <a class="reference internal" href="parameters.html#ssec-phot-keywords"><em>Photometric Filter Keywords</em></a>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter2</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter3</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">...</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter1_ex</span></tt>: photometric value through filter 1 for the extincted spectrum, in the same units as <tt class="docutils literal"><span class="pre">PhotFilter1</span></tt>; only present if SLUG was run with extinction enabled</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter2_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter3_ex</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">...</span></tt></li>
+</ul>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">ascii</span></tt>, these data are output in a series of columns, with different trials separated by lines of dashes. Some of the extincted photometry columns may be blank; see <a class="reference internal" href="#ssec-int-phot-file"><em>The integrated_phot File</em></a>.</p>
+<p>If <tt class="docutils literal"><span class="pre">output_mode</span></tt> is <tt class="docutils literal"><span class="pre">fits</span></tt>, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. If SLUG was run with extinction enabled, in for each filter <tt class="docutils literal"><span class="pre">FILTERNAME</span></tt> there is a corresponding column <tt class="docutils literal"><span class="pre">FILTERNAME_ex</span></tt> containing the photometric value for that filter applied to the extincted spectrum. Some of these values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>; see <a class="reference internal" href="#ssec-int-phot-file"><em>The integrated_phot File</em></a>. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
+<p>In <tt class="docutils literal"><span class="pre">binary</span></tt> output mode, the binary data file starts with</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">NFilter</span></tt> (stored as <tt class="docutils literal"><span class="pre">ASCII</span> <span class="pre">text</span></tt>): number of filters used</li>
+<li><tt class="docutils literal"><span class="pre">FilterName</span></tt> <tt class="docutils literal"><span class="pre">FilterUnit</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries stored as <tt class="docutils literal"><span class="pre">ASCII</span> <span class="pre">text</span></tt>): the name and units for each filter are listed in ASCII, one filter-unit pair per line</li>
+<li><tt class="docutils literal"><span class="pre">Extinct</span></tt> (<tt class="docutils literal"><span class="pre">byte</span></tt>): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled</li>
+</ul>
+<p>and then contains a series of records, one for each output time , with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">Time</span></tt> (<tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">NCluster</span></tt> (<tt class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></tt>, usually <tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></tt>): number of non-disrupted clusters present at this time</li>
+</ul>
+<p>This is followed by <tt class="docutils literal"><span class="pre">NCluster</span></tt> entries of the following form:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">UniqueID</span></tt> (<tt class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>)</li>
+<li><tt class="docutils literal"><span class="pre">PhotFilter_ex</span></tt> (<tt class="docutils literal"><span class="pre">NFilter</span></tt> entries of type <tt class="docutils literal"><span class="pre">double</span></tt>); only present if <tt class="docutils literal"><span class="pre">Extinct</span></tt> is 1. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt> if photometry could not be computed for that filter (see above).</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Output Files and Format</a><ul>
+<li><a class="reference internal" href="#the-integrated-prop-file">The <tt class="docutils literal"><span class="pre">integrated_prop</span></tt> File</a></li>
+<li><a class="reference internal" href="#the-integrated-spec-file">The <tt class="docutils literal"><span class="pre">integrated_spec</span></tt> File</a></li>
+<li><a class="reference internal" href="#the-integrated-phot-file">The <tt class="docutils literal"><span class="pre">integrated_phot</span></tt> File</a></li>
+<li><a class="reference internal" href="#the-cluster-prop-file">The <tt class="docutils literal"><span class="pre">cluster_prop</span></tt> File</a></li>
+<li><a class="reference internal" href="#the-cluster-spec-file">The <tt class="docutils literal"><span class="pre">cluster_spec</span></tt> File</a></li>
+<li><a class="reference internal" href="#the-cluster-phot-file">The <tt class="docutils literal"><span class="pre">cluster_phot</span></tt> File</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pdfs.html"
+                        title="previous chapter">Probability Distribution Functions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="filters.html"
+                        title="next chapter">Filters and Filter Data</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/output.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="filters.html" title="Filters and Filter Data"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pdfs.html" title="Probability Distribution Functions"
+             >previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

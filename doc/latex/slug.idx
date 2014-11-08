@@ -1,0 +1,41 @@
+\indexentry{slugpy (module)|hyperpage}{47}
+\indexentry{combine\_cluster() (in module slugpy)|hyperpage}{47}
+\indexentry{combine\_integrated() (in module slugpy)|hyperpage}{47}
+\indexentry{compute\_photometry() (in module slugpy)|hyperpage}{47}
+\indexentry{photometry\_convert() (in module slugpy)|hyperpage}{48}
+\indexentry{read\_cluster() (in module slugpy)|hyperpage}{49}
+\indexentry{read\_cluster\_phot() (in module slugpy)|hyperpage}{51}
+\indexentry{read\_cluster\_prop() (in module slugpy)|hyperpage}{52}
+\indexentry{read\_cluster\_spec() (in module slugpy)|hyperpage}{52}
+\indexentry{read\_filter() (in module slugpy)|hyperpage}{53}
+\indexentry{read\_integrated() (in module slugpy)|hyperpage}{53}
+\indexentry{read\_integrated\_phot() (in module slugpy)|hyperpage}{56}
+\indexentry{read\_integrated\_prop() (in module slugpy)|hyperpage}{56}
+\indexentry{read\_integrated\_spec() (in module slugpy)|hyperpage}{57}
+\indexentry{read\_summary() (in module slugpy)|hyperpage}{58}
+\indexentry{slug\_open() (in module slugpy)|hyperpage}{58}
+\indexentry{write\_cluster() (in module slugpy)|hyperpage}{58}
+\indexentry{write\_integrated() (in module slugpy)|hyperpage}{59}
+\indexentry{slugpy.cloudy (module)|hyperpage}{59}
+\indexentry{read\_cloudy\_continuum() (in module slugpy.cloudy)|hyperpage}{59}
+\indexentry{read\_cloudy\_linelist() (in module slugpy.cloudy)|hyperpage}{59}
+\indexentry{read\_cluster\_cloudyphot() (in module slugpy.cloudy)|hyperpage}{59}
+\indexentry{read\_cluster\_cloudylines() (in module slugpy.cloudy)|hyperpage}{60}
+\indexentry{read\_cluster\_cloudyspec() (in module slugpy.cloudy)|hyperpage}{61}
+\indexentry{read\_integrated\_cloudylines() (in module slugpy.cloudy)|hyperpage}{62}
+\indexentry{read\_integrated\_cloudyphot() (in module slugpy.cloudy)|hyperpage}{62}
+\indexentry{read\_integrated\_cloudyspec() (in module slugpy.cloudy)|hyperpage}{63}
+\indexentry{write\_cluster\_cloudyphot() (in module slugpy.cloudy)|hyperpage}{64}
+\indexentry{write\_cluster\_cloudylines() (in module slugpy.cloudy)|hyperpage}{64}
+\indexentry{write\_cluster\_cloudyspec() (in module slugpy.cloudy)|hyperpage}{64}
+\indexentry{write\_integrated\_cloudylines() (in module slugpy.cloudy)|hyperpage}{64}
+\indexentry{write\_integrated\_cloudyphot() (in module slugpy.cloudy)|hyperpage}{65}
+\indexentry{write\_integrated\_cloudyspec() (in module slugpy.cloudy)|hyperpage}{65}
+\indexentry{sfr\_slug (class in slugpy.sfr\_slug)|hyperpage}{65}
+\indexentry{\_\_call\_\_() (slugpy.sfr\_slug.sfr\_slug method)|hyperpage}{66}
+\indexentry{\_\_init\_\_() (slugpy.sfr\_slug.sfr\_slug method)|hyperpage}{66}
+\indexentry{\_\_weakref\_\_ (slugpy.sfr\_slug.sfr\_slug attribute)|hyperpage}{67}
+\indexentry{get\_kde() (slugpy.sfr\_slug.sfr\_slug method)|hyperpage}{67}
+\indexentry{pdf() (slugpy.sfr\_slug.sfr\_slug method)|hyperpage}{67}
+\indexentry{pdfgrid() (slugpy.sfr\_slug.sfr\_slug method)|hyperpage}{67}
+\indexentry{set\_kde() (slugpy.sfr\_slug.sfr\_slug method)|hyperpage}{68}

@@ -10,43 +10,44 @@ from ..slug_open import slug_open
 def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
                                verbose=False, read_info=None):
     """
-    Function to read a SLUG2 integrated_cloudyspec file.
+    Function to read a SLUG2 integrated_cloudylines file.
 
     Parameters
-    ----------
-    model_name : string
-       The name of the model to be read
-    output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
-       the current directory is searched, followed by the SLUG_DIR
-       directory if that environment variable is set
-    fmt : string
-       Format for the file to be read. Allowed values are 'ascii',
-       'bin' or 'binary, and 'fits'. If one of these is set, the code
-       will only attempt to open ASCII-, binary-, or FITS-formatted
-       output, ending in .txt., .bin, or .fits, respectively. If set
-       to None, the code will try to open ASCII files first, then if
-       it fails try binary files, and if it fails again try FITS
-       files.
-    verbose : bool
-       If True, verbose output is printed as code runs
-    read_info : dict
-       On return, this dict will contain the keys 'fname' and
-       'format', giving the name of the file read and the format it
-       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       model_name : string
+          The name of the model to be read
+       output_dir : string
+          The directory where the SLUG2 output is located; if set to None,
+          the current directory is searched, followed by the SLUG_DIR
+          directory if that environment variable is set
+       fmt : string
+          Format for the file to be read. Allowed values are 'ascii',
+          'bin' or 'binary, and 'fits'. If one of these is set, the code
+          will only attempt to open ASCII-, binary-, or FITS-formatted
+          output, ending in .txt., .bin, or .fits, respectively. If set
+          to None, the code will try to open ASCII files first, then if
+          it fails try binary files, and if it fails again try FITS
+          files.
+       verbose : bool
+          If True, verbose output is printed as code runs
+       read_info : dict
+          On return, this dict will contain the keys 'fname' and
+          'format', giving the name of the file read and the format it
+          was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    time : array
-       times at which line luminosities are output, in yr
-    cloudy_linelabel : array, dtype='S4', shape (N_lines)
-       labels for the lines, following cloudy's 4 character line label
-       notation
-    cloudy_linewl : array, shape (N_lines)
-       rest wavelength for each line, in Angstrom
-    cloudy_linelum : array, shape (N_lines, N_times, N_trials)
-       luminosity of each line at each time for each trial, in erg/s
+       A namedtuple containing the following fields:
+
+       time : array, shape (N_times) or shape (N_trials)
+          Times at which data are output; shape is either N_times (if
+          the run was done with fixed output times) or N_trials (if
+          the run was done with random output times)
+       cloudy_linelabel : array, dtype='S4', shape (N_lines)
+          labels for the lines, following cloudy's 4 character line label
+          notation
+       cloudy_linewl : array, shape (N_lines)
+          rest wavelength for each line, in Angstrom
+       cloudy_linelum : array, shape (N_lines, N_times, N_trials)
+          luminosity of each line at each time for each trial, in erg/s
     """
 
     # Open file
@@ -75,6 +76,7 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
         time = []
         label = []
         lum = []
+        trial = []
 
         # Burn the three header lines
         fp.readline()
@@ -82,18 +84,22 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
         fp.readline()
 
         # Read data
+        trialptr = 0
         for entry in fp:
 
             if entry[:3] == '---':
+                trialptr = trialptr+1
                 continue       # Skip separator lines
 
             # Split up the line
+            trial.append(trialptr)
             time.append(float(entry[0:11]))
             label.append(entry[21:25])
             wavelength.append(float(entry[28:39]))
             lum.append(float(entry[42:53]))
 
         # Convert to arrays
+        trial = np.array(trial, dtype='uint')
         time = np.array(time)
         label = np.array(label)
         wavelength = np.array(wavelength)
@@ -112,12 +118,12 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
             nl = len(wavelength)
             time = [time[0]]
 
-        # Figure out how many trials there are from how many times the
-        # time array decreases instead of increasing. Truncate the
-        # time array appropriately.
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        # Figure out how many trials there are and reshape the time
+        # array appropriately
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Reshape the line luminosity array
         lum = np.transpose(np.reshape(lum, (ntrial, ntime, nl)))
@@ -142,22 +148,24 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
 
         # Now read the rest of the file and convert to doubles
         data = fp.read()
-        ndata = len(data)/struct.calcsize('d')
-        nchunk = ndata/(nl+1)
-        data_list = struct.unpack('d'*ndata, data)
+        nchunk = len(data) / \
+                 (struct.calcsize('L')+(nl+1)*struct.calcsize('d'))
+        data_list = struct.unpack(('L'+'d'*(nl+1))*nchunk, data)
 
         # Figure out how many times we have, and get unique times
-        time = np.array(data_list[::nl+1])
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        trial = np.array(data_list[::nl+2])
+        time = np.array(data_list[1::nl+2])
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Put line luminosity into array
         lum = np.zeros((nl, ntime, ntrial))
         ptr = 0
         for i in range(ntrial):
             for j in range(ntime):
-                recptr = ptr*(nl+1)+1
+                recptr = ptr*(nl+2)+2
                 lum[:,j,i] = np.array(data_list[recptr:recptr+nl])
                 ptr = ptr+1
 
@@ -179,7 +187,8 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
         lum \
             = np.transpose(
                 np.reshape(lum, (ntrial, ntime, len(wavelength))))

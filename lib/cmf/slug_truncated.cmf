@@ -1,0 +1,16 @@
+###############################################################
+# This is an CMF definition file for SLUG v2.
+# This file defines a truncated version of the default slug CMF, 
+# which is a single powerlaw with a minimum at 20 Msun, a maximum at 100 Msun,
+# and a slope of -2    
+###############################################################
+
+# Breakpoints: mass values where the functional form changes
+# The first and last breakpoint will define the minimum and
+# maximum mass
+breakpoints 20.0 100
+
+# Definitions of segments between the breakpoints
+segment
+type powerlaw
+slope -2

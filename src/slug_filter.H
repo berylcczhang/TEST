@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 #include <vector>
+#include "constants.H"
 #include "int_tabulated.H"
 
 class slug_filter {
@@ -94,6 +95,16 @@ public:
 
   double compute_photon_lum(const std::vector<double>& lambda_in,
 			    const std::vector<double>& L_lambda) const;
+
+  // Routines to return the wavelength and response curve for this
+  // filter; these are returned as const objects
+  const std::vector<double> &get_wavelength() const { return lambda; }
+  const std::vector<double> &get_response() const { return response; }
+  double get_wavelength_min() const 
+  { if (bol_flux) return 0; else return lambda.front(); }
+  double get_wavelength_max() const
+  { if (bol_flux || phot_flux) return constants::big;
+    else return lambda.back(); }
 
 private:
 

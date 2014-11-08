@@ -12,21 +12,20 @@ def read_cloudy_continuum(filename, r0=None):
     Reads a cloudy continuum output, produced by save last continuum
 
     Parameters
-    ----------
-    filename : string
-       name of the file to be read
-    r0 : float
-       inner radius, in cm; if included, the quantities returned will
-       be total energies instead of energy emission rates instead of
-       rates per unit area
+       filename : string
+          name of the file to be read
+       r0 : float
+          inner radius, in cm; if included, the quantities returned will
+          be total energies instead of energy emission rates instead of
+          rates per unit area
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    wl : array
-       wavelengths in Angstrom
-    incident : array
-       incident radiation field intensity
+       A namedtuple containing the following fields:
+
+       wl : array
+          wavelengths in Angstrom
+       incident : array
+          incident radiation field intensity
     """
 
     # Open file

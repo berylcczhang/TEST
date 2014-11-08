@@ -13,57 +13,56 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
     Function to read a SLUG2 integrated_cloudyspec file.
 
     Parameters
-    ----------
-    model_name : string
-       The name of the model to be read
-    output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
-       the current directory is searched, followed by the SLUG_DIR
-       directory if that environment variable is set
-    fmt : string
-       Format for the file to be read. Allowed values are 'ascii',
-       'bin' or 'binary, and 'fits'. If one of these is set, the code
-       will only attempt to open ASCII-, binary-, or FITS-formatted
-       output, ending in .txt., .bin, or .fits, respectively. If set
-       to None, the code will try to open ASCII files first, then if
-       it fails try binary files, and if it fails again try FITS
-       files.
-    verbose : bool
-       If True, verbose output is printed as code runs
-    read_info : dict
-       On return, this dict will contain the keys 'fname' and
-       'format', giving the name of the file read and the format it
-       was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       model_name : string
+          The name of the model to be read
+       output_dir : string
+          The directory where the SLUG2 output is located; if set to None,
+          the current directory is searched, followed by the SLUG_DIR
+          directory if that environment variable is set
+       fmt : string
+          Format for the file to be read. Allowed values are 'ascii',
+          'bin' or 'binary, and 'fits'. If one of these is set, the code
+          will only attempt to open ASCII-, binary-, or FITS-formatted
+          output, ending in .txt., .bin, or .fits, respectively. If set
+          to None, the code will try to open ASCII files first, then if
+          it fails try binary files, and if it fails again try FITS
+          files.
+       verbose : bool
+          If True, verbose output is printed as code runs
+       read_info : dict
+          On return, this dict will contain the keys 'fname' and
+          'format', giving the name of the file read and the format it
+          was in; 'format' will be one of 'ascii', 'binary', or 'fits'
 
     Returns
-    -------
-    A namedtuple containing the following fields:
-    time : array
-       times at which spectra are output, in yr
-    cloudy_wl : array
-       wavelength, in Angstrom
-    cloudy_inc : array, shape (N_wavelength, N_times, N_trials)
-       specific luminosity of the stellar radiation field at each
-       wavelength and each time for each trial, in erg/s/A
-    cloudy_trans : array, shape (N_wavelength, N_times, N_trials)
-       specific luminosity of the stellar radiation field after it has
-       passed through the HII region, at each wavelength and each time
-       for each trial, in erg/s/A
-    cloudy_emit : array, shape (N_wavelength, N_times, N_trials)
-       specific luminosity of the radiation field emitted by the HII
-       region, at each wavelength and each time for each trial, in
-       erg/s/A
-    cloudy_trans_emit : array, shape (N_wavelength, N_times, N_trials)
-       the sum of emitted and transmitted; this is what would be seen
-       by an observer looking at both the star cluster and its nebula
+       A namedtuple containing the following fields:
+
+       time : array, shape (N_times) or shape (N_trials)
+          Times at which data are output; shape is either N_times (if
+          the run was done with fixed output times) or N_trials (if
+          the run was done with random output times)
+       cloudy_wl : array
+          wavelength, in Angstrom
+       cloudy_inc : array, shape (N_wavelength, N_times, N_trials)
+          specific luminosity of the stellar radiation field at each
+          wavelength and each time for each trial, in erg/s/A
+       cloudy_trans : array, shape (N_wavelength, N_times, N_trials)
+          specific luminosity of the stellar radiation field after it has
+          passed through the HII region, at each wavelength and each time
+          for each trial, in erg/s/A
+       cloudy_emit : array, shape (N_wavelength, N_times, N_trials)
+          specific luminosity of the radiation field emitted by the HII
+          region, at each wavelength and each time for each trial, in
+          erg/s/A
+       cloudy_trans_emit : array, shape (N_wavelength, N_times, N_trials)
+          the sum of emitted and transmitted; this is what would be seen
+          by an observer looking at both the star cluster and its nebula
     """
 
     # Open file
     fp, fname = slug_open(model_name+"_integrated_cloudyspec", 
                           output_dir=output_dir,
                           fmt=fmt)
-    if read_info is not None:
-        read_info['fname'] = fname
 
     # Print status
     if verbose:
@@ -79,6 +78,7 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
             read_info['format'] = 'ascii'
 
         # Prepare output holders
+        trial = []
         wavelength = []
         time = []
         inc = []
@@ -92,13 +92,16 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         fp.readline()
 
         # Read data
+        trialptr = 0
         for entry in fp:
 
             if entry[:3] == '---':
+                trialptr = trialptr+1
                 continue       # Skip separator lines
 
             # Split up the line
             data = entry.split()
+            trial.append(trialptr)
             time.append(float(data[0]))
             wavelength.append(float(data[1]))
             inc.append(float(data[2]))
@@ -107,6 +110,7 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
             trans_emit.append(float(data[5]))
 
         # Convert to arrays
+        trial = np.array(trial)
         time = np.array(time)
         wavelength = np.array(wavelength)
         inc = np.array(inc)
@@ -126,12 +130,12 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
             nl = len(wavelength)
             time = [time[0]]
 
-        # Figure out how many trials there are from how many times the
-        # time array decreases instead of increasing. Truncate the
-        # time array appropriately.
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        # Figure out how many trials there are and reshape the time
+        # array appropriately
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Reshape the spectral arrays
         inc = np.transpose(np.reshape(inc, (ntrial, ntime, nl)))
@@ -151,17 +155,19 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         data = fp.read(struct.calcsize('d')*nl)
         wavelength = np.array(struct.unpack('d'*nl, data))
 
-        # Now read the rest of the file and convert to doubles
+        # Now read the rest of the file and convert to correct type
         data = fp.read()
-        ndata = len(data)/struct.calcsize('d')
-        nchunk = ndata/(4*nl+1)
-        data_list = struct.unpack('d'*ndata, data)
+        nchunk = len(data) / \
+                 (struct.calcsize('L')+(4*nl+1)*struct.calcsize('d'))
+        data_list = struct.unpack(('L'+'d'*(4*nl+1))*nchunk, data)
 
-        # Figure out how many times we have, and get unique times
-        time = np.array(data_list[::4*nl+1])
-        ntrial = 1 + np.sum(time[1:] <= time[:-1])
+        # Get time and trial arrays, and get number of times and trials
+        trial = np.array(data_list[::4*nl+2], dtype='uint')
+        time = np.array(data_list[1::4*nl+2])
+        ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
         # Put spectra into arrays
         inc = np.zeros((nl, ntime, ntrial))
@@ -171,7 +177,7 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         ptr = 0
         for i in range(ntrial):
             for j in range(ntime):
-                recptr = ptr*(4*nl+1)+1
+                recptr = ptr*(4*nl+2)+2
                 inc[:,j,i] = np.array(data_list[recptr:recptr+nl])
                 trans[:,j,i] = np.array(data_list[recptr+nl:recptr+2*nl])
                 emit[:,j,i] = np.array(data_list[recptr+2*nl:recptr+3*nl])
@@ -197,7 +203,8 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        time = time[:ntime]
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
         inc \
             = np.transpose(
                 np.reshape(inc, (ntrial, ntime, len(wavelength))))

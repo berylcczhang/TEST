@@ -3,7 +3,6 @@ This function writes out a list of line luminosities computed by
 cloudy from a slug run.
 """
 
-from collections import namedtuple
 import numpy as np
 try:
     import astropy.io.fits as fits
@@ -15,22 +14,22 @@ except ImportError:
 
 def write_integrated_cloudylines(data, model_name, fmt):
     """
-    Write out data computed by cloudy on a slug spectrum
+    Write out line luminosities computed by cloudy on a slug spectrum
 
-    data : namedtuple
-       Integrated cloudy line data to be written; a namedtuple
-       containing the fields time, cloudy_linelist, cloudy_linewl, 
-       cloudy_linelum
-    model_name : string
-       Base file name to give the model to be written. Can include a
-       directory specification if desired.
-    fmt : string
-       Format for the output file. Allowed values are 'ascii', 'bin'
-       or 'binary, and 'fits'.
+    Parameters
+       data : namedtuple
+          Integrated cloudy line data to be written; a namedtuple
+          containing the fields time, cloudy_linelist, cloudy_linewl, 
+          cloudy_linelum
+       model_name : string
+          Base file name to give the model to be written. Can include a
+          directory specification if desired.
+       fmt : string
+          Format for the output file. Allowed values are 'ascii', 'bin'
+          or 'binary, and 'fits'.
 
     Returns
-    -------
-    Nothing
+       Nothing
     """
 
     # Make sure fmt is valid
@@ -60,17 +59,25 @@ def write_integrated_cloudylines(data, model_name, fmt):
                  + "\n")
 
         # Write data
-        ntime = len(data.time)
+        ntime = data.cloudy_linelum.shape[-2]
         ntrial = data.cloudy_linelum.shape[-1]
+        if len(data.time) > ntime:
+            random_time = True
+        else:
+            random_time = False
         nline = len(data.cloudy_linewl)
         for i in range(ntrial):
             if i != 0:
                 fp.write("-"*(4*14-3)+"\n")
             for j in range(ntime):
+                if random_time:
+                    t_out = data.time[i]
+                else:
+                    t_out = data.time[j]
                 for k in range(nline):
                     fp.write(("{:11.5e}   {:>11s}   {:11.5e}   " +
                               "{:11.5e}\n")
-                             .format(data.time[j], 
+                             .format(t_out, 
                                      data.cloudy_linelabel[k],
                                      data.cloudy_linewl[k],
                                      data.cloudy_linelum[k,j,i]))
@@ -96,9 +103,17 @@ def write_integrated_cloudylines(data, model_name, fmt):
         # Write line luminosities
         ntime = data.cloudy_linelum.shape[1]
         ntrial = data.cloudy_linelum.shape[2]
+        if len(data.time) > ntime:
+            random_time = True
+        else:
+            random_time = False
         for i in range(ntrial):
             for j in range(ntime):
-                fp.write(data.time[j])
+                fp.write(np.uint(i))
+                if random_time:
+                    fp.write(data.time[i])
+                else:
+                    fp.write(data.time[j])
                 # This next line is needed to put the data into a
                 # contiguous block before writing
                 tmp = np.copy(data.cloudy_linelum[:,j,i])
@@ -131,7 +146,10 @@ def write_integrated_cloudylines(data, model_name, fmt):
         trial = np.transpose(np.tile(
             np.arange(ntrial, dtype='int64'), (ntimes,1))).\
             flatten()
-        times = np.tile(data.time, ntrial)
+        if len(data.time) > ntimes:
+            times = data.time
+        else:
+            times = np.tile(data.time, ntrial)
 
         # Convert data to FITS columns
         cols = []

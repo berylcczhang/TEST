@@ -1,5 +1,5 @@
 """
-This function writes out a spectrum computed by cloudy from a slug
+This function writes out integrated spectra computed by cloudy from a slug
 run.
 """
 
@@ -17,20 +17,20 @@ def write_integrated_cloudyspec(data, model_name, fmt):
     """
     Write out data computed by cloudy on a slug spectrum
 
-    data : namedtuple
-       Integrated cloudy spectral data to be written; a namedtuple
-       containing the field time, cloudy_wl, cloudy_inc, cloudy_trans,
-       cloudy_emit, and cloudy_trans_emit
-    model_name : string
-       Base file name to give the model to be written. Can include a
-       directory specification if desired.
-    fmt : string
-       Format for the output file. Allowed values are 'ascii', 'bin'
-       or 'binary, and 'fits'.
+    Parameters
+       data : namedtuple
+          Integrated cloudy spectral data to be written; a namedtuple
+          containing the field time, cloudy_wl, cloudy_inc, cloudy_trans,
+          cloudy_emit, and cloudy_trans_emit
+       model_name : string
+          Base file name to give the model to be written. Can include a
+          directory specification if desired.
+       fmt : string
+          Format for the output file. Allowed values are 'ascii', 'bin'
+          or 'binary, and 'fits'.
 
     Returns
-    -------
-    Nothing
+       Nothing
     """
 
     # Make sure fmt is valid
@@ -61,17 +61,25 @@ def write_integrated_cloudyspec(data, model_name, fmt):
                  + "\n")
 
         # Write data
-        ntime = len(data.time)
+        ntime = data.cloudy_inc.shape[-2]
         ntrial = data.cloudy_inc.shape[-1]
+        if len(data.time) > ntime:
+            random_time = True
+        else:
+            random_time = False
         nl = len(data.cloudy_wl)
         for i in range(ntrial):
             if i != 0:
                 fp.write("-"*(6*14-3)+"\n")
             for j in range(ntime):
+                if random_time:
+                    t_out = data.time[i]
+                else:
+                    t_out = data.time[j]
                 for k in range(nl):
                     fp.write(("{:11.5e}   {:11.5e}   {:11.5e}   " +
                               "{:11.5e}   {:11.5e}   {:11.5e}\n")
-                             .format(data.time[j], data.cloudy_wl[k],
+                             .format(t_out, data.cloudy_wl[k],
                                      data.cloudy_inc[k,j,i],
                                      data.cloudy_trans[k,j,i],
                                      data.cloudy_emit[k,j,i],
@@ -90,11 +98,19 @@ def write_integrated_cloudyspec(data, model_name, fmt):
         fp.write(data.cloudy_wl)
 
         # Write out times and spectra
-        ntime = len(data.time)
+        ntime = data.cloudy_inc.shape[-2]
         ntrial = data.cloudy_inc.shape[-1]
+        if len(data.time) > ntime:
+            random_time = True
+        else:
+            random_time = False
         for i in range(ntrial):
             for j in range(ntime):
-                fp.write(data.time[j])
+                fp.write(np.uint(i))
+                if random_time:
+                    fp.write(data.time[i])
+                else:
+                    fp.write(data.time[j])
                 # Note: need to put data in contiguous block before
                 # writing
                 tmp = np.copy(data.cloudy_inc[:,j,i])
@@ -127,11 +143,14 @@ def write_integrated_cloudyspec(data, model_name, fmt):
 
         # Figure out number of trials, and tile arrays
         ntrial = data.cloudy_inc.shape[-1]
-        ntimes = len(data.time)
+        ntimes = data.cloudy_inc.shape[-2]
         trial = np.transpose(np.tile(
             np.arange(ntrial, dtype='int64'), (ntimes,1))).\
             flatten()
-        times = np.tile(data.time, ntrial)
+        if len(data.time) > ntimes:
+            times = data.time
+        else:
+            times = np.tile(data.time, ntrial)
 
         # Convert spectra to FITS columns, and make an HDU from them
         speccols = []

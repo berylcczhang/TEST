@@ -28,6 +28,7 @@ namespace std
 #include "slug_specsyn.H"
 #include "slug_tracks.H"
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 
 using namespace std;
@@ -52,14 +53,16 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
 			 const slug_PDF* my_sfh, 
 			 const slug_tracks* my_tracks, 
 			 const slug_specsyn* my_specsyn,
-			 const slug_filter_set* my_filters) :
+			 const slug_filter_set* my_filters,
+			 const slug_extinction* my_extinct) :
   imf(my_imf), 
   cmf(my_cmf), 
   clf(my_clf),
   sfh(my_sfh),
   tracks(my_tracks),
   specsyn(my_specsyn),
-  filters(my_filters)
+  filters(my_filters),
+  extinct(my_extinct)
  {
 
   // Initialize mass and time
@@ -88,11 +91,13 @@ slug_galaxy::~slug_galaxy() {
 
   // Destroy cluster lists
   while (disrupted_clusters.size() > 0) {
-    delete disrupted_clusters.back();
+    if (disrupted_clusters.back() != nullptr)
+      delete disrupted_clusters.back();
     disrupted_clusters.pop_back();
   }
   while (clusters.size() > 0) {
-    delete clusters.back();
+    if (clusters.back() != nullptr)
+      delete clusters.back();
     clusters.pop_back();
   }
 }
@@ -111,17 +116,18 @@ slug_galaxy::reset(bool reset_cluster_id) {
   Lbol_set = spec_set = field_data_set = phot_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
-    delete disrupted_clusters.back();
+    if (disrupted_clusters.back() != nullptr)
+      delete disrupted_clusters.back();
     disrupted_clusters.pop_back();
   }
   while (clusters.size() > 0) {
-    delete clusters.back();
+    if (clusters.back() != nullptr)
+      delete clusters.back();
     clusters.pop_back();
   }
   L_lambda.resize(0);
   if (reset_cluster_id) cluster_id = 0;
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // Advance routine
@@ -159,7 +165,7 @@ slug_galaxy::advance(double time) {
       slug_cluster *new_cluster = 
 	new slug_cluster(cluster_id++, new_cluster_masses[i],
 			 birth_times[i], imf, tracks, specsyn, filters,
-			 clf);
+			 extinct, clf);
       clusters.push_back(new_cluster);
       mass += new_cluster->get_birth_mass();
       aliveMass += new_cluster->get_birth_mass();
@@ -174,6 +180,11 @@ slug_galaxy::advance(double time) {
     vector<double> new_star_masses;
     imf->drawPopulation((1.0-fc)*mass_to_draw, new_star_masses);
 
+    // Get extinctions to field stars
+    vector<double> AV;
+    if (extinct != NULL) 
+      AV = extinct->draw_AV(new_star_masses.size());
+
     // Push stars onto field star list; in the process, set the birth
     // time and death time for each of them
     for (unsigned int i=0; i<new_star_masses.size(); i++) {
@@ -183,6 +194,7 @@ slug_galaxy::advance(double time) {
       new_star.death_time = new_star.birth_time 
 	+ tracks->star_lifetime(new_star.mass);
       field_stars.push_back(new_star);
+      if (extinct != NULL) field_star_AV.push_back(AV[i]);
       mass += new_star.mass;
       aliveMass += new_star.mass;
     }
@@ -231,9 +243,10 @@ slug_galaxy::advance(double time) {
   // Go through the field star list and remove any field stars that
   // have died
   while (field_stars.size() > 0) {
-    if (field_stars.back().death_time < curTime) {
+    if (field_stars.back().death_time < time) {
       aliveMass -= field_stars.back().mass;
       field_stars.pop_back();
+      if (extinct != NULL) field_star_AV.pop_back();
     } else {
       break;
     }
@@ -244,6 +257,7 @@ slug_galaxy::advance(double time) {
 
   // Store new time
   curTime = time;
+
 }
 
 
@@ -264,7 +278,7 @@ slug_galaxy::set_field_data() {
     vector<double> m(1, field_stars[i].mass);
     const vector<slug_stardata> &stardata = 
       tracks->get_isochrone(curTime - field_stars[i].birth_time, m);
-    field_data.push_back(stardata[0]);
+    if (stardata.size() > 0) field_data.push_back(stardata[0]);
   }
 
   // Set status flag
@@ -314,7 +328,7 @@ slug_galaxy::set_Lbol() {
 // Compute spectrum, getting Lbol in the process
 ////////////////////////////////////////////////////////////////////////
 void
-slug_galaxy::set_spectrum() {
+slug_galaxy::set_spectrum(const bool del_cluster) {
 
   // Do nothing if already set
   if (spec_set) return;
@@ -323,6 +337,12 @@ slug_galaxy::set_spectrum() {
   vector<double>::size_type nl = specsyn->n_lambda();
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
+  vector<double>::size_type nl_ext = 0;
+  if (extinct != NULL) {
+    nl_ext = extinct->n_lambda();
+    L_lambda_ext.assign(nl_ext, 0.0);
+    Lbol_ext = 0.0;
+  }
 
   // Loop over non-disrupted clusters; for each one, get spectrum and
   // bolometric luminosity and add both to global sum
@@ -332,6 +352,16 @@ slug_galaxy::set_spectrum() {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
+    if (extinct != NULL) {
+      const vector<double>& spec_ext = (*it)->get_spectrum_extinct();
+      for (vector<double>::size_type i=0; i<nl_ext; i++) 
+	L_lambda_ext[i] += spec_ext[i];
+      Lbol_ext += (*it)->get_Lbol_extinct();
+    }
+    if (del_cluster) {
+      delete (*it);
+      *it = nullptr;
+    }
   }
 
   // Now do exactly the same thing for disrupted clusters
@@ -341,6 +371,16 @@ slug_galaxy::set_spectrum() {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
+    if (extinct != NULL) {
+      const vector<double>& spec_ext = (*it)->get_spectrum_extinct();
+      for (vector<double>::size_type i=0; i<nl_ext; i++) 
+	L_lambda_ext[i] += spec_ext[i];
+      Lbol_ext += (*it)->get_Lbol_extinct();
+    }
+    if (del_cluster) {
+      delete (*it);
+      *it = nullptr;
+    }
   }
 
   // Now do stochastic field stars
@@ -350,9 +390,19 @@ slug_galaxy::set_spectrum() {
     for (vector<double>::size_type j=0; j<nl; j++) 
       L_lambda[j] += spec[j];
     Lbol += pow(10.0, field_data[i].logL);
+    if (extinct != NULL) {
+      vector<double> spec_ext = 
+	extinct->spec_extinct(field_star_AV[i], spec);
+      for (vector<double>::size_type j=0; j<nl_ext; j++) 
+	L_lambda_ext[j] += spec_ext[j];
+      Lbol_ext += int_tabulated::
+	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
+    }
   }
 
-  // Finally do non-stochastic field stars
+  // Finally do non-stochastic field stars; note that non-stochastic
+  // field stars get extincted by the expectation value of the AV
+  // distribution.
   if (imf->has_stoch_lim()) {
     double Lbol_tmp;
     vector<double> spec;
@@ -360,6 +410,14 @@ slug_galaxy::set_spectrum() {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += Lbol_tmp;
+    if (extinct != NULL) {
+      vector<double> spec_ext =
+	extinct->spec_extinct(extinct->AV_expect(), spec);
+      for (vector<double>::size_type i=0; i<nl_ext; i++) 
+	L_lambda_ext[i] += spec_ext[i];
+      Lbol_ext += int_tabulated::
+	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
+    }
   }
 
   // Set flags
@@ -371,13 +429,13 @@ slug_galaxy::set_spectrum() {
 // Compute photometry
 ////////////////////////////////////////////////////////////////////////
 void
-slug_galaxy::set_photometry() {
+slug_galaxy::set_photometry(const bool del_cluster) {
 
   // Do nothing if already set
   if (phot_set) return;
 
   // Compute the spectrum
-  set_spectrum();
+  set_spectrum(del_cluster);
 
   // Grab the wavelength table
   const vector<double>& lambda = specsyn->lambda();
@@ -390,6 +448,26 @@ slug_galaxy::set_photometry() {
   for (vector<double>::size_type i=0; i<phot.size(); i++)
     if (phot[i] == -constants::big) phot[i] = Lbol;
 
+  // Repeat for extincted values
+  if (extinct != NULL) {
+    phot_ext = filters->compute_phot(extinct->lambda(), 
+				     L_lambda_ext);
+    for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
+      if (phot_ext[i] == -constants::big) {
+	phot_ext[i] = Lbol_ext;
+      } else if (filters->get_filter(i)->photon_filter() &&
+		 (filters->get_filter(i)->get_wavelength_min() >
+		  extinct->lambda_max())) {
+	phot_ext[i] = nan("");
+      } else if ((filters->get_filter(i)->get_wavelength_min() <
+		  extinct->lambda_min()) ||
+		 (filters->get_filter(i)->get_wavelength_max() >
+		  extinct->lambda_max())) {
+	phot_ext[i] = nan("");
+      }
+    }
+  }
+
   // Flag that the photometry is set
   phot_set = true;
 }  
@@ -400,7 +478,8 @@ slug_galaxy::set_photometry() {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_integrated_prop(ofstream& int_prop_file, 
-				   const outputMode out_mode) {
+				   const outputMode out_mode, 
+				   const unsigned long trial) {
 
   if (out_mode == ASCII) {
     int_prop_file << setprecision(5) << scientific 
@@ -414,6 +493,7 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 		  << setw(11) << right << field_stars.size()
 		  << endl;
   } else {
+    int_prop_file.write((char *) &trial, sizeof trial);
     int_prop_file.write((char *) &curTime, sizeof curTime);
     int_prop_file.write((char *) &targetMass, sizeof targetMass);
     int_prop_file.write((char *) &mass, sizeof mass);
@@ -434,7 +514,8 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 ////////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_FITS
 void
-slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, int trial) {
+slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, 
+				   unsigned long trial) {
 
   // Get current number of entries
   int fits_status = 0;
@@ -442,7 +523,7 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, int trial) {
   fits_get_num_rows(int_prop_fits, &nrows, &fits_status);
 
   // Write a new entry
-  fits_write_col(int_prop_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(int_prop_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(int_prop_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
@@ -471,11 +552,13 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, int trial) {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file, 
-				const outputMode out_mode) {
+				const outputMode out_mode,
+				const unsigned long trial) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
   if (out_mode == BINARY) {
+    cluster_prop_file.write((char *) &trial, sizeof trial);
     cluster_prop_file.write((char *) &curTime, sizeof curTime);
     vector<double>::size_type n = clusters.size();
     cluster_prop_file.write((char *) &n, sizeof n);
@@ -484,7 +567,7 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
   // Now write out each cluster
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_prop(cluster_prop_file, out_mode);
+    (*it)->write_prop(cluster_prop_file, out_mode, trial);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -493,7 +576,7 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits, 
-				int trial) {
+				unsigned long trial) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_prop(cluster_prop_fits, trial);
@@ -506,10 +589,12 @@ slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_integrated_spec(ofstream& int_spec_file, 
-				   const outputMode out_mode) {
+				   const outputMode out_mode,
+				   const unsigned long trial,
+				   const bool del_cluster) {
 
   // Make sure spectrum information is current. If not, compute it.
-  if (!spec_set) set_spectrum();
+  if (!spec_set) set_spectrum(del_cluster);
 
   if (out_mode == ASCII) {
     vector<double> lambda = specsyn->lambda();
@@ -517,13 +602,24 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
       int_spec_file << setprecision(5) << scientific 
 		    << setw(11) << right << curTime << "   "
 		    << setw(11) << right << lambda[i] << "   "
-		    << setw(11) << right << L_lambda[i]
-		    << endl;
+		    << setw(11) << right << L_lambda[i];
+      if (extinct != NULL) {
+	int j = i - extinct->off();
+	if ((j >= 0) && (j < L_lambda_ext.size())) {
+	  int_spec_file << "   "
+			<< setw(11) << right << L_lambda_ext[j];
+	}
+      }
+      int_spec_file << endl;
     }
   } else {
+    int_spec_file.write((char *) &trial, sizeof trial);
     int_spec_file.write((char *) &curTime, sizeof curTime);
     int_spec_file.write((char *) L_lambda.data(), 
 			sizeof(double)*L_lambda.size());
+    if (extinct != NULL)
+      int_spec_file.write((char *) L_lambda_ext.data(),
+			  sizeof(double)*L_lambda_ext.size());
   }
 }
 
@@ -534,10 +630,11 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits, 
-				   int trial) {
+				   unsigned long trial,
+				   const bool del_cluster) {
 
   // Make sure spectrum information is current. If not, compute it.
-  if (!spec_set) set_spectrum();
+  if (!spec_set) set_spectrum(del_cluster);
 
   // Get current number of entries
   int fits_status = 0;
@@ -545,12 +642,16 @@ slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits,
   fits_get_num_rows(int_spec_fits, &nrows, &fits_status);
 
   // Write data
-  fits_write_col(int_spec_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(int_spec_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(int_spec_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
   fits_write_col(int_spec_fits, TDOUBLE, 3, nrows+1, 1, 
 		 L_lambda.size(), L_lambda.data(), &fits_status);
+  if (extinct != NULL)
+    fits_write_col(int_spec_fits, TDOUBLE, 4, nrows+1, 1, 
+		   L_lambda_ext.size(), L_lambda_ext.data(),
+		   &fits_status);
 }
 #endif
 
@@ -559,11 +660,13 @@ slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file, 
-				const outputMode out_mode) {
+				const outputMode out_mode,
+				const unsigned long trial) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
   if (out_mode == BINARY) {
+    cluster_spec_file.write((char *) &trial, sizeof trial);
     cluster_spec_file.write((char *) &curTime, sizeof curTime);
     vector<double>::size_type n = clusters.size();
     cluster_spec_file.write((char *) &n, sizeof n);
@@ -572,7 +675,7 @@ slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file,
   // Now have each cluster write
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_spectrum(cluster_spec_file, out_mode);
+    (*it)->write_spectrum(cluster_spec_file, out_mode, trial);
 }
 
 
@@ -582,7 +685,7 @@ slug_galaxy::write_cluster_spec(ofstream& cluster_spec_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_spec(fitsfile* cluster_spec_fits, 
-				int trial) {
+				unsigned long trial) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_spectrum(cluster_spec_fits, trial);
@@ -594,21 +697,35 @@ slug_galaxy::write_cluster_spec(fitsfile* cluster_spec_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_integrated_phot(ofstream& outfile, 
-				   const outputMode out_mode) {
+				   const outputMode out_mode,
+				   const unsigned long trial,
+				   const bool del_cluster) {
 
   // Make sure photometric information is current. If not, compute it.
-  if (!phot_set) set_photometry();
+  if (!phot_set) set_photometry(del_cluster);
 
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific 
-	    << setw(15) << right << curTime;
+	    << setw(18) << right << curTime;
     for (vector<double>::size_type i=0; i<phot.size(); i++)
-      outfile << "   " << setw(15) << right << phot[i];
+      outfile << "   " << setw(18) << right << phot[i];
+    if (extinct != NULL) {
+      for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
+	if (!isnan(phot_ext[i]))
+	  outfile << "   " << setw(18) << right << phot_ext[i];
+	else
+	  outfile << "   " << setw(18) << right << " ";
+      }
+    }
     outfile << endl;
   } else {
+    outfile.write((char *) &trial, sizeof trial);
     outfile.write((char *) &curTime, sizeof curTime);
     outfile.write((char *) phot.data(), 
 			sizeof(double)*phot.size());
+    if (extinct != NULL)
+      outfile.write((char *) phot_ext.data(), 
+		    sizeof(double)*phot_ext.size());
   }
 }
 
@@ -618,10 +735,11 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits, 
-				   int trial) {
+				   unsigned long trial,
+				   const bool del_cluster) {
 
   // Make sure photometric information is current. If not, compute it.
-  if (!phot_set) set_photometry();
+  if (!phot_set) set_photometry(del_cluster);
 
   // Get current number of entries
   int fits_status = 0;
@@ -629,7 +747,7 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
   fits_get_num_rows(int_phot_fits, &nrows, &fits_status);
 
   // Write data
-  fits_write_col(int_phot_fits, TINT, 1, nrows+1, 1, 1, &trial, 
+  fits_write_col(int_phot_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
 		 &fits_status);
   fits_write_col(int_phot_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
@@ -638,6 +756,14 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
     fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
 		   &(phot[i]), &fits_status);
   }
+  if (extinct != NULL) {
+    for (int i=0; i<phot_ext.size(); i++) {
+      int colnum = i+3+phot.size();
+      fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		     &(phot_ext[i]), &fits_status);
+    }
+  }
+
 }
 #endif
 
@@ -646,11 +772,13 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
 ////////////////////////////////////////////////////////////////////////
 void
 slug_galaxy::write_cluster_phot(ofstream& outfile, 
-				const outputMode out_mode) {
+				const outputMode out_mode,
+				const unsigned long trial) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
   if (out_mode == BINARY) {
+    outfile.write((char *) &trial, sizeof trial);
     outfile.write((char *) &curTime, sizeof curTime);
     vector<double>::size_type n = clusters.size();
     outfile.write((char *) &n, sizeof n);
@@ -659,7 +787,7 @@ slug_galaxy::write_cluster_phot(ofstream& outfile,
   // Now have each cluster write
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_photometry(outfile, out_mode);
+    (*it)->write_photometry(outfile, out_mode, trial);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -668,7 +796,7 @@ slug_galaxy::write_cluster_phot(ofstream& outfile,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_phot(fitsfile* cluster_phot_fits, 
-				int trial) {
+				unsigned long trial) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_photometry(cluster_phot_fits, trial);

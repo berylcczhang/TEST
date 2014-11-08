@@ -1,5 +1,5 @@
 # Makefile for the slug code, v2
-.PHONY: all debug exec clean
+.PHONY: all debug clean
 
 MACHINE	=
 FITS ?= ENABLE_FITS
@@ -15,6 +15,8 @@ all:
                 mkdir output; \
         fi)
 	@(cp src/slug bin)
+	cd cluster_slug && $(MAKE) all MACHINE=$(MACHINE)
+	@(cp cluster_slug/cluster_slug.* slugpy/cluster_slug)
 
 debug:
 	cd src && $(MAKE) debug MACHINE=$(MACHINE) FITS=$(FITS)
@@ -27,6 +29,8 @@ debug:
 		mkdir output; \
 	fi)
 	@(cp src/slug bin)
+	cd cluster_slug && $(MAKE) debug MACHINE=$(MACHINE)
+	@(cp cluster_slug/cluster_slug.* slugpy/cluster_slug)
 
 clean:
 	cd src && $(MAKE) clean
@@ -34,3 +38,6 @@ clean:
 	then \
 		rm -f bin/slug; \
 	fi)
+	cd cluster_slug && $(MAKE) clean
+	@(rm -f slugpy/cluster_slug/cluster_slug.so)
+	@(rm -f slugpy/cluster_slug/cluster_slug.dylib)

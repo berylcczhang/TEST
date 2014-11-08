@@ -58,6 +58,9 @@ public:
   // Change sampling method
   void setMethod(samplingMethod new_method) { method = new_method; }
 
+  // Change the normalization
+  void setNorm(double new_norm);
+
   // Methods to intereact with the limits for stochasticity
   bool has_stoch_lim() const { return range_restrict; }
   void remove_stoch_lim();

@@ -1,0 +1,87 @@
+#######################################
+# Paramater for sampling problem      #
+#######################################
+
+# This parameter file provides a setup for simulating a
+# single star cluster to highligh the importance of 
+# sampling choice 
+
+#######################
+# Relevant parameter  #
+#######################
+
+# Name of the model; this will become the base name for all output
+# files
+# Default: SLUG_DEF
+model_name        SLUG_SAMPLING_4
+
+# Type of simulation. Allowed values:
+# -- cluster (simulate a simple stellar population all formed at time
+#    0)
+# -- galaxy (continuous star formation)
+# Default: galaxy
+sim_type  	  cluster
+
+# Number of model galaxies to run
+# Default: 1
+n_trials          1000
+
+# Length of time step (in yr for linear time step, in dex for
+# logarithmic)
+time_step    	  1.0e6
+
+# Maximum evolution time, in yr.
+end_time	  1.0e6
+
+# Mass of cluster for cluster mode simulation, in Msun; can be omitted,
+# and will be ignored, if sim_type = galaxy
+cluster_mass        50
+
+
+#############################################
+# Parameters controlling simulation outputs #
+#############################################
+
+# Write out cluster physical properties? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster       1
+
+# Write out cluster photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_phot  1
+
+# Write out cluster spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_spec  0
+
+# Write output as binary, ASCII, or FITS; allowed values:
+# -- binary
+# -- ascii
+# -- fits
+# Default: ascii
+output_mode      fits
+
+# IMF (initial mass function) file name
+# Default: lib/imf/chabrier.imf (Chabrier 2005 IMF)
+imf   	          lib/imf/wk06.imf
+
+# CLF (cluster lifetime function) file name
+# Default: lib/clf/slug_default.clf (dN/dt ~ t^-1.9)
+clf               lib/clf/nodisrupt.clf
+
+# Photometric filters to be used; can be comma- or
+# whitespace-separated. For a list of available filters, see the file
+# lib/filters/FILTER_LIST. In addition to those filters, the following
+# special values are always available:
+# -- QH0 : H ionizing photon luminosity, in phot/s
+# -- QHe0 : He ionizing photon luminosity, in phot/s
+# -- QHe1 : He+ ionizing photon luminosity, in phot/s
+# -- Lbol : bolometric luminosity, in L_sun
+phot_bands    QH0, LBOL,GALEX_FUV
+

@@ -1,0 +1,94 @@
+.. highlight:: rest
+
+.. _sec-slugpy:
+
+slugpy -- The Python Helper Library
+===================================
+
+Basic Usage
+-----------
+
+SLUG comes with the python module slugpy, which contains an extensive set of routines for reading, writing, and manipulating SLUG outputs. The most common task is to read a set of SLUG outputs into memory so that they can be processed. To read the data from a SLUG run using slugpy, one can simply do the following::
+
+   from slugpy import *
+   idata = read_integrated('SLUG_MODEL_NAME')
+   cdata = read_cluster('SLUG_MODEL_NAME')
+
+The ``read_integrated`` function reads all the integrated-light data (i.e., the data stored in the ``_integrated_*`` files -- see :ref:`sec-output`) for a SLUG output whose name is given as the argument. This is the base name specified by the ``model_name`` keyword (see :ref:`ssec-basic-keywords`), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a ``namedtuple`` containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see :ref:`sec-cloudy-slug`) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:
+
+* time: output times
+* target_mass: target stellar mass at each time
+* actual_mass: actual stellar mass at each time
+* live_mass: mass of currently-alive stars
+* cluster_mass: mass of living stars in non-disrupted clusters
+* num_clusters: number of non-disrupted clusters
+* num_dis_clusters: number of disrupted clusters
+* num_fld_stars: number of still-living stars that formed in the field
+* wl: wavelengths of output stellar spectra (in Angstrom)
+* spec: integrated spectrum of all stars, expressed as a specific luminosity (erg/s/Angstrom)
+* filter_names: list of photometric filter names
+* filter_units: list of units for photometric outputs
+* filter_wl_eff: effective wavelength for each photometric filter
+* filter_wl: list of wavelengths for each filter at which the response function is given (in Angstrom)
+* filter_response: photon response function for each filter at each wavelength (dimensionless)
+* filter_beta: index :math:`\beta` used to set the normalization for each filter -- see :ref:`ssec-spec-phot`
+* filter_wl_c: pivot wavelength used to set the normalization for each filter for which :math:`\beta \neq 0` -- see :ref:`ssec-spec-phot`
+* phot: photometry in each filter
+
+The following fields are present only if SLUG was run with extinction enabled:
+
+* wl_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl_ex may contain fewer elements than wl_ex, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.
+* spec_ex: same as spec, but for the extincted spectrum. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.
+* phot_ex: same as phot, but for the extincted spectrum. Note that some values may be ``NaN``. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
+
+The following fields are present only for runs that have been processed through the cloudy_slug interface (see :ref:`sec-cloudy-slug`):
+
+* cloudy_wl: wavelengths of the output nebular spectra (in Angstrom)
+* cloudy_inc: incident stellar radiation field, expressed as a specific luminosity (erg/s/Angstrom) -- should be the same as spec, but binned onto cloudy's wavelength grid; provided mainly as a bug-checking diagnostic
+* cloudy_trans: the transmitted stellar radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) -- this is the radiation field of the stars after it has passed through the HII region, and is what one would see in an observational aperture centered on the stars with negligible contribution from the nebula
+* cloudy_emit: the emitted nebular radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) -- this is the radiation emitted by the nebula excluding the stars, and is what one would see in an observational aperture that included the nebula but masked out the stars
+* cloudy_trans_emit: the sum of the transmitted stellar and emitted nebular radiation, expressed as a specific luminosity (erg/s/Angstrom) -- this is what one would see in an observational aperture covering the both the stars and the nebula
+* cloudy_linelabel: list of emitting species for the line luminosities computed by cloudy, following cloudy's 4-letter notation
+* cloudy_linewl: wavelengths of all the lines computed by cloudy (in Angstrom)
+* cloudy_linelum: luminosities of the lines computed by cloudy (in erg/s)
+* cloudy_filter_names, cloudy_filter_units, cloudy_filter_wl_eff, cloudy_filter_wl, cloudy_filter_response, cloudy_filter_beta, cloudy_filter_wl_c: exactly the same as the corresponding fields without the cloudy prefix, but for the photometric filters applied to the cloudy output
+* cloudy_phot_trans, cloudy_phot_emit, and cloudy_phot_trans_emit: photometry of the transmitted, emitted, and transmitted+emitted radiation field provided by cloudy_trans, cloudy_emit, and cloudy_trans_emit
+
+For the above fields, quantities that are different for each trial and each time are stored as numpy arrays with a shape (N_times, N_trials) for scalar quantities (e.g., actual_mass), or a shape (N, N_times, N_trials) for quantities that are vectors of length N (e.g., the spectrum).
+
+The ``read_cluster`` function is analogous, except that instead of reading the whole-galaxy data, it reads data on the individual star clusters, as stored in the ``_cluster_*`` output files. It returns the following fields:
+
+* id: a unique identifier number for each cluster; this is guaranteed to be unique across both times and trials, so that if two clusters in the list have the same id number, that means that the data given are for the same cluster at two different times in its evolution
+* trial: the trial number in which that cluster appeared
+* time: the time at which the data for that cluster are computed
+* form_time: the time at which that cluster formed
+* lifetime: the between when the cluster formed and when it will disrupt
+* target_mass: the target stellar mass of the cluster
+* actual_mass: the actual stellar mass of the cluter
+* live_mass: the mass of all still-living stars in the cluster
+* num_star: the number of stars in the cluster
+* max_star_mass: the mass of the single most massive still-living star in the cluster
+* A_V: the visual extinction for this cluster, in mag; present only if SLUG was run with extinction enabled
+* All the remaining fields are identical to those listed above for integrated quantities, starting with wl
+
+For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).
+
+
+Full Documentation of slugpy
+----------------------------
+
+.. automodule:: slugpy
+   :members:
+
+Full Documentation of slugpy.cloudy
+-----------------------------------
+
+.. automodule:: slugpy.cloudy
+   :members:
+
+Full Documentation of slugpy.sfr_slug
+-------------------------------------
+
+.. autoclass:: slugpy.sfr_slug.sfr_slug
+   :members:
+   :special-members:

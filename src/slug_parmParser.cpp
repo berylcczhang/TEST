@@ -118,7 +118,12 @@ slug_parmParser::setDefaults() {
   startTime = timeStep = endTime = -constants::big;
   sfr = cluster_mass = -constants::big;
   constantSFR = false;
+  constantAV = false;
+  randomSFR = false;
+  randomClusterMass = false;
+  randomOutputTime = false;
   save_seed = read_seed = false;
+  use_extinct = false;
 
   // Physical model parameters
   path lib_path("lib");
@@ -136,6 +141,9 @@ slug_parmParser::setDefaults() {
   track = (lib_path / track_path / track_file).string();
   path atmos_path("atmospheres");
   atmos_dir = (lib_path / atmos_path).string();
+  path extinct_path("extinct");
+  path extinct_file("SB_ATT_SLUG.dat");
+  extinct_curve = (lib_path / extinct_path / extinct_file).string();
   specsyn_mode = SB99;
   fClust = 1.0;
   min_stoch_mass = 0.0;
@@ -208,21 +216,42 @@ slug_parmParser::parseFile(ifstream &paramFile) {
       } else if (!(tokens[0].compare("start_time"))) {
 	startTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
-	timeStep = lexical_cast<double>(tokens[1]);
+	// See if timeStep is a number, indicating definite output times
+	try {
+	  timeStep = lexical_cast<double>(tokens[1]);
+	} catch (const bad_lexical_cast& ia) {
+	  out_time_dist = tokens[1];
+	  randomOutputTime = true;
+	}
       } else if (!(tokens[0].compare("end_time"))) {
 	endTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("log_time"))) {
 	logTime = (lexical_cast<double>(tokens[1]) == 1);
       } else if (!(tokens[0].compare("sfr"))) {
-	to_lower(tokens[1]);
-	if (tokens[1].compare("sfh") == 0)
+	string tmp = tokens[1];
+	to_lower(tmp);
+	if (tmp.compare("sfh") == 0)
 	  constantSFR = false;
 	else {
-	  sfr = lexical_cast<double>(tokens[1]);
-	  constantSFR = true;
+	  try {
+	    // See if the SFR is a number, indicating a constant SFR
+	    sfr = lexical_cast<double>(tokens[1]);
+	    constantSFR = true;
+	  } catch (const bad_lexical_cast& ia) {
+	    // SFR is neither a number nor "sfh", so interpret this as
+	    // giving the name of a PDF file that will be used to draw
+	    // a SFR
+	    randomSFR = true;
+	    sfr_file = tokens[1];
+	  }
 	}
       } else if (!(tokens[0].compare("cluster_mass"))) {
-	cluster_mass = lexical_cast<double>(tokens[1]);
+	string tmp = tokens[1];
+	to_lower(tmp);
+	if (tmp.compare("cmf") == 0)
+	  randomClusterMass = true;
+	else
+	  cluster_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("sfh"))) {
 	sfh = tokens[1];
       } else if (!(tokens[0].compare("imf"))) {
@@ -237,6 +266,19 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	atmos_dir = tokens[1];
       } else if (!(tokens[0].compare("filters"))) {
 	filter_dir = tokens[1];
+      } else if (!(tokens[0].compare("a_v"))) {
+	use_extinct = true;
+	try {
+	  // See if the A_V is a number, indicated a constant A_V
+	  A_V = lexical_cast<double>(tokens[1]);
+	  constantAV = true;
+	} catch (const bad_lexical_cast& ia) {
+	  // A_V is not a number, so assume it is a distribution file name
+	  AV_dist = tokens[1];
+	  constantAV = false;
+	}
+      } else if (!(tokens[0].compare("extinction_curve"))) {
+	extinct_curve = tokens[1];
       } else if (!(tokens[0].compare("rng_seed_file"))) {
 	seed_file = tokens[1];
       } else if (!(tokens[0].compare("min_stoch_mass"))) {
@@ -411,7 +453,7 @@ slug_parmParser::checkParams() {
     cerr << "slug: error: startTime must be > 0" << endl;
     exit(1);
   }
-  if (timeStep <= 0) {
+  if ((timeStep <= 0) && !randomOutputTime) {
     if (timeStep == -constants::big) {
       cerr << "slug: error: parameter timeStep must be set" 
 		<< endl;
@@ -429,15 +471,15 @@ slug_parmParser::checkParams() {
     }
     exit(1);
   }
-  if (!constantSFR && run_galaxy_sim) {
+  if (!constantSFR && !randomSFR && run_galaxy_sim) {
     if (sfh.length() == 0) {
-      cerr << "slug: error: for non-constant SFR, must set SFH" 
+      cerr << "slug: error: SFH requested, but no SFH file specified" 
 		<< endl;
       exit(1);
     }    
   }
-  if (!run_galaxy_sim && cluster_mass < 0) {
-    cerr << "slug: error: cluster mass must be set to > 0 for cluster sim"
+  if (!run_galaxy_sim && cluster_mass < 0 && !randomClusterMass) {
+    cerr << "slug: error: cluster_mass must be either cmf or a number > 0 for cluster sim"
 	 << endl;
     exit(1);
   }
@@ -459,6 +501,21 @@ slug_parmParser::checkParams() {
     exit(1);
   }
 
+  // Make sure filter names are unique; if not, eliminate duplicates
+  // and spit out a warning
+  vector<vector<double>::size_type> duplicates;
+  for (vector<double>::size_type i=0; i<photBand.size(); i++)
+    for (vector<double>::size_type j=i+1; j<photBand.size(); j++)
+      if (photBand[i] == photBand[j]) duplicates.push_back(j);
+  vector<vector<double>::size_type>::reverse_iterator 
+    rit = duplicates.rbegin();
+  for ( ; rit != duplicates.rend(); ++rit) {
+    vector<double>::size_type i = *rit;
+    cerr << "slug: warning: ignoring duplicate photometric band "
+	 << photBand[i] << endl;
+    photBand.erase(photBand.begin() + i);
+  }
+
   // See if the SLUG_DIR environment variable is set, for use in
   // setting up default paths. If not, set it to current working
   // directory.
@@ -478,6 +535,9 @@ slug_parmParser::checkParams() {
   path track_path(track);
   path atmos_path(atmos_dir);
   path filter_path(filter_dir);
+  path extinct_path(extinct_curve);
+  path AV_path(AV_dist);
+  path out_time_path(out_time_dist);
   if (!out_path.is_absolute())
     outDir = (slug_path / out_path).string();
   if (!imf_path.is_absolute()) 
@@ -492,6 +552,12 @@ slug_parmParser::checkParams() {
     atmos_dir = (slug_path / atmos_path).string();
   if (!filter_path.is_absolute()) 
     filter_dir = (slug_path / filter_path).string();
+  if (!extinct_path.is_absolute())
+    extinct_curve = (slug_path / extinct_path).string();
+  if (!AV_path.is_absolute())
+    AV_path = (slug_path / AV_path).string();
+  if (!out_time_path.is_absolute())
+    out_time_dist = (slug_path / out_time_path).string();
 }
 
 
@@ -526,17 +592,25 @@ slug_parmParser::writeParams() const {
   else
     paramFile << "cluster" << endl;
   paramFile << "n_trials             " << nTrials << endl;
-  paramFile << "time_step            " << timeStep << endl;
-  paramFile << "end_time             " << endTime << endl;
+  if (!randomOutputTime) {
+    paramFile << "time_step            " << timeStep << endl;
+    paramFile << "end_time             " << endTime << endl;
+  } else {
+    paramFile << "output_time_dist     " << out_time_dist << endl;
+  }
   if (run_galaxy_sim) {
     if (constantSFR)
       paramFile << "SFR                  " << sfr << endl;
+    else if (randomSFR)
+      paramFile << "SFR                  " << sfr_file << endl;
     else
       paramFile << "SFH                  " << sfh << endl;
   }
   paramFile << "IMF                  " << imf << endl;
-  if (run_galaxy_sim)
+  if (run_galaxy_sim || randomClusterMass)
     paramFile << "CMF                  " << cmf << endl;
+  if (!run_galaxy_sim && !randomClusterMass)
+    paramFile << "cluster_mass         " << cluster_mass << endl;
   paramFile << "CLF                  " << clf << endl;
   paramFile << "tracks               " << track << endl;
   paramFile << "atmos_dir            " << atmos_dir << endl;
@@ -555,6 +629,16 @@ slug_parmParser::writeParams() const {
     paramFile << "kurucz+hillier" << endl;
   } else if (specsyn_mode == SB99) {
     paramFile << "sb99" << endl;
+  }
+  if (use_extinct) {
+    paramFile << "extinction           " << "yes" << endl;
+    if (constantAV)
+      paramFile << "A_V                  " << A_V << endl;
+    else
+      paramFile << "A_V                  " << AV_dist << endl;
+    paramFile << "extinction_curve     " << extinct_curve << endl;
+  } else {
+    paramFile << "extinction           " << "no" << endl;
   }
   if (run_galaxy_sim)
     paramFile << "clust_frac           " << fClust << endl;
@@ -608,17 +692,27 @@ double slug_parmParser::get_timeStep() const { return timeStep; }
 double slug_parmParser::get_endTime() const { return endTime; }
 bool slug_parmParser::get_logTime() const { return logTime; }
 bool slug_parmParser::get_constantSFR() const { return constantSFR; }
+bool slug_parmParser::get_randomSFR() const { return randomSFR; }
+bool slug_parmParser::get_constantAV() const { return constantAV; }
 double slug_parmParser::get_SFR() const { return sfr; }
+double slug_parmParser::get_AV() const { return A_V; }
 double slug_parmParser::get_z() const { return z; }
 double slug_parmParser::get_WR_mass() const { return WR_mass; }
 double slug_parmParser::get_metallicity() const { return metallicity; }
 double slug_parmParser::get_min_stoch_mass() const { return min_stoch_mass; }
 const char *slug_parmParser::get_SFH() const { return sfh.c_str(); }
+const char *slug_parmParser::get_SFR_file() const { return sfr_file.c_str(); }
 const char *slug_parmParser::get_IMF() const { return imf.c_str(); }
 const char *slug_parmParser::get_CMF() const { return cmf.c_str(); }
 const char *slug_parmParser::get_CLF() const { return clf.c_str(); }
 const char *slug_parmParser::get_trackFile() const { return track.c_str(); }
 const char *slug_parmParser::get_atmos_dir() const { return atmos_dir.c_str(); }
+const char *slug_parmParser::get_extinct_curve() const 
+{ return extinct_curve.c_str(); }
+const char *slug_parmParser::get_AV_dist() const 
+{ return AV_dist.c_str(); }
+const char *slug_parmParser::get_outtime_dist() const 
+{ return out_time_dist.c_str(); }
 const char *slug_parmParser::get_filter_dir() const 
 { return filter_dir.c_str(); }
 const char *slug_parmParser::get_modelName() const { return model.c_str(); }
@@ -646,6 +740,8 @@ specsynMode slug_parmParser::get_specsynMode() const { return specsyn_mode; }
 photMode slug_parmParser::get_photMode() const { return phot_mode; }
 bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
 double slug_parmParser::get_cluster_mass() const { return cluster_mass; }
+bool slug_parmParser::get_random_cluster_mass() const 
+{ return randomClusterMass;}
 const vector<string>& slug_parmParser::get_photBand() const
 { return photBand; }
 unsigned int slug_parmParser::get_rng_offset() const
@@ -653,3 +749,6 @@ unsigned int slug_parmParser::get_rng_offset() const
 bool slug_parmParser::save_rng_seed() const { return save_seed; }
 bool slug_parmParser::read_rng_seed() const { return read_seed; }
 const string slug_parmParser::rng_seed_file() const { return seed_file; }
+bool slug_parmParser::get_use_extinct() const { return use_extinct; }
+bool slug_parmParser::get_random_output_time() const 
+{ return randomOutputTime; }

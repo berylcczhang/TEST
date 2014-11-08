@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_galaxy_H_
 
 #include "slug.H"
+#include "slug_extinction.H"
 #include "slug_filter_set.H"
 #include "slug_specsyn.H"
 #include <list>
@@ -48,7 +49,8 @@ public:
 	      const slug_PDF* my_cmf, const slug_PDF* my_clf, 
 	      const slug_PDF* my_sfh, const slug_tracks* tracks, 
 	      const slug_specsyn* my_specsyn,
-	      const slug_filter_set* my_filters);
+	      const slug_filter_set* my_filters,
+	      const slug_extinction* my_extinct);
   ~slug_galaxy();
 
   // Set galaxy back to its initial state
@@ -62,40 +64,53 @@ public:
   // and return.
   double get_Lbol() { set_Lbol(); return Lbol; }
 
-  const std::vector<double> &get_spectrum()
-  { set_spectrum(); return L_lambda; }
+  const std::vector<double> 
+  &get_spectrum(const bool del_cluster = false)
+  { set_spectrum(del_cluster); return L_lambda; }
 
   void get_spectrum(std::vector<double>& lambda_out, 
-		    std::vector<double>& L_lambda_out)
-  { set_spectrum();
+		    std::vector<double>& L_lambda_out,
+		    const bool del_cluster = false)
+  { set_spectrum(del_cluster);
     lambda_out = specsyn->lambda();
     L_lambda_out = L_lambda; }
 
-  const std::vector<double>& get_photometry()
-  { set_photometry(); return phot; }
+  const std::vector<double>& 
+  get_photometry(const bool del_cluster = false)
+  { set_photometry(del_cluster); return phot; }
 
   // Output functions
   void write_integrated_prop(std::ofstream& int_prop_file, 
-			     const outputMode out_mode);
-  void write_cluster_prop(std::ofstream& cluster_prop_file,
-			  const outputMode out_mode);
+			     const outputMode out_mode, 
+			     const unsigned long trial);
+  void write_cluster_prop(std::ofstream& cluster_prop_file, 
+			  const outputMode out_mode,
+			  const unsigned long trial);
   void write_integrated_spec(std::ofstream& int_spec_file,
-			     const outputMode out_mode);
+			     const outputMode out_mode,
+			     const unsigned long trial,
+			     const bool del_cluster = false);
   void write_cluster_spec(std::ofstream& cluster_spec_file,
-			  const outputMode out_mode);
+			  const outputMode out_mode,
+			  const unsigned long trial);
   void write_integrated_phot(std::ofstream& outfile,
-			     const outputMode out_mode);
+			     const outputMode out_mode,
+			     const unsigned long trial,
+			     const bool del_cluster = false);
   void write_cluster_phot(std::ofstream& outfile,
-			  const outputMode out_mode);
+			  const outputMode out_mode,
+			  const unsigned long trial);
 
 #ifdef ENABLE_FITS
   // FITS output functions
-  void write_integrated_prop(fitsfile* int_prop_fits, int trial);
-  void write_cluster_prop(fitsfile* cluster_prop_fits, int trial);
-  void write_integrated_spec(fitsfile* int_spec_fits, int trial);
-  void write_cluster_spec(fitsfile* cluster_spec_fits, int trial);
-  void write_integrated_phot(fitsfile* int_phot_fits, int trial);
-  void write_cluster_phot(fitsfile* cluster_phot_fits, int trial);
+  void write_integrated_prop(fitsfile* int_prop_fits, unsigned long trial);
+  void write_cluster_prop(fitsfile* cluster_prop_fits, unsigned long trial);
+  void write_integrated_spec(fitsfile* int_spec_fits, unsigned long trial,
+			     const bool del_cluster = false);
+  void write_cluster_spec(fitsfile* cluster_spec_fits, unsigned long trial);
+  void write_integrated_phot(fitsfile* int_phot_fits, unsigned long trial,
+			     const bool del_cluster = false);
+  void write_cluster_phot(fitsfile* cluster_phot_fits, unsigned long trial);
 #endif
 
 private:
@@ -104,8 +119,8 @@ private:
   // photometry
   void set_field_data();
   void set_Lbol();
-  void set_spectrum();
-  void set_photometry();
+  void set_spectrum(const bool del_cluster = false);
+  void set_photometry(const bool del_cluster = false);
 
   // Distributions and physical models used in simulation
   const slug_PDF *imf;                // IMF
@@ -115,6 +130,7 @@ private:
   const slug_tracks *tracks;          // Evolutionary track set
   const slug_specsyn *specsyn;        // Spectral synthesizer
   const slug_filter_set *filters;     // Filter set
+  const slug_extinction *extinct;     // Extinction object
 
   // Simulation data
   double curTime;                     // Current time
@@ -123,22 +139,25 @@ private:
   double aliveMass;                   // Mass of currently alive stars
   double clusterMass;                 // Mass in non-disrupted clusters
   double fc;                          // Fraction of stars in clusters
-  double nonStochFieldMass;        // Mass of field stars w/out stochasticity
+  double nonStochFieldMass;           // Mass of field stars w/out stochasticity
   double Lbol;                        // Bolometric luminosity of galaxy
+  double Lbol_ext;                    // Bolometric luminsoity w/extinction
   unsigned long cluster_id;           // Cluster ID counter
   std::vector<slug_star> field_stars; // Field stars
   std::vector<slug_stardata> field_data; // Field star data
+  std::vector<double> field_star_AV;  // Field star extinctions
   std::list<slug_cluster *> disrupted_clusters; // Disrupted clusters
   std::list<slug_cluster *> clusters; // Cluster list
   std::vector<double> L_lambda;       // Specific luminosity of galaxy
   std::vector<double> phot;           // Integrated photometry of galaxy
+  std::vector<double> L_lambda_ext;   // Specific luminosity w/extinction
+  std::vector<double> phot_ext;       // Integrated photometry w/extinction
 
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?
   bool spec_set;                      // Is the spectrum current?
   bool field_data_set;                // Is the field star data current?
   bool phot_set;                      // Is photometry current
-  
 };
 
 #endif

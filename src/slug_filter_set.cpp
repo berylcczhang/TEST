@@ -219,11 +219,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     } else if (recordptr >= 0) {
 
       // This is a filter we're interested in, so tokenize the line
-      // and record the data
+      // and record the data; skip repeated entries
       split(tokens, line, is_any_of("\t "), token_compress_on);
-      lambda.push_back(lexical_cast<double>(tokens[0]));
-      response.push_back(lexical_cast<double>(tokens[1]));
-
+      if (lambda.size() == 0) {
+	  lambda.push_back(lexical_cast<double>(tokens[0]));
+	  response.push_back(lexical_cast<double>(tokens[1]));
+      } else if (lambda.back() != lexical_cast<double>(tokens[0])) {
+	lambda.push_back(lexical_cast<double>(tokens[0]));
+	response.push_back(lexical_cast<double>(tokens[1]));
+      }
     }
 
   }
@@ -238,7 +242,11 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     filters[recordptr] = 
       new slug_filter(lambda, response, beta[filterptr], 
 		      lambda_c[filterptr]);
+    nrecorded++;
   }
+
+  // Safety check
+  assert(nrecorded == filters.size());
 
   // If we've been asked to write output in Vega magnitudes, read in
   // the spectrum of Vega and integrate it over all our filters to get
@@ -392,43 +400,92 @@ slug_filter_set::compute_phot(const std::vector<double>& lambda,
 
       // This is a filter that represents photon counts above a
       // threshold, so return that
-      phot[i] = filters[i]->compute_photon_lum(lambda, L_lambda);
+
+      if (filters[i]->get_wavelength_min() > lambda.back()) {
+	// Safety check: make sure that the wavelength range represented
+	// by this filter overlaps the input wavelength range; if not
+	// just set this to zero
+	phot[i] = 0.0;
+      } else {
+	phot[i] = filters[i]->compute_photon_lum(lambda, L_lambda);
+      }
 
     } else if (phot_mode == L_NU) {
 
       // L_NU mode, so just compute L_nu
-      phot[i] = filters[i]->compute_Lbar_nu(lambda, L_lambda);
+
+      if ((filters[i]->get_wavelength_min() > lambda.back()) ||
+	  (filters[i]->get_wavelength_max() < lambda.front())) {
+	// Safety check: make sure that the wavelength range represented
+	// by this filter overlaps the input wavelength range; if not
+	// just set this to zero
+	phot[i] = 0.0;
+      } else {
+	phot[i] = filters[i]->compute_Lbar_nu(lambda, L_lambda);
+      }
 
     } else if (phot_mode == AB) {
 
       // AB magnitude mode: compute L_nu, then get the absolute AB mag
       // from it
-      double Lbar_nu = filters[i]->compute_Lbar_nu(lambda, L_lambda);
-      double F_nu = Lbar_nu / (4.0*M_PI*pow(10.0*constants::pc, 2));
-      phot[i] = -2.5*log10(F_nu) - 48.6;
+      if ((filters[i]->get_wavelength_min() > lambda.back()) ||
+	  (filters[i]->get_wavelength_max() < lambda.front())) {
+	// Safety check: make sure that the wavelength range represented
+	// by this filter overlaps the input wavelength range; if not
+	// just set this to - a big number
+	phot[i] = -constants::big;
+      } else {
+	double Lbar_nu = filters[i]->compute_Lbar_nu(lambda, L_lambda);
+	double F_nu = Lbar_nu / (4.0*M_PI*pow(10.0*constants::pc, 2));
+	phot[i] = -2.5*log10(F_nu) - 48.6;
+      }
 
     } else if (phot_mode == L_LAMBDA) {
 
       // L_lambda mode: just return L_lambda
-      phot[i] = filters[i]->compute_Lbar_lambda(lambda, L_lambda);
+      if ((filters[i]->get_wavelength_min() > lambda.back()) ||
+	  (filters[i]->get_wavelength_max() < lambda.front())) {
+	// Safety check: make sure that the wavelength range represented
+	// by this filter overlaps the input wavelength range; if not
+	// just set this to zero
+	phot[i] = 0.0;
+      } else {
+	phot[i] = filters[i]->compute_Lbar_lambda(lambda, L_lambda);
+      }
 
     } else if (phot_mode == STMAG) {
 
       // STMag mode: compute L_lambda, then get absolute ST mag from
       // it
-      double Lbar_lambda = 
-	filters[i]->compute_Lbar_lambda(lambda, L_lambda);
-      double F_lambda = Lbar_lambda / 
-	(4.0*M_PI*pow(10.0*constants::pc, 2));
-      phot[i] = -2.5*log10(F_lambda) - 21.1;
+      if ((filters[i]->get_wavelength_min() > lambda.back()) ||
+	  (filters[i]->get_wavelength_max() < lambda.front())) {
+	// Safety check: make sure that the wavelength range represented
+	// by this filter overlaps the input wavelength range; if not
+	// just set this to - a big number
+	phot[i] = -constants::big;
+      } else {
+	double Lbar_lambda = 
+	  filters[i]->compute_Lbar_lambda(lambda, L_lambda);
+	double F_lambda = Lbar_lambda / 
+	  (4.0*M_PI*pow(10.0*constants::pc, 2));
+	phot[i] = -2.5*log10(F_lambda) - 21.1;
+      }
 
     } else if (phot_mode == VEGA) {
 
       // Vega mag: same as AB mag mode, but then we subtract off the
       // magnitude of Vega (already computed)
-      double Lbar_nu = filters[i]->compute_Lbar_nu(lambda, L_lambda);
-      double F_nu = Lbar_nu / (4.0*M_PI*pow(10.0*constants::pc, 2));
-      phot[i] = -2.5*log10(F_nu) - 48.6 - vega_mag[i];
+      if ((filters[i]->get_wavelength_min() > lambda.back()) ||
+	  (filters[i]->get_wavelength_max() < lambda.front())) {
+	// Safety check: make sure that the wavelength range represented
+	// by this filter overlaps the input wavelength range; if not
+	// just set this to - a big number
+	phot[i] = -constants::big;
+      } else {
+	double Lbar_nu = filters[i]->compute_Lbar_nu(lambda, L_lambda);
+	double F_nu = Lbar_nu / (4.0*M_PI*pow(10.0*constants::pc, 2));
+	phot[i] = -2.5*log10(F_nu) - 48.6 - vega_mag[i];
+      }
 
     }
 

@@ -54,6 +54,11 @@ parser.add_argument('-nc', '--noconsolidate', action='store_true',
 parser.add_argument('-nl', '--nicelevel', default=0, type=int,
                     help="nice level of the cloudy processes " +
                     "(default: 0)")
+parser.add_argument('-v', '--verbose', action='store_true',
+                    default=False, help="produce verbose output")
+parser.add_argument('-t', '--tmpdir', default=None,
+                    help="directory for temporary work files" +
+                    " (default: cwd/slug_par_tmp)")
 args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
@@ -160,7 +165,7 @@ else:
 # output; we'll call threads to run this later
 def display_out(out, procnum):
     for line in iter(out.readline, ''):
-        print("proc {:d}: ".format(procnum) + line.split('\n')[0])
+        print("thread {:d}: ".format(procnum+1) + line.split('\n')[0])
     out.close()
 
 
@@ -176,8 +181,12 @@ err_threads = [None] * nproc
 out_names = []
 trial_num = []
 ON_POSIX = 'posix' in sys.builtin_module_names
+if args.tmpdir == None:
+    tmpdir = osp.join(cwd, 'slug_par_tmp')
+else:
+    tmpdir = args.tmpdir
 try: 
-    os.mkdir(osp.join(cwd, 'slug_par_tmp'))  # Temporary working directory
+    os.mkdir(tmpdir)  # Temporary working directory
 except OSError: pass           # Probably failed because dir exists
 while completed_trials < ntrials:
 
@@ -222,10 +231,10 @@ while completed_trials < ntrials:
             pfile_tmp.append("model_name   "+new_model_name)
         if out_dir_line != -1:
             pfile_tmp[out_dir_line] \
-                = "out_dir   "+osp.join(cwd, "slug_par_tmp")
+                = "out_dir   "+tmpdir
         else:
             pfile_tmp.append("out_dir   "+
-                             osp.join(cwd, "slug_par_tmp"))
+                             tmpdir)
         if rng_offset_line != -1:
             pfile_tmp[rng_offset_line] \
                 = "rng_offset   " + str(10000*p)
@@ -233,24 +242,32 @@ while completed_trials < ntrials:
             pfile_tmp.append("rng_offset   " + str(10000*p))
 
         # Record characteristics of this run
-        out_names.append(osp.join(cwd, "slug_par_tmp",
+        out_names.append(osp.join(tmpdir,
                                   new_model_name))
         trial_num.append(new_ntrials)
 
         # Write temporary parameter file to disk
-        pfile_name = osp.join(cwd, "slug_par_tmp", 
+        pfile_name = osp.join(tmpdir, 
                               "slug_par_p{:03d}".format(p))
         fp = open(pfile_name, 'w')
         for line in pfile_tmp:
             fp.write(line+'\n')
         fp.close()
 
+        # Print status if verbose
+        if args.verbose:
+            print(("thread {:d}: launching slug on trials " +
+                   "{:d} - {:d} / {:d}").
+                  format(p+1, completed_trials+1,
+                         completed_trials+batchsize,
+                         ntrials))
+
         # Start new process
         cmd = osp.join(cwd, 'slug') + " " + pfile_name
         if args.nicelevel > 0:
             cmd = "nice -n " + str(args.nicelevel) + " " + cmd
         proc_list[p] \
-            = subprocess.Popen(cmd, bufsize=1, shell=True,
+            = subprocess.Popen(cmd, bufsize=0, shell=True,
                                stdout=subprocess.PIPE, 
                                stderr=subprocess.PIPE,
                                close_fds=ON_POSIX)
@@ -274,17 +291,15 @@ while completed_trials < ntrials:
 # Step 6: wait for final processes to complete; we do this because we
 # don't want to kill the output threads or do file cleanup before all
 # processes are done
-while True:
-    nrunning = len(proc_list)
+running = [True]*len(proc_list)
+while True in running:
     for i, proc in enumerate(proc_list):
-        if proc is None:
-            # Process never started
-            nrunning = nrunning - 1
-        elif proc.poll() != None:
-            # Process completed
-            nrunning = nrunning - 1
-    if nrunning == 0:
-        break
+        if running[i]:
+            if proc is None:
+                # Process never started
+                running[i] = False
+            elif proc.poll() != None:
+                running[i] = False
 
 # Step 7: consolidate output files if requested; just move them if not
 if output_mode == 'ascii':
@@ -389,12 +404,13 @@ if verbosity > 0:
 
 # Delete parameter files
 for i in range(nproc):
-    pfile_name = osp.join(cwd, "slug_par_tmp", 
+    pfile_name = osp.join(tmpdir, 
                           "slug_par_p{:03d}".format(i))
-    try:
-        os.remove(pfile_name)
-    except OSError:
-        warnings.warn("unable to clean up temporary file "+pfile_name)
+    if i < ntrials:
+        try:
+            os.remove(pfile_name)
+        except OSError:
+            warnings.warn("unable to clean up temporary file "+pfile_name)
 
 # Delete output files
 for f in out_names:
@@ -425,7 +441,7 @@ for f in out_names:
 
 # Remove temporary directory
 try:
-    os.rmdir(osp.join(cwd, "slug_par_tmp"))
+    os.rmdir(tmpdir)
 except OSError:
     warnings.warn("unable to clean up temporary directory "+
-                  osp.join(cwd, "slug_par_tmp"))
+                  tmpdir)

@@ -43,7 +43,7 @@ public:
   slug_specsyn_sb99(const char *dirname, 
 		    const slug_tracks *my_tracks, 
 		    const slug_PDF *my_imf,
-		    const slug_PDF *my_sfh,
+		    slug_PDF *my_sfh,
 		    const double z_in = 0.0) :
     slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
     hillier(dirname, my_tracks, my_imf, my_sfh, z_in, false),

@@ -17,34 +17,31 @@ def slug_open(filename, output_dir=None, fmt=None):
     Function to open a SLUG2 output file.
 
     Parameters
-    ----------
-    filename : string
-       Name of the file to open, without any extension. The following
-       extensions are tried, in order: .txt, .bin, .fits
-    output_dir : string
-       The directory where the SLUG2 output is located; if set to None,
-       the current directory is searched, followed by the
-       SLUG_DIR/output directory if the SLUG_DIR environment variable
-       is set
-    fmt : string
-       Format for the file to be read. Allowed values are 'ascii',
-       'bin' or 'binary, and 'fits'. If one of these is set, the code
-       will only attempt to open ASCII-, binary-, or FITS-formatted
-       output, ending in .txt., .bin, or .fits, respectively. If set
-       to None, the code will try to open ASCII files first, then if
-       it fails try binary files, and if it fails again try FITS
-       files.
+       filename : string
+          Name of the file to open, without any extension. The following
+          extensions are tried, in order: .txt, .bin, .fits
+       output_dir : string
+          The directory where the SLUG2 output is located; if set to None,
+          the current directory is searched, followed by the
+          SLUG_DIR/output directory if the SLUG_DIR environment variable
+          is set
+       fmt : string
+          Format for the file to be read. Allowed values are 'ascii',
+          'bin' or 'binary, and 'fits'. If one of these is set, the code
+          will only attempt to open ASCII-, binary-, or FITS-formatted
+          output, ending in .txt., .bin, or .fits, respectively. If set
+          to None, the code will try to open ASCII files first, then if
+          it fails try binary files, and if it fails again try FITS
+          files.
 
     Returns
-    -------
-    fp : file or astropy.io.fits.hdu.hdulist.HDUList
-       A file object pointing the file that has been opened
-    fname : string
-       Name of the file that was opened
+       fp : file or astropy.io.fits.hdu.hdulist.HDUList
+          A file object pointing the file that has been opened
+       fname : string
+          Name of the file that was opened
 
     Raises
-    ------
-    IOError, if a file of the specified name cannot be found
+       IOError, if a file of the specified name cannot be found
     """
 
     # Did we get a specific directory in which to look? If not, try

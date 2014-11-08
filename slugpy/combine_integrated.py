@@ -12,15 +12,13 @@ def combine_integrated(data):
     treating each input run as a separate set of trials.
 
     Parameters
-    ----------
-    data : list_like
-       A list containing the integrated data for each run, as
-       returned by read_integrated
+       data : list_like
+          A list containing the integrated data for each run, as
+          returned by read_integrated
 
     Returns
-    -------
-    combined_data : namedtuple
-       The combined data, in the same format as each object in data
+       combined_data : namedtuple
+          The combined data, in the same format as each object in data
     """
 
     # Safety check: make sure all input data objects have the same
@@ -31,9 +29,14 @@ def combine_integrated(data):
 
     # Combine fields
     new_fields = []
-    single_fields = ['time', 'target_mass', 'wl', 'filter_names',
+    single_fields = ['time', 'wl', 'wl_ex', 'filter_names',
                      'filter_units', 'filter_wl', 'filter_wl_eff',
-                     'filter_response']
+                     'filter_response', 'filter_beta', 'filter_wl_c',
+                     'cloudy_linelabel', 'cloudy_linewl',
+                     'cloudy_wl', 'cloudy_filter_names',
+                     'cloudy_filter_units', 'cloudy_filter_wl_eff',
+                     'cloudy_filter_wl', 'cloudy_filter_response',
+                     'cloudy_filter_beta', 'cloudy_filter_wl_c']
     for i, f in enumerate(data[0]._fields):
 
         # For the following fields we just need one copy

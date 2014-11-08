@@ -1,0 +1,57 @@
+\BOOKMARK [0][-]{chapter.1}{License}{}% 1
+\BOOKMARK [0][-]{chapter.2}{Introduction to SLUG}{}% 2
+\BOOKMARK [1][-]{section.2.1}{What Does SLUG Do?}{chapter.2}% 3
+\BOOKMARK [1][-]{section.2.2}{Cluster Simulations and Galaxy Simulations}{chapter.2}% 4
+\BOOKMARK [1][-]{section.2.3}{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\137V distribution}{chapter.2}% 5
+\BOOKMARK [1][-]{section.2.4}{Spectra, Photometry, and Extinction}{chapter.2}% 6
+\BOOKMARK [1][-]{section.2.5}{Monte Carlo Simulation}{chapter.2}% 7
+\BOOKMARK [0][-]{chapter.3}{Compiling and Installing SLUG}{}% 8
+\BOOKMARK [1][-]{section.3.1}{Dependencies}{chapter.3}% 9
+\BOOKMARK [1][-]{section.3.2}{Compiling}{chapter.3}% 10
+\BOOKMARK [0][-]{chapter.4}{Running a SLUG simulation}{}% 11
+\BOOKMARK [0][-]{chapter.5}{Parameter Specification}{}% 12
+\BOOKMARK [1][-]{section.5.1}{File Format}{chapter.5}% 13
+\BOOKMARK [1][-]{section.5.2}{Basic Keywords}{chapter.5}% 14
+\BOOKMARK [1][-]{section.5.3}{Simulation Control Keywords}{chapter.5}% 15
+\BOOKMARK [1][-]{section.5.4}{Output Control Keywords}{chapter.5}% 16
+\BOOKMARK [1][-]{section.5.5}{Physical Model Keywords}{chapter.5}% 17
+\BOOKMARK [1][-]{section.5.6}{Photometric Filter Keywords}{chapter.5}% 18
+\BOOKMARK [0][-]{chapter.6}{Probability Distribution Functions}{}% 19
+\BOOKMARK [1][-]{section.6.1}{Basic Mode}{chapter.6}% 20
+\BOOKMARK [1][-]{section.6.2}{Advanced Mode}{chapter.6}% 21
+\BOOKMARK [1][-]{section.6.3}{Sampling Methods}{chapter.6}% 22
+\BOOKMARK [0][-]{chapter.7}{Output Files and Format}{}% 23
+\BOOKMARK [1][-]{section.7.1}{The integrated\137prop File}{chapter.7}% 24
+\BOOKMARK [1][-]{section.7.2}{The integrated\137spec File}{chapter.7}% 25
+\BOOKMARK [1][-]{section.7.3}{The integrated\137phot File}{chapter.7}% 26
+\BOOKMARK [1][-]{section.7.4}{The cluster\137prop File}{chapter.7}% 27
+\BOOKMARK [1][-]{section.7.5}{The cluster\137spec File}{chapter.7}% 28
+\BOOKMARK [1][-]{section.7.6}{The cluster\137phot File}{chapter.7}% 29
+\BOOKMARK [0][-]{chapter.8}{Filters and Filter Data}{}% 30
+\BOOKMARK [0][-]{chapter.9}{cloudy\137slug: An Automated Interface to cloudy}{}% 31
+\BOOKMARK [1][-]{section.9.1}{cloudy\137slug Basics}{chapter.9}% 32
+\BOOKMARK [1][-]{section.9.2}{The cloudy\137slug Physical Model: Integrated Mode Versus Cluster Mode}{chapter.9}% 33
+\BOOKMARK [1][-]{section.9.3}{The cloudy\137slug Input Template}{chapter.9}% 34
+\BOOKMARK [1][-]{section.9.4}{The cloudy\137slug Interface Script}{chapter.9}% 35
+\BOOKMARK [1][-]{section.9.5}{Full Description of cloudy\137slug Output}{chapter.9}% 36
+\BOOKMARK [0][-]{chapter.10}{slugpy \205 The Python Helper Library}{}% 37
+\BOOKMARK [1][-]{section.10.1}{Basic Usage}{chapter.10}% 38
+\BOOKMARK [1][-]{section.10.2}{Full Documentation of slugpy}{chapter.10}% 39
+\BOOKMARK [1][-]{section.10.3}{Full Documentation of slugpy.cloudy}{chapter.10}% 40
+\BOOKMARK [1][-]{section.10.4}{Full Documentation of slugpy.sfr\137slug}{chapter.10}% 41
+\BOOKMARK [0][-]{chapter.11}{Test Problems}{}% 42
+\BOOKMARK [1][-]{section.11.1}{Problem example: basic galaxy simulation}{chapter.11}% 43
+\BOOKMARK [1][-]{section.11.2}{Problem example\137cluster: basic cluster simulation}{chapter.11}% 44
+\BOOKMARK [1][-]{section.11.3}{Problem constsampl: importance of constrained sampling}{chapter.11}% 45
+\BOOKMARK [1][-]{section.11.4}{Problem sampling: different sampling techniques}{chapter.11}% 46
+\BOOKMARK [1][-]{section.11.5}{Problem imfchoice: different IMF implementations}{chapter.11}% 47
+\BOOKMARK [1][-]{section.11.6}{Problem cmfchoice: different CMF implementations}{chapter.11}% 48
+\BOOKMARK [1][-]{section.11.7}{Problem sfhsampling: realizations of SFH}{chapter.11}% 49
+\BOOKMARK [1][-]{section.11.8}{Problem cldisrupt: cluster disruption at work}{chapter.11}% 50
+\BOOKMARK [1][-]{section.11.9}{Problem clfraction: cluster fraction at work}{chapter.11}% 51
+\BOOKMARK [1][-]{section.11.10}{Problem spectra: full spectra}{chapter.11}% 52
+\BOOKMARK [1][-]{section.11.11}{Problem redshift: trivial redshift example}{chapter.11}% 53
+\BOOKMARK [0][-]{chapter.12}{Acknowledgements}{}% 54
+\BOOKMARK [0][-]{chapter.13}{Indices and tables}{}% 55
+\BOOKMARK [0][-]{section*.43}{Python Module Index}{}% 56
+\BOOKMARK [0][-]{section*.44}{Index}{}% 57
