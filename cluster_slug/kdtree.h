@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _KDTREE_H_
 #define _KDTREE_H_
 
-#include <stdbool.h>
 #include <stdlib.h>
+#include "geometry.h"
 
 /*********************************************************************/
 /* Macros for traversing KD trees                                    */
@@ -40,9 +40,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef struct {
   /* Number of points in this node */
   unsigned int npt;
-  /* Corners of box bounding region occupied by this node and its
-     children. */
+  /* Corners of box bounding region occupied by this node. */
   double *xlim[2];
+  /* Corners of box tightly bounding the data points in this node */
+  double *xbnd[2];
   /* Dimension along which this node splits. -1 for a leaf. */
   int splitdim;
   /* Pointer to the positions for this node */
@@ -62,81 +63,14 @@ typedef struct {
   unsigned int nodes;
   /* Size of extra data elements associated with positions */
   size_t dsize;
-  /* Swap space */
-  double *xswap;
-  void *dswap;
   /* Pointer to tree root */
   KDnode *tree;
 } KDtree;
 
+
 /*********************************************************************/
 /* Function definitions                                              */
 /*********************************************************************/
-
-double box_max_dist2(const double *x, const double *xbox[2],
-		     const unsigned int ndim_x, 
-		     const unsigned int ndim_xbox,
-		     const unsigned int *dim_x,
-		     double *swap);
-/* Returns the squared distance between an input point and the
-   most distant point in the box whose corners are at positions xbox.
-
-   Parameters:
-      INPUT x
-         Array of ndim_x elements giving the position of the point
-      INPUT xbox
-         2D array of 2 x ndim_xbox elements giving positions of box
-         corners
-      INPUT ndim_x
-         number of dimensions in x
-      INPUT ndim_xbox
-         number of dimensions in xbox
-      INPUT dim_x
-         Array of ndim_x elements specifying which coordinates are
-         given in x; for example, if ndim_xbox = 3, ndim_x = 2, and
-	 dim_x = [0, 2], then the box is a 3d cube, and x specifies
-         the position of a line at constant (x, z) in 3-space. If this
-         is left as NULL, then the dimensions of x are assumed to
-         correspond to the first ndim_x dimensions of xbox
-      INPUT/OUTPUT swap
-         Array of at least ndim_xbox elements to use as swap space
-
-   Returns:
-      OUTPUT dist2
-         the squared distance between x and the nearest point in the
-         box
-*/
-
-double box_min_dist2(const double *x, const double *xbox[2],
-		     const unsigned int ndim_x, 
-		     const unsigned int ndim_xbox,
-		     const unsigned int *dim_x);
-/* Returns the squared distance between an input point and the
-   nearest point in the box whose corners are at positions xbox.
-
-   Parameters:
-      INPUT x
-         Array of ndim_x elements giving the position of the point
-      INPUT xbox
-         2D array of 2 x ndim_xbox elements giving positions of box
-         corners
-      INPUT ndim_x
-         number of dimensions in x
-      INPUT ndim_xbox
-         number of dimensions in xbox
-      INPUT dim_x
-         Array of ndim_x elements specifying which coordinates are
-         given in x; for example, if ndim_xbox = 3, ndim_x = 2, and
-	 dim_x = [0, 2], then the box is a 3d cube, and x specifies
-         the position of a line at constant (x, z) in 3-space. If this
-         is left as NULL, then the dimensions of x are assumed to
-         correspond to the first ndim_x dimensions of xbox
-
-   Returns:
-      OUTPUT dist2
-         the squared distance between x and the nearest point in the
-         box
-*/
 
 KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt, 
 		   unsigned int leafsize, void *dptr, size_t dsize);
@@ -159,66 +93,11 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
          size of each element of dptr
 
    Returns:
-      tree : OUTPUT
-         a KD tree decomposition of the data
+      OUTPUT tree
+         a pointer to a KD tree decomposition of the data
 */
 
-
-double euclidean_metric2(const double *x1, const double *x2,
-			 const unsigned int ndim);
-/* Returns the squared distance between two points computed using the
-   N-dimensional Euclidean.
-
-   Parameters:
-      INPUT x1
-         Array giving position of first point
-      INPUT x2
-         Array giving position of second point
-      INPUT ndim
-         Number of dimensions
-
-   Returns:
-      OUTPUT dist2
-         The square of the Euclidean distance between the two points
-*/
-
-double euclidean_metric2_dim(const double *x1, const double *x2,
-			     const unsigned int ndim1,
-			     const unsigned int ndim2,
-			     const unsigned int *dim2);
-/* Returns the squared distance between a point and a point, line,
-   plane, or similar higher dimensional object using the N-dimensional
-   Euclidean metrc.
-
-   Parameters:
-      INPUT x1
-         Array of ndim1 elements giving position of the point
-      INPUT x2
-         Array of ndim2 elements giving position of the second object
-         (point, line, etc.)
-      INPUT ndim1
-         Number of dimensions in the space
-      INPUT ndim2
-         Number of coordinates in x2; ndim2 = ndim1 corresponds to
-         finding the distance between two points, ndim2 = ndim1 - 1
-         corresponds to finding the distance between a point and a
-         line, ndim2 = ndim1 - 2 corresponds to finding the distance
-         between a point and a plane, etc.
-      INPUT dim2
-         Array of ndim2 elements specifying which dimensions of the
-         space are specified by the entries in x2; for example, if
-         ndim1 = 3, ndim2 = 2, and dim2 = [0, 2], then x2[0] gives the
-         x coordinate and x2[1] gives the z coordinate, and thus we
-         are finding the distance between the point x1 and the line x2
-         that is located at a constant (x,z) point.
-
-   Returns:
-      OUTPUT dist2
-         The square of the Euclidean distance between
-*/
-
-
-void free_tree(KDtree **tree);
+void free_tree(KDtree *tree);
 /* Frees the memory associated with a KD tree.
 
    Parameters
@@ -229,11 +108,11 @@ void free_tree(KDtree **tree);
       Nothing
 */
 
-
 void neighbors(const KDtree *tree, const double *xpt, 
 	       const unsigned int *dims, const unsigned int ndim, 
-	       const unsigned int nneighbor, double *pos,
-	       void *dptr, double *dist2);
+	       const unsigned int nneighbor,
+	       const double *scale, double *pos,
+	       void *dptr, double *d2);
 /* Routine to find the N nearest neighbors to an input point; input
    points can have fewer dimensions than the search space, in which
    case the routine searches for the nearest neighbors to a line,
@@ -257,7 +136,10 @@ void neighbors(const KDtree *tree, const double *xpt,
          number of elements in x and dims
       INPUT nneighbor
          the number of neighbors to find
-      OUTPUT x
+      INPUT scale
+         Array of ndim elements giving the scale factors for the
+         Euclidean metric; if left as NULL, all scale factors are set to 1
+      OUTPUT pos
          positions of the nearest neighbor points; on entry, this
          pointer must point to a block of at least
          tree->ndim*nneighbor elements, and on return element
@@ -268,186 +150,39 @@ void neighbors(const KDtree *tree, const double *xpt,
          points in x; element dptr[i] is the extra data for the ith
          point; must point to a block of valid memory at least i
          elements long
-      OUTPUT dist2
+      OUTPUT d2
          squared distances of all particles found from xpt; on entry,
          this pointer mut point to a block of nneighbor elements, and
          on return dist2[i] gives the distance from the ith point
          found to xpt
 */
 
-
-inline
-bool query_contained_by_slab(const KDnode *node, const double *xslab, 
-			     const unsigned int *dim_slab, 
-			     unsigned int ndim_slab,
-			     double offset, unsigned int ndim);
-/* Returns true if this node is entirely contained within a slab of
-   the specified position and thickness.
-
-   Parameters:
-      INPUT node
-         pointer to the node being queried
-      INPUT xslab
-         An array giving the coordinates of the center of the
-         hyperslab. The dimensions whose coordinates are being
-         specified is given by the dim_slab parameter.
-      INPUT dim_slab
-         An array specifying the dimensions in which the hyperslab
-         lies. These refer to the dimensions of the data set indexed
-         by the KD tree, and start at 0. Each element of dim_slab
-         must be in the range 0 ... ndim-1, where ndim is the number
-         of dimensions in the KD tree data set.
-      INPUT ndim_slab
-         The number of dimensions of the hyperslab being searched,
-         i.e. the number of elements in xslab and dim_slab.
-      INPUT offset
-         half-thickness of the slab around the slab
-      INPUT ndim
-         number of dimensions in the data
-
-   Returns:
-      OUTPUT contain
-         true if the node is entirely contained inside the slab, false
-         otherwise
-*/
-
-
-inline
-bool query_contained_by_sphere(const KDnode *node, const double *xpt, 
-			       double radius, unsigned int ndim, 
-			       double *swap);
-/* Returns true if this node is entirely contained within a sphere of
-   the specified radius centered on the input point.
-
-   Parameters:
-      INPUT node
-         pointer to the node being queried
-      INPUT xpt
-         center of the search sphere
-      INPUT radius
-         radius of the search sphere
-      INPUT ndim
-         number of dimensions in the data
-      INPUT/OUTPUT swap
-         an array of ndim elements to use as swap space
-
-   Returns:
-      OUTPUT contain
-         true if the node is entirely contained in the sphere, false
-         otherwise
-*/
-
-
-inline
-bool query_contains_sphere(const KDnode *node, const double *xpt, 
-			   double radius, unsigned int ndim, 
-			   double *swap);
-/* Returns true if this node is entirely contains a sphere of the
-   specified radius centered on the input point.
-
-   Parameters:
-      INPUT node
-         pointer to the node being queried
-      INPUT xpt
-         center of the search sphere
-      INPUT radius
-         radius of the search sphere
-      INPUT ndim
-         number of dimensions in the data
-      INPUT/OUTPUT swap
-         an array of ndim elements to use as swap space
-
-   Returns:
-      OUTPUT contain
-         true if the node entirely contains the sphere, false
-         otherwise
-*/
-
-
-inline
-bool query_intersect_slab(const KDnode *node, const double *xslab, 
-			  const unsigned int *dim_slab,
-			  unsigned int ndim_slab,
-			  double offset, unsigned int ndim);
-/* Returns true if the cube associatd with this node intersects a slab
-   of finite thickness centered on a specified slab, false otherwise.
-
-   Parameters:
-      INPUT node
-         pointer to the node being queried
-      INPUT xslab
-         An array giving the coordinates of the center of the
-         hyperslab. The dimensions whose coordinates are being
-         specified is given by the dim_slab parameter.
-      INPUT dim_slab
-         An array specifying the dimensions in which the hyperslab
-         lies. These refer to the dimensions of the data set indexed
-         by the KD tree, and start at 0. Each element of dim_slab
-         must be in the range 0 ... ndim-1, where ndim is the number
-         of dimensions in the KD tree data set.
-      INPUT ndim_slab
-         The number of dimensions of the hyperslab being searched,
-         i.e. the number of elements in xslab and dim_slab.
-      INPUT offset
-         half-thickness of the slab around the slab
-      INPUT ndim
-         number of dimensions in the data
-
-   Returns:
-      OUTPUT contain
-         true if the node intersects the slab, false otherwise
-*/
-
-inline
-bool query_intersect_sphere(const KDnode *node, const double *xpt, 
-			    double radius, unsigned int ndim);
-/* Returns true if the cube associatd with this node intersects a sphere of
-   the specified radius centered on the input point.
-
-   Parameters:
-      INPUT node
-         pointer to the node being queried
-      INPUT xpt
-         center of the search sphere
-      INPUT radius
-         radius of the search sphere
-      INPUT ndim
-         number of dimensions in the data
-
-   Returns:
-      OUTPUT contain
-         true if the node is intersects the sphere, false otherwise
-*/
-
-unsigned int query_slab(const KDtree *tree, const double *xslab, 
-			const unsigned int *dim_slab, 
-			unsigned int ndim_slab, 
-			double offset, double **x, void **dptr,
-			double **dist2);
+unsigned int query_box(const KDtree *tree, const double *xbox[2], 
+		       unsigned int ndim, const unsigned int *dim, 
+		       const double *scale, double **x, void **dptr,
+		       double **d2);
 /* This routine searches the KD tree and finds all the points that lie
-   within a certain distance of a specified hyperslab, aligned with
-   the coordinate axes of the data in the KD tree.
+   within a specified box; the box may have fewer dimensions than the
+   KD tree, in which case it is interpreted as a hyperslab.
 
    Parameters:
       INPUT tree
          The KD tree to be searched
-      INPUT xslab
-         An array giving the coordinates of the center of the
-         hyperslab. The dimensions whose coordinates are being specified
-         is given by the dim_slab parameter.
-      INPUT dim_slab
-         An array specifying the dimensions in which the hyperslab
-         lies. These refer to the dimensions of the data set indexed
-         by the KD tree, and start at 0. Each element of dim_slab
-         must be in the range 0 ... ndim-1, where ndim is the number
-         of dimensions in the KD tree data set.
-      INPUT ndim_slab
-         The number of dimensions of the hyperslab being searched,
-         i.e. the number of elements in xslab and dim_slab.
-      INPUT offset
-         The extent of the region around the hyperslab to be
-         searched. Points are found if their perpendicular distance to
-         the hyperslab is <= offset.
+      INPUT xbox
+         2D array of 2 x ndim elements giving positions of the
+         corners of the box
+      INPUT ndim
+         Number of coordinates in xbox; if ndim == tree->ndim, the
+         search region is a closed box, while if ndim < tree->ndim it
+         is hyperslab
+      INPUT dim
+         Array of ndim elements specifying which dimensions of the
+         space are specified by the entries in xbox; if left as NULL,
+         dimensions are assumed to be [0, 1, 2, ... ndim - 1]
+      INPUT scale
+         Array of tree->ndim elements giving the scale factors for the
+         Euclidean metric; if left as NULL, all scale factors are set
+         to 1
       OUTPUT x
          pointer to an array containing the locations of all the
          points found; on output (*x)[tree->ndim*i + j] is the jth
@@ -460,11 +195,12 @@ unsigned int query_slab(const KDtree *tree, const double *xslab,
          pointer to the start of the data for point i; (*dptr) should
          not point to valid memory on input, as the required memory is
          allocated within the routine
-      OUTPUT dist2
+      OUTPUT d2
          pointer to an array containing the square of the distance
          from each point returned by the query to the center of the
-         hyperslab; (*dist2) should not point to valid memory on
-         input, as the required memory is allocated within the routine
+         hyperslab or the box; (*d2) should not point to valid
+         memory on input, as the required memory is allocated within
+         the routine
 
    Returns:
       OUTPUT npt
@@ -472,21 +208,35 @@ unsigned int query_slab(const KDtree *tree, const double *xslab,
 */
 
 
-unsigned int query_sphere(const KDtree *tree, const double *xpt, 
-			  double radius, double **x, void **dptr,
-			  double **dist2);
-/* This routine searchers a KD tree to find all points within a
-   specified distance of an input data point. It returns the positions
-   all the points found and copies of their associated data.
+unsigned int query_sphere(const KDtree *tree, const double *xcen,
+			  unsigned int ndim, const unsigned int *dim, 
+			  const double radius, const double *scale,
+			  double **x, void **dptr, double **d2);
+/* This routine searches the KD tree and finds all the points that lie
+   within a specified sphere; the sphere may have fewer dimensions than the
+   KD tree, in which case it is interpreted as a hypercylinder that is
+   infinite in the unspecified directions.
 
    Parameters:
       INPUT tree
-         pointer to the KDtree to be searched
-      INPUT xpt
-         center of the search region; must be an array of tree->ndim
-         elements
+         The KD tree to be searched
+      INPUT xcen
+         array of ndim elements giving the position of the center of
+	 the sphere
+      INPUT ndim
+         Number of coordinates in xcen; if ndim < tree->ndim, the
+         search region is a hypercylinder, while if ndim == tree->ndim
+         the search region is a sphere
+      INPUT dim
+         Array of ndim elements specifying which dimensions of the
+         space are specified by the entries in xbox; if left as NULL,
+         dimensions are assumed to be [0, 1, 2, ... ndim - 1]
       INPUT radius
-         search radius
+         radius of the sphere
+      INPUT scale
+         Array of tree->ndim elements giving the scale factors for the
+         Euclidean metric; if left as NULL, all scale factors are set
+         to 1
       OUTPUT x
          pointer to an array containing the locations of all the
          points found; on output (*x)[tree->ndim*i + j] is the jth
@@ -499,11 +249,12 @@ unsigned int query_sphere(const KDtree *tree, const double *xpt,
          pointer to the start of the data for point i; (*dptr) should
          not point to valid memory on input, as the required memory is
          allocated within the routine
-      OUTPUT dist2
+      OUTPUT d2
          pointer to an array containing the square of the distance
          from each point returned by the query to the center of the
-         sphere; (*dist2) should not point to valid memory on input,
-         as the required memory is allocated within the routine
+         sphere; (*d2) should not point to valid memory on input, as
+         the required memory is allocated within the routine
+
    Returns:
       OUTPUT npt
          the number of points returned by the search
