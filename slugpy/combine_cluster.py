@@ -6,6 +6,7 @@ ID numbers are not preserved by this operation.
 
 from collections import namedtuple
 import numpy as np
+from warnings import warn
 
 def combine_cluster(data):
     """
@@ -24,11 +25,16 @@ def combine_cluster(data):
           The combined data, in the same format as each object in data
     """
 
-    # Safety check: make sure all input data objects have the same
-    # fields
+    # Construct list of common fields, and issue warning if fields are
+    # not identical
+    s = set(data[0]._fields)
+    warned = False
     for i in range(len(data)-1):
-        if data[i]._fields != data[i+1]._fields:
-            raise ValueError("input data must have identical fields")
+        if data[i]._fields != data[i+1]._fields and not warned:
+            warnstr = "data to be combined does not have identical " + \
+                      "fields; only common fields will be kept"
+            warn(warnstr)
+        s &= set(data[i+1]._fields)
 
     # List of fields for which we need only one copy, because they're
     # the same for every cluster
@@ -43,7 +49,7 @@ def combine_cluster(data):
 
     # Combine fields
     new_fields = []
-    for i, f in enumerate(data[0]._fields):
+    for f in s:
 
         if f == 'id':
             # ID field requires special handling
@@ -65,15 +71,15 @@ def combine_cluster(data):
 
         # For the following fields we just need one copy
         elif f in single_fields:
-            new_fields.append(data[0][i])
+            new_fields.append(getattr(data[0], f))
 
         # All other fields can just be concatenated
         else:
-            joined_field = np.concatenate([d[i] for d in data])
+            joined_field = np.concatenate([getattr(d, f) for d in data])
             new_fields.append(joined_field)
 
     # Create new output object
-    out_type = namedtuple('cluster_data', data[0]._fields)
+    out_type = namedtuple('cluster_data', s)
     combined_data = out_type._make(new_fields)
 
     # Return
