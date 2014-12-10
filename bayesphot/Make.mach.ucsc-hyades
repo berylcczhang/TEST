@@ -1,0 +1,32 @@
+# Machine-specific settings for UCSC hyades
+
+# Default is icpc / icc
+MACH_CXX     = icpc
+MACH_CXX     = icc
+
+# Flag needed to specify c++11 standard
+MACH_C11FLAG      = -std=c++11
+
+# Optimization flags
+MACH_CXXOPTFLAGS  = -O3 -ipo -xAVX
+MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
+MACH_LDOPTFLAGS	  = -O3 -ipo -xAVX
+
+# Debug flags
+MACH_CXXDEBFLAGS  = -g
+MACH_COPTFLAGS	  = $(MACH_CXXDEBFLAGS)
+MACH_LDDEBFLAGS   = -g
+
+# Flags to compile shared libaries
+LIB_EXTENSION	   = .so
+CLIBFLAGS	   = -fPIC
+DYNLIBFLAG	   = -shared
+
+# Locations of BOOST and GSL library files
+BOOST_HDR_PATH	  = /home/krumholz/lib/include
+BOOST_LIB_PATH	  = /home/krumholz/lib/lib
+GSL_HDR_PATH	  = /home/krumholz/lib/include
+GSL_LIB_PATH	  = /home/krumholz/lib/lib
+
+# Boost library names do not have tags
+MACH_BOOST_TAG    =

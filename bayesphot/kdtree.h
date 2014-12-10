@@ -61,6 +61,8 @@ typedef struct {
   unsigned int leaves;
   /* Number of nodes in the tree */
   unsigned int nodes;
+  /* Maximum size of a leaf */
+  unsigned int leafsize;
   /* Size of extra data elements associated with positions */
   size_t dsize;
   /* Pointer to tree root */
@@ -138,7 +140,8 @@ void neighbors(const KDtree *tree, const double *xpt,
          the number of neighbors to find
       INPUT scale
          Array of ndim elements giving the scale factors for the
-         Euclidean metric; if left as NULL, all scale factors are set to 1
+         Euclidean metric; if left as NULL, all scale factors are set
+         to 1 
       OUTPUT pos
          positions of the nearest neighbor points; on entry, this
          pointer must point to a block of at least
@@ -155,7 +158,75 @@ void neighbors(const KDtree *tree, const double *xpt,
          this pointer mut point to a block of nneighbor elements, and
          on return dist2[i] gives the distance from the ith point
          found to xpt
+
+   Returns
+      Nothing
 */
+
+void neighbors_all(const KDtree *tree, const unsigned int nneighbor,
+		   const double *scale, unsigned int *idx, 
+		   double *d2);
+/* Routine to find the N nearest neighbors of every point in the KD
+   tree. Points are not considered their own neighbors.
+
+   Parameters:
+      INPUT tree
+         the KD tree to be searched
+      INPUT nneighbor
+         the number of neighbors to find
+      INPUT scale
+         Array of tree->ndim elements giving the scale factors for the
+         Euclidean metric; if left as NULL, all scale factors are set
+         to 1
+      OUTPUT idx
+         indices of the neighbors found; element idx[i*nneighbor+j]
+         gives the index of the jth nearest neighbor of the ith point,
+	 where point numbers and indices refer to the array x that is
+         indexed by the KDtree object; must point to nneighbor *
+         tree->npt valid memory elements on entry
+      OUTPUT d2
+         squared distances of all neighbors found, indexed in the same
+         way as idx; as with idx, this array must point to nneighbor *
+         tree->npt valid memory elements on entry
+
+   Returns
+      Nothing
+*/
+
+void neighbors_point(const KDtree *tree, const unsigned int idxpt,
+		     const unsigned int nneighbor,
+		     const double *scale, unsigned int *idx, 
+		     double *d2);
+/* Routine to find the N nearest neighbors of a point in the KD
+   tree. The result is essentially the same as calling neighbors using
+   the position of that point as an input, but the search can be done
+   significantly faster is the point is already in the tree. Points
+   are not considered their own neighbors.
+
+   Parameters:
+      INPUT tree
+         the KD tree to be searched
+      INPUT idxpt
+         the index of the point whose neighbors are to be found, in
+         the array x that is indexed by the KDtree
+      INPUT nneighbor
+         the number of neighbors to find
+      INPUT scale
+         Array of tree->ndim elements giving the scale factors for the
+         Euclidean metric; if left as NULL, all scale factors are set
+         to 1
+      OUTPUT idx
+          indices of the N nearest neighbors, sorted from nearest to
+          farthest; must point to nneighbor elements of valid memory
+          on entry
+      OUTPUT d2
+          distances to the N nearest neighbors; must point to
+          nneighbor elements of valid memory on entry
+
+   Returns
+      Nothing
+*/
+
 
 unsigned int query_box(const KDtree *tree, const double *xbox[2], 
 		       unsigned int ndim, const unsigned int *dim, 

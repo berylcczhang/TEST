@@ -62,12 +62,11 @@ kernel_density* build_kd(double *x, unsigned int ndim,
    samples and weights
 
    Parameters:
-      INPUT x
+      INPUT/OUTPUT x
          array of npt * ndim elements containing the positions,
          ordered so that element x[j + i*ndim] is the jth coordinate
-         of point i; unlike with build_kd, these data ARE copied, so
-         the array x may be altered or disposed of once this function
-         returns
+         of point i; the data are re-ordered but not copied, so
+         altering x after calling build_kd will lead to bogus results
       INPUT ndim
          number of dimensions in the data set
       INPUT npt
@@ -100,20 +99,6 @@ void free_kd(kernel_density *kd);
       Nothing
 */
 
-void kd_change_wgt(const double *wgt, kernel_density *kd);
-/* This routine changes the weights in a kernel_density object, while
-   leaving the point positions unchanged.
-
-   Parameters
-      INPUT wgts
-         Array giving the new weights
-      INPUT/OUTPUT kd
-         The kernel density object to be re-weighted
-
-   Returns
-      Nothing
-*/
-
 void kd_change_bandwidth(const double *bandwidth, kernel_density *kd);
 /* This routine changes the bandwidths in a kernel_density object,
    leaving the point positions and weights unchanged.
@@ -124,6 +109,20 @@ void kd_change_bandwidth(const double *bandwidth, kernel_density *kd);
          elements
       INPUT/OUTPUT kd
          The kernel density object whose bandwidths are to be changed
+
+   Returns
+      Nothing
+*/
+
+void kd_change_wgt(const double *wgt, kernel_density *kd);
+/* This routine changes the weights in a kernel_density object, while
+   leaving the point positions unchanged.
+
+   Parameters
+      INPUT wgts
+         Array giving the new weights
+      INPUT/OUTPUT kd
+         The kernel density object to be re-weighted
 
    Returns
       Nothing
@@ -170,14 +169,175 @@ void kd_neighbors(const kernel_density *kd, const double *xpt,
       OUTPUT dptr
          extra data associated with each of the nearest neighbor
          points in x; element dptr[i] is the extra data for the ith
-         point; must point to a block of valid memory at least i
-         elements long
+         point; must point to a block of valid memory at least
+         nneighbor elements long
       OUTPUT d2
          squared distances of all particles found from xpt; on entry,
          this pointer mut point to a block of nneighbor elements, and
          on return dist2[i] gives the distance from the ith point
          found to xpt
+
+   Returns
+      Nothing
 */
+
+void kd_neighbors_all(const kernel_density *kd, 
+		      const unsigned int nneighbor, 
+		      const bool bandwidth_units, unsigned int *idx, 
+		      double *d2);
+/* This routine returns the indices of the N nearest neighbors for
+   every point in the data set indexed by the kernel density
+   object. Points are not considered their own neighbors.
+
+   Parameters:
+      INPUT kd
+         the kernel density object to be searched
+      INPUT nneighbor
+         the number of neighbors to find
+      INPUT bandwidth_units
+         if true, the metric used to determine relative distance is
+         normalized to the dimension-dependent bandwidth; if false,
+         the metric is a simple Euclidean one
+      OUTPUT idx
+         indices of the neighbors found element idx[i*nneighbor+j]
+         gives the index of the jth nearest neighbor of the ith point,
+	 where point numbers and indices refer to the array x that is
+         indexed by the kernel density object; must point to
+         nneighbor * kd->tree->npt valid memory elements on entry
+      OUTPUT d2
+         squared distances of all neighbors found, indexed in the same
+         way as idx; as with idx, this array must point to nneighbor *
+         kd->tree->npt valid memory elements on entry
+
+   Returns
+      Nothing
+*/
+
+void kd_neighbors_point(const kernel_density *kd, 
+			const unsigned int idxpt, 
+			const unsigned int nneighbor,
+			const bool bandwidth_units,
+			unsigned int *idx, double *d2);
+/* This routine finds the N nearest neighbors of a data point in the
+   data set. Points are not considered their own neighbors.
+
+   Parameters:
+      INPUT kd
+         the kernel density object to be searched
+      INPUT idxpt
+         the index of the point whose neighbors are to be found, in
+         the array x that holds the kernel density data set
+      INPUT nneighbor
+         the number of neighbors to find
+      INPUT bandwidth_units
+         if true, the metric used to determine relative distance is
+         normalized to the dimension-dependent bandwidth; if false,
+         the metric is a simple Euclidean one
+      OUTPUT idx
+         indices of the neighbors found, where indices refer to the
+         array x that is indexed by the kernel density object; must
+         point to nneighbor valid memory elements on entry
+      OUTPUT d2
+         squared distances of all neighbors found; must point to
+         nneighbor valid memory elements on entry
+
+   Returns
+      Nothing
+*/
+
+void kd_neighbors_point_vec(const kernel_density *kd, 
+			    const unsigned int *idxpt, 
+			    const unsigned int npt,
+			    const unsigned int nneighbor,
+			    const bool bandwidth_units,
+			    unsigned int *idx, double *d2);
+/* This routine is identical to kd_neighbors_point, except that it
+   operates on a vector of input points instead of a single point.
+
+   Parameters:
+      INPUT kd
+         the kernel density object to be searched
+      INPUT idxpt
+         the indices of the points whose neighbors are to be found, in
+         the array x that holds the kernel density data set
+      INPUT npt
+         number of points whose neighbors are to be found
+      INPUT nneighbor
+         the number of neighbors to find
+      INPUT bandwidth_units
+         if true, the metric used to determine relative distance is
+         normalized to the dimension-dependent bandwidth; if false,
+         the metric is a simple Euclidean one
+      OUTPUT idx
+         indices of the neighbors found, where indices refer to the
+         array x that is indexed by the kernel density object; element
+         idx[i*nneighbor+j] is the jth neighbor of the ith input point;
+	 must point to nneighbor * npt valid memory elements on entry
+      OUTPUT d2
+         squared distances of all neighbors found, indexed in the same
+         way as idx; must point to nneighbor * npt valid memory
+         elements on entry
+
+   Returns
+      Nothing
+*/
+
+
+void kd_neighbors_vec(const kernel_density *kd, const double *xpt, 
+		      const unsigned int *dims, const unsigned int ndim, 
+		      const unsigned int npt, const unsigned int nneighbor,
+		      const bool bandwidth_units, double *pos,
+		      void *dptr, double *d2);
+/* This routine is identical to kd_neighbors, except that it operates
+   on a vector of input points instead of a single input point.
+
+   Parameters:
+      INPUT kd
+         the kernel density object to be searched
+      INPUT xpt
+         array of ndim * npt elements giving the position of the search
+         points; xpt[ndim*i+j] is the jth coordinate of the ith point
+      INPUT dims
+         array specifying which dimensions in the kd tree are given in
+         xpt; e.g., if the KD tree has tree dimensions, and dims = [0,
+         2], then the two elements of x will be interpreted as
+         specifying x and z coordinates, and the routine will search
+         for the closest neighbors to a line as the specified x and
+         z. If ndim is equal to the number of dimensions in the KD
+         tree, this argument may be left as NULL.
+      INPUT ndim
+         number of elements in dims, and in each set of coordinates in
+         x
+      INPUT npt
+         number of points whose neighbors are to be found
+      INPUT nneighbor
+         the number of neighbors to find
+      INPUT bandwidth_units
+         if true, the metric used to determine relative distance is
+         normalized to the dimension-dependent bandwidth; if false,
+         the metric is a simple Euclidean one
+      OUTPUT pos
+         positions of the nearest neighbor points; on entry, this
+         pointer must point to a block of at least
+         tree->ndim*nneighbor*npt elements, and on return element
+	 x[i*tree->ndim*npt+j*tree->ndim+k] contains the kth
+         coordinate of the jth neighbor point for the ith input point;
+	 points are sorted by distance from xpt
+      OUTPUT dptr
+         extra data associated with each of the nearest neighbor
+         points in x; element dptr[i*npt+j] is the extra data for the
+         jth neighbor of the ith input point; must point to a block of
+         valid memory at least nneighbor * npt elements long
+      OUTPUT d2
+         squared distances of all particles found from xpt; on entry,
+         this pointer mut point to a block of nneighbor*npt elements,
+         and on return dist2[i*nneighbor+j] gives the distance from
+         the jth nearest neighbor to the ith point found to xpt
+
+   Returns
+      Nothing
+*/
+
 
 double kd_pdf(const kernel_density *kd, const double *x,
 	      const double reltol, const double abstol
@@ -284,6 +444,60 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
          specified error tolerances
 */
 
+void kd_pdf_int_vec(const kernel_density *kd, const double *x, 
+		    const unsigned int *dims, const unsigned int ndim,
+		    const unsigned int npt, const double reltol, 
+		    const double abstol, double *pdf
+#ifdef DIAGNOSTIC
+		    , unsigned int *nodecheck, unsigned int *leafcheck,
+		    unsigned int *termcheck
+#endif
+		    );
+/* This routine is identical to kd_pdf_int, except that it operates
+   on a vector of input points x instead of a single input point.
+
+   Parameters:
+      INPUT kd
+         the kernel_density object to be used to evaluate the PDF
+      INPUT x
+         an ndim*npt element array giving the position at which the PDF is
+         to be evaluated; element x[i*ndim+j] is the jth element of
+         the ith point
+      INPUT dims
+         an ndim element array specifying the dimensions included in x
+      INPUT ndim
+         number of dimensions in x; must be less than the number in
+         the kd tree
+      INPUT npt
+         number of input positions
+      INPUT reltol
+         Relative error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | / pdf_true < reltol.
+      INPUT abstol
+         Absolute error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | < abstol.
+      OUTPUT nodecheck
+         Number of individual nodes examined during the evaluation;
+         only if compiled with DIAGNOSTIC set; must point to npt
+         elements of valid, writeable memory
+      OUTPUT leafcheck
+         Number of leaves examined during the evaluation; only if
+         compiled with DIAGNOSTIC set; must point to npt elements of
+         valid, writeable memory
+      OUTPUT termcheck
+         Number of nodes examined during the evaluation which were not
+         futher sub-divided; only if compiled with DIAGNOSTIC set;
+         must point to npt elements of valid, writeable memory
+
+   Returns:
+      OUT pdf_approx
+         an approximation to the output integral, accurate within the
+         specified error tolerances
+*/
+
+
 void kd_pdf_vec(const kernel_density *kd, const double *x, 
 		const unsigned int npt, const double reltol, 
 		const double abstol, double *pdf
@@ -293,7 +507,7 @@ void kd_pdf_vec(const kernel_density *kd, const double *x,
 #endif
 		);
 /* This routine returns the value of the probability distribution
-   function for a kernel_density object evaluated at a serires of
+   function for a kernel_density object evaluated at a series of
    specified positions, with a specified relative tolerance. The
    computation is identical to that in kd_pdf, just computed on a
    vector of points instead of a single one.

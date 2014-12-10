@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /*********************************************************************/
 
 #define SQR(x) ((x)*(x))
+#define NODEBLOCKSIZE 1024
 
 /*********************************************************************/
 /* Static functions                                                  */
@@ -47,6 +48,7 @@ double ds(unsigned int n) {
   }
 }
 
+/* Functions to compute PDFs and integrals thereof on single tree nodes */
 static inline
 double kd_pdf_node(const kernel_density *kd, const double *x, 
 		   const unsigned int curnode);
@@ -70,11 +72,11 @@ kernel_density* build_kd(double *x, unsigned int ndim,
 
   /* Allocate memory */
   if (!(kd = malloc(sizeof(kernel_density)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_kernel_density\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_kernel_density\n");
     exit(1);
   }
   if (!(kd->h = calloc(ndim, sizeof(double)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_kernel_density\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_kernel_density\n");
     exit(1);
   }
 
@@ -124,7 +126,7 @@ kernel_density* build_kd(double *x, unsigned int ndim,
 
   /* Allocate memory to hold summed weights of the nodes of the tree */
   if (!(kd->nodewgt = calloc(kd->tree->nodes, sizeof(double)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_kernel_density\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_kernel_density\n");
     exit(1);
   }
   kd->nodewgt--; /* Change to 1 offset instead of 0 offset */
@@ -143,11 +145,8 @@ kernel_density* build_kd(double *x, unsigned int ndim,
       for (j=0; j<kd->tree->tree[i].npt; j++)
 	kd->nodewgt[i] += 
 	  ((double *) kd->tree->tree[i].dptr)[j];
-      kd->nodewgt[i] *= kd->norm / wgttot;
     } else {
-      kd->nodewgt[i] = 
-	((double) kd->tree->tree[i].npt) / 
-	((double) npt) * kd->norm;
+      kd->nodewgt[i] = ((double) kd->tree->tree[i].npt);
     }
   }
 
@@ -248,12 +247,93 @@ void kd_neighbors(const kernel_density *kd, const double *xpt,
   }
 }
 
+/*********************************************************************/
+/* Find the N nearest neighbors to all points in the KDtree          */
+/*********************************************************************/
+void kd_neighbors_all(const kernel_density *kd, 
+		      const unsigned int nneighbor, 
+		      const bool bandwidth_units, unsigned int *idx, 
+		      double *d2) {
+  /* Call the KDtree neighbor finding routine */
+  if (bandwidth_units) {
+    neighbors_all(kd->tree, nneighbor, kd->h, idx, d2);
+  } else {
+    neighbors_all(kd->tree, nneighbor, NULL, idx, d2);
+  }
+}
+
+/*********************************************************************/
+/* Find N nearest neighbors to a single point in the KD tree         */
+/*********************************************************************/
+void kd_neighbors_point(const kernel_density *kd, 
+			const unsigned int idxpt, 
+			const unsigned int nneighbor,
+			const bool bandwidth_units,
+			unsigned int *idx, double *d2) {
+  /* Just call the KDtree routine */
+  if (bandwidth_units) {
+    neighbors_point(kd->tree, idxpt, nneighbor, kd->h, idx, d2);
+  } else {
+    neighbors_point(kd->tree, idxpt, nneighbor, NULL, idx, d2);
+  }
+}
+
+/*********************************************************************/
+/* Vectorized version of kd_neighbors_point                          */
+/*********************************************************************/
+void kd_neighbors_point_vec(const kernel_density *kd, 
+			    const unsigned int *idxpt, 
+			    const unsigned int npt,
+			    const unsigned int nneighbor,
+			    const bool bandwidth_units,
+			    unsigned int *idx, double *d2) {
+  unsigned int i;
+  for (i=0; i<npt; i++) {
+    if (bandwidth_units) {
+      neighbors_point(kd->tree, idxpt[i], nneighbor, kd->h, 
+		      idx+i*nneighbor, d2+i*nneighbor);
+    } else {
+      neighbors_point(kd->tree, idxpt[i], nneighbor, NULL, 
+		      idx+i*nneighbor, d2+i*nneighbor);
+    }
+  }
+}
+
+/*********************************************************************/
+/* Same as kd_neighbors, but for a vector of input points            */
+/*********************************************************************/
+void kd_neighbors_vec(const kernel_density *kd, const double *xpt, 
+		      const unsigned int *dims, const unsigned int ndim, 
+		      const unsigned int npt, const unsigned int nneighbor,
+		      const bool bandwidth_units, double *pos,
+		      void *dptr, double *d2) {
+  unsigned int i;
+
+  /* Loop over input points, calling KDtree neighbor find routine on each */
+  for (i=0; i<npt; i++) {
+    if (bandwidth_units) {
+      neighbors(kd->tree, 
+		xpt + i*ndim, 
+		dims, ndim, nneighbor, kd->h, 
+		pos + i*ndim*nneighbor, 
+		(void *) (((double *) dptr) + i*nneighbor),
+		d2 + i*nneighbor);
+    } else {
+      neighbors(kd->tree, 
+		xpt + i*ndim, 
+		dims, ndim, nneighbor, NULL, 
+		pos + i*ndim*nneighbor, 
+		(void *) (((double *) dptr) + i*nneighbor),
+		d2 + i*nneighbor);
+    }
+  }
+}
+
 
 /*********************************************************************/
 /* Function to evaluate the PDF approximately using a kernel_density */
 /* object                                                            */
 /*********************************************************************/
-#define NODEBLOCKSIZE 1024
 double kd_pdf(const kernel_density *kd, const double *x,
 	      const double reltol, const double abstol
 #ifdef DIAGNOSTIC
@@ -296,12 +376,12 @@ double kd_pdf(const kernel_density *kd, const double *x,
     /* Allocate memory for node list */
     if (!(nodelist = (unsigned int *) 
 	  calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
       exit(1);
     }
     if (!(nodepdf = (double *) 
 	  calloc(NODEBLOCKSIZE, sizeof(double)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
       exit(1);
     }
     nalloc = NODEBLOCKSIZE;  
@@ -365,12 +445,12 @@ double kd_pdf(const kernel_density *kd, const double *x,
     if (nnode+2 >= nalloc) {
       if (!(nodelist = (unsigned int *) 
 	    realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
-	fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
 	exit(1);
       }
       if (!(nodepdf = (double *) 
 	    realloc(nodepdf, 2*nalloc*sizeof(double)))) {
-	fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
 	exit(1);
       }
       nalloc *= 2;
@@ -480,12 +560,12 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
     /* Allocate memory for node list */
     if (!(nodelist = (unsigned int *) 
 	  calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
       exit(1);
     }
     if (!(nodepdf = (double *) 
 	  calloc(NODEBLOCKSIZE, sizeof(double)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
       exit(1);
     }
     nalloc = NODEBLOCKSIZE;  
@@ -556,12 +636,12 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
     if (nnode+2 >= nalloc) {
       if (!(nodelist = (unsigned int *) 
 	    realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
-	fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
 	exit(1);
       }
       if (!(nodepdf = (double *) 
 	    realloc(nodepdf, 2*nalloc*sizeof(double)))) {
-	fprintf(stderr, "cluster_slug: error: unable to allocate memory in kd_pdf_tol\n");
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
 	exit(1);
       }
       nalloc *= 2;
@@ -604,7 +684,6 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
   /* Return */
   return(pdf);
 }
-#undef NODEBLOCKSIZE
 
 
 /*********************************************************************/
@@ -692,13 +771,14 @@ double kd_pdf_node(const kernel_density *kd, const double *x,
     /* Return PDF at minimum distance */
     switch (kd->ktype) {
     case epanechnikov: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * (1.0 - d2) : 0.0);
+      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot 
+	     * (1.0 - d2) : 0.0);
     }
     case tophat: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] : 0.0);
+      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot : 0.0);
     }
     case gaussian: {
-      return(0.5 * kd->nodewgt[curnode] * exp(-d2/2.0));
+      return(0.5 * kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0));
     }
     }
   }
@@ -787,18 +867,41 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
        distance. */
     switch (kd->ktype) {
     case epanechnikov: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * fac * 
+      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot * fac * 
 	      pow(1.0-d2, 1.0+0.5*ndim_int) : 0.0);
     }
     case tophat: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * fac * 
+      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot * fac * 
 	     pow(1.0-d2, 0.5*ndim_int) : 0.0);
     }
     case gaussian: {
-      return(0.5 * kd->nodewgt[curnode] * fac * exp(-d2/2.0));
+      return(0.5 * kd->nodewgt[curnode] * kd->norm_tot * fac * exp(-d2/2.0));
     }
     }
   }
+}
+
+
+/*********************************************************************/
+/* Vectorized version of kd_pdf_int                                  */
+/*********************************************************************/
+void kd_pdf_int_vec(const kernel_density *kd, const double *x, 
+		    const unsigned int *dims, const unsigned int ndim,
+		    const unsigned int npt, const double reltol, 
+		    const double abstol, double *pdf
+#ifdef DIAGNOSTIC
+		    , unsigned int *nodecheck, unsigned int *leafcheck,
+		    unsigned int *termcheck
+#endif
+		    ) {
+
+  unsigned int i;
+  for (i=0; i<npt; i++)
+    pdf[i] = kd_pdf_int(kd, x+i*ndim, dims, ndim, reltol, abstol
+#ifdef DIAGNOSTIC
+			, nodecheck+i, leafcheck+i, termcheck+i
+#endif
+			);
 }
 
 
@@ -814,6 +917,7 @@ void kd_pdf_vec(const kernel_density *kd, const double *x,
 		unsigned int *termcheck
 #endif
 		) {
+
   unsigned int i;
   for (i=0; i<npt; i++)
     pdf[i] = kd_pdf(kd, x+i*kd->tree->ndim, reltol, abstol

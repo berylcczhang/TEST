@@ -135,18 +135,18 @@ void xdata_alloc(unsigned int nnew, unsigned int *ncur, double **x,
     if (nblock > 0) {
       memsize = nblock*MEMBLOCKSIZE*ndim*sizeof(double);
       if (!(*x = (double *) malloc(memsize))) {
-	fprintf(stderr, "cluster_slug: error: unable to allocate memory for KDtree return value\n");
+	fprintf(stderr, "bayesphot: error: unable to allocate memory for KDtree return value\n");
 	exit(1);
       }
       memsize = nblock*MEMBLOCKSIZE*sizeof(double);
       if (!(*d2 = (double *) malloc(memsize))) {
-	fprintf(stderr, "cluster_slug: error: unable to allocate memory for KDtree return value\n");
+	fprintf(stderr, "bayesphot: error: unable to allocate memory for KDtree return value\n");
 	exit(1);
       }
       if (dsize > 0) {
 	memsize = nblock*MEMBLOCKSIZE*dsize;
 	if (!(*dptr = malloc(memsize))) {
-	  fprintf(stderr, "cluster_slug: error: unable to allocate memory for KDtree return value\n");
+	  fprintf(stderr, "bayesphot: error: unable to allocate memory for KDtree return value\n");
 	  exit(1);
 	}
       }
@@ -156,20 +156,20 @@ void xdata_alloc(unsigned int nnew, unsigned int *ncur, double **x,
     memsize = nblock*MEMBLOCKSIZE*ndim*sizeof(double);
     *x = (double *) realloc(*x, memsize);
     if ((x==NULL) && (memsize>0)) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory for KDtree search\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory for KDtree search\n");
       exit(1);
     }
     memsize = nblock*MEMBLOCKSIZE*sizeof(double);
     *d2 = (double *) realloc(*d2, memsize);
     if ((d2==NULL) && (memsize>0)) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory for KDtree search\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory for KDtree search\n");
       exit(1);
     }
     if (dsize > 0) {
       memsize = nblock*MEMBLOCKSIZE*dsize;
       *dptr = realloc(*dptr, memsize);
       if ((dptr==NULL) && (memsize>0)) {
-	fprintf(stderr, "cluster_slug: error: unable to allocate memory for KDtree search\n");
+	fprintf(stderr, "bayesphot: error: unable to allocate memory for KDtree search\n");
 	exit(1);
       }
     }
@@ -194,14 +194,14 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
 
   /* Allocate memory for the tree */
   if (!(tree = (KDtree *) malloc(sizeof(KDtree)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_tree\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
     exit(1);
   }
 
   /* Allocate swap space */
   if (dsize > 0) {
     if (!(dswap = malloc(dsize))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_tree\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
   }
@@ -214,33 +214,34 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
     tree->nodes += tree->leaves;
     tree->levels++;
   }
+  tree->leafsize = leafsize;
   tree->dsize = dsize;
 
   /* Allocate memory for the tree  */
   if (!(tree->tree = (KDnode *) calloc(tree->nodes, sizeof(KDnode)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_tree\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
     exit(1);
   }
   tree->tree--; /* Offset by 1 so tree->tree[1] is the root node */
   for (n=1; n<=tree->nodes; n++) {
     if (!(tree->tree[n].xlim[0] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_tree\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
     if (!(tree->tree[n].xlim[1] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_tree\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
     if (!(tree->tree[n].xbnd[0] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_tree\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
     if (!(tree->tree[n].xbnd[1] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
-      fprintf(stderr, "cluster_slug: error: unable to allocate memory in build_tree\n");
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
   }
@@ -445,15 +446,16 @@ void neighbors(const KDtree *tree, const double *xpt,
        investigate, so check each of the points it contains */
     for (i=0; i<tree->tree[curnode].npt; i++) {
 
-      /* Is this point more distant than the most distance of the
+      /* Is this point more distant than the most distant of the
 	 current neighbors? If so, continue to next point. */
       r2 = dist2(xpt, &(tree->tree[curnode].x[tree->ndim*i]), ndim,
 		 tree->ndim, dims, NULL, scale, tree->ndim);
       if (r2  > d2[nneighbor-1]) continue;
 
       /* If we're here, we've found a point in this leaf that is
-	 closer than any of our current neighbors. Figure out where
-	 in the current neighbor list to insert it. */
+	 closer than them most distant of our current
+	 neighbors. Figure out where in the current neighbor list to
+	 insert it. */
       ptr = 0;
       while (d2[ptr] < r2) ptr++;
 
@@ -488,6 +490,332 @@ void neighbors(const KDtree *tree, const double *xpt,
 
 
 /*********************************************************************/
+/* Neighbor search routine for all points in the tree                */
+/*********************************************************************/
+void neighbors_all(const KDtree *tree, const unsigned int nneighbor,
+		   const double *scale, unsigned int *idx, 
+		   double *d2) {
+  /* This routine is much like neighbors_point, but takes advantage of
+     some efficiencies that arise when we know we need to find the
+     nearest neighbors of every point. */
+  unsigned int curnode = ROOT;
+  unsigned int npt = tree->tree[ROOT].npt;
+  unsigned int i, j, k, offset, idxtmp, ptr;
+  unsigned int *homenode;
+  double r2, *xpt;
+
+  /* Allocate temporary storage */
+  if (!(homenode = calloc(npt, sizeof(unsigned int)))) {
+    fprintf(stderr, "bayesphot error: unable to allocate memory in neighbors_all\n");
+    exit(1);
+  }
+
+  /* Initialize the distance list */
+  for (i=0; i<npt*nneighbor; i++) d2[i] = DBL_MAX;
+
+  /* Traverse the entire tree down to its leaves */
+  while (1) {
+
+    /* If we're not a leaf, just go left */
+    if (tree->tree[curnode].splitdim != -1) {
+      curnode = LEFT(curnode);
+      continue;
+    }
+
+    /* We are a leaf, so get the pairwise distance between each pair
+       of points in this leaf */
+    offset = nneighbor * (tree->tree[curnode].x - tree->tree[ROOT].x) / 
+      tree->ndim;
+    for (i=0; i<tree->tree[curnode].npt; i++) {
+      homenode[offset/nneighbor+i] = curnode;
+      for (j=i+1; j<tree->tree[curnode].npt; j++) {
+
+	/* Get distance between point pair */
+	r2 = dist2(&(tree->tree[curnode].x[tree->ndim*i]),
+		   &(tree->tree[curnode].x[tree->ndim*j]), 
+		   tree->ndim, tree->ndim, NULL, NULL, scale, 
+		   tree->ndim);
+
+	/* If distance is smaller than largest distance for first
+	   point, store this point */
+	if (r2  < d2[offset+i*nneighbor + nneighbor-1]) {	
+
+	  /* Figure out where to insert this point */
+	  ptr = 0;
+	  while (d2[offset+i*nneighbor+ptr] < r2) ptr++;
+
+	  /* Move the rest of the current neighbor list back one space */
+	  for (k=nneighbor-1; k>ptr; k--) {
+	    idx[offset+i*nneighbor+k] = idx[offset+i*nneighbor+k-1];
+	    d2[offset+i*nneighbor+k] = d2[offset+i*nneighbor+k-1];
+	  }
+
+	  /* Insert the point we just found into the neighbor list */
+	  idx[offset+i*nneighbor+ptr] = offset / nneighbor + j;
+	  d2[offset+i*nneighbor+ptr] = r2;
+	}
+
+	/* Same as previous block, but for the second point; this
+	   just amounts to swapping the i's and j's */
+	if (r2  < d2[offset+j*nneighbor + nneighbor-1]) {	
+	  ptr = 0;
+	  while (d2[offset+j*nneighbor+ptr] < r2) ptr++;
+	  for (k=nneighbor-1; k>ptr; k--) {
+	    idx[offset+j*nneighbor+k] = idx[offset+j*nneighbor+k-1];
+	    d2[offset+j*nneighbor+k] = d2[offset+j*nneighbor+k-1];
+	  }
+	  idx[offset+j*nneighbor+ptr] = offset / nneighbor + i;
+	  d2[offset+j*nneighbor+ptr] = r2;
+	}
+      }
+    }
+
+    /* We're done with this leaf, so move to next node */
+    SETNEXT(curnode);
+    if (curnode==ROOT) break;
+  }
+
+  /* Now loop over all points, doing a depth-wise search of the tree
+     for each. */
+  for (k=0; k<npt; k++) {
+
+    /* Initialize for this point */
+    xpt = tree->tree[ROOT].x + k*tree->ndim;
+    offset = k*nneighbor;
+    curnode = ROOT;
+
+    while (1) {
+
+      /* See if any part of this node is within a distance less than the
+	 current maximum distance from the search point */
+      r2 = box_min_dist2(xpt, (const double **) tree->tree[curnode].xbnd, 
+			 tree->ndim, tree->ndim, NULL, NULL, scale, 
+			 tree->ndim);
+
+      if (r2 > d2[offset+nneighbor-1]) {
+	SETNEXT(curnode);
+	if (curnode==ROOT) break;
+	continue;
+      }
+
+      /* If we're here, we need to investigate this node. If this node
+	 is not a leaf, just go to its left child. */
+      if (tree->tree[curnode].splitdim != -1) {
+	curnode = LEFT(curnode);
+	continue;
+      }
+
+      /* Is this leaf the home leaf? If so, we've already checked it, so
+	 move on. */
+      if (curnode == homenode[k]) {
+	SETNEXT(curnode);
+	if (curnode==ROOT) break;
+	continue;
+      }
+
+      /* If we're here, we have found a leaf that we need to
+	 investigate, so check each of the points it contains */
+      for (i=0; i<tree->tree[curnode].npt; i++) {
+
+	/* Skip the input point itself */
+	if (xpt == &(tree->tree[curnode].x[tree->ndim*i])) continue;
+
+	/* Is this point more distant than the most distant of the
+	   current neighbors? If so, continue to next point. */
+	r2 = dist2(xpt, &(tree->tree[curnode].x[tree->ndim*i]), tree->ndim,
+		   tree->ndim, NULL, NULL, scale, tree->ndim);
+	if (r2  > d2[offset+nneighbor-1]) continue;
+
+	/* If we're here, we've found a point in this leaf that is
+	   closer than the most distant of our current neighbors. Figure
+	   out where in the current neighbor list to insert it. */
+	ptr = 0;
+	while (d2[offset+ptr] < r2) ptr++;
+
+	/* Is this point already in the list? If so, skip it. */
+	idxtmp = (&(tree->tree[curnode].x[tree->ndim*i]) -
+		  &(tree->tree[ROOT].x[0])) / tree->ndim;
+	if (idx[offset+ptr] == idxtmp) continue;
+
+	/* If we're here, we found a new point, so move the list back to
+	   accomodate it */
+	for (j=nneighbor-1; j>ptr; j--) {
+	  idx[offset+j] = idx[offset+j-1];
+	  d2[offset+j] = d2[offset+j-1];
+	}
+
+	/* Insert the point we just found into the neighbor list */
+	idx[offset+ptr] = idxtmp;
+	d2[offset+ptr] = r2;
+      }
+
+      /* We're done with this leaf, so go on to next one */
+      SETNEXT(curnode);
+      if (curnode==ROOT) break;
+    }
+  }
+
+  /* Free memory */
+  free(homenode);
+}
+
+
+/*********************************************************************/
+/* Neighbor search routine for points known to be in the tree        */
+/*********************************************************************/
+void neighbors_point(const KDtree *tree, const unsigned int idxpt,
+		     const unsigned int nneighbor,
+		     const double *scale, unsigned int *idx, 
+		     double *d2) {
+
+  /* This routine does essentially the same thing as neighbors, but
+     with the added step that we initialize the distances using the
+     points in the same leaf as the input point. This significantly
+     reduces worst-case search time. */
+  unsigned int curnode = ROOT;
+  unsigned int spdim = tree->tree[ROOT].splitdim;
+  unsigned int i, j, idxtmp, homenode, ptr;
+  double *xpt = &(tree->tree[ROOT].x[tree->ndim*idxpt]);
+  double r2;
+
+  /* Initialize the distance list */
+  for (i=0; i<nneighbor; i++) d2[i] = DBL_MAX;
+
+  /* Traverse the tree down to the leaf of this point */
+  while (spdim != -1) {
+    if (tree->tree[LEFT(curnode)].xbnd[1][spdim] >= xpt[spdim])
+      curnode = LEFT(curnode);
+    else
+      curnode = RIGHT(curnode);
+    spdim = tree->tree[curnode].splitdim;
+  }
+  homenode = curnode;
+
+  /* Now traverse the tree breadth-wise, starting at the home node and
+     moving left, stopping once we have good initial guesses for every
+     one of the requested neighbors */
+  while (d2[nneighbor-1] == DBL_MAX) {
+
+    /* Search this leaf */
+    for (i=0; i<tree->tree[curnode].npt; i++) {
+
+      /* Skip the input point itself */
+      if (xpt == &(tree->tree[curnode].x[tree->ndim*i])) continue;
+
+      /* Is this point more distant than the most distant of the
+	 current neighbors? If so, continue to next point. */
+      r2 = dist2(xpt, &(tree->tree[curnode].x[tree->ndim*i]), tree->ndim, 
+		 tree->ndim, NULL, NULL, scale, tree->ndim);
+      if (r2  > d2[nneighbor-1]) continue;
+
+      /* If we're here, we've found a point in this leaf that is
+	 closer than the most distant of our current neighbors. Figure
+	 out where in the current neighbor list to insert it. */
+      ptr = 0;
+      while (d2[ptr] < r2) ptr++;
+
+      /* Move the rest of the current neighbor list back one space */
+      for (j=nneighbor-1; j>ptr; j--) {
+	idx[j] = idx[j-1];
+	d2[j] = d2[j-1];
+      }
+
+      /* Insert the point we just found into the neighbor list; note
+	 that we construct the index offset in the original data set by
+	 taking the memory offset and dividing by the number of
+	 dimensions. */
+      idx[ptr] = (&(tree->tree[curnode].x[tree->ndim*i]) -
+		  &(tree->tree[ROOT].x[0])) / tree->ndim;
+      d2[ptr] = r2;
+    }
+
+    /* If curnode is a power of 2, it's a leftmost node at its level,
+       so stop searching and break; otherwise move left. */
+    if ((curnode & (curnode-1)) == 0) break;
+    curnode--;
+
+  }
+
+  /* Now do a depth-wise search of the tree, starting at ROOT */
+  curnode = ROOT;
+  while (1) {
+
+    /* See if any part of this node is within a distance less than the
+       current maximum distance from the search point; if not, got to
+       next node; side CS subtlety: the typecast in the next line is
+       needed to avoid compiler warnings; see 
+       http://c-faq.com/ansi/constmismatch.html */
+    r2 = box_min_dist2(xpt, (const double **) tree->tree[curnode].xbnd, 
+		       tree->ndim, tree->ndim, NULL, NULL, scale, 
+		       tree->ndim);
+
+    if (r2 > d2[nneighbor-1]) {
+      SETNEXT(curnode);
+      if (curnode==ROOT) break;
+      continue;
+    }
+
+    /* If we're here, we need to investigate this node. If this node
+       is not a leaf, just go to its left child. */
+    if (tree->tree[curnode].splitdim != -1) {
+      curnode = LEFT(curnode);
+      continue;
+    }
+
+    /* Is this leaf the home leaf? If so, we've already checked it, so
+       move on. */
+    if (curnode == homenode) {
+      SETNEXT(curnode);
+      if (curnode==ROOT) break;
+      continue;
+    }
+
+    /* If we're here, we have found a leaf that we need to
+       investigate, so check each of the points it contains */
+    for (i=0; i<tree->tree[curnode].npt; i++) {
+
+      /* Skip the input point itself */
+      if (xpt == &(tree->tree[curnode].x[tree->ndim*i])) continue;
+
+      /* Is this point more distant than the most distant of the
+	 current neighbors? If so, continue to next point. */
+      r2 = dist2(xpt, &(tree->tree[curnode].x[tree->ndim*i]), tree->ndim,
+		 tree->ndim, NULL, NULL, scale, tree->ndim);
+      if (r2  > d2[nneighbor-1]) continue;
+
+      /* If we're here, we've found a point in this leaf that is
+	 closer than the most distant of our current neighbors. Figure
+	 out where in the current neighbor list to insert it. */
+      ptr = 0;
+      while (d2[ptr] < r2) ptr++;
+
+      /* Is this point already in the list? If so, skip it. */
+      idxtmp = (&(tree->tree[curnode].x[tree->ndim*i]) -
+		&(tree->tree[ROOT].x[0])) / tree->ndim;
+      if (idx[ptr] == idxtmp) continue;
+
+      /* If we're here, we found a new point, so move the list back to
+	 accomodate it */
+      for (j=nneighbor-1; j>ptr; j--) {
+	idx[j] = idx[j-1];
+	d2[j] = d2[j-1];
+      }
+
+      /* Insert the point we just found into the neighbor list */
+      idx[ptr] = idxtmp;
+      d2[ptr] = r2;
+    }
+
+    /* We're done with this leaf, so go on to next one */
+    SETNEXT(curnode);
+    if (curnode==ROOT) break;
+  }
+}
+
+
+
+
+/*********************************************************************/
 /* Routine to search a box                                           */
 /*********************************************************************/
 unsigned int query_box(const KDtree *tree, const double *xbox[2], 
@@ -503,7 +831,7 @@ unsigned int query_box(const KDtree *tree, const double *xbox[2],
 
   /* Allocate temporary space and store box center in it */
   if (!(xcen = (double *) calloc(tree->ndim, sizeof(double)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in query_box\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in query_box\n");
     exit(1);
   }
   for (j=0; j<ndim; j++) xcen[j] = 0.5*(xbox[0][j] + xbox[1][j]);
@@ -638,11 +966,11 @@ unsigned int query_sphere(const KDtree *tree, const double *xcen,
      sphere. This will be used to discard nodes that don't need to be
      searched. */
   if (!(xbox[0] = calloc(ndim, sizeof(double)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in query_sphere\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in query_sphere\n");
     exit(1);
   }
   if (!(xbox[1] = calloc(ndim, sizeof(double)))) {
-    fprintf(stderr, "cluster_slug: error: unable to allocate memory in query_sphere\n");
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in query_sphere\n");
     exit(1);
   }
   if (scale == NULL) {
