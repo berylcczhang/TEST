@@ -23,7 +23,6 @@ namespace std
 #endif
 #include <cstdlib>
 #include <cmath>
-#include <string>
 #include "constants.H"
 #include "slug_PDF.H"
 #include "slug_PDF_delta.H"
@@ -224,6 +223,80 @@ slug_PDF::setNorm(double new_norm) {
   PDFintegral = new_norm;
   if (new_norm == 1.0) normalized = true;
   else normalized = false;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Method to add a segment
+////////////////////////////////////////////////////////////////////////
+void
+slug_PDF::add_segment(double x_min, double x_max, double wgt, 
+		      string type_name) {
+
+  // Safety check: make sure wgt >= 0
+  if (wgt < 0.0) {
+    cerr << "slug: error: wgt must be >= 0 in slug_PDF::add_segment" 
+	 << endl;
+    exit(1);
+  }
+
+  // Decide which type of segment to add
+  slug_PDF_segment *seg = NULL;
+  if (type_name.compare("delta")==0) {
+    slug_PDF_delta *new_seg = new slug_PDF_delta(x_min, x_max, rng);
+    seg = (slug_PDF_segment *) new_seg;
+  } else if (type_name.compare("exponential")==0) {
+    slug_PDF_exponential *new_seg = 
+      new slug_PDF_exponential(x_min, x_max, rng);
+    seg = (slug_PDF_segment *) new_seg;
+  } else if (type_name.compare("lognormal")==0) {
+    slug_PDF_lognormal *new_seg = new slug_PDF_lognormal(x_min, x_max, rng);
+    seg = (slug_PDF_segment *) new_seg;
+  } else if (type_name.compare("normal")==0) {
+    slug_PDF_normal *new_seg = new slug_PDF_normal(x_min, x_max, rng);
+    seg = (slug_PDF_segment *) new_seg;
+  } else if (type_name.compare("powerlaw")==0) {
+    slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw(x_min, x_max, rng);
+    seg = (slug_PDF_segment *) new_seg;
+  } else if (type_name.compare("schechter")==0) {
+    slug_PDF_schechter *new_seg = new slug_PDF_schechter(x_min, x_max, rng);
+    seg = (slug_PDF_segment *) new_seg;
+  } else {
+    cerr << "slug: error: unknown segment type " << type_name 
+	 << " in slug_PDF::add_segment" << endl;
+    exit(1);
+  }
+
+  // Remove any range restrictions if they exist
+  bool restore_range_restrict = range_restrict;
+  double x_stoch_min, x_stoch_max;
+  if (range_restrict) {
+    x_stoch_min = xStochMin;
+    x_stoch_max = xStochMax;
+    this->remove_stoch_lim();
+  }
+
+  // Push this segment onto the segment vector
+  segments.push_back(seg);
+  weights.push_back(wgt);
+
+  // If the weight of the new segment is non-zero, renormalize
+  if (wgt != 0.0) {
+    double cumWeight = weights[0];
+    for (unsigned int i=1; i<segments.size(); i++) {
+      cumWeight += weights[i];
+    }
+    if (normalized) {
+      for (unsigned int i=0; i<segments.size(); i++)
+	weights[i] /= cumWeight;
+      PDFintegral = 1.0;
+    } else {
+      PDFintegral = cumWeight;
+    }
+  }
+
+  // Restore the range restrictions if necessary
+  if (restore_range_restrict)
+    this->set_stoch_lim(x_stoch_min, x_stoch_max);
 }
 
 ////////////////////////////////////////////////////////////////////////

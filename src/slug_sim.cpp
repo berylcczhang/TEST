@@ -395,7 +395,6 @@ void slug_sim::galaxy_sim() {
       // Advance to next time
       galaxy->advance(outTimes[j]);
 
-
       // Write physical properties if requested
       if (pp.get_writeIntegratedProp()) {
 #ifdef ENABLE_FITS

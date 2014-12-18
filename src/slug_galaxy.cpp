@@ -148,66 +148,72 @@ slug_galaxy::advance(double time) {
   double mass_to_draw = new_mass + targetMass - mass;
   targetMass += new_mass;
 
-  // Create new clusters
-  if (fc != 0) {
+  // Skip star/cluster creation if new_mass == 0, even if mass_to_draw
+  // != 0, to avoid problems with trying to draw from a region of SFH
+  // where no clusters should form
+  if (new_mass > 0) {
 
-    // Get masses of new clusters
-    vector<double> new_cluster_masses;
-    cmf->drawPopulation(fc*mass_to_draw, new_cluster_masses);
+    // Create new clusters
+    if (fc != 0) {
 
-    // Get birth times of new clusters
-    vector<double> birth_times = sfh->draw(curTime, time,
-					   new_cluster_masses.size());
+      // Get masses of new clusters
+      vector<double> new_cluster_masses;
+      cmf->drawPopulation(fc*mass_to_draw, new_cluster_masses);
 
-    // Create clusters of chosen masses and birth times, and push them
-    // onto the master cluster list
-    for (unsigned int i=0; i<new_cluster_masses.size(); i++) {
-      slug_cluster *new_cluster = 
-	new slug_cluster(cluster_id++, new_cluster_masses[i],
-			 birth_times[i], imf, tracks, specsyn, filters,
-			 extinct, clf);
-      clusters.push_back(new_cluster);
-      mass += new_cluster->get_birth_mass();
-      aliveMass += new_cluster->get_birth_mass();
-      clusterMass += new_cluster->get_birth_mass();
-    }
-  }
+      // Get birth times of new clusters
+      vector<double> birth_times = sfh->draw(curTime, time,
+					     new_cluster_masses.size());
 
-  // Create new field stars
-  if (fc != 1) {
-
-    // Get masses of new field stars
-    vector<double> new_star_masses;
-    imf->drawPopulation((1.0-fc)*mass_to_draw, new_star_masses);
-
-    // Get extinctions to field stars
-    vector<double> AV;
-    if (extinct != NULL) 
-      AV = extinct->draw_AV(new_star_masses.size());
-
-    // Push stars onto field star list; in the process, set the birth
-    // time and death time for each of them
-    for (unsigned int i=0; i<new_star_masses.size(); i++) {
-      slug_star new_star;
-      new_star.mass = new_star_masses[i];
-      new_star.birth_time = sfh->draw(curTime, time);
-      new_star.death_time = new_star.birth_time 
-	+ tracks->star_lifetime(new_star.mass);
-      field_stars.push_back(new_star);
-      if (extinct != NULL) field_star_AV.push_back(AV[i]);
-      mass += new_star.mass;
-      aliveMass += new_star.mass;
+      // Create clusters of chosen masses and birth times, and push them
+      // onto the master cluster list
+      for (unsigned int i=0; i<new_cluster_masses.size(); i++) {
+	slug_cluster *new_cluster = 
+	  new slug_cluster(cluster_id++, new_cluster_masses[i],
+			   birth_times[i], imf, tracks, specsyn, filters,
+			   extinct, clf);
+	clusters.push_back(new_cluster);
+	mass += new_cluster->get_birth_mass();
+	aliveMass += new_cluster->get_birth_mass();
+	clusterMass += new_cluster->get_birth_mass();
+      }
     }
 
-    // Sort field star list by death time, from largest to smallest
-    sort(field_stars.begin(), field_stars.end(), 
-	 galaxy::sort_death_time_decreasing);
+    // Create new field stars
+    if (fc != 1) {
 
-    // Increase the non-stochastic field star mass by the mass of
-    // field stars that should have formed below the stochstic limit
-    if (imf->has_stoch_lim())
-      nonStochFieldMass += 
-	(1.0-fc)*new_mass*imf->integral_restricted();
+      // Get masses of new field stars
+      vector<double> new_star_masses;
+      imf->drawPopulation((1.0-fc)*mass_to_draw, new_star_masses);
+
+      // Get extinctions to field stars
+      vector<double> AV;
+      if (extinct != NULL) 
+	AV = extinct->draw_AV(new_star_masses.size());
+
+      // Push stars onto field star list; in the process, set the birth
+      // time and death time for each of them
+      for (unsigned int i=0; i<new_star_masses.size(); i++) {
+	slug_star new_star;
+	new_star.mass = new_star_masses[i];
+	new_star.birth_time = sfh->draw(curTime, time);
+	new_star.death_time = new_star.birth_time 
+	  + tracks->star_lifetime(new_star.mass);
+	field_stars.push_back(new_star);
+	if (extinct != NULL) field_star_AV.push_back(AV[i]);
+	mass += new_star.mass;
+	aliveMass += new_star.mass;
+      }
+
+      // Sort field star list by death time, from largest to smallest
+      sort(field_stars.begin(), field_stars.end(), 
+	   galaxy::sort_death_time_decreasing);
+
+      // Increase the non-stochastic field star mass by the mass of
+      // field stars that should have formed below the stochstic limit
+      if (imf->has_stoch_lim())
+	nonStochFieldMass += 
+	  (1.0-fc)*new_mass*imf->integral_restricted();
+    }
   }
 
   // Advance all clusters to current time; track how the currently

@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/random/variate_generator.hpp>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include "slug_PDF_segment.H"
 
 // Enum for sampling methods
@@ -60,6 +61,10 @@ public:
 
   // Change the normalization
   void setNorm(double new_norm);
+
+  // Add a segment
+  void add_segment(double x_min, double x_max, double wgt, 
+		   std::string type_name);
 
   // Methods to intereact with the limits for stochasticity
   bool has_stoch_lim() const { return range_restrict; }
