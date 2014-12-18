@@ -305,13 +305,13 @@ def do_cloudy_run(thread_num, q):
                 else:
                     fpout.write(line+'\n')
 
-        # In cluster mode, compute internal radius, starting denstiy
+        # In cluster mode, compute internal radius, starting density
         # self-consistently; in integrated mode, set inner radius
         # self-consistently
         if not args.clustermode:
             if not radset:
                 alphaB = 2.59e-13    # Case B recombination coefficient
-                rstrom = (3.0*qH0/(4.0*np.pi*alphaB*hden**2))**(1./3.)
+                rstrom = (3.0*qH0/(4.4*np.pi*alphaB*hden**2))**(1./3.)
                 r0 = rstrom/1e3
                 fpout.write("radius {:f}\n".format(np.log10(r0)))
         else:
