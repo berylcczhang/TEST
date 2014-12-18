@@ -22,7 +22,7 @@ they are properly installed and visible to the script. This script has been writ
  
 
 Problem ``example_galaxy``: basic galaxy simulation
-============================================
+===================================================
 
 This problem illustrates the basic usage of \slug\ in ``galaxy`` mode by running 48 realizations of a galaxy with constant 
 :math:`\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}`, up to a maximum time of :math:`2\times 10^8` yr. By issuing the 

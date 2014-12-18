@@ -184,7 +184,7 @@ sets the starting density to the value expected for photoionization
 equilibrum in a uniform HII region,
 
 .. math:: n_{\mathrm{II}} = \left(\frac{3
-	  Q(\mathrm{H}^0)}{4\pi\alpha_B
+	  Q(\mathrm{H}^0)}{4.4 \pi\alpha_B
 	  r_{\mathrm{II}}^3}\right)^{1/2}
 
 Note that this approximation will be highly inaccurate if
@@ -711,3 +711,8 @@ This is followed by ``NCluster`` entries of the following form:
   ``float64``), giving the transmitted plus emitted photometry in each
   filter
 
+Full Documentation of slugpy.cloudy
+-----------------------------------
+
+.. automodule:: slugpy.cloudy
+   :members:

@@ -19,8 +19,11 @@ Contents:
    pdfs
    output
    filters
-   cloudy
    slugpy
+   cloudy
+   bayesphot
+   cluster_slug
+   sfr_slug
    tests
    acknowledgements
 
