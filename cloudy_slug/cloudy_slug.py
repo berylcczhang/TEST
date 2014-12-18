@@ -110,14 +110,22 @@ if args.cloudytemplate is None:
 else:
     cloudytemplate = args.cloudytemplate
 
+if args.slugpath is None:
+    if 'SLUG_DIR' in os.environ:
+        slugdir=osp.join(os.environ['SLUG_DIR'],'output/')
+    else:
+        slugdir='output/'
+else:
+    slugdir=args.slugpath
+
 
 # Step 3: read the SLUG output to be processed, and check that we have
 # what we need
 file_info = {}
 if (args.clustermode):
-    data = read_cluster(args.slug_model_name, read_info=file_info)
+    data = read_cluster(args.slug_model_name, read_info=file_info, output_dir=slugdir)
 else:
-    data = read_integrated(args.slug_model_name, read_info=file_info)
+    data = read_integrated(args.slug_model_name, read_info=file_info, output_dir=slugdir)
 valid = True
 if 'spec' not in data._fields:
     valid = False
@@ -255,9 +263,9 @@ def do_cloudy_run(thread_num, q):
                 q.task_done()
                 continue
             spec = data.spec[cluster_num,:]
-            ext = "_n{:09d}".format(cluster_num)
+            ext = "_n{0:09d}".format(cluster_num)
             qH0 = data.phot[cluster_num,qH0idx]
-            outstr = "launching cloudy on cluster {:d} of {:d}" \
+            outstr = "launching cloudy on cluster {0:d} of {1:d}" \
                 .format(cluster_num+1, len(data.id))
 
         else:
@@ -265,17 +273,17 @@ def do_cloudy_run(thread_num, q):
             # Integrated mode
             trial, time = q.get()
             spec = data.spec[:, time, trial]
-            ext = "_tr{:05d}_ti{:05d}".format(trial,time)
+            ext = "_tr{0:05d}_ti{1:05d}".format(trial,time)
             qH0 = data.phot[qH0idx,time,trial]
-            outstr = ("launching cloudy on trial {:d}/{:d}, " +
-                      "time {:d}/{:d}").format(trial+1, data.spec.shape[-1],
+            outstr = ("launching cloudy on trial {0:d}/{1:d}, " +
+                      "time {2:d}/{3:d}").format(trial+1, data.spec.shape[-1],
                                                time+1, data.spec.shape[-2])
 
         # Write out the cloudy input file header, substituting a
         # custom name for OUTPUT_FILENAME
         cloudy_in_fname = osp.join(cwd, 
                                    'cloudy_tmp', 
-                                   'cloudy.in'+'_{:05d}'.format(thread_num))
+                                   'cloudy.in'+'_{0:05d}'.format(thread_num))
         fpout = open(cloudy_in_fname, 'w')
         radset = False
         for line in tempfile:
@@ -313,7 +321,7 @@ def do_cloudy_run(thread_num, q):
                 alphaB = 2.59e-13    # Case B recombination coefficient
                 rstrom = (3.0*qH0/(4.0*np.pi*alphaB*hden**2))**(1./3.)
                 r0 = rstrom/1e3
-                fpout.write("radius {:f}\n".format(np.log10(r0)))
+                fpout.write("radius {0:f}\n".format(np.log10(r0)))
         else:
             # Get current age of this cluster
             age = data.time[0] - data.form_time[0]
@@ -339,12 +347,12 @@ def do_cloudy_run(thread_num, q):
             r = rch*(xIIrad**3.5 + xIIgas**3.5)**(2.0/7.0)
             r0 = r/1e3
             nH = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
-            fpout.write("hden {:f}\n".format(np.log10(nH)))
+            fpout.write("hden {0:f}\n".format(np.log10(nH)))
             if not radset:
-                fpout.write("radius {:f}\n".format(np.log10(r0)))
+                fpout.write("radius {0:f}\n".format(np.log10(r0)))
 
         # Write the ionizing luminosity to the cloudy input file
-        fpout.write("Q(H) = {:f}\n".format(np.log10(qH0)))
+        fpout.write("Q(H) = {0:f}\n".format(np.log10(qH0)))
 
         # Write the spectral shape into the cloudy input file,
         # prepending and appending low values outside the range
@@ -354,19 +362,19 @@ def do_cloudy_run(thread_num, q):
         specclean[spec == 0.0] = np.amin(spec[spec > 0])*1e-4
         logL_nu = np.log10(specclean*c/freq**2)
         fpout.write("interpolate")
-        fpout.write(" ({:f} {:f})".format(7.51, 
+        fpout.write(" ({0:f} {1:f})".format(7.51, 
                                           np.amin(logL_nu)-4))
-        fpout.write(" ({:f} {:f})".format(logfreq[-1]-0.01, 
+        fpout.write(" ({0:f} {1:f})".format(logfreq[-1]-0.01, 
                                           np.amin(logL_nu)-4))
         for i in range(len(logL_nu)):
             if i % 4 == 0:
                 fpout.write("\ncontinue")
-            fpout.write(" ({:f} {:f})".format(logfreq[-i-1],
+            fpout.write(" ({0:f} {1:f})".format(logfreq[-i-1],
                                               logL_nu[-i-1]))
-        fpout.write("\ncontinue ({:f} {:f})".
+        fpout.write("\ncontinue ({0:f} {1:f})".
                     format(logfreq[0]+0.01, 
                            np.amin(logL_nu)-4))
-        fpout.write(" ({:f} {:f})\n".format(22.4, 
+        fpout.write(" ({0:f} {1:f})\n".format(22.4, 
                                             np.amin(logL_nu)-4))
 
         # Close cloudy input file
@@ -374,7 +382,7 @@ def do_cloudy_run(thread_num, q):
 
         # If verbose, print status
         if args.verbose:
-            print("thread {:d}: ".format(thread_num+1) + outstr)
+            print("thread {0:d}: ".format(thread_num+1) + outstr)
 
         # Launch the cloudy process and wait for it to complete
         cloudy_out_fname = osp.join(cwd, 'cloudy_tmp', 'cloudy.out'+ext)
