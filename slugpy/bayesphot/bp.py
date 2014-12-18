@@ -41,6 +41,19 @@ class bp(object):
     A class that can be used to estimate the PDF of the physical
     properties of stellar population from a training set plus a set of
     measured photometric values.
+
+    Properties
+       priors: array, shape (N) | callable | None
+          prior probability on each data point; interpretation
+          depends on the type passed; array, shape (N): values are
+          interpreted as the prior probability of each data point;
+          callable: the callable must take as an argument an array
+          of shape (N, nphys), and return an array of shape (N)
+          giving the prior probability at each data point; None:
+          all data points have equal prior probability
+       bandwidth : 'auto' | array, shape (M)
+          bandwidth for kernel density estimation; if set to
+          'auto', the bandwidth will be estimated automatically
     """
 
     ##################################################################
@@ -50,7 +63,7 @@ class bp(object):
                  ktype='gaussian', priors=None, sample_density=None,
                  reltol=1.0e-3, abstol=1.0e-10, leafsize=16):
         """
-        Initialize a cluster_slug object.
+        Initialize a bp object.
 
         Parameters
            dataset : array, shape (N, M)
@@ -73,39 +86,30 @@ class bp(object):
               'tophat'; only Gaussian can be used with error bars
            priors : array, shape (N) | callable | None
               prior probability on each data point; interpretation
-              depends on the type passed:
-                 array, shape (N) : 
-                    values are interpreted as the prior probability of
-                    each data point
-                 callable : 
-                    the callable must take as an argument an array of
-                    shape (N, nphys), and return an array of shape (N)
-                    giving the prior probability at each data point
-                  None :
-                    all data points have equal prior probability
+              depends on the type passed; array, shape (N): values are
+              interpreted as the prior probability of each data point;
+              callable: the callable must take as an argument an array
+              of shape (N, nphys), and return an array of shape (N)
+              giving the prior probability at each data point; None:
+              all data points have equal prior probability
            sample_density : array, shape (N) | callable | 'auto' | None
               the density of the data samples at each data point; this
               need not match the prior density; interpretation depends
-              on the type passed:
-                 array, shape (N) : 
-                    values are interpreted as the density of data
-                    sampling at each sample point
-                 callable : 
-                    the callable must take as an argument an array of
-                    shape (N, nphys), and return an array of shape (N)
-                    giving the sampling density at each point
-                 'auto' :
-                    the sample density will be computed directly from
-                    the data set; note that this can be quite slow for
-                    large data sets, so it is preferable to specify
-                    this analytically if it is known
-                  None :
-                    data are assumed to be uniformly sampled
+              on the type passed; array, shape (N): values are
+              interpreted as the density of data sampling at each
+              sample point; callable: the callable must take as an
+              argument an array of shape (N, nphys), and return an
+              array of shape (N) giving the sampling density at each
+              point; 'auto': the sample density will be computed
+              directly from the data set; note that this can be quite
+              slow for large data sets, so it is preferable to specify
+              this analytically if it is known; None: data are assumed
+              to be uniformly sampled
            reltol : float
               relative error tolerance; errors on all returned
               probabilities p will satisfy either
-              |p_est - p_true| <= reltol * p_est   OR
-              |p_est - p_true| <= abstol,
+              abs(p_est - p_true) <= reltol * p_est   OR
+              abs(p_est - p_true) <= abstol,
               where p_est is the returned estimate and p_true is the
               true value
            abstol : float
@@ -118,7 +122,6 @@ class bp(object):
 
         Raises
            IOError, if the bayesphot c library cannot be found
-
         """
 
         # Load the c library
@@ -364,7 +367,7 @@ class bp(object):
         """
         This function sets the prior probabilities to use
 
-        Parameters:
+        Parameters
            priors : array, shape (N) | callable | None
               prior probability on each data point; interpretation
               depends on the type passed:
@@ -375,7 +378,7 @@ class bp(object):
                     the callable must take as an argument an array of
                     shape (N, nphys), and return an array of shape (N)
                     giving the prior probability at each data point
-                  None :
+                 None :
                     all data points have equal prior probability
 
         Returns
@@ -571,7 +574,7 @@ class bp(object):
         function evaluated at a particular log mass, log age,
         extinction, and set of log luminosities
 
-        Parameters:
+        Parameters
            physprop : arraylike, shape (nphys) or (..., nphys)
               array giving values of the physical properties; for a
               multidimensional array, the operation is vectorized over
@@ -585,18 +588,9 @@ class bp(object):
               array, the operation is vectorized over the leading
               dimensions
 
-        Returns:
+        Returns
            logL : float or arraylike
               natural log of the likelihood function
-
-           (only returned if the c library was compiled in DIAGNOSTIC mode)
-           nodecheck : int or array, shape(N)
-              Number of nodes examined during the evaluation
-           leafcheck : int or array, shape(N)
-              Number of leaves examined during the evaluation
-           termcheck : int or array, shape(N)
-              Number of nodes examined during the evaluation for which
-              no children were examined
         """
 
         # Safety check
@@ -790,15 +784,6 @@ class bp(object):
               broadcasting the leading dimensions of photprop and
               photerr together, while the trailing dimensions match
               the dimensions of the output grid
-
-           (only returned if the c library was compiled in DIAGNOSTIC mode)
-           nodecheck : int or array, shape(N)
-              Number of nodes examined during the evaluation
-           leafcheck : int or array, shape(N)
-              Number of leaves examined during the evaluation
-           termcheck : int or array, shape(N)
-              Number of nodes examined during the evaluation for which
-              no children were examined
         """
 
         # Safety check
