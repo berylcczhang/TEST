@@ -263,7 +263,7 @@ def do_cloudy_run(thread_num, q):
             # Check if this cluster is below our age maximum; if not,
             # skip it
             if data.time[cluster_num]-data.form_time[cluster_num] > \
-               args.age*1e6*365.25*24.*3600.:
+               args.agemax*1e6*365.25*24.*3600.:
                 q.task_done()
                 continue
             spec = data.spec[cluster_num,:]
