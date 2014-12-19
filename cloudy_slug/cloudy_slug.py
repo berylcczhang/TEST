@@ -493,7 +493,7 @@ if compute_continuum:
     cloudywl_max = np.zeros(0)
     if args.clustermode:
         for i in range(len(cloudywl)):
-            if cloudy_wl[i] is not None:
+            if cloudywl[i] is not None:
                 if cloudywl[i].shape[0] > cloudywl_max.shape[0]:
                     cloudywl_max = cloudywl[i]
     else:
@@ -505,7 +505,7 @@ if compute_continuum:
     # Now loop over stored spectra, padding array beginnings
     if args.clustermode:
         for i in range(len(cloudywl)):
-            if cloudy_wl[i] is not None:
+            if cloudywl[i] is not None:
                 offset = len(cloudywl_max) - len(cloudywl[i])
                 if offset > 0:
                     cloudyspec[i] \
