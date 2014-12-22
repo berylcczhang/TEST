@@ -281,8 +281,9 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
     # Reshape time and photometry arrays
     ntrial = len(np.unique(trial))
     ntime = len(time)/ntrial
-    if np.amin(time[:ntime] == time[ntime:2*ntime]):
-        time = time[:ntime]
+    if ntime != len(time):
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
     phot = np.transpose(np.reshape(phot, (ntrial, ntime, nfilter)))
     if extinct:
         phot_ex = np.transpose(np.reshape(phot_ex, (ntrial, ntime, nfilter)))

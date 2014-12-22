@@ -170,8 +170,9 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     # reshape time array appropriately
     ntrial = len(np.unique(trial))
     ntime = len(time)/ntrial
-    if np.amin(time[:ntime] == time[ntime:2*ntime]):
-        time = time[:ntime]
+    if ntime != len(time):
+        if np.amin(time[:ntime] == time[ntime:2*ntime]):
+            time = time[:ntime]
 
     # Prune / reshape the output arrays
     target_mass = np.transpose(target_mass.reshape(ntrial, ntime))

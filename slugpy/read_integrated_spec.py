@@ -146,8 +146,9 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # array appropriately
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
+        if ntime != len(time):
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
 
         # Reshape the L_lambda array
         L_lambda = np.transpose(np.reshape(L_lambda, 
@@ -191,8 +192,9 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         time = np.array(data_list[1::nl+nl_ex+2])
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
+        if ntime != len(time):
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
 
         # Put L_lambda into array
         L_lambda = np.zeros((nl, ntime, ntrial))
@@ -225,8 +227,9 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
+        if ntime != len(time):
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
         L_lambda \
             = np.transpose(
                 np.reshape(L_lambda, (ntrial, ntime, len(wavelength))))
