@@ -111,13 +111,17 @@ else:
     cloudytemplate = args.cloudytemplate
 
 if args.slugpath is None:
+    #set input directory 
     if 'SLUG_DIR' in os.environ:
         slugdir=osp.join(os.environ['SLUG_DIR'],'output/')
     else:
         slugdir='output/'
+    #use cwd as output
+    outpath='./'
 else:
     slugdir=args.slugpath
-
+    #use selected output dir for  output
+    outpath=slugdir
 
 # Step 3: read the SLUG output to be processed, and check that we have
 # what we need
@@ -259,7 +263,7 @@ def do_cloudy_run(thread_num, q):
             # Check if this cluster is below our age maximum; if not,
             # skip it
             if data.time[cluster_num]-data.form_time[cluster_num] > \
-               args.age*1e6*365.25*24.*3600.:
+               args.agemax*1e6*365.25*24.*3600.:
                 q.task_done()
                 continue
             spec = data.spec[cluster_num,:]
@@ -489,7 +493,7 @@ if compute_continuum:
     cloudywl_max = np.zeros(0)
     if args.clustermode:
         for i in range(len(cloudywl)):
-            if cloudy_wl[i] is not None:
+            if cloudywl[i] is not None:
                 if cloudywl[i].shape[0] > cloudywl_max.shape[0]:
                     cloudywl_max = cloudywl[i]
     else:
@@ -501,7 +505,7 @@ if compute_continuum:
     # Now loop over stored spectra, padding array beginnings
     if args.clustermode:
         for i in range(len(cloudywl)):
-            if cloudy_wl[i] is not None:
+            if cloudywl[i] is not None:
                 offset = len(cloudywl_max) - len(cloudywl[i])
                 if offset > 0:
                     cloudyspec[i] \
@@ -548,11 +552,11 @@ if compute_continuum:
 # Step 9: write the cloudy spectra to file
 if compute_continuum:
     if args.clustermode:
-        write_cluster_cloudyspec(cloudyspec_data, args.slug_model_name,
+        write_cluster_cloudyspec(cloudyspec_data, osp.join(outpath,args.slug_model_name),
                                  file_info['format'])
     else:
         write_integrated_cloudyspec(cloudyspec_data,
-                                    args.slug_model_name,
+                                    osp.join(outpath,args.slug_model_name),
                                     file_info['format'])
 
 # Step 10: write the line data to file
@@ -578,7 +582,7 @@ if compute_lines:
                                        'cloudy_linelum'])
         cloudylines = cloudylines_type(data.id, data.trial, data.time, 
                                        linelist, linewl, linelum)
-        write_cluster_cloudylines(cloudylines, args.slug_model_name,
+        write_cluster_cloudylines(cloudylines, osp.join(outpath,args.slug_model_name),
                                   file_info['format'])
     else:
         linelum = np.array(linelum)
@@ -589,7 +593,7 @@ if compute_lines:
         cloudylines = cloudylines_type(data.time, linelist,
                                        linewl, 
                                        np.transpose(linelum, (2,0,1)))
-        write_integrated_cloudylines(cloudylines, args.slug_model_name,
+        write_integrated_cloudylines(cloudylines, osp.join(outpath,args.slug_model_name),
                                      file_info['format'])
 
 # Step 11: write photometry to file
@@ -634,7 +638,7 @@ if compute_continuum:
                               cloudyphot[:,1,:], cloudyphot[:,2,:])
 
         # Write
-        write_cluster_cloudyphot(cloudyphot_data, args.slug_model_name,
+        write_cluster_cloudyphot(cloudyphot_data, osp.join(outpath,args.slug_model_name),
                                  file_info['format'])
 
     else:
@@ -666,7 +670,7 @@ if compute_continuum:
                               np.transpose(cloudyphot[:,:,2,:], (2,0,1)))
 
         # Write
-        write_integrated_cloudyphot(cloudyphot_data, args.slug_model_name,
+        write_integrated_cloudyphot(cloudyphot_data, osp.join(outpath,args.slug_model_name),
                                     file_info['format'])
 
 
