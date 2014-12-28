@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_filter_set.H"
 #include "slug_galaxy.H"
 #include "slug_PDF.H"
+#include "slug_nebular.H"
 #include "slug_specsyn.H"
 #include "slug_tracks.H"
 #include <iostream>
@@ -50,6 +51,7 @@ public:
 	       const slug_specsyn *my_specsyn,
 	       const slug_filter_set *my_filters,
 	       const slug_extinction *my_extinct,
+	       const slug_nebular *my_nebular,
 	       const slug_PDF *my_clf=NULL);
 
   // Destructor
@@ -175,6 +177,7 @@ private:
   const slug_specsyn *specsyn;        // Spectral synthesizer
   const slug_filter_set *filters;     // Photometric filters
   const slug_extinction *extinct;     // Extinction
+  const slug_nebular *nebular;        // Nebular
 
   // Malleable data
   unsigned long id;                   // Unique ID

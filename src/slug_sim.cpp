@@ -229,11 +229,23 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     extinct = NULL;
   }
 
+  // If using nebular emission, initialize the computation of that
+  if (pp.get_use_nebular()) {
+    nebular = new slug_nebular(pp.get_atomic_dir(),
+			       specsyn->lambda(true),
+			       pp.get_nebular_den(),
+			       pp.get_nebular_temp(),
+			       pp.get_nebular_phidust(),
+			       pp.get_z());
+  } else {
+    nebular = NULL;
+  }
+
   // Initialize either a galaxy or a single cluster, depending on
   // which type of simulation we're running
   if (pp.galaxy_sim()) {
     galaxy = new slug_galaxy(pp, imf, cmf, clf, sfh, tracks, 
-			     specsyn, filters, extinct);
+			     specsyn, filters, extinct, nebular);
     cluster = NULL;
   } else {
     double cluster_mass;
@@ -243,10 +255,9 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       cluster_mass = pp.get_cluster_mass();
     cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
 			       tracks, specsyn, filters,
-			       extinct, clf);
+			       extinct, nebular, clf);
     galaxy = NULL;
   }
-
 
   // Record the output mode
   out_mode = pp.get_outputMode();
@@ -256,7 +267,6 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   int_prop_fits = cluster_prop_fits = int_spec_fits = 
     cluster_spec_fits = int_phot_fits = cluster_phot_fits = NULL;
 #endif
-
 
   // Open the output files we'll need and write their headers
   if (pp.get_verbosity() > 1)
@@ -291,6 +301,8 @@ slug_sim::~slug_sim() {
   if (filters != NULL) delete filters;
   if (out_time_pdf != NULL) delete out_time_pdf;
   if (sfr_pdf != NULL) delete sfr_pdf;
+  if (extinct != NULL) delete extinct;
+  if (nebular != NULL) delete nebular;
 
   // Close open files
   if (int_prop_file.is_open()) int_prop_file.close();
@@ -501,7 +513,7 @@ void slug_sim::cluster_sim() {
       delete cluster;
       cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
 				 tracks, specsyn, filters,
-				 extinct, clf);
+				 extinct, nebular, clf);
     } else {
       cluster->reset();
     }

@@ -29,17 +29,23 @@ namespace constants {
   const double G = 6.67384e-8;
   const double c = 2.99792458e10;
   const double h = 6.62606957e-27;
+  const double hbar = 1.054571725e-27;
   const double kB = 1.3806488e-16;
   const double sigmaSB = 5.670373e-5;
   const double hcOverkB = 1.4387769599838156;
   const double hc = 1.986445683269303e-16;
   const double hc2 = 5.955214340707938e-06;
   const double Ryd = 2.1798721703680373e-11;
+  const double echarge = 4.80320425e-10;
+  const double melectron = 9.10938291e-28;
 
   // Ionization threshhold wavelengths for HI, HeI, HeII, in Angstrom
   const double lambdaHI = 911.2670505509151;
   const double lambdaHeI = 503.9888;
   const double lambdaHeII = 227.2979;
+
+  // Number ratio of He to H
+  const double xHe = 0.1;
 
   // Unit conversions to CGS
   const double Msun = 1.989e33;
@@ -62,8 +68,7 @@ namespace constants {
   // Numeric limits
   const double big = std::numeric_limits<double>::max();
   const double small = std::numeric_limits<double>::min();
-
+   
 }
-
 #endif
 // _constants_H_

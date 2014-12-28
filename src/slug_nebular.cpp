@@ -46,9 +46,10 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 slug_nebular::
 slug_nebular(const char *atomic_dir,
-	     const std::vector<double> lambda_in,
+	     const std::vector<double>& lambda_in,
 	     const double n_in, const double T_in,
-	     const double phi_dust_in, const double z_in) {
+	     const double phi_dust_in, const double z_in) :
+  lambda(lambda_in) {
 
   // Initialize the conversion factor
   LperQ.assign(lambda.size(), 0);
@@ -164,7 +165,7 @@ slug_nebular(const char *atomic_dir,
   // Now read the alpha2s data
   H2p_alpha2s.resize(extent2[H2p_T_alpha2s.size()][H2p_den.size()]);
   for (unsigned int i=0; i<H2p_T_alpha2s.size(); i++) {
-    for (unsigned int j=0; j<H2p_T_alpha2s.size(); j++) {
+    for (unsigned int j=0; j<H2p_den.size(); j++) {
       Halpha2s_file >> H2p_alpha2s[i][j];
     }
   }
@@ -177,13 +178,14 @@ slug_nebular(const char *atomic_dir,
   // 495)
   for (unsigned int i=0; i<lambda.size(); i++) {
     double y = (3.0/4.0)*constants::lambdaHI / lambda[i];
-    if (y > 1) H2p_emiss[i] = 0.0;
+    if (y > 1) H2p_emiss.push_back(0.0);
     else {
-      H2p_emiss[i] = (y * (1.0-y) * pow(1.0 - 4.0*y*(1.0-y), H2p_g) +
-		      H2p_a * pow(y*(1-y), H2p_b) * 
-		      pow(4.0*y*(1.0-y), H2p_g)) / H2p_norm *
-	constants::hc2 / 
-	(pow(lambda[i], 3.0) * pow(constants::Angstrom, 2.0));
+      H2p_emiss.push_back((y * (1.0-y) * pow(1.0 - 4.0*y*(1.0-y), H2p_g) +
+			   H2p_a * pow(y*(1-y), H2p_b) * 
+			   pow(4.0*y*(1.0-y), H2p_g)) / H2p_norm *
+			  constants::hc2 / 
+			  (pow(lambda[i], 3.0) * 
+			   pow(constants::Angstrom, 2.0)));
     }
   }
 
@@ -232,7 +234,6 @@ slug_nebular(const char *atomic_dir,
       // Read the model header line and extract the density,
       // temperature, and maximum level
       vector<string> tokens;
-      getline(Hlines_file, hdr);  // Burn a newline character
       getline(Hlines_file, hdr);
       trim(hdr);
       split(tokens, hdr, is_any_of("\t "), token_compress_on);
@@ -249,11 +250,14 @@ slug_nebular(const char *atomic_dir,
       }
 
       // Read data
-      for (unsigned int nu=Hlines_nMax; nu>0; nu--) {
+      for (unsigned int nu=Hlines_nMax; nu>1; nu--) {
 	for (unsigned int nl=1; nl<nu; nl++) {
-	  Hlines_file >> Hlines_emiss[i][j][nu][nl];
+	  Hlines_file >> Hlines_emiss[i][j][nu-2][nl-1];
 	}
       }
+
+      // Burn a newline
+      getline(Hlines_file, hdr);
     }
   }
 
@@ -300,17 +304,25 @@ set_properties(const double n_in, const double T_in,
 
   // Do interpolation in temperature direction on the stored table
   unsigned int H_T_idx = 0;
-  while (HIffbf_T[H_T_idx+1] > T) H_T_idx++;
+  while (HIffbf_T[H_T_idx+1] < T) H_T_idx++;
   double H_T_wgt = log(T/HIffbf_T[H_T_idx]) / 
     log(HIffbf_T[H_T_idx+1]/HIffbf_T[H_T_idx]);
 
   // Interpolate from Ferland (1980) table onto our wavelength table
   unsigned int idx = 0, H_wl_idx = 0;
   while (lambda[idx] < HIffbf_lambda[0]) idx++;
-  for (unsigned int i=idx; i<HIffbf_lambda.back(); i++) {
+  for (unsigned int i=idx; i<LperQ.size(); i++) {
 
     // Move the index in the Ferland wavelength table if needed
-    while (HIffbf_lambda[H_wl_idx+1] < lambda[i]) H_wl_idx++;
+    while ((HIffbf_lambda[H_wl_idx+1] < lambda[i]) &&
+	   (H_wl_idx < HIffbf_lambda.size()-1)) H_wl_idx++;
+
+    // If we're off the end of the wavelength table, break; we'll use
+    // an analytic approximation below
+    if (H_wl_idx == HIffbf_lambda.size()-1) {
+      idx=i;
+      break;
+    }
 
     // Get interpolation weight
     double H_wl_wgt = log(lambda[i]/HIffbf_lambda[H_wl_idx]) / 
@@ -334,11 +346,23 @@ set_properties(const double n_in, const double T_in,
 
     // Compute contribution to emission; note that we want L_lambda =
     // gamma_wl * ne * nH * V, where V = emission volume, but from
-    // ionization balance we also have (1 - phi_dust) Q = alphaB *
+    // ionization balance we also have phi_dust Q = alphaB *
     // ne * nH * V, so we have
-    // ne * nH * V = (1 - phi_dust) Q / alpha_B  ===>
-    // L_lambda = gamma_wl * (1 - phi_dust) Q / alpha_B
-    LperQ[i] += gamma_wl * (1.0 - phi_dust) / alphaB;
+    // ne * nH * V = phi_dust Q / alpha_B  ===>
+    // L_lambda = gamma_wl * phi_dust Q / alpha_B
+    LperQ[i] += gamma_wl * phi_dust / alphaB;
+  }
+
+  // Fill in lower frequency data using the fit from Draine (2011),
+  // eqn. 10.8 for free-free alone; bound-free is negligible in
+  // comparison. The rest of the calculationis the same as above.
+  for (unsigned int i=idx; i<LperQ.size(); i++) {
+    double nu = constants::hc / (lambda[i]*constants::Angstrom);
+    double gammaHI = 4.0*M_PI * 3.35e-40 * pow(nu/1e9, -0.118) * 
+      pow(T/1e4, -0.323);
+    double gamma_wl = gammaHI * constants::c / 
+      (lambda[i]*lambda[i]*constants::Angstrom);
+    LperQ[i] += gamma_wl * phi_dust / alphaB;
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -348,35 +372,35 @@ set_properties(const double n_in, const double T_in,
   // Get indices and interpolation coefficients in temperature and
   // density 
   H_T_idx = 0;
-  while (H2p_T_alpha2s[H_T_idx+1] > T) H_T_idx++;
+  while (H2p_T_alpha2s[H_T_idx+1] < T) H_T_idx++;
   H_T_wgt = log(T/H2p_T_alpha2s[H_T_idx]) / 
     log(H2p_T_alpha2s[H_T_idx+1]/H2p_T_alpha2s[H_T_idx]);
   unsigned int H_den_idx = 0;
-  while (H2p_den[H_den_idx+1] > T) H_den_idx++;
-  double H_den_wgt = log(T/H2p_den[H_den_idx]) / 
+  while (H2p_den[H_den_idx+1] < den) H_den_idx++;
+  double H_den_wgt = log(den/H2p_den[H_den_idx]) / 
     log(H2p_den[H_den_idx+1]/H2p_den[H_den_idx]);
 
   // Get alpha_2s for our density and temperature
   double alpha2s = 
     exp( (1.0-H_T_wgt) * (1.0-H_den_wgt) * 
-	 log(H2p_alpha2s[H_den_idx][H_T_idx]) +
+	 log(H2p_alpha2s[H_T_idx][H_den_idx]) +
 	 (1.0-H_T_wgt) * H_den_wgt *
-	 log(H2p_alpha2s[H_den_idx][H_T_idx+1]) +
+	 log(H2p_alpha2s[H_T_idx][H_den_idx+1]) +
 	 H_T_wgt * (1.0-H_den_wgt) *
-	 log(H2p_alpha2s[H_den_idx+1][H_T_idx]) +
+	 log(H2p_alpha2s[H_T_idx+1][H_den_idx]) +
 	 H_T_wgt * H_den_wgt *
-	 log(H2p_alpha2s[H_den_idx+1][H_T_idx+1]) );
+	 log(H2p_alpha2s[H_T_idx+1][H_den_idx+1]) );
 
   // Get correction factor for collisional depopulation of the 2s
   // state by electrons and photons
   double q2s2p_e = H2p_q2s2p_e[0] * pow(T/H2p_T_q2s2p[0], H2p_slope_e);
   double q2s2p_p = H2p_q2s2p_p[0] * pow(T/H2p_T_q2s2p[0], H2p_slope_p);
   double collfac = 1.0 / 
-    (1.0 + A2s1s / (den*q2s2p_p + (1+constants::xHe)*den*q2s2p_e));
+    (1.0 + (den*q2s2p_p + (1+constants::xHe)*den*q2s2p_e) / A2s1s);
 
   // Add 2-photon emissivity
   for (unsigned int i=0; i<LperQ.size(); i++)
-    LperQ[i] += (1.0 - phi_dust) * (alpha2s / alphaB) * H2p_emiss[i] 
+    LperQ[i] += phi_dust * (alpha2s / alphaB) * H2p_emiss[i] 
       * collfac;
 
   //////////////////////////////////////////////////////////////////////
@@ -384,21 +408,24 @@ set_properties(const double n_in, const double T_in,
   //////////////////////////////////////////////////////////////////////
 
   // Loop over pairs of states; we already have the interpolation
-  // indices and weights from the previous step
-  for (unsigned int i=Hlines_nMax; i>0; i--) {
-    for (unsigned int j=1; j<i; j++) {
+  // indices and weights from the previous step. Note that we only
+  // consider upper states nu >= 3, and lower states nl >= 2, because
+  // in case B there are no transitions to n = 1 except via 2-photon
+  // or Lyman alpha, so the emissivities for nl = 1 are meaningless.
+  for (unsigned int i=Hlines_nMax; i>2; i--) {
+    for (unsigned int j=2; j<i; j++) {
 
       // Get the emissivity for this state pair, defined as L_line
       // [erg/s/cm^3] = emiss * ne * nH+
       double emiss = 
 	exp( (1.0-H_T_wgt) * (1.0-H_den_wgt) * 
-	     log(Hlines_emiss[H_den_idx][H_T_idx][i][j]) +
+	     log(Hlines_emiss[H_T_idx][H_den_idx][i-2][j-1]) +
 	     (1.0-H_T_wgt) * H_den_wgt *
-	     log(Hlines_emiss[H_den_idx][H_T_idx+1][i][j]) +
+	     log(Hlines_emiss[H_T_idx][H_den_idx+1][i-2][j-1]) +
 	     H_T_wgt * (1.0-H_den_wgt) *
-	     log(Hlines_emiss[H_den_idx+1][H_T_idx][i][j]) +
+	     log(Hlines_emiss[H_T_idx+1][H_den_idx][i-2][j-1]) +
 	     H_T_wgt * H_den_wgt *
-	     log(Hlines_emiss[H_den_idx+1][H_T_idx+1][i][j]) );
+	     log(Hlines_emiss[H_T_idx+1][H_den_idx+1][i-2][j-1]) );
 
       // Get central wavelength for this level pair
       double wl = constants::lambdaHI / (1.0/(j*j) - 1.0/(i*i));
@@ -425,7 +452,7 @@ set_properties(const double n_in, const double T_in,
 
       // Compute conversion factor
       LperQ[k] += emiss / (lambda[k]*dlogLambda) 
-	* (1.0 - phi_dust) / alphaB;
+	* phi_dust / alphaB;
     }
   }
 }

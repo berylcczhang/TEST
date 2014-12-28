@@ -50,7 +50,7 @@ public:
 
   // Constructor
   slug_nebular(const char *atomic_dir,
-	       const std::vector<double> lambda_in,
+	       const std::vector<double>& lambda_in,
 	       const double n_in = 1.0e4, const double T_in = 1.0e4, 
 	       const double phi_dust_in = 0.73,
 	       const double z_in = 0.0);
@@ -78,7 +78,7 @@ private:
   const double nMax = 1.0e6;
 
   // Wavelength grid
-  const std::vector<double> lambda;
+  const std::vector<double>& lambda;
 
   // Filter that is used to compute ionizing photon luminosities
   slug_filter *ion_filter;

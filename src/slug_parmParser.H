@@ -45,12 +45,16 @@ public:
   bool get_constantAV() const;            // Is the A_V constant?
   bool get_random_output_time() const;    // Are output times random?
   bool get_random_cluster_mass() const;   // Is cluster mass randomly drawn?
+  bool get_use_nebular() const;           // Compute nebular emission or not?
   double get_SFR() const;                 // SFR value for constant SFR
   double get_AV() const;                  // A_V value for constant A_V
   double get_z() const;                   // Return the redshift
   double get_metallicity() const;         // Metallicity
   double get_WR_mass() const;             // Mass at which WR stars appear
   double get_min_stoch_mass() const;      // Min mass to treat stochstically
+  double get_nebular_den() const;         // Density for nebular calculation
+  double get_nebular_temp() const;        // Temperature for nebular calc
+  double get_nebular_phidust() const;     // phi_dust for nebular calc
   const char *get_SFR_file() const;       // SFR file name for random SFR
   const char *get_SFH() const;            // SF history file name
   const char *get_IMF() const;            // IMF file name
@@ -61,6 +65,7 @@ public:
   const char *get_AV_dist() const;        // A_V distribution file
   const char *get_atmos_dir() const;      // Directory w/atmospehre library
   const char *get_filter_dir() const;     // Directory w/filter library
+  const char *get_atomic_dir() const;     // Directory w/atomic data
   const char *get_modelName() const;      // Name of this model
   const char *get_outDir() const;         // Dir into which to dump output
   const char *get_outtime_dist() const;   // Distribution of output times
@@ -111,11 +116,15 @@ private:
   double min_stoch_mass;                  // Min mass to treat stochastically
   double fClust;                          // Frac stars formed in clusters
   double cluster_mass;                    // Cluster mass for cluster sims
+  double nebular_den;                     // Density for nebular calculation
+  double nebular_temp;                    // Temp for nebular calculation
+  double nebular_phidust;                 // phi_dust for nebular calc
   bool constantSFR;                       // Is SFR constant?
   bool randomSFR;                         // Is SFR drawn randomly?
   bool constantAV;                        // Is A_V constant?
   bool randomClusterMass;                 // Is cluster mass drawn randomly?
   bool randomOutputTime;                  // Are output times random?
+  bool use_nebular;                       // Compute nebular emission or not?
   bool writeClusterProp;                  // Write out cluster properties?
   bool writeClusterPhot;                  // Write out cluster photometry?
   bool writeClusterSpec;                  // Write out cluster spectra?
@@ -135,6 +144,7 @@ private:
   std::string track;                      // File containing stellar tracks
   std::string atmos_dir;                  // Directory w/atmosphere library
   std::string filter_dir;                 // Directory w/filter library
+  std::string atomic_dir;                 // Directory w/atomic data
   std::string extinct_curve;              // Extinction curve file name
   std::string AV_dist;                    // A_V distribution file name
   std::string model;                      // Name of this model

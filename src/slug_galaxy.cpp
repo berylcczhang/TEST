@@ -54,7 +54,8 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
 			 const slug_tracks* my_tracks, 
 			 const slug_specsyn* my_specsyn,
 			 const slug_filter_set* my_filters,
-			 const slug_extinction* my_extinct) :
+			 const slug_extinction* my_extinct,
+			 const slug_nebular* my_nebular) :
   imf(my_imf), 
   cmf(my_cmf), 
   clf(my_clf),
@@ -62,7 +63,8 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   tracks(my_tracks),
   specsyn(my_specsyn),
   filters(my_filters),
-  extinct(my_extinct)
+  extinct(my_extinct),
+  nebular(my_nebular)
  {
 
   // Initialize mass and time
@@ -170,7 +172,7 @@ slug_galaxy::advance(double time) {
 	slug_cluster *new_cluster = 
 	  new slug_cluster(cluster_id++, new_cluster_masses[i],
 			   birth_times[i], imf, tracks, specsyn, filters,
-			   extinct, clf);
+			   extinct, nebular, clf);
 	clusters.push_back(new_cluster);
 	mass += new_cluster->get_birth_mass();
 	aliveMass += new_cluster->get_birth_mass();

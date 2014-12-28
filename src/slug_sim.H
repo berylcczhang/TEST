@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug.H"
 #include "slug_cluster.H"
 #include "slug_galaxy.H"
+#include "slug_nebular.H"
 #include "slug_parmParser.H"
 #include "slug_PDF.H"
 #include "slug_tracks.H"
@@ -100,6 +101,7 @@ private:
   slug_specsyn *specsyn;      // Spectral synthesizer
   slug_filter_set *filters;   // Photometric filters
   slug_extinction *extinct;   // Extinction class
+  slug_nebular *nebular;      // Nebular emission class
   slug_cluster *cluster;      // A single star cluster
   slug_galaxy *galaxy;        // A single galaxy
   outputMode out_mode;        // Output mode

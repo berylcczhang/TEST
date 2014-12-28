@@ -124,6 +124,7 @@ slug_parmParser::setDefaults() {
   randomOutputTime = false;
   save_seed = read_seed = false;
   use_extinct = false;
+  use_nebular = true;
 
   // Physical model parameters
   path lib_path("lib");
@@ -144,11 +145,16 @@ slug_parmParser::setDefaults() {
   path extinct_path("extinct");
   path extinct_file("SB_ATT_SLUG.dat");
   extinct_curve = (lib_path / extinct_path / extinct_file).string();
+  path atomic_path("atomic");
+  atomic_dir = (lib_path / atomic_path).string();
   specsyn_mode = SB99;
   fClust = 1.0;
   min_stoch_mass = 0.0;
   metallicity = -1.0;    // Flag for not set
   WR_mass = -1.0;        // flag for not set
+  nebular_den = 1.0e3;
+  nebular_temp = 1.0e4;
+  nebular_phidust = 0.73;
 
   // Photometric parameters
   path filter_path("filters");
@@ -279,6 +285,16 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	}
       } else if (!(tokens[0].compare("extinction_curve"))) {
 	extinct_curve = tokens[1];
+      } else if (!(tokens[0].compare("atomic_data"))) {
+	atomic_dir = tokens[1];
+      } else if (!(tokens[0].compare("compute_nebular"))) {
+	use_nebular = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("nebular_den"))) {
+	nebular_den = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_temp"))) {
+	nebular_temp = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_phidust"))) {
+	nebular_phidust = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("rng_seed_file"))) {
 	seed_file = tokens[1];
       } else if (!(tokens[0].compare("min_stoch_mass"))) {
@@ -488,6 +504,11 @@ slug_parmParser::checkParams() {
 	 << endl;
     exit(1);
   }
+  if (nebular_phidust < 0 || nebular_phidust > 1) {
+    cerr << "slug: error: nebular_phidust must be in the range [0,1]"
+	 << endl;
+    exit(1);
+  }
   if (!writeClusterProp && !writeClusterPhot 
       && !writeClusterSpec && !writeIntegratedPhot
       && !writeIntegratedSpec) {
@@ -534,6 +555,7 @@ slug_parmParser::checkParams() {
   path clf_path(clf);
   path track_path(track);
   path atmos_path(atmos_dir);
+  path atomic_path(atomic_dir);
   path filter_path(filter_dir);
   path extinct_path(extinct_curve);
   path AV_path(AV_dist);
@@ -554,6 +576,8 @@ slug_parmParser::checkParams() {
     filter_dir = (slug_path / filter_path).string();
   if (!extinct_path.is_absolute())
     extinct_curve = (slug_path / extinct_path).string();
+  if (!atomic_path.is_absolute())
+    atomic_path = (slug_path / atomic_path).string();
   if (!AV_path.is_absolute())
     AV_path = (slug_path / AV_path).string();
   if (!out_time_path.is_absolute())
@@ -640,6 +664,14 @@ slug_parmParser::writeParams() const {
   } else {
     paramFile << "extinction           " << "no" << endl;
   }
+  if (use_nebular) {
+    paramFile << "nebular_emission     " << "yes" << endl;
+    paramFile << "nebular_density      " << nebular_den << endl;
+    paramFile << "nebular_temperature  " << nebular_temp << endl;
+    paramFile << "nebular_phidust      " << nebular_phidust << endl;
+  } else {
+    paramFile << "nebular_emission     " << "no" << endl;
+  }
   if (run_galaxy_sim)
     paramFile << "clust_frac           " << fClust << endl;
   if (writeClusterPhot || writeIntegratedPhot) {
@@ -707,6 +739,8 @@ const char *slug_parmParser::get_CMF() const { return cmf.c_str(); }
 const char *slug_parmParser::get_CLF() const { return clf.c_str(); }
 const char *slug_parmParser::get_trackFile() const { return track.c_str(); }
 const char *slug_parmParser::get_atmos_dir() const { return atmos_dir.c_str(); }
+const char *slug_parmParser::get_atomic_dir() const 
+{ return atomic_dir.c_str(); }
 const char *slug_parmParser::get_extinct_curve() const 
 { return extinct_curve.c_str(); }
 const char *slug_parmParser::get_AV_dist() const 
@@ -752,3 +786,7 @@ const string slug_parmParser::rng_seed_file() const { return seed_file; }
 bool slug_parmParser::get_use_extinct() const { return use_extinct; }
 bool slug_parmParser::get_random_output_time() const 
 { return randomOutputTime; }
+bool slug_parmParser::get_use_nebular() const { return use_nebular; }
+double slug_parmParser::get_nebular_den() const { return nebular_den; }
+double slug_parmParser::get_nebular_temp() const { return nebular_temp; }
+double slug_parmParser::get_nebular_phidust() const { return nebular_phidust; }

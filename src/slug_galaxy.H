@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug.H"
 #include "slug_extinction.H"
 #include "slug_filter_set.H"
+#include "slug_nebular.H"
 #include "slug_specsyn.H"
 #include <list>
 #include <iostream>
@@ -50,7 +51,8 @@ public:
 	      const slug_PDF* my_sfh, const slug_tracks* tracks, 
 	      const slug_specsyn* my_specsyn,
 	      const slug_filter_set* my_filters,
-	      const slug_extinction* my_extinct);
+	      const slug_extinction* my_extinct,
+	      const slug_nebular *my_nebular);
   ~slug_galaxy();
 
   // Set galaxy back to its initial state
@@ -131,6 +133,7 @@ private:
   const slug_specsyn *specsyn;        // Spectral synthesizer
   const slug_filter_set *filters;     // Filter set
   const slug_extinction *extinct;     // Extinction object
+  const slug_nebular *nebular;        // Nebular object
 
   // Simulation data
   double curTime;                     // Current time

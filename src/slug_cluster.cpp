@@ -41,10 +41,11 @@ slug_cluster::slug_cluster(const unsigned long my_id,
 			   const slug_specsyn *my_specsyn, 
 			   const slug_filter_set *my_filters,
 			   const slug_extinction *my_extinct,
+			   const slug_nebular *my_nebular,
 			   const slug_PDF *my_clf) :
   targetMass(my_mass), imf(my_imf), clf(my_clf), tracks(my_tracks), 
   specsyn(my_specsyn), filters(my_filters), extinct(my_extinct),
-  id(my_id), formationTime(time), curTime(time)
+  nebular(my_nebular), id(my_id), formationTime(time), curTime(time)
 {
 
   // Initialize to non-disrupted
