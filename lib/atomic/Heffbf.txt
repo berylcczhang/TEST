@@ -1,0 +1,7 @@
+# Helium I free-free and bound-free emission coefficients. This table
+# is taken from Osterbrock (1989, table 4.8). The quantity stored
+# gamma is defined such that the total free-free plus bound-free
+# emissivity is given by j_nu = gamma ne nHe / 4 pi
+#
+
+

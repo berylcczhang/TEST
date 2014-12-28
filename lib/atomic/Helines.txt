@@ -1,0 +1,53 @@
+# He I emisison line intensities, from Benjamin et al. (1999, ApJ,
+# 514, 307). The data here are parameters for a fit of the He
+# emissivitiy gamma, defined by
+# 4 pi j_line = = gamma ne nHe+. The format is as follows. The first
+# line contains
+#
+# nDen nLines
+#
+# where nDen is the number of densities in the file, and nLines is the
+# number of He lines at each density. This is followed by nDen blocks
+# of data. Each block starts with a single line giving the density in
+# cm^-3, followed by nLines lines of the form
+# 
+# lambda a b c
+#
+# where lambda is the wavelength of the line, and a, b, and c are fit
+# parameters giving gamma(T) = a (T/1e4)^b exp(c / (T/1e4))
+
+3 33
+1e2
+2946	2.91e-26	-0.740	-0.076
+3189	5.90e-26	-0.707	-0.048
+3615	7.60e-27	-0.864	-0.115
+3890	1.41e-25	-0.709	-0.025
+3966	1.53e-26	-0.845	-0.097
+4027	3.32e-26	-1.098	-0.148
+4122	2.39e-27	-0.405	0.024
+4389	8.83e-27	-1.121	-0.156
+4439	1.06e-27	-0.547	-0.011
+4473	6.68e-26	-1.048	-0.080
+4715	5.52e-27	-0.230	0.155
+4923	1.85e-26	-1.125	-0.124
+5017	3.79e-26	-0.859	-0.083
+5049	2.42e-27	-0.489	0.035
+5877	1.73e-25	-1.091	-0.024
+6680	5.25e-26	-1.202	-0.091
+7067	2.65e-26	-0.340	0.114
+7283	8.88e-27	-0.547	0.015
+9466	1.61e-27	-0.740	-0.076
+10833	2.94e-25	-0.364	0.144
+11973	3.35e-27	-1.098	-0.148
+12531	1.89e-27	-0.707	-0.048
+12789	1.08e-26	-1.331	-0.141
+12793	3.60e-27	-1.331	-0.141
+12972	1.12e-27	-1.121	-0.156
+15088	8.14e-28	-0.845	-0.097
+17007	4.42e-27	-1.048	-0.080
+18690	2.40e-26	-1.332	-0.078
+18701	8.16e-27	-1.364	-0.100
+19091	1.71e-27	-1.125	-0.123
+19550	1.10e-27	-0.707	-0.048
+20589	4.35e-26	-0.919	-0.054
+21128	8.43e-28	-0.230	0.155
