@@ -82,10 +82,19 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
        phot : array, shape (N_filter, N_times, N_trials)
           photometric value in each filter at each time in each trial;
           units are as indicated in the units field
+       phot_neb : array, shape (N_filter, N_times, N_trials)
+          same as phot, but for the light after it has passed through
+          the HII region (present only if SLUG was run with nebular
+          emission enabled)
        phot_ex : array, shape (N_filter, N_times, N_trials)
           same as phot, but after extinction has been applied (present
           only if SLUG was run with extinction enabled)
-       
+       phot_neb_ex : array, shape (N_filter, N_times, N_trials)
+          same as phot, but for the light after it has passed through
+          the HII region and then had extinction applied (present only
+          if SLUG was run with both nebular emission and extinction
+          enabled)
+
     Raises
        IOError, if no photometry file can be opened
        ValueError, if photsystem is set to an unknown value
@@ -123,23 +132,33 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
                 units.append(l)
         units = units[1:]    # Get rid of the units for time
 
-        # See if we have extinction; this is indicated by there being
-        # an even number of filters, and by the filters in the second
-        # half of the list having the same names as those in the first
-        # half, but with the extension "_ex"
-        if nfilter % 2 == 0:
+        # Search for filters with names that end in _n, _ex, or _nex,
+        # indicating that they include the effects of the nebula,
+        # extinction, or both
+        neb = []
+        ex = []
+        for i in range(nfilter):
+            if len(filters[i]) > 2:
+                if filters[i][-2:] == '_n':
+                    neb.append(i)
+            if len(filters[i]) > 3:
+                if filters[i][-3:] == '_ex':
+                    ext.append(i)
+        if len(neb) > 0:
+            nebular = True
+        else:
+            nebular = False
+        if len(ex) > 0:
             extinct = True
-            for i in range(nfilter/2):
-                extinct = extinct and \
-                          (filters[i]+'_ex' == filters[i+nfilter/2])
         else:
             extinct = False
 
-        # If we have extinction, reshape the filter and unit lists
-        if extinct:
-            nfilter = nfilter/2
-            filters = filters[:nfilter]
-            units = units[:nfilter]
+        # If we have nebular emission or extinction, reshape filter
+        # and units lists
+        nuniq = nfilter / ((1+nebular)*(1+extinct))
+        nfilter = nuniq
+        filters = filters[:nfilter]
+        units = units[:nfilter]
 
         # Burn a line
         line = fp.readline()
@@ -148,8 +167,12 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         trial = []
         time = []
         phot = []
+        if nebular:
+            phot_neb = []
         if extinct:
             phot_ex = []
+            if nebular:
+                phot_neb_ex = []
 
         # Read through data
         trialptr = 0
@@ -162,22 +185,41 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
             time.append(float(linesplit[0]))
             phot.append(np.array(linesplit[1:nfilter+1],
                                  dtype='float'))
+            if nebular:
+                phot_neb.append(np.array(
+                    linesplit[nfilter+1:2*nfilter+1],
+                    dtype='float'))
             if extinct:
                 tmp_ex = []
                 for i in range(nfilter):
-                    substr = line[21*(1+nfilter+i):21*(1+nfilter+i+1)]
+                    substr = line[21*(1+(1+nebular)*nfilter+i):
+                                  21*(1+(1+nebular)*nfilter+i+1)]
                     if substr.isspace():
                         tmp_ex.append(np.nan)
                     else:
                         tmp_ex.append(float(substr))
                 phot_ex.append(np.array(tmp_ex))
+                if nebular:
+                    tmp_neb_ex = []
+                    for i in range(nfilter):
+                        substr = line[21*(1+3*nfilter+i):
+                                      21*(1+3*nfilter+i+1)]
+                        if substr.isspace():
+                            tmp_neb_ex.append(np.nan)
+                        else:
+                            tmp_neb_ex.append(float(substr))
+                    phot_neb_ex.append(np.array(tmp_neb_ex))
 
         # Convert to arrays
         trial = np.array(trial)
         time = np.array(time)
         phot = np.array(phot)
+        if nebular:
+            phot_neb = np.array(phot_neb)
         if extinct:
             phot_ex = np.array(phot_ex)
+            if nebular:
+                phot_neb_ex = np.array(phot_neb_ex)
 
     elif fname.endswith('.bin'):
 
@@ -196,7 +238,10 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
             filters.append(line.split()[0])
             units.append(line.split()[1])
 
-        # Read the bit that tells us if we're using extinction
+        # Read the bits that tells us if we're using nebular emission
+        # and extinction
+        data = fp.read(struct.calcsize('b'))
+        nebular = struct.unpack('b', data)[0] != 0
         data = fp.read(struct.calcsize('b'))
         extinct = struct.unpack('b', data)[0] != 0
 
@@ -204,29 +249,37 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         data = fp.read()
 
         # Unpack the data
-        chunkstr = 'L'+(nfilter+1)*'d'
-        if extinct:
-            chunkstr = chunkstr + nfilter*'d'
+        nftot = (1+nebular)*(1+extinct)*nfilter
+        chunkstr = 'L'+(nftot+1)*'d'
         nchunk = len(data)/struct.calcsize(chunkstr)
         data_list = struct.unpack(nchunk*chunkstr, data)
 
         # Parse into arrays
+        trial = np.array(data_list[::nftot+2], dtype=np.uint64)
+        time = np.array(data_list[1::nftot+2])
+        phot = np.zeros((nchunk, nfilter))
+        if nebular:
+            phot_neb = np.zeros((nchunk, nfilter))
         if extinct:
-            trial = np.array(data_list[::2*nfilter+2], dtype=np.uint64)
-            time = np.array(data_list[1::2*nfilter+2])
-            phot = np.zeros((nchunk, nfilter))
             phot_ex = np.zeros((nchunk, nfilter))
-            for i in range(nchunk):
-                phot[i,:] = data_list[(2*nfilter+2)*i+2:
-                                      (2*nfilter+2)*i+2+nfilter]
-                phot_ex[i,:] = data_list[(2*nfilter+2)*i+2+nfilter:
-                                         (2*nfilter+2)*i+2+2*nfilter]
-        else:
-            trial = np.array(data_list[::nfilter+2], dtype='uint')
-            time = np.array(data_list[1::nfilter+2])
-            phot = np.zeros((nchunk, nfilter))
-            for i in range(nchunk):
-                phot[i,:] = data_list[(nfilter+2)*i+2:(nfilter+2)*(i+1)]
+            if nebular:
+                phot_neb_ex = np.zeros((nchunk, nfilter))
+        for i in range(nchunk):
+            phot[i,:] = data_list[(nftot+2)*i+2:
+                                  (nftot+2)*i+2+nfilter]
+            ptr = 1
+            if nebular:
+                phot_neb[i,:] = data_list[(nftot+2)*i+nfilter*ptr+2:
+                                          (nftot+2)*i+nfilter*(ptr+1)+2]
+                ptr = ptr+1
+            if extinct:
+                phot_ex[i,:] = data_list[(nftot+2)*i+nfilter*ptr+2:
+                                         (nftot+2)*i+nfilter*(ptr+1)+2]
+                ptr = ptr+1
+                if nebular:
+                    phot_neb_ex[i,:] \
+                        = data_list[(nftot+2)*i+nfilter*ptr+2:
+                                    (nftot+2)*i+nfilter*(ptr+1)+2]
 
     elif fname.endswith('.fits'):
 
@@ -246,34 +299,52 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
             filters.append(fp[1].header['TTYPE'+str(i)])
             units.append(fp[1].header['TUNIT'+str(i)])
             i = i+1
-
-        # See if we have extinction; this is indicated by there being
-        # an even number of filters, and by the filters in the second
-        # half of the list having the same names as those in the first
-        # half, but with the extension "_ex"
         nfilter = len(filters)
-        if nfilter % 2 == 0:
+
+        # Search for filters with names that end in _neb, _ex, or _neb_ex,
+        # indicating that they include the effects of the nebula,
+        # extinction, or both
+        neb = []
+        ex = []
+        for i in range(nfilter):
+            if len(filters[i]) > 4:
+                if filters[i][-4:] == '_neb':
+                    neb.append(i)
+            if len(filters[i]) > 3:
+                if filters[i][-3:] == '_ex':
+                    ext.append(i)
+        if len(neb) > 0:
+            nebular = True
+        else:
+            nebular = False
+        if len(ex) > 0:
             extinct = True
-            for i in range(nfilter/2):
-                extinct = extinct and \
-                          (filters[i]+'_ex' == filters[i+nfilter/2])
         else:
             extinct = False
 
-        # If we have extinction, reshape the filter and unit lists
-        if extinct:
-            nfilter = nfilter/2
-            filters = filters[:nfilter]
-            units = units[:nfilter]
+        # If we have nebular emission or extinction, reshape filter
+        # and units lists
+        nuniq = nfilter / ((1+nebular)*(1+extinct))
+        nfilter = nuniq
+        filters = filters[:nfilter]
+        units = units[:nfilter]
 
         # Get photometric data
         phot = np.zeros((len(time), nfilter))
+        if nebular:
+            phot_neb = np.zeros((len(time), nfilter))
         if extinct:
             phot_ex = np.zeros((len(time), nfilter))
+            if nebular:
+                phot_neb_ex = np.zeros((len(time), nfilter))
         for i in range(len(filters)):
             phot[:,i] = fp[1].data.field(filters[i])
+            if nebular:
+                phot_neb[:,i] = fp[1].data.field(filters[i]+"_neb")
             if extinct:
                 phot_ex[:,i] = fp[1].data.field(filters[i]+"_ex")
+                if nebular:
+                    phot_neb_ex[:,i] = fp[1].data.field(filters[i]+"_neb_ex")
 
     # Close file
     fp.close()
@@ -285,8 +356,13 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         if np.amin(time[:ntime] == time[ntime:2*ntime]):
             time = time[:ntime]
     phot = np.transpose(np.reshape(phot, (ntrial, ntime, nfilter)))
+    if nebular:
+        phot_neb = np.transpose(np.reshape(phot_neb, (ntrial, ntime, nfilter)))
     if extinct:
         phot_ex = np.transpose(np.reshape(phot_ex, (ntrial, ntime, nfilter)))
+        if nebular:
+            phot_neb_ex = np.transpose(
+                np.reshape(phot_neb_ex, (ntrial, ntime, nfilter)))
 
     # Read filter data if requested
     if not nofilterdata:
@@ -302,46 +378,56 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
             units_save = deepcopy(units)
             photometry_convert(photsystem, phot, units, 
                                filter_names=filters)
+            if nebular:
+                photometry_convert(photsystem, phot_neb, units_save, 
+                                   filter_names=filters)
             if extinct:
                 photometry_convert(photsystem, phot_ex, units_save, 
                                    filter_names=filters)
+                if nebular:
+                    photometry_convert(photsystem, phot_neb_ex, units_save, 
+                                       filter_names=filters)
         else:
             units_save = deepcopy(units)
             photometry_convert(photsystem, phot, units, wl_eff, 
                                filter_names=filters)
+            units_out = deepcopy(units)
+            units = deepcopy(units_save)
+            if nebular:
+                photometry_convert(photsystem, phot_neb, units, 
+                                   wl_eff, filter_names=filters)
+                units = deepcopy(units_save)
             if extinct:
-                photometry_convert(photsystem, phot_ex, units_save, wl_eff, 
+                photometry_convert(photsystem, phot_ex, units, wl_eff, 
                                    filter_names=filters)
+                units = deepcopy(units_save)
+                if nebular:
+                    photometry_convert(photsystem, phot_neb_ex, units, 
+                                       wl_eff, filter_names=filters)
+                    units = deepcopy(units_save)
+            units = units_out
 
     # Construct return object
-    if nofilterdata:
-        if extinct:
-            out_type = namedtuple('integrated_phot',
-                                  ['time', 'filter_names', 
-                                   'filter_units', 'phot', 'phot_ex'])
-            out = out_type(time, filters, units, phot, phot_ex)
-        else:
-            out_type = namedtuple('integrated_phot',
-                                  ['time', 'filter_names', 
-                                   'filter_units', 'phot'])
-            out = out_type(time, filters, units, phot)
-    else:
-        if extinct:
-            out_type = namedtuple('integrated_phot',
-                                  ['time', 'filter_names', 'filter_units',
-                                   'filter_wl_eff', 'filter_wl', 
+    fieldnames = ['time', 'filter_names', 'filter_units']
+    fields = [time, filters, units]
+    if not nofilterdata:
+        fieldnames = fieldnames + ['filter_wl_eff', 'filter_wl',
                                    'filter_response', 'filter_beta',
-                                   'filter_wl_c', 'phot', 'phot_ex'])
-            out = out_type(time, filters, units, wl_eff, wavelength, 
-                           response, beta, wl_c, phot, phot_ex)
-        else:
-            out_type = namedtuple('integrated_phot',
-                                  ['time', 'filter_names', 'filter_units',
-                                   'filter_wl_eff', 'filter_wl', 
-                                   'filter_response', 'filter_beta',
-                                   'filter_wl_c', 'phot'])
-            out = out_type(time, filters, units, wl_eff, wavelength, 
-                           response, beta, wl_c, phot)
+                                   'filter_wl_c']
+        fields = fields + [wl_eff, wavelength, response, beta, wl_c]
+    fieldnames = fieldnames + ['phot']
+    fields = fields + [phot]
+    if nebular:
+        fieldnames = fieldnames + ['phot_neb']
+        fields = fields + [phot_neb]
+    if extinct:
+        fieldnames = fieldnames + ['phot_ex']
+        fields = fields + [phot_ex]
+        if nebular:
+            fieldnames = fieldnames + ['phot_neb_ex']
+            fields = fields + [phot_neb_ex]
+    out_type = namedtuple('integrated_spec', fieldnames)
+    out = out_type(*fields)
 
     # Return
     return out
