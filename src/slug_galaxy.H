@@ -155,6 +155,10 @@ private:
   std::vector<double> phot;           // Integrated photometry of galaxy
   std::vector<double> L_lambda_ext;   // Specific luminosity w/extinction
   std::vector<double> phot_ext;       // Integrated photometry w/extinction
+  std::vector<double> L_lambda_neb;   // Specific star+nebular luminosity
+  std::vector<double> phot_neb;       // Integrated star+nebular photometry
+  std::vector<double> L_lambda_neb_ext; // Spec star+nebular lum w/extinction
+  std::vector<double> phot_neb_ext;   // Integ star+nebular phot w/extinction
 
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?

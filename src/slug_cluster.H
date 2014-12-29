@@ -102,41 +102,35 @@ public:
   const std::vector<slug_stardata> &get_isochrone()
   { set_isochrone(); return stardata; }
 
-  double get_Lbol() 
-  { set_Lbol(); return Lbol; }
+  // Routines to get bolometric luminosity, with or without extinction
+  double get_Lbol() { set_Lbol(); return Lbol; }
+  double get_Lbol_extinct() { set_Lbol(); return Lbol_ext; }
 
-  const std::vector<double> &get_spectrum()
-  { set_spectrum(); return L_lambda; }
+  // Methods to get spectrum, with or without extinction and nebular
+  // contributions
+  const std::vector<double> &get_spectrum();
+  const std::vector<double> &get_spectrum_neb();
+  const std::vector<double> &get_spectrum_extinct();
+  const std::vector<double> &get_spectrum_neb_extinct();
 
+  // Methods to get spectrum plus wavelength table
   void get_spectrum(std::vector<double> &lambda_out, 
-		    std::vector<double> &L_lambda_out)
-  { set_spectrum(); 
-    lambda_out = specsyn->lambda(); 
-    L_lambda_out = L_lambda; }
-
-  const std::vector<double> &get_photometry()
-  { set_photometry(); return phot; }
-
-  // Methods to get the spectrum and photometry including extinction
-  double get_Lbol_extinct() 
-  { set_Lbol(); return Lbol_ext; }
-
-  const std::vector<double> &get_spectrum_extinct()
-  { set_spectrum(); return L_lambda_ext; }
-
+		    std::vector<double> &L_lambda_out);
+  void get_spectrum_neb(std::vector<double> &lambda_out, 
+			std::vector<double> &L_lambda_out);
   void get_spectrum_extinct(std::vector<double> &lambda_out, 
-			    std::vector<double> &L_lambda_out)
-  { set_spectrum(); 
-    lambda_out = extinct->lambda(); 
-    L_lambda_out = L_lambda_ext; }
+			    std::vector<double> &L_lambda_out);
+  void get_spectrum_neb_extinct(std::vector<double> &lambda_out, 
+				std::vector<double> &L_lambda_out);
 
-  const std::vector<double> &get_photometry_extinct()
-  { set_photometry(); return phot_ext; }
+  // Methods to get photometry
+  const std::vector<double> &get_photometry();
+  const std::vector<double> &get_photometry_neb();
+  const std::vector<double> &get_photometry_extinct();
+  const std::vector<double> &get_photometry_neb_extinct();
 
-  // Method to clear the spectrum, in order to save memory
-  void clear_spectrum()
-  { L_lambda.resize(0); L_lambda_ext.resize(0); 
-    spec_set = false; }
+  // Method to clear the spectrum and photometry
+  void clear_spectrum();
 
   // Output routines. The optional arguemnt cluster_only is used to
   // flag that only this cluster is being written, rather than a
@@ -198,6 +192,10 @@ private:
   std::vector<double> phot;           // Photometry
   std::vector<double> L_lambda_ext;   // Spectrum after extinction
   std::vector<double> phot_ext;       // Photometry after extinction
+  std::vector<double> L_lambda_neb;   // Specific star+nebular luminosity
+  std::vector<double> phot_neb;       // Integrated star+nebular photometry
+  std::vector<double> L_lambda_neb_ext; // Spec star+nebular lum w/extinction
+  std::vector<double> phot_neb_ext;   // Integ star+nebular phot w/extinction
   bool is_disrupted;                  // Is this cluster disrupted?
   bool data_set, Lbol_set, spec_set, phot_set;  // Status indicators
 };

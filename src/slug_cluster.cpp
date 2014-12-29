@@ -248,6 +248,7 @@ slug_cluster::set_spectrum() {
   vector<double>::size_type nl = specsyn->n_lambda();
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
+  if (nebular != NULL) L_lambda_neb.assign(nl, 0.0);
 
   // Stochastic stars part
   if (stars.size() > 0) {
@@ -273,6 +274,9 @@ slug_cluster::set_spectrum() {
     Lbol += Lbol_tmp;
   }
 
+  // If using nebular emission, compute the stellar+nebular spectrum
+  if (nebular != NULL) L_lambda_neb = nebular->get_tot_spec(L_lambda);
+
   // If using extinction, compute the extincted spectrum and the
   // bolometric luminosity after extinction is applied
   if (extinct != NULL) {
@@ -280,6 +284,8 @@ slug_cluster::set_spectrum() {
     Lbol_ext = int_tabulated::
       integrate(extinct->lambda(), L_lambda_ext) 
       / constants::Lsun;
+    if (nebular != NULL)
+      L_lambda_neb_ext = extinct->spec_extinct(A_V, L_lambda_neb);
   }
 
   // Flag that things are set
@@ -310,10 +316,18 @@ slug_cluster::set_photometry() {
   for (vector<double>::size_type i=0; i<phot.size(); i++)
     if (phot[i] == -constants::big) phot[i] = Lbol;
 
+  // Repeat for stellar+nebular spectrum
+  if (nebular != NULL) {
+    phot_neb = filters->compute_phot(lambda, L_lambda_neb);
+    for (vector<double>::size_type i=0; i<phot_neb.size(); i++)
+      if (phot_neb[i] == -constants::big) phot_neb[i] = Lbol;
+  }
+
   // If using extinction, compute photometry on the extincted
   // spectrum; in the process, be careful to mask filters whose
   // response curve doesn't overlap with the extincted spectrum
   if (extinct != NULL) {
+
     phot_ext = filters->compute_phot(extinct->lambda(), 
 				     L_lambda_ext);
     for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
@@ -330,12 +344,127 @@ slug_cluster::set_photometry() {
 	phot_ext[i] = nan("");
       }
     }
+
+    // Repeat for stellar+nebular spectrum
+    if (nebular != NULL) {
+      phot_neb_ext = filters->compute_phot(extinct->lambda(), 
+					   L_lambda_neb_ext);
+      for (vector<double>::size_type i=0; i<phot_neb_ext.size(); i++) {
+	if (phot_neb_ext[i] == -constants::big) {
+	  phot_neb_ext[i] = Lbol_ext;
+	} else if (filters->get_filter(i)->photon_filter() &&
+		   (filters->get_filter(i)->get_wavelength_min() >
+		    extinct->lambda_max())) {
+	  phot_neb_ext[i] = nan("");
+	} else if ((filters->get_filter(i)->get_wavelength_min() <
+		    extinct->lambda_min()) ||
+		   (filters->get_filter(i)->get_wavelength_max() >
+		    extinct->lambda_max())) {
+	  phot_neb_ext[i] = nan("");
+	}
+      }
+    }
   }
   
   // Flag that the photometry is set
   phot_set = true;
 }  
 
+
+////////////////////////////////////////////////////////////////////////
+// Routines to return the spectrum, without or without nebular
+// contributions and extinction, and with our without the wavelength
+// table
+////////////////////////////////////////////////////////////////////////
+const vector<double> &slug_cluster::get_spectrum() {
+  set_spectrum();
+  return L_lambda;
+}
+
+const vector<double> &slug_cluster::get_spectrum_neb() {
+  set_spectrum();
+  return L_lambda_neb;
+}
+
+const vector<double> &slug_cluster::get_spectrum_extinct() {
+  set_spectrum();
+  return L_lambda_ext;
+}
+
+const vector<double> &slug_cluster::get_spectrum_neb_extinct() { 
+  set_spectrum(); 
+  return L_lambda_neb_ext;
+}
+
+void slug_cluster::get_spectrum(vector<double> &lambda_out, 
+				vector<double> &L_lambda_out) { 
+  set_spectrum(); 
+  lambda_out = specsyn->lambda(); 
+  L_lambda_out = L_lambda;
+}
+
+void slug_cluster::get_spectrum_neb(vector<double> &lambda_out, 
+				    vector<double> &L_lambda_out) {
+  set_spectrum(); 
+  lambda_out = specsyn->lambda(); 
+  L_lambda_out = L_lambda_neb;
+}
+
+void slug_cluster::get_spectrum_extinct(vector<double> &lambda_out, 
+					vector<double> &L_lambda_out) { 
+  set_spectrum(); 
+  lambda_out = extinct->lambda(); 
+  L_lambda_out = L_lambda_ext;
+}
+
+void slug_cluster::get_spectrum_neb_extinct(vector<double> &lambda_out, 
+					    vector<double> &L_lambda_out) { 
+  set_spectrum(); 
+  lambda_out = specsyn->lambda(); 
+  L_lambda_out = L_lambda_neb_ext;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Routines to return the photometry
+////////////////////////////////////////////////////////////////////////
+
+const vector<double> &slug_cluster::get_photometry() { 
+  set_photometry();
+  return phot;
+}
+
+const vector<double> &slug_cluster::get_photometry_neb() {
+  set_photometry();
+  return phot_neb;
+}
+
+const vector<double> &slug_cluster::get_photometry_extinct() {
+  set_photometry();
+  return phot_ext;
+}
+
+const vector<double> &slug_cluster::get_photometry_neb_extinct() {
+  set_photometry();
+  return phot_neb_ext;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Routines to clear data
+////////////////////////////////////////////////////////////////////////
+void slug_cluster::clear_spectrum() {
+  L_lambda.resize(0); 
+  L_lambda_ext.resize(0); 
+  L_lambda_neb.resize(0);
+  L_lambda_neb_ext.resize(0);
+  phot.resize(0);
+  phot_neb.resize(0);
+  phot_ext.resize(0);
+  phot_neb_ext.resize(0);
+  spec_set = false;
+  phot_set = false;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Output physical properties
@@ -453,11 +582,17 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
 	      << setw(11) << right << curTime << "   "
 	      << setw(11) << right << lambda[i] << "   "
 	      << setw(11) << right << L_lambda[i];
+      if (nebular != NULL)
+	outfile << "   "
+		<< setw(11) << right << L_lambda_neb[i];
       if (extinct != NULL) {
 	int j = i - extinct->off();
 	if ((j >= 0) && (j < L_lambda_ext.size())) {
 	  outfile << "   "
 		  << setw(11) << right << L_lambda_ext[j];
+	  if (nebular != NULL)
+	    outfile << "   "
+		    << setw(11) << right << L_lambda_neb_ext[j];
 	}
       }
       outfile << endl;
@@ -472,9 +607,16 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
     outfile.write((char *) &id, sizeof id);
     outfile.write((char *) L_lambda.data(), 
 		  L_lambda.size()*sizeof(double));
-    if (extinct != NULL)
+    if (nebular != NULL)
+      outfile.write((char *) L_lambda_neb.data(), 
+		    L_lambda_neb.size()*sizeof(double));
+    if (extinct != NULL) {
       outfile.write((char *) L_lambda_ext.data(), 
 		    L_lambda_ext.size()*sizeof(double));
+      if (nebular != NULL)
+	outfile.write((char *) L_lambda_neb_ext.data(), 
+		      L_lambda_neb_ext.size()*sizeof(double));
+    }
   }
 }
 
@@ -503,9 +645,25 @@ write_spectrum(fitsfile *out_fits, unsigned long trial) {
 		 &fits_status);
   fits_write_col(out_fits, TDOUBLE, 4, nrows+1, 1, L_lambda.size(), 
 		 L_lambda.data(), &fits_status);
-  if (extinct != NULL)
-    fits_write_col(out_fits, TDOUBLE, 5, nrows+1, 1, L_lambda_ext.size(), 
-		   L_lambda_ext.data(), &fits_status);
+  unsigned int colnum = 5;
+  if (nebular != NULL) {
+    fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 
+		   L_lambda_neb.size(), L_lambda_neb.data(), 
+		   &fits_status);
+    colnum++;
+  }
+  if (extinct != NULL) {
+    fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 
+		   L_lambda_ext.size(), L_lambda_ext.data(), 
+		   &fits_status);
+    colnum++;
+    if (nebular != NULL) {
+      fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 
+		     L_lambda_neb_ext.size(), L_lambda_neb_ext.data(), 
+		     &fits_status);
+      colnum++;
+    }
+  }
 }
 #endif
 
@@ -528,12 +686,23 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
 	    << setw(18) << right << curTime;
     for (vector<double>::size_type i=0; i<phot.size(); i++)
       outfile << "   " << setw(18) << right << phot[i];
+    if (nebular != NULL)
+      for (vector<double>::size_type i=0; i<phot_neb.size(); i++)
+	outfile << "   " << setw(18) << right << phot_neb[i];
     if (extinct != NULL) {
       for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
 	if (!std::isnan(phot_ext[i]))
 	  outfile << "   " << setw(18) << right << phot_ext[i];
 	else
 	  outfile << "   " << setw(18) << right << " ";
+      }
+      if (nebular != NULL) {
+	for (vector<double>::size_type i=0; i<phot_neb_ext.size(); i++) {
+	  if (!std::isnan(phot_neb_ext[i]))
+	    outfile << "   " << setw(18) << right << phot_neb_ext[i];
+	  else
+	    outfile << "   " << setw(18) << right << " ";
+	}
       }
     }
     outfile << endl;
@@ -547,9 +716,16 @@ write_photometry(ofstream& outfile, const outputMode out_mode,
     outfile.write((char *) &id, sizeof id);
     outfile.write((char *) phot.data(), 
 		  phot.size()*sizeof(double));
-    if (extinct != NULL)
+    if (nebular != NULL)
+      outfile.write((char *) phot_neb.data(), 
+		    phot_neb.size()*sizeof(double));
+    if (extinct != NULL) {
       outfile.write((char *) phot_ext.data(), 
 		    phot_ext.size()*sizeof(double));
+      if (nebular != NULL)
+	outfile.write((char *) phot_neb_ext.data(), 
+		      phot_neb_ext.size()*sizeof(double));
+    }
   }
 }
 

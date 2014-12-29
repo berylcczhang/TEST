@@ -345,11 +345,13 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
   vector<double>::size_type nl = specsyn->n_lambda();
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
+  if (nebular != NULL) L_lambda_neb.assign(nl, 0.0);
   vector<double>::size_type nl_ext = 0;
   if (extinct != NULL) {
     nl_ext = extinct->n_lambda();
     L_lambda_ext.assign(nl_ext, 0.0);
     Lbol_ext = 0.0;
+    if (nebular != NULL) L_lambda_neb_ext.assign(nl_ext, 0.0);
   }
 
   // Loop over non-disrupted clusters; for each one, get spectrum and
@@ -360,11 +362,22 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
+    if (nebular != NULL) {
+      const vector<double>& spec_neb = (*it)->get_spectrum_neb();
+      for (vector<double>::size_type i=0; i<nl; i++) 
+	L_lambda_neb[i] += spec_neb[i];
+    }
     if (extinct != NULL) {
       const vector<double>& spec_ext = (*it)->get_spectrum_extinct();
       for (vector<double>::size_type i=0; i<nl_ext; i++) 
 	L_lambda_ext[i] += spec_ext[i];
       Lbol_ext += (*it)->get_Lbol_extinct();
+      if (nebular != NULL) {
+	const vector<double>& spec_neb_ext 
+	  = (*it)->get_spectrum_neb_extinct();
+	for (vector<double>::size_type i=0; i<nl; i++) 
+	  L_lambda_neb_ext[i] += spec_neb_ext[i];
+      }
     }
     if (del_cluster) {
       delete (*it);
@@ -379,11 +392,22 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += (*it)->get_Lbol();
+    if (nebular != NULL) {
+      const vector<double>& spec_neb = (*it)->get_spectrum_neb();
+      for (vector<double>::size_type i=0; i<nl; i++) 
+	L_lambda_neb[i] += spec_neb[i];
+    }
     if (extinct != NULL) {
       const vector<double>& spec_ext = (*it)->get_spectrum_extinct();
       for (vector<double>::size_type i=0; i<nl_ext; i++) 
 	L_lambda_ext[i] += spec_ext[i];
       Lbol_ext += (*it)->get_Lbol_extinct();
+      if (nebular != NULL) {
+	const vector<double>& spec_neb_ext 
+	  = (*it)->get_spectrum_neb_extinct();
+	for (vector<double>::size_type i=0; i<nl; i++) 
+	  L_lambda_neb_ext[i] += spec_neb_ext[i];
+      }
     }
     if (del_cluster) {
       delete (*it);
@@ -398,6 +422,12 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     for (vector<double>::size_type j=0; j<nl; j++) 
       L_lambda[j] += spec[j];
     Lbol += pow(10.0, field_data[i].logL);
+    vector<double> spec_neb;
+    if (nebular != NULL) {
+      spec_neb = nebular->get_tot_spec(spec);
+      for (vector<double>::size_type j=0; j<nl; j++) 
+	L_lambda_neb[j] += spec_neb[j];
+    }
     if (extinct != NULL) {
       vector<double> spec_ext = 
 	extinct->spec_extinct(field_star_AV[i], spec);
@@ -405,6 +435,12 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
 	L_lambda_ext[j] += spec_ext[j];
       Lbol_ext += int_tabulated::
 	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
+      if (nebular != NULL) {
+	vector<double> spec_neb_ext = 
+	  extinct->spec_extinct(field_star_AV[i], spec_neb);
+	for (vector<double>::size_type j=0; j<nl_ext; j++) 
+	  L_lambda_neb_ext[j] += spec_neb_ext[j];
+      }
     }
   }
 
@@ -418,6 +454,11 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += Lbol_tmp;
+    if (nebular != NULL) {
+      vector<double> spec_neb = nebular->get_tot_spec(spec);
+      for (vector<double>::size_type i=0; i<nl; i++) 
+	L_lambda_neb[i] += spec_neb[i];
+    }
     if (extinct != NULL) {
       vector<double> spec_ext =
 	extinct->spec_extinct(extinct->AV_expect(), spec);
@@ -425,6 +466,11 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
 	L_lambda_ext[i] += spec_ext[i];
       Lbol_ext += int_tabulated::
 	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
+      if (nebular != NULL) {
+	vector<double> spec_neb_ext = nebular->get_tot_spec(spec_ext);
+	for (vector<double>::size_type i=0; i<nl; i++) 
+	  L_lambda_neb_ext[i] += spec_neb_ext[i];
+      }
     }
   }
 
@@ -456,6 +502,13 @@ slug_galaxy::set_photometry(const bool del_cluster) {
   for (vector<double>::size_type i=0; i<phot.size(); i++)
     if (phot[i] == -constants::big) phot[i] = Lbol;
 
+  // Repeat for stellar+nebular spectrum
+  if (nebular != NULL) {
+    phot_neb = filters->compute_phot(lambda, L_lambda_neb);
+    for (vector<double>::size_type i=0; i<phot_neb.size(); i++)
+      if (phot_neb[i] == -constants::big) phot_neb[i] = Lbol;
+  }
+
   // Repeat for extincted values
   if (extinct != NULL) {
     phot_ext = filters->compute_phot(extinct->lambda(), 
@@ -472,6 +525,24 @@ slug_galaxy::set_photometry(const bool del_cluster) {
 		 (filters->get_filter(i)->get_wavelength_max() >
 		  extinct->lambda_max())) {
 	phot_ext[i] = nan("");
+      }
+    }
+    if (nebular != NULL) {
+      phot_neb_ext = filters->compute_phot(extinct->lambda(), 
+				       L_lambda_neb_ext);
+      for (vector<double>::size_type i=0; i<phot_neb_ext.size(); i++) {
+	if (phot_neb_ext[i] == -constants::big) {
+	  phot_neb_ext[i] = Lbol_ext;
+	} else if (filters->get_filter(i)->photon_filter() &&
+		   (filters->get_filter(i)->get_wavelength_min() >
+		    extinct->lambda_max())) {
+	  phot_neb_ext[i] = nan("");
+	} else if ((filters->get_filter(i)->get_wavelength_min() <
+		    extinct->lambda_min()) ||
+		   (filters->get_filter(i)->get_wavelength_max() >
+		    extinct->lambda_max())) {
+	  phot_neb_ext[i] = nan("");
+	}
       }
     }
   }
@@ -611,11 +682,17 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
 		    << setw(11) << right << curTime << "   "
 		    << setw(11) << right << lambda[i] << "   "
 		    << setw(11) << right << L_lambda[i];
+      if (nebular != NULL)
+	int_spec_file << "   "
+		      << setw(11) << right << L_lambda_neb[i];
       if (extinct != NULL) {
 	int j = i - extinct->off();
 	if ((j >= 0) && (j < L_lambda_ext.size())) {
 	  int_spec_file << "   "
 			<< setw(11) << right << L_lambda_ext[j];
+	  if (nebular != NULL)
+	    int_spec_file << "   "
+			  << setw(11) << right << L_lambda_neb_ext[j];
 	}
       }
       int_spec_file << endl;
@@ -625,9 +702,16 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
     int_spec_file.write((char *) &curTime, sizeof curTime);
     int_spec_file.write((char *) L_lambda.data(), 
 			sizeof(double)*L_lambda.size());
-    if (extinct != NULL)
+    if (nebular != NULL)
+      int_spec_file.write((char *) L_lambda_neb.data(),
+			  sizeof(double)*L_lambda_neb.size());
+    if (extinct != NULL) {
       int_spec_file.write((char *) L_lambda_ext.data(),
 			  sizeof(double)*L_lambda_ext.size());
+      if (nebular != NULL)
+	int_spec_file.write((char *) L_lambda_neb_ext.data(),
+			    sizeof(double)*L_lambda_neb_ext.size());
+    }
   }
 }
 
@@ -656,10 +740,25 @@ slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits,
 		 &fits_status);
   fits_write_col(int_spec_fits, TDOUBLE, 3, nrows+1, 1, 
 		 L_lambda.size(), L_lambda.data(), &fits_status);
-  if (extinct != NULL)
-    fits_write_col(int_spec_fits, TDOUBLE, 4, nrows+1, 1, 
+  int colnum = 4;
+  if (extinct != NULL) {
+    fits_write_col(int_spec_fits, TDOUBLE, colnum, nrows+1, 1, 
+		   L_lambda_neb.size(), L_lambda_neb.data(),
+		   &fits_status);
+    colnum++;
+  }
+  if (extinct != NULL) {
+    fits_write_col(int_spec_fits, TDOUBLE, colnum, nrows+1, 1, 
 		   L_lambda_ext.size(), L_lambda_ext.data(),
 		   &fits_status);
+    colnum++;
+    if (extinct != NULL) {
+      fits_write_col(int_spec_fits, TDOUBLE, colnum, nrows+1, 1, 
+		     L_lambda_neb_ext.size(), L_lambda_neb_ext.data(),
+		     &fits_status);
+      colnum++;
+    }
+  }
 }
 #endif
 
@@ -717,12 +816,28 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
 	    << setw(18) << right << curTime;
     for (vector<double>::size_type i=0; i<phot.size(); i++)
       outfile << "   " << setw(18) << right << phot[i];
+    if (nebular != NULL) {
+      for (vector<double>::size_type i=0; i<phot_neb.size(); i++) {
+	if (!std::isnan(phot_neb[i]))
+	  outfile << "   " << setw(18) << right << phot_neb[i];
+	else
+	  outfile << "   " << setw(18) << right << " ";
+      }
+    }
     if (extinct != NULL) {
       for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
 	if (!std::isnan(phot_ext[i]))
 	  outfile << "   " << setw(18) << right << phot_ext[i];
 	else
 	  outfile << "   " << setw(18) << right << " ";
+      }
+      if (nebular != NULL) {
+	for (vector<double>::size_type i=0; i<phot_neb_ext.size(); i++) {
+	  if (!std::isnan(phot_neb[i]))
+	    outfile << "   " << setw(18) << right << phot_neb_ext[i];
+	  else
+	    outfile << "   " << setw(18) << right << " ";
+	}
       }
     }
     outfile << endl;
@@ -731,9 +846,16 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
     outfile.write((char *) &curTime, sizeof curTime);
     outfile.write((char *) phot.data(), 
 			sizeof(double)*phot.size());
-    if (extinct != NULL)
+    if (nebular != NULL)
+      outfile.write((char *) phot_neb.data(), 
+		    sizeof(double)*phot_neb.size());
+    if (extinct != NULL) {
       outfile.write((char *) phot_ext.data(), 
 		    sizeof(double)*phot_ext.size());
+      if (nebular != NULL)
+	outfile.write((char *) phot_neb_ext.data(), 
+		      sizeof(double)*phot_neb_ext.size());
+    }
   }
 }
 
@@ -759,19 +881,33 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
 		 &fits_status);
   fits_write_col(int_phot_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
-  for (int i=0; i<phot.size(); i++) {
-    int colnum = i+3;
+  unsigned int colnum = 3;
+  for (unsigned int i=0; i<phot.size(); i++) {
     fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
 		   &(phot[i]), &fits_status);
+    colnum++;
   }
-  if (extinct != NULL) {
-    for (int i=0; i<phot_ext.size(); i++) {
-      int colnum = i+3+phot.size();
+  if (nebular != NULL) {
+    for (unsigned int i=0; i<phot_ext.size(); i++) {
       fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
-		     &(phot_ext[i]), &fits_status);
+		     &(phot_neb[i]), &fits_status);
+      colnum++;
     }
   }
-
+  if (extinct != NULL) {
+    for (unsigned int i=0; i<phot_ext.size(); i++) {
+      fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		     &(phot_ext[i]), &fits_status);
+      colnum++;
+    }
+    if (nebular != NULL) {
+      for (unsigned int i=0; i<phot_ext.size(); i++) {
+	fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		       &(phot_neb_ext[i]), &fits_status);
+	colnum++;
+      }
+    }
+  }
 }
 #endif
 

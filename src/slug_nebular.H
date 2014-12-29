@@ -52,8 +52,7 @@ public:
   slug_nebular(const char *atomic_dir,
 	       const std::vector<double>& lambda_in,
 	       const double n_in = 1.0e4, const double T_in = 1.0e4, 
-	       const double phi_dust_in = 0.73,
-	       const double z_in = 0.0);
+	       const double phi_dust_in = 0.73);
 
   // Destructor
   ~slug_nebular();
@@ -61,12 +60,16 @@ public:
   // Routines to set the physical parameters for the HII region
   void set_properties(const double n_in = 1.0e4, 
 		      const double T_in = 1.0e4, 
-		      const double phi_dust_in = 0.73,
-		      const double z_in = 0.0);
+		      const double phi_dust_in = 0.73);
 
-  // Routines to return nebular spectrum
-  std::vector<double> get_spectrum(const std::vector<double>& L_lambda);
-  std::vector<double> get_spectrum(const double QH0);
+  // Routine to return spectrum with nebular contribution
+  std::vector<double> 
+  get_tot_spec(const std::vector<double>& L_lambda) const;
+
+  // Routine to return just the nebular spectrum
+  std::vector<double> 
+  get_neb_spec(const std::vector<double>& L_lambda) const;
+  std::vector<double> get_neb_spec(const double QH0) const;
 
 private:
 
@@ -87,7 +90,6 @@ private:
   double phi_dust; // Fraction of ionizing photons absorbed by H
   double den;      // Gas density
   double T;        // Gas temperature
-  double z;        // Redshift
 
   // Hydrogen free-free and bound-free emission data
   unsigned int HIffbf_nT, HIffbf_nE;

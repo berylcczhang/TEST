@@ -48,7 +48,7 @@ slug_nebular::
 slug_nebular(const char *atomic_dir,
 	     const std::vector<double>& lambda_in,
 	     const double n_in, const double T_in,
-	     const double phi_dust_in, const double z_in) :
+	     const double phi_dust_in) :
   lambda(lambda_in) {
 
   // Initialize the conversion factor
@@ -183,9 +183,8 @@ slug_nebular(const char *atomic_dir,
       H2p_emiss.push_back((y * (1.0-y) * pow(1.0 - 4.0*y*(1.0-y), H2p_g) +
 			   H2p_a * pow(y*(1-y), H2p_b) * 
 			   pow(4.0*y*(1.0-y), H2p_g)) / H2p_norm *
-			  constants::hc2 / 
-			  (pow(lambda[i], 3.0) * 
-			   pow(constants::Angstrom, 2.0)));
+			  constants::hc * constants::lambdaHI / 
+			  (pow(lambda[i], 3.0) * constants::Angstrom));
     }
   }
 
@@ -267,7 +266,7 @@ slug_nebular(const char *atomic_dir,
   //////////////////////////////////////////////////////////////////////
   // Compute L_lambda / Q
   //////////////////////////////////////////////////////////////////////
-  set_properties(n_in, T_in, phi_dust_in, z_in);
+  set_properties(n_in, T_in, phi_dust_in);
 }
 
 
@@ -284,13 +283,12 @@ slug_nebular::~slug_nebular() {
 void
 slug_nebular::
 set_properties(const double n_in, const double T_in, 
-	       const double phi_dust_in, const double z_in) {
+	       const double phi_dust_in) {
 
   // Store the properties
   den = n_in;
   T = T_in;
   phi_dust = phi_dust_in;
-  z = z_in;
 
   // Zero out the L/Q conversion
   LperQ.assign(lambda.size(), 0);
@@ -461,7 +459,7 @@ set_properties(const double n_in, const double T_in,
 // Compute nebular spectrum from ionizing luminosity
 ////////////////////////////////////////////////////////////////////////
 vector<double> 
-slug_nebular::get_spectrum(const double QH0) {
+slug_nebular::get_neb_spec(const double QH0) const {
 
   // Return value
   vector<double> L_lambda(lambda.size());
@@ -474,11 +472,33 @@ slug_nebular::get_spectrum(const double QH0) {
 // Compute nebular spectrum from input spectrum
 ////////////////////////////////////////////////////////////////////////
 vector<double> 
-slug_nebular::get_spectrum(const vector<double>& L_lambda) {
+slug_nebular::get_neb_spec(const vector<double>& L_lambda) const {
 
   // Get ionizing photon flux from input spectrum
   double QH0 = ion_filter->compute_photon_lum(lambda, L_lambda);
 
   // Return value from get_spectrum routine with ionizing flux
-  return get_spectrum(QH0);
+  return get_neb_spec(QH0);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Compute total stellar + nebular spectrum
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::get_tot_spec(const vector<double>& L_lambda) const {
+
+  // Get nebular spectrum
+  vector<double> neb_spec = get_neb_spec(L_lambda);
+
+  // Prepare to store output
+  vector<double> tot_spec(L_lambda.size(), 0.0);
+
+  // Compute total spectrum
+  for (unsigned int i=0; i<tot_spec.size(); i++) {
+    if (lambda[i] < constants::lambdaHI) continue;
+    tot_spec[i] = L_lambda[i] + neb_spec[i];
+  }
+
+  // Return
+  return tot_spec;
 }
