@@ -505,8 +505,16 @@ slug_galaxy::set_photometry(const bool del_cluster) {
   // Repeat for stellar+nebular spectrum
   if (nebular != NULL) {
     phot_neb = filters->compute_phot(lambda, L_lambda_neb);
-    for (vector<double>::size_type i=0; i<phot_neb.size(); i++)
-      if (phot_neb[i] == -constants::big) phot_neb[i] = Lbol;
+    // Special cases: force ionizing luminosity to be zero exactly for
+    // this spectrum, and bolometric luminosity to be exactly the same
+    // as for the non-nebular case
+    for (vector<double>::size_type i=0; i<phot_neb.size(); i++) {
+      if (phot_neb[i] == -constants::big) phot_neb[i] = Lbol; 
+      if (filters->get_filter(i)->photon_filter() &&
+	  (filters->get_filter(i)->get_wavelength_max()
+	   <= constants::lambdaHI))
+	phot_neb[i] = 0.0;
+    }
   }
 
   // Repeat for extincted values
@@ -542,6 +550,10 @@ slug_galaxy::set_photometry(const bool del_cluster) {
 		   (filters->get_filter(i)->get_wavelength_max() >
 		    extinct->lambda_max())) {
 	  phot_neb_ext[i] = nan("");
+	} else if (filters->get_filter(i)->photon_filter() &&
+		   (filters->get_filter(i)->get_wavelength_max()
+		    <= constants::lambdaHI)) {
+	  phot_neb_ext[i] = 0.0;
 	}
       }
     }
@@ -888,7 +900,7 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
     colnum++;
   }
   if (nebular != NULL) {
-    for (unsigned int i=0; i<phot_ext.size(); i++) {
+    for (unsigned int i=0; i<phot_neb.size(); i++) {
       fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
 		     &(phot_neb[i]), &fits_status);
       colnum++;
@@ -901,7 +913,7 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
       colnum++;
     }
     if (nebular != NULL) {
-      for (unsigned int i=0; i<phot_ext.size(); i++) {
+      for (unsigned int i=0; i<phot_neb_ext.size(); i++) {
 	fits_write_col(int_phot_fits, TDOUBLE, colnum, nrows+1, 1, 1,
 		       &(phot_neb_ext[i]), &fits_status);
 	colnum++;

@@ -319,8 +319,16 @@ slug_cluster::set_photometry() {
   // Repeat for stellar+nebular spectrum
   if (nebular != NULL) {
     phot_neb = filters->compute_phot(lambda, L_lambda_neb);
-    for (vector<double>::size_type i=0; i<phot_neb.size(); i++)
+    // Special cases: force ionizing luminosity to be zero exactly for
+    // this spectrum, and bolometric luminosity to be exactly the same
+    // as for the non-nebular case
+    for (vector<double>::size_type i=0; i<phot_neb.size(); i++) {
       if (phot_neb[i] == -constants::big) phot_neb[i] = Lbol;
+      if (filters->get_filter(i)->photon_filter() &&
+	  (filters->get_filter(i)->get_wavelength_max()
+	   <= constants::lambdaHI))
+	phot_neb[i] = 0.0;
+    }
   }
 
   // If using extinction, compute photometry on the extincted
@@ -361,6 +369,10 @@ slug_cluster::set_photometry() {
 		   (filters->get_filter(i)->get_wavelength_max() >
 		    extinct->lambda_max())) {
 	  phot_neb_ext[i] = nan("");
+	} else if (filters->get_filter(i)->photon_filter() &&
+		   (filters->get_filter(i)->get_wavelength_max()
+		    <= constants::lambdaHI)) {
+	  phot_neb_ext[i] = 0.0;
 	}
       }
     }
@@ -753,16 +765,31 @@ write_photometry(fitsfile *out_fits, unsigned long trial) {
 		 &fits_status);
   fits_write_col(out_fits, TDOUBLE, 3, nrows+1, 1, 1, &curTime, 
 		 &fits_status);
-  for (int i=0; i<phot.size(); i++) {
-    int colnum = i+4;
+  unsigned int colnum = 4;
+  for (unsigned int i=0; i<phot.size(); i++) {
     fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
 		   &(phot[i]), &fits_status);
+    colnum++;
+  }
+  if (nebular != NULL) {
+    for (unsigned int i=0; i<phot_neb.size(); i++) {
+      fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		     &(phot_neb[i]), &fits_status);
+      colnum++;
+    }
   }
   if (extinct != NULL) {
-    for (int i=0; i<phot_ext.size(); i++) {
-      int colnum = i+4+phot_ext.size();
+    for (unsigned int i=0; i<phot_ext.size(); i++) {
       fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
 		     &(phot_ext[i]), &fits_status);
+      colnum++;
+    }
+    if (nebular != NULL) {
+      for (unsigned int i=0; i<phot_neb_ext.size(); i++) {
+	fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		       &(phot_neb_ext[i]), &fits_status);
+	colnum++;
+      }
     }
   }
 }

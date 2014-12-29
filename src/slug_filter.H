@@ -101,10 +101,9 @@ public:
   const std::vector<double> &get_wavelength() const { return lambda; }
   const std::vector<double> &get_response() const { return response; }
   double get_wavelength_min() const 
-  { if (bol_flux) return 0; else return lambda.front(); }
+  { if (bol_flux || phot_flux) return 0; else return lambda.front(); }
   double get_wavelength_max() const
-  { if (bol_flux || phot_flux) return constants::big;
-    else return lambda.back(); }
+  { if (bol_flux) return constants::big; else return lambda.back(); }
 
 private:
 
