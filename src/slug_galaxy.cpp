@@ -741,7 +741,7 @@ slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits,
   fits_write_col(int_spec_fits, TDOUBLE, 3, nrows+1, 1, 
 		 L_lambda.size(), L_lambda.data(), &fits_status);
   int colnum = 4;
-  if (extinct != NULL) {
+  if (nebular != NULL) {
     fits_write_col(int_spec_fits, TDOUBLE, colnum, nrows+1, 1, 
 		   L_lambda_neb.size(), L_lambda_neb.data(),
 		   &fits_status);
@@ -752,7 +752,7 @@ slug_galaxy::write_integrated_spec(fitsfile* int_spec_fits,
 		   L_lambda_ext.size(), L_lambda_ext.data(),
 		   &fits_status);
     colnum++;
-    if (extinct != NULL) {
+    if (nebular != NULL) {
       fits_write_col(int_spec_fits, TDOUBLE, colnum, nrows+1, 1, 
 		     L_lambda_neb_ext.size(), L_lambda_neb_ext.data(),
 		     &fits_status);

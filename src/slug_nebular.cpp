@@ -355,7 +355,7 @@ set_properties(const double n_in, const double T_in,
   // eqn. 10.8 for free-free alone; bound-free is negligible in
   // comparison. The rest of the calculationis the same as above.
   for (unsigned int i=idx; i<LperQ.size(); i++) {
-    double nu = constants::hc / (lambda[i]*constants::Angstrom);
+    double nu = constants::c / (lambda[i]*constants::Angstrom);
     double gammaHI = 4.0*M_PI * 3.35e-40 * pow(nu/1e9, -0.118) * 
       pow(T/1e4, -0.323);
     double gamma_wl = gammaHI * constants::c / 
