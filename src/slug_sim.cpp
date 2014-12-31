@@ -1188,7 +1188,7 @@ void slug_sim::open_cluster_spec() {
     tform2_str[3] = lexical_cast<string>(nl) + "D";
     vector<string> tunit2_str = { "", "", "yr", "erg/s/A" };
     ncol = 4;
-    if (extinct != NULL) {
+    if (nebular != NULL) {
       ttype2_str.push_back("L_lambda_neb");
       tform2_str.push_back(lexical_cast<string>(nl) + "D");
       tunit2_str.push_back("erg/s/A");
