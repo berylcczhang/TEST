@@ -375,7 +375,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
       if (nebular != NULL) {
 	const vector<double>& spec_neb_ext 
 	  = (*it)->get_spectrum_neb_extinct();
-	for (vector<double>::size_type i=0; i<nl; i++) 
+	for (vector<double>::size_type i=0; i<nl_ext; i++) 
 	  L_lambda_neb_ext[i] += spec_neb_ext[i];
       }
     }
@@ -405,7 +405,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
       if (nebular != NULL) {
 	const vector<double>& spec_neb_ext 
 	  = (*it)->get_spectrum_neb_extinct();
-	for (vector<double>::size_type i=0; i<nl; i++) 
+	for (vector<double>::size_type i=0; i<nl_ext; i++) 
 	  L_lambda_neb_ext[i] += spec_neb_ext[i];
       }
     }
@@ -468,7 +468,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
 	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
       if (nebular != NULL) {
 	vector<double> spec_neb_ext = nebular->get_tot_spec(spec_ext);
-	for (vector<double>::size_type i=0; i<nl; i++) 
+	for (vector<double>::size_type i=0; i<nl_ext; i++) 
 	  L_lambda_neb_ext[i] += spec_neb_ext[i];
       }
     }
