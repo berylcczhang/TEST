@@ -845,7 +845,7 @@ slug_galaxy::write_integrated_phot(ofstream& outfile,
       }
       if (nebular != NULL) {
 	for (vector<double>::size_type i=0; i<phot_neb_ext.size(); i++) {
-	  if (!std::isnan(phot_neb[i]))
+	  if (!std::isnan(phot_neb_ext[i]))
 	    outfile << "   " << setw(18) << right << phot_neb_ext[i];
 	  else
 	    outfile << "   " << setw(18) << right << " ";
