@@ -143,7 +143,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
                     neb.append(i)
             if len(filters[i]) > 3:
                 if filters[i][-3:] == '_ex':
-                    ext.append(i)
+                    ex.append(i)
         if len(neb) > 0:
             nebular = True
         else:
@@ -312,7 +312,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
                     neb.append(i)
             if len(filters[i]) > 3:
                 if filters[i][-3:] == '_ex':
-                    ext.append(i)
+                    ex.append(i)
         if len(neb) > 0:
             nebular = True
         else:

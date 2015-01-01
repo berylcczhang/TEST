@@ -101,7 +101,7 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
 
         # See if we have extinction
         hdrsplit = hdr.split()
-        if hdrsplit[-1] == 'L_lambda_ex':
+        if 'L_lambda_ex' in hdrsplit:
             extinct = True
             wl_ex = []
             L_lambda_ex = []
@@ -315,7 +315,7 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
             wl_ex = wl_ex.flatten()
             L_lambda_ex = fp[2].data.field('L_lambda_ex')
             if nebular:
-                L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ex')
+                L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ext')
         else:
             extinct = False
 
