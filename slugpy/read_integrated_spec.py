@@ -113,7 +113,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                 L_lambda_neb_ex = []
                 nebexcol = hdrsplit.index('L_l_neb_ex')
         else:
-            nebular = false
+            nebular = False
 
         # Burn the next two lines
         fp.readline()
@@ -300,6 +300,8 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                 = np.transpose(
                     np.reshape(L_lambda_neb, (ntrial, ntime,
                                               len(wavelength))))
+        else:
+            nebular = False
 
         # If we have extinction data, handle that too
         if 'Wavelength_ex' in fp[1].data.columns.names:
