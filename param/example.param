@@ -60,11 +60,11 @@ verbosity        1
 #    0)
 # -- galaxy (continuous star formation)
 # Default: galaxy
-#sim_type  	  galaxy
+sim_type  	  galaxy
 
 # Number of model galaxies to run
 # Default: 1
-n_trials          480
+n_trials          500
 
 # Logarithmic time stepping? Allowed values:
 # -- 0 (no)
@@ -166,7 +166,7 @@ out_integrated_spec  1
 # -- ascii
 # -- fits
 # Default: ascii
-output_mode      binary
+output_mode      fits
 
 
 #####################################################################
@@ -246,12 +246,38 @@ redshift             0
 # parameter is set to any string that cannot be converted to a real
 # number, it will be interpreted as a file name giving the name of a
 # PDF file specifying the distribution of extinctions.
-#A_V                  lib/avdist/slug_default.av
+A_V                  lib/avdist/slug_default.av
 
 # File specifying the shape fof the extinction curve
 # Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti+ 2000 starburst
 # attenuation curve)
 #extinction_curve     lib/extinct/SB_ATT_SLUG.dat
+
+# Compute nebular emission or not
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+#compute_nebular      1
+
+# Directory containing atomic data; only needed if nebular emission is
+# being used
+# Default: lib/atomic
+#atomic_dir           lib/atomic
+
+# Hydrogen number density to assume for nebular emission computation,
+# in cm^-3
+# Default: 1.0e3
+#nebular_den          1.0e3
+
+# Gas temperature to assume for nebular emission computation, in K
+# Default: 1.0e4
+#nebular_temp         1.0e4
+
+# Fraction of ionizing photons assumed to absorbed by H instead of
+# dust inside HII regions
+# Default: 0.73 (i.e, 73% of ionizing photons absorbed by H, 27% by
+# dust)
+#nebular_phidust      0.73
 
 #############################################
 # Parameters describing photometric filters #
@@ -270,7 +296,7 @@ redshift             0
 # -- QHe1 : He+ ionizing photon luminosity, in phot/s
 # -- Lbol : bolometric luminosity, in L_sun
 #phot_bands         Johnson_V, Johnson_U, Johnson_B, Cousins_R, Cousins_I, QH0, LBOL, WFC3_UVIS_F225W, WFC3_UVIS_F336W, WFC3_UVIS_F438W, WFC3_UVIS_F555W, WFC3_UVIS_F814W
-phot_bands   QH0, WFC3_UVIS_F225W, Johnson_V, Lbol
+phot_bands   QH0, WFC3_UVIS_F225W
 
 # Directory containing photometric filter data
 # Default: lib/filters

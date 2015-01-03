@@ -254,6 +254,32 @@ A_V                  lib/avdist/slug_default.av
 # attenuation curve)
 #extinction_curve     lib/extinct/SB_ATT_SLUG.dat
 
+# Compute nebular emission or not
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+#compute_nebular      1
+
+# Directory containing atomic data; only needed if nebular emission is
+# being used
+# Default: lib/atomic
+#atomic_dir           lib/atomic
+
+# Hydrogen number density to assume for nebular emission computation,
+# in cm^-3
+# Default: 1.0e3
+#nebular_den          1.0e3
+
+# Gas temperature to assume for nebular emission computation, in K
+# Default: 1.0e4
+#nebular_temp         1.0e4
+
+# Fraction of ionizing photons assumed to absorbed by H instead of
+# dust inside HII regions
+# Default: 0.73 (i.e, 73% of ionizing photons absorbed by H, 27% by
+# dust)
+#nebular_phidust      0.73
+
 #############################################
 # Parameters describing photometric filters #
 #############################################
