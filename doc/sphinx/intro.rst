@@ -114,7 +114,7 @@ Here :math:`n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_
   * :math:`I(\mathrm{H}^0)` is the hydrogen ionization potential
   * :math:`P_\nu` is the frequency distribution for two-photon emission, computed from the analytic approximation of `Nussbaumer & Schmutz (1984, A&A, 138, 495) <http://adsabs.harvard.edu/abs/1984A%26A...138..495N>`_
   * :math:`\alpha_{2s}^{\mathrm{eff,(H)}}` is the effective recombination rate to the 2s state, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
-  * :math:`q_{2s-2p,p}` and :math:`q_{2s-2p,e}` are the collisional rate coefficients for transitions from the 2s to the 2p state induced by collisions with protons and electrons, respectively, taken from Osterbrock (1989, University Science Books, table 4.10)
+  * :math:`q_{2s-2p,p}` and :math:`q_{2s-2p,e}` are the collisional rate coefficients for transitions from the 2s to the 2p state induced by collisions with protons and electrons, respectively, taken from `Osterbrock (1989, University Science Books, table 4.10) <http://adsabs.harvard.edu/abs/1989agna.book.....O>`_
   * :math:`A_{2s-1s}` is the Einstein coefficient for the hydrogen 2s-1s two-photon emission process, taken from `Draine (2011, section 14.2.4) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_
 
 * :math:`\alpha_{nn'}^{\mathrm{eff,B,(H)}}` is the effective emission rate coefficient for the :math:`n` to :math:`n'` H recombination line, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
