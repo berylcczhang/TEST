@@ -71,15 +71,7 @@ where :math:`M_{\rm AB}(\mbox{Vega})` is the AB magnitude of Vega. The latter qu
 
 .. math:: L_{\rm bol} = \int_0^\infty L_\nu \, d\nu.
 
-Fourth and finally, if extinction is enabled, SLUG also computes an extincted spectrum
-
-.. math:: L_{\lambda,\mathrm{ex}} = L_{\lambda} e^{-\tau_\lambda}
-
-where the optical depth :math:`\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1.086)`, :math:`A_V` is the visual extinction in mag, the factor 1.086 is the conversion between magnitudes and the true dimensionless optical depth, :math:`\kappa_\lambda` is a user-specified input extinction at wavelength :math:`\lambda`, and the V-band mean opacity is defined by
-
-.. math:: \kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}
-
-where :math:`R_\nu(V)` is the filter response function as frequency :math:`\nu` for the Johnson V filter. Photometric values for the extincted spectrum are computed exactly as for the unextincted one.
+If nebular processing and/or extinction are enabled, photometric quantities are computed separately for each available version of the spectrum, :math:`L_\lambda`, :math:`L_{\lambda,\mathrm{neb}}`, :math:`L_{\lambda,\mathrm{ex}}`, and :math:`L_{\lambda,\mathrm{neb,ex}}`.
 
 For a cluster simulation, this procedure is applied to the star cluster being simulated at a user-specified set of output times. For a galaxy simulation, the procedure is much the same, but it can be done both for all the stars in the galaxy taken as a whole, and individually for each star cluster that is still present (i.e., that has not been disrupted).
 
@@ -134,10 +126,16 @@ Here :math:`n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_
 Extinction
 ----------
 
-If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing was enabled, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor :math:`\phi_{\mathrm{dust}}` used in the nebular emission calculation (see :ref:`ssec-nebula`) is not affected by the value of :math:`A_V` used in the calculation.
+If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor :math:`\phi_{\mathrm{dust}}` used in the nebular emission calculation (see :ref:`ssec-nebula`) is not affected by the value of :math:`A_V` used in the calculation.
 
-The extincted spectrum is computed as
+SLUG computes the extincted spectrum as
 
-.. math:: L_{\lambda,\mathrm{ex}} = L_{\lambda} e^{-1.086 A_V f(\lambda)}
+.. math:: L_{\lambda,\mathrm{ex}} = L_{\lambda} e^{-\tau_\lambda}
 
-where :math:`A_V` is measured in magnitudes and :math:`f(\lambda)` is a user-specified function describing the shape of the extinction curve (several standard choices are available -- see :ref:`ssec-phys-keywords`); :math:`f(\lambda)` is normalized so that setting :math:`A_V = 1` produces exactly 1 magnitude of extinction for a spectrum that is flat in frequency (i.e., :math:`L_\nu` constant) integrated over the response function of a Johnson V filter.
+where the optical depth :math:`\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1.086)`, :math:`A_V` is the visual extinction in mag, the factor 1.086 is the conversion between magnitudes and the true dimensionless optical depth, :math:`\kappa_\lambda` is a user-specified input extinction at wavelength :math:`\lambda`, and the V-band mean opacity is defined by
+
+.. math:: \kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}
+
+where :math:`R_\nu(V)` is the filter response function as frequency :math:`\nu` for the Johnson V filter. The extinction curve :math:`\kappa_\lambda` can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see :ref:`ssec-phys-keywords` for details.
+
+The computation for :math:`L_{\lambda,\mathrm{neb,ex}}` is analogous.
