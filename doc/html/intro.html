@@ -70,9 +70,9 @@
 <p>For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction <span class="math">\(f_c\)</span> of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction <span class="math">\(1-f_c\)</span> of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars <span class="math">\(M_*\)</span> that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses <span class="math">\((1-f_c)M_*\)</span> and <span class="math">\(f_c M_*\)</span>. For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case, and each star is given its own randomly-generated extinction. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. Again, each cluster gets its own extinction. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.</p>
 <p>Finally, star clusters can be disrupted independent of the fate of their parent stars. When each cluster is formed, it is assigned a lifetime drawn from the CLF. Once that time has passed, the cluster ceases to be entered in the lists of individual cluster spectra and photometry (see next section), although the individual stars continue to contribute to the integrated light of the galaxy.</p>
 </div>
-<div class="section" id="spectra-photometry-and-extinction">
-<span id="ssec-spec-phot"></span><h2>Spectra, Photometry, and Extinction<a class="headerlink" href="#spectra-photometry-and-extinction" title="Permalink to this headline">¶</a></h2>
-<p>Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength <span class="math">\(L_\lambda\)</span>. Third, it computes photometry for the stellar population by integrating the computed spectra over a set of specified photometric filters. If extinction is enabled, photometric values are computed for both the unextincted and the extincted spectrum. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:</p>
+<div class="section" id="spectra-and-photometry">
+<span id="ssec-spec-phot"></span><h2>Spectra and Photometry<a class="headerlink" href="#spectra-and-photometry" title="Permalink to this headline">¶</a></h2>
+<p>Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength <span class="math">\(L_\lambda\)</span>. Third, if nebular emission is enabled, the code calculates the spectrum <span class="math">\(L_{\lambda,\mathrm{neb}}\)</span> that emerges after the starlight passes through the HII region aruond the star &#8211; see <a class="reference internal" href="#ssec-nebula"><em>Nebular Processing</em></a>. Fourth, if extinction is enabled, SLUG computes the extincted stellar and nebula-processed spectra <span class="math">\(L_{\lambda,\mathrm{ex}}\)</span> and <span class="math">\(L_{\lambda,\mathrm{neb,ex}}\)</span> &#8211; see <a class="reference internal" href="#ssec-extinction"><em>Extinction</em></a>. Fifth and finally, SLUG computes photometry for the stellar population by integrating all computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:</p>
 <ul class="simple">
 <li>The frequency-averaged luminosity across the filter, defined as</li>
 </ul>
@@ -124,6 +124,47 @@
 <h2>Monte Carlo Simulation<a class="headerlink" href="#monte-carlo-simulation" title="Permalink to this headline">¶</a></h2>
 <p>The steps described in the previous two section are those required for a single realization of the stellar population. However, the entire point of SLUG is to repeat this procedure many times in order to build up the statistics of the population light output. Thus the entire procedure can be repeated as many times as the user desires.</p>
 </div>
+<div class="section" id="nebular-processing">
+<span id="ssec-nebula"></span><h2>Nebular Processing<a class="headerlink" href="#nebular-processing" title="Permalink to this headline">¶</a></h2>
+<p>SLUG includes methods for post-processing the output starlight to compute the light that will emerge from the HII region around star clusters, and to further apply extinction to that light.</p>
+<p>Nebular emission is computed by assuming that all the ionizing photons are absorbed in a uniform-density, uniform-temperature HII region around each star cluster / star, and then computing the resulting emission at non-ionizing energies. The calculation assumes that the HII region is in photoionization equilibrium, and consists of hydrogen that is fully ionized and helium that is singly ionized. Under these assumptions the volume <span class="math">\(V\)</span>, electron density <span class="math">\(n_e\)</span>, and hydrogen density <span class="math">\(n_{\mathrm{H}}\)</span> are related to the hydrogen ionizing luminosity <span class="math">\(Q(\mathrm{H}^0)\)</span> via</p>
+<div class="math">
+\[\phi_{\mathrm{dust}} Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V\]</div>
+<p>Here <span class="math">\(\phi_{\mathrm{dust}}\)</span> is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and <span class="math">\(\alpha_{\mathrm{B}}(T)\)</span> is the temperature-dependent case B recombination rate coefficient. SLUG approximates <span class="math">\(\alpha_{\mathrm{B}}(T)\)</span> using the analytic approximation given by equation 14.6 of <a class="reference external" href="http://adsabs.harvard.edu/abs/2011piim.book.....D">Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press)</a>, while <span class="math">\(\phi_{\mathrm{dust}}\)</span> and <span class="math">\(T\)</span> are user-chosen parameters.</p>
+<p>The relation above determines <span class="math">\(n_e n_{\mathrm{H}} V\)</span>, and from this SLUG computes the nebular emission including the following processes:</p>
+<ul class="simple">
+<li>Hydrogen free-free and H I bound-free emission</li>
+<li>Hydrogen 2-photon emission</li>
+<li>Hydrogen recombination lines from all lines with upper levels <span class="math">\(n_u \leq 25\)</span></li>
+<li>He II free-free and He I bound-free emission</li>
+<li>The brightest 33 brightest He I recombination and collisionally-excited lines</li>
+</ul>
+<p>Formally, the luminosity per unit wavelength is computed as</p>
+<div class="math">
+\[\begin{split}L_{\lambda,\mathrm{neb}} = \left[\gamma_{\mathrm{ff}}^{(\mathrm{H})} + \gamma_{\mathrm{bf}}^{(\mathrm{H})} + \gamma_{\mathrm{2p}}^{(\mathrm{H})} + \sum_{n,n' \leq 25, n&lt;n'} \alpha_{nn'}^{\mathrm{eff,B,(H)}} E_{nn'}^{(\mathrm{H})} +  x_{\mathrm{He}} \gamma_{\mathrm{ff}}^{(\mathrm{He})} +  x_{\mathrm{He}} \gamma_{\mathrm{bf}}^{(\mathrm{He})} +  x_{\mathrm{He}} \sum_{i=1}^{33} \gamma_{i,\mathrm{line}}^{(\mathrm{He})}\right] n_e n_{\mathrm{H}}{V}\end{split}\]</div>
+<p>Here <span class="math">\(n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_{\mathrm{B}}(T)\)</span> from photoionization equilibrium, <span class="math">\(E_{nn'}\)</span> is the energy difference between hydrogen levels <span class="math">\(n\)</span> and <span class="math">\(n'\)</span>, and the remaining terms and their sources appearing in this equation are:</p>
+<ul class="simple">
+<li><span class="math">\(\gamma_{\mathrm{ff}}^{(\mathrm{H})}\)</span> and <span class="math">\(\gamma_{\mathrm{ff}}^{(\mathrm{H})}\)</span>: hydrogen free-free and bound-free emissivity, from the tabulation of <a class="reference external" href="http://adsabs.harvard.edu/abs/1980PASP...92..596F">Ferland (1980, PASP, 92, 596)</a> for wavelengths up to 13.1 <span class="math">\(\mu\mathrm{m}\)</span>, and from the analytic approximation of <a class="reference external" href="http://adsabs.harvard.edu/abs/2011piim.book.....D">Draine (2011, eqn. 10.8)</a> at longer wavelengths</li>
+<li><span class="math">\(\gamma_{\mathrm{2p}}^{(\mathrm{H})}\)</span>: hydrogen two-photon emissivity, computed as <span class="math">\(\gamma_{\mathrm{2p}}^{(\mathrm{H})} = [hc/\lambda^3] I(\mathrm{H}^0) P_\nu \alpha_{2s}^{\mathrm{eff,(H)}} / [1 + (n_{\mathrm{H}} q_{2s-2p,p} + (1+x_{\mathrm{He}}) n_{\mathrm{H}} q_{2s-2p,e})/A_{2s-1s}]\)</span>. The quantities appearing in this expression are:<ul>
+<li><span class="math">\(I(\mathrm{H}^0)\)</span> is the hydrogen ionization potential</li>
+<li><span class="math">\(P_\nu\)</span> is the frequency distribution for two-photon emission, computed from the analytic approximation of <a class="reference external" href="http://adsabs.harvard.edu/abs/1984A%26A...138..495N">Nussbaumer &amp; Schmutz (1984, A&amp;A, 138, 495)</a></li>
+<li><span class="math">\(\alpha_{2s}^{\mathrm{eff,(H)}}\)</span> is the effective recombination rate to the 2s state, taken from the tabulation of <a class="reference external" href="http://adsabs.harvard.edu/abs/1995MNRAS.272...41S">Storey &amp; Hummer (1995, MNRAS, 272, 41)</a></li>
+<li><span class="math">\(q_{2s-2p,p}\)</span> and <span class="math">\(q_{2s-2p,e}\)</span> are the collisional rate coefficients for transitions from the 2s to the 2p state induced by collisions with protons and electrons, respectively, taken from Osterbrock (1989, University Science Books, table 4.10)</li>
+<li><span class="math">\(A_{2s-1s}\)</span> is the Einstein coefficient for the hydrogen 2s-1s two-photon emission process, taken from <a class="reference external" href="http://adsabs.harvard.edu/abs/2011piim.book.....D">Draine (2011, section 14.2.4)</a></li>
+</ul>
+</li>
+<li><span class="math">\(\alpha_{nn'}^{\mathrm{eff,B,(H)}}\)</span> is the effective emission rate coefficient for the <span class="math">\(n\)</span> to <span class="math">\(n'\)</span> H recombination line, taken from the tabulation of <a class="reference external" href="http://adsabs.harvard.edu/abs/1995MNRAS.272...41S">Storey &amp; Hummer (1995, MNRAS, 272, 41)</a></li>
+<li><span class="math">\(\gamma_{i,\mathrm{line}}^{(\mathrm{He})}\)</span> is the emissivity for the brightest recombination and collisionally-excited lines of <span class="math">\(\mathrm{He}^+\)</span>, taken from the tabulation of <a class="reference external" href="http://adsabs.harvard.edu/abs/1999ApJ...514..307B">Benjamin et al. (1999, ApJ, 514, 307)</a></li>
+</ul>
+</div>
+<div class="section" id="extinction">
+<span id="ssec-extinction"></span><h2>Extinction<a class="headerlink" href="#extinction" title="Permalink to this headline">¶</a></h2>
+<p>If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing was enabled, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor <span class="math">\(\phi_{\mathrm{dust}}\)</span> used in the nebular emission calculation (see <a class="reference internal" href="#ssec-nebula"><em>Nebular Processing</em></a>) is not affected by the value of <span class="math">\(A_V\)</span> used in the calculation.</p>
+<p>The extincted spectrum is computed as</p>
+<div class="math">
+\[L_{\lambda,\mathrm{ex}} = L_{\lambda} e^{-1.086 A_V f(\lambda)}\]</div>
+<p>where <span class="math">\(A_V\)</span> is measured in magnitudes and <span class="math">\(f(\lambda)\)</span> is a user-specified function describing the shape of the extinction curve (several standard choices are available &#8211; see <a class="reference internal" href="parameters.html#ssec-phys-keywords"><em>Physical Model Keywords</em></a>); <span class="math">\(f(\lambda)\)</span> is normalized so that setting <span class="math">\(A_V = 1\)</span> produces exactly 1 magnitude of extinction for a spectrum that is flat in frequency (i.e., <span class="math">\(L_\nu\)</span> constant) integrated over the response function of a Johnson V filter.</p>
+</div>
 </div>
 
 
@@ -138,8 +179,10 @@
 <li><a class="reference internal" href="#what-does-slug-do">What Does SLUG Do?</a></li>
 <li><a class="reference internal" href="#cluster-simulations-and-galaxy-simulations">Cluster Simulations and Galaxy Simulations</a></li>
 <li><a class="reference internal" href="#probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution">Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution</a></li>
-<li><a class="reference internal" href="#spectra-photometry-and-extinction">Spectra, Photometry, and Extinction</a></li>
+<li><a class="reference internal" href="#spectra-and-photometry">Spectra and Photometry</a></li>
 <li><a class="reference internal" href="#monte-carlo-simulation">Monte Carlo Simulation</a></li>
+<li><a class="reference internal" href="#nebular-processing">Nebular Processing</a></li>
+<li><a class="reference internal" href="#extinction">Extinction</a></li>
 </ul>
 </li>
 </ul>
@@ -192,7 +235,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

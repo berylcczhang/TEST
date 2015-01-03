@@ -166,7 +166,7 @@
 <li><p class="first"><tt class="docutils literal"><span class="pre">A_V</span></tt> (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter <tt class="docutils literal"><span class="pre">A_V</span></tt> is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value <span class="math">\(A_V\)</span>, in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a>, specifying the probability distribution of <span class="math">\(A_V\)</span> values, in mag.</p>
 </li>
 <li><dl class="first docutils">
-<dt><tt class="docutils literal"><span class="pre">extinction_curve</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/extinct/SB_ATT_SLUG.dat</span></tt>) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction <span class="math">\(\kappa_\nu\)</span> at that wavelength / frequency in <span class="math">\(\mathrm{cm}^2\)</span>. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra, Photometry, and Extinction</em></a>). SLUG ships with the following extinction curves (all in <tt class="docutils literal"><span class="pre">lib/extinct</span></tt>):</dt>
+<dt><tt class="docutils literal"><span class="pre">extinction_curve</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/extinct/SB_ATT_SLUG.dat</span></tt>) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction <span class="math">\(\kappa_\nu\)</span> at that wavelength / frequency in <span class="math">\(\mathrm{cm}^2\)</span>. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra and Photometry</em></a>). SLUG ships with the following extinction curves (all in <tt class="docutils literal"><span class="pre">lib/extinct</span></tt>):</dt>
 <dd><ul class="first last simple">
 <li><tt class="docutils literal"><span class="pre">LMC_EXT_SLUG.dat</span></tt> : LMC extinction curve; optical-UV from <a class="reference external" href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick, E. L., 1999, PASP, 111, 63</a>, IR from <a class="reference external" href="http://adsabs.harvard.edu/abs/1984A%26A...134..284L">Landini, M., et al., 1984, A&amp;A, 134, 284</a>; parts combined by D. Calzetti</li>
 <li><tt class="docutils literal"><span class="pre">MW_EXT_SLUG.dat</span></tt> : MW extinction curve; optical-UV from <a class="reference external" href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick, E. L., 1999 PASP, 111, 63</a>, IR from <a class="reference external" href="http://adsabs.harvard.edu/abs/1984A%26A...134..284L">Landini, M., et al., 1984, A&amp;A, 134, 284</a>; parts combined by D. Calzetti</li>
@@ -175,6 +175,16 @@
 </ul>
 </dd>
 </dl>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">compute_nebular</span></tt> (default: <tt class="docutils literal"><span class="pre">1</span></tt>): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">atomic_dir</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/atomic/</span></tt>): directory where the atomic data used for nebular emission calculations is located</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">nebular_den</span></tt> (default: <tt class="docutils literal"><span class="pre">1e3</span></tt>): hydrogen number density in <span class="math">\(\mathrm{cm}^{-3}\)</span> to use in nebular emission computations</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">nebular_temp</span></tt> (default: <tt class="docutils literal"><span class="pre">1e4</span></tt>): gas kinetic temperature in K to use in nebular emission computations</p>
+</li>
+<li><p class="first"><tt class="docutils literal"><span class="pre">nebular_phidust</span></tt> (default: <tt class="docutils literal"><span class="pre">0.73</span></tt>): fraction of ionizing photons absorbed by H atoms rather than by dust grains inside the HII region; the default value of <tt class="docutils literal"><span class="pre">0.73</span></tt>, taken from <a class="reference external" href="http://adsabs.harvard.edu/abs/1997ApJ...476..144M">McKee &amp; Williams (1997, ApJ, 476, 144)</a> means that 73% of ionizing photons are absorbed by H and 27% by dust</p>
 </li>
 </ul>
 </div>
@@ -196,7 +206,7 @@
 <li><p class="first"><tt class="docutils literal"><span class="pre">filters</span></tt> (default: <tt class="docutils literal"><span class="pre">lib/filters</span></tt>): directory containing photometric filter data</p>
 </li>
 <li><dl class="first docutils">
-<dt><tt class="docutils literal"><span class="pre">phot_mode</span></tt> (default: <tt class="docutils literal"><span class="pre">L_nu</span></tt>): photometric system to be used when writing photometric outputs. Full definitions of the quantities computed for each of the choices listed below are given in <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra, Photometry, and Extinction</em></a>. Note that these values are ignored for the four special bands <tt class="docutils literal"><span class="pre">QH0</span></tt>, <tt class="docutils literal"><span class="pre">QHe0</span></tt>, <tt class="docutils literal"><span class="pre">QHe1</span></tt>, and <tt class="docutils literal"><span class="pre">Lbol</span></tt>. These four bands are always written out in the units specified above. Allowed values are:</dt>
+<dt><tt class="docutils literal"><span class="pre">phot_mode</span></tt> (default: <tt class="docutils literal"><span class="pre">L_nu</span></tt>): photometric system to be used when writing photometric outputs. Full definitions of the quantities computed for each of the choices listed below are given in <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra and Photometry</em></a>. Note that these values are ignored for the four special bands <tt class="docutils literal"><span class="pre">QH0</span></tt>, <tt class="docutils literal"><span class="pre">QHe0</span></tt>, <tt class="docutils literal"><span class="pre">QHe1</span></tt>, and <tt class="docutils literal"><span class="pre">Lbol</span></tt>. These four bands are always written out in the units specified above. Allowed values are:</dt>
 <dd><ul class="first last simple">
 <li><tt class="docutils literal"><span class="pre">L_nu</span></tt>: report frequency-averaged luminosity in the band, in units of erg/s/Hz</li>
 <li><tt class="docutils literal"><span class="pre">L_lambda</span></tt>: report wavelength-averaged luminosity in the band, in units of erg/s/Angstrom</li>
@@ -278,7 +288,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

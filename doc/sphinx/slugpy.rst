@@ -33,13 +33,23 @@ The ``read_integrated`` function reads all the integrated-light data (i.e., the 
 * filter_response: photon response function for each filter at each wavelength (dimensionless)
 * filter_beta: index :math:`\beta` used to set the normalization for each filter -- see :ref:`ssec-spec-phot`
 * filter_wl_c: pivot wavelength used to set the normalization for each filter for which :math:`\beta \neq 0` -- see :ref:`ssec-spec-phot`
-* phot: photometry in each filter
+* phot: photometry of the stars in each filter
+
+The following fields are present only if SLUG was run with nebular processing enabled:
+
+* spec_neb: same as spec, but for the spectrum that emerges after the starlight has passed through the nebulae around the emitting clusters and field stars
+* phot_neb: same as phot, but for the nebular-processed spectrum
 
 The following fields are present only if SLUG was run with extinction enabled:
 
 * wl_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl_ex may contain fewer elements than wl_ex, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.
 * spec_ex: same as spec, but for the extincted spectrum. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.
 * phot_ex: same as phot, but for the extincted spectrum. Note that some values may be ``NaN``. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
+
+The following fields are present only if SLUG was run with both nebular processing and extinction enabled:
+
+* spec_neb_ex: same as spec_neb, but with extinction applied. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.
+* phot_neb_ex: same as phot_neb, but wtih extinction applied. Note that some values may be ``NaN``. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
 
 The following fields are present only for runs that have been processed through the cloudy_slug interface (see :ref:`sec-cloudy-slug`):
 

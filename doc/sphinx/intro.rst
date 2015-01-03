@@ -28,10 +28,10 @@ Finally, star clusters can be disrupted independent of the fate of their parent 
 
 .. _ssec-spec-phot:
 
-Spectra, Photometry, and Extinction
------------------------------------
+Spectra and Photometry
+----------------------
 
-Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength :math:`L_\lambda`. Third, it computes photometry for the stellar population by integrating the computed spectra over a set of specified photometric filters. If extinction is enabled, photometric values are computed for both the unextincted and the extincted spectrum. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:
+Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength :math:`L_\lambda`. Third, if nebular emission is enabled, the code calculates the spectrum :math:`L_{\lambda,\mathrm{neb}}` that emerges after the starlight passes through the HII region aruond the star -- see :ref:`ssec-nebula`. Fourth, if extinction is enabled, SLUG computes the extincted stellar and nebula-processed spectra :math:`L_{\lambda,\mathrm{ex}}` and :math:`L_{\lambda,\mathrm{neb,ex}}` -- see :ref:`ssec-extinction`. Fifth and finally, SLUG computes photometry for the stellar population by integrating all computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:
 
 * The frequency-averaged luminosity across the filter, defined as
 
@@ -87,3 +87,57 @@ Monte Carlo Simulation
 ----------------------
 
 The steps described in the previous two section are those required for a single realization of the stellar population. However, the entire point of SLUG is to repeat this procedure many times in order to build up the statistics of the population light output. Thus the entire procedure can be repeated as many times as the user desires.
+
+.. _ssec-nebula:
+
+Nebular Processing
+------------------
+
+SLUG includes methods for post-processing the output starlight to compute the light that will emerge from the HII region around star clusters, and to further apply extinction to that light.
+
+Nebular emission is computed by assuming that all the ionizing photons are absorbed in a uniform-density, uniform-temperature HII region around each star cluster / star, and then computing the resulting emission at non-ionizing energies. The calculation assumes that the HII region is in photoionization equilibrium, and consists of hydrogen that is fully ionized and helium that is singly ionized. Under these assumptions the volume :math:`V`, electron density :math:`n_e`, and hydrogen density :math:`n_{\mathrm{H}}` are related to the hydrogen ionizing luminosity :math:`Q(\mathrm{H}^0)` via
+
+.. math:: \phi_{\mathrm{dust}} Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V
+
+Here :math:`\phi_{\mathrm{dust}}` is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and :math:`\alpha_{\mathrm{B}}(T)` is the temperature-dependent case B recombination rate coefficient. SLUG approximates :math:`\alpha_{\mathrm{B}}(T)` using the analytic approximation given by equation 14.6 of `Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_, while :math:`\phi_{\mathrm{dust}}` and :math:`T` are user-chosen parameters.
+
+The relation above determines :math:`n_e n_{\mathrm{H}} V`, and from this SLUG computes the nebular emission including the following processes:
+
+* Hydrogen free-free and H I bound-free emission
+* Hydrogen 2-photon emission
+* Hydrogen recombination lines from all lines with upper levels :math:`n_u \leq 25`
+* He II free-free and He I bound-free emission
+* The brightest 33 brightest He I recombination and collisionally-excited lines
+
+Formally, the luminosity per unit wavelength is computed as
+
+.. math:: L_{\lambda,\mathrm{neb}} = \left[\gamma_{\mathrm{ff}}^{(\mathrm{H})} + \gamma_{\mathrm{bf}}^{(\mathrm{H})} + \gamma_{\mathrm{2p}}^{(\mathrm{H})} + \sum_{n,n' \leq 25, n<n'} \alpha_{nn'}^{\mathrm{eff,B,(H)}} E_{nn'}^{(\mathrm{H})} +  x_{\mathrm{He}} \gamma_{\mathrm{ff}}^{(\mathrm{He})} +  x_{\mathrm{He}} \gamma_{\mathrm{bf}}^{(\mathrm{He})} +  x_{\mathrm{He}} \sum_{i=1}^{33} \gamma_{i,\mathrm{line}}^{(\mathrm{He})}\right] n_e n_{\mathrm{H}}{V}
+
+Here :math:`n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_{\mathrm{B}}(T)` from photoionization equilibrium, :math:`E_{nn'}` is the energy difference between hydrogen levels :math:`n` and :math:`n'`, and the remaining terms and their sources appearing in this equation are:
+
+* :math:`\gamma_{\mathrm{ff}}^{(\mathrm{H})}` and :math:`\gamma_{\mathrm{ff}}^{(\mathrm{H})}`: hydrogen free-free and bound-free emissivity, from the tabulation of `Ferland (1980, PASP, 92, 596) <http://adsabs.harvard.edu/abs/1980PASP...92..596F>`_ for wavelengths up to 13.1 :math:`\mu\mathrm{m}`, and from the analytic approximation of `Draine (2011, eqn. 10.8) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_ at longer wavelengths
+
+* :math:`\gamma_{\mathrm{2p}}^{(\mathrm{H})}`: hydrogen two-photon emissivity, computed as :math:`\gamma_{\mathrm{2p}}^{(\mathrm{H})} = [hc/\lambda^3] I(\mathrm{H}^0) P_\nu \alpha_{2s}^{\mathrm{eff,(H)}} / [1 + (n_{\mathrm{H}} q_{2s-2p,p} + (1+x_{\mathrm{He}}) n_{\mathrm{H}} q_{2s-2p,e})/A_{2s-1s}]`. The quantities appearing in this expression are:
+
+  * :math:`I(\mathrm{H}^0)` is the hydrogen ionization potential
+  * :math:`P_\nu` is the frequency distribution for two-photon emission, computed from the analytic approximation of `Nussbaumer & Schmutz (1984, A&A, 138, 495) <http://adsabs.harvard.edu/abs/1984A%26A...138..495N>`_
+  * :math:`\alpha_{2s}^{\mathrm{eff,(H)}}` is the effective recombination rate to the 2s state, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
+  * :math:`q_{2s-2p,p}` and :math:`q_{2s-2p,e}` are the collisional rate coefficients for transitions from the 2s to the 2p state induced by collisions with protons and electrons, respectively, taken from Osterbrock (1989, University Science Books, table 4.10)
+  * :math:`A_{2s-1s}` is the Einstein coefficient for the hydrogen 2s-1s two-photon emission process, taken from `Draine (2011, section 14.2.4) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_
+
+* :math:`\alpha_{nn'}^{\mathrm{eff,B,(H)}}` is the effective emission rate coefficient for the :math:`n` to :math:`n'` H recombination line, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
+
+* :math:`\gamma_{i,\mathrm{line}}^{(\mathrm{He})}` is the emissivity for the brightest recombination and collisionally-excited lines of :math:`\mathrm{He}^+`, taken from the tabulation of `Benjamin et al. (1999, ApJ, 514, 307) <http://adsabs.harvard.edu/abs/1999ApJ...514..307B>`_
+
+.. _ssec-extinction:
+
+Extinction
+----------
+
+If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing was enabled, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor :math:`\phi_{\mathrm{dust}}` used in the nebular emission calculation (see :ref:`ssec-nebula`) is not affected by the value of :math:`A_V` used in the calculation.
+
+The extincted spectrum is computed as
+
+.. math:: L_{\lambda,\mathrm{ex}} = L_{\lambda} e^{-1.086 A_V f(\lambda)}
+
+where :math:`A_V` is measured in magnitudes and :math:`f(\lambda)` is a user-specified function describing the shape of the extinction curve (several standard choices are available -- see :ref:`ssec-phys-keywords`); :math:`f(\lambda)` is normalized so that setting :math:`A_V = 1` produces exactly 1 magnitude of extinction for a spectrum that is flat in frequency (i.e., :math:`L_\nu` constant) integrated over the response function of a Johnson V filter.

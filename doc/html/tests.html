@@ -26,7 +26,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="Contributors and Acknowledgements" href="acknowledgements.html" />
-    <link rel="prev" title="slugpy – The Python Helper Library" href="slugpy.html" /> 
+    <link rel="prev" title="sfr_slug: Bayesian Inference of Star Formation Rates" href="sfr_slug.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,7 +42,7 @@
           <a href="acknowledgements.html" title="Contributors and Acknowledgements"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="slugpy.html" title="slugpy – The Python Helper Library"
+          <a href="sfr_slug.html" title="sfr_slug: Bayesian Inference of Star Formation Rates"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
@@ -59,14 +59,21 @@
 set of problems <tt class="docutils literal"><span class="pre">problemname</span></tt> that are specified by a parameter file <tt class="docutils literal"><span class="pre">param/problemname.param</span></tt>. Problems that require
 multiple simulations are described instead by multiple paramater files, each with unique ID XX:  <tt class="docutils literal"><span class="pre">param/problemnameXX.param</span></tt>.
 Users can reproduce the output of the test problems with the provided executable scripts  <tt class="docutils literal"><span class="pre">test/run_problemname.sh</span></tt>.
-For each problem, a script for analysis is distributed  in <tt class="docutils literal"><span class="pre">test/problemname.py</span></tt>. Details for each test problem are given below.
-Throughout this section, it is assumed that the <tt class="docutils literal"><span class="pre">SLUG_DIR</span></tt> has been properly set.</p>
-<div class="section" id="problem-example-basic-galaxy-simulation">
-<h2>Problem <tt class="docutils literal"><span class="pre">example</span></tt>: basic galaxy simulation<a class="headerlink" href="#problem-example-basic-galaxy-simulation" title="Permalink to this headline">¶</a></h2>
+For each problem, a script for analysis is distributed  in <tt class="docutils literal"><span class="pre">test/problemname.py</span></tt>. Details for each test problem are given below. Throughout this section, it is assumed that the <tt class="docutils literal"><span class="pre">SLUG_DIR</span></tt> has been properly set.
+These test problems are designed to work with outputs in FITS format, but that can be easily changed in the
+<tt class="docutils literal"><span class="pre">.param</span></tt> files. To run all the problems and the analysis scripts in one go, the user can simply
+run <tt class="docutils literal"><span class="pre">test/run_alltest.sh</span></tt>. It will take around 15 minutes
+for the script to complete on a standard laptop. About 700MB of data are generated.
+If SLUG is correctly installed and working, the first part of the script (i.e. the SLUG
+simulations) should run flawlessly. The second part of the script relies instead on external python procedures,
+including slugpy, numpy, and matplotlib. While these packages are fairly standard, the user needs to ensure that
+they are properly installed and visible to the script. This script has been written for and tested with Python 2.7.</p>
+<div class="section" id="problem-example-galaxy-basic-galaxy-simulation">
+<h2>Problem <tt class="docutils literal"><span class="pre">example_galaxy</span></tt>: basic galaxy simulation<a class="headerlink" href="#problem-example-galaxy-basic-galaxy-simulation" title="Permalink to this headline">¶</a></h2>
 <p>This problem illustrates the basic usage of slugin <tt class="docutils literal"><span class="pre">galaxy</span></tt> mode by running 48 realizations of a galaxy with constant
 <span class="math">\(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\)</span>, up to a maximum time of <span class="math">\(2\times 10^8\)</span> yr. By issuing the
-command <tt class="docutils literal"><span class="pre">test/run_example.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_EXAMPLE*</span></tt> are generated. Once the models are ready,
-<tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_EXAMPLE_f1.pdf</span></tt>.</p>
+command <tt class="docutils literal"><span class="pre">test/run_example_galaxy.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_GALAXY_EXAMPLE*</span></tt> are generated. Once the models are ready,
+<tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_galaxy.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_GALAXY_EXAMPLE_f1.pdf</span></tt>.</p>
 <p>The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a
 function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence
 of SLUG core algorithm. The 1:1 relation is shown by a red dashed line.
@@ -297,26 +304,66 @@ to variations in the SFHs on short timescales.</p>
 </div>
 <div class="section" id="problem-cldisrupt-cluster-disruption-at-work">
 <h2>Problem <tt class="docutils literal"><span class="pre">cldisrupt</span></tt>: cluster disruption at work<a class="headerlink" href="#problem-cldisrupt-cluster-disruption-at-work" title="Permalink to this headline">¶</a></h2>
-<p>This problem highlights the flexible choice of CLF implementations in SLUG.</p>
-<p>[basic run with different clfs]</p>
-<ul class="simple">
-<li>pending investigation in SFH -</li>
-</ul>
+<p>One additional ingredient in SLUG is the lifetime distribution for clusters. Since v2, SLUG is flexible in
+controlling the rate with which clusters are disrupted. This problem shows a comparison between
+two simulations with and without cluster disruption.</p>
+<p>The command  <tt class="docutils literal"><span class="pre">test/run_cldisrup.sh</span></tt> runs two <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations, each with 100 trials
+which are evolved in timesteps of  <span class="math">\(5\times 10^5\rm\;yr\)</span> up to a maximum age of
+<span class="math">\(1\times 10^7\rm\;yr\)</span>. Both simulations are characterized by a burst of star formation
+<span class="math">\(=0.001\rm\;M_\odot\;yr^{-1}\)</span> within the first Myr. A Chabrier IMF and a <span class="math">\(M^{-2}\)</span>
+CMF are adopted, and <span class="math">\(f_c = 1\)</span>. For the first simulation, cluster disruption is
+disabled. In the second simulation, cluster disruption operates at times <span class="math">\(&gt;1\rm\;Myr\)</span>,
+with a cluster lifetime function which is a powerlaw of index -1.9.
+The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_cldisrup.py</span></tt> produces the figure <tt class="docutils literal"><span class="pre">test/SLUG_CLDISRUP_f1.pdf</span></tt>.
+The two columns show results with (right) and without (left) cluster disruption.</p>
+<p>The first row shows the median stellar mass of the 100 trials as a function of time.
+The blue dashed lines show the mass inside the galaxy, while the black solid lines show the
+median mass in clusters. The red band shows the first and fourth quartile of the distribution.
+One can see that in both cases the galaxy mass rises in the first Myr up to the desired
+targeted mass of <span class="math">\(=1000\rm\;M_\odot\)</span> given the input SFH. After 1Myr, star formation
+stops and the galaxy mass does not evolve with time. Conversely, the cluster mass (black line, red
+regions) evolves differently. In the case without cluster disruption, because <span class="math">\(f_c = 1\)</span>,
+the cluster mass tracks the galaxy mass at all time. When cluster disruption is enabled (right),
+one can see that the mass in clusters rise following the galaxy mass in the first Myr. Past that time,
+clusters start being disrupted and the mass in clusters declines.
+The same behavior is visible in the second row, which shows the median number of alive (black) and
+disrupted (black) clusters. To the left, without cluster disruption, the number of clusters alive
+tracks the galaxy mass. Conversely, this distribution declines with time to the right when cluster disruption is
+enabled. The complementary quantity (number of disrupted clusters) rises accordingly.
+The last two rows show instead the integrated fluxes in FUV and bolometric luminosity.
+Again, medians are in black and the first and third quartiles in red. One can see a nearly identical distribution
+in the left and right panels. In these simulations, the controlling factors of the integrated photometry
+are the SFH and the sampling techniques, which do not depend on the cluster disruption rate. Clearly, the
+photometry of stars in cluster would exhibit instead a similar dependence to what shown in the top panels.</p>
 </div>
 <div class="section" id="problem-spectra-full-spectra">
 <h2>Problem <tt class="docutils literal"><span class="pre">spectra</span></tt>: full spectra<a class="headerlink" href="#problem-spectra-full-spectra" title="Permalink to this headline">¶</a></h2>
-<p>This problem highlights the power of the new feature offered in SLUG v2: the ability to produce
-full spectra and implement dust extinction.</p>
-<ul class="simple">
-<li>one run with spectra [single timestep]
-shows cluster spectra and galaxy spectra</li>
-<li>one run with spectra redshifted</li>
-<li>one run with spectra dust det</li>
-<li>one run with spectra dust  stoch</li>
-</ul>
-<p>[basic run with full spectra out: shows stochasticity applied to spectra]</p>
-<p>This problem shows a trivial example of the redshift capability in SLUG v2.</p>
-<p>[basic run with full spectra out at a different redshift]</p>
+<p>Since v2, SLUG is able to generate spectra for star clusters and for galaxies, which can also be computed for
+arbitrary redshifts. This problem highlights the new features.
+It also demonstrates how SLUG can handle dust extinction, both in a deterministic and stochastic way.</p>
+<p>The command  <tt class="docutils literal"><span class="pre">test/run_spectra.sh</span></tt> runs four <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations, each with 500 trials
+of continuous SFR <span class="math">\(=0.001\rm\;M_\odot\;yr^{-1}\)</span> which are evolved for a
+single timestep of  <span class="math">\(2\times 10^6\rm\;yr\)</span>. A Chabrier IMF and a <span class="math">\(M^{-2}\)</span>
+CMF are adopted, cluster disruption is disabled, and <span class="math">\(f_c = 1\)</span>.
+The simulations differ in the following way:
+1) the reference model, computed without extinction and at <span class="math">\(z = 0\)</span>;
+2) same as the reference model, but at <span class="math">\(z = 3\)</span>;
+3) same as the reference model at <span class="math">\(z = 0\)</span>, but with a deterministic extinction of <span class="math">\(A_V = 0.5\)</span> and
+a Calzetti+2000 starburst attenuation curve;
+4) same as model number 3, but with stochastic extinction.
+The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_spectra.py</span></tt> produces the figure <tt class="docutils literal"><span class="pre">test/SLUG_SPECTRA_f1.pdf</span></tt>,
+which shows a gallery of galaxy SEDs for each model. The median SED is shown in black, the blue region
+corresponds to the first and third quartile of the distribution, and the red shaded region
+marks the 5 and 95 percentiles.</p>
+<p>The top panel shows the default model, where stochasticity occurs as detailed in the previous examples.
+The second panel from the top shows instead a model with deterministic extinction. This is simply
+a scaled-down version of the reference model, according to the input dust law and normalization
+coefficient <span class="math">\(A_V\)</span>. As the dust law extends only to 915 Angstrom the output SED is truncated.
+The third panel shows that, once SLUG handles dust  in a stochastic way, the intrinsic scatter is
+amplified. This is a simple consequence of applying dust extinction with varying normalizations, which
+enhances the final scatter about the median. Finally, the bottom panel shows the trivial case in which
+the spectrum is shifted in wavelength by a constant factor <span class="math">\((1+z)\)</span>. Obviously, redshift enhances
+the stochasticity in the optical due to a simple shift of wavelengths.</p>
 </div>
 </div>
 
@@ -329,7 +376,7 @@ shows cluster spectra and galaxy spectra</li>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Test Problems</a><ul>
-<li><a class="reference internal" href="#problem-example-basic-galaxy-simulation">Problem <tt class="docutils literal"><span class="pre">example</span></tt>: basic galaxy simulation</a></li>
+<li><a class="reference internal" href="#problem-example-galaxy-basic-galaxy-simulation">Problem <tt class="docutils literal"><span class="pre">example_galaxy</span></tt>: basic galaxy simulation</a></li>
 <li><a class="reference internal" href="#problem-example-cluster-basic-cluster-simulation">Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation</a></li>
 <li><a class="reference internal" href="#problem-constsampl-importance-of-constrained-sampling">Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling</a></li>
 <li><a class="reference internal" href="#problem-sampling-different-sampling-techniques">Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques</a></li>
@@ -344,8 +391,8 @@ shows cluster spectra and galaxy spectra</li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="slugpy.html"
-                        title="previous chapter">slugpy &#8211; The Python Helper Library</a></p>
+  <p class="topless"><a href="sfr_slug.html"
+                        title="previous chapter">sfr_slug: Bayesian Inference of Star Formation Rates</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="acknowledgements.html"
                         title="next chapter">Contributors and Acknowledgements</a></p>
@@ -384,14 +431,14 @@ shows cluster spectra and galaxy spectra</li>
           <a href="acknowledgements.html" title="Contributors and Acknowledgements"
              >next</a> |</li>
         <li class="right" >
-          <a href="slugpy.html" title="slugpy – The Python Helper Library"
+          <a href="sfr_slug.html" title="sfr_slug: Bayesian Inference of Star Formation Rates"
              >previous</a> |</li>
         <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

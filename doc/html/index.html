@@ -59,8 +59,10 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html#what-does-slug-do">What Does SLUG Do?</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#cluster-simulations-and-galaxy-simulations">Cluster Simulations and Galaxy Simulations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution">Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution</a></li>
-<li class="toctree-l2"><a class="reference internal" href="intro.html#spectra-photometry-and-extinction">Spectra, Photometry, and Extinction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#spectra-and-photometry">Spectra and Photometry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="intro.html#monte-carlo-simulation">Monte Carlo Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#nebular-processing">Nebular Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="intro.html#extinction">Extinction</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="compiling.html">Compiling and Installing SLUG</a><ul>
@@ -94,23 +96,34 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="filters.html">Filters and Filter Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="slugpy.html">slugpy &#8211; The Python Helper Library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="slugpy.html#basic-usage">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="slugpy.html#module-slugpy">Full Documentation of slugpy</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="cloudy.html">cloudy_slug: An Automated Interface to cloudy</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="cloudy.html#cloudy-slug-basics">cloudy_slug Basics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cloudy.html#the-cloudy-slug-physical-model-integrated-mode-versus-cluster-mode">The cloudy_slug Physical Model: Integrated Mode Versus Cluster Mode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cloudy.html#the-cloudy-slug-input-template">The cloudy_slug Input Template</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cloudy.html#the-cloudy-slug-interface-script">The cloudy_slug Interface Script</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cloudy.html#full-description-of-cloudy-slug-output">Full Description of cloudy_slug Output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cloudy.html#module-slugpy.cloudy">Full Documentation of slugpy.cloudy</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="slugpy.html">slugpy &#8211; The Python Helper Library</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="slugpy.html#basic-usage">Basic Usage</a></li>
-<li class="toctree-l2"><a class="reference internal" href="slugpy.html#module-slugpy">Full Documentation of slugpy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="slugpy.html#module-slugpy.cloudy">Full Documentation of slugpy.cloudy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="slugpy.html#full-documentation-of-slugpy-sfr-slug">Full Documentation of slugpy.sfr_slug</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bayesphot.html">bayesphot: Bayesian Inference for Stochastic Stellar Populations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bayesphot.html#module-slugpy.bayesphot.bp">Full Documentation of slugpy.bayesphot</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cluster_slug.html">cluster_slug: Bayesian Inference of Star Cluster Properties</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cluster_slug.html#full-documentation-of-slugpy-cluster-slug">Full Documentation of slugpy.cluster_slug</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sfr_slug.html">sfr_slug: Bayesian Inference of Star Formation Rates</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sfr_slug.html#full-documentation-of-slugpy-sfr-slug">Full Documentation of slugpy.sfr_slug</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">Test Problems</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-example-basic-galaxy-simulation">Problem <tt class="docutils literal"><span class="pre">example</span></tt>: basic galaxy simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#problem-example-galaxy-basic-galaxy-simulation">Problem <tt class="docutils literal"><span class="pre">example_galaxy</span></tt>: basic galaxy simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tests.html#problem-example-cluster-basic-cluster-simulation">Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tests.html#problem-constsampl-importance-of-constrained-sampling">Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tests.html#problem-sampling-different-sampling-techniques">Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques</a></li>
@@ -189,7 +202,7 @@
     </div>
     <div class="footer">
         &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

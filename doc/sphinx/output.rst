@@ -59,15 +59,18 @@ This file contains data on the spectra of the entire galaxy, and consists of a s
 
 * ``Time``: evolution time at which the output is produced
 * ``Wavelength``: observed frame wavelength at which the spectrum is evaluated
-* ``L_lambda``: specific luminosity at the specified wavelength, without extinction
-* ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
+* ``L_lambda``: specific luminosity at the specified wavelength, before extinction or nebular effects are applied
+* ``L_lambda_neb``: specific luminosity at the specified wavelength, after the light has been processed through the nebula (only present if SLUG was run with nebular emission enabled)
+* ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied, but without the effects of the nebula (only present if SLUG was run with extinction enabled)
+* ``L_lambda_neb_ex``: specific luminosity at the specified wavelength, after the light is first processed by the nebular and then subjected to dust extinction (only present if SLUG was run with both extinction and nebular emission enabled)
 
-If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for ``L_lambda_ex`` may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.
+If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for ``L_lambda_ex`` and ``L_l_neb_ex`` may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.
 
- If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum ``L_lambda`` at that time. The final field, ``L_lambda_ex``, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+ If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum ``L_lambda`` at that time. The remaining fields ``L_lambda_neb``, ``L_lambda_ex``, and ``L_lambda_neb_ex``, give the spectra including nebular processing, extinction, and both. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 For binary output, the file is formatted as follows. The file starts with
 
+* ``Nebular`` (``byte``): a single byte, with a value of 0 indicating that nebular processing was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the spectra
 * ``Wavelength`` (``NWavelength`` entries of type ``double``)
@@ -78,7 +81,9 @@ and then contains a series of records in the format
 
 * ``Time`` (``double``)
 * ``L_lambda`` (``NWavelength`` entries of type ``double``)
+* ``L_lambda_neb`` (``NWavelength`` entries of type ``double``); only present if ``Nebular`` is 1
 * ``L_lambda_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
+* ``L_lambda_neb_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
@@ -94,9 +99,17 @@ This file contains data on the photometric properties of the entire galaxy, and 
 * ``PhotFilter2``
 * ``PhotFilter3``
 * ``...``
+* ``PhotFilter1_neb``: photometric value through filter 1 for the spectrum after nebular processing, in the same units as ``PhotFilter1``; only present if SLUG was run with nebular processing enabled
+* ``PhotFilter2_neb``
+* ``PhotFilter3_neb``
+* ``...``
 * ``PhotFilter1_ex``: photometric value through filter 1 for the extincted spectrum, in the same units as ``PhotFilter1``; only present if SLUG was run with extinction enabled
 * ``PhotFilter2_ex``
 * ``PhotFilter3_ex``
+* ``...``
+* ``PhotFilter1_neb_ex``: photometric value through filter 1 for the spectrum after nebular processing and extinction, in the same units as ``PhotFilter1``; only present if SLUG was run with both nebular processing and extinction enabled
+* ``PhotFilter2_neb_ex``
+* ``PhotFilter3_neb_ex``
 * ``...``
 
 If ``output_mode`` is ``ascii``, these data are output in a series of
@@ -112,10 +125,12 @@ for that filter cannot be computed either.
 If ``output_mode`` is ``fits``, the data are stored as a series of
 columns in a binary table extension to the FITS file; the filter names
 and units are included in the header information for the columns. If
-SLUG was run with extinction enabled, in for each filter
-``FILTERNAME`` there is a corresponding column ``FILTERNAME_ex``
-containing the photometric value for that filter applied to the
-extincted spectrum. Some of these values may be ``NaN``; this
+SLUG was run with nebular emission enabled, for each filter ``FILTERNAME``
+there is a corresponding column ``FILTERNAME_neb`` giving the photometric
+value for the nebular-processed spectrum. Similarly, the columns
+``FILTERNAME_ex`` and ``FILTERNAME_neb_ex`` give the photometric values
+for the extincted stellar and stellar + nebular spectra, respectively.
+Some of the extincted values may be ``NaN``; this
 indicates that the photon response function provided for that filter
 extends beyond the wavelength range covered by the provided extinction
 curve. In addition to the time and photometric filter values, the FITS
@@ -129,6 +144,9 @@ For binary output, the file is formatted as follows. The file starts with
 * ``FilterName`` ``FilterUnit`` (``NFilter`` entries stored as ``ASCII
   text``): the name and units for each filter are listed in ASCII, one
   filter-unit pair per line
+* ``Nebular`` (``byte``): a single byte, with a value of 0 indicating
+  that nebular processing was not enabled for this run, and a value of 1
+  indicating that it was enabled
 * ``Extinct`` (``byte``): a single byte, with a value of 0 indicating
   that extinction was not enabled for this run, and a value of 1
   indicating that it was enabled
@@ -137,7 +155,9 @@ This is followed by a series of entries of the form
 
 * ``Time`` (``double``)
 * ``PhotFilter`` (``NFilter`` entries of type ``double``)
+* ``PhotFilter_neb`` (``NFilter`` entries of type ``double``); only present if ``Nebular`` is 1.
 * ``PhotFilter_ex`` (``NFilter`` entries of type ``double``); only present if ``Extinct`` is 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
+* ``PhotFilter_neb_ex`` (``NFilter`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
@@ -190,14 +210,17 @@ This file contains the spectra of the individual clusters, and each entry contai
 * ``Time``: evolution time at which the output is produced
 * ``Wavelength``: observed frame wavelength at which the spectrum is evaluated
 * ``L_lambda``: specific luminosity at the specified wavelength
+* ``L_lambda_neb``: specific luminosity at the specified wavelength after nebular processing is applied (only present if SLUG was run with nebular processing enabled)
 * ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
+* ``L_lambda_neb_ex``: specific luminosity at the specified wavelength after nebular processing and extinction are applied (only present if SLUG was run with both nebular processing and extinction enabled)
 
 If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. The column ``L_lambda_ex`` is present only if SLUG was run with extinction enabled. Some entries for ``L_lambda_ex`` may be empty; see :ref:`ssec-int-spec-file`.
 
-If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has four fields if SLUG was run without extinction, or five fields if it was run with extinction. The first four fields, always present, give the trial number, unique ID of the cluster, the time, and the spectrum ``L_lambda`` at that time. The final field, ``L_lambda_ex``, gives the extincted spectrum at that time and trial. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has always contains the fields ``UniqueId``, ``Time``, ``Trial``, and ``L_lambda`` giving the cluster unique ID, time, trial number, and stellar spectrum. Depending on whether nebular processing and/or extinction were enabled when SLUG was run, it may also contain the fields ``L_lambda_neb``, ``L_lambda_ex``, and ``L_lambda_neb_ex`` giving the nebular-processed, extincted, and nebular-processed plus extincted spectra. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 Output in ``binary`` mode is formatted as follows.  The file starts with
 
+* ``Nebular`` (``byte``): a single byte, with a value of 0 indicating that nebular processing was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the spectra
 * ``Wavelength`` (``NWavelength`` entries of type ``double``)
@@ -213,7 +236,9 @@ This is followed by ``NCluster`` entries of the following form:
 
 * ``UniqueID`` (``unsigned long``)
 * ``L_lambda`` (``NWavelength`` entries of type ``double``)
+* ``L_lambda_neb`` (``NWavelength`` entries of type ``double``); only present if ``Nebular`` is 1
 * ``L_lambda_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
+* ``L_lambda_neb_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
 
 
 .. _ssec-cluster-phot-file:
@@ -229,19 +254,42 @@ This file contains the photometric values for the individual clusters. Each entr
 * ``PhotFilter2``
 * ``PhotFilter3``
 * ``...``
+* ``PhotFilter1_neb``: photometric value through filter 1 for the spectrum after nebular processing, in the same units as ``PhotFilter1``; only present if SLUG was run with nebular processing enabled
+* ``PhotFilter2_neb``
+* ``PhotFilter3_neb``
+* ``...``
 * ``PhotFilter1_ex``: photometric value through filter 1 for the extincted spectrum, in the same units as ``PhotFilter1``; only present if SLUG was run with extinction enabled
 * ``PhotFilter2_ex``
 * ``PhotFilter3_ex``
 * ``...``
+* ``PhotFilter1_neb_ex``: photometric value through filter 1 for the spectrum after nebular processing and extinction, in the same units as ``PhotFilter1``; only present if SLUG was run with both nebular processing and extinction enabled
+* ``PhotFilter2_neb_ex``
+* ``PhotFilter3_neb_ex``
+* ``...``
 
 If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. Some of the extincted photometry columns may be blank; see :ref:`ssec-int-phot-file`.
 
-If ``output_mode`` is ``fits``, the data are stored as a series of columns in a binary table extension to the FITS file; the filter names and units are included in the header information for the columns. If SLUG was run with extinction enabled, in for each filter ``FILTERNAME`` there is a corresponding column ``FILTERNAME_ex`` containing the photometric value for that filter applied to the extincted spectrum. Some of these values may be ``NaN``; see :ref:`ssec-int-phot-file`. In addition to the time, unique ID, and photometric filter values, the FITS file contains a column specifying the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If ``output_mode`` is ``fits``, the data are stored as a series of
+columns in a binary table extension to the FITS file; the filter names
+and units are included in the header information for the columns. If
+SLUG was run with nebular emission enabled, for each filter ``FILTERNAME``
+there is a corresponding column ``FILTERNAME_neb`` giving the photometric
+value for the nebular-processed spectrum. Similarly, the columns
+``FILTERNAME_ex`` and ``FILTERNAME_neb_ex`` give the photometric values
+for the extincted stellar and stellar + nebular spectra, respectively.
+Some of the extincted values may be ``NaN``; this
+indicates that the photon response function provided for that filter
+extends beyond the wavelength range covered by the provided extinction
+curve. In addition to the time and photometric filter values, the FITS
+file contains a column specifying the trial number for that
+entry. Both the ASCII- and FITS-formatted output should be fairly
+self-documenting.
 
 In ``binary`` output mode, the binary data file starts with
 
 * ``NFilter`` (stored as ``ASCII text``): number of filters used
 * ``FilterName`` ``FilterUnit`` (``NFilter`` entries stored as ``ASCII text``): the name and units for each filter are listed in ASCII, one filter-unit pair per line
+* ``Nebular`` (``byte``): a single byte, with a value of 0 indicating that nebular processing was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 
 and then contains a series of records, one for each output time , with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
@@ -253,7 +301,9 @@ This is followed by ``NCluster`` entries of the following form:
 
 * ``UniqueID`` (``unsigned long``)
 * ``PhotFilter`` (``NFilter`` entries of type ``double``)
+* ``PhotFilter_neb`` (``NFilter`` entries of type ``double``); only present if ``Nebular`` is 1.
 * ``PhotFilter_ex`` (``NFilter`` entries of type ``double``); only present if ``Extinct`` is 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
+* ``PhotFilter_neb_ex`` (``NFilter`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
 
 
 
