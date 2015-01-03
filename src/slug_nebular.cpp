@@ -123,9 +123,11 @@ slug_nebular(const char *atomic_dir,
   // Generate the array of wavelengths for tabular data
   HIffbf_lambda.resize(2*HIffbf_nE-2);
   HIffbf_lambda[0] = constants::lambdaHI;
-  for (unsigned int i=1; i<HIffbf_nE; i++)
+  for (unsigned int i=1; i<HIffbf_nE-1; i++)
     HIffbf_lambda[2*i-1] = HIffbf_lambda[2*i] = 
       constants::lambdaHI*(i+1)*(i+1);
+  HIffbf_lambda[2*HIffbf_nE-3] = constants::lambdaHI*
+    HIffbf_nE*HIffbf_nE;
   
   //////////////////////////////////////////////////////////////////////
   // Read the data for hydrogen 2 photon
@@ -262,6 +264,54 @@ slug_nebular(const char *atomic_dir,
 
   // Close file
   Hlines_file.close();
+
+  //////////////////////////////////////////////////////////////////////
+  // Read the data for He lines
+  //////////////////////////////////////////////////////////////////////
+
+  // Open file
+  fname = "Helines.txt";
+  ifstream Helines_file;
+  path Helines_path = dirname / path(fname.c_str());
+  Helines_file.open(Helines_path.c_str());
+  if (!Helines_file.is_open()) {
+    // Couldn't open file, so bail out
+    cerr << "slug: error: unable to open He data file " 
+	 << Helines_path.string() << endl;
+    exit(1);
+  }
+
+  // Read until we find a non-comment, non-blank line
+  while (getline(Helines_file, hdr)) {
+    trim(hdr);
+    if (hdr.length() == 0) continue;
+    if (hdr.front() == '#') continue;
+    break;
+  }
+
+  // We've found the first line, which contains number of temperatures
+  // and densities; extract them
+  stringstream ss4(hdr);
+  ss4 >> Helines_nDen >> Helines_nLines;
+
+  // Resize data arrays
+  Helines_den.resize(Helines_nDen);
+  Helines_lambda.resize(Helines_nLines);
+  Helines_a.resize(extent2[Helines_nDen][Helines_nLines]);
+  Helines_b.resize(extent2[Helines_nDen][Helines_nLines]);
+  Helines_c.resize(extent2[Helines_nDen][Helines_nLines]);
+
+  // Loop over densities and lines
+  for (unsigned int i=0; i<Helines_nDen; i++) {
+    Helines_file >> Helines_den[i];
+    for (unsigned int j=0; j<Helines_nLines; j++) {
+      Helines_file >> Helines_lambda[j] >> Helines_a[i][j] 
+		   >> Helines_b[i][j] >> Helines_c[i][j];
+    }
+  }
+
+  // Close file
+  Helines_file.close();
 
   //////////////////////////////////////////////////////////////////////
   // Compute L_lambda / Q
@@ -452,6 +502,52 @@ set_properties(const double n_in, const double T_in,
       LperQ[k] += emiss / (lambda[k]*dlogLambda) 
 	* phi_dust / alphaB;
     }
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  // Step 5. Helium lines
+  //////////////////////////////////////////////////////////////////////
+
+  // Prepare to interpolate in density
+  unsigned int He_idx = 0;
+  double He_wgt;
+  if (Helines_den[0] > den) He_wgt = 1.0;
+  else {
+    while (Helines_den[He_idx+1] < den) He_idx++;
+    He_wgt = log(den/Helines_den[He_idx]) / 
+      log(Helines_den[He_idx+1]/Helines_den[He_idx]);
+  }
+
+  // Loop over lines
+  for (unsigned int i=0; i<Helines_nLines; i++) {
+
+    // Get emissivitiy for this line
+    double emiss = 
+      (1.0 - He_wgt) * Helines_a[He_idx][i] *
+      pow(T/1e4, Helines_b[He_idx][i]) * 
+      exp(Helines_c[He_idx][i]/(T/1e4)) +
+      He_wgt * Helines_a[He_idx+1][i] *
+      pow(T/1e4, Helines_b[He_idx+1][i]) * 
+      exp(Helines_c[He_idx+1][i]/(T/1e4));
+
+    // Find correct wavelength bin and bin width
+    double dlogLambda;
+    unsigned int k;
+    for (k=0; k<lambda.size()-1; k++) {
+      if (Helines_lambda[i] < sqrt(lambda[k]*lambda[k+1])) break;
+    }
+    if (k == 0) {
+      dlogLambda = 2.0 * (log(lambda[1]) - log(lambda[0]));
+    } else if (k == lambda.size()-1) {
+      dlogLambda = 2.0 * (log(lambda[lambda.size()-1]) - 
+			  log(lambda[lambda.size()-2]));
+    } else {
+      dlogLambda = log(lambda[k+1]) - log(lambda[k-1]);
+    }
+
+    // Compute conversion factor
+    LperQ[k] += constants::xHe * emiss / (lambda[k]*dlogLambda) 
+      * phi_dust / alphaB;
   }
 }
 

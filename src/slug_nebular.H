@@ -122,6 +122,11 @@ private:
   std::vector<double> Hlines_T, Hlines_den;
   array4d Hlines_emiss;
 
+  // Helium line data
+  unsigned int Helines_nLines, Helines_nDen;
+  std::vector<double> Helines_lambda, Helines_den;
+  array2d Helines_a, Helines_b, Helines_c;
+
   // Conversion between ionizing luminosity and continuum emission
   std::vector<double> LperQ;
 };

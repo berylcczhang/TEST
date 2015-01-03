@@ -1573,7 +1573,7 @@ void slug_sim::open_cluster_phot() {
       if (nebular != NULL) {
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
 	  filter_names_neb_ex[i] = filter_names[i] + "_neb_ex";
-	  ttype.push_back(const_cast<char*>(filter_names_neb[i].c_str()));
+	  ttype.push_back(const_cast<char*>(filter_names_neb_ex[i].c_str()));
 	  tform.push_back(const_cast<char*>(form_str[2].c_str()));
 	  tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
 	}
