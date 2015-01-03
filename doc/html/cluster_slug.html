@@ -1,0 +1,393 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cluster_slug: Bayesian Inference of Star Cluster Properties &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="sfr_slug: Bayesian Inference of Star Formation Rates" href="sfr_slug.html" />
+    <link rel="prev" title="bayesphot: Bayesian Inference for Stochastic Stellar Populations" href="bayesphot.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sfr_slug.html" title="sfr_slug: Bayesian Inference of Star Formation Rates"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="bayesphot.html" title="bayesphot: Bayesian Inference for Stochastic Stellar Populations"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="cluster-slug-bayesian-inference-of-star-cluster-properties">
+<span id="sec-cluster-slug"></span><h1>cluster_slug: Bayesian Inference of Star Cluster Properties<a class="headerlink" href="#cluster-slug-bayesian-inference-of-star-cluster-properties" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="full-documentation-of-slugpy-cluster-slug">
+<h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="slugpy.cluster_slug.cluster_slug">
+<em class="property">class </em><tt class="descclassname">slugpy.cluster_slug.</tt><tt class="descname">cluster_slug</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that can be used to estimate the PDF of star cluster
+properties (mass, age, extinction) from a set of input photometry
+in various bands.</p>
+<dl class="docutils">
+<dt>Properties</dt>
+<dd><dl class="first last docutils">
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dd>prior probability on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
+<dd>bandwidth for kernel density estimation; if set to
+&#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a cluster_slug object.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of the SLUG model to load; if left as None, the default
+is $SLUG_DIR/cluster_slug/CLUSTER_SLUG</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
+<dd>bandwidth for kernel density estimation; if set to
+&#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
+<dt>ktype <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>type of kernel to be used in densty estimation; allowed
+values are &#8216;gaussian&#8217; (default), &#8216;epanechnikov&#8217;, and
+&#8216;tophat&#8217;; only Gaussian can be used with error bars</dd>
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dd>prior probability on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability</dd>
+<dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | None</span></dt>
+<dd>the density of the data samples at each data point; this
+need not match the prior density; interpretation depends
+on the type passed; array, shape (N): values are
+interpreted as the density of data sampling at each
+sample point; callable: the callable must take as an
+argument an array of shape (N, nphys), and return an
+array of shape (N) giving the sampling density at each
+point; &#8216;auto&#8217;: the sample density will be computed
+directly from the data set; note that this can be quite
+slow for large data sets, so it is preferable to specify
+this analytically if it is known; None: data are assumed
+to be uniformly sampled</dd>
+<dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>relative error tolerance; errors on all returned
+probabilities p will satisfy either
+abs(p_est - p_true) &lt;= reltol * p_est   OR
+abs(p_est - p_true) &lt;= abstol,
+where p_est is the returned estimate and p_true is the
+true value</dd>
+<dt>abstol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>absolute error tolerance; see above</dd>
+<dt>leafsize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of data points in each leaf of the KD tree</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
+<dt>Raises</dt>
+<dd>IOError, if the library cannot be found</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="slugpy.cluster_slug.cluster_slug.__weakref__">
+<tt class="descname">__weakref__</tt><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.add_filters">
+<tt class="descname">add_filters</tt><big>(</big><em>filters</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.add_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a set of filters to use for cluster property estimation</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>nothing</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.filters">
+<tt class="descname">filters</tt><big>(</big><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of all available filters</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>None</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">list of strings</span></dt>
+<dd>list of available filter names</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.logL">
+<tt class="descname">logL</tt><big>(</big><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.logL" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns the natural log of the likelihood
+function evaluated at a particular log mass, log age,
+extinction, and set of log luminosities</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (3) or (..., 3)</span></dt>
+<dd>array giving values of the log M, log T, and A_V; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>logL <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>natural log of the likelihood function</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.mcmc">
+<tt class="descname">mcmc</tt><big>(</big><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mcmc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns a sample of MCMC walkers for cluster
+mass, age, and extinction</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>mc_walkers <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of walkers to use in the MCMC</dd>
+<dt>mc_steps <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps in the MCMC</dd>
+<dt>mc_burn_in <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps to consider &#8220;burn-in&#8221; and discard</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd><dl class="first last docutils">
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of sample points returned by the MCMC</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.mpdf">
+<tt class="descname">mpdf</tt><big>(</big><em>idx</em>, <em>photprop</em>, <em>photerr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mpdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the marginal probability for one or mode physical
+quantities for one or more input sets of photometric
+properties. Output quantities are computed on a grid of
+values, in the same style as meshgrid</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>idx <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>index of the physical quantity whose PDF is to be
+computed; 0 = log M, 1 = log T, 2 = A_V; if this is an
+iterable, the joint distribution of the indicated
+quantities is returned</dd>
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx</dd>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
+<dd>minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
+<dd>maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx</dd>
+<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
+<dd>set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, returned pdf&#8217;s will be normalized to integrate
+to 1</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
+of the output grid, for each input cluster; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cluster_slug: Bayesian Inference of Star Cluster Properties</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-slugpy-cluster-slug">Full Documentation of slugpy.cluster_slug</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="bayesphot.html"
+                        title="previous chapter">bayesphot: Bayesian Inference for Stochastic Stellar Populations</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sfr_slug.html"
+                        title="next chapter">sfr_slug: Bayesian Inference of Star Formation Rates</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/cluster_slug.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sfr_slug.html" title="sfr_slug: Bayesian Inference of Star Formation Rates"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="bayesphot.html" title="bayesphot: Bayesian Inference for Stochastic Stellar Populations"
+             >previous</a> |</li>
+        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
