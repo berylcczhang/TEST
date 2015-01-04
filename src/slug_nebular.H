@@ -25,10 +25,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // production. This method is intended as a "quick and dirty" estimate
 // that can stand in for a much more accurate (but much more
 // expensive) calculation with cloudy. The processes included are:
-// 1. Hydrogen free-free and bound-free
-// 2. Hydrogen 2-photon emission
-// 3. Hydrogen recombination lines
-// 4. Helium free-free and bound-free
+// 1. Hydrogen and helium free-free
+// 2. Hydrogen and helium bound-free
+// 3. Hydrogen 2-photon emission
+// 4. Hydrogen recombination lines
 // 5. Helium recombination and collisionally-excited lines
 ////////////////////////////////////////////////////////////////////////
 
@@ -91,10 +91,17 @@ private:
   double den;      // Gas density
   double T;        // Gas temperature
 
-  // Hydrogen free-free and bound-free emission data
-  unsigned int HIffbf_nT, HIffbf_nE;
-  std::vector<double> HIffbf_T, HIffbf_lambda;
-  array2d HIffbf_gamma;
+  // Hydrogen bound-free emission data
+  unsigned int HIbf_nT, HIbf_nE;
+  std::vector<double> HIbf_logT, HIbf_en;
+  std::vector<int> HIbf_thresh;
+  array2d HIbf_gammam;
+
+  // Helium bound-free emission data
+  unsigned int HeIbf_nT, HeIbf_nE;
+  std::vector<double> HeIbf_logT, HeIbf_en;
+  std::vector<int> HeIbf_thresh;
+  array2d HeIbf_gammam;
 
   // Hydrogen 2-photon data
   // Einstein A for the 2s -> 1s process from Draine (2011, section

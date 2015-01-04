@@ -73,26 +73,24 @@ slug_nebular(const char *atomic_dir,
   }
 
   //////////////////////////////////////////////////////////////////////
-  // Read the tabulated emission coefficients for H free-free and
-  // bound-free
+  // Read the tabulated emission coefficients for HI bound-free
   //////////////////////////////////////////////////////////////////////
 
-  // Open the data file containing the Ferland (1980) data
-  string fname = "Hffbf.txt";
-  ifstream Hffbf_file;
+  string fname = "HIbf.txt";
+  ifstream HIbf_file;
   path dirname(atomic_dir);
-  path Hffbf_path = dirname / path(fname.c_str());
-  Hffbf_file.open(Hffbf_path.c_str());
-  if (!Hffbf_file.is_open()) {
+  path HIbf_path = dirname / path(fname.c_str());
+  HIbf_file.open(HIbf_path.c_str());
+  if (!HIbf_file.is_open()) {
     // Couldn't open file, so bail out
     cerr << "slug: error: unable to open H data file " 
-	 << Hffbf_path.string() << endl;
+	 << HIbf_path.string() << endl;
     exit(1);
   }
 
   // Read until we find a non-comment, non-blank line
   string hdr;
-  while (getline(Hffbf_file, hdr)) {
+  while (getline(HIbf_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
     if (hdr.front() == '#') continue;
@@ -100,34 +98,74 @@ slug_nebular(const char *atomic_dir,
   }
 
   // We've found the first line, which contains number of temperatures
-  // and edges; extract them
-  stringstream ss(hdr);
-  ss >> HIffbf_nT >> HIffbf_nE;
+  // and energies; extract them
+  stringstream ssHI(hdr);
+  ssHI >> HIbf_nT >> HIbf_nE;
 
-  // Now read the temperature table
-  HIffbf_T.resize(HIffbf_nT);
-  for (unsigned int i=0; i<HIffbf_nT; i++) Hffbf_file >> HIffbf_T[i];
+  // Now read the log temperature table
+  HIbf_logT.resize(HIbf_nT);
+  for (unsigned int i=0; i<HIbf_nT; i++) HIbf_file >> HIbf_logT[i];
 
-  // Now read the table of gamma values
+  // Now read the table of energies, threshold markers, and gamma_m
+  // values
   array2d::extent_gen extent2;
-  HIffbf_gamma.resize(extent2[2*HIffbf_nE-2][HIffbf_nT]);
-  for (unsigned int i=0; i<2*HIffbf_nE-2; i++) {
-    getline(Hffbf_file, hdr);   // Burn the newline
-    for (unsigned int j=0; j<HIffbf_nT; j++)
-      Hffbf_file >> HIffbf_gamma[i][j];
+  HIbf_gammam.resize(extent2[HIbf_nE][HIbf_nT]);
+  HIbf_thresh.resize(HIbf_nE);
+  HIbf_en.resize(HIbf_nE);
+  for (unsigned int i=0; i<HIbf_nE; i++) {
+    HIbf_file >> HIbf_thresh[i] >> HIbf_en[i];
+    for (unsigned int j=0; j<HIbf_nT; j++)
+      HIbf_file >> HIbf_gammam[i][j];
   }
 
   // Close the file
-  Hffbf_file.close();
+  HIbf_file.close();
 
-  // Generate the array of wavelengths for tabular data
-  HIffbf_lambda.resize(2*HIffbf_nE-2);
-  HIffbf_lambda[0] = constants::lambdaHI;
-  for (unsigned int i=1; i<HIffbf_nE-1; i++)
-    HIffbf_lambda[2*i-1] = HIffbf_lambda[2*i] = 
-      constants::lambdaHI*(i+1)*(i+1);
-  HIffbf_lambda[2*HIffbf_nE-3] = constants::lambdaHI*
-    HIffbf_nE*HIffbf_nE;
+  //////////////////////////////////////////////////////////////////////
+  // Read the tabulated emission coefficients for HeI bound-free
+  //////////////////////////////////////////////////////////////////////
+
+  fname = "HeIbf.txt";
+  ifstream HeIbf_file;
+  path HeIbf_path = dirname / path(fname.c_str());
+  HeIbf_file.open(HeIbf_path.c_str());
+  if (!HeIbf_file.is_open()) {
+    // Couldn't open file, so bail out
+    cerr << "slug: error: unable to open He data file " 
+	 << HeIbf_path.string() << endl;
+    exit(1);
+  }
+
+  // Read until we find a non-comment, non-blank line
+  while (getline(HeIbf_file, hdr)) {
+    trim(hdr);
+    if (hdr.length() == 0) continue;
+    if (hdr.front() == '#') continue;
+    break;
+  }
+
+  // We've found the first line, which contains number of temperatures
+  // and energies; extract them
+  stringstream ssHeI(hdr);
+  ssHeI >> HeIbf_nT >> HeIbf_nE;
+
+  // Now read the log temperature table
+  HeIbf_logT.resize(HeIbf_nT);
+  for (unsigned int i=0; i<HeIbf_nT; i++) HeIbf_file >> HeIbf_logT[i];
+
+  // Now read the table of energies, threshold markers, and gamma_m
+  // values
+  HeIbf_gammam.resize(extent2[HeIbf_nE][HeIbf_nT]);
+  HeIbf_thresh.resize(HeIbf_nE);
+  HeIbf_en.resize(HeIbf_nE);
+  for (unsigned int i=0; i<HeIbf_nE; i++) {
+    HeIbf_file >> HeIbf_thresh[i] >> HeIbf_en[i];
+    for (unsigned int j=0; j<HeIbf_nT; j++)
+      HeIbf_file >> HeIbf_gammam[i][j];
+  }
+
+  // Close the file
+  HeIbf_file.close();
   
   //////////////////////////////////////////////////////////////////////
   // Read the data for hydrogen 2 photon
@@ -347,81 +385,192 @@ set_properties(const double n_in, const double T_in,
   double alphaB = 2.54e-13*pow(T/1e4, -0.8163-0.0208*log(T/1e4));
 
   //////////////////////////////////////////////////////////////////////
-  // Step 1. Hydrogen free-free and bound-free
+  // Step 1. Hydrogen and helium free-free
   //////////////////////////////////////////////////////////////////////
 
-  // Do interpolation in temperature direction on the stored table
-  unsigned int H_T_idx = 0;
-  while (HIffbf_T[H_T_idx+1] < T) H_T_idx++;
-  double H_T_wgt = log(T/HIffbf_T[H_T_idx]) / 
-    log(HIffbf_T[H_T_idx+1]/HIffbf_T[H_T_idx]);
+  // This calculation uses the analytic formulae given in chapter 10
+  // of Draine (2011); abundances are computed assuming ne = (1+xHe)
+  // nH, nHe+ = (1+xHe) nH
+  for (unsigned int i=0; i<LperQ.size(); i++) {
 
-  // Interpolate from Ferland (1980) table onto our wavelength table
-  unsigned int idx = 0, H_wl_idx = 0;
-  while (lambda[idx] < HIffbf_lambda[0]) idx++;
-  for (unsigned int i=idx; i<LperQ.size(); i++) {
+    // Skip ionizing wavelengths
+    if (lambda[i] < constants::lambdaHI) continue;
 
-    // Move the index in the Ferland wavelength table if needed
-    while ((HIffbf_lambda[H_wl_idx+1] < lambda[i]) &&
-	   (H_wl_idx < HIffbf_lambda.size()-1)) H_wl_idx++;
+    // Frequency
+    double nu = constants::c / (lambda[i]*constants::Angstrom);
+    
+    // Gaunt factor approximation (Draine 2011, eqn. 10.9)
+    double gff = log(exp(5.96 - sqrt(3.0)/M_PI * 
+			 log(nu/1e9 * pow(T/1e4, -1.5))) + exp(1.0));
 
-    // If we're off the end of the wavelength table, break; we'll use
-    // an analytic approximation below
-    if (H_wl_idx == HIffbf_lambda.size()-1) {
-      idx=i;
-      break;
+    // Free-free emission coefficient / (ne nH) (Draine 2011,
+    // eqn. 10.1); note that this is in erg cm^3 s^-1 Hz^-1
+    double jff = (8.0/3.0) * sqrt(2.0*M_PI/3.0) * gff *
+      pow(constants::echarge, 6) / 
+      (pow(constants::melectron, 2) * pow(constants::c, 3)) *
+      sqrt(constants::melectron/(constants::kB*T)) *
+      exp(-constants::h*nu/(constants::kB*T)) *
+      (1.0+constants::xHe)*(1.0+constants::xHe);
+
+    // Contribution to L/Q, including conversion from energy Hz^-1 to
+    // energy Angstrom^-1
+    LperQ[i] += 4.0*M_PI*jff * constants::c / 
+      (lambda[i]*lambda[i]*constants::Angstrom)
+      * phi_dust / alphaB;
+
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  // Step 2. Hydrogen and helium bound-free
+  //////////////////////////////////////////////////////////////////////
+
+  // Get index and coefficient for interpolation of temperature
+  unsigned int HIbf_T_idx = 0;
+  while (HIbf_logT[HIbf_T_idx+1] < log10(T)) HIbf_T_idx++;
+  double HIbf_T_wgt = (log10(T) - HIbf_logT[HIbf_T_idx]) / 
+    (HIbf_logT[HIbf_T_idx+1] - HIbf_logT[HIbf_T_idx]);
+
+  // Find first entry in wavelength array that is covered by the
+  // tabulation
+  unsigned int idx1 = lambda.size()-1;
+  while (constants::hc / (lambda[idx1]*constants::Angstrom) <
+	 HIbf_en[0]*constants::Ryd) idx1--;
+
+  // Loop over energies in the table of emission coefficients
+  unsigned int idx2;
+  double ethresh = 0.0;
+  for (unsigned int i=0; i<HIbf_nE-1; i++) {
+
+    // If this energy is a threshold, remember it
+    if (HIbf_thresh[i] == 1) ethresh = HIbf_en[i];
+
+    // If the energy we're pointing at in the wavelength table is
+    // above the next energy in the energy table, go to next energy
+    if (constants::hc / (lambda[idx1]*constants::Angstrom) >
+	HIbf_en[i+1]*constants::Ryd) continue;
+
+    // Find the last wavelength, starting from the current position
+    // and working backward, that is below the next energy in the
+    // bound-free emission table
+    idx2 = idx1;
+    while (constants::hc / (lambda[idx2-1]*constants::Angstrom) <
+	   HIbf_en[i+1]*constants::Ryd) idx2--;
+
+    // Loop over this index range, getting gamma_m at each wavelength
+    for (unsigned int j=idx2; j<=idx1; j++) {
+
+      // Energy at this wavelength, in Ryd
+      double en = constants::hc / 
+	(lambda[j]*constants::Angstrom*constants::Ryd);
+
+      // Interpolation coefficient
+      double wgt = (en - HIbf_en[i]) / (HIbf_en[i+1] - HIbf_en[i]);
+
+      // Interpolated gamma_m
+      double gammam =
+	(1.0-wgt) * (1.0-HIbf_T_wgt) * HIbf_gammam[i][HIbf_T_idx] +
+	wgt * (1.0-HIbf_T_wgt) * HIbf_gammam[i+1][HIbf_T_idx] +
+	(1.0-wgt) * HIbf_T_wgt * HIbf_gammam[i][HIbf_T_idx+1] +
+	wgt * HIbf_T_wgt * HIbf_gammam[i+1][HIbf_T_idx+1];
+
+      // Energy difference from nearest threshold, in Rydberg
+      double dER = en - ethresh;
+
+      // Emission coefficient
+      double gamma = 1.0e-40 * gammam * pow(T/1.0e4, 1.5) *
+	exp(-15.7887*dER / (T/1.0e4));
+
+      // Convert coefficient erg cm^3 Hz^-1 to erg cm^3 Angstrom^-1
+      double gamma_wl = gamma * constants::c / 
+	(lambda[j]*lambda[j]*constants::Angstrom);
+
+      // Contribtuion to L/Q
+      LperQ[j] += gamma_wl * phi_dust / alphaB;
     }
 
-    // Get interpolation weight
-    double H_wl_wgt = log(lambda[i]/HIffbf_lambda[H_wl_idx]) / 
-      log(HIffbf_lambda[H_wl_idx+1]/HIffbf_lambda[H_wl_idx]);
-
-    // Do bilinear interpolation in log gamma to get coefficient; this
-    // gives the emissivity per unit frequency per ne*nH
-    double gammaHI = 
-      exp( (1.0-H_T_wgt) * (1.0-H_wl_wgt) * 
-	   log(HIffbf_gamma[H_wl_idx][H_T_idx]) +
-	   (1.0-H_T_wgt) * H_wl_wgt *
-	   log(HIffbf_gamma[H_wl_idx][H_T_idx+1]) +
-	   H_T_wgt * (1.0-H_wl_wgt) *
-	   log(HIffbf_gamma[H_wl_idx+1][H_T_idx]) +
-	   H_T_wgt * H_wl_wgt *
-	   log(HIffbf_gamma[H_wl_idx+1][H_T_idx+1]) );
-
-    // Convert coefficient erg cm^3 Hz^-1 to erg cm^3 Angstrom^-1
-    double gamma_wl = gammaHI * constants::c / 
-      (lambda[i]*lambda[i]*constants::Angstrom);
-
-    // Compute contribution to emission; note that we want L_lambda =
-    // gamma_wl * ne * nH * V, where V = emission volume, but from
-    // ionization balance we also have phi_dust Q = alphaB *
-    // ne * nH * V, so we have
-    // ne * nH * V = phi_dust Q / alpha_B  ===>
-    // L_lambda = gamma_wl * phi_dust Q / alpha_B
-    LperQ[i] += gamma_wl * phi_dust / alphaB;
+    // Move index
+    idx1 = idx2-1;
   }
 
-  // Fill in lower frequency data using the fit from Draine (2011),
-  // eqn. 10.8 for free-free alone; bound-free is negligible in
-  // comparison. The rest of the calculation is the same as above.
-  for (unsigned int i=idx; i<LperQ.size(); i++) {
-    double nu = constants::c / (lambda[i]*constants::Angstrom);
-    double gammaHI = 4.0*M_PI * 3.35e-40 * pow(nu/1e9, -0.118) * 
-      pow(T/1e4, -0.323);
-    double gamma_wl = gammaHI * constants::c / 
-      (lambda[i]*lambda[i]*constants::Angstrom);
-    LperQ[i] += gamma_wl * phi_dust / alphaB;
+
+  // Same procedure for He
+
+  // Get index and coefficient for interpolation of temperature
+  unsigned int HeIbf_T_idx = 0;
+  while (HeIbf_logT[HeIbf_T_idx+1] < log10(T)) HeIbf_T_idx++;
+  double HeIbf_T_wgt = (log10(T) - HeIbf_logT[HeIbf_T_idx]) / 
+    (HeIbf_logT[HeIbf_T_idx+1] - HeIbf_logT[HeIbf_T_idx]);
+
+  // Find first entry in wavelength array that is covered by the
+  // tabulation
+  idx1 = lambda.size()-1;
+  while (constants::hc / (lambda[idx1]*constants::Angstrom) <
+	 HeIbf_en[0]*constants::Ryd) idx1--;
+
+  // Loop over energies in the table of emission coefficients
+  for (unsigned int i=0; i<HeIbf_nE-1; i++) {
+
+    // If this energy is a threshold, remember it
+    if (HeIbf_thresh[i] == 1) ethresh = HeIbf_en[i];
+
+    // If the energy we're pointing at in the wavelength table is
+    // above the next energy in the energy table, go to next energy
+    if (constants::hc / (lambda[idx1]*constants::Angstrom) >
+	HeIbf_en[i+1]*constants::Ryd) continue;
+
+    // Find the last wavelength, starting from the current position
+    // and working backward, that is below the next energy in the
+    // bound-free emission table
+    idx2 = idx1;
+    while (constants::hc / (lambda[idx2-1]*constants::Angstrom) <
+	   HeIbf_en[i+1]*constants::Ryd) idx2--;
+
+    // Loop over this index range, getting gamma_m at each wavelength
+    for (unsigned int j=idx2; j<=idx1; j++) {
+
+      // Energy at this wavelength, in Ryd
+      double en = constants::hc / 
+	(lambda[j]*constants::Angstrom*constants::Ryd);
+
+      // Interpolation coefficient
+      double wgt = (en - HeIbf_en[i]) / (HeIbf_en[i+1] - HeIbf_en[i]);
+
+      // Interpolated gamma_m
+      double gammam =
+	(1.0-wgt) * (1.0-HeIbf_T_wgt) * HeIbf_gammam[i][HeIbf_T_idx] +
+	wgt * (1.0-HeIbf_T_wgt) * HeIbf_gammam[i+1][HeIbf_T_idx] +
+	(1.0-wgt) * HeIbf_T_wgt * HeIbf_gammam[i][HeIbf_T_idx+1] +
+	wgt * HeIbf_T_wgt * HeIbf_gammam[i+1][HeIbf_T_idx+1];
+
+      // Energy difference from nearest threshold, in Rydberg
+      double dER = en - ethresh;
+
+      // Emission coefficient
+      double gamma = 1.0e-40 * gammam * pow(T/1.0e4, 1.5) *
+	exp(-15.7887*dER / (T/1.0e4));
+
+      // Convert coefficient erg cm^3 Hz^-1 to erg cm^3 Angstrom^-1
+      double gamma_wl = gamma * constants::c / 
+	(lambda[j]*lambda[j]*constants::Angstrom);
+
+      // Contribtuion to L/Q
+      LperQ[j] += constants::xHe *
+	gamma_wl * phi_dust / alphaB;
+    }
+
+    // Move index
+    idx1 = idx2-1;
   }
 
   //////////////////////////////////////////////////////////////////////
-  // Step 2. Hydrogen two-photon
+  // Step 3. Hydrogen two-photon
   //////////////////////////////////////////////////////////////////////
 
   // Get indices and interpolation coefficients in temperature and
   // density 
-  H_T_idx = 0;
+  unsigned int H_T_idx = 0;
   while (H2p_T_alpha2s[H_T_idx+1] < T) H_T_idx++;
-  H_T_wgt = log(T/H2p_T_alpha2s[H_T_idx]) / 
+  double H_T_wgt = log(T/H2p_T_alpha2s[H_T_idx]) / 
     log(H2p_T_alpha2s[H_T_idx+1]/H2p_T_alpha2s[H_T_idx]);
   unsigned int H_den_idx = 0;
   while (H2p_den[H_den_idx+1] < den) H_den_idx++;
@@ -452,7 +601,7 @@ set_properties(const double n_in, const double T_in,
       * collfac;
 
   //////////////////////////////////////////////////////////////////////
-  // Step 3. Hydrogen recombination lines
+  // Step 4. Hydrogen recombination lines
   //////////////////////////////////////////////////////////////////////
 
   // Loop over pairs of states; we already have the interpolation

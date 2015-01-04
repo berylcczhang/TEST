@@ -95,10 +95,10 @@ Here :math:`\phi_{\mathrm{dust}}` is the fraction of ionizing photons that are a
 
 The relation above determines :math:`n_e n_{\mathrm{H}} V`, and from this SLUG computes the nebular emission including the following processes:
 
-* Hydrogen free-free and H I bound-free emission
+* :math:`\mathrm{H}^+` and :math:`\mathrm{He}^+` free-free emission
+* :math:`\mathrm{H}` and :math:`\mathrm{He}` bound-free emission
 * Hydrogen 2-photon emission
 * Hydrogen recombination lines from all lines with upper levels :math:`n_u \leq 25`
-* He II free-free and He I bound-free emission
 * The brightest 33 brightest He I recombination and collisionally-excited lines
 
 Formally, the luminosity per unit wavelength is computed as
@@ -107,19 +107,25 @@ Formally, the luminosity per unit wavelength is computed as
 
 Here :math:`n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_{\mathrm{B}}(T)` from photoionization equilibrium, :math:`E_{nn'}` is the energy difference between hydrogen levels :math:`n` and :math:`n'`, and the remaining terms and their sources appearing in this equation are:
 
-* :math:`\gamma_{\mathrm{ff}}^{(\mathrm{H})}` and :math:`\gamma_{\mathrm{ff}}^{(\mathrm{H})}`: hydrogen free-free and bound-free emissivity, from the tabulation of `Ferland (1980, PASP, 92, 596) <http://adsabs.harvard.edu/abs/1980PASP...92..596F>`_ for wavelengths up to 13.1 :math:`\mu\mathrm{m}`, and from the analytic approximation of `Draine (2011, eqn. 10.8) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_ at longer wavelengths
+* :math:`\gamma_{\mathrm{ff}}^{(\mathrm{H})}` and :math:`\gamma_{\mathrm{ff}}^{(\mathrm{He})}`: HII and HeII free-free emission coefficients; these are computed from eqution 10.1 of `Draine (2011) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_, using the analytic approximation to the Gaunt factor given by equation 10.8 of the same source 
 
-* :math:`\gamma_{\mathrm{2p}}^{(\mathrm{H})}`: hydrogen two-photon emissivity, computed as :math:`\gamma_{\mathrm{2p}}^{(\mathrm{H})} = [hc/\lambda^3] I(\mathrm{H}^0) P_\nu \alpha_{2s}^{\mathrm{eff,(H)}} / [1 + (n_{\mathrm{H}} q_{2s-2p,p} + (1+x_{\mathrm{He}}) n_{\mathrm{H}} q_{2s-2p,e})/A_{2s-1s}]`. The quantities appearing in this expression are:
-
-  * :math:`I(\mathrm{H}^0)` is the hydrogen ionization potential
-  * :math:`P_\nu` is the frequency distribution for two-photon emission, computed from the analytic approximation of `Nussbaumer & Schmutz (1984, A&A, 138, 495) <http://adsabs.harvard.edu/abs/1984A%26A...138..495N>`_
-  * :math:`\alpha_{2s}^{\mathrm{eff,(H)}}` is the effective recombination rate to the 2s state, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
-  * :math:`q_{2s-2p,p}` and :math:`q_{2s-2p,e}` are the collisional rate coefficients for transitions from the 2s to the 2p state induced by collisions with protons and electrons, respectively, taken from `Osterbrock (1989, University Science Books, table 4.10) <http://adsabs.harvard.edu/abs/1989agna.book.....O>`_
-  * :math:`A_{2s-1s}` is the Einstein coefficient for the hydrogen 2s-1s two-photon emission process, taken from `Draine (2011, section 14.2.4) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_
+* :math:`\gamma_{\mathrm{bf}}^{(\mathrm{H})}` and :math:`\gamma_{\mathrm{bf}}^{(\mathrm{He})}`: HI and HeI bound-free emission coefficients; these are computed using the tabulation and interpolation method given in `Ercolano & Storey (2006, MNRAS, 372, 1875) <http://adsabs.harvard.edu/abs/2006MNRAS.372.1875E>`_
 
 * :math:`\alpha_{nn'}^{\mathrm{eff,B,(H)}}` is the effective emission rate coefficient for the :math:`n` to :math:`n'` H recombination line, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
 
 * :math:`\gamma_{i,\mathrm{line}}^{(\mathrm{He})}` is the emissivity for the brightest recombination and collisionally-excited lines of :math:`\mathrm{He}^+`, taken from the tabulation of `Benjamin et al. (1999, ApJ, 514, 307) <http://adsabs.harvard.edu/abs/1999ApJ...514..307B>`_
+
+* :math:`\gamma_{\mathrm{2p}}^{(\mathrm{H})}`: hydrogen two-photon emissivity, computed as
+
+.. math:: \gamma_{\mathrm{2p}}^{(\mathrm{H})} = \frac{hc}{\lambda^3} I(\mathrm{H}^0) \alpha_{2s}^{\mathrm{eff,(H)}} \frac{1}{1 + \frac{n_{\mathrm{H}} q_{2s-2p,p} + (1+x_{\mathrm{He}}) n_{\mathrm{H}} q_{2s-2p,e}}{A_{2s-1s}}} P_\nu 
+
+Here
+
+  * :math:`I(\mathrm{H}^0)` is the hydrogen ionization potential
+  * :math:`\alpha_{2s}^{\mathrm{eff,(H)}}` is the effective recombination rate to the 2s state, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
+  * :math:`q_{2s-2p,p}` and :math:`q_{2s-2p,e}` are the collisional rate coefficients for transitions from the 2s to the 2p state induced by collisions with protons and electrons, respectively, taken from `Osterbrock (1989, University Science Books, table 4.10) <http://adsabs.harvard.edu/abs/1989agna.book.....O>`_
+  * :math:`A_{2s-1s}` is the Einstein coefficient for the hydrogen 2s-1s two-photon emission process, taken from `Draine (2011, section 14.2.4) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_
+  * :math:`P_\nu` is the frequency distribution for two-photon emission, computed from the analytic approximation of `Nussbaumer & Schmutz (1984, A&A, 138, 495) <http://adsabs.harvard.edu/abs/1984A%26A...138..495N>`_
 
 .. _ssec-extinction:
 
