@@ -26,12 +26,14 @@ SLUG v1 will no longer be maintained, so all users are encouraged to migrate to 
 
 The SLUG repository contains several subdirectories.
 
+* *bayesphot*: contains source code for the SLUG Bayesian photometry library
 * *bin*: this contains the slug source code when it is compiled, as well as the paralle wrapper python script
 * *cloudy_slug*: this contains the code for the interface to [cloudy](http://nublado.org)
 * *doc*: this contains documentation for the code
 * *lib*: this contains the data files required by the code
     - *lib/atmospheres*: contains stellar atmosphere models
-    - *lib/avdist* : contains predefined distributions of visual extinction
+    - *lib/atomic*: contains atomic data files
+    - *lib/avdist*: contains predefined distributions of visual extinction
     - *lib/clf*: contains predefined star cluster lifetime functions
     - *lib/cmf*: contains predefined star cluster mass fuctions
     - *lib/extinct*: contains predefined extinction curves
@@ -41,11 +43,12 @@ The SLUG repository contains several subdirectories.
 * *output*: this is the default location for writing output
 * *param*: this is the default location for parameter files that control slug simulations
 * *slugpy*: this contains the python module slugpy, which includes routines for parsing and manipulating simulation outputs
+    - *bayesphot*: contains python routines to do Bayesian estimation of physical properties from photometry
     - *cloudy*: contains parsing routines related to the [cloudy](http://nublado.org) interface
+    - *cluster_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star cluster properties
     - *sfr_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star formation rates
 * *src*: this contains the main source code for SLUG
-* *test*: this contains python test scripts
-    - *test/aux*: contains data files for the test scripts
+* *test*: this contains test scripts
 
 ### Installing and configuring ###
 
