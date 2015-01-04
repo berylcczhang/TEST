@@ -18,7 +18,8 @@ This repository contains SLUG v2. SLUG v1 is available at <https://sites.google.
 * Greater flexibility in output and output formatting (ASCII, binary, or FITS)
 * Python helper routines for parsing output (replacing the older IDL routines used by SLUG v1)
 * The ability to apply stochastically-selected extinctions to the predicted light output
-* An automated interface to couple the code to [cloudy](http://nublado.org) in order to predict nebular line emission
+* Quick estimation of the nebular contribution to spectra and photometry
+* An automated interface to couple the code to [cloudy](http://nublado.org) in order to provide much more accurate predictions of nebular emission
 
 SLUG v1 will no longer be maintained, so all users are encouraged to migrate to SLUG v2 as soon as possible.
 
