@@ -577,9 +577,9 @@ slug_parmParser::checkParams() {
   if (!extinct_path.is_absolute())
     extinct_curve = (slug_path / extinct_path).string();
   if (!atomic_path.is_absolute())
-    atomic_path = (slug_path / atomic_path).string();
+    atomic_dir = (slug_path / atomic_path).string();
   if (!AV_path.is_absolute())
-    AV_path = (slug_path / AV_path).string();
+    AV_dist = (slug_path / AV_path).string();
   if (!out_time_path.is_absolute())
     out_time_dist = (slug_path / out_time_path).string();
 }
