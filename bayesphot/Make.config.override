@@ -19,3 +19,9 @@
 #LIB_EXTENSION	   = 
 #CLIBFLAGS	   = 
 #DYNLIBFLAG	   = 
+
+# Location of GSL
+#GSL_HDR_PATH	=
+#GSL_LIB_PATH	=
+#INCFLAGS       += -I$(GSL_HDR_PATH)
+#LDLIBFLAGS     += -L$(GSL_LIB_PATH)
