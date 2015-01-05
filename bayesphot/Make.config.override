@@ -19,10 +19,3 @@
 #LIB_EXTENSION	   = 
 #CLIBFLAGS	   = 
 #DYNLIBFLAG	   = 
-
-# Locations of boost and GSL libraries. Can be left blank if these are
-# in the default link/include paths.
-#BOOST_HDR_PATH	= 
-#BOOST_LIB_PATH	=
-#GSL_HDR_PATH	=
-#GSL_LIB_PATH	=
