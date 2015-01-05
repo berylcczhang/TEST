@@ -65,6 +65,9 @@ ifeq ($(FITS), ENABLE_FITS)
      LDLIBFLAGS += -lcfitsio
      DEFINES    += -DENABLE_FITS
 endif
+ifdef FITS_LIB_PATH
+     LDLIBFLAGS += -L$(FITS_LIB_PATH)
+endif
 
 # Read any user overrides
 -include Make.config.override
