@@ -315,7 +315,7 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
             wl_ex = wl_ex.flatten()
             L_lambda_ex = fp[2].data.field('L_lambda_ex')
             if nebular:
-                L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ext')
+                L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ex')
         else:
             extinct = False
 

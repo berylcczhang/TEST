@@ -1002,7 +1002,7 @@ void slug_sim::open_integrated_spec() {
       tunit2_str.push_back("erg/s/A");
       ncol++;
       if (nebular != NULL) {
-	ttype2_str.push_back("L_lambda_neb_ext");
+	ttype2_str.push_back("L_lambda_neb_ex");
 	tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
 	tunit2_str.push_back("erg/s/A");
 	ncol++;

@@ -314,7 +314,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                     np.reshape(L_lambda_ex, (ntrial, ntime, 
                                              len(wl_ex))))
             if nebular:
-                L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ext')
+                L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ex')
                 L_lambda_neb_ex \
                     = np.transpose(
                         np.reshape(L_lambda_neb_ex, (ntrial, ntime, 
