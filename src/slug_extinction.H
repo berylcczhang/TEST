@@ -61,8 +61,8 @@ public:
   std::vector<double>::size_type n_lambda() const 
   { return lambda_grd.size(); }
   std::vector<double>::size_type off() const { return offset; }
-  const double lambda_min() const { return lambda_grd.front(); }
-  const double lambda_max() const { return lambda_grd.back(); }
+  double lambda_min() const { return lambda_grd.front(); }
+  double lambda_max() const { return lambda_grd.back(); }
 
 private:
 
