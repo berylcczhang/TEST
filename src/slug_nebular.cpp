@@ -93,7 +93,7 @@ slug_nebular(const char *atomic_dir,
   while (getline(HIbf_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
-    if (hdr.front() == '#') continue;
+    if (hdr[0] == '#') continue;
     break;
   }
 
@@ -140,7 +140,7 @@ slug_nebular(const char *atomic_dir,
   while (getline(HeIbf_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
-    if (hdr.front() == '#') continue;
+    if (hdr[0] == '#') continue;
     break;
   }
 
@@ -188,7 +188,7 @@ slug_nebular(const char *atomic_dir,
   while (getline(Halpha2s_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
-    if (hdr.front() == '#') continue;
+    if (hdr[0] == '#') continue;
     break;
   }
 
@@ -254,7 +254,7 @@ slug_nebular(const char *atomic_dir,
   while (getline(Hlines_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
-    if (hdr.front() == '#') continue;
+    if (hdr[0] == '#') continue;
     break;
   }
 
@@ -323,7 +323,7 @@ slug_nebular(const char *atomic_dir,
   while (getline(Helines_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
-    if (hdr.front() == '#') continue;
+    if (hdr[0] == '#') continue;
     break;
   }
 
