@@ -27,7 +27,6 @@ SLUG v1 will no longer be maintained, so all users are encouraged to migrate to 
 
 The SLUG repository contains several subdirectories.
 
-* *bayesphot*: contains source code for the SLUG Bayesian photometry library
 * *bin*: this contains the slug source code when it is compiled, as well as the paralle wrapper python script
 * *cloudy_slug*: this contains the code for the interface to [cloudy](http://nublado.org)
 * *doc*: this contains documentation for the code
@@ -49,6 +48,7 @@ The SLUG repository contains several subdirectories.
     - *cluster_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star cluster properties
     - *sfr_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star formation rates
 * *src*: this contains the main source code for SLUG
+    - *bayesphot*: contains source code for the SLUG Bayesian photometry library
 * *test*: this contains test scripts
 
 ### Installing and configuring ###
