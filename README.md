@@ -99,7 +99,7 @@ If you have questions about SLUG, have discovered any bugs, or want to contribut
 
 ### Acknowledgements ###
 
-SLUG was the product of many people's work. The core code was originally written by Robert da Silva and Michele Fumagalli, with contributions from Jonathan Parra. The reimplementation and python parsing routines were written by Mark Krumholz. SLUG benefitted enormously from the methods and library of track and atmosphere models curated by Claus Leitherer as part of [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm). The extensive set of filters available is thanks to Charlie Conroy, who maintains the filter data as part of [FSPS](https://code.google.com/p/fsps/). The predefined extinction curves are courtesty of Daniela Calzetti.
+SLUG was the product of many people's work. The core code was originally written by Robert da Silva and Michele Fumagalli, with contributions from Jonathan Parra. The reimplementation and python parsing routines were written by Mark Krumholz. SLUG benefitted enormously from the methods and library of track and atmosphere models curated by Claus Leitherer as part of [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm). The extensive set of filters available started with the compilation provided by Charlie Conroy, who maintains a filter list as part of [FSPS](https://code.google.com/p/fsps/). The predefined extinction curves are courtesty of Daniela Calzetti.
 
 ### License ###
 
