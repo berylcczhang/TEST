@@ -427,7 +427,7 @@ class bp(object):
                 elif type(self.__sden) is np.ndarray:
 
                     # Array, so treat treat this as the data
-                    self.__sample_densty = self.__sden
+                    self.__sample_density = self.__sden
 
                 elif self.__sden == 'auto':
 

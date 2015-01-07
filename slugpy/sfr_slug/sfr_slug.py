@@ -15,6 +15,16 @@ from ..bayesphot import bp
 from ..read_integrated_prop import read_integrated_prop
 from ..read_integrated_phot import read_integrated_phot
 
+# Functions for pre-defined prior probability distributions on the SFR
+def dndlogsfr_flat(logsfr):
+    return 1.0+logsfr*0.0
+
+def dndlogsfr_schechter(logsfr):
+    sfr = exp(logsfr)
+    return sfr**(-0.51) * exp(-sfr/9.2)
+
+
+# Main sfr_slug class
 class sfr_slug(object):
     """
     A class that can be used to estimate the PDF of true star
@@ -22,14 +32,18 @@ class sfr_slug(object):
     star formation rate.
 
     Properties
-       priors : array, shape (N) | callable | None
+       priors : array, shape (N) | callable | 'flat' | 'schechter' | None
           prior probability on each data point; interpretation
           depends on the type passed; array, shape (N): values are
           interpreted as the prior probability of each data point;
           callable: the callable must take as an argument an array
           of shape (N, nphys), and return an array of shape (N)
           giving the prior probability at each data point; None:
-          all data points have equal prior probability
+          all data points have equal prior probability; the values
+          'flat' and 'schechter' use priors p(log SFR) ~ constant and
+          p(log SFR) ~ SFR^alpha exp(-SFR/SFR_*), respectively, where
+          alpha = -0.51 and SFR_* = 9.2 Msun/yr are the values
+          measured by Bothwell et al. (2011)
        bandwidth : 'auto' | array, shape (M)
           bandwidth for kernel density estimation; if set to
           'auto', the bandwidth will be estimated automatically
@@ -40,7 +54,7 @@ class sfr_slug(object):
     ##################################################################
     def __init__(self, libname=None, detname=None, filters=None, 
                  bandwidth=0.1, ktype='gaussian', priors=None, 
-                 sample_density='default', reltol=1.0e-3,
+                 sample_density='read', reltol=1.0e-3,
                  abstol=1.0e-10, leafsize=16):
         """
         Initialize an sfr_slug object.
@@ -73,7 +87,7 @@ class sfr_slug(object):
               of shape (N, nphys), and return an array of shape (N)
               giving the prior probability at each data point; None:
               all data points have equal prior probability
-           sample_density : array, shape (N) | callable | 'auto' | 'default' | None
+           sample_density : array, shape (N) | callable | 'auto' | 'read' | None
               the density of the data samples at each data point; this
               need not match the prior density; interpretation depends
               on the type passed; array, shape (N): values are
@@ -84,10 +98,10 @@ class sfr_slug(object):
               point; 'auto': the sample density will be computed
               directly from the data set; note that this can be quite
               slow for large data sets, so it is preferable to specify
-              this analytically if it is known; 'default': the sample
-              density is assumed to be that of the default library
-              that ships with SLUG; None: data are assumed to be
-              uniformly sampled
+              this analytically if it is known; 'read': the sample
+              density is to be read from a numpy save file whose name
+              matches that of the library, with the extension _density.npy
+              added; None: data are assumed to be uniformly sampled
            reltol : float
               relative error tolerance; errors on all returned
               probabilities p will satisfy either
@@ -114,7 +128,7 @@ class sfr_slug(object):
                 self.__libname = osp.join(os.environ['SLUG_DIR'], 
                                           self.__libname)
         else:
-            self.libname = libname
+            self.__libname = libname
         prop = read_integrated_prop(self.__libname)
         phot = read_integrated_phot(self.__libname)
 
@@ -125,6 +139,18 @@ class sfr_slug(object):
             self.__detname = detname
         propdet = read_integrated_prop(self.__detname)
         photdet = read_integrated_phot(self.__detname)
+
+        # If we have been told to read the sample density, do so
+        try:
+            if sample_density == 'read':
+                self.__sample_density = np.load(self.__libname + 
+                                                '_density.npy')
+        except IOError:
+            warnings.warn("unable to load requested sample "+
+                          "density file " + 
+                          self.__libname + "_density.npy; setting " +
+                          "sample_density = 'auto' instead")
+            sample_density = 'auto'
 
         # Store filters
         self.__allfilters = phot.filter_names
@@ -153,10 +179,6 @@ class sfr_slug(object):
             (logsfrphot.shape[0]*logsfrphot.shape[1],
              logsfrphot.shape[2])))
 
-        # Purge data set of runs where SFR came out to exactly 0
-        #idx = np.where(self.__ds[:,2].flatten() > -99.99)[0]
-        #self.__ds = self.__ds[idx,:]
-
         # Record other stuff that we'll use to construct bp objects
         # later
         if type(bandwidth) is not np.ndarray:
@@ -166,10 +188,8 @@ class sfr_slug(object):
         self.__priors = priors
         self.__reltol = reltol
         self.__abstol = abstol
-        if sample_density != 'default':
+        if sample_density != 'read':
             self.__sample_density = sample_density
-        else:
-            self.__sample_density = 'auto'
 
         # Initialize empty dict containing filter sets
         self.__filtersets = []
@@ -263,8 +283,15 @@ class sfr_slug(object):
     @priors.setter
     def priors(self, pr):
         self.__priors = pr
-        for f in self.__filtersets:
-            f['bp'].priors = self.__priors
+        if pr == 'flat':
+            for f in self.__filtersets:
+                f['bp'].priors = dndlogsfr_flat
+        elif pr == 'schechter':
+            for f in self.__filtersets:
+                f['bp'].priors = dndlogsfr_schechter
+        else:
+            for f in self.__filtersets:
+                f['bp'].priors = self.__priors
 
 
     ##################################################################
