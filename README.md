@@ -88,9 +88,7 @@ Once the code is compiled, running a SLUG simulation is fairly straightforward. 
 4. Once the simulation is done, you can examine the output by eye (if you chose to write the output in ASCII format) or, more likely, read the data using the provided python routines. The two basic output reading routines can be invoked by doing the following in a python program of the command prompt of an interactive session:
 
 `from slugpy import *`
-
 `int_data = read_integrated('RUN_NAME')`
-
 `cluster_data = read_cluster('RUN_NAME')`
 
 ### Questions, bugs, and getting involved ###
