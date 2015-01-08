@@ -20,8 +20,8 @@ def dndlogsfr_flat(logsfr):
     return 1.0+logsfr*0.0
 
 def dndlogsfr_schechter(logsfr):
-    sfr = exp(logsfr)
-    return sfr**(-0.51) * exp(-sfr/9.2)
+    sfr = np.exp(logsfr)
+    return sfr**(-0.51) * np.exp(-sfr/9.2)
 
 
 # Main sfr_slug class
