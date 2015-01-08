@@ -185,7 +185,6 @@ class sfr_slug(object):
             bandwidth = np.array([bandwidth]*(1+len(phot.filter_names)))
         self.__bandwidth = bandwidth
         self.__ktype = ktype
-        self.__priors = priors
         self.__reltol = reltol
         self.__abstol = abstol
         if sample_density != 'read':
@@ -193,6 +192,9 @@ class sfr_slug(object):
 
         # Initialize empty dict containing filter sets
         self.__filtersets = []
+
+        # Set priors
+        self.priors = priors
 
         # If we have been given a filter list, create the data set to
         # go with it
@@ -282,14 +284,12 @@ class sfr_slug(object):
 
     @priors.setter
     def priors(self, pr):
-        self.__priors = pr
         if pr == 'flat':
-            for f in self.__filtersets:
-                f['bp'].priors = dndlogsfr_flat
+            self.priors = dndlogsfr_flat
         elif pr == 'schechter':
-            for f in self.__filtersets:
-                f['bp'].priors = dndlogsfr_schechter
+            self.priors = dndlogsfr_schechter
         else:
+            self.__priors = pr
             for f in self.__filtersets:
                 f['bp'].priors = self.__priors
 
