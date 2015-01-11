@@ -219,26 +219,39 @@ def write_integrated(data, model_name, fmt):
 
             fp = open(model_name+'_integrated_spec.txt', 'w')
 
-            # Write header lines
+            # Construct header lines
+            line1 = ("{:<14s}"*3).format('Time', 'Wavelength',
+                                         'L_lambda')
+            line2 = ("{:<14s}"*3).format('(yr)', '(Angstrom)', 
+                                         '(erg/s/A)')
+            line3 = ("{:<14s}"*3).format('-----------', '-----------', 
+                                         '-----------')
+            sep_length = 3*14-3
+            out_line = "{:11.5e}   {:11.5e}   {:11.5e}"
+
+            if 'spec_neb' in data._fields:
+                line1 = line1 + "{:<14s}".format("L_l_neb")
+                line2 = line2 + "{:<14s}".format("(erg/s/A)")
+                line3 = line3 + "{:<14s}".format("-----------")
+                sep_length = sep_length + 14
+                out_line = out_line + "   {:11.5e}"
             if 'spec_ex' in data._fields:
-                fp.write(("{:<14s}"*4).
-                         format('Time', 'Wavelength', 'L_lambda', 
-                                'L_lambda_ex') + "\n")
-                fp.write(("{:<14s}"*4).
-                         format('(yr)', '(Angstrom)', '(erg/s/A)', 
-                                '(erg/s/A)') + "\n")
-                fp.write(("{:<14s}"*4).
-                         format('-----------', '-----------', '-----------',
-                                '-----------')
-                         + "\n")
-            else:
-                fp.write(("{:<14s}"*3).
-                         format('Time', 'Wavelength', 'L_lambda') + "\n")
-                fp.write(("{:<14s}"*3).
-                         format('(yr)', '(Angstrom)', '(erg/s/A)') + "\n")
-                fp.write(("{:<14s}"*3).
-                         format('-----------', '-----------', '-----------')
-                         + "\n")
+                line1 = line1 + "{:<14s}".format("L_lambda_ex")
+                line2 = line2 + "{:<14s}".format("(erg/s/A)")
+                line3 = line3 + "{:<14s}".format("-----------")
+                sep_length = sep_length + 14
+                out_line1 = out_line + "   {:11.5e}"
+            if 'spec_neb_ex' in data._fields:
+                line1 = line1 + "{:<14s}".format("L_l_neb_ex")
+                line2 = line2 + "{:<14s}".format("(erg/s/A)")
+                line3 = line3 + "{:<14s}".format("-----------")
+                sep_length = sep_length + 14
+                out_line1 = out_line1 + "   {:11.5e}"
+
+            # Write header lines
+            fp.write(line1+"\n")
+            fp.write(line2+"\n")
+            fp.write(line3+"\n")
 
             # Write data
             ntime = data.spec.shape[-2]
@@ -251,43 +264,33 @@ def write_integrated(data, model_name, fmt):
             if 'spec_ex' in data._fields:
                 offset = np.where(data.wl_ex[0] == data.wl)[0][0]
                 nl_ex = len(data.wl_ex)
+            else:
+                offset = 0
+                nl_ex = 0
             for i in range(ntrial):
-                if 'spec_ex' in data._fields:
-                    if i != 0:
-                        fp.write("-"*(4*14-3)+"\n")
-                    for j in range(ntime):
-                        if random_time:
-                            t_out = data.time[i]
+                # Write trial separator
+                if i != 0:
+                    fp.write("-"*sep_length+"\n")
+                # Write data for this time
+                for j in range(ntime):
+                    if random_time:
+                        t_out = data.time[i]
+                    else:
+                        t_out = data.time[j]
+                    for k in range(nl):
+                        out_data = [t_out, data.wl[k],
+                                    data.spec[k,j,i]]
+                        if 'spec_neb' in data._fields:
+                            out_data = out_data + [data.spec_neb[k,j,i]]
+                        if k >= offset and k < offset + nl_ex:
+                            out_data = out_data + [data.spec_ex[k-offset,j,i]]
+                            if 'spec_neb_ex' in data._fields:
+                                out_data = out_data + \
+                                           [data.spec_neb_ex[k-offset,j,i]]
+                            out_fmt = out_line1
                         else:
-                            t_out = data.time[j]
-                        for k in range(offset):
-                            fp.write(("{:11.5e}   {:11.5e}   "+
-                                      "{:11.5e}\n")
-                                     .format(t_out, data.wl[k],
-                                             data.spec[k,j,i]))
-                        for k in range(offset, offset+nl_ex):
-                            fp.write(("{:11.5e}   {:11.5e}   "+
-                                      "{:11.5e}   {:11.5e}\n")
-                                     .format(data.time[j], data.wl[k],
-                                             data.spec[k,j,i], 
-                                             data.spec_ex[k-offset,j,i]))
-                        for k in range(offset+nl_ex, nl):
-                            fp.write(("{:11.5e}   {:11.5e}   "+
-                                      "{:11.5e}\n")
-                                     .format(data.time[j], data.wl[k],
-                                             data.spec[k,j,i]))
-                else:
-                    if i != 0:
-                        fp.write("-"*(3*14-3)+"\n")
-                    for j in range(ntime):
-                        if random_time:
-                            t_out = data.time[i]
-                        else:
-                            t_out = data.time[j]
-                        for k in range(nl):
-                            fp.write("{:11.5e}   {:11.5e}   {:11.5e}\n"
-                                     .format(t_out, data.wl[k],
-                                             data.spec[k,j,i]))
+                            out_fmt = out_line
+                        fp.write(out_fmt.format(*out_data)+"\n")
 
             # Close
             fp.close()
@@ -300,7 +303,12 @@ def write_integrated(data, model_name, fmt):
 
             fp = open(model_name+'_integrated_spec.bin', 'wb')
 
-            # Write out a byte indicating extinction or no extinction
+            # Write out bytes indicating nebular or no nebular, and
+            # extinction or no extinction
+            if 'spec_neb' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
             if 'spec_ex' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
@@ -331,8 +339,14 @@ def write_integrated(data, model_name, fmt):
                     # contiguous block before writing
                     tmp = np.copy(data.spec[:,j,i])
                     fp.write(tmp)
+                    if 'spec_neb' in data._fields:
+                        tmp = np.copy(data.spec_neb[:,j,i])
+                        fp.write(tmp)
                     if 'spec_ex' in data._fields:
                         tmp = np.copy(data.spec_ex[:,j,i])
+                        fp.write(tmp)
+                    if 'spec_neb_ex' in data._fields:
+                        tmp = np.copy(data.spec_neb_ex[:,j,i])
                         fp.write(tmp)
 
             # Close file
@@ -387,9 +401,23 @@ def write_integrated(data, model_name, fmt):
                                         unit="erg/s/A",
                                         array=np.transpose(data.spec).
                                         reshape(ntimes*ntrial, nl)))
+            if 'spec_neb' in data._fields:
+                speccols.append(
+                    fits.Column(name="L_lambda_neb",
+                                format=fmtstring,
+                                unit="erg/s/A",
+                                array=np.transpose(data.spec_neb).
+                                reshape(ntimes*ntrial, nl)))
             if 'spec_ex' in data._fields:
                 speccols.append(
                     fits.Column(name="L_lambda_ex",
+                                format=fmtstring_ex,
+                                unit="erg/s/A",
+                                array=np.transpose(data.spec_ex).
+                                reshape(ntimes*ntrial, nl_ex)))
+            if 'spec_neb_ex' in data._fields:
+                speccols.append(
+                    fits.Column(name="L_lambda_neb_ex",
                                 format=fmtstring_ex,
                                 unit="erg/s/A",
                                 array=np.transpose(data.spec_ex).
@@ -420,24 +448,30 @@ def write_integrated(data, model_name, fmt):
 
             # Write header lines
             fp.write("{:<21s}".format('Time'))
+            fac = 1
             for f in data.filter_names:
                 fp.write("{:<21s}".format(f))
+            if 'phot_neb' in data._fields:
+                fac = fac + 1
+                for f in data.filter_names:
+                    fp.write("{:<21s}".format(f+'_n'))
             if 'phot_ex' in data._fields:
+                fac = fac + 1
                 for f in data.filter_names:
                     fp.write("{:<21s}".format(f+'_ex'))
+            if 'phot_neb_ex' in data._fields:
+                fac = fac + 1
+                for f in data.filter_names:
+                    fp.write("{:<21s}".format(f+'_nex'))
             fp.write("\n")
             fp.write("{:<21s}".format('(yr)'))
-            for f in data.filter_units:
-                fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
-            if 'phot_ex' in data._fields:
+            for i in range(fac):
                 for f in data.filter_units:
                     fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
             fp.write("\n")
             fp.write("{:<21s}".format('------------------'))
             nf = len(data.filter_names)
-            for i in range(nf):
-                fp.write("{:<21s}".format('------------------'))
-            if 'phot_ex' in data._fields:
+            for j in range(fac):
                 for i in range(nf):
                     fp.write("{:<21s}".format('------------------'))
             fp.write("\n")
@@ -452,10 +486,7 @@ def write_integrated(data, model_name, fmt):
             for i in range(ntrial):
                 # Write separator between trials
                 if i != 0:
-                    if 'phot_ex' in data._fields:
-                        fp.write("-"*((1+2*nf)*21-3)+"\n")
-                    else:
-                        fp.write("-"*((1+nf)*21-3)+"\n")
+                    fp.write("-"*((1+fac*nf)*21-3)+"\n")
                 for j in range(ntime):
                     if random_time:
                         t_out = data.time[i]
@@ -465,6 +496,10 @@ def write_integrated(data, model_name, fmt):
                     for k in range(nf):
                         fp.write("          {:11.5e}".
                                  format(data.phot[k,j,i]))
+                    if 'phot_neb' in data._fields:
+                        for k in range(nf):
+                            fp.write("          {:11.5e}".
+                                     format(data.phot_neb[k,j,i]))
                     if 'phot_ex' in data._fields:
                         for k in range(nf):
                             if np.isnan(data.phot_ex[k,j,i]):
@@ -472,6 +507,13 @@ def write_integrated(data, model_name, fmt):
                             else:
                                 fp.write("          {:11.5e}".
                                          format(data.phot_ex[k,j,i]))
+                    if 'phot_neb_ex' in data._fields:
+                        for k in range(nf):
+                            if np.isnan(data.phot_neb_ex[k,j,i]):
+                                fp.write("          {:11s}".format(""))
+                            else:
+                                fp.write("          {:11.5e}".
+                                         format(data.phot_neb_ex[k,j,i]))
                     fp.write("\n")
 
             # Close
@@ -492,8 +534,13 @@ def write_integrated(data, model_name, fmt):
                 fp.write(data.filter_names[i] + " " + 
                          data.filter_units[i] + "\n")
 
-            # Write out a byte indicating extinction or no extinction
-            if 'phot_ex' in data._fields:
+            # Write out bytes indicating nebular or no nebular, and
+            # extinction or no extinction
+            if 'spec_neb' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+            if 'spec_ex' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
@@ -516,8 +563,14 @@ def write_integrated(data, model_name, fmt):
                     # contiguous block before writing
                     tmp = np.copy(data.phot[:,j,i])
                     fp.write(tmp)
+                    if 'phot_neb' in data._fields:
+                        tmp = np.copy(data.phot_neb[:,j,i])
+                        fp.write(tmp)
                     if 'phot_ex' in data._fields:
                         tmp = np.copy(data.phot_ex[:,j,i])
+                        fp.write(tmp)
+                    if 'phot_neb_ex' in data._fields:
+                        tmp = np.copy(data.phot_neb_ex[:,j,i])
                         fp.write(tmp)
 
             # Close file
@@ -554,6 +607,14 @@ def write_integrated(data, model_name, fmt):
                                 format="1D",
                                 array=np.transpose(data.phot[i,:,:]).
                                 flatten()))
+            if 'phot_neb' in data._fields:
+                for i in range(len(data.filter_names)):
+                    cols.append(
+                        fits.Column(name=data.filter_names[i]+'_neb',
+                                    unit=data.filter_units[i],
+                                    format="1D",
+                                    array=np.transpose(data.phot_neb[i,:,:]).
+                                    flatten()))
             if 'phot_ex' in data._fields:
                 for i in range(len(data.filter_names)):
                     cols.append(
@@ -561,6 +622,14 @@ def write_integrated(data, model_name, fmt):
                                     unit=data.filter_units[i],
                                     format="1D",
                                     array=np.transpose(data.phot_ex[i,:,:]).
+                                    flatten()))
+            if 'phot_neb_ex' in data._fields:
+                for i in range(len(data.filter_names)):
+                    cols.append(
+                        fits.Column(name=data.filter_names[i]+'_neb_ex',
+                                    unit=data.filter_units[i],
+                                    format="1D",
+                                    array=np.transpose(data.phot_neb_ex[i,:,:]).
                                     flatten()))
             fitscols = fits.ColDefs(cols)
 

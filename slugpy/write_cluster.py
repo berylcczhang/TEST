@@ -263,66 +263,69 @@ def write_cluster(data, model_name, fmt):
 
             fp = open(model_name+'_cluster_spec.txt', 'w')
 
-            # Write header lines
+            # Construct header lines
+            line1 = ("{:<14s}"*4).format('UniqueID', 'Time', 
+                                         'Wavelength', 'L_lambda')
+            line2 = ("{:<14s}"*4).format('', '(yr)', '(Angstrom)', 
+                                         '(erg/s/A)')
+            line3 = ("{:<14s}"*4).format('-----------', '-----------', 
+                                         '-----------', '-----------')
+            sep_length = 4*14-3
+            out_line = "{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
+            if 'spec_neb' in data._fields:
+                line1 = line1 + "{:<14s}".format("L_l_neb")
+                line2 = line2 + "{:<14s}".format("(erg/s/A)")
+                line3 = line3 + "{:<14s}".format("-----------")
+                sep_length = sep_length + 14
+                out_line = out_line + "   {:11.5e}"
             if 'spec_ex' in data._fields:
-                fp.write(("{:<14s}"*5).
-                         format('UniqueID', 'Time', 'Wavelength',
-                                'L_lambda', 'L_lambda_ex') + "\n")
-                fp.write(("{:<14s}"*5).
-                         format('', '(yr)', '(Angstrom)', '(erg/s/A)',
-                                '(erg/s/A)')
-                         + "\n")
-                fp.write(("{:<14s}"*5).
-                         format('-----------', '-----------', '-----------',
-                                '-----------', '-----------') + "\n")
-            else:
-                fp.write(("{:<14s}"*4).
-                         format('UniqueID', 'Time', 'Wavelength',
-                                'L_lambda') + "\n")
-                fp.write(("{:<14s}"*4).
-                         format('', '(yr)', '(Angstrom)', '(erg/s/A)')
-                         + "\n")
-                fp.write(("{:<14s}"*4).
-                         format('-----------', '-----------', '-----------',
-                                '-----------') + "\n")
+                line1 = line1 + "{:<14s}".format("L_lambda_ex")
+                line2 = line2 + "{:<14s}".format("(erg/s/A)")
+                line3 = line3 + "{:<14s}".format("-----------")
+                sep_length = sep_length + 14
+                out_line1 = out_line + "   {:11.5e}"
+            if 'spec_neb_ex' in data._fields:
+                line1 = line1 + "{:<14s}".format("L_l_neb_ex")
+                line2 = line2 + "{:<14s}".format("(erg/s/A)")
+                line3 = line3 + "{:<14s}".format("-----------")
+                sep_length = sep_length + 14
+                out_line1 = out_line1 + "   {:11.5e}"
+
+            # Write header lines
+            fp.write(line1+"\n")
+            fp.write(line2+"\n")
+            fp.write(line3+"\n")
 
             # Write data
             nl = len(data.wl)
             if 'spec_ex' in data._fields:
                 offset = np.where(data.wl_ex[0] == data.wl)[0][0]
                 nl_ex = len(data.wl_ex)
+            else:
+                offset = 0
+                nl_ex = 0
             for i in range(len(data.id)):
+
                 # If this is a new trial, write a separator
-                if 'spec_ex' in data._fields:
-                    if i != 0:
-                        if data.trial[i] != data.trial[i-1]:
-                            fp.write("-"*(5*14-3)+"\n")
-                    for j in range(offset):
-                        fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
-                                 .format(data.id[i], data.time[i],
-                                         data.wl[j], data.spec[i,j]) 
-                                 + "\n")
-                    for j in range(offset, offset+nl_ex):
-                        fp.write(("{:11d}   {:11.5e}   {:11.5e}" +
-                                  "   {:11.5e}   {:11.5e}")
-                                 .format(data.id[i], data.time[i],
-                                         data.wl[j], data.spec[i,j],
-                                         data.spec_ex[i,j-offset]) 
-                                 + "\n")
-                    for j in range(offset+nl_ex, nl):
-                        fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
-                                 .format(data.id[i], data.time[i],
-                                         data.wl[j], data.spec[i,j]) 
-                                 + "\n")
-                else:
-                    if i != 0:
-                        if data.trial[i] != data.trial[i-1]:
-                            fp.write("-"*(4*14-3)+"\n")
-                    for j in range(nl):
-                        fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}"
-                                 .format(data.id[i], data.time[i],
-                                         data.wl[j], data.spec[i,j]) 
-                                 + "\n")
+                if i != 0:
+                    if data.trial[i] != data.trial[i-1]:
+                        fp.write("-"*sep_length+"\n")
+
+                # Write data for this trial
+                for j in range(nl):
+                    out_data = [data.id[i], data.time[i],
+                                data.wl[j], data.spec[i,j]]
+                    if 'spec_neb' in data._fields:
+                        out_data = out_data + [data.spec_neb[i,j]]
+                    if j >= offset and j < offset + nl_ex:
+                        out_data = out_data + [data.spec_ex[i,j-offset]]
+                        if 'spec_neb_ex' in data._fields:
+                            out_data = out_data + \
+                                       [data.spec_neb_ex[i,j-offset]]
+                        out_fmt = out_line1
+                    else:
+                        out_fmt = out_line
+                    fp.write(out_fmt.format(*out_data)+"\n")
 
             # Close
             fp.close()
@@ -335,7 +338,12 @@ def write_cluster(data, model_name, fmt):
 
             fp = open(model_name+'_cluster_spec.bin', 'wb')
 
-            # Write out a byte indicating extinction or no extinction
+            # Write out bytes indicating nebular or no nebular, and
+            # extinction or no extinction
+            if 'spec_neb' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
             if 'spec_ex' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
@@ -392,8 +400,12 @@ def write_cluster(data, model_name, fmt):
                     for k in range(ptr, block_end):
                         fp.write(data.id[k])
                         fp.write(data.spec[k,:])
+                        if 'spec_neb' in data._fields:
+                            fp.write(data.spec_neb[k,:])
                         if 'spec_ex' in data._fields:
                             fp.write(data.spec_ex[k,:])
+                        if 'spec_neb_ex' in data._fields:
+                            fp.write(data.spec_neb_ex[k,:])
 
                     # Move pointer
                     ptr = block_end
@@ -440,11 +452,21 @@ def write_cluster(data, model_name, fmt):
                                         format=fmtstring,
                                         unit="erg/s/A",
                                         array=data.spec))
+            if 'spec_neb' in data._fields:
+                speccols.append(fits.Column(name="L_lambda_neb",
+                                            format=fmtstring,
+                                            unit="erg/s/A",
+                                            array=data.spec_neb))
             if 'spec_ex' in data._fields:
                 speccols.append(fits.Column(name="L_lambda_ex",
                                             format=fmtstring_ex,
                                             unit="erg/s/A",
                                             array=data.spec_ex))
+            if 'spec_neb_ex' in data._fields:
+                speccols.append(fits.Column(name="L_lambda_neb_ex",
+                                            format=fmtstring_ex,
+                                            unit="erg/s/A",
+                                            array=data.spec_neb_ex))
             specfits = fits.ColDefs(speccols)
             spechdu = fits.BinTableHDU.from_columns(specfits)
 
@@ -471,25 +493,31 @@ def write_cluster(data, model_name, fmt):
 
             # Write header lines
             fp.write(("{:<21s}"*2).format('UniqueID', 'Time'))
+            fac = 1
             for f in data.filter_names:
                 fp.write("{:<21s}".format(f))
+            if 'phot_neb' in data._fields:
+                fac = fac + 1
+                for f in data.filter_names:
+                    fp.write("{:<21s}".format(f+'_n'))
             if 'phot_ex' in data._fields:
+                fac = fac + 1
                 for f in data.filter_names:
                     fp.write("{:<21s}".format(f+'_ex'))
+            if 'phot_neb_ex' in data._fields:
+                fac = fac + 1
+                for f in data.filter_names:
+                    fp.write("{:<21s}".format(f+'_nex'))
             fp.write("\n")
             fp.write(("{:<21s}"*2).format('', '(yr)'))
-            for f in data.filter_units:
-                fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
-            if 'phot_ex' in data._fields:
+            for i in range(fac):
                 for f in data.filter_units:
                     fp.write("({:s}".format(f)+")"+" "*(19-len(f)))
             fp.write("\n")
             nf = len(data.filter_names)
             fp.write(("{:<21s}"*2).
                      format('------------------', '------------------'))
-            for i in range(nf):
-                fp.write("{:<21s}".format('------------------'))
-            if 'phot_ex' in data._fields:
+            for j in range(fac):
                 for i in range(nf):
                     fp.write("{:<21s}".format('------------------'))
             fp.write("\n")
@@ -499,14 +527,15 @@ def write_cluster(data, model_name, fmt):
                 # If this is a new trial, write a separator
                 if i != 0:
                     if data.trial[i] != data.trial[i-1]:
-                        if 'phot_ex' in data._fields:
-                            fp.write("-"*((2+2*nf)*21-3)+"\n")
-                        else:
-                            fp.write("-"*((2+nf)*21-3)+"\n")
+                        fp.write("-"*((2+fac*nf)*21-3)+"\n")
                 fp.write("       {:11d}          {:11.5e}"
                          .format(data.id[i], data.time[i]))
                 for j in range(nf):
                     fp.write("          {:11.5e}".format(data.phot[i,j]))
+                if 'phot_neb' in data._fields:
+                    for j in range(nf):
+                        fp.write("          {:11.5e}".
+                                 format(data.phot_neb[i,j]))
                 if 'phot_ex' in data._fields:
                     for j in range(nf):
                         if np.isnan(data.phot_ex[i,j]):
@@ -515,6 +544,14 @@ def write_cluster(data, model_name, fmt):
                         else:
                             fp.write("          {:11.5e}".
                                      format(data.phot_ex[i,j]))
+                if 'phot_neb_ex' in data._fields:
+                    for j in range(nf):
+                        if np.isnan(data.phot_ex[i,j]):
+                            fp.write("          {:11s}".
+                                     format(""))
+                        else:
+                            fp.write("          {:11.5e}".
+                                     format(data.phot_neb_ex[i,j]))
                 fp.write("\n")
 
             # Close
@@ -535,8 +572,13 @@ def write_cluster(data, model_name, fmt):
                 fp.write(data.filter_names[i] + " " + 
                          data.filter_units[i] + "\n")
 
-            # Write out a byte indicating extinction or no extinction
-            if 'phot_ex' in data._fields:
+            # Write out bytes indicating nebular or no nebular, and
+            # extinction or no extinction
+            if 'spec_neb' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+            if 'spec_ex' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
@@ -585,8 +627,12 @@ def write_cluster(data, model_name, fmt):
                     for k in range(ptr, block_end):
                         fp.write(data.id[k])
                         fp.write(data.phot[k,:])
+                        if 'phot_neb' in data._fields:
+                            fp.write(data.phot_neb[k,:])
                         if 'phot_ex' in data._fields:
                             fp.write(data.phot_ex[k,:])
+                        if 'phot_neb_ex' in data._fields:
+                            fp.write(data.phot_neb_ex[k,:])
 
                     # Move pointer
                     ptr = block_end
@@ -613,6 +659,13 @@ def write_cluster(data, model_name, fmt):
                                         unit=data.filter_units[i],
                                         format="1D",
                                         array=data.phot[:,i]))
+            if 'phot_neb' in data._fields:
+                for i in range(len(data.filter_names)):
+                    cols.append(
+                        fits.Column(name=data.filter_names[i]+'_neb',
+                                    unit=data.filter_units[i],
+                                    format="1D",
+                                    array=data.phot_neb[:,i]))
             if 'phot_ex' in data._fields:
                 for i in range(len(data.filter_names)):
                     cols.append(
@@ -620,6 +673,13 @@ def write_cluster(data, model_name, fmt):
                                     unit=data.filter_units[i],
                                     format="1D",
                                     array=data.phot_ex[:,i]))
+            if 'phot_neb_ex' in data._fields:
+                for i in range(len(data.filter_names)):
+                    cols.append(
+                        fits.Column(name=data.filter_names[i]+'_neb_ex',
+                                    unit=data.filter_units[i],
+                                    format="1D",
+                                    array=data.phot_neb_ex[:,i]))
             fitscols = fits.ColDefs(cols)
 
             # Create the binary table HDU
