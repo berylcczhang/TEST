@@ -58,7 +58,7 @@ parser.add_argument('-v', '--verbose', action='store_true',
                     default=False, help="produce verbose output")
 parser.add_argument('-t', '--tmpdir', default=None,
                     help="directory for temporary work files" +
-                    " (default: cwd/slug_par_tmp)")
+                    " (default: cwd/MODELNAME_tmp)")
 args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
@@ -182,7 +182,7 @@ out_names = []
 trial_num = []
 ON_POSIX = 'posix' in sys.builtin_module_names
 if args.tmpdir == None:
-    tmpdir = osp.join(cwd, 'slug_par_tmp')
+    tmpdir = osp.join(cwd, model_name+'_tmp')
 else:
     tmpdir = args.tmpdir
 try: 
