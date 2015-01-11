@@ -26,7 +26,7 @@ class cluster_slug(object):
     in various bands.
 
     Properties
-       priors: array, shape (N) | callable | None
+       priors : array, shape (N) | callable | None
           prior probability on each data point; interpretation
           depends on the type passed; array, shape (N): values are
           interpreted as the prior probability of each data point;
@@ -212,11 +212,14 @@ class cluster_slug(object):
         newfilter['dataset'] = np.zeros((self.__ds.shape[0], 
                                          3+len(filters)))
         newfilter['dataset'][:,:3] = self.__ds[:,:3]
+        newfilter['idx'] = np.zeros(1+len(filters), dtype=int)
+        newfilter['idx'][0:3] = arange(3, dtype=int)
         for i, f in enumerate(filters):
             if f not in self.__allfilters:
                 raise ValueError("unknown filter "+str(f))
             idx = self.__allfilters.index(f)
             newfilter['dataset'][:,3+i] = self.__ds[:,3+idx]
+            newfilter['idx'][i+3] = 3+idx
 
         # Build a bp object to go with this data set
         newfilter['bp'] = bp(newfilter['dataset'], 3,
@@ -243,7 +246,7 @@ class cluster_slug(object):
     @priors.setter
     def priors(self, pr):
         self.__priors = pr
-        for f in self.__filterset:
+        for f in self.__filtersets:
             f['bp'].priors = self.__priors
 
 
@@ -255,11 +258,11 @@ class cluster_slug(object):
     def bandwidth(self):
         return self.__bandwidth
 
-    @priors.setter
+    @bandwidth.setter
     def bandwidth(self, bandwidth):
         self.__bandwidth = bandwidth
-        for f in self.__filterset:
-            f['bp'].bandwidth = bandwidth
+        for f in self.__filtersets:
+            f['bp'].bandwidth = np.array(bandwidth)[f['idx']]
 
 
     ##################################################################

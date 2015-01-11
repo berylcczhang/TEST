@@ -5,6 +5,7 @@ with a training data set.
 """
 
 import numpy as np
+import scipy.interpolate as interp
 import os
 import os.path as osp
 import ctypes
@@ -43,7 +44,7 @@ class bp(object):
     measured photometric values.
 
     Properties
-       priors: array, shape (N) | callable | None
+       priors : array, shape (N) | callable | None
           prior probability on each data point; interpretation
           depends on the type passed; array, shape (N): values are
           interpreted as the prior probability of each data point;
@@ -327,7 +328,7 @@ class bp(object):
         self.__kd = self.__clib.build_kd(np.ravel(self.__dataset),
                                          self.__dataset.shape[1],
                                          self.__ndata, None, 
-                                         leafsize, self.__bandwidth,
+                                         self.leafsize, self.__bandwidth,
                                          self.__ktype)
 
         # Initialize the bandwidth
@@ -360,6 +361,10 @@ class bp(object):
 
     @property
     def priors(self):
+        """
+        The current set of prior probabilities for every
+        simulation in the library
+        """
         return self.__priors
 
     @priors.setter
@@ -412,7 +417,7 @@ class bp(object):
                     # None means uniform sampling
                     self.__sample_density = np.ones(self.__ndata)
 
-                elif hasttr(self.__sden, '__call__'):
+                elif hasattr(self.__sden, '__call__'):
 
                     # Callable, so pass the physical data to the
                     # callable and store the result
@@ -422,7 +427,7 @@ class bp(object):
                 elif type(self.__sden) is np.ndarray:
 
                     # Array, so treat treat this as the data
-                    self.__sample_densty = self.__sden
+                    self.__sample_density = self.__sden
 
                 elif self.__sden == 'auto':
 
@@ -439,34 +444,82 @@ class bp(object):
                             = self.__clib.build_kd(
                                 np.ravel(self.__dataset_phys), 
                                 self.__nphys, self.__ndata,
-                                None, leafsize, self.__bandwidth,
+                                None, self.leafsize, self.__bandwidth,
                                 self.__ktype)
 
                         # Use the unweighted kernel density object to
                         # evaluate the raw sample density near each data
-                        # point
+                        # point, or near a sub-sample which we can
+                        # interpolate from
                         self.__sample_density = np.zeros(self.__ndata)
-                        if not self.__diag_mode:
-                            self.__clib.kd_pdf_vec(
-                                self.__kd_phys, np.ravel(self.__dataset_phys),
-                                self.__ndata, self.reltol, self.abstol,
-                                self.__sample_density)
+                        nsamp = 500
+                        if self.__ndata < nsamp:
+                            # Few data points, just use them all; note
+                            # that we cannot pass self.__dataset_phys,
+                            # because it is not in the same order as
+                            # the full data set anymore
+                            pts = np.ravel(self.__dataset[:,:self.__nphys])
+                            if not self.__diag_mode:
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, pts,
+                                    self.__ndata, self.reltol, self.abstol,
+                                    self.__sample_density)
+                            else:
+                                nodecheck = np.zeros(self.__ndata, dtype=c_uint)
+                                leafcheck = np.zeros(self.__ndata, dtype=c_uint)
+                                termcheck = np.zeros(self.__ndata, dtype=c_uint)
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, pts,
+                                    self.__ndata, self.reltol, self.abstol,
+                                    self.__sample_density, nodecheck, 
+                                    leafcheck, termcheck)
                         else:
-                            nodecheck = np.zeros(self.__ndata, dtype=c_uint)
-                            leafcheck = np.zeros(self.__ndata, dtype=c_uint)
-                            termcheck = np.zeros(self.__ndata, dtype=c_uint)
-                            self.__clib.kd_pdf_vec(
-                                self.__kd_phys, np.ravel(self.__dataset_tmp),
-                                self.__ndata, self.reltol, self.abstol,
-                                self.__sample_density, nodecheck, leafcheck, 
-                                termcheck)
+                            # Many data points, so choose a sample at random
+                            idxpt = np.array(
+                                random.sample(np.arange(self.__ndata), 
+                                              nsamp), dtype=np.uintc)
+                            pos = np.copy(self.__dataset_phys[idxpt,:])
+                            # Add points at the edges of the dataset
+                            # to ensure we enclose all the points
+                            lowlim = np.amin(self.__dataset_phys,
+                                             axis=0)
+                            pos = np.append(pos, lowlim)
+                            hilim = np.amax(self.__dataset_phys,
+                                            axis=0)
+                            pos = np.append(pos, hilim)
+                            # Compute density at selected points
+                            sample_density = np.zeros(nsamp+2)
+                            if not self.__diag_mode:
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, np.ravel(pos), 
+                                    nsamp+2, self.reltol, self.abstol,
+                                    sample_density)
+                            else:
+                                nodecheck = np.zeros(nsamp+2, dtype=c_uint)
+                                leafcheck = np.zeros(nsamp+2, dtype=c_uint)
+                                termcheck = np.zeros(nsamp+2, dtype=c_uint)
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, np.ravel(pos), 
+                                    nsamp+2, self.reltol, self.abstol,
+                                    sample_density, nodecheck, 
+                                    leafcheck, termcheck)
+                            # Now interpolate the sample points to all
+                            # points in the data set
+                            pts = np.ravel(self.__dataset[:,:self.__nphys])
+                            self.__sample_density \
+                                = np.exp(
+                                    interp.griddata(pos, 
+                                                    np.log(sample_density),
+                                                    pts,
+                                                    method='linear')).flatten()
 
             # We now have the sample density. Record the new prior,
             # and, if our prior is a callable, call it; otherwise
             # just record the input data
             self.__priors = pr
             if hasattr(self.__priors, '__call__'):
-                prior_data = self.__priors(self.__dataset[:,:self.__nphys])
+                prior_data \
+                    = self.__priors(self.__dataset[:,:self.__nphys]).flatten()
             else:
                 prior_data = self.__priors
 
@@ -482,6 +535,9 @@ class bp(object):
  
     @property
     def bandwidth(self):
+        """
+        The current bandwidth
+        """
         return deepcopy(self.__bandwidth)
 
     @bandwidth.setter
@@ -594,16 +650,31 @@ class bp(object):
         """
 
         # Safety check
-        if np.array(physprop).shape[-1] != self.__nphys:
+        if (np.array(physprop).shape[-1] != self.__nphys) and \
+           (self.__nphys > 1):
             raise ValueError("need " + str(self.__nphys) + 
                              " physical properties!")
-        if np.array(photprop).shape[-1] != self.__nphot:
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphot) +
                              " photometric properties!")
         if photerr is not None:
-            if np.array(photerr).shape[-1] != self.__nphot:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
+
+        # Reshape arrays if necessary
+        if (np.array(physprop).shape[-1] != self.__nphys) and \
+           (self.__nphys == 1):
+            physprop = physprop.reshape(physprop.shape+(1,))
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot == 1):
+            photprop = photprop.reshape(photprop.shape+(1,))
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot == 1):
+                photerr = photerr.reshape(photerr.shape+(1,))
 
         # Figure out number of distinct input sets of physical and
         # photometric properties
@@ -787,13 +858,29 @@ class bp(object):
         """
 
         # Safety check
-        if np.array(photprop).shape[-1] != self.__nphot:
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphot) +
                              " photometric properties!")
         if photerr is not None:
-            if np.array(photerr).shape[-1] != self.__nphot:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
+        if (np.amax(idx) > self.__nphys) or (np.amin(idx) < 0) or \
+           (not (np.unique(idx) == idx)):
+            raise ValueError("need non-repeating indices in " +
+                             "the range 0 - {:d}!".
+                             format(self.__nphys-1))
+
+        # Reshape arrays if necessary
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot == 1):
+            photprop = photprop.reshape(photprop.shape+(1,))
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot == 1):
+                photerr = photerr.reshape(photerr.shape+(1,))
 
         # Set up the grid of outputs
         if grid is not None:
@@ -885,17 +972,35 @@ class bp(object):
                 bandwidth = np.sqrt(self.__bandwidth**2+err**2)
                 self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
 
-            # Call the PDF computation routine
+            # Call the PDF computation routine; note that we call
+            # kd_pdf_int_vec if we're actually marginalizing over any
+            # physical properties (which is the case if len(idx) <
+            # nphys), but we invoke kd_pdf_vec if we're not actually
+            # marginalizing (len(idx)==nphys) because then we don't
+            # need to do any integration
             if not self.__diag_mode:
-                self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
-                                           dims, ndim, pdf.size,
-                                           self.reltol, self.abstol,
-                                           np.ravel(pdf))
+                if nidx < self.__nphys:
+                    self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
+                                               dims, ndim, pdf.size,
+                                               self.reltol, self.abstol,
+                                               np.ravel(pdf))
+                else:
+                    self.__clib.kd_pdf_vec(self.__kd, np.ravel(cdata),
+                                           pdf.size, self.reltol,
+                                           self.abstol, np.ravel(pdf))
             else:
-                self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
-                                           dims, ndim, pdf.size,
-                                           self.reltol, self.abstol,
-                                           np.ravel(pdf), 
+                if nidx < self.__nphys:                
+                    self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
+                                               dims, ndim, pdf.size,
+                                               self.reltol, self.abstol,
+                                               np.ravel(pdf), 
+                                               np.ravel(nodecheck), 
+                                               np.ravel(leafcheck),
+                                               np.ravel(termcheck))
+                else:
+                    self.__clib.kd_pdf_vec(self.__kd, np.ravel(cdata),
+                                           pdf.size, self.reltol,
+                                           self.abstol, np.ravel(pdf),
                                            np.ravel(nodecheck), 
                                            np.ravel(leafcheck),
                                            np.ravel(termcheck))
@@ -1043,14 +1148,25 @@ class bp(object):
             raise ImportError("unable to import emcee")
 
         # Safety check
-        if np.array(photprop).shape[-1] != self.__nphot:
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphot) +
                              " photometric properties!")
         if photerr is not None:
-            if np.array(photerr).shape[-1] != self.__nphot:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
-                             " photometric properties!")
+                                 " photometric errors!")
  
+        # Reshape arrays if necessary
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot == 1):
+            photprop = photprop.reshape(photprop.shape+(1,))
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot == 1):
+                photerr = photerr.reshape(photerr.shape+(1,))
+
         # Prepare storage for output
         samples = []
 
