@@ -52,7 +52,7 @@ class cluster_slug(object):
         Parameters
            libname : string
               name of the SLUG model to load; if left as None, the default
-              is $SLUG_DIR/cluster_slug/CLUSTER_SLUG
+              is $SLUG_DIR/cluster_slug/CLUSTERSLUG_MW
            filters : iterable of stringlike
               list of filter names to be used for inferenence
            photsystem : None or string
@@ -113,12 +113,12 @@ class cluster_slug(object):
 
         # Load the cluster data
         if libname is None:
-            self.__libname = osp.join('cluster_slug', 'CLUSTERSLUG')
+            self.__libname = osp.join('cluster_slug', 'CLUSTERSLUG_MW')
             if 'SLUG_DIR' in os.environ:
                 self.__libname = osp.join(os.environ['SLUG_DIR'], 
                                           self.__libname)
         else:
-            self.libname = libname
+            self.__libname = libname
         prop = read_cluster_prop(self.__libname)
         phot = read_cluster_phot(self.__libname, photsystem=photsystem)
 
@@ -140,6 +140,37 @@ class cluster_slug(object):
         # our evolutionary tracks
         idx = np.where(np.amin(phot.phot, axis=1) > 0)[0]
 
+        # See if we have nebular, extincted data
+        if 'phot_neb_ex' in phot._fields:
+            nebular = True
+            extinct = True
+            ph = phot.phot_neb_ex
+        elif 'phot_ex' in phot._fields:
+            warnstr = "cluster_slug: photometry including " + \
+                      "nebular contribution is not available;" + \
+                      " using starlight only"
+            warnings.warn(warnstr)
+            nebular = True
+            extinct = False
+            ph = phot.phot_ex
+        elif 'phot_neb' in phot._fields:
+            warnstr = "cluster_slug: photometry including " + \
+                      "extinction is not available;" + \
+                      " using unextincted light only"
+            warnings.warn(warnstr)
+            nebular = False
+            extinct = True
+            ph = phot.phot_ex
+        else:
+            warnstr = "cluster_slug: photometry including " + \
+                      "nebular contribution and extinction " + \
+                      "is not available; using unextincted " + \
+                      "starlight only"
+            warnings.warn(warnstr)
+            nebular = False
+            extinct = False
+            ph = phot.phot
+
         # Build dataset array; 1st 3 dimensions are log mass, log age,
         # and A_V remaining ones are photometric values
         self.__ds = np.zeros((len(idx),
@@ -147,19 +178,33 @@ class cluster_slug(object):
         self.__ds[:,0] = np.log10(prop.actual_mass[idx])
         self.__ds[:,1] = np.log10(prop.time[idx] - prop.form_time[idx])
         self.__ds[:,2] = prop.A_V[idx]
-        self.__ds[:,3:] = phot.phot_ex[idx,:]
+        self.__ds[:,3:] = ph[idx,:]
+
+        # Treat ionizing fluxes as a special case, using the
+        # non-nebular, non-extincted value for them regardless of
+        # whether nebular emission or extinction are enabled
+        if 'QH0' in phot.filter_names:
+            idx1 = phot.filter_names.index('QH0')
+            self.__ds[:,3+idx1] = phot.phot[idx,idx1]
+        if 'QHe0' in phot.filter_names:
+            idx1 = phot.filter_names.index('QHe0')
+            self.__ds[:,3+idx1] = phot.phot[idx,idx1]
+        if 'QHe1' in phot.filter_names:
+            idx1 = phot.filter_names.index('QHe1')
+            self.__ds[:,3+idx1] = phot.phot[idx,idx1]
 
         # Fill in any cases where extincted photometry is not
         # available
-        for i in np.where(np.isnan(phot.phot_ex[idx[0],:]))[0]:
-            warnstr = "cluster_slug: extincted photometry " + \
-                      "unavailable for filter " + \
-                      phot.filter_names[i] + \
-                      ", probably because extinction curve " + \
-                      "does not cover the required wavelength " + \
-                      "range; using unextincted values instead"
-            warnings.warn(warnstr)
-            self.__ds[:,3+i] = phot.phot[idx,i]
+        if extinct:
+            for i in np.where(np.isnan(phot.phot_ex[idx[0],:]))[0]:
+                warnstr = "cluster_slug: extincted photometry " + \
+                          "unavailable for filter " + \
+                          phot.filter_names[i] + \
+                          ", probably because extinction curve " + \
+                          "does not cover the required wavelength " + \
+                          "range; using unextincted values instead"
+                warnings.warn(warnstr)
+                self.__ds[:,3+i] = phot.phot[idx,i]
 
         # Take log of photometric values if they are recorded in a
         # linear system
