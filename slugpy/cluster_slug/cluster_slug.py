@@ -42,9 +42,10 @@ class cluster_slug(object):
     ##################################################################
     # Initializer method
     ##################################################################
-    def __init__(self, libname=None, filters=None, bandwidth='auto',
-                 ktype='gaussian', priors=None, sample_density=None,
-                 reltol=1.0e-3, abstol=1.0e-10, leafsize=16):
+    def __init__(self, libname=None, filters=None, photsystem=None,
+                 bandwidth='auto', ktype='gaussian', priors=None, 
+                 sample_density=None, reltol=1.0e-3, abstol=1.0e-10,
+                 leafsize=16):
         """
         Initialize a cluster_slug object.
 
@@ -54,6 +55,15 @@ class cluster_slug(object):
               is $SLUG_DIR/cluster_slug/CLUSTER_SLUG
            filters : iterable of stringlike
               list of filter names to be used for inferenence
+           photsystem : None or string
+              If photsystem is None, the library will be left in
+              whatever photometric system was used to write
+              it. Alternately, if it is a string, the data will be
+              converted to the specified photometric system. Allowable
+              values are 'L_nu', 'L_lambda', 'AB', 'STMAG', and
+              'Vega', corresponding to the options defined in the SLUG
+              code. Once this is set, any subsequent photometric data
+              input are assumed to be in the same photometric system.
            bandwidth : 'auto' | array, shape (M)
               bandwidth for kernel density estimation; if set to
               'auto', the bandwidth will be estimated automatically
@@ -110,7 +120,7 @@ class cluster_slug(object):
         else:
             self.libname = libname
         prop = read_cluster_prop(self.__libname)
-        phot = read_cluster_phot(self.__libname)
+        phot = read_cluster_phot(self.__libname, photsystem=photsystem)
 
         # Record available filters
         self.__allfilters = phot.filter_names
