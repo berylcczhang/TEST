@@ -564,8 +564,8 @@ bool sphere_in_box(const double *xcen1, const double *xbox2[2],
   res = box_in_box((const double **) xbox1, xbox2, ndim1, ndim2, dim1, dim2);
 
   /* Free memory */
-  free(xbox1);
-  free(xbox2);
+  free(xbox1[0]);
+  free(xbox1[1]);
 
   /* Return */
   return(res);

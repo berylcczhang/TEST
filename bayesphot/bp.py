@@ -5,6 +5,7 @@ with a training data set.
 """
 
 import numpy as np
+import scipy.interpolate as interp
 import os
 import os.path as osp
 import ctypes
@@ -23,6 +24,8 @@ try:
 except:
     mc_avail = False
     pass
+import multiprocessing as mp
+
 
 ##################################################################
 # Define some types for use later                                #
@@ -41,6 +44,19 @@ class bp(object):
     A class that can be used to estimate the PDF of the physical
     properties of stellar population from a training set plus a set of
     measured photometric values.
+
+    Properties
+       priors : array, shape (N) | callable | None
+          prior probability on each data point; interpretation
+          depends on the type passed; array, shape (N): values are
+          interpreted as the prior probability of each data point;
+          callable: the callable must take as an argument an array
+          of shape (N, nphys), and return an array of shape (N)
+          giving the prior probability at each data point; None:
+          all data points have equal prior probability
+       bandwidth : 'auto' | array, shape (M)
+          bandwidth for kernel density estimation; if set to
+          'auto', the bandwidth will be estimated automatically
     """
 
     ##################################################################
@@ -50,7 +66,7 @@ class bp(object):
                  ktype='gaussian', priors=None, sample_density=None,
                  reltol=1.0e-3, abstol=1.0e-10, leafsize=16):
         """
-        Initialize a cluster_slug object.
+        Initialize a bp object.
 
         Parameters
            dataset : array, shape (N, M)
@@ -73,39 +89,30 @@ class bp(object):
               'tophat'; only Gaussian can be used with error bars
            priors : array, shape (N) | callable | None
               prior probability on each data point; interpretation
-              depends on the type passed:
-                 array, shape (N) : 
-                    values are interpreted as the prior probability of
-                    each data point
-                 callable : 
-                    the callable must take as an argument an array of
-                    shape (N, nphys), and return an array of shape (N)
-                    giving the prior probability at each data point
-                  None :
-                    all data points have equal prior probability
+              depends on the type passed; array, shape (N): values are
+              interpreted as the prior probability of each data point;
+              callable: the callable must take as an argument an array
+              of shape (N, nphys), and return an array of shape (N)
+              giving the prior probability at each data point; None:
+              all data points have equal prior probability
            sample_density : array, shape (N) | callable | 'auto' | None
               the density of the data samples at each data point; this
               need not match the prior density; interpretation depends
-              on the type passed:
-                 array, shape (N) : 
-                    values are interpreted as the density of data
-                    sampling at each sample point
-                 callable : 
-                    the callable must take as an argument an array of
-                    shape (N, nphys), and return an array of shape (N)
-                    giving the sampling density at each point
-                 'auto' :
-                    the sample density will be computed directly from
-                    the data set; note that this can be quite slow for
-                    large data sets, so it is preferable to specify
-                    this analytically if it is known
-                  None :
-                    data are assumed to be uniformly sampled
+              on the type passed; array, shape (N): values are
+              interpreted as the density of data sampling at each
+              sample point; callable: the callable must take as an
+              argument an array of shape (N, nphys), and return an
+              array of shape (N) giving the sampling density at each
+              point; 'auto': the sample density will be computed
+              directly from the data set; note that this can be quite
+              slow for large data sets, so it is preferable to specify
+              this analytically if it is known; None: data are assumed
+              to be uniformly sampled
            reltol : float
               relative error tolerance; errors on all returned
               probabilities p will satisfy either
-              |p_est - p_true| <= reltol * p_est   OR
-              |p_est - p_true| <= abstol,
+              abs(p_est - p_true) <= reltol * p_est   OR
+              abs(p_est - p_true) <= abstol,
               where p_est is the returned estimate and p_true is the
               true value
            abstol : float
@@ -118,7 +125,6 @@ class bp(object):
 
         Raises
            IOError, if the bayesphot c library cannot be found
-
         """
 
         # Load the c library
@@ -324,7 +330,7 @@ class bp(object):
         self.__kd = self.__clib.build_kd(np.ravel(self.__dataset),
                                          self.__dataset.shape[1],
                                          self.__ndata, None, 
-                                         leafsize, self.__bandwidth,
+                                         self.leafsize, self.__bandwidth,
                                          self.__ktype)
 
         # Initialize the bandwidth
@@ -357,6 +363,10 @@ class bp(object):
 
     @property
     def priors(self):
+        """
+        The current set of prior probabilities for every
+        simulation in the library
+        """
         return self.__priors
 
     @priors.setter
@@ -364,7 +374,7 @@ class bp(object):
         """
         This function sets the prior probabilities to use
 
-        Parameters:
+        Parameters
            priors : array, shape (N) | callable | None
               prior probability on each data point; interpretation
               depends on the type passed:
@@ -375,7 +385,7 @@ class bp(object):
                     the callable must take as an argument an array of
                     shape (N, nphys), and return an array of shape (N)
                     giving the prior probability at each data point
-                  None :
+                 None :
                     all data points have equal prior probability
 
         Returns
@@ -409,7 +419,7 @@ class bp(object):
                     # None means uniform sampling
                     self.__sample_density = np.ones(self.__ndata)
 
-                elif hasttr(self.__sden, '__call__'):
+                elif hasattr(self.__sden, '__call__'):
 
                     # Callable, so pass the physical data to the
                     # callable and store the result
@@ -419,7 +429,7 @@ class bp(object):
                 elif type(self.__sden) is np.ndarray:
 
                     # Array, so treat treat this as the data
-                    self.__sample_densty = self.__sden
+                    self.__sample_density = self.__sden
 
                 elif self.__sden == 'auto':
 
@@ -436,34 +446,82 @@ class bp(object):
                             = self.__clib.build_kd(
                                 np.ravel(self.__dataset_phys), 
                                 self.__nphys, self.__ndata,
-                                None, leafsize, self.__bandwidth,
+                                None, self.leafsize, self.__bandwidth,
                                 self.__ktype)
 
                         # Use the unweighted kernel density object to
                         # evaluate the raw sample density near each data
-                        # point
+                        # point, or near a sub-sample which we can
+                        # interpolate from
                         self.__sample_density = np.zeros(self.__ndata)
-                        if not self.__diag_mode:
-                            self.__clib.kd_pdf_vec(
-                                self.__kd_phys, np.ravel(self.__dataset_phys),
-                                self.__ndata, self.reltol, self.abstol,
-                                self.__sample_density)
+                        nsamp = 500
+                        if self.__ndata < nsamp:
+                            # Few data points, just use them all; note
+                            # that we cannot pass self.__dataset_phys,
+                            # because it is not in the same order as
+                            # the full data set anymore
+                            pts = np.ravel(self.__dataset[:,:self.__nphys])
+                            if not self.__diag_mode:
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, pts,
+                                    self.__ndata, self.reltol, self.abstol,
+                                    self.__sample_density)
+                            else:
+                                nodecheck = np.zeros(self.__ndata, dtype=c_uint)
+                                leafcheck = np.zeros(self.__ndata, dtype=c_uint)
+                                termcheck = np.zeros(self.__ndata, dtype=c_uint)
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, pts,
+                                    self.__ndata, self.reltol, self.abstol,
+                                    self.__sample_density, nodecheck, 
+                                    leafcheck, termcheck)
                         else:
-                            nodecheck = np.zeros(self.__ndata, dtype=c_uint)
-                            leafcheck = np.zeros(self.__ndata, dtype=c_uint)
-                            termcheck = np.zeros(self.__ndata, dtype=c_uint)
-                            self.__clib.kd_pdf_vec(
-                                self.__kd_phys, np.ravel(self.__dataset_tmp),
-                                self.__ndata, self.reltol, self.abstol,
-                                self.__sample_density, nodecheck, leafcheck, 
-                                termcheck)
+                            # Many data points, so choose a sample at random
+                            idxpt = np.array(
+                                random.sample(np.arange(self.__ndata), 
+                                              nsamp), dtype=np.uintc)
+                            pos = np.copy(self.__dataset_phys[idxpt,:])
+                            # Add points at the edges of the dataset
+                            # to ensure we enclose all the points
+                            lowlim = np.amin(self.__dataset_phys,
+                                             axis=0)
+                            pos = np.append(pos, lowlim)
+                            hilim = np.amax(self.__dataset_phys,
+                                            axis=0)
+                            pos = np.append(pos, hilim)
+                            # Compute density at selected points
+                            sample_density = np.zeros(nsamp+2)
+                            if not self.__diag_mode:
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, np.ravel(pos), 
+                                    nsamp+2, self.reltol, self.abstol,
+                                    sample_density)
+                            else:
+                                nodecheck = np.zeros(nsamp+2, dtype=c_uint)
+                                leafcheck = np.zeros(nsamp+2, dtype=c_uint)
+                                termcheck = np.zeros(nsamp+2, dtype=c_uint)
+                                self.__clib.kd_pdf_vec(
+                                    self.__kd_phys, np.ravel(pos), 
+                                    nsamp+2, self.reltol, self.abstol,
+                                    sample_density, nodecheck, 
+                                    leafcheck, termcheck)
+                            # Now interpolate the sample points to all
+                            # points in the data set
+                            pts = np.ravel(self.__dataset[:,:self.__nphys])
+                            self.__sample_density \
+                                = np.exp(
+                                    interp.griddata(pos, 
+                                                    np.log(sample_density),
+                                                    pts,
+                                                    method='linear')).flatten()
 
             # We now have the sample density. Record the new prior,
             # and, if our prior is a callable, call it; otherwise
             # just record the input data
             self.__priors = pr
             if hasattr(self.__priors, '__call__'):
-                prior_data = self.__priors(self.__dataset[:,:self.__nphys])
+                prior_data \
+                    = self.__priors(self.__dataset[:,:self.__nphys]).flatten()
             else:
                 prior_data = self.__priors
 
@@ -479,6 +537,9 @@ class bp(object):
  
     @property
     def bandwidth(self):
+        """
+        The current bandwidth
+        """
         return deepcopy(self.__bandwidth)
 
     @bandwidth.setter
@@ -571,7 +632,7 @@ class bp(object):
         function evaluated at a particular log mass, log age,
         extinction, and set of log luminosities
 
-        Parameters:
+        Parameters
            physprop : arraylike, shape (nphys) or (..., nphys)
               array giving values of the physical properties; for a
               multidimensional array, the operation is vectorized over
@@ -585,31 +646,37 @@ class bp(object):
               array, the operation is vectorized over the leading
               dimensions
 
-        Returns:
+        Returns
            logL : float or arraylike
               natural log of the likelihood function
-
-           (only returned if the c library was compiled in DIAGNOSTIC mode)
-           nodecheck : int or array, shape(N)
-              Number of nodes examined during the evaluation
-           leafcheck : int or array, shape(N)
-              Number of leaves examined during the evaluation
-           termcheck : int or array, shape(N)
-              Number of nodes examined during the evaluation for which
-              no children were examined
         """
 
         # Safety check
-        if np.array(physprop).shape[-1] != self.__nphys:
+        if (np.array(physprop).shape[-1] != self.__nphys) and \
+           (self.__nphys > 1):
             raise ValueError("need " + str(self.__nphys) + 
                              " physical properties!")
-        if np.array(photprop).shape[-1] != self.__nphot:
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphot) +
                              " photometric properties!")
         if photerr is not None:
-            if np.array(photerr).shape[-1] != self.__nphot:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
+
+        # Reshape arrays if necessary
+        if (np.array(physprop).shape[-1] != self.__nphys) and \
+           (self.__nphys == 1):
+            physprop = physprop.reshape(physprop.shape+(1,))
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot == 1):
+            photprop = photprop.reshape(photprop.shape+(1,))
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot == 1):
+                photerr = photerr.reshape(photerr.shape+(1,))
 
         # Figure out number of distinct input sets of physical and
         # photometric properties
@@ -790,25 +857,32 @@ class bp(object):
               broadcasting the leading dimensions of photprop and
               photerr together, while the trailing dimensions match
               the dimensions of the output grid
-
-           (only returned if the c library was compiled in DIAGNOSTIC mode)
-           nodecheck : int or array, shape(N)
-              Number of nodes examined during the evaluation
-           leafcheck : int or array, shape(N)
-              Number of leaves examined during the evaluation
-           termcheck : int or array, shape(N)
-              Number of nodes examined during the evaluation for which
-              no children were examined
         """
 
         # Safety check
-        if np.array(photprop).shape[-1] != self.__nphot:
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphot) +
                              " photometric properties!")
         if photerr is not None:
-            if np.array(photerr).shape[-1] != self.__nphot:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
+        if (np.amax(idx) > self.__nphys) or (np.amin(idx) < 0) or \
+           (not (np.unique(idx) == idx)):
+            raise ValueError("need non-repeating indices in " +
+                             "the range 0 - {:d}!".
+                             format(self.__nphys-1))
+
+        # Reshape arrays if necessary
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot == 1):
+            photprop = photprop.reshape(photprop.shape+(1,))
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot == 1):
+                photerr = photerr.reshape(photerr.shape+(1,))
 
         # Set up the grid of outputs
         if grid is not None:
@@ -900,20 +974,35 @@ class bp(object):
                 bandwidth = np.sqrt(self.__bandwidth**2+err**2)
                 self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
 
-            # Call the PDF computation routine
+            # Call the PDF computation routine; note that we call
+            # kd_pdf_int_vec if we're actually marginalizing over any
+            # physical properties (which is the case if len(idx) <
+            # nphys), but we invoke kd_pdf_vec if we're not actually
+            # marginalizing (len(idx)==nphys) because then we don't
+            # need to do any integration
             if not self.__diag_mode:
-                self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
-                                           dims, ndim, pdf.size,
-                                           self.reltol, self.abstol,
-                                           np.ravel(pdf))
+                if nidx < self.__nphys:
+                    self.__clib.kd_pdf_int_vec(
+                        self.__kd, np.ravel(cdata), dims, ndim,
+                        pdf.size, self.reltol, self.abstol,
+                        np.ravel(pdf))
+                else:
+                    self.__clib.kd_pdf_vec(
+                        self.__kd, np.ravel(cdata), pdf.size, 
+                        self.reltol, self.abstol, np.ravel(pdf))
             else:
-                self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
-                                           dims, ndim, pdf.size,
-                                           self.reltol, self.abstol,
-                                           np.ravel(pdf), 
-                                           np.ravel(nodecheck), 
-                                           np.ravel(leafcheck),
-                                           np.ravel(termcheck))
+                if nidx < self.__nphys:                
+                    self.__clib.kd_pdf_int_vec(
+                        self.__kd, np.ravel(cdata), dims, ndim, 
+                        pdf.size, self.reltol, self.abstol,
+                        np.ravel(pdf), np.ravel(nodecheck), 
+                        np.ravel(leafcheck), np.ravel(termcheck))
+                else:
+                    self.__clib.kd_pdf_vec(
+                        self.__kd, np.ravel(cdata), pdf.size, 
+                        self.reltol, self.abstol, np.ravel(pdf),
+                        np.ravel(nodecheck), np.ravel(leafcheck), 
+                        np.ravel(termcheck))
 
         else:
 
@@ -1026,11 +1115,11 @@ class bp(object):
     # Function to compute an MCMC sampler for a particular set of
     # photometric values
     ##################################################################
-    def mcmc(self, photprop, photerr=None, filter_names=None,
-            mc_walkers=100, mc_steps=500, mc_burn_in=50):
+    def mcmc(self, photprop, photerr=None, mc_walkers=100,
+             mc_steps=500, mc_burn_in=50):
         """
-        This function returns the posterior probability distribution
-        for cluster mass, age, and extinction using an MCMC method
+        This function returns a sample of MCMC walkers sampling the
+        physical parameters at a specified set of photometric values.
 
         Parameters:
            photprop : arraylike, shape (nfilter) or (..., nfilter)
@@ -1049,7 +1138,8 @@ class bp(object):
               number of steps to consider "burn-in" and discard
 
         Returns
-           Nothing
+           samples : array
+              array of sample points returned by the MCMC
         """
 
         # See if we have emcee
@@ -1057,14 +1147,25 @@ class bp(object):
             raise ImportError("unable to import emcee")
 
         # Safety check
-        if np.array(photprop).shape[-1] != self.__nphot:
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphot) +
                              " photometric properties!")
         if photerr is not None:
-            if np.array(photerr).shape[-1] != self.__nphot:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
-                             " photometric properties!")
+                                 " photometric errors!")
  
+        # Reshape arrays if necessary
+        if (np.array(photprop).shape[-1] != self.__nphot) and \
+           (self.__nphot == 1):
+            photprop = photprop.reshape(photprop.shape+(1,))
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot == 1):
+                photerr = photerr.reshape(photerr.shape+(1,))
+
         # Prepare storage for output
         samples = []
 
