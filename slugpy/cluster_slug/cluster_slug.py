@@ -210,11 +210,14 @@ class cluster_slug(object):
                     self.__ds[:,3+i] = phot.phot[:,i]
 
         # Take log of photometric values if they are recorded in a
-        # linear system; ensure that linear values are non-negative
+        # linear system; ensure that linear values are non-negative,
+        # and that values in magnitudes are non-infinite
         for i, f in enumerate(phot.filter_units):
             if 'mag' not in f:
                 self.__ds[:,3+i][self.__ds[:,3+i] <= 0] = 1.0e-99
                 self.__ds[:,3+i] = np.log10(self.__ds[:,3+i])
+            else:
+                self.__ds[:,3+i][np.isinf(self.__ds[:,3+i])] = 99.0
 
         # Initialize empty dict containing filter sets
         self.__filtersets = []
