@@ -111,6 +111,11 @@ class cluster_slug(object):
            IOError, if the library cannot be found
         """
 
+        # Suppress obnoxious numpy warning messages here
+        errstate = np.geterr()
+        np.seterr(divide='ignore', invalid='ignore', over='ignore',
+                  under='ignore')
+
         # Load the cluster data
         if libname is None:
             self.__libname = osp.join('cluster_slug', 'CLUSTERSLUG_MW')
@@ -124,6 +129,7 @@ class cluster_slug(object):
 
         # Record available filters
         self.__allfilters = phot.filter_names
+        self.filter_units = phot.filter_units
 
         # Record other stuff that we'll use to construct bp objects
         # later
@@ -133,12 +139,6 @@ class cluster_slug(object):
         self.__sample_density = sample_density
         self.__reltol = reltol
         self.__abstol = abstol
-
-        # Only keep cases where the luminosity is non-zero; zero
-        # luminosity cases correspond to clusters where the most
-        # massive star produced was below the minimum mass included in
-        # our evolutionary tracks
-        idx = np.where(np.amin(phot.phot, axis=1) > 0)[0]
 
         # See if we have nebular, extincted data
         if 'phot_neb_ex' in phot._fields:
@@ -173,30 +173,30 @@ class cluster_slug(object):
 
         # Build dataset array; 1st 3 dimensions are log mass, log age,
         # and A_V remaining ones are photometric values
-        self.__ds = np.zeros((len(idx),
+        self.__ds = np.zeros((len(phot.id),
                                    3+len(phot.filter_names)))
-        self.__ds[:,0] = np.log10(prop.actual_mass[idx])
-        self.__ds[:,1] = np.log10(prop.time[idx] - prop.form_time[idx])
-        self.__ds[:,2] = prop.A_V[idx]
-        self.__ds[:,3:] = ph[idx,:]
+        self.__ds[:,0] = np.log10(prop.actual_mass)
+        self.__ds[:,1] = np.log10(prop.time - prop.form_time)
+        self.__ds[:,2] = prop.A_V
+        self.__ds[:,3:] = ph
 
         # Treat ionizing fluxes as a special case, using the
         # non-nebular, non-extincted value for them regardless of
         # whether nebular emission or extinction are enabled
         if 'QH0' in phot.filter_names:
             idx1 = phot.filter_names.index('QH0')
-            self.__ds[:,3+idx1] = phot.phot[idx,idx1]
+            self.__ds[:,3+idx1] = phot.phot[:,idx1]
         if 'QHe0' in phot.filter_names:
             idx1 = phot.filter_names.index('QHe0')
-            self.__ds[:,3+idx1] = phot.phot[idx,idx1]
+            self.__ds[:,3+idx1] = phot.phot[:,idx1]
         if 'QHe1' in phot.filter_names:
             idx1 = phot.filter_names.index('QHe1')
-            self.__ds[:,3+idx1] = phot.phot[idx,idx1]
+            self.__ds[:,3+idx1] = phot.phot[:,idx1]
 
         # Fill in any cases where extincted photometry is not
         # available
         if extinct:
-            for i in np.where(np.isnan(phot.phot_ex[idx[0],:]))[0]:
+            for i in np.where(np.isnan(self.__ds[0,3:]))[0]:
                 warnstr = "cluster_slug: extincted photometry " + \
                           "unavailable for filter " + \
                           phot.filter_names[i] + \
@@ -204,16 +204,24 @@ class cluster_slug(object):
                           "does not cover the required wavelength " + \
                           "range; using unextincted values instead"
                 warnings.warn(warnstr)
-                self.__ds[:,3+i] = phot.phot[idx,i]
+                if nebular:
+                    self.__ds[:,3+i] = phot.phot_neb[:,i]
+                else:
+                    self.__ds[:,3+i] = phot.phot[:,i]
 
         # Take log of photometric values if they are recorded in a
-        # linear system
+        # linear system; ensure that linear values are non-negative
         for i, f in enumerate(phot.filter_units):
             if 'mag' not in f:
+                self.__ds[:,3+i][self.__ds[:,3+i] <= 0] = 1.0e-99
                 self.__ds[:,3+i] = np.log10(self.__ds[:,3+i])
 
         # Initialize empty dict containing filter sets
         self.__filtersets = []
+
+        # Restore the numpy error state
+        np.seterr(divide=errstate['divide'], over=errstate['over'], 
+                  under=errstate['under'], invalid=errstate['invalid'])
 
         # If we have been given a filter list, create the data set to
         # go with it
@@ -267,8 +275,8 @@ class cluster_slug(object):
         newfilter['dataset'] = np.zeros((self.__ds.shape[0], 
                                          3+len(filters)))
         newfilter['dataset'][:,:3] = self.__ds[:,:3]
-        newfilter['idx'] = np.zeros(1+len(filters), dtype=int)
-        newfilter['idx'][0:3] = arange(3, dtype=int)
+        newfilter['idx'] = np.zeros(3+len(filters), dtype=int)
+        newfilter['idx'][0:3] = np.arange(3, dtype=int)
         for i, f in enumerate(filters):
             if f not in self.__allfilters:
                 raise ValueError("unknown filter "+str(f))
