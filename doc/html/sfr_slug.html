@@ -59,21 +59,25 @@
 <h2>Full Documentation of slugpy.sfr_slug<a class="headerlink" href="#full-documentation-of-slugpy-sfr-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.sfr_slug.sfr_slug">
-<em class="property">class </em><tt class="descclassname">slugpy.sfr_slug.</tt><tt class="descname">sfr_slug</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='default'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">slugpy.sfr_slug.</tt><tt class="descname">sfr_slug</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of true star
 formation rate from a set of input point mass estimates of the
 star formation rate.</p>
 <dl class="docutils">
 <dt>Properties</dt>
 <dd><dl class="first last docutils">
-<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;flat&#8217; | &#8216;schechter&#8217; | None</span></dt>
 <dd>prior probability on each data point; interpretation
 depends on the type passed; array, shape (N): values are
 interpreted as the prior probability of each data point;
 callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
-all data points have equal prior probability</dd>
+all data points have equal prior probability; the values
+&#8216;flat&#8217; and &#8216;schechter&#8217; use priors p(log SFR) ~ constant and
+p(log SFR) ~ SFR^alpha exp(-SFR/SFR_*), respectively, where
+alpha = -0.51 and SFR_* = 9.2 Msun/yr are the values
+measured by Bothwell et al. (2011)</dd>
 <dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
 <dd>bandwidth for kernel density estimation; if set to
 &#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
@@ -82,7 +86,7 @@ all data points have equal prior probability</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='default'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div>Initialize an sfr_slug object.</div></blockquote>
 <dl class="docutils">
@@ -99,9 +103,11 @@ photometry to SFR conversions; if left as None, the default
 is libname_DET</dd>
 <dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
 <dd>list of filter names to be used for inferenence</dd>
-<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span></dt>
 <dd>bandwidth for kernel density estimation; if set to
-&#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
+&#8216;auto&#8217;, the bandwidth will be estimated automatically;
+if set to a float, the same bandwidth is used in all
+dimensions</dd>
 <dt>ktype <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
 <dd>type of kernel to be used in densty estimation; allowed
 values are &#8216;gaussian&#8217; (default), &#8216;epanechnikov&#8217;, and
@@ -114,7 +120,7 @@ callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability</dd>
-<dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | &#8216;default&#8217; | None</span></dt>
+<dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | &#8216;read&#8217; | None</span></dt>
 <dd>the density of the data samples at each data point; this
 need not match the prior density; interpretation depends
 on the type passed; array, shape (N): values are
@@ -125,10 +131,10 @@ array of shape (N) giving the sampling density at each
 point; &#8216;auto&#8217;: the sample density will be computed
 directly from the data set; note that this can be quite
 slow for large data sets, so it is preferable to specify
-this analytically if it is known; &#8216;default&#8217;: the sample
-density is assumed to be that of the default library
-that ships with SLUG; None: data are assumed to be
-uniformly sampled</dd>
+this analytically if it is known; &#8216;read&#8217;: the sample
+density is to be read from a numpy save file whose name
+matches that of the library, with the extension _density.npy
+added; None: data are assumed to be uniformly sampled</dd>
 <dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>relative error tolerance; errors on all returned
 probabilities p will satisfy either
@@ -229,8 +235,7 @@ be used by default</dd>
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.mcmc">
 <tt class="descname">mcmc</tt><big>(</big><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mcmc" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function returns a sample of MCMC walkers for cluster
-mass, age, and extinction</p>
+<dd><p>This function returns a sample of MCMC walkers for log SFR</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
@@ -266,8 +271,8 @@ default</dd>
 
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.mpdf">
-<tt class="descname">mpdf</tt><big>(</big><em>logSFRpho</em>, <em>logSFRphoterr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mpdf" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the marginal probability of logSFR for one or more
+<tt class="descname">mpdf</tt><big>(</big><em>logSFRphot</em>, <em>logSFRphoterr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mpdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the marginal probability of log SFR for one or more
 input sets of photometric properties. Output quantities are
 computed on a grid of values, in the same style as meshgrid</p>
 <dl class="docutils">
@@ -282,23 +287,15 @@ it</dd>
 <dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
-<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
-<dd>number of points in each dimension of the output grid;
-if this is an iterable, it must have the same number of
-elements as idx</dd>
-<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
-<dd>minimum value in the output grid in each quantity; if
-left as None, defaults to the minimum value in the
-library; if this is an iterable, it must contain the
-same number of elements as idx</dd>
-<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
-<dd>maximum value in the output grid in each quantity; if
-left as None, defaults to the maximum value in the
-library; if this is an iterable, it must contain the
-same number of elements as idx</dd>
-<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
-<dd>set of values defining the grid on which the PDF is to
-be evaluated, in the same format used by meshgrid</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of points in the output log SFR grid</dd>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>minimum value in the output log SFR grid</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>maximum value in the output log SFR grid</dd>
+<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>set of values defining the grid of SFR values at which
+to evaluate; if set, overrides ngrid, qmin, and qmax</dd>
 <dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>if True, returned pdf&#8217;s will be normalized to integrate
 to 1</dd>
@@ -312,15 +309,14 @@ default</dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
 <dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of values at which the PDF is evaluated; contents
-are the same as returned by meshgrid</dd>
+<dd>array of log SFR values at which the PDF is evaluated</dd>
 <dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>array of marginal posterior probabilities at each point
-of the output grid, for each input cluster; the leading
-dimensions match the leading dimensions produced by
-broadcasting the leading dimensions of photprop and
-photerr together, while the trailing dimensions match
-the dimensions of the output grid</dd>
+of the output grid, for each input photometric value;
+the leading dimensions match the leading dimensions
+produced by broadcasting the leading dimensions of
+photprop and photerr together, while the trailing
+dimensions match the dimensions of the output grid</dd>
 </dl>
 </dd>
 </dl>

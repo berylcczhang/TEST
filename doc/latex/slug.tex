@@ -14,7 +14,7 @@
 
 
 \title{slug Documentation}
-\date{January 03, 2015}
+\date{January 22, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -75,11 +75,10 @@
 \expandafter\def\csname PYG@tok@c\endcsname{\let\PYG@it=\textit\def\PYG@tc##1{\textcolor[rgb]{0.25,0.50,0.56}{##1}}}
 \expandafter\def\csname PYG@tok@mf\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
 \expandafter\def\csname PYG@tok@err\endcsname{\def\PYG@bc##1{\setlength{\fboxsep}{0pt}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}
-\expandafter\def\csname PYG@tok@mb\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
+\expandafter\def\csname PYG@tok@kd\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@ss\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.32,0.47,0.09}{##1}}}
 \expandafter\def\csname PYG@tok@sr\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.14,0.33,0.53}{##1}}}
 \expandafter\def\csname PYG@tok@mo\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
-\expandafter\def\csname PYG@tok@kd\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@mi\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
 \expandafter\def\csname PYG@tok@kn\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@o\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
@@ -173,7 +172,9 @@ where \(L_\nu\) is the specific luminosity per unit frequency, \(R_\nu\) is the 
 The wavelength-averaged luminosity across the filter, defined as
 
 \end{itemize}
-
+\begin{gather}
+\begin{split}\langle L_\lambda\rangle_R = \frac{\int L_\lambda \, d\ln\lambda}{\int R_\lambda (\lambda/\lambda_c)^{-\beta} \, d\ln\lambda},\end{split}\notag
+\end{gather}
 where \(L_\lambda\) is the specific luminosity per unit wavelength, \(R_\lambda\) is the filter response function per photon at wavelength \(\lambda\), and \(\lambda_c\) is the central wavelength of the filter.
 \begin{itemize}
 \item {} 
@@ -4833,6 +4834,8 @@ Nothing
 
 \chapter{bayesphot: Bayesian Inference for Stochastic Stellar Populations}
 \label{bayesphot:sec-bayesphot}\label{bayesphot::doc}\label{bayesphot:bayesphot-bayesian-inference-for-stochastic-stellar-populations}
+Bayesphot is a package for performing Bayesian inference for the physical properties of a stellar system using its measured photometric properties, in a case where the photometric properties vary non-deterministically with the physical properties. Formally, bayesphot answers the following question: consider a stellar system characterized by a vector of \(\mathbf{x} = (x_1, x_2, \ldots x_N)\) physical properties. We have a physical model that lets us sample the expected photometric properties as a function of physical properties, i.e., that for some sample of \(K\) systems with physical properties \(\mathbf{x}_k\) we are able to compute the corresponding photometric properties \(\mathbf{y}_k = \mathbf{y} = (y_1, y_2, \ldots y_M)_k\). Now suppose that we observe such a system, and we observe it to have photometric properties \(\mathbf{y}_{\mathrm{obs}}\), with some set of photometric errors \(\mathbf{\sigma}_{\mathbf{y}} = (\sigma_{y_1}, \sigma_{y_2}, \ldots \sigma_{y_M})\), which are assumed to be Gaussian-distributed. What should we infer about the posterior probability distribution of the physical properties, i.e., given a set of prior probabilities \(p(\mathbf{x})\), plus our measurements, what is \(p(\mathbf{x} \mid \mathbf{y}_{\mathrm{obs}}, \mathbf{\sigma}_{\mathrm{y}})\)?
+
 
 \section{Full Documentation of slugpy.bayesphot}
 \label{bayesphot:full-documentation-of-slugpy-bayesphot}\label{bayesphot:module-slugpy.bayesphot.bp}\index{slugpy.bayesphot.bp (module)}
@@ -4948,6 +4951,14 @@ IOError, if the bayesphot c library cannot be found
 \begin{fulllineitems}
 \phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__weakref__}\pysigline{\bfcode{\_\_weakref\_\_}}
 list of weak references to the object (if defined)
+
+\end{fulllineitems}
+
+\index{bandwidth (slugpy.bayesphot.bp.bp attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.bandwidth}\pysigline{\bfcode{bandwidth}}
+The current bandwidth
 
 \end{fulllineitems}
 
@@ -5097,6 +5108,15 @@ the dimensions of the output grid
 
 \end{fulllineitems}
 
+\index{priors (slugpy.bayesphot.bp.bp attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.priors}\pysigline{\bfcode{priors}}
+The current set of prior probabilities for every
+simulation in the library
+
+\end{fulllineitems}
+
 
 \end{fulllineitems}
 
@@ -5109,7 +5129,7 @@ the dimensions of the output grid
 \label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -5134,16 +5154,26 @@ bandwidth for kernel density estimation; if set to
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
 \item[{libname}] \leavevmode{[}string{]}
 name of the SLUG model to load; if left as None, the default
-is \$SLUG\_DIR/cluster\_slug/CLUSTER\_SLUG
+is \$SLUG\_DIR/cluster\_slug/CLUSTERSLUG\_MW
 
 \item[{filters}] \leavevmode{[}iterable of stringlike{]}
 list of filter names to be used for inferenence
+
+\item[{photsystem}] \leavevmode{[}None or string{]}
+If photsystem is None, the library will be left in
+whatever photometric system was used to write
+it. Alternately, if it is a string, the data will be
+converted to the specified photometric system. Allowable
+values are `L\_nu', `L\_lambda', `AB', `STMAG', and
+`Vega', corresponding to the options defined in the SLUG
+code. Once this is set, any subsequent photometric data
+input are assumed to be in the same photometric system.
 
 \item[{bandwidth}] \leavevmode{[}`auto' \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
@@ -5426,20 +5456,24 @@ the dimensions of the output grid
 \label{sfr_slug:full-documentation-of-slugpy-sfr-slug}\index{sfr\_slug (class in slugpy.sfr\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.sfr\_slug.}\bfcode{sfr\_slug}}{\emph{libname=None}, \emph{detname=None}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density='default'}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
+\phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.sfr\_slug.}\bfcode{sfr\_slug}}{\emph{libname=None}, \emph{detname=None}, \emph{filters=None}, \emph{bandwidth=0.1}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density='read'}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
 A class that can be used to estimate the PDF of true star
 formation rate from a set of input point mass estimates of the
 star formation rate.
 \begin{description}
 \item[{Properties}] \leavevmode\begin{description}
-\item[{priors}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} None{]}
+\item[{priors}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} `flat' \textbar{} `schechter' \textbar{} None{]}
 prior probability on each data point; interpretation
 depends on the type passed; array, shape (N): values are
 interpreted as the prior probability of each data point;
 callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
-all data points have equal prior probability
+all data points have equal prior probability; the values
+`flat' and `schechter' use priors p(log SFR) \textasciitilde{} constant and
+p(log SFR) \textasciitilde{} SFR\textasciicircum{}alpha exp(-SFR/SFR\_*), respectively, where
+alpha = -0.51 and SFR\_* = 9.2 Msun/yr are the values
+measured by Bothwell et al. (2011)
 
 \item[{bandwidth}] \leavevmode{[}`auto' \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
@@ -5451,7 +5485,7 @@ bandwidth for kernel density estimation; if set to
 \index{\_\_init\_\_() (slugpy.sfr\_slug.sfr\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{detname=None}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density='default'}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}~\begin{quote}
+\phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{detname=None}, \emph{filters=None}, \emph{bandwidth=0.1}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density='read'}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}~\begin{quote}
 
 Initialize an sfr\_slug object.
 \end{quote}
@@ -5471,9 +5505,11 @@ is libname\_DET
 \item[{filters}] \leavevmode{[}iterable of stringlike{]}
 list of filter names to be used for inferenence
 
-\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} array, shape (M){]}
+\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} float \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
-`auto', the bandwidth will be estimated automatically
+`auto', the bandwidth will be estimated automatically;
+if set to a float, the same bandwidth is used in all
+dimensions
 
 \item[{ktype}] \leavevmode{[}string{]}
 type of kernel to be used in densty estimation; allowed
@@ -5489,7 +5525,7 @@ of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
 
-\item[{sample\_density}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} `auto' \textbar{} `default' \textbar{} None{]}
+\item[{sample\_density}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} `auto' \textbar{} `read' \textbar{} None{]}
 the density of the data samples at each data point; this
 need not match the prior density; interpretation depends
 on the type passed; array, shape (N): values are
@@ -5500,10 +5536,10 @@ array of shape (N) giving the sampling density at each
 point; `auto': the sample density will be computed
 directly from the data set; note that this can be quite
 slow for large data sets, so it is preferable to specify
-this analytically if it is known; `default': the sample
-density is assumed to be that of the default library
-that ships with SLUG; None: data are assumed to be
-uniformly sampled
+this analytically if it is known; `read': the sample
+density is to be read from a numpy save file whose name
+matches that of the library, with the extension \_density.npy
+added; None: data are assumed to be uniformly sampled
 
 \item[{reltol}] \leavevmode{[}float{]}
 relative error tolerance; errors on all returned
@@ -5625,8 +5661,7 @@ natural log of the likelihood function
 
 \begin{fulllineitems}
 \phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug.mcmc}\pysiglinewithargsret{\bfcode{mcmc}}{\emph{photprop}, \emph{photerr=None}, \emph{mc\_walkers=100}, \emph{mc\_steps=500}, \emph{mc\_burn\_in=50}, \emph{filters=None}}{}
-This function returns a sample of MCMC walkers for cluster
-mass, age, and extinction
+This function returns a sample of MCMC walkers for log SFR
 \begin{description}
 \item[{Parameters:}] \leavevmode\begin{description}
 \item[{photprop}] \leavevmode{[}arraylike, shape (nfilter) or (..., nfilter){]}
@@ -5669,8 +5704,8 @@ array of sample points returned by the MCMC
 \index{mpdf() (slugpy.sfr\_slug.sfr\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug.mpdf}\pysiglinewithargsret{\bfcode{mpdf}}{\emph{logSFRpho}, \emph{logSFRphoterr=None}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
-Returns the marginal probability of logSFR for one or more
+\phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug.mpdf}\pysiglinewithargsret{\bfcode{mpdf}}{\emph{logSFRphot}, \emph{logSFRphoterr=None}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
+Returns the marginal probability of log SFR for one or more
 input sets of photometric properties. Output quantities are
 computed on a grid of values, in the same style as meshgrid
 \begin{description}
@@ -5686,26 +5721,18 @@ array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions
 
-\item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
-number of points in each dimension of the output grid;
-if this is an iterable, it must have the same number of
-elements as idx
+\item[{ngrid}] \leavevmode{[}int{]}
+number of points in the output log SFR grid
 
-\item[{qmin}] \leavevmode{[}float or listlike{]}
-minimum value in the output grid in each quantity; if
-left as None, defaults to the minimum value in the
-library; if this is an iterable, it must contain the
-same number of elements as idx
+\item[{qmin}] \leavevmode{[}float{]}
+minimum value in the output log SFR grid
 
-\item[{qmax}] \leavevmode{[}float or listlike{]}
-maximum value in the output grid in each quantity; if
-left as None, defaults to the maximum value in the
-library; if this is an iterable, it must contain the
-same number of elements as idx
+\item[{qmax}] \leavevmode{[}float{]}
+maximum value in the output log SFR grid
 
-\item[{grid}] \leavevmode{[}listlike of arrays{]}
-set of values defining the grid on which the PDF is to
-be evaluated, in the same format used by meshgrid
+\item[{grid}] \leavevmode{[}array{]}
+set of values defining the grid of SFR values at which
+to evaluate; if set, overrides ngrid, qmin, and qmax
 
 \item[{norm}] \leavevmode{[}bool{]}
 if True, returned pdf's will be normalized to integrate
@@ -5721,16 +5748,15 @@ default
 
 \item[{Returns:}] \leavevmode\begin{description}
 \item[{grid\_out}] \leavevmode{[}array{]}
-array of values at which the PDF is evaluated; contents
-are the same as returned by meshgrid
+array of log SFR values at which the PDF is evaluated
 
 \item[{pdf}] \leavevmode{[}array{]}
 array of marginal posterior probabilities at each point
-of the output grid, for each input cluster; the leading
-dimensions match the leading dimensions produced by
-broadcasting the leading dimensions of photprop and
-photerr together, while the trailing dimensions match
-the dimensions of the output grid
+of the output grid, for each input photometric value;
+the leading dimensions match the leading dimensions
+produced by broadcasting the leading dimensions of
+photprop and photerr together, while the trailing
+dimensions match the dimensions of the output grid
 
 \end{description}
 

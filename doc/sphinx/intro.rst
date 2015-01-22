@@ -41,7 +41,7 @@ where :math:`L_\nu` is the specific luminosity per unit frequency, :math:`R_\nu`
 
 * The wavelength-averaged luminosity across the filter, defined as
 
-.. math::\langle L_\lambda\rangle_R = \frac{\int L_\lambda \, d\ln\lambda}{\int R_\lambda (\lambda/\lambda_c)^{-\beta} \, d\ln\lambda},
+.. math:: \langle L_\lambda\rangle_R = \frac{\int L_\lambda \, d\ln\lambda}{\int R_\lambda (\lambda/\lambda_c)^{-\beta} \, d\ln\lambda},
 
 where :math:`L_\lambda` is the specific luminosity per unit wavelength, :math:`R_\lambda` is the filter response function per photon at wavelength :math:`\lambda`, and :math:`\lambda_c` is the central wavelength of the filter.
 

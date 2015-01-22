@@ -59,7 +59,7 @@
 <h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><tt class="descclassname">slugpy.cluster_slug.</tt><tt class="descname">cluster_slug</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">slugpy.cluster_slug.</tt><tt class="descname">cluster_slug</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -82,16 +82,25 @@ all data points have equal prior probability</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
 <dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
 <dd>name of the SLUG model to load; if left as None, the default
-is $SLUG_DIR/cluster_slug/CLUSTER_SLUG</dd>
+is $SLUG_DIR/cluster_slug/CLUSTERSLUG_MW</dd>
 <dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
 <dd>list of filter names to be used for inferenence</dd>
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span></dt>
+<dd>If photsystem is None, the library will be left in
+whatever photometric system was used to write
+it. Alternately, if it is a string, the data will be
+converted to the specified photometric system. Allowable
+values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;, &#8216;AB&#8217;, &#8216;STMAG&#8217;, and
+&#8216;Vega&#8217;, corresponding to the options defined in the SLUG
+code. Once this is set, any subsequent photometric data
+input are assumed to be in the same photometric system.</dd>
 <dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
 <dd>bandwidth for kernel density estimation; if set to
 &#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
