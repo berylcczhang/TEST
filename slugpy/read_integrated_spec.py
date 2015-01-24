@@ -154,13 +154,11 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         wavelength = np.array(wavelength)
         L_lambda = np.array(L_lambda)
         if nebular:
-            wl_neb = np.array(wl_neb)
             L_lambda_neb = np.array(L_lambda_neb)
         if extinct:
             wl_ex = np.array(wl_ex)
             L_lambda_ex = np.array(L_lambda_ex)
         if nebular and extinct:
-            wl_neb_ex = np.array(wl_neb_ex)
             L_lambda_neb_ex = np.array(L_lambda_neb_ex)
 
         # Figure out the number of wavelengths by finding the first
