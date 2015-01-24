@@ -47,7 +47,10 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
           wavelength, in Angstrom
        spec : array, shape (N_cluster, N_wavelength)
           specific luminosity of each cluster at each wavelength, in erg/s/A
-       spec_neb : array, shape (N_wavelength, N_times, N_trials)
+       wl_neb : array
+          wavelength for the nebular spectrum, in Angstrom (present
+          only if SLUG was run with nebular emission enabled)
+       spec_neb : array, shape (N_cluster, N_wavelength)
           specific luminosity at each wavelength and each time for each
           trial, including emission and absorption by the HII region,
           in erg/s/A (present only if SLUG was run with nebular
@@ -60,7 +63,11 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
           time for each trial after extinction has been applied, in
           erg/s/A (present only if SLUG was run with extinction
           enabled)
-       spec_neb_ex : array, shape (N_wavelength, N_times, N_trials)
+       wl_neb_ex : array
+          wavelength for the extincted spectrum with nebular emission,
+          in Angstrom (present only if SLUG was run with both nebular
+          emission and extinction enabled)
+       spec_neb_ex : array, shape (N_cluster, N_wavelength)
           specific luminosity at each wavelength in wl_ex and each
           time for each trial including emission and absorption by the
           HII region, after extinction has been applied, in erg/s/A
@@ -206,6 +213,13 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
                 trial.append(trialptr)
                 ptr = 0
 
+        # If we have nebular emission, for ASCII output the nebular
+        # wavelength list is identical to the stellar one
+        if nebular:
+            wl_neb = wavelength
+            if extinct:
+                wl_neb_ex = wl_ex
+
     elif fname.endswith('.bin'):
 
         # Binary mode
@@ -230,6 +244,13 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
         nl, = struct.unpack('L', data)
         data = fp.read(struct.calcsize('d')*nl)
         wavelength = np.array(struct.unpack('d'*nl, data))
+        if nebular:
+            data = fp.read(struct.calcsize('L'))
+            nl_neb, = struct.unpack('L', data)
+            data = fp.read(struct.calcsize('d')*nl_neb)
+            wl_neb = np.array(struct.unpack('d'*nl_neb, data))
+        else:
+            nl_neb = 0
         if extinct:
             data = fp.read(struct.calcsize('L'))
             nl_ex, = struct.unpack('L', data)
@@ -237,6 +258,13 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
             wl_ex = np.array(struct.unpack('d'*nl_ex, data))
         else:
             nl_ex = 0
+        if extinct and nebular:
+            data = fp.read(struct.calcsize('L'))
+            nl_neb_ex, = struct.unpack('L', data)
+            data = fp.read(struct.calcsize('d')*nl_neb_ex)
+            wl_neb_ex = np.array(struct.unpack('d'*nl_neb_ex, data))
+        else:
+            nl_neb_ex = 0
 
         # Go through the rest of the file
         while True:
@@ -259,34 +287,34 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
             # Read the next block of clusters
             data = fp.read(struct.calcsize('L')*ncluster + 
                            struct.calcsize('d')*ncluster * 
-                           (1+nebular)*(nl+nl_ex))
-            data_list = struct.unpack(('L'+'d'*(nl+nl_ex)*(1+nebular))
+                           (nl + nl_neb + nl_ex + nl_neb_ex))
+            data_list = struct.unpack(('L'+'d'*(nl+nl_neb+nl_ex+nl_neb_ex))
                                       * ncluster, data)
 
             # Pack clusters into data list
-            cluster_id.extend(data_list[::(1+nebular)*(nl+nl_ex)+1])
+            cluster_id.extend(data_list[::nl+nl_neb+nl_ex+nl_neb_ex+1])
             L_lambda.extend(
-                [data_list[((1+nebular)*(nl+nl_ex)+1)*i+1 : 
-                           ((1+nebular)*(nl+nl_ex)+1)*i+1+nl] 
+                [data_list[(nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1 : 
+                           (nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1+nl] 
                  for i in range(ncluster)])
             if nebular:
                 L_lambda_neb.extend(
-                    [data_list[((1+nebular)*(nl+nl_ex)+1)*i+1+nl : 
-                               ((1+nebular)*(nl+nl_ex)+1)*i+1+2*nl] 
+                    [data_list[(nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1+nl : 
+                               (nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1+nl+nl_neb] 
                      for i in range(ncluster)])
             if extinct:
                 L_lambda_ex.extend(
-                    [data_list[((1+nebular)*(nl+nl_ex)+1)*i+1 + 
-                               nl*(1+nebular) :
-                               ((1+nebular)*(nl+nl_ex)+1)*i+1 + 
-                               nl*(1+nebular)+nl_ex] 
+                    [data_list[(nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1 + 
+                               nl+nl_neb :
+                               (nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1 + 
+                               nl+nl_neb+nl_ex] 
                      for i in range(ncluster)])
                 if nebular:
                     L_lambda_neb_ex.extend(
-                        [data_list[((1+nebular)*(nl+nl_ex)+1)*i+1 + 
-                                   nl*(1+nebular) + nl_ex :
-                                   ((1+nebular)*(nl+nl_ex)+1)*i+1 + 
-                                   nl*(1+nebular) + 2*nl_ex] 
+                        [data_list[(nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1 + 
+                                   nl+nl_neb+nl_ex :
+                                   (nl+nl_neb+nl_ex+nl_neb_ex+1)*i+1 + 
+                                   nl+nl_neb+nl_ex+nl_neb_ex] 
                          for i in range(ncluster)])
 
     elif fname.endswith('.fits'):
@@ -304,6 +332,8 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
         # Read nebular data if available
         if 'L_lambda_neb' in fp[2].data.columns.names:
             nebular = True
+            wl_neb = fp[1].data.field('Wavelength_neb')
+            wl_neb = wl_neb.flatten()
             L_lambda_neb = fp[2].data.field('L_lambda_neb')
         else:
             nebular = False
@@ -319,6 +349,12 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
         else:
             extinct = False
 
+        # Handle extincted neblar data
+        if nebular and extinct:
+            wl_neb_ex = fp[1].data.field('Wavelength_neb_ex')
+            wl_neb_ex = wl_neb_ex.flatten()
+            L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ex')
+
     # Close file
     fp.close()
 
@@ -331,7 +367,7 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
     L_lambda = np.reshape(L_lambda, (len(time), len(wavelength)))
     if nebular:
         L_lambda_neb = np.array(L_lambda_neb)
-        L_lambda_neb = np.reshape(L_lambda_neb, (len(time), len(wavelength)))
+        L_lambda_neb = np.reshape(L_lambda_neb, (len(time), len(wl_neb)))
     if extinct:
         wl_ex = np.array(wl_ex)
         L_lambda_ex = np.array(L_lambda_ex)
@@ -340,20 +376,20 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
         if nebular:
             L_lambda_neb_ex = np.array(L_lambda_neb_ex)
             L_lambda_neb_ex = np.reshape(L_lambda_neb_ex, 
-                                         (len(time), len(wl_ex)))
+                                         (len(time), len(wl_neb_ex)))
 
     # Build namedtuple to hold output
     fieldnames = ['id', 'trial', 'time', 'wl', 'spec']
     fields = [cluster_id, trial, time, wavelength, L_lambda]
     if nebular:
-        fieldnames = fieldnames + ['spec_neb']
-        fields = fields + [L_lambda_neb]
+        fieldnames = fieldnames + ['wl_neb', 'spec_neb']
+        fields = fields + [wl_neb, L_lambda_neb]
     if extinct:
         fieldnames = fieldnames + ['wl_ex', 'spec_ex']
         fields = fields + [wl_ex, L_lambda_ex]
         if nebular:
-            fieldnames = fieldnames + ['spec_neb_ex']
-            fields = fields + [L_lambda_neb_ex]
+            fieldnames = fieldnames + ['wl_neb_ex', 'spec_neb_ex']
+            fields = fields + [wl_neb_ex, L_lambda_neb_ex]
     out_type = namedtuple('integrated_spec', fieldnames)
     out = out_type(*fields)
 

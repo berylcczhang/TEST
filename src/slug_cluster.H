@@ -115,13 +115,17 @@ public:
 
   // Methods to get spectrum plus wavelength table
   void get_spectrum(std::vector<double> &lambda_out, 
-		    std::vector<double> &L_lambda_out);
+		    std::vector<double> &L_lambda_out,
+		    bool rest = false);
   void get_spectrum_neb(std::vector<double> &lambda_out, 
-			std::vector<double> &L_lambda_out);
+			std::vector<double> &L_lambda_out,
+			bool rest = false);
   void get_spectrum_extinct(std::vector<double> &lambda_out, 
-			    std::vector<double> &L_lambda_out);
+			    std::vector<double> &L_lambda_out,
+			    bool rest = false);
   void get_spectrum_neb_extinct(std::vector<double> &lambda_out, 
-				std::vector<double> &L_lambda_out);
+				std::vector<double> &L_lambda_out,
+				bool rest = false);
 
   // Methods to get photometry
   const std::vector<double> &get_photometry();

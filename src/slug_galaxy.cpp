@@ -345,13 +345,14 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
   vector<double>::size_type nl = specsyn->n_lambda();
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
-  if (nebular != NULL) L_lambda_neb.assign(nl, 0.0);
+  if (nebular != NULL) L_lambda_neb.assign(nebular->n_lambda(), 0.0);
   vector<double>::size_type nl_ext = 0;
   if (extinct != NULL) {
     nl_ext = extinct->n_lambda();
     L_lambda_ext.assign(nl_ext, 0.0);
     Lbol_ext = 0.0;
-    if (nebular != NULL) L_lambda_neb_ext.assign(nl_ext, 0.0);
+    if (nebular != NULL) 
+      L_lambda_neb_ext.assign(extinct->n_lambda_neb(), 0.0);
   }
 
   // Loop over non-disrupted clusters; for each one, get spectrum and
@@ -364,7 +365,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     Lbol += (*it)->get_Lbol();
     if (nebular != NULL) {
       const vector<double>& spec_neb = (*it)->get_spectrum_neb();
-      for (vector<double>::size_type i=0; i<nl; i++) 
+      for (vector<double>::size_type i=0; i<nebular->n_lambda(); i++) 
 	L_lambda_neb[i] += spec_neb[i];
     }
     if (extinct != NULL) {
@@ -375,7 +376,8 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
       if (nebular != NULL) {
 	const vector<double>& spec_neb_ext 
 	  = (*it)->get_spectrum_neb_extinct();
-	for (vector<double>::size_type i=0; i<nl_ext; i++) 
+	for (vector<double>::size_type i=0; i<extinct->n_lambda_neb(); 
+	     i++) 
 	  L_lambda_neb_ext[i] += spec_neb_ext[i];
       }
     }
@@ -394,7 +396,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     Lbol += (*it)->get_Lbol();
     if (nebular != NULL) {
       const vector<double>& spec_neb = (*it)->get_spectrum_neb();
-      for (vector<double>::size_type i=0; i<nl; i++) 
+      for (vector<double>::size_type i=0; i<nebular->n_lambda(); i++) 
 	L_lambda_neb[i] += spec_neb[i];
     }
     if (extinct != NULL) {
@@ -405,7 +407,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
       if (nebular != NULL) {
 	const vector<double>& spec_neb_ext 
 	  = (*it)->get_spectrum_neb_extinct();
-	for (vector<double>::size_type i=0; i<nl_ext; i++) 
+	for (vector<double>::size_type i=0; i<extinct->n_lambda_neb(); i++) 
 	  L_lambda_neb_ext[i] += spec_neb_ext[i];
       }
     }
@@ -425,7 +427,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     vector<double> spec_neb;
     if (nebular != NULL) {
       spec_neb = nebular->get_tot_spec(spec);
-      for (vector<double>::size_type j=0; j<nl; j++) 
+      for (vector<double>::size_type j=0; j<nebular->n_lambda(); j++) 
 	L_lambda_neb[j] += spec_neb[j];
     }
     if (extinct != NULL) {
@@ -437,8 +439,9 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
 	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
       if (nebular != NULL) {
 	vector<double> spec_neb_ext = 
-	  extinct->spec_extinct(field_star_AV[i], spec_neb);
-	for (vector<double>::size_type j=0; j<nl_ext; j++) 
+	  extinct->spec_extinct_neb(field_star_AV[i], spec_neb);
+	for (vector<double>::size_type j=0; j<extinct->n_lambda_neb(); 
+	     j++) 
 	  L_lambda_neb_ext[j] += spec_neb_ext[j];
       }
     }
@@ -454,9 +457,10 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += Lbol_tmp;
+    vector<double> spec_neb;
     if (nebular != NULL) {
-      vector<double> spec_neb = nebular->get_tot_spec(spec);
-      for (vector<double>::size_type i=0; i<nl; i++) 
+      spec_neb = nebular->get_tot_spec(spec);
+      for (vector<double>::size_type i=0; i<nebular->n_lambda(); i++) 
 	L_lambda_neb[i] += spec_neb[i];
     }
     if (extinct != NULL) {
@@ -467,8 +471,10 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
       Lbol_ext += int_tabulated::
 	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
       if (nebular != NULL) {
-	vector<double> spec_neb_ext = nebular->get_tot_spec(spec_ext);
-	for (vector<double>::size_type i=0; i<nl_ext; i++) 
+	vector<double> spec_neb_ext = 
+	  extinct->spec_extinct_neb(extinct->AV_expect(), spec_neb);
+	for (vector<double>::size_type i=0; i<extinct->n_lambda_neb(); 
+	     i++) 
 	  L_lambda_neb_ext[i] += spec_neb_ext[i];
       }
     }
@@ -491,11 +497,8 @@ slug_galaxy::set_photometry(const bool del_cluster) {
   // Compute the spectrum
   set_spectrum(del_cluster);
 
-  // Grab the wavelength table
-  const vector<double>& lambda = specsyn->lambda();
-
   // Compute photometry
-  phot = filters->compute_phot(lambda, L_lambda);
+  phot = filters->compute_phot(specsyn->lambda(), L_lambda);
 
   // If any of the photometric values are -big, that indicates that we
   // want the bolometric luminosity, so insert that
@@ -504,7 +507,7 @@ slug_galaxy::set_photometry(const bool del_cluster) {
 
   // Repeat for stellar+nebular spectrum
   if (nebular != NULL) {
-    phot_neb = filters->compute_phot(lambda, L_lambda_neb);
+    phot_neb = filters->compute_phot(nebular->lambda(), L_lambda_neb);
     // Special cases: force ionizing luminosity to be zero exactly for
     // this spectrum, and bolometric luminosity to be exactly the same
     // as for the non-nebular case
@@ -526,29 +529,29 @@ slug_galaxy::set_photometry(const bool del_cluster) {
 	phot_ext[i] = Lbol_ext;
       } else if (filters->get_filter(i)->photon_filter() &&
 		 (filters->get_filter(i)->get_wavelength_min() >
-		  extinct->lambda_max())) {
+		  extinct->lambda().back())) {
 	phot_ext[i] = nan("");
       } else if ((filters->get_filter(i)->get_wavelength_min() <
-		  extinct->lambda_min()) ||
+		  extinct->lambda().front()) ||
 		 (filters->get_filter(i)->get_wavelength_max() >
-		  extinct->lambda_max())) {
+		  extinct->lambda().back())) {
 	phot_ext[i] = nan("");
       }
     }
     if (nebular != NULL) {
-      phot_neb_ext = filters->compute_phot(extinct->lambda(), 
-				       L_lambda_neb_ext);
+      phot_neb_ext = filters->compute_phot(extinct->lambda_neb(), 
+					   L_lambda_neb_ext);
       for (vector<double>::size_type i=0; i<phot_neb_ext.size(); i++) {
 	if (phot_neb_ext[i] == -constants::big) {
 	  phot_neb_ext[i] = Lbol_ext;
 	} else if (filters->get_filter(i)->photon_filter() &&
 		   (filters->get_filter(i)->get_wavelength_min() >
-		    extinct->lambda_max())) {
+		    extinct->lambda_neb().back())) {
 	  phot_neb_ext[i] = nan("");
 	} else if ((filters->get_filter(i)->get_wavelength_min() <
-		    extinct->lambda_min()) ||
+		    extinct->lambda_neb().front()) ||
 		   (filters->get_filter(i)->get_wavelength_max() >
-		    extinct->lambda_max())) {
+		    extinct->lambda_neb().back())) {
 	  phot_neb_ext[i] = nan("");
 	} else if (filters->get_filter(i)->photon_filter() &&
 		   (filters->get_filter(i)->get_wavelength_max()
@@ -688,20 +691,36 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
   if (!spec_set) set_spectrum(del_cluster);
 
   if (out_mode == ASCII) {
-    vector<double> lambda = specsyn->lambda();
+    vector<double> lambda, L_lambda_star, L_lambda_star_ext;
+    if (nebular == NULL) {
+      lambda = specsyn->lambda();
+      L_lambda_star = L_lambda;
+      if (extinct != NULL) L_lambda_star_ext = L_lambda_ext;
+    } else {
+      // Need to output all data using nebular wavelength table in
+      // this case, which means we need to interpolate the purely
+      // stellar spectra onto it
+      lambda = nebular->lambda();
+      L_lambda_star = nebular->interp_stellar(L_lambda);
+      if (extinct != NULL) 
+	L_lambda_star_ext = nebular->interp_stellar(L_lambda_ext, 
+						    extinct->off());
+    }
     for (vector<double>::size_type i=0; i<lambda.size(); i++) {
       int_spec_file << setprecision(5) << scientific 
 		    << setw(11) << right << curTime << "   "
 		    << setw(11) << right << lambda[i] << "   "
-		    << setw(11) << right << L_lambda[i];
+		    << setw(11) << right << L_lambda_star[i];
       if (nebular != NULL)
 	int_spec_file << "   "
 		      << setw(11) << right << L_lambda_neb[i];
       if (extinct != NULL) {
-	int j = i - extinct->off();
-	if ((j >= 0) && (j < L_lambda_ext.size())) {
+	int j;
+	if (nebular == NULL) j = i - extinct->off();
+	else j = i - extinct->off_neb();
+	if ((j >= 0) && (j < L_lambda_star_ext.size())) {
 	  int_spec_file << "   "
-			<< setw(11) << right << L_lambda_ext[j];
+			<< setw(11) << right << L_lambda_star_ext[j];
 	  if (nebular != NULL)
 	    int_spec_file << "   "
 			  << setw(11) << right << L_lambda_neb_ext[j];

@@ -46,6 +46,9 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
        spec : array, shape (N_wavelength, N_times, N_trials)
           specific luminosity at each wavelength and each time for each
           trial, in erg/s/A
+       wl_neb : array
+          wavelength for the nebular spectrum, in Angstrom (present
+          only if SLUG was run with nebular emission enabled)
        spec_neb : array, shape (N_wavelength, N_times, N_trials)
           specific luminosity at each wavelength and each time for each
           trial, including emission and absorption by the HII region,
@@ -59,6 +62,10 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
           time for each trial after extinction has been applied, in
           erg/s/A (present only if SLUG was run with extinction
           enabled)
+       wl_neb_ex : array
+          wavelength for the extincted spectrum with nebular emission,
+          in Angstrom (present only if SLUG was run with both nebular
+          emission and extinction enabled)
        spec_neb_ex : array, shape (N_wavelength, N_times, N_trials)
           specific luminosity at each wavelength in wl_ex and each
           time for each trial including emission and absorption by the
@@ -188,7 +195,15 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                 np.reshape(L_lambda_ex, (ntrial, ntime, nl_ex)))
             if nebular:
                 L_lambda_neb_ex = np.transpose(
-                    np.reshape(L_lambda_neb_ex, (ntrial, ntime, nl_ex)))
+                    np.reshape(L_lambda_neb_ex, (ntrial, ntime,
+                                                 nl_ex)))
+
+        # If we have nebular emission, for ASCII output the nebular
+        # wavelength list is identical to the stellar one
+        if nebular:
+            wl_neb = wavelength
+            if extinct:
+                wl_neb_ex = wl_ex
 
     elif fname.endswith('.bin'):
 
@@ -208,6 +223,13 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         nl, = struct.unpack('L', data)
         data = fp.read(struct.calcsize('d')*nl)
         wavelength = np.array(struct.unpack('d'*nl, data))
+        if nebular:
+            data = fp.read(struct.calcsize('L'))
+            nl_neb, = struct.unpack('L', data)
+            data = fp.read(struct.calcsize('d')*nl_neb)
+            wl_neb = np.array(struct.unpack('d'*nl_neb, data))
+        else:
+            nl_neb = 0
         if extinct:
             data = fp.read(struct.calcsize('L'))
             nl_ex, = struct.unpack('L', data)
@@ -215,22 +237,29 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
             wl_ex = np.array(struct.unpack('d'*nl_ex, data))
         else:
             nl_ex = 0
+        if extinct and nebular:
+            data = fp.read(struct.calcsize('L'))
+            nl_neb_ex, = struct.unpack('L', data)
+            data = fp.read(struct.calcsize('d')*nl_neb_ex)
+            wl_neb_ex = np.array(struct.unpack('d'*nl_neb_ex, data))
+        else:
+            nl_neb_ex = 0
+
 
         # Now read the rest of the file and convert to correct type
         data = fp.read()
         nchunk = len(data) / \
                  (struct.calcsize('L') + 
-                  ((1+nebular)*nl + 
-                   (1+nebular)*nl_ex + 1)*struct.calcsize('d'))
-        data_list = struct.unpack(('L'+'d'*(
-            (1+nebular)*nl + 
-            (1+nebular)*nl_ex + 1))*nchunk, data)
+                  (nl + nl_neb + nl_ex + nl_neb_ex + 1)
+                  *struct.calcsize('d'))
+        data_list = struct.unpack(
+            ('L'+'d'*(nl + nl_neb + nl_ex + nl_neb_ex + 1))*nchunk, 
+            data)
 
         # Get time and trial arrays, and get number of times and trials
-        trial = np.array(data_list[::(1+nebular)*nl + 
-                                   (1+nebular)*nl_ex + 2], dtype='uint')
-        time = np.array(data_list[1::(1+nebular)*nl +
-                                  (1+nebular)*nl_ex + 2])
+        trial = np.array(data_list[::nl+nl_neb+nl_ex+nl_neb_ex+2], 
+                         dtype='uint')
+        time = np.array(data_list[1::nl+nl_neb+nl_ex+nl_neb_ex+2])
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
         if ntime != len(time):
@@ -240,23 +269,23 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # Put L_lambda into array
         L_lambda = np.zeros((nl, ntime, ntrial))
         if nebular:
-            L_lambda_neb = np.zeros((nl, ntime, ntrial))
+            L_lambda_neb = np.zeros((nl_neb, ntime, ntrial))
         if extinct:
             L_lambda_ex = np.zeros((nl_ex, ntime, ntrial))
             if nebular:
-                L_lambda_neb_ex = np.zeros((nl_ex, ntime, ntrial))
+                L_lambda_neb_ex = np.zeros((nl_neb_ex, ntime, ntrial))
         ptr = 0
         for i in range(ntrial):
             for j in range(ntime):
-                ptr1 = ptr*((1+nebular)*nl+(1+nebular)*nl_ex+2)+2
+                ptr1 = ptr*(nl+nl_neb+nl_ex+nl_neb_ex+2)+2
                 L_lambda[:,j,i] \
                     = np.array(data_list[ptr1:ptr1+nl])
                 offset = nl
                 if nebular:
                     L_lambda_neb[:,j,i] \
                         = np.array(data_list[ptr1+offset:
-                                             ptr1+offset+nl])
-                    offset = offset+nl
+                                             ptr1+offset+nl_neb])
+                    offset = offset+nl_neb
                 if extinct:
                     L_lambda_ex[:,j,i] \
                         = np.array(data_list[ptr1+offset:
@@ -265,7 +294,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                     if nebular:
                         L_lambda_neb_ex[:,j,i] \
                             = np.array(data_list[ptr1+offset:
-                                                 ptr1+offset+nl_ex])
+                                                 ptr1+offset+nl_neb_ex])
                 ptr = ptr+1
 
     elif fname.endswith('.fits'):
@@ -295,11 +324,13 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # Read nebular data if available
         if 'L_lambda_neb' in fp[2].data.columns.names:
             nebular = True
+            wl_neb = fp[1].data.field('Wavelength_neb')
+            wl_neb = wl_neb.flatten()
             L_lambda_neb = fp[2].data.field('L_lambda_neb')
             L_lambda_neb \
                 = np.transpose(
                     np.reshape(L_lambda_neb, (ntrial, ntime,
-                                              len(wavelength))))
+                                              len(wl_neb))))
         else:
             nebular = False
 
@@ -313,14 +344,18 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                 = np.transpose(
                     np.reshape(L_lambda_ex, (ntrial, ntime, 
                                              len(wl_ex))))
-            if nebular:
-                L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ex')
-                L_lambda_neb_ex \
-                    = np.transpose(
-                        np.reshape(L_lambda_neb_ex, (ntrial, ntime, 
-                                                     len(wl_ex))))
         else:
             extinct = False
+
+        # Handle extincted neblar data
+        if nebular and extinct:
+            wl_neb_ex = fp[1].data.field('Wavelength_neb_ex')
+            wl_neb_ex = wl_neb_ex.flatten()
+            L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ex')
+            L_lambda_neb_ex \
+                = np.transpose(
+                    np.reshape(L_lambda_neb_ex, (ntrial, ntime, 
+                                                 len(wl_neb_ex))))
 
     # Close file
     fp.close()
@@ -329,14 +364,14 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
     fieldnames = ['time', 'wl', 'spec']
     fields = [time, wavelength, L_lambda]
     if nebular:
-        fieldnames = fieldnames + ['spec_neb']
-        fields = fields + [L_lambda_neb]
+        fieldnames = fieldnames + ['wl_neb', 'spec_neb']
+        fields = fields + [wl_neb, L_lambda_neb]
     if extinct:
         fieldnames = fieldnames + ['wl_ex', 'spec_ex']
         fields = fields + [wl_ex, L_lambda_ex]
         if nebular:
-            fieldnames = fieldnames + ['spec_neb_ex']
-            fields = fields + [L_lambda_neb_ex]
+            fieldnames = fieldnames + ['wl_neb_ex', 'spec_neb_ex']
+            fields = fields + [wl_neb_ex, L_lambda_neb_ex]
     out_type = namedtuple('integrated_spec', fieldnames)
     out = out_type(*fields)
 

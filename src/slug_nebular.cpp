@@ -25,6 +25,7 @@ namespace std
 #include "slug_nebular.H"
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
@@ -48,11 +49,9 @@ slug_nebular::
 slug_nebular(const char *atomic_dir,
 	     const std::vector<double>& lambda_in,
 	     const double n_in, const double T_in,
-	     const double phi_dust_in) :
-  lambda(lambda_in) {
-
-  // Initialize the conversion factor
-  LperQ.assign(lambda.size(), 0);
+	     const double phi_dust_in,
+	     const double z) :
+  lambda_star(lambda_in) {
 
   // Set up the filter object we'll use to extract ionizing fluxes
   // from input spectra
@@ -213,21 +212,6 @@ slug_nebular(const char *atomic_dir,
   // Close file
   Halpha2s_file.close();
 
-  // Compute the 2-photon emissivity distribution on our input grid
-  // using the approximation of Nussbaumer & Schmutz (1984, A&A, 138,
-  // 495)
-  for (unsigned int i=0; i<lambda.size(); i++) {
-    double y = (3.0/4.0)*constants::lambdaHI / lambda[i];
-    if (y > 1) H2p_emiss.push_back(0.0);
-    else {
-      H2p_emiss.push_back((y * (1.0-y) * pow(1.0 - 4.0*y*(1.0-y), H2p_g) +
-			   H2p_a * pow(y*(1-y), H2p_b) * 
-			   pow(4.0*y*(1.0-y), H2p_g)) / H2p_norm *
-			  constants::hc * constants::lambdaHI / 
-			  (pow(lambda[i], 3.0) * constants::Angstrom));
-    }
-  }
-
   // Get slopes for collision rate coefficients
   H2p_slope_e = log(H2p_q2s2p_e[1]/H2p_q2s2p_e[0]) /
     log(H2p_T_q2s2p[1]/H2p_T_q2s2p[0]);
@@ -352,6 +336,87 @@ slug_nebular(const char *atomic_dir,
   Helines_file.close();
 
   //////////////////////////////////////////////////////////////////////
+  // Construct the wavelength grid for nebular spectra; this will be
+  // the stellar grid, with some extra points added around each line
+  // so that we can resolve the line
+  //////////////////////////////////////////////////////////////////////
+
+  // Start by setting nebular grids to match the stellar grid
+  lambda_neb = lambda_star;
+
+  // Add grid points around hydrogen lines
+  for (unsigned int i=Hlines_nMax; i>2; i--) {
+    for (unsigned int j=2; j<i; j++) {
+
+      // Get central wavelength and line width for this level pair
+      double wlcen = constants::lambdaHI / (1.0/(j*j) - 1.0/(i*i));
+      double lw = wlcen * linewidth / constants::c;
+
+      // If we're off the stellar wavelength table, skip this line
+      if ((wlcen < lambda_star[0]) || 
+	  (wlcen > lambda_star[lambda_star.size()-1])) continue;
+
+      // Insert gridpoints at values form -4 to 4 sigma_line into the
+      // grid
+      for (unsigned int k=0; k<ngrid_line; k++) {
+        double wl = wlcen + 4.0 * lw * (2.0 * k/(ngrid_line-1.0) - 1.0);
+	for (unsigned int l=0; l<lambda_neb.size(); l++) {
+	  if (wl < lambda_neb[l]) {
+	    lambda_neb.insert(lambda_neb.begin() + l, wl);
+	    break;
+	  }
+	}
+      }
+    }
+  }
+
+  // Do the same for He lines
+  for (unsigned int i=0; i<Helines_nLines; i++) {
+
+    // Get central wavelength and line width for this line
+    double wlcen = Helines_lambda[i];
+    double lw = wlcen * linewidth / constants::c;
+
+    // If we're off the wavelength table, skip this line
+    if ((wlcen < lambda_star[0]) || 
+	(wlcen > lambda_star[lambda_star.size()-1])) continue;
+
+    // Insert gridpoints at values form -4 to 4 sigma_line into the
+    // grid
+    for (unsigned int k=0; k<ngrid_line; k++) {
+      double wl = wlcen + 4.0 * lw * (2.0 * k/(ngrid_line-1.0) - 1.0);
+      for (unsigned int l=0; l<lambda_neb.size(); l++) {
+	if (wl < lambda_neb[l]) {
+	  lambda_neb.insert(lambda_neb.begin() + l, wl);
+	  break;
+	}
+      }
+    }
+  }
+
+  // Set up the observed-frame wavelength grids
+  lambda_neb_obs = lambda_neb;
+  for (unsigned int i=0; i<lambda_neb.size(); i++)
+    lambda_neb_obs[i] *= 1.0 + z;
+
+  // Compute the 2-photon emissivity distribution on our grid
+  // using the approximation of Nussbaumer & Schmutz (1984, A&A, 138,
+  // 495)
+  for (unsigned int i=0; i<lambda_neb.size(); i++) {
+    double y = (4.0/3.0)*constants::lambdaHI / lambda_neb[i];
+    if (y > 1) {
+      H2p_emiss.push_back(0.0);
+    } else {
+      H2p_emiss.push_back((y * (1.0-y) * pow(1.0 - 4.0*y*(1.0-y), H2p_g) +
+			   H2p_a * pow(y*(1-y), H2p_b) * 
+			   pow(4.0*y*(1.0-y), H2p_g)) / H2p_norm *
+			  constants::hc * constants::lambdaHI / 
+			  (pow(lambda_neb[i], 3.0) * 
+			   constants::Angstrom));
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////
   // Compute L_lambda / Q
   //////////////////////////////////////////////////////////////////////
   set_properties(n_in, T_in, phi_dust_in);
@@ -379,7 +444,7 @@ set_properties(const double n_in, const double T_in,
   phi_dust = phi_dust_in;
 
   // Zero out the L/Q conversion
-  LperQ.assign(lambda.size(), 0);
+  LperQ.assign(lambda_neb.size(), 0);
 
   // Compute alphaB for our HII region; eqn. 14.6 of Draine (2011)
   double alphaB = 2.54e-13*pow(T/1e4, -0.8163-0.0208*log(T/1e4));
@@ -394,10 +459,10 @@ set_properties(const double n_in, const double T_in,
   for (unsigned int i=0; i<LperQ.size(); i++) {
 
     // Skip ionizing wavelengths
-    if (lambda[i] < constants::lambdaHI) continue;
+    if (lambda_neb[i] < constants::lambdaHI) continue;
 
     // Frequency
-    double nu = constants::c / (lambda[i]*constants::Angstrom);
+    double nu = constants::c / (lambda_neb[i]*constants::Angstrom);
     
     // Gaunt factor approximation (Draine 2011, eqn. 10.9)
     double gff = log(exp(5.96 - sqrt(3.0)/M_PI * 
@@ -415,7 +480,7 @@ set_properties(const double n_in, const double T_in,
     // Contribution to L/Q, including conversion from energy Hz^-1 to
     // energy Angstrom^-1
     LperQ[i] += 4.0*M_PI*jff * constants::c / 
-      (lambda[i]*lambda[i]*constants::Angstrom)
+      (lambda_neb[i]*lambda_neb[i]*constants::Angstrom)
       * phi_dust / alphaB;
 
   }
@@ -432,8 +497,8 @@ set_properties(const double n_in, const double T_in,
 
   // Find first entry in wavelength array that is covered by the
   // tabulation
-  unsigned int idx1 = lambda.size()-1;
-  while (constants::hc / (lambda[idx1]*constants::Angstrom) <
+  unsigned int idx1 = lambda_neb.size()-1;
+  while (constants::hc / (lambda_neb[idx1]*constants::Angstrom) <
 	 HIbf_en[0]*constants::Ryd) idx1--;
 
   // Loop over energies in the table of emission coefficients
@@ -446,14 +511,14 @@ set_properties(const double n_in, const double T_in,
 
     // If the energy we're pointing at in the wavelength table is
     // above the next energy in the energy table, go to next energy
-    if (constants::hc / (lambda[idx1]*constants::Angstrom) >
+    if (constants::hc / (lambda_neb[idx1]*constants::Angstrom) >
 	HIbf_en[i+1]*constants::Ryd) continue;
 
     // Find the last wavelength, starting from the current position
     // and working backward, that is below the next energy in the
     // bound-free emission table
     idx2 = idx1;
-    while (constants::hc / (lambda[idx2-1]*constants::Angstrom) <
+    while (constants::hc / (lambda_neb[idx2-1]*constants::Angstrom) <
 	   HIbf_en[i+1]*constants::Ryd) idx2--;
 
     // Loop over this index range, getting gamma_m at each wavelength
@@ -461,7 +526,7 @@ set_properties(const double n_in, const double T_in,
 
       // Energy at this wavelength, in Ryd
       double en = constants::hc / 
-	(lambda[j]*constants::Angstrom*constants::Ryd);
+	(lambda_neb[j]*constants::Angstrom*constants::Ryd);
 
       // Interpolation coefficient
       double wgt = (en - HIbf_en[i]) / (HIbf_en[i+1] - HIbf_en[i]);
@@ -482,7 +547,7 @@ set_properties(const double n_in, const double T_in,
 
       // Convert coefficient erg cm^3 Hz^-1 to erg cm^3 Angstrom^-1
       double gamma_wl = gamma * constants::c / 
-	(lambda[j]*lambda[j]*constants::Angstrom);
+	(lambda_neb[j]*lambda_neb[j]*constants::Angstrom);
 
       // Contribtuion to L/Q
       LperQ[j] += gamma_wl * phi_dust / alphaB;
@@ -491,7 +556,6 @@ set_properties(const double n_in, const double T_in,
     // Move index
     idx1 = idx2-1;
   }
-
 
   // Same procedure for He
 
@@ -503,8 +567,8 @@ set_properties(const double n_in, const double T_in,
 
   // Find first entry in wavelength array that is covered by the
   // tabulation
-  idx1 = lambda.size()-1;
-  while (constants::hc / (lambda[idx1]*constants::Angstrom) <
+  idx1 = lambda_neb.size()-1;
+  while (constants::hc / (lambda_neb[idx1]*constants::Angstrom) <
 	 HeIbf_en[0]*constants::Ryd) idx1--;
 
   // Loop over energies in the table of emission coefficients
@@ -515,14 +579,14 @@ set_properties(const double n_in, const double T_in,
 
     // If the energy we're pointing at in the wavelength table is
     // above the next energy in the energy table, go to next energy
-    if (constants::hc / (lambda[idx1]*constants::Angstrom) >
+    if (constants::hc / (lambda_neb[idx1]*constants::Angstrom) >
 	HeIbf_en[i+1]*constants::Ryd) continue;
 
     // Find the last wavelength, starting from the current position
     // and working backward, that is below the next energy in the
     // bound-free emission table
     idx2 = idx1;
-    while (constants::hc / (lambda[idx2-1]*constants::Angstrom) <
+    while (constants::hc / (lambda_neb[idx2-1]*constants::Angstrom) <
 	   HeIbf_en[i+1]*constants::Ryd) idx2--;
 
     // Loop over this index range, getting gamma_m at each wavelength
@@ -530,7 +594,12 @@ set_properties(const double n_in, const double T_in,
 
       // Energy at this wavelength, in Ryd
       double en = constants::hc / 
-	(lambda[j]*constants::Angstrom*constants::Ryd);
+	(lambda_neb[j]*constants::Angstrom*constants::Ryd);
+
+      // Make sure energy is < 1 Ryd: we ignore emission at > 1 Ryd on
+      // the grounds that these photons will not be absorbed by H and
+      // thus not seen
+      if (en > 1) continue;
 
       // Interpolation coefficient
       double wgt = (en - HeIbf_en[i]) / (HeIbf_en[i+1] - HeIbf_en[i]);
@@ -551,7 +620,7 @@ set_properties(const double n_in, const double T_in,
 
       // Convert coefficient erg cm^3 Hz^-1 to erg cm^3 Angstrom^-1
       double gamma_wl = gamma * constants::c / 
-	(lambda[j]*lambda[j]*constants::Angstrom);
+	(lambda_neb[j]*lambda_neb[j]*constants::Angstrom);
 
       // Contribtuion to L/Q
       LperQ[j] += constants::xHe *
@@ -560,6 +629,9 @@ set_properties(const double n_in, const double T_in,
 
     // Move index
     idx1 = idx2-1;
+
+    // Check if we have gotten to energies > 1 Ryd; if so, stop
+    if (lambda_neb[idx1] < constants::lambdaHI) break;
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -596,9 +668,10 @@ set_properties(const double n_in, const double T_in,
     (1.0 + (den*q2s2p_p + (1+constants::xHe)*den*q2s2p_e) / A2s1s);
 
   // Add 2-photon emissivity
-  for (unsigned int i=0; i<LperQ.size(); i++)
+  for (unsigned int i=0; i<LperQ.size(); i++) {
     LperQ[i] += phi_dust * (alpha2s / alphaB) * H2p_emiss[i] 
       * collfac;
+  }
 
   //////////////////////////////////////////////////////////////////////
   // Step 4. Hydrogen recombination lines
@@ -627,6 +700,16 @@ set_properties(const double n_in, const double T_in,
       // Get central wavelength for this level pair
       double wl = constants::lambdaHI / (1.0/(j*j) - 1.0/(i*i));
 
+      // Get dispersion for this line
+      double lw = wl * linewidth / constants::c;
+
+      // Add contribution for this level pair
+      for (unsigned int k=0; k<lambda_neb.size(); k++)
+	LperQ[k] += 1.0/(sqrt(2.0*M_PI)*lw) * 
+	  exp(-pow(lambda_neb[k]-wl, 2) / (2.0 * pow(lw, 2))) *
+	  emiss * phi_dust / alphaB;
+
+#if 0
       // If we're off the wavelength table, skip this line
       if ((wl < exp(2*log(lambda[0]) - log(lambda[1]))) || 
 	  (wl > exp(2*log(lambda[lambda.size()-1]) - 
@@ -650,6 +733,7 @@ set_properties(const double n_in, const double T_in,
       // Compute conversion factor
       LperQ[k] += emiss / (lambda[k]*dlogLambda) 
 	* phi_dust / alphaB;
+#endif
     }
   }
 
@@ -679,6 +763,17 @@ set_properties(const double n_in, const double T_in,
       pow(T/1e4, Helines_b[He_idx+1][i]) * 
       exp(Helines_c[He_idx+1][i]/(T/1e4));
 
+    // Get central wavelength and line width for this line
+    double wlcen = Helines_lambda[i];
+    double lw = wlcen * linewidth / constants::c;
+
+    // Add contribution for this level
+    for (unsigned int k=0; k<lambda_neb.size(); k++)
+      LperQ[k] += 1.0/(sqrt(2.0*M_PI)*lw) * 
+	exp(-pow(lambda_neb[k]-wlcen, 2) / (2.0 * pow(lw, 2))) *
+	constants::xHe * emiss * phi_dust / alphaB;
+
+#if 0
     // Find correct wavelength bin and bin width
     double dlogLambda;
     unsigned int k;
@@ -697,6 +792,7 @@ set_properties(const double n_in, const double T_in,
     // Compute conversion factor
     LperQ[k] += constants::xHe * emiss / (lambda[k]*dlogLambda) 
       * phi_dust / alphaB;
+#endif
   }
 }
 
@@ -705,10 +801,8 @@ set_properties(const double n_in, const double T_in,
 ////////////////////////////////////////////////////////////////////////
 vector<double> 
 slug_nebular::get_neb_spec(const double QH0) const {
-
-  // Return value
-  vector<double> L_lambda(lambda.size());
-  for (unsigned int i=0; i<lambda.size(); i++)
+  vector<double> L_lambda(lambda_neb.size(), 0.0);
+  for (unsigned int i=0; i<lambda_neb.size(); i++)
     L_lambda[i] = LperQ[i] * QH0;
   return L_lambda;
 }
@@ -720,10 +814,67 @@ vector<double>
 slug_nebular::get_neb_spec(const vector<double>& L_lambda) const {
 
   // Get ionizing photon flux from input spectrum
-  double QH0 = ion_filter->compute_photon_lum(lambda, L_lambda);
+  double QH0 = ion_filter->compute_photon_lum(lambda_star, L_lambda);
 
   // Return value from get_spectrum routine with ionizing flux
   return get_neb_spec(QH0);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Interpolate a spectrum from the stellar to the nebular grid
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::interp_stellar(const vector<double> &L_lambda_star,
+			     const vector<double>::size_type offset) 
+  const {
+
+  // Find the part of the nebular grid that lies within the range of
+  // the input stellar spectrum
+  vector<double>::size_type ptr1, ptr2;
+  if (L_lambda_star.size() == lambda_star.size()) {
+    // Input spectrum covers full stellar wavelength grid
+    assert(offset == 0);
+    ptr1 = 0;
+    ptr2 = lambda_neb.size();
+  } else {
+    // Input spectrum is smaller than full stellar wavelength grid
+    ptr1=0;
+    while (lambda_neb[ptr1] < lambda_star[offset]) ptr1++;
+    ptr2=ptr1+1;
+    while (lambda_neb[ptr2] < lambda_star[offset+L_lambda_star.size()-1]) {
+      ptr2++;
+      if (ptr2 == lambda_neb.size()) break;
+    }
+  }
+
+  // Create array to return
+  vector<double> L_lambda_neb(ptr2-ptr1);
+
+  // Loop over nebular grid
+  unsigned int ptr = offset;
+  for (vector<double>::size_type i=ptr1; i<ptr2; i++) {
+
+    if (lambda_neb[i] == lambda_star[ptr]) {
+
+      // This point on the nebular grid matches one on the stellar
+      // grid, so just copy
+      L_lambda_neb[i-ptr1] = L_lambda_star[ptr-offset];
+      ptr++;
+
+    } else {
+
+      // This point on nebular grid is between two points on the
+      // stellar grid, so linearly interpolate
+      double wgt = log(lambda_neb[i]/lambda_star[ptr-1]) / 
+	log(lambda_star[ptr]/lambda_star[ptr-1]);
+      L_lambda_neb[i-ptr1] = pow(L_lambda_star[ptr-offset-1], 1.0-wgt) *
+	pow(L_lambda_star[ptr-offset], wgt);
+
+    }
+  }
+
+  // Return
+  return L_lambda_neb;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -732,17 +883,16 @@ slug_nebular::get_neb_spec(const vector<double>& L_lambda) const {
 vector<double>
 slug_nebular::get_tot_spec(const vector<double>& L_lambda) const {
 
-  // Get nebular spectrum
-  vector<double> neb_spec = get_neb_spec(L_lambda);
+  // Get nebular contribution to spectrum
+  vector<double> tot_spec = get_neb_spec(L_lambda);
 
-  // Prepare to store output
-  vector<double> tot_spec(L_lambda.size(), 0.0);
+  // Get stellar spectrum interpolated onto nebular grid
+  vector<double> star_spec = interp_stellar(L_lambda);
 
-  // Compute total spectrum
-  for (unsigned int i=0; i<tot_spec.size(); i++) {
-    if (lambda[i] < constants::lambdaHI) continue;
-    tot_spec[i] = L_lambda[i] + neb_spec[i];
-  }
+  // Add stellar contribution at wavelengths longer than 912 Angstrom
+  unsigned int i=0;
+  while (lambda_neb[i] < constants::lambdaHI) i++;
+  for ( ; i<lambda_neb.size(); i++) tot_spec[i] += star_spec[i];
 
   // Return
   return tot_spec;

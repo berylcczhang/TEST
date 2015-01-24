@@ -33,11 +33,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class slug_extinction {
 
 public:
-  // Construct an extinction object from two file names, one
-  // specifying the A_V distribution and the other specifying the
-  // extinction curve shape file
+  // Construct an extinction object, either using just the stellar
+  // grid or using both a pure stellar wavelength grid plus a nebular
+  // one
   slug_extinction(const slug_parmParser& pp, 
 		  const std::vector<double> &lambda_in,
+		  rng_type *rng);
+  slug_extinction(const slug_parmParser& pp, 
+		  const std::vector<double> &lambda_in,
+		  const std::vector<double> &lambda_neb_in,
 		  rng_type *rng);
 
   // Destructor
@@ -51,29 +55,49 @@ public:
     return AVdist->draw(AVdist->get_xMin(), AVdist->get_xMax(), n);
   }
 
-  // Routine to apply extinction to a spectrum
+  // Routine to apply extinction to a spectrum, using either the
+  // stellar or the nebular grid
   std::vector<double> 
   spec_extinct(const double A_V,
 	       const std::vector<double>& spec_in) const;
+  std::vector<double> 
+  spec_extinct_neb(const double A_V,
+		   const std::vector<double>& spec_in) const;
 
   // Routines to return the wavelength grid and its characteristics
-  const std::vector<double>& lambda() const { return lambda_grd; }
+  const std::vector<double>& lambda(bool rest = false) const {
+    if (rest) return lambda_grd;
+    else return lambda_obs;
+  }
   std::vector<double>::size_type n_lambda() const 
   { return lambda_grd.size(); }
   std::vector<double>::size_type off() const { return offset; }
-  double lambda_min() const { return lambda_grd.front(); }
-  double lambda_max() const { return lambda_grd.back(); }
+
+  // Same as previous functions, but for the nebular grid
+  const std::vector<double>& lambda_neb(bool rest = false) const { 
+    if (rest) return lambda_neb_grd;
+    else return lambda_neb_obs;
+  }
+  std::vector<double>::size_type n_lambda_neb() const 
+  { return lambda_neb_grd.size(); }
+  std::vector<double>::size_type off_neb() const 
+  { return offset_neb; }
 
 private:
 
   slug_PDF *AVdist;                // PDF of A_V values
   std::vector<double> lambda_tab;  // Wavelengths in input table
   std::vector<double> kappa_tab;   // Extinction in input table
-  std::vector<double> lambda_grd;  // Wavelengths grid
+  std::vector<double> lambda_grd;  // Wavelength grid
   std::vector<double> kappa_grd;   // Extinction grid
+  std::vector<double> lambda_neb_grd; // Nebular wavelength grid
+  std::vector<double> kappa_neb_grd;  // Nebular extinction grid
+  std::vector<double> lambda_obs, lambda_neb_obs; // Observed-frame
+					 // wavelength grids
   std::vector<double>::size_type offset; // Index offset between
 					 // extincted and unextincted
 					 // spectra
+  std::vector<double>::size_type offset_neb;
 };
 
 #endif

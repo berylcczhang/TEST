@@ -222,22 +222,27 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 			    imf, sfh, pp.get_z());
   }
 
-  // If using extinction, initialize the extinction curve
-  if (pp.get_use_extinct()) {
-    extinct = new slug_extinction(pp, specsyn->lambda(true), rng);
-  } else {
-    extinct = NULL;
-  }
-
   // If using nebular emission, initialize the computation of that
   if (pp.get_use_nebular()) {
     nebular = new slug_nebular(pp.get_atomic_dir(),
 			       specsyn->lambda(true),
 			       pp.get_nebular_den(),
 			       pp.get_nebular_temp(),
-			       pp.get_nebular_phidust());
+			       pp.get_nebular_phidust(),
+			       pp.get_z());
   } else {
     nebular = NULL;
+  }
+
+  // If using extinction, initialize the extinction curve
+  if (pp.get_use_extinct()) {
+    if (nebular != NULL)
+      extinct = new slug_extinction(pp, specsyn->lambda(true),
+				    nebular->lambda(), rng);
+    else
+      extinct = new slug_extinction(pp, specsyn->lambda(true), rng);
+  } else {
+    extinct = NULL;
   }
 
   // Initialize either a galaxy or a single cluster, depending on
@@ -923,18 +928,35 @@ void slug_sim::open_integrated_spec() {
     int_spec_file.write((char *) &use_nebular, sizeof use_nebular);
     bool use_extinct = (extinct != NULL);
     int_spec_file.write((char *) &use_extinct, sizeof use_extinct);
-    // List of wavelengths
+    // Write list of wavelengths
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
     int_spec_file.write((char *) &nl, sizeof nl);
     int_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
-    // List of extincted wavelengths
+    // Write list of nebular wavelengths if using nebular emission
+    if (use_nebular) {
+      vector<double> lambda_neb = nebular->lambda();
+      vector<double>::size_type nl_neb = lambda_neb.size();
+      int_spec_file.write((char *) &nl_neb, sizeof nl_neb);
+      int_spec_file.write((char *) &(lambda_neb[0]),
+			  nl_neb*sizeof(double));
+    }
+    // Write list of extincted wavelengths if using extinction
     if (use_extinct) {
       vector<double> lambda_ext = extinct->lambda();
       vector<double>::size_type nl_ext = lambda_ext.size();
       int_spec_file.write((char *) &nl_ext, sizeof nl_ext);
       int_spec_file.write((char *) &(lambda_ext[0]),
 			  nl_ext*sizeof(double));
+    }
+    // Write list of nebular and extincted wavelenghts if using both
+    // nebular emission and extinction
+    if (use_nebular && use_extinct) {
+      vector<double> lambda_neb_ext = extinct->lambda_neb();
+      vector<double>::size_type nl_neb_ext = lambda_neb_ext.size();
+      int_spec_file.write((char *) &nl_neb_ext, sizeof nl_neb_ext);
+      int_spec_file.write((char *) &(lambda_neb_ext[0]),
+			  nl_neb_ext*sizeof(double));
     }
   }
 #ifdef ENABLE_FITS
@@ -943,18 +965,34 @@ void slug_sim::open_integrated_spec() {
     // In FITS mode, write the wavelength information in the first HDU
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
-    vector<double> lambda_ext;
-    vector<double>::size_type nl_ext;
+    vector<double> lambda_neb, lambda_ext, lambda_neb_ext;
+    vector<double>::size_type nl_ext, nl_neb, nl_neb_ext;
     vector<string> ttype_str = { "Wavelength" };
     vector<string> tform_str;
     tform_str.push_back(lexical_cast<string>(nl) + "D");
     vector<string> tunit_str = { "Angstrom" };
     int ncol=1;
+    if (nebular != NULL) {
+      lambda_neb = nebular->lambda();
+      nl_neb = lambda_neb.size();
+      ttype_str.push_back("Wavelength_neb");
+      tform_str.push_back(lexical_cast<string>(nl_neb) + "D");
+      tunit_str.push_back("Angstrom");
+      ncol++;
+    }
     if (extinct != NULL) {
       lambda_ext = extinct->lambda();
       nl_ext = lambda_ext.size();
       ttype_str.push_back("Wavelength_ex");
       tform_str.push_back(lexical_cast<string>(nl_ext) + "D");
+      tunit_str.push_back("Angstrom");
+      ncol++;
+    }
+    if (extinct != NULL && nebular != NULL) {
+      lambda_neb_ext = extinct->lambda_neb();
+      nl_neb_ext = lambda_neb_ext.size();
+      ttype_str.push_back("Wavelength_neb_ex");
+      tform_str.push_back(lexical_cast<string>(nl_neb_ext) + "D");
       tunit_str.push_back("Angstrom");
       ncol++;
     }
@@ -979,9 +1017,22 @@ void slug_sim::open_integrated_spec() {
     // Write wavelength data to table
     fits_write_col(int_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
-    if (extinct != NULL)
-      fits_write_col(int_spec_fits, TDOUBLE, 2, 1, 1, nl_ext,
+    int col=2;
+    if (nebular != NULL) {
+      fits_write_col(int_spec_fits, TDOUBLE, col, 1, 1, nl_neb,
+		     lambda_neb.data(), &fits_status);
+      col++;
+    }
+    if (extinct != NULL) {
+      fits_write_col(int_spec_fits, TDOUBLE, col, 1, 1, nl_ext,
 		     lambda_ext.data(), &fits_status);
+      col++;
+    }
+    if (nebular != NULL && extinct != NULL) {
+      fits_write_col(int_spec_fits, TDOUBLE, col, 1, 1, nl_neb_ext,
+		     lambda_neb_ext.data(), &fits_status);
+      col++;
+    }
 
     // Create a new table to hold the computed spectra.
     char spec_name[] = "Spectra";
@@ -992,7 +1043,7 @@ void slug_sim::open_integrated_spec() {
     ncol = 3;
     if (nebular != NULL) {
       ttype2_str.push_back("L_lambda_neb");
-      tform2_str.push_back(lexical_cast<string>(nl) + "D");
+      tform2_str.push_back(lexical_cast<string>(nl_neb) + "D");
       tunit2_str.push_back("erg/s/A");
       ncol++;
     }
@@ -1001,12 +1052,12 @@ void slug_sim::open_integrated_spec() {
       tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
       tunit2_str.push_back("erg/s/A");
       ncol++;
-      if (nebular != NULL) {
-	ttype2_str.push_back("L_lambda_neb_ex");
-	tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
-	tunit2_str.push_back("erg/s/A");
-	ncol++;
-      }
+    }
+    if (nebular != NULL && extinct != NULL) {
+      ttype2_str.push_back("L_lambda_neb_ex");
+      tform2_str.push_back(lexical_cast<string>(nl_neb_ext) + "D");
+      tunit2_str.push_back("erg/s/A");
+      ncol++;
     }
     char **ttype2 = new char *[ncol];
     char **tform2 = new char *[ncol];
@@ -1125,6 +1176,14 @@ void slug_sim::open_cluster_spec() {
     vector<double>::size_type nl = lambda.size();
     cluster_spec_file.write((char *) &nl, sizeof nl);
     cluster_spec_file.write((char *) &(lambda[0]), nl*sizeof(double));
+    // List of nebular wavelengths
+    if (use_nebular) {
+      vector<double> lambda_neb = nebular->lambda();
+      vector<double>::size_type nl_neb = lambda_neb.size();
+      cluster_spec_file.write((char *) &nl_neb, sizeof nl_neb);
+      cluster_spec_file.write((char *) &(lambda_neb[0]),
+			      nl_neb*sizeof(double));
+    }
     // List of extincted wavelengths
     if (use_extinct) {
       vector<double> lambda_ext = extinct->lambda();
@@ -1133,6 +1192,14 @@ void slug_sim::open_cluster_spec() {
       cluster_spec_file.write((char *) &(lambda_ext[0]),
 			      nl_ext*sizeof(double));
     }
+    // List of nebular extincted wavelengths
+    if (use_extinct && use_nebular) {
+      vector<double> lambda_neb_ext = extinct->lambda_neb();
+      vector<double>::size_type nl_neb_ext = lambda_neb_ext.size();
+      cluster_spec_file.write((char *) &nl_neb_ext, sizeof nl_neb_ext);
+      cluster_spec_file.write((char *) &(lambda_neb_ext[0]),
+			      nl_neb_ext*sizeof(double));
+    }
   }
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -1140,18 +1207,34 @@ void slug_sim::open_cluster_spec() {
     // In FITS mode, write the wavelength information in the first HDU
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
-    vector<double> lambda_ext;
-    vector<double>::size_type nl_ext;
+    vector<double> lambda_neb, lambda_ext, lambda_neb_ext;
+    vector<double>::size_type nl_neb, nl_ext, nl_neb_ext;
     vector<string> ttype_str = { "Wavelength" };
     vector<string> tform_str;
     tform_str.push_back(lexical_cast<string>(nl) + "D");
     vector<string> tunit_str = { "Angstrom" };
     int ncol=1;
+    if (nebular != NULL) {
+      lambda_neb = nebular->lambda();
+      nl_neb = lambda_neb.size();
+      ttype_str.push_back("Wavelength_neb");
+      tform_str.push_back(lexical_cast<string>(nl_neb) + "D");
+      tunit_str.push_back("Angstrom");
+      ncol++;
+    }
     if (extinct != NULL) {
       lambda_ext = extinct->lambda();
       nl_ext = lambda_ext.size();
       ttype_str.push_back("Wavelength_ex");
       tform_str.push_back(lexical_cast<string>(nl_ext) + "D");
+      tunit_str.push_back("Angstrom");
+      ncol++;
+    }
+    if (extinct != NULL && nebular != NULL) {
+      lambda_neb_ext = extinct->lambda_neb();
+      nl_neb_ext = lambda_neb_ext.size();
+      ttype_str.push_back("Wavelength_neb_ex");
+      tform_str.push_back(lexical_cast<string>(nl_neb_ext) + "D");
       tunit_str.push_back("Angstrom");
       ncol++;
     }
@@ -1176,9 +1259,22 @@ void slug_sim::open_cluster_spec() {
     // Write wavelength data to table
     fits_write_col(cluster_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
-    if (extinct != NULL)
-      fits_write_col(cluster_spec_fits, TDOUBLE, 2, 1, 1, nl_ext,
+    int col=2;
+    if (nebular != NULL) {
+      fits_write_col(cluster_spec_fits, TDOUBLE, col, 1, 1, nl_neb,
+		     lambda_neb.data(), &fits_status);
+      col++;
+    }
+    if (extinct != NULL) {
+      fits_write_col(cluster_spec_fits, TDOUBLE, col, 1, 1, nl_ext,
 		     lambda_ext.data(), &fits_status);
+      col++;
+    }
+    if (nebular != NULL && extinct != NULL) {
+      fits_write_col(cluster_spec_fits, TDOUBLE, col, 1, 1, nl_neb_ext,
+		     lambda_neb_ext.data(), &fits_status);
+      col++;
+    }
 
     // Create a new table to hold the computed spectra
     char spec_name[] = "Spectra";
@@ -1190,7 +1286,7 @@ void slug_sim::open_cluster_spec() {
     ncol = 4;
     if (nebular != NULL) {
       ttype2_str.push_back("L_lambda_neb");
-      tform2_str.push_back(lexical_cast<string>(nl) + "D");
+      tform2_str.push_back(lexical_cast<string>(nl_neb) + "D");
       tunit2_str.push_back("erg/s/A");
       ncol++;
     }
@@ -1201,7 +1297,7 @@ void slug_sim::open_cluster_spec() {
       ncol++;
       if (nebular != NULL) {
 	ttype2_str.push_back("L_lambda_neb_ex");
-	tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
+	tform2_str.push_back(lexical_cast<string>(nl_neb_ext) + "D");
 	tunit2_str.push_back("erg/s/A");
 	ncol++;
       }

@@ -38,9 +38,10 @@ def combine_cluster(data):
 
     # List of fields for which we need only one copy, because they're
     # the same for every cluster
-    single_fields = ['wl', 'wl_ex', 'filter_names',
-                     'filter_units', 'filter_wl', 'filter_wl_eff',
-                     'filter_response', 'filter_beta', 'filter_wl_c',
+    single_fields = ['wl', 'wl_neb', 'wl_ex', 'wl_neb_ex', 
+                     'filter_names', 'filter_units', 'filter_wl',
+                     'filter_wl_eff', 'filter_response', 'filter_beta', 
+                     'filter_wl_c',
                      'cloudy_linelabel', 'cloudy_linewl',
                      'cloudy_wl', 'cloudy_filter_names',
                      'cloudy_filter_units', 'cloudy_filter_wl_eff',

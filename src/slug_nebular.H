@@ -52,7 +52,8 @@ public:
   slug_nebular(const char *atomic_dir,
 	       const std::vector<double>& lambda_in,
 	       const double n_in = 1.0e4, const double T_in = 1.0e4, 
-	       const double phi_dust_in = 0.73);
+	       const double phi_dust_in = 0.73,
+	       const double z = 0.0);
 
   // Destructor
   ~slug_nebular();
@@ -62,14 +63,29 @@ public:
 		      const double T_in = 1.0e4, 
 		      const double phi_dust_in = 0.73);
 
-  // Routine to return spectrum with nebular contribution
+  // Routine to return the nebular wavelength grid
+  std::vector<double>::size_type n_lambda() const
+  { return lambda_neb.size(); }
+  const std::vector<double> &lambda(bool rest = false) const { 
+    if (rest) return lambda_neb_obs;
+    else return lambda_neb;
+  }
+
+  // Routine to return spectrum with nebular contribution added to
+  // stellar spectrum
   std::vector<double> 
   get_tot_spec(const std::vector<double>& L_lambda) const;
 
-  // Routine to return just the nebular spectrum
+  // Routines to return just the nebular spectrum
   std::vector<double> 
   get_neb_spec(const std::vector<double>& L_lambda) const;
   std::vector<double> get_neb_spec(const double QH0) const;
+
+  // Routine to interpolate a spectrum from the stellar wavelength
+  // grid to the nebular one
+  std::vector<double>
+  interp_stellar(const std::vector<double> &L_lambda_star,
+		 const std::vector<double>::size_type offset = 0) const;
 
 private:
 
@@ -80,8 +96,11 @@ private:
   const double nMin = 0.0;
   const double nMax = 1.0e6;
 
-  // Wavelength grid
-  const std::vector<double>& lambda;
+  // Wavelength grid and associated information
+  const std::vector<double> &lambda_star;
+  std::vector<double> lambda_neb, lambda_neb_obs;
+  const int ngrid_line = 16;  // Number of gridpoints to represent a line
+  const double linewidth = 1.0e6; // Make lines 10 km/s wide
 
   // Filter that is used to compute ionizing photon luminosities
   slug_filter *ion_filter;
@@ -134,7 +153,8 @@ private:
   std::vector<double> Helines_lambda, Helines_den;
   array2d Helines_a, Helines_b, Helines_c;
 
-  // Conversion between ionizing luminosity and continuum emission
+  // Conversion between ionizing luminosity and nebular emission, for
+  // clusters and integrated
   std::vector<double> LperQ;
 };
 

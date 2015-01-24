@@ -160,8 +160,10 @@ slug_cluster::advance(double time) {
   // Traverse the list, popping off stars that have died, and
   // correcting the mass downward as we go
   while (stars.size() > 0) {
-    if (stars.back() > stellarDeathMass) stars.pop_back();
-    else break;
+    if (stars.back() > stellarDeathMass) {
+      aliveMass -= stars.back();
+      stars.pop_back();
+    } else break;
   }
 
   // If the maximum mass for non-stochastic treatment is smaller than
@@ -251,7 +253,6 @@ slug_cluster::set_spectrum() {
   vector<double>::size_type nl = specsyn->n_lambda();
   L_lambda.assign(nl, 0.0);
   Lbol = 0.0;
-  if (nebular != NULL) L_lambda_neb.assign(nl, 0.0);
 
   // Stochastic stars part
   if (stars.size() > 0) {
@@ -278,7 +279,8 @@ slug_cluster::set_spectrum() {
   }
 
   // If using nebular emission, compute the stellar+nebular spectrum
-  if (nebular != NULL) L_lambda_neb = nebular->get_tot_spec(L_lambda);
+  if (nebular != NULL) 
+    L_lambda_neb = nebular->get_tot_spec(L_lambda);
 
   // If using extinction, compute the extincted spectrum and the
   // bolometric luminosity after extinction is applied
@@ -288,7 +290,8 @@ slug_cluster::set_spectrum() {
       integrate(extinct->lambda(), L_lambda_ext) 
       / constants::Lsun;
     if (nebular != NULL)
-      L_lambda_neb_ext = extinct->spec_extinct(A_V, L_lambda_neb);
+      L_lambda_neb_ext = 
+	extinct->spec_extinct_neb(A_V, L_lambda_neb);
   }
 
   // Flag that things are set
@@ -308,11 +311,8 @@ slug_cluster::set_photometry() {
   // Compute the spectrum
   set_spectrum();
 
-  // Grab the wavelength table
-  const vector<double>& lambda = specsyn->lambda();
-
   // Compute photometry
-  phot = filters->compute_phot(lambda, L_lambda);
+  phot = filters->compute_phot(specsyn->lambda(), L_lambda);
 
   // If any of the photometric values are -big, that indicates that we
   // want the bolometric luminosity, so insert that
@@ -321,7 +321,7 @@ slug_cluster::set_photometry() {
 
   // Repeat for stellar+nebular spectrum
   if (nebular != NULL) {
-    phot_neb = filters->compute_phot(lambda, L_lambda_neb);
+    phot_neb = filters->compute_phot(nebular->lambda(), L_lambda_neb);
     // Special cases: force ionizing luminosity to be zero exactly for
     // this spectrum, and bolometric luminosity to be exactly the same
     // as for the non-nebular case
@@ -338,7 +338,6 @@ slug_cluster::set_photometry() {
   // spectrum; in the process, be careful to mask filters whose
   // response curve doesn't overlap with the extincted spectrum
   if (extinct != NULL) {
-
     phot_ext = filters->compute_phot(extinct->lambda(), 
 				     L_lambda_ext);
     for (vector<double>::size_type i=0; i<phot_ext.size(); i++) {
@@ -346,31 +345,31 @@ slug_cluster::set_photometry() {
 	phot_ext[i] = Lbol_ext;
       } else if (filters->get_filter(i)->photon_filter() &&
 		 (filters->get_filter(i)->get_wavelength_min() >
-		  extinct->lambda_max())) {
+		  extinct->lambda().back())) {
 	phot_ext[i] = nan("");
       } else if ((filters->get_filter(i)->get_wavelength_min() <
-		  extinct->lambda_min()) ||
+		  extinct->lambda().front()) ||
 		 (filters->get_filter(i)->get_wavelength_max() >
-		  extinct->lambda_max())) {
+		  extinct->lambda().back())) {
 	phot_ext[i] = nan("");
       }
     }
 
     // Repeat for stellar+nebular spectrum
     if (nebular != NULL) {
-      phot_neb_ext = filters->compute_phot(extinct->lambda(), 
+      phot_neb_ext = filters->compute_phot(extinct->lambda_neb(), 
 					   L_lambda_neb_ext);
       for (vector<double>::size_type i=0; i<phot_neb_ext.size(); i++) {
 	if (phot_neb_ext[i] == -constants::big) {
 	  phot_neb_ext[i] = Lbol_ext;
 	} else if (filters->get_filter(i)->photon_filter() &&
 		   (filters->get_filter(i)->get_wavelength_min() >
-		    extinct->lambda_max())) {
+		    extinct->lambda_neb().back())) {
 	  phot_neb_ext[i] = nan("");
 	} else if ((filters->get_filter(i)->get_wavelength_min() <
-		    extinct->lambda_min()) ||
+		    extinct->lambda_neb().front()) ||
 		   (filters->get_filter(i)->get_wavelength_max() >
-		    extinct->lambda_max())) {
+		    extinct->lambda_neb().back())) {
 	  phot_neb_ext[i] = nan("");
 	} else if (filters->get_filter(i)->photon_filter() &&
 		   (filters->get_filter(i)->get_wavelength_max()
@@ -412,30 +411,34 @@ const vector<double> &slug_cluster::get_spectrum_neb_extinct() {
 }
 
 void slug_cluster::get_spectrum(vector<double> &lambda_out, 
-				vector<double> &L_lambda_out) { 
+				vector<double> &L_lambda_out,
+				bool rest) { 
   set_spectrum(); 
-  lambda_out = specsyn->lambda(); 
+  lambda_out = specsyn->lambda(rest);
   L_lambda_out = L_lambda;
 }
 
 void slug_cluster::get_spectrum_neb(vector<double> &lambda_out, 
-				    vector<double> &L_lambda_out) {
+				    vector<double> &L_lambda_out,
+				    bool rest) {
   set_spectrum(); 
-  lambda_out = specsyn->lambda(); 
+  lambda_out = nebular->lambda(rest); 
   L_lambda_out = L_lambda_neb;
 }
 
 void slug_cluster::get_spectrum_extinct(vector<double> &lambda_out, 
-					vector<double> &L_lambda_out) { 
+					vector<double> &L_lambda_out,
+					bool rest) { 
   set_spectrum(); 
-  lambda_out = extinct->lambda(); 
+  lambda_out = extinct->lambda(rest); 
   L_lambda_out = L_lambda_ext;
 }
 
 void slug_cluster::get_spectrum_neb_extinct(vector<double> &lambda_out, 
-					    vector<double> &L_lambda_out) { 
+					    vector<double> &L_lambda_out,
+					    bool rest) { 
   set_spectrum(); 
-  lambda_out = specsyn->lambda(); 
+  lambda_out = extinct->lambda_neb(rest); 
   L_lambda_out = L_lambda_neb_ext;
 }
 
@@ -590,21 +593,37 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
   if (!spec_set) set_spectrum();
 
   if (out_mode == ASCII) {
-    const vector<double>& lambda = specsyn->lambda();
+    vector<double> lambda, L_lambda_star, L_lambda_star_ext;
+    if (nebular == NULL) {
+      lambda = specsyn->lambda();
+      L_lambda_star = L_lambda;
+      if (extinct != NULL) L_lambda_star_ext = L_lambda_ext;
+    } else {
+      // Need to output all data using nebular wavelength table in
+      // this case, which means we need to interpolate the purely
+      // stellar spectra onto it
+      lambda = nebular->lambda();
+      L_lambda_star = nebular->interp_stellar(L_lambda);
+      if (extinct != NULL) 
+	L_lambda_star_ext = nebular->interp_stellar(L_lambda_ext, 
+						    extinct->off());
+    }
     for (unsigned int i=0; i<lambda.size(); i++) {
       outfile << setprecision(5) << scientific 
 	      << setw(11) << right << id << "   "
 	      << setw(11) << right << curTime << "   "
 	      << setw(11) << right << lambda[i] << "   "
-	      << setw(11) << right << L_lambda[i];
+	      << setw(11) << right << L_lambda_star[i];
       if (nebular != NULL)
 	outfile << "   "
 		<< setw(11) << right << L_lambda_neb[i];
       if (extinct != NULL) {
-	int j = i - extinct->off();
-	if ((j >= 0) && (j < L_lambda_ext.size())) {
+	int j;
+	if (nebular == NULL) j = i - extinct->off();
+	else j = i - extinct->off_neb();
+	if ((j >= 0) && (j < L_lambda_star_ext.size())) {
 	  outfile << "   "
-		  << setw(11) << right << L_lambda_ext[j];
+		  << setw(11) << right << L_lambda_star_ext[j];
 	  if (nebular != NULL)
 	    outfile << "   "
 		    << setw(11) << right << L_lambda_neb_ext[j];
