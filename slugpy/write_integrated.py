@@ -464,7 +464,7 @@ def write_integrated(data, model_name, fmt):
             if 'spec_neb' in data._fields:
                 speccols.append(
                     fits.Column(name="L_lambda_neb",
-                                format=fmtstring,
+                                format=fmtstring_neb,
                                 unit="erg/s/A",
                                 array=np.transpose(data.spec_neb).
                                 reshape(ntimes*ntrial, nl_neb)))
@@ -478,9 +478,9 @@ def write_integrated(data, model_name, fmt):
             if 'spec_neb_ex' in data._fields:
                 speccols.append(
                     fits.Column(name="L_lambda_neb_ex",
-                                format=fmtstring_ex,
+                                format=fmtstring_neb_ex,
                                 unit="erg/s/A",
-                                array=np.transpose(data.spec_ex).
+                                array=np.transpose(data.spec_neb_ex).
                                 reshape(ntimes*ntrial, nl_neb_ex)))
             specfits = fits.ColDefs(speccols)
             spechdu = fits.BinTableHDU.from_columns(specfits)
