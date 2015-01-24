@@ -359,7 +359,8 @@ slug_nebular(const char *atomic_dir,
       // Insert gridpoints at values form -4 to 4 sigma_line into the
       // grid
       for (unsigned int k=0; k<ngrid_line; k++) {
-        double wl = wlcen + 4.0 * lw * (2.0 * k/(ngrid_line-1.0) - 1.0);
+        double wl = wlcen + line_extent * lw * 
+	  (2.0 * k/(ngrid_line-1.0) - 1.0);
 	for (unsigned int l=0; l<lambda_neb.size(); l++) {
 	  if (wl < lambda_neb[l]) {
 	    lambda_neb.insert(lambda_neb.begin() + l, wl);
@@ -384,7 +385,8 @@ slug_nebular(const char *atomic_dir,
     // Insert gridpoints at values form -4 to 4 sigma_line into the
     // grid
     for (unsigned int k=0; k<ngrid_line; k++) {
-      double wl = wlcen + 4.0 * lw * (2.0 * k/(ngrid_line-1.0) - 1.0);
+      double wl = wlcen + line_extent * lw * 
+	(2.0 * k/(ngrid_line-1.0) - 1.0);
       for (unsigned int l=0; l<lambda_neb.size(); l++) {
 	if (wl < lambda_neb[l]) {
 	  lambda_neb.insert(lambda_neb.begin() + l, wl);
