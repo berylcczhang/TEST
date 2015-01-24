@@ -6,6 +6,7 @@ fits), or to consolidate multiple runs into a single output file.
 """
 
 import numpy as np
+from scipy.interpolate import interp1d
 from cloudy import write_cluster_cloudyphot
 from cloudy import write_cluster_cloudylines
 from cloudy import write_cluster_cloudyspec
@@ -263,6 +264,43 @@ def write_cluster(data, model_name, fmt):
 
             fp = open(model_name+'_cluster_spec.txt', 'w')
 
+            # If we have nebular data, and this data wasn't originally
+            # read in ASCII mode, then the stellar and nebular spectra
+            # won't be on the same grids. Since in ASCII mode they'll
+            # be written out in the same grid, we need to interpolate
+            # the stellar spectra onto the nebular grid
+            if ('wl_neb' in data._fields) and \
+               (len(data.wl_neb) > len(data.wl)):
+                wl = data.wl_neb
+                # Suppress the numpy warnings we're going to generate
+                # if any of the entries in spec are 0
+                save_err = np.seterr(divide='ignore', invalid='ignore')
+                ifunc = interp1d(np.log(data.wl), np.log(data.spec))
+                spec = np.exp(ifunc(np.log(data.wl_neb)))
+                # Restore original error settings
+                np.seterr(divide=save_err['divide'], 
+                          invalid=save_err['invalid'])
+                # Fix NaN's
+                spec[np.isnan(spec)] = 0.0
+                if 'wl_neb_ex' in data._fields:
+                    # Same for extincted nebular data
+                    wl_ex = data.wl_neb_ex
+                    save_err = np.seterr(divide='ignore', invalid='ignore')
+                    ifunc = interp1d(np.log(data.wl_ex),
+                                     np.log(data.spec_ex))
+                    spec_ex = np.exp(ifunc(np.log(data.wl_neb_ex)))
+                    np.seterr(divide=save_err['divide'],
+                              invalid=save_err['invalid'])
+                    spec_ex[np.isnan(spec_ex)] = 0.0
+            else:
+                # If no nebular data, just replicate the original
+                # stellar grid
+                wl = data.wl
+                spec = data.spec
+                if 'wl_ex' in data._fields:
+                    wl_ex = data.wl_ex
+                    spec_ex = data.spec_ex
+
             # Construct header lines
             line1 = ("{:<14s}"*4).format('UniqueID', 'Time', 
                                          'Wavelength', 'L_lambda')
@@ -299,8 +337,8 @@ def write_cluster(data, model_name, fmt):
             # Write data
             nl = len(data.wl)
             if 'spec_ex' in data._fields:
-                offset = np.where(data.wl_ex[0] == data.wl)[0][0]
-                nl_ex = len(data.wl_ex)
+                offset = np.where(wl_ex[0] == wl)[0][0]
+                nl_ex = len(wl_ex)
             else:
                 offset = 0
                 nl_ex = 0
@@ -314,11 +352,11 @@ def write_cluster(data, model_name, fmt):
                 # Write data for this trial
                 for j in range(nl):
                     out_data = [data.id[i], data.time[i],
-                                data.wl[j], data.spec[i,j]]
+                                wl[j], spec[i,j]]
                     if 'spec_neb' in data._fields:
                         out_data = out_data + [data.spec_neb[i,j]]
                     if j >= offset and j < offset + nl_ex:
-                        out_data = out_data + [data.spec_ex[i,j-offset]]
+                        out_data = out_data + [spec_ex[i,j-offset]]
                         if 'spec_neb_ex' in data._fields:
                             out_data = out_data + \
                                        [data.spec_neb_ex[i,j-offset]]
@@ -352,9 +390,15 @@ def write_cluster(data, model_name, fmt):
             # Write out wavelength data
             fp.write(np.int64(len(data.wl)))
             fp.write(data.wl)
+            if 'spec_neb' in data._fields:
+                fp.write(np.int64(len(data.wl_neb)))
+                fp.write(data.wl_neb)
             if 'spec_ex' in data._fields:
                 fp.write(np.int64(len(data.wl_ex)))
                 fp.write(data.wl_ex)
+            if 'spec_neb_ex' in data._fields:
+                fp.write(np.int64(len(data.wl_neb_ex)))
+                fp.write(data.wl_neb_ex)
 
             # Construct lists of times and trials
             trials = np.unique(data.trial)
@@ -428,6 +472,14 @@ def write_cluster(data, model_name, fmt):
                                   format=fmtstring,
                                   unit="Angstrom", 
                                   array=data.wl.reshape(1,nl))]
+            if 'spec_neb' in data._fields:
+                nl_neb = data.wl_neb.shape[0]
+                fmtstring_neb = str(nl_neb)+"D"
+                wlcols.append(
+                    fits.Column(name="Wavelength_neb",
+                                format=fmtstring_neb,
+                                unit="Angstrom", 
+                                array=data.wl_neb.reshape(1,nl_neb)))
             if 'spec_ex' in data._fields:
                 nl_ex = data.wl_ex.shape[0]
                 fmtstring_ex = str(nl_ex)+"D"
@@ -436,6 +488,14 @@ def write_cluster(data, model_name, fmt):
                                 format=fmtstring_ex,
                                 unit="Angstrom", 
                                 array=data.wl_ex.reshape(1,nl_ex)))
+            if 'spec_neb_ex' in data._fields:
+                nl_neb_ex = data.wl_neb_ex.shape[0]
+                fmtstring_neb_ex = str(nl_neb_ex)+"D"
+                wlcols.append(
+                    fits.Column(name="Wavelength_neb_ex",
+                                format=fmtstring_neb_ex,
+                                unit="Angstrom", 
+                                array=data.wl_neb_ex.reshape(1,nl_neb_ex)))
             wlfits = fits.ColDefs(wlcols)
             wlhdu = fits.BinTableHDU.from_columns(wlcols)
 
@@ -454,7 +514,7 @@ def write_cluster(data, model_name, fmt):
                                         array=data.spec))
             if 'spec_neb' in data._fields:
                 speccols.append(fits.Column(name="L_lambda_neb",
-                                            format=fmtstring,
+                                            format=fmtstring_neb,
                                             unit="erg/s/A",
                                             array=data.spec_neb))
             if 'spec_ex' in data._fields:
@@ -464,7 +524,7 @@ def write_cluster(data, model_name, fmt):
                                             array=data.spec_ex))
             if 'spec_neb_ex' in data._fields:
                 speccols.append(fits.Column(name="L_lambda_neb_ex",
-                                            format=fmtstring_ex,
+                                            format=fmtstring_neb_ex,
                                             unit="erg/s/A",
                                             array=data.spec_neb_ex))
             specfits = fits.ColDefs(speccols)

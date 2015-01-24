@@ -89,9 +89,32 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           wavelength, in Angstrom
        spec : array, shape (N_cluster, N_wavelength)
           specific luminosity of each cluster at each wavelength, in erg/s/A
-
-       If extinction is enabled, wl_ex and spec_ex will contain the spectra 
-       after extinction has been applied. 
+       wl_neb : array
+          wavelength for the nebular spectrum, in Angstrom (present
+          only if SLUG was run with nebular emission enabled)
+       spec_neb : array, shape (N_cluster, N_wavelength)
+          specific luminosity at each wavelength and each time for each
+          trial, including emission and absorption by the HII region,
+          in erg/s/A (present only if SLUG was run with nebular
+          emission enabled)
+       wl_ex : array
+          wavelength for the extincted spectrum, in Angstrom (present
+          only if SLUG was run with extinction enabled)
+       spec_ex : array, shape (N_cluster, N_wavelength)
+          specific luminosity at each wavelength in wl_ex and each
+          time for each trial after extinction has been applied, in
+          erg/s/A (present only if SLUG was run with extinction
+          enabled)
+       wl_neb_ex : array
+          wavelength for the extincted spectrum with nebular emission,
+          in Angstrom (present only if SLUG was run with both nebular
+          emission and extinction enabled)
+       spec_neb_ex : array, shape (N_cluster, N_wavelength)
+          specific luminosity at each wavelength in wl_ex and each
+          time for each trial including emission and absorption by the
+          HII region, after extinction has been applied, in erg/s/A
+          (present only if SLUG was run with nebular emission and
+          extinction both enabled)
 
        (Present if the run being read contains a cluster_phot file)
 

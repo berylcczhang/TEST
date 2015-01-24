@@ -213,6 +213,11 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
                 trial.append(trialptr)
                 ptr = 0
 
+        # Convert lists to arrays
+        wavelength = np.array(wavelength)
+        if extinct:
+            wl_ex = np.array(wl_ex)
+
         # If we have nebular emission, for ASCII output the nebular
         # wavelength list is identical to the stellar one
         if nebular:
