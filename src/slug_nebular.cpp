@@ -356,14 +356,15 @@ slug_nebular(const char *atomic_dir,
       if ((wlcen < lambda_star[0]) || 
 	  (wlcen > lambda_star[lambda_star.size()-1])) continue;
 
-      // Insert gridpoints at values form -4 to 4 sigma_line into the
-      // grid
+      // Insert gridpoints around line center
       for (unsigned int k=0; k<ngrid_line; k++) {
         double wl = wlcen + line_extent * lw * 
 	  (2.0 * k/(ngrid_line-1.0) - 1.0);
 	for (unsigned int l=0; l<lambda_neb.size(); l++) {
 	  if (wl < lambda_neb[l]) {
-	    lambda_neb.insert(lambda_neb.begin() + l, wl);
+	    // Skip if this wavelength is already in the grid
+	    if (wl != lambda_neb[l-1])
+	      lambda_neb.insert(lambda_neb.begin() + l, wl);
 	    break;
 	  }
 	}
@@ -382,14 +383,15 @@ slug_nebular(const char *atomic_dir,
     if ((wlcen < lambda_star[0]) || 
 	(wlcen > lambda_star[lambda_star.size()-1])) continue;
 
-    // Insert gridpoints at values form -4 to 4 sigma_line into the
-    // grid
+    // Insert gridpoints around the line center
     for (unsigned int k=0; k<ngrid_line; k++) {
       double wl = wlcen + line_extent * lw * 
 	(2.0 * k/(ngrid_line-1.0) - 1.0);
       for (unsigned int l=0; l<lambda_neb.size(); l++) {
 	if (wl < lambda_neb[l]) {
-	  lambda_neb.insert(lambda_neb.begin() + l, wl);
+	  // Skip if this wavelength is already in the grid
+	  if (wl != lambda_neb[l-1]) 
+	    lambda_neb.insert(lambda_neb.begin() + l, wl);
 	  break;
 	}
       }
