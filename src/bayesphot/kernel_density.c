@@ -394,7 +394,7 @@ void kd_neighbors_vec(const kernel_density *kd, const double *xpt,
       neighbors(kd->tree, 
 		xpt + i*ndim, 
 		dims, ndim, nneighbor, kd->h, 
-		pos + i*ndim*nneighbor, 
+		pos + i*kd->tree->ndim*nneighbor, 
 		(void *) (((double *) dptr) + i*nneighbor),
 		d2 + i*nneighbor);
     } else {
@@ -975,12 +975,17 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
 		    ) {
 
   unsigned int i;
-  for (i=0; i<npt; i++)
-    pdf[i] = kd_pdf_int(kd, x+i*ndim, dims, ndim, reltol, abstol
+#pragma omp parallel private(i)
+  {
+    #pragma omp for
+    for (i=0; i<npt; i++) {
+      pdf[i] = kd_pdf_int(kd, x+i*ndim, dims, ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-			, nodecheck+i, leafcheck+i, termcheck+i
+			  , nodecheck+i, leafcheck+i, termcheck+i
 #endif
-			);
+			  );
+    }
+  }
 }
 
 
@@ -998,12 +1003,17 @@ void kd_pdf_vec(const kernel_density *kd, const double *x,
 		) {
 
   unsigned int i;
-  for (i=0; i<npt; i++)
-    pdf[i] = kd_pdf(kd, x+i*kd->tree->ndim, reltol, abstol
+#pragma omp parallel private(i)
+  {
+  #pragma omp for
+    for (i=0; i<npt; i++) {
+      pdf[i] = kd_pdf(kd, x+i*kd->tree->ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-		    , nodecheck+i, leafcheck+i, termcheck+i
+		      , nodecheck+i, leafcheck+i, termcheck+i
 #endif
-		    );
+		      );
+    }
+  }
 }
 
 /*********************************************************************/

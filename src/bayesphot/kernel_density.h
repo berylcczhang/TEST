@@ -302,7 +302,7 @@ void kd_neighbors_vec(const kernel_density *kd, const double *xpt,
          xpt; e.g., if the KD tree has tree dimensions, and dims = [0,
          2], then the two elements of x will be interpreted as
          specifying x and z coordinates, and the routine will search
-         for the closest neighbors to a line as the specified x and
+         for the closest neighbors to a line at the specified x and
          z. If ndim is equal to the number of dimensions in the KD
          tree, this argument may be left as NULL.
       INPUT ndim
