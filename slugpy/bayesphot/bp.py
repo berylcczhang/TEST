@@ -24,6 +24,8 @@ try:
 except:
     mc_avail = False
     pass
+import multiprocessing as mp
+
 
 ##################################################################
 # Define some types for use later                                #
@@ -52,9 +54,11 @@ class bp(object):
           of shape (N, nphys), and return an array of shape (N)
           giving the prior probability at each data point; None:
           all data points have equal prior probability
-       bandwidth : 'auto' | array, shape (M)
+       bandwidth : 'auto' | float | array, shape (M)
           bandwidth for kernel density estimation; if set to
-          'auto', the bandwidth will be estimated automatically
+          'auto', the bandwidth will be estimated automatically; if
+          set to a scalar quantity, the same bandwidth is used for all
+          dimensions
     """
 
     ##################################################################
@@ -78,9 +82,11 @@ class bp(object):
            filters : listlike of strings, nphys elements
               names of photometric filters; if left as None, the
               filters can be referred to by index, but not by name
-           bandwidth : 'auto' | array, shape (M)
+           bandwidth : 'auto' | float | array, shape (M)
               bandwidth for kernel density estimation; if set to
-              'auto', the bandwidth will be estimated automatically
+              'auto', the bandwidth will be estimated automatically; if
+              set to a scalar quantity, the same bandwidth is used for all
+              dimensions
            ktype : string
               type of kernel to be used in densty estimation; allowed
               values are 'gaussian' (default), 'epanechnikov', and
@@ -549,7 +555,11 @@ class bp(object):
 
         elif bw != 'auto':
             # If we've been given a specified bandwidth, set to that
-            self.__bandwidth = np.copy(bw)
+            if hasattr(bw, '__iter__'):
+                self.__bandwidth = np.copy(bw)
+            else:
+                self.__bandwidth \
+                    = np.zeros(self.__nphys + self.__nphot) + bw
             self.__auto_bw_set = False
 
         else:
@@ -980,30 +990,27 @@ class bp(object):
             # need to do any integration
             if not self.__diag_mode:
                 if nidx < self.__nphys:
-                    self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
-                                               dims, ndim, pdf.size,
-                                               self.reltol, self.abstol,
-                                               np.ravel(pdf))
+                    self.__clib.kd_pdf_int_vec(
+                        self.__kd, np.ravel(cdata), dims, ndim,
+                        pdf.size, self.reltol, self.abstol,
+                        np.ravel(pdf))
                 else:
-                    self.__clib.kd_pdf_vec(self.__kd, np.ravel(cdata),
-                                           pdf.size, self.reltol,
-                                           self.abstol, np.ravel(pdf))
+                    self.__clib.kd_pdf_vec(
+                        self.__kd, np.ravel(cdata), pdf.size, 
+                        self.reltol, self.abstol, np.ravel(pdf))
             else:
                 if nidx < self.__nphys:                
-                    self.__clib.kd_pdf_int_vec(self.__kd, np.ravel(cdata),
-                                               dims, ndim, pdf.size,
-                                               self.reltol, self.abstol,
-                                               np.ravel(pdf), 
-                                               np.ravel(nodecheck), 
-                                               np.ravel(leafcheck),
-                                               np.ravel(termcheck))
+                    self.__clib.kd_pdf_int_vec(
+                        self.__kd, np.ravel(cdata), dims, ndim, 
+                        pdf.size, self.reltol, self.abstol,
+                        np.ravel(pdf), np.ravel(nodecheck), 
+                        np.ravel(leafcheck), np.ravel(termcheck))
                 else:
-                    self.__clib.kd_pdf_vec(self.__kd, np.ravel(cdata),
-                                           pdf.size, self.reltol,
-                                           self.abstol, np.ravel(pdf),
-                                           np.ravel(nodecheck), 
-                                           np.ravel(leafcheck),
-                                           np.ravel(termcheck))
+                    self.__clib.kd_pdf_vec(
+                        self.__kd, np.ravel(cdata), pdf.size, 
+                        self.reltol, self.abstol, np.ravel(pdf),
+                        np.ravel(nodecheck), np.ravel(leafcheck), 
+                        np.ravel(termcheck))
 
         else:
 
@@ -1245,3 +1252,74 @@ class bp(object):
         # Return
         return samples
 
+
+    ##################################################################
+    # Function to return the N best matches in the library to an input
+    # set of photometric properties
+    ##################################################################
+    def bestmatch(self, phot, nmatch=1, bandwidth_units=False):
+        """
+        Searches through the simulation library and returns the closest
+        matches to an input set of photometry.
+
+        Parameters:
+           phot : arraylike, shape (nfilter) or (..., nfilter)
+              array giving the photometric values; for a
+              multidimensional array, the operation is vectorized over
+              the leading dimensions
+           nmatch : int
+              number of matches to return; returned matches will be
+              ordered by distance from the input
+           bandwidth_units : bool
+              if False, distances are computed based on the
+              logarithmic difference in luminosity; if True, they are
+              measured in units of the bandwidth
+
+        Returns:
+           matches : array, shape (..., nmatch, nphys + nfilter)
+              best matches to the input photometry; shape in the
+              leading dimensions will be the same as for phot, and if
+              nmatch == 1 then that dimension will be omitted
+           dist : array, shape (..., nmatch)
+              distances between the matches and the input photometry
+        """
+
+        # Safety check
+        if (np.array(phot).shape[-1] != self.__nphot) and \
+           (self.__nphot > 1):
+            raise ValueError("need " + str(self.__nphot) +
+                             " photometric properties!")
+
+        # Reshape arrays if necessary
+        if (np.array(phot).shape[-1] != self.__nphot) and \
+           (self.__nphot == 1):
+            phot = phot.reshape(phot.shape+(1,))
+
+        # Set up array to hold outputs
+        if np.array(phot).ndim == 1:
+            outshape = [self.__nphys + self.__nphot]
+        else:
+            outshape = list(phot.shape[:-1]) + [self.__nphys + self.__nphot]
+        if nmatch > 1:
+            outshape.insert(-1, nmatch)
+        matches = np.zeros(outshape)
+        if len(outshape) > 1:
+            wgts = np.zeros(outshape[:-1])
+            d2 = np.zeros(outshape[:-1])
+        else:
+            wgts = np.zeros([1])
+            d2 = np.zeros([1])
+
+        # Call the c neighbor-finding routine
+        self.__clib.kd_neighbors_vec(
+            self.__kd, np.ravel(phot), 
+            np.arange(self.__nphys, self.__nphot+self.__nphys,
+                      dtype=ctypes.c_uint).
+            ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
+            self.__nphot, np.array(phot).size/self.__nphot,
+            nmatch, bandwidth_units, np.ravel(matches),
+            wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+            np.ravel(d2))
+
+        # Return
+        return matches, np.sqrt(d2)

@@ -34,18 +34,22 @@ class cluster_slug(object):
           of shape (N, nphys), and return an array of shape (N)
           giving the prior probability at each data point; None:
           all data points have equal prior probability
-       bandwidth : 'auto' | array, shape (M)
+       bandwidth : None | 'auto' | float | array, shape (M)
           bandwidth for kernel density estimation; if set to
-          'auto', the bandwidth will be estimated automatically
+          'auto', the bandwidth will be estimated automatically; if
+          set to a float, the same bandwidth will be used in all
+          dimensions; if set to None, the default bandwidth for
+          the default library (0.1 dex in physical quantities, 0.3
+          mag in photometric ones) will be used
     """
 
     ##################################################################
     # Initializer method
     ##################################################################
     def __init__(self, libname=None, filters=None, photsystem=None,
-                 bandwidth='auto', ktype='gaussian', priors=None, 
+                 bandwidth=None, ktype='gaussian', priors=None, 
                  sample_density=None, reltol=1.0e-3, abstol=1.0e-10,
-                 leafsize=16):
+                 leafsize=16, use_nebular=True):
         """
         Initialize a cluster_slug object.
 
@@ -64,9 +68,13 @@ class cluster_slug(object):
               'Vega', corresponding to the options defined in the SLUG
               code. Once this is set, any subsequent photometric data
               input are assumed to be in the same photometric system.
-           bandwidth : 'auto' | array, shape (M)
+           bandwidth : None | 'auto' | float | array, shape (M)
               bandwidth for kernel density estimation; if set to
-              'auto', the bandwidth will be estimated automatically
+              'auto', the bandwidth will be estimated automatically;
+              if set to a scalar quantity, this will be used for all
+              dimensions; if set to None, the default bandwidth for
+              the default library (0.1 dex in physical quantities, 0.3
+              mag in photometric ones) will be used
            ktype : string
               type of kernel to be used in densty estimation; allowed
               values are 'gaussian' (default), 'epanechnikov', and
@@ -103,6 +111,10 @@ class cluster_slug(object):
               absolute error tolerance; see above
            leafsize : int
               number of data points in each leaf of the KD tree
+           use_nebular : bool
+              if True, photometry including nebular emission will be
+              used if available; if not, nebular emission will be
+              omitted
 
         Returns
            Nothing
@@ -133,7 +145,6 @@ class cluster_slug(object):
 
         # Record other stuff that we'll use to construct bp objects
         # later
-        self.__bandwidth = bandwidth
         self.__ktype = ktype
         self.__priors = priors
         self.__sample_density = sample_density
@@ -141,7 +152,7 @@ class cluster_slug(object):
         self.__abstol = abstol
 
         # See if we have nebular, extincted data
-        if 'phot_neb_ex' in phot._fields:
+        if 'phot_neb_ex' in phot._fields and use_nebular:
             nebular = True
             extinct = True
             ph = phot.phot_neb_ex
@@ -149,11 +160,12 @@ class cluster_slug(object):
             warnstr = "cluster_slug: photometry including " + \
                       "nebular contribution is not available;" + \
                       " using starlight only"
-            warnings.warn(warnstr)
-            nebular = True
-            extinct = False
+            if use_nebular:
+                warnings.warn(warnstr)
+            nebular = False
+            extinct = True
             ph = phot.phot_ex
-        elif 'phot_neb' in phot._fields:
+        elif 'phot_neb' in phot._fields and use_nebular:
             warnstr = "cluster_slug: photometry including " + \
                       "extinction is not available;" + \
                       " using unextincted light only"
@@ -166,7 +178,8 @@ class cluster_slug(object):
                       "nebular contribution and extinction " + \
                       "is not available; using unextincted " + \
                       "starlight only"
-            warnings.warn(warnstr)
+            if use_nebular:
+                warnings.warn(warnstr)
             nebular = False
             extinct = False
             ph = phot.phot
@@ -219,8 +232,18 @@ class cluster_slug(object):
             else:
                 self.__ds[:,3+i][np.isinf(self.__ds[:,3+i])] = 99.0
 
-        # Initialize empty dict containing filter sets
+        # Initialize empty list containing filter sets
         self.__filtersets = []
+
+        # Set the bandwidth
+        self.__bw_default = np.zeros(3 + len(phot.filter_names))
+        self.__bw_default[:3] = 0.1
+        for i, f in enumerate(phot.filter_units):
+            if 'mag' in f:
+                self.__bw_default[3+i] = 0.3
+            else:
+                self.__bw_default[3+i] = 0.12
+        self.bandwidth = bandwidth
 
         # Restore the numpy error state
         np.seterr(divide=errstate['divide'], over=errstate['over'], 
@@ -271,7 +294,7 @@ class cluster_slug(object):
                 return
 
         # We're adding a new filter set, so save its name
-        newfilter = { 'filters' : filters}
+        newfilter = { 'filters' : copy.deepcopy(filters) }
 
         # Construct data set to use with this filter combination, and
         # fill it in
@@ -288,9 +311,17 @@ class cluster_slug(object):
             newfilter['idx'][i+3] = 3+idx
 
         # Build a bp object to go with this data set
+        if self.__bandwidth is None:
+            bw = np.array(self.__bw_default)[newfilter['idx']]
+        elif self.__bandwidth == 'auto':
+            bw = 'auto'
+        elif hasattr(self.__bandwidth, '__iter__'):
+            bw = np.array(self.__bandwidth)[newfilter['idx']]
+        else:
+            bw = self.__bandwidth
         newfilter['bp'] = bp(newfilter['dataset'], 3,
                              filters=filters,
-                             bandwidth = self.__bandwidth,
+                             bandwidth = bw,
                              ktype = self.__ktype,
                              priors = self.__priors,
                              sample_density = self.__sample_density,
@@ -328,11 +359,18 @@ class cluster_slug(object):
     def bandwidth(self, bandwidth):
         self.__bandwidth = bandwidth
         for f in self.__filtersets:
-            f['bp'].bandwidth = np.array(bandwidth)[f['idx']]
+            if self.__bandwidth is None:
+                f['bp'].bandwidth = self.__bw_default[f['idx']]
+            elif self.__bandwidth == 'auto':
+                f['bp'].bandwidth = 'auto'
+            elif hasattr(self.__bandwidth, '__iter__'):
+                f['bp'].bandwidth = self.__bandwidth[f['idx']]
+            else:
+                f['bp'].bandwidth = self.__bandwidth
 
 
     ##################################################################
-    # Wrappers around the bp logL, mpdf, and mcmc functions
+    # Wrappers around the bp logL, mpdf, mcmc, and bestmatch functions
     ##################################################################
     def logL(self, physprop, photprop, photerr=None, filters=None):
         """
@@ -535,6 +573,63 @@ class cluster_slug(object):
                     bp = f['bp']
                     break
 
-            # Call the logL method
+            # Call the mcmc method
             return bp.mcmc(photprop, photerr, mc_walkers, mc_steps, 
                            mc_burn_in)
+
+
+    def bestmatch(self, phot, nmatch=1, bandwidth_units=False,
+                  filters=None):
+        """
+        Searches through the simulation library and returns the closest
+        matches to an input set of photometry.
+
+        Parameters:
+           phot : arraylike, shape (nfilter) or (..., nfilter)
+              array giving the photometric values; for a
+              multidimensional array, the operation is vectorized over
+              the leading dimensions
+           nmatch : int
+              number of matches to return; returned matches will be
+              ordered by distance from the input
+           bandwidth_units : bool
+              if False, distances are computed based on the
+              logarithmic difference in luminosity; if True, they are
+              measured in units of the bandwidth
+
+        Returns:
+           matches : array, shape (..., nmatch, 3 + nfilter)
+              best matches to the input photometry; shape in the
+              leading dimensions will be the same as for phot, and if
+              nmatch == 1 then that dimension will be omitted; in the
+              final dimension, the first 3 elements give log M, log T,
+              and A_V, while the last nfilter give the photometric
+              values
+           dist : array, shape (..., nmatch)
+              distances between the matches and the input photometry
+        """
+
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    bestmatch(phot, nmatch, bandwidth_units)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the bestmatch method
+            return bp.bestmatch(phot, nmatch, bandwidth_units)
