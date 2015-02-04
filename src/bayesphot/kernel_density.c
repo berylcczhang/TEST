@@ -401,7 +401,7 @@ void kd_neighbors_vec(const kernel_density *kd, const double *xpt,
       neighbors(kd->tree, 
 		xpt + i*ndim, 
 		dims, ndim, nneighbor, NULL, 
-		pos + i*ndim*nneighbor, 
+		pos + i*kd->tree->ndim*nneighbor, 
 		(void *) (((double *) dptr) + i*nneighbor),
 		d2 + i*nneighbor);
     }
