@@ -59,7 +59,7 @@
 <h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><tt class="descclassname">slugpy.cluster_slug.</tt><tt class="descname">cluster_slug</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">slugpy.cluster_slug.</tt><tt class="descname">cluster_slug</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bandwidth=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>use_nebular=True</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -74,15 +74,19 @@ callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability</dd>
-<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">None | &#8216;auto&#8217; | float | array, shape (M)</span></dt>
 <dd>bandwidth for kernel density estimation; if set to
-&#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
+&#8216;auto&#8217;, the bandwidth will be estimated automatically; if
+set to a float, the same bandwidth will be used in all
+dimensions; if set to None, the default bandwidth for
+the default library (0.1 dex in physical quantities, 0.3
+mag in photometric ones) will be used</dd>
 </dl>
 </dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bandwidth=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>use_nebular=True</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -101,9 +105,13 @@ values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;, &#8216;AB&#8217;, &#8216;
 &#8216;Vega&#8217;, corresponding to the options defined in the SLUG
 code. Once this is set, any subsequent photometric data
 input are assumed to be in the same photometric system.</dd>
-<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">None | &#8216;auto&#8217; | float | array, shape (M)</span></dt>
 <dd>bandwidth for kernel density estimation; if set to
-&#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
+&#8216;auto&#8217;, the bandwidth will be estimated automatically;
+if set to a scalar quantity, this will be used for all
+dimensions; if set to None, the default bandwidth for
+the default library (0.1 dex in physical quantities, 0.3
+mag in photometric ones) will be used</dd>
 <dt>ktype <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
 <dd>type of kernel to be used in densty estimation; allowed
 values are &#8216;gaussian&#8217; (default), &#8216;epanechnikov&#8217;, and
@@ -140,6 +148,10 @@ true value</dd>
 <dd>absolute error tolerance; see above</dd>
 <dt>leafsize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
 <dd>number of data points in each leaf of the KD tree</dd>
+<dt>use_nebular <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, photometry including nebular emission will be
+used if available; if not, nebular emission will be
+omitted</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -168,6 +180,43 @@ true value</dd>
 </dd>
 <dt>Returns</dt>
 <dd>nothing</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.bestmatch">
+<tt class="descname">bestmatch</tt><big>(</big><em>phot</em>, <em>nmatch=1</em>, <em>bandwidth_units=False</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.bestmatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches through the simulation library and returns the closest
+matches to an input set of photometry.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of matches to return; returned matches will be
+ordered by distance from the input</dd>
+<dt>bandwidth_units <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if False, distances are computed based on the
+logarithmic difference in luminosity; if True, they are
+measured in units of the bandwidth</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, 3 + nfilter)</span></dt>
+<dd>best matches to the input photometry; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted; in the
+final dimension, the first 3 elements give log M, log T,
+and A_V, while the last nfilter give the photometric
+values</dd>
+<dt>dist <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span></dt>
+<dd>distances between the matches and the input photometry</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 

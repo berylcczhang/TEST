@@ -14,7 +14,7 @@
 
 
 \title{slug Documentation}
-\date{January 22, 2015}
+\date{February 04, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -4834,11 +4834,100 @@ Nothing
 
 \chapter{bayesphot: Bayesian Inference for Stochastic Stellar Populations}
 \label{bayesphot:sec-bayesphot}\label{bayesphot::doc}\label{bayesphot:bayesphot-bayesian-inference-for-stochastic-stellar-populations}
+
+\section{What Does bayesphot Do?}
+\label{bayesphot:what-does-bayesphot-do}
 Bayesphot is a package for performing Bayesian inference for the physical properties of a stellar system using its measured photometric properties, in a case where the photometric properties vary non-deterministically with the physical properties. Formally, bayesphot answers the following question: consider a stellar system characterized by a vector of \(\mathbf{x} = (x_1, x_2, \ldots x_N)\) physical properties. We have a physical model that lets us sample the expected photometric properties as a function of physical properties, i.e., that for some sample of \(K\) systems with physical properties \(\mathbf{x}_k\) we are able to compute the corresponding photometric properties \(\mathbf{y}_k = \mathbf{y} = (y_1, y_2, \ldots y_M)_k\). Now suppose that we observe such a system, and we observe it to have photometric properties \(\mathbf{y}_{\mathrm{obs}}\), with some set of photometric errors \(\mathbf{\sigma}_{\mathbf{y}} = (\sigma_{y_1}, \sigma_{y_2}, \ldots \sigma_{y_M})\), which are assumed to be Gaussian-distributed. What should we infer about the posterior probability distribution of the physical properties, i.e., given a set of prior probabilities \(p(\mathbf{x})\), plus our measurements, what is \(p(\mathbf{x} \mid \mathbf{y}_{\mathrm{obs}}, \mathbf{\sigma}_{\mathrm{y}})\)?
+
+The kernel density estimation algorithm that bayesphot uses to answer this question is described and derived in the slug methods paper. Bayesphot is implemented in two parts: a shared object library that is implemented in c, and that is compiled at the same time that slug is built, and a python wrapper class called \code{bp} that is included in the slugpy.bayesphot module. The following sections describe how to use \code{bp} objects to generate posterior PDFs.
+
+
+\section{Creating \texttt{bp} Objects}
+\label{bayesphot:creating-bp-objects}
+The \code{bp} class can be imported via:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+from slugpy.bayesphot import *
+\end{Verbatim}
+
+or:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+from slugpy.bayesphot import bp\PYG{l+s}{{}`{}`}
+\end{Verbatim}
+
+Once imported, a \code{bp} object can be instantiated. The call signature for the \code{bp} constructor class is:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+def \PYGZus{}\PYGZus{}init\PYGZus{}\PYGZus{}(self, dataset, nphys, filters=None, bandwidth=\PYGZsq{}auto\PYGZsq{},
+             ktype=\PYGZsq{}gaussian\PYGZsq{}, priors=None, sample\PYGZus{}density=None,
+             reltol=1.0e\PYGZhy{}3, abstol=1.0e\PYGZhy{}10, leafsize=16):
+\end{Verbatim}
+
+A full description of all options is included in the {\hyperref[bayesphot:ssec-slugpy-bayesphot]{\emph{Full Documentation of slugpy.bayesphot}}}, but the essential features are summarized here.
+
+The argument \code{dataset} is an array of shape (N, M) that contains the library of N models that represents the training set for the Bayesian analysis. Each model consists of M properties; the first \code{nphys} of these are physical properties that are the quantities to be inferred from the observations, while the remaining ones are photometric properties. An important point is that the \code{dataset} object is NOT copied, so altering it after the \code{bp} object is created will result in erroneous results.
+
+The \code{priors} and \code{sample\_density} arguments are used to compute the weighting to apply to the input models. The \code{priors} argument specifies the prior probability to assign to each model; it can be either an array giving a prior probability directly, or a callable that can take the physical properties of models as an input and return the prior probability as an output. Similarly, the \code{sample\_density} argument specifies the probablity distribution from which the physical models were selected; as with \code{priors}, it can be an array or a callable.
+
+The \code{bandwidth} argument specifies the bandwidth to use in the kernel density estimation; this need not be the same in each dimension. The \code{bandwidth} can be specified as a float, in which case it is the same for every dimension, or as an array of M elements giving the bandwidth for every dimension. Finally, it can be set to the string \code{auto}, in which case the \code{bp} will attempt to make a reasonable choice of bandwidth autonomously. However, this autonomous choice will probably perform less well than something that is hand-chosen by the user based on their knowledge of the library. As a rule of thumb, bandwidths should be chosen so that, for typical input photometric values, there are \textasciitilde{}10 simulations within the 1 kernel size.
+
+Note that both \code{priors} and \code{bandwidth} are properties of the \code{bp} class, and can be altered after the \code{bp} object is created. This makes it possible to alter the priors and bandwidth without incurring the computational or memory cost of generating an entirely new \code{bp} object.
+
+
+\section{Using \texttt{bp} Objects}
+\label{bayesphot:using-bp-objects}
+Once a \code{bp} object is instantiated, it can be used to compute likelihood functions, marginal probabilities, and MCMC sample ensembles, and to search the library for the best matches to an input set of photometry.
+
+The likelihood function is implemented via the \code{bp.logL} method, which has the call signature:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+def logL(self, physprop, photprop, photerr=None):
+\end{Verbatim}
+
+The argument \code{physprop} is a set of physical properties, the argument \code{photprop} is a set of photometric properties, and the argument \code{photerr} is an (optional) set of photometric errors. All of these must be arrays, the size of whose trailing dimension matches the number of physical properties (for \code{physprop}) or the number of photometric properties (for \code{photprop} and \code{photerr}); the leading dimensions of these arrays are broadcast together using normal broadcasting rules. The quantity returned is the log of the joint probability distribution of physical and photometric properties. Specifically, the quantity returned for each input set of physical and photometric properties is
+\begin{gather}
+\begin{split}\log p(\mathbf{x}, \mathbf{y}, \sigma_{\mathbf{y}}) = \log A \sum_{i=1}^N w_i G(\mathbf{x}, \mathbf{y}; \mathbf{h}')\end{split}\notag
+\end{gather}
+where \(A\) is a normalization constant chosen to ensure that the PDF integrated over all space is unity, \(\mathbf{x}\) is the vector of physical properties, \(\mathbf{y}\) is the vector of photometric properties, \(\sigma_\mathbf{y}\) is the vector of photomtric errors, \(w_i\) is the weight of the ith model as determined by the priors and sample density,
+\begin{gather}
+\begin{split}G\left(\mathbf{x}, \mathbf{y}; \mathbf{h}'\right) \propto \exp\left[-\left(\frac{x_1^2}{2h_{x_1}'^2} + \cdots + \frac{x_N^2}{2h_{x_N}'^2} + \frac{y_1^2}{2h_{y_1}'^2} + \cdots + \frac{y_M^2}{2h_{y_M}'^2} \right)\right]\end{split}\notag
+\end{gather}
+is the N-dimensional Gaussian function, and
+\begin{gather}
+\begin{split}\mathbf{h'} = \sqrt{\mathbf{h}^2 + \sigma_{\mathbf{y}}^2}\end{split}\notag
+\end{gather}
+is the modified bandwidth, which is equal to the bandwidth used for kernel density estimation added in quadrature sum with the errors in the photometric quantities (see the slug method paper for details).
+
+Estimation of marginal PDFs is done via the \code{bp.mpdf} method, which has the call signature:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+def mpdf(self, idx, photprop, photerr=None, ngrid=128,
+         qmin=None, qmax=None, grid=None, norm=True):
+\end{Verbatim}
+
+The argument \code{idx} is an int or a list of ints between 0 and nphys-1, which specifies for which physical quantity or physical quantities the marginal PDF is to be computed. These indices refer to the indices in the \code{dataset} array that was input when the \code{bp} object was instantiated. The arguments \code{photprop} and \code{photerr} give the photometric measurements and their errors for which the marginal PDFs are to be computed; they must be arrays whose trailing dimension is equal to the number of photometric quantities. The leading dimensions of these arrays are broadcast together following the normal broadcasting rules. By default each physical quantity will be estimated on a grid of 128 points, evenly spaced from the lowest value of that physical property in the model library to the highest value. The parameters \code{qmin}, \code{qmax}, \code{ngrid}, and \code{grid} can be used to override this behavior and set the grid of evaluation points manually. The function returns a tuple \code{grid\_out, pdf}; here \code{grid\_out} is the grid of points on which the marginal PDF has been computed, and \code{pdf} is the value of the marginal PDF evaluated at those gridpoints.
+
+MCMC calculations are implemented via the method \code{bp.mcmc}; this method relies on the \href{http://dan.iel.fm/emcee/current/}{emcee} python module, and will only function if it is installed. The call signature is:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+def mcmc(self, photprop, photerr=None, mc\PYGZus{}walkers=100,
+         mc\PYGZus{}steps=500, mc\PYGZus{}burn\PYGZus{}in=50):
+\end{Verbatim}
+
+The quantities \code{photprop} and \code{photerr} have the same meaning as for \code{bp.mpdf}, and the quantities \code{mc\_walkers}, \code{mc\_steps}, and \code{mc\_burn\_in} are passed directly to \code{emcee}, and are described in \href{http://dan.iel.fm/emcee/current/}{emcee's documentation}. The quantity returned is an array of sample points computed by the MCMC; its format is also described in \href{http://dan.iel.fm/emcee/current/}{emcee's documentation}. Note that, although \code{bp.mcmc} can be used to compute marginal PDFs of the physical quantities, for marginal PDFs of 1 quantity or joint PDFs of 2 quantities it is almost always faster to use \code{bp.mpdf} than \code{bp.mcmc}. This is because \code{bp.mpdf} takes advantage of the fact that integrals of cuts through N-dimensional Gaussians can be integrated analytically to compute the marginal PDFs directly, though needing to evaluate the likelihood function point by point. In contrast, the general MCMC algorithm used by \code{emcee} effectively does the integral numerically.
+
+The \code{bp.bestmatch} method searches through the model library and finds the N library entries that are closest to an input set of photometry. The call signature is:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+def bestmatch(self, phot, nmatch=1, bandwidth\PYGZus{}units=False):
+\end{Verbatim}
+
+Here \code{phot} is the set of photometric properties, which is identical to the \code{photprop} parameter used by \code{logL}, \code{mpdf}, and \code{mcmc}. The argument \code{nmatch} specifies how many matches to return, and the argument \code{bandwidth\_units} specifies whether distances are to be measured using an ordinary Euclidean metric, or in units of the kernel bandwidth in a given direction. The function returns, for each input set of photometry, the physical and photometric properties of the \code{nmatch} models in the library that are closest to the input photometric values. This can be used to judge if a good match to the input photometry is present in the library.
 
 
 \section{Full Documentation of slugpy.bayesphot}
-\label{bayesphot:full-documentation-of-slugpy-bayesphot}\label{bayesphot:module-slugpy.bayesphot.bp}\index{slugpy.bayesphot.bp (module)}
+\label{bayesphot:module-slugpy.bayesphot.bp}\label{bayesphot:ssec-slugpy-bayesphot}\label{bayesphot:full-documentation-of-slugpy-bayesphot}\index{slugpy.bayesphot.bp (module)}
 This defines a class that can be used to estimate the PDF of physical
 quantities from a set of input photometry in various bands, together
 with a training data set.
@@ -4860,9 +4949,11 @@ of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
 
-\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} array, shape (M){]}
+\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} float \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
-`auto', the bandwidth will be estimated automatically
+`auto', the bandwidth will be estimated automatically; if
+set to a scalar quantity, the same bandwidth is used for all
+dimensions
 
 \end{description}
 
@@ -4884,13 +4975,15 @@ properties
 \item[{npys}] \leavevmode{[}int{]}
 number of physical properties in dataset
 
-\item[{filters}] \leavevmode{[}listlike of strings, nphys elements{]}
-names of photometric filters; if left as None, the
-filters can be referred to by index, but not by name
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+names of photometric filters; not used, but can be
+stored for convenience
 
-\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} array, shape (M){]}
+\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} float \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
-`auto', the bandwidth will be estimated automatically
+`auto', the bandwidth will be estimated automatically; if
+set to a scalar quantity, the same bandwidth is used for all
+dimensions
 
 \item[{ktype}] \leavevmode{[}string{]}
 type of kernel to be used in densty estimation; allowed
@@ -4959,6 +5052,45 @@ list of weak references to the object (if defined)
 \begin{fulllineitems}
 \phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.bandwidth}\pysigline{\bfcode{bandwidth}}
 The current bandwidth
+
+\end{fulllineitems}
+
+\index{bestmatch() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.bestmatch}\pysiglinewithargsret{\bfcode{bestmatch}}{\emph{phot}, \emph{nmatch=1}, \emph{bandwidth\_units=False}}{}
+Searches through the simulation library and returns the closest
+matches to an input set of photometry.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phot}] \leavevmode{[}arraylike, shape (nfilter) or (..., nfilter){]}
+array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions
+
+\item[{nmatch}] \leavevmode{[}int{]}
+number of matches to return; returned matches will be
+ordered by distance from the input
+
+\item[{bandwidth\_units}] \leavevmode{[}bool{]}
+if False, distances are computed based on the
+logarithmic difference in luminosity; if True, they are
+measured in units of the bandwidth
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{matches}] \leavevmode{[}array, shape (..., nmatch, nphys + nfilter){]}
+best matches to the input photometry; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted
+
+\item[{dist}] \leavevmode{[}array, shape (..., nmatch){]}
+distances between the matches and the input photometry
+
+\end{description}
+
+\end{description}
 
 \end{fulllineitems}
 
@@ -5129,7 +5261,7 @@ simulation in the library
 \label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -5144,9 +5276,13 @@ of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
 
-\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} array, shape (M){]}
+\item[{bandwidth}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
-`auto', the bandwidth will be estimated automatically
+`auto', the bandwidth will be estimated automatically; if
+set to a float, the same bandwidth will be used in all
+dimensions; if set to None, the default bandwidth for
+the default library (0.1 dex in physical quantities, 0.3
+mag in photometric ones) will be used
 
 \end{description}
 
@@ -5154,7 +5290,7 @@ bandwidth for kernel density estimation; if set to
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -5175,9 +5311,13 @@ values are `L\_nu', `L\_lambda', `AB', `STMAG', and
 code. Once this is set, any subsequent photometric data
 input are assumed to be in the same photometric system.
 
-\item[{bandwidth}] \leavevmode{[}`auto' \textbar{} array, shape (M){]}
+\item[{bandwidth}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
-`auto', the bandwidth will be estimated automatically
+`auto', the bandwidth will be estimated automatically;
+if set to a scalar quantity, this will be used for all
+dimensions; if set to None, the default bandwidth for
+the default library (0.1 dex in physical quantities, 0.3
+mag in photometric ones) will be used
 
 \item[{ktype}] \leavevmode{[}string{]}
 type of kernel to be used in densty estimation; allowed
@@ -5221,6 +5361,11 @@ absolute error tolerance; see above
 \item[{leafsize}] \leavevmode{[}int{]}
 number of data points in each leaf of the KD tree
 
+\item[{use\_nebular}] \leavevmode{[}bool{]}
+if True, photometry including nebular emission will be
+used if available; if not, nebular emission will be
+omitted
+
 \end{description}
 
 \item[{Returns}] \leavevmode
@@ -5255,6 +5400,48 @@ list of filter names to be used for inferenence
 
 \item[{Returns}] \leavevmode
 nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{bestmatch() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.bestmatch}\pysiglinewithargsret{\bfcode{bestmatch}}{\emph{phot}, \emph{nmatch=1}, \emph{bandwidth\_units=False}, \emph{filters=None}}{}
+Searches through the simulation library and returns the closest
+matches to an input set of photometry.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phot}] \leavevmode{[}arraylike, shape (nfilter) or (..., nfilter){]}
+array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions
+
+\item[{nmatch}] \leavevmode{[}int{]}
+number of matches to return; returned matches will be
+ordered by distance from the input
+
+\item[{bandwidth\_units}] \leavevmode{[}bool{]}
+if False, distances are computed based on the
+logarithmic difference in luminosity; if True, they are
+measured in units of the bandwidth
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{matches}] \leavevmode{[}array, shape (..., nmatch, 3 + nfilter){]}
+best matches to the input photometry; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted; in the
+final dimension, the first 3 elements give log M, log T,
+and A\_V, while the last nfilter give the photometric
+values
+
+\item[{dist}] \leavevmode{[}array, shape (..., nmatch){]}
+distances between the matches and the input photometry
+
+\end{description}
 
 \end{description}
 
