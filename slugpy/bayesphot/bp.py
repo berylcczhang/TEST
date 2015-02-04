@@ -54,11 +54,17 @@ class bp(object):
           of shape (N, nphys), and return an array of shape (N)
           giving the prior probability at each data point; None:
           all data points have equal prior probability
+<<<<<<< HEAD
        bandwidth : 'auto' | float | array, shape (M)
           bandwidth for kernel density estimation; if set to
           'auto', the bandwidth will be estimated automatically; if
           set to a scalar quantity, the same bandwidth is used for all
           dimensions
+=======
+       bandwidth : 'auto' | array, shape (M)
+          bandwidth for kernel density estimation; if set to
+          'auto', the bandwidth will be estimated automatically
+>>>>>>> 6172cca6eca42188eac163494591c1b4926c6d21
     """
 
     ##################################################################
@@ -752,9 +758,9 @@ class bp(object):
 
             # Return
             if not self.__diag_mode:
-                return pdf
+                return np.log(pdf)
             else:
-                return pdf, nodecheck, leafcheck, termcheck
+                return np.log(pdf), nodecheck, leafcheck, termcheck
 
         else:
 
@@ -802,9 +808,9 @@ class bp(object):
 
             # Return
             if not self.__diag_mode:
-                return pdf
+                return np.log(pdf)
             else:
-                return pdf, nodecheck, leafcheck, termcheck
+                return np.log(pdf), nodecheck, leafcheck, termcheck
 
 
     ##################################################################
