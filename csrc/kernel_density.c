@@ -154,8 +154,18 @@ kernel_density* build_kd(double *x, unsigned int ndim,
      children */
   curnode = PARENT(curnode);
   while (curnode != 0) {
-    for (i=curnode; i<2*curnode; i++)
-      kd->nodewgt[i] = kd->nodewgt[LEFT(i)] + kd->nodewgt[RIGHT(i)];
+    for (i=curnode; i<2*curnode; i++) {
+      if (kd->tree->tree[i].splitdim != -1) {
+	kd->nodewgt[i] = kd->nodewgt[LEFT(i)] + kd->nodewgt[RIGHT(i)];
+      } else {
+	if (wgt != NULL)
+	  for (j=0; j<kd->tree->tree[i].npt; j++)
+	    kd->nodewgt[i] += 
+	      ((double *) kd->tree->tree[i].dptr)[j];
+	else
+	  kd->nodewgt[i] = ((double) kd->tree->tree[i].npt);
+      }
+    }
     curnode = PARENT(curnode);
   }
 
@@ -179,7 +189,7 @@ void free_kd(kernel_density *kd) {
 /* Function to change the weights in a kernel_density object         */
 /*********************************************************************/
 void kd_change_wgt(const double *wgt, kernel_density *kd) {
-  unsigned int i;
+  unsigned int i, j, curnode;
   double wgttot;
 
   /* Change the weights */
@@ -193,6 +203,75 @@ void kd_change_wgt(const double *wgt, kernel_density *kd) {
     for (i=0; i<kd->tree->tree[1].npt; i++) wgttot += wgt[i];
     kd->norm_tot = kd->norm / wgttot;
   }
+
+  /* Reassign the individual node weight pointers and weight sums in a
+     breadth-first traversal of the tree */
+
+  /* Go to leftmost leaf */
+  curnode = ROOT;
+  while (kd->tree->tree[curnode].splitdim != -1) 
+    curnode = LEFT(curnode);
+
+  /* Traverse the leaves of the tree; at each leaf, set the offset in
+     the weight array to match that in the data array, and adding up
+     the weight of each point to get a node weight */
+  for (i=curnode; i<2*curnode; i++) {
+    if (wgt != NULL) {
+
+      /* Set pointer to weight for this node */
+      if (kd->tree->tree[i].npt != 0)
+	kd->tree->tree[i].dptr = (void *) 
+	  (wgt + (kd->tree->tree[i].x - kd->tree->tree[ROOT].x) / 
+	   kd->tree->ndim);
+
+      /* Get weight */
+      kd->nodewgt[i] = 0.0;  
+      for (j=0; j<kd->tree->tree[i].npt; j++)
+	kd->nodewgt[i] += 
+	  ((double *) kd->tree->tree[i].dptr)[j];
+
+    } else {
+
+      /* Set pointer to weight for this node */
+      if (kd->tree->tree[i].npt != 0)
+	kd->tree->tree[i].dptr = NULL;      
+
+      /* Get weight */
+      kd->nodewgt[i] = ((double) kd->tree->tree[i].npt);
+    }
+  }
+
+  /* Now repeat for the rest of the tree summing up the contribution
+     from the children to get the summed weight */
+  curnode = PARENT(curnode);
+  while (curnode != 0) {
+    for (i=curnode; i<2*curnode; i++) {
+
+      /* Set pointer to weight for this node */
+      if (wgt != NULL) {
+	if (kd->tree->tree[i].npt != 0)
+	  kd->tree->tree[i].dptr = (void *) 
+	    (wgt + (kd->tree->tree[i].x - kd->tree->tree[ROOT].x) / 
+	     kd->tree->ndim);
+      } else {
+	kd->tree->tree[i].dptr = NULL;
+      }
+
+      /* Get weight for this node */
+      if (kd->tree->tree[i].splitdim != -1) {
+	kd->nodewgt[i] = kd->nodewgt[LEFT(i)] + kd->nodewgt[RIGHT(i)];
+      } else {
+	if (wgt != NULL)
+	  for (j=0; j<kd->tree->tree[i].npt; j++)
+	    kd->nodewgt[i] += 
+	      ((double *) kd->tree->tree[i].dptr)[j];
+	else
+	  kd->nodewgt[i] = ((double) kd->tree->tree[i].npt);
+      }
+    }
+    curnode = PARENT(curnode);
+  }
+
 }
 
 /*********************************************************************/
@@ -896,12 +975,17 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
 		    ) {
 
   unsigned int i;
-  for (i=0; i<npt; i++)
-    pdf[i] = kd_pdf_int(kd, x+i*ndim, dims, ndim, reltol, abstol
+#pragma omp parallel private(i)
+  {
+    #pragma omp for
+    for (i=0; i<npt; i++) {
+      pdf[i] = kd_pdf_int(kd, x+i*ndim, dims, ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-			, nodecheck+i, leafcheck+i, termcheck+i
+			  , nodecheck+i, leafcheck+i, termcheck+i
 #endif
-			);
+			  );
+    }
+  }
 }
 
 
@@ -919,12 +1003,17 @@ void kd_pdf_vec(const kernel_density *kd, const double *x,
 		) {
 
   unsigned int i;
-  for (i=0; i<npt; i++)
-    pdf[i] = kd_pdf(kd, x+i*kd->tree->ndim, reltol, abstol
+#pragma omp parallel private(i)
+  {
+  #pragma omp for
+    for (i=0; i<npt; i++) {
+      pdf[i] = kd_pdf(kd, x+i*kd->tree->ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-		    , nodecheck+i, leafcheck+i, termcheck+i
+		      , nodecheck+i, leafcheck+i, termcheck+i
 #endif
-		    );
+		      );
+    }
+  }
 }
 
 /*********************************************************************/
