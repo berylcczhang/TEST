@@ -9,9 +9,9 @@ SLUG can produce 7 output files, though the actual number produced depends on th
 
 The only file that is always produced is the summary file, which is named ``MODEL_NAME_summary.txt``, where ``MODEL_NAME`` is the value given by the ``model_name`` keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.
 
-The other six output files all have names of the form ``MODEL_NAME_xxx.ext``, where the extension ``.ext`` is one of ``.txt``, ``.bin``, or ``.fits`` depending on the ``output_mode`` specified in the parameter file, and ``xxx`` is ``integrated_prop``, ``integrated_spec``, ``integrated_phot``, ``cluster_prop``, ``cluster_spec``, or ``cluster_phot``. The production of these output files is controlled by the parameters ``out_integrated``, ``out_integrated_spec``, ``out_integrated_phot``, ``out_cluster``, ``out_cluster_spec``, and ``out_cluster_phot`` in the parameter file. The files are formatted as described below. 
+The other six output files all have names of the form ``MODEL_NAME_xxx.ext``, where the extension ``.ext`` is one of ``.txt``, ``.bin``, or ``.fits`` depending on the ``output_mode`` specified in the parameter file, and ``xxx`` is ``integrated_prop``, ``integrated_spec``, ``integrated_phot``, ``cluster_prop``, ``cluster_spec``, or ``cluster_phot``. The production of these output files is controlled by the parameters ``out_integrated``, ``out_integrated_spec``, ``out_integrated_phot``, ``out_cluster``, ``out_cluster_spec``, and ``out_cluster_phot`` in the parameter file. 
 
-The following conventions are used throughout, unless noted otherwise:
+The easiest way to read these output files is with :ref:`sec-slugpy`, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:
 
 * Masses are in :math:`M_\odot`
 * Times in year
@@ -58,32 +58,39 @@ The ``integrated_spec`` File
 This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:
 
 * ``Time``: evolution time at which the output is produced
-* ``Wavelength``: observed frame wavelength at which the spectrum is evaluated
+* ``Wavelength``: observed frame wavelength at which the stellar spectrum is evaluated
 * ``L_lambda``: specific luminosity at the specified wavelength, before extinction or nebular effects are applied
+* ``Wavelength_neb``: observed frame wavelength at which the stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular emission enabled)
 * ``L_lambda_neb``: specific luminosity at the specified wavelength, after the light has been processed through the nebula (only present if SLUG was run with nebular emission enabled)
+* ``Wavelength_ex``: observed frame wavelength at which the extincted stellar spectrum is evaluated (present only if SLUG was run with extinction enabled)
 * ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied, but without the effects of the nebula (only present if SLUG was run with extinction enabled)
+* ``Wavelength_neb_ex``: observed frame wavelength at which the extincted stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular processing and  extinction enabled)
 * ``L_lambda_neb_ex``: specific luminosity at the specified wavelength, after the light is first processed by the nebular and then subjected to dust extinction (only present if SLUG was run with both extinction and nebular emission enabled)
 
-If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for ``L_lambda_ex`` and ``L_l_neb_ex`` may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.
+If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. In ``ascii`` mode, only a single ``Wavelength`` column is present, and for those wavelengths that are not included in one of the grids, some entries may be blank.
 
- If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum ``L_lambda`` at that time. The remaining fields ``L_lambda_neb``, ``L_lambda_ex``, and ``L_lambda_neb_ex``, give the spectra including nebular processing, extinction, and both. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field ``Wavelength`` listing the wavelengths at which the stellar spectra are given; if nebular emission was enabled in the SLUG calculation, there is also a field ``Wavelength_neb`` giving the nebular wavelength grid, and if extinction was enabled the table has a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. If both nebular emission and extinction were included, the field ``Wavelength_neb_ex`` exists as well, giving the wavelength grid for that spectrum. The second table has three fields, ``Trial``, ``Time``, and ``L_lambda`` giving the trial number, time, and stellar spectrum. It may also contain fields ``L_lambda_neb``, ``L_lambda_ex``, and ``L_lambda_neb_ex`` giving the stellar plus nebular spectrum, extincted stellar spectrum, and extincted stellar plus nebular spectrum. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 For binary output, the file is formatted as follows. The file starts with
 
 * ``Nebular`` (``byte``): a single byte, with a value of 0 indicating that nebular processing was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
-* ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the spectra
+* ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the stellar spectra
 * ``Wavelength`` (``NWavelength`` entries of type ``double``)
-* ``NWavelength_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extinted spectra; only present if ``Extinct`` is 1
+* ``NWavelength_neb`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the stellar plus nebular spectra; only present if ``Nebular`` is 1
+* ``Wavelength_neb`` (``NWavelength_neb`` entries of type ``double``)
+* ``NWavelength_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extincted spectra; only present if ``Extinct`` is 1
 * ``Wavelength_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
+* ``NWavelength_neb_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extincted nebular plus stellar spectra; only present if ``Nebular`` and ``Extinct`` are both 1
+* ``Wavelength_ex`` (``NWavelength_neb_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
 
 and then contains a series of records in the format
 
 * ``Time`` (``double``)
 * ``L_lambda`` (``NWavelength`` entries of type ``double``)
-* ``L_lambda_neb`` (``NWavelength`` entries of type ``double``); only present if ``Nebular`` is 1
+* ``L_lambda_neb`` (``NWavelength_neb`` entries of type ``double``); only present if ``Nebular`` is 1
 * ``L_lambda_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
-* ``L_lambda_neb_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
+* ``L_lambda_neb_ex`` (``NWavelength_neb_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
@@ -208,24 +215,31 @@ This file contains the spectra of the individual clusters, and each entry contai
 
 * ``UniqueID``: a unique identifier number for each cluster that is preserved across times and output files
 * ``Time``: evolution time at which the output is produced
-* ``Wavelength``: observed frame wavelength at which the spectrum is evaluated
-* ``L_lambda``: specific luminosity at the specified wavelength
-* ``L_lambda_neb``: specific luminosity at the specified wavelength after nebular processing is applied (only present if SLUG was run with nebular processing enabled)
-* ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
-* ``L_lambda_neb_ex``: specific luminosity at the specified wavelength after nebular processing and extinction are applied (only present if SLUG was run with both nebular processing and extinction enabled)
+* ``Wavelength``: observed frame wavelength at which the stellar spectrum is evaluated
+* ``L_lambda``: specific luminosity at the specified wavelength, before extinction or nebular effects are applied
+* ``Wavelength_neb``: observed frame wavelength at which the stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular emission enabled)
+* ``L_lambda_neb``: specific luminosity at the specified wavelength, after the light has been processed through the nebula (only present if SLUG was run with nebular emission enabled)
+* ``Wavelength_ex``: observed frame wavelength at which the extincted stellar spectrum is evaluated (present only if SLUG was run with extinction enabled)
+* ``L_lambda_ex``: specific luminosity at the specified wavelength after extinction is applied, but without the effects of the nebula (only present if SLUG was run with extinction enabled)
+* ``Wavelength_neb_ex``: observed frame wavelength at which the extincted stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular processing and  extinction enabled)
+* ``L_lambda_neb_ex``: specific luminosity at the specified wavelength, after the light is first processed by the nebular and then subjected to dust extinction (only present if SLUG was run with both extinction and nebular emission enabled)
 
-If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. The column ``L_lambda_ex`` is present only if SLUG was run with extinction enabled. Some entries for ``L_lambda_ex`` may be empty; see :ref:`ssec-int-spec-file`.
+If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. The columns ``L_lambda_neb``, ``L_lambda_ex``, and ``L_lambda_neb_ex`` are present only if SLUG was run with the appropriate options enabled. Some entries in these fields may be empty; see :ref:`ssec-int-spec-file`.
 
-If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field ``Wavelength_ex`` listing the wavelengths at which the extincted spectrum is computed. The second table has always contains the fields ``UniqueId``, ``Time``, ``Trial``, and ``L_lambda`` giving the cluster unique ID, time, trial number, and stellar spectrum. Depending on whether nebular processing and/or extinction were enabled when SLUG was run, it may also contain the fields ``L_lambda_neb``, ``L_lambda_ex``, and ``L_lambda_neb_ex`` giving the nebular-processed, extincted, and nebular-processed plus extincted spectra. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If ``output_mode`` is ``fits``, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given, in the same format as for :ref:`ssec-int-spec-file`. The second table has always contains the fields ``UniqueId``, ``Time``, ``Trial``, and ``L_lambda`` giving the cluster unique ID, time, trial number, and stellar spectrum. Depending on whether nebular processing and/or extinction were enabled when SLUG was run, it may also contain the fields ``L_lambda_neb``, ``L_lambda_ex``, and ``L_lambda_neb_ex`` giving the nebular-processed, extincted, and nebular-processed plus extincted spectra. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 Output in ``binary`` mode is formatted as follows.  The file starts with
 
 * ``Nebular`` (``byte``): a single byte, with a value of 0 indicating that nebular processing was not enabled for this run, and a value of 1 indicating that it was enabled
 * ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
-* ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the spectra
+* ``NWavelength`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the stellar spectra
 * ``Wavelength`` (``NWavelength`` entries of type ``double``)
-* ``NWavelength_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extinted spectra; only present if ``Extinct`` is 1
+* ``NWavelength_neb`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the stellar plus nebular spectra; only present if ``Nebular`` is 1
+* ``Wavelength_neb`` (``NWavelength_neb`` entries of type ``double``)
+* ``NWavelength_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extincted spectra; only present if ``Extinct`` is 1
 * ``Wavelength_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
+* ``NWavelength_neb_ex`` (``std::vector<double>::size_type``, usually ``unsigned long long``): the number of wavelength entries in the extincted nebular plus stellar spectra; only present if ``Nebular`` and ``Extinct`` are both 1
+* ``Wavelength_ex`` (``NWavelength_neb_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
 
 and then contains a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
 
@@ -236,9 +250,9 @@ This is followed by ``NCluster`` entries of the following form:
 
 * ``UniqueID`` (``unsigned long``)
 * ``L_lambda`` (``NWavelength`` entries of type ``double``)
-* ``L_lambda_neb`` (``NWavelength`` entries of type ``double``); only present if ``Nebular`` is 1
+* ``L_lambda_neb`` (``NWavelength_neb`` entries of type ``double``); only present if ``Nebular`` is 1
 * ``L_lambda_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Extinct`` is 1
-* ``L_lambda_neb_ex`` (``NWavelength_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
+* ``L_lambda_neb_ex`` (``NWavelength_neb_ex`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1
 
 
 .. _ssec-cluster-phot-file:
