@@ -16,7 +16,7 @@ MACH_LDOPTFLAGS   = -O2
 
 # Debug flags
 MACH_CXXDEBFLAGS  = -g
-MACH_COPTFLAGS	  = $(MACH_CXXDEBFLAGS)
+MACH_CDEBFLAGS	  = $(MACH_CXXDEBFLAGS)
 MACH_LDDEBFLAGS   = -g
 
 # Flags to compile shared libaries
