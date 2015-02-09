@@ -12,6 +12,8 @@ else
      # that. If not, use a generic makefile depending on the OS.
      ifeq ($(UNAMEN), hyades.ucsc.edu)
           include Make.mach.ucsc-hyades
+     else ifeq ($(UNAMEN), cosma-e)
+          include Make.mach.icc-cosma4
      else ifeq ($(UNAME), Linux)
           include Make.mach.linux-gnu
      else ifeq ($(UNAME), Darwin)
