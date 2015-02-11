@@ -9,6 +9,7 @@ import copy
 import os
 import os.path as osp
 import warnings
+import urllib2
 
 # Import the data reading and Bayesian inference stuff we need
 from ..bayesphot import bp
@@ -121,7 +122,7 @@ class sfr_slug(object):
            IOError, if the library cannot be found
         """
 
-        # Load the data
+        # If using the default library, assign the library name
         if libname is None:
             self.__libname = osp.join('sfr_slug', 'SFR_SLUG')
             if 'SLUG_DIR' in os.environ:
@@ -129,8 +130,85 @@ class sfr_slug(object):
                                           self.__libname)
         else:
             self.__libname = libname
-        prop = read_integrated_prop(self.__libname)
-        phot = read_integrated_phot(self.__libname)
+
+        # Load the data
+        try:
+            prop = read_integrated_prop(self.__libname)
+            phot = read_integrated_phot(self.__libname)
+        except IOError:
+
+            # If we're here, we failed to load the library. If we were
+            # given a library file name explicitly, just raise an
+            # error.
+            if libname is not None:
+                raise IOError("unable to open library {}".
+                              format(self.__libname))
+
+            # If we've made it to here, we were asked to open the
+            # default library but failed to do so. Check if the
+            # failure could be because we don't have astropy and thus
+            # can't open fits files. If that's the cause, print out a
+            # helpful error message.
+            try:
+                import astropy.io.fits as fits
+            except ImportError:
+                raise IOError("failed to read default sfr_slug " +
+                              "library sfr_slug/SFR_SLUG due to missing " +
+                              "astropy.io.fits; install astropy " +
+                              "or specify a library in a non-FITS " +
+                              "format")
+
+            # If we're here, we couldn't open the default library, and
+            # it's not because we don't have FITS capability. The file
+            # must not exist, or must be damaged. Check if we're in
+            # interactive mode. If not, just raise an error and
+            # suggest the user to go get the library file.
+            errstr = "Unable to open default sfr_slug " + \
+                     "library file sfr_slug/SFR_SLUG."
+            import __main__ as main
+            if hasattr(main, '__file__'):
+                # We're not interactive; just raise an error
+                raise IOError(errstr + " " +
+                              "Try downloading it from " +
+                              "https://sites.google.com/site/runslug/plots")
+
+            # If we're here, we don't have hte library file, but we
+            # are in interactive mode. Thus offer the user an option
+            # to go download the file now.
+            usr_response \
+                = raw_input(errstr + " Would you like to download it "
+                            "now (total size 160 MB)? [y/n] ").\
+                lower().strip()
+            if not usr_response in ['yes', 'y', 'ye']:
+                # User didn't say yes, so raise error
+                raise IOError("Unable to proceeed")
+
+            # If we're here, download the files
+            print("Fetching SFR_SLUG_integrated_prop.fits...")
+            url = urllib2.urlopen(
+                'https://www.dropbox.com/s/7la1b5h986rdz29/SFR_SLUG_integrated_prop.fits?dl=0')
+            rawdata = url.read()
+            url.close()
+            fp = open(osp.join(osp.dirname(self.__libname),
+                               'SFR_SLUG_integrated_prop.fits'), 'wb')
+            fp.write(rawdata)
+            fp.close()
+            print("Fetching SFR_SLUG_integrated_phot.fits...")
+            url = urllib2.urlopen(
+                'https://www.dropbox.com/s/ra8qf5raqutcf50/SFR_SLUG_integrated_phot.fits?dl=0')
+            rawdata = url.read()
+            url.close()
+            fp = open(osp.join(osp.dirname(self.__libname),
+                               'SFR_SLUG_integrated_phot.fits'), 'wb')
+            fp.write(rawdata)
+            fp.close()
+
+            # Now try reading the data
+            try:
+                prop = read_integrated_prop(self.__libname)
+                phot = read_integrated_phot(self.__libname)
+            except IOError:
+                raise IOError("still unable to open default library")
 
         # Load the determinstic run
         if detname is None:
