@@ -184,18 +184,20 @@ class sfr_slug(object):
                 raise IOError("Unable to proceeed")
 
             # If we're here, download the files
-            print("Fetching SFR_SLUG_integrated_prop.fits...")
+            print("Fetching SFR_SLUG_integrated_prop.fits " +
+                  "(this may take a while)...")
             url = urllib2.urlopen(
-                'https://www.dropbox.com/s/7la1b5h986rdz29/SFR_SLUG_integrated_prop.fits?dl=0')
+                'https://dl.dropboxusercontent.com/s/7la1b5h986rdz29/SFR_SLUG_integrated_prop.fits')
             rawdata = url.read()
             url.close()
             fp = open(osp.join(osp.dirname(self.__libname),
                                'SFR_SLUG_integrated_prop.fits'), 'wb')
             fp.write(rawdata)
             fp.close()
-            print("Fetching SFR_SLUG_integrated_phot.fits...")
+            print("Fetching SFR_SLUG_integrated_phot.fits " +
+                  "(this make take a while)...")
             url = urllib2.urlopen(
-                'https://www.dropbox.com/s/ra8qf5raqutcf50/SFR_SLUG_integrated_phot.fits?dl=0')
+                'https://dl.dropboxusercontent.com/s/ra8qf5raqutcf50/SFR_SLUG_integrated_phot.fits')
             rawdata = url.read()
             url.close()
             fp = open(osp.join(osp.dirname(self.__libname),
