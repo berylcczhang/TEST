@@ -12,7 +12,9 @@ from slug_open import slug_open
 
 def read_integrated_phot(model_name, output_dir=None, fmt=None,
                          nofilterdata=False, photsystem=None,
-                         verbose=False, read_info=None):
+                         verbose=False, read_info=None,
+                         filters_only=False, read_filters=None,
+                         read_nebular=None, read_extinct=None):
     """
     Function to read a SLUG2 integrated_phot file.
 
@@ -50,9 +52,28 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
           On return, this dict will contain the keys 'fname' and
           'format', giving the name of the file read and the format it
           was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       filters_only : bool
+          If True, the code only reads the data on the filters, not
+          any of the actual photometry. If combined with nofilterdata,
+          this can be used to return the list of available filters
+          and nothing else.
+       read_filters : None | string | listlike containing strings
+          If this is None, data on all filters is read. Otherwise only
+          filters whose name(s) match the input filter names ar
+          read.
+       read_nebular : None | bool
+          If True, only data with the nebular contribution is read; if
+          False, only data without it is read. Default behavior is to
+          read all data.
+       read_extinct : None | bool
+          If True, only data with extinction applied is read; if
+          False, only data without it is read. Default behavior is to
+          read all data.
 
     Returns
-       A namedtuple containing the following fields:
+       A namedtuple , which can contain the following fields depending
+       on the input options, and depending on which fields are present
+       in the file being read:
 
        time : array, shape (N_times) or shape (N_trials)
           Times at which data are output; shape is either N_times (if
@@ -68,12 +89,10 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
           True
        filter_wl : list of arrays
           a list giving the wavelength table for each filter; this is
-          None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
-          nofilterdata is True
+          None for the filters Lbol, QH0, QHe0, and QHe1
        filter_response : list of arrays
           a list giving the photon response function for each filter;
-          this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
-          if nofilterdata is True 
+          this is None for the filters Lbol, QH0, QHe0, and QHe1
        filter_beta : list
           powerlaw index beta for each filter; used to normalize the
           photometry
@@ -84,16 +103,12 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
           units are as indicated in the units field
        phot_neb : array, shape (N_filter, N_times, N_trials)
           same as phot, but for the light after it has passed through
-          the HII region (present only if SLUG was run with nebular
-          emission enabled)
+          the HII region
        phot_ex : array, shape (N_filter, N_times, N_trials)
-          same as phot, but after extinction has been applied (present
-          only if SLUG was run with extinction enabled)
+          same as phot, but after extinction has been applied
        phot_neb_ex : array, shape (N_filter, N_times, N_trials)
           same as phot, but for the light after it has passed through
-          the HII region and then had extinction applied (present only
-          if SLUG was run with both nebular emission and extinction
-          enabled)
+          the HII region and then had extinction applied
 
     Raises
        IOError, if no photometry file can be opened
@@ -160,65 +175,117 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         filters = filters[:nfilter]
         units = units[:nfilter]
 
-        # Burn a line
-        line = fp.readline()
+        # Skip the rest if reading filter data only
+        if not filters_only:
 
-        # Prepare holders for data
-        trial = []
-        time = []
-        phot = []
-        if nebular:
-            phot_neb = []
-        if extinct:
-            phot_ex = []
+            # If requested to read only certain filters, figure out
+            # which ones are in our list to read
+            if read_filters is not None:
+                fread = []
+                if hasattr(read_filters, '__iter__'):
+                    for f in filters:
+                        if f in read_filters:
+                            fread.append(True)
+                        else:
+                            fread.append(False)
+                else:
+                    for f in filters:
+                        if f == read_filters:
+                            fread.append(True)
+                        else:
+                            fread.append(False)
+
+            # Burn a line
+            line = fp.readline()
+
+            # Prepare holders for data
+            trial = []
+            time = []
+            phot = []
             if nebular:
+                phot_neb = []
+            if extinct:
+                phot_ex = []
+            if nebular and extinct:
                 phot_neb_ex = []
 
-        # Read through data
-        trialptr = 0
-        for line in fp:
-            if line[:3] == '---':
-                trialptr = trialptr + 1
-                continue       # Skip separator lines
-            linesplit = line.split()
-            trial.append(trialptr)
-            time.append(float(linesplit[0]))
-            phot.append(np.array(linesplit[1:nfilter+1],
-                                 dtype='float'))
-            if nebular:
-                phot_neb.append(np.array(
-                    linesplit[nfilter+1:2*nfilter+1],
-                    dtype='float'))
-            if extinct:
-                tmp_ex = []
-                for i in range(nfilter):
-                    substr = line[21*(1+(1+nebular)*nfilter+i):
-                                  21*(1+(1+nebular)*nfilter+i+1)]
-                    if substr.isspace():
-                        tmp_ex.append(np.nan)
+            # Read through data
+            trialptr = 0
+            for line in fp:
+                if line[:3] == '---':
+                    trialptr = trialptr + 1
+                    continue       # Skip separator lines
+                linesplit = line.split()
+                trial.append(trialptr)
+                time.append(float(linesplit[0]))
+                if read_nebular is not True and read_extinct is not True:
+                    if read_filters is None:
+                        phot.append(np.array(linesplit[1:nfilter+1],
+                                             dtype='float'))
                     else:
-                        tmp_ex.append(float(substr))
-                phot_ex.append(np.array(tmp_ex))
-                if nebular:
+                        tmp = []
+                        for i, j in enumerate(range(1,1+nfilter)):
+                            if fread[i]:
+                                tmp.append(linesplit[j])
+                        phot.append(np.array(tmp, dtype='float'))
+                if nebular and read_nebular is not False and \
+                   read_extinct is not True:
+                    if read_filters is None:
+                        phot_neb.append(np.array(
+                            linesplit[nfilter+1:2*nfilter+1],
+                            dtype='float'))
+                    else:
+                        tmp = []
+                        for i, j in enumerate(range(nfilter+1,1+2*nfilter)):
+                            if fread[i]:
+                                tmp.append(linesplit[j])
+                        phot_neb.append(np.array(tmp, dtype='float'))
+                if extinct and read_nebular is not True and \
+                   read_extinct is not False:
+                    tmp_ex = []
+                    for i in range(nfilter):
+                        substr = line[21*(1+(1+nebular)*nfilter+i):
+                                      21*(1+(1+nebular)*nfilter+i+1)]
+                        if read_filters is None:
+                            if substr.isspace():
+                                tmp_ex.append(np.nan)
+                            else:
+                                tmp_ex.append(float(substr))
+                        else:
+                            if fread[i]:
+                                if substr.isspace():
+                                    tmp_ex.append(np.nan)
+                                else:
+                                    tmp_ex.append(float(substr))
+                    phot_ex.append(np.array(tmp_ex, dtype='float'))
+                if nebular and extinct and read_nebular is not False \
+                   and read_extinct is not False:
                     tmp_neb_ex = []
                     for i in range(nfilter):
                         substr = line[21*(1+3*nfilter+i):
                                       21*(1+3*nfilter+i+1)]
-                        if substr.isspace():
-                            tmp_neb_ex.append(np.nan)
+                        if read_filters is None:
+                            if substr.isspace():
+                                tmp_neb_ex.append(np.nan)
+                            else:
+                                tmp_neb_ex.append(float(substr))
                         else:
-                            tmp_neb_ex.append(float(substr))
-                    phot_neb_ex.append(np.array(tmp_neb_ex))
+                            if fread[i]:
+                                if substr.isspace():
+                                    tmp_neb_ex.append(np.nan)
+                                else:
+                                    tmp_neb_ex.append(float(substr))
+                    phot_neb_ex.append(np.array(tmp_neb_ex, dtype='float'))
 
-        # Convert to arrays
-        trial = np.array(trial)
-        time = np.array(time)
-        phot = np.array(phot)
-        if nebular:
-            phot_neb = np.array(phot_neb)
-        if extinct:
-            phot_ex = np.array(phot_ex)
+            # Convert to arrays
+            trial = np.array(trial)
+            time = np.array(time)
+            phot = np.array(phot)
             if nebular:
+                phot_neb = np.array(phot_neb)
+            if extinct:
+                phot_ex = np.array(phot_ex)
+            if nebular and extinct:
                 phot_neb_ex = np.array(phot_neb_ex)
 
     elif fname.endswith('.bin'):
@@ -244,52 +311,175 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         nebular = struct.unpack('b', data)[0] != 0
         data = fp.read(struct.calcsize('b'))
         extinct = struct.unpack('b', data)[0] != 0
-
-        # Read rest of file
-        data = fp.read()
-
-        # Unpack the data
         nftot = (1+nebular)*(1+extinct)*nfilter
-        chunkstr = 'L'+(nftot+1)*'d'
-        nchunk = len(data)/struct.calcsize(chunkstr)
-        data_list = struct.unpack(nchunk*chunkstr, data)
 
-        # Parse into arrays
-        trial = np.array(data_list[::nftot+2], dtype=np.uint64)
-        time = np.array(data_list[1::nftot+2])
-        phot = np.zeros((nchunk, nfilter))
-        if nebular:
-            phot_neb = np.zeros((nchunk, nfilter))
-        if extinct:
-            phot_ex = np.zeros((nchunk, nfilter))
-            if nebular:
-                phot_neb_ex = np.zeros((nchunk, nfilter))
-        for i in range(nchunk):
-            phot[i,:] = data_list[(nftot+2)*i+2:
-                                  (nftot+2)*i+2+nfilter]
-            ptr = 1
-            if nebular:
-                phot_neb[i,:] = data_list[(nftot+2)*i+nfilter*ptr+2:
-                                          (nftot+2)*i+nfilter*(ptr+1)+2]
-                ptr = ptr+1
-            if extinct:
-                phot_ex[i,:] = data_list[(nftot+2)*i+nfilter*ptr+2:
-                                         (nftot+2)*i+nfilter*(ptr+1)+2]
-                ptr = ptr+1
-                if nebular:
-                    phot_neb_ex[i,:] \
-                        = data_list[(nftot+2)*i+nfilter*ptr+2:
-                                    (nftot+2)*i+nfilter*(ptr+1)+2]
+        # If only reading the filters, skip the rest of this
+        if not filters_only:
+
+            # Handle things differently if we're reading
+            # everything versus if we're reading just some filters
+            if read_filters is None:
+
+                # Read rest of file
+                data = fp.read()
+
+                # Unpack the data
+                chunkstr = 'L'+(nftot+1)*'d'
+                nchunk = len(data)/struct.calcsize(chunkstr)
+                data_list = struct.unpack(nchunk*chunkstr, data)
+
+                # Parse into arrays
+                trial = np.array(data_list[::nftot+2], dtype=np.uint64)
+                time = np.array(data_list[1::nftot+2])
+                if read_nebular is not True and read_extinct is not True:
+                    phot = np.zeros((nchunk, nfilter))
+                if nebular and \
+                   read_nebular is not False and \
+                   read_extinct is not True:
+                    phot_neb = np.zeros((nchunk, nfilter))
+                if extinct and \
+                   read_nebular is not True and \
+                   read_extinct is not False:
+                    phot_ex = np.zeros((nchunk, nfilter))
+                if nebular and extinct and \
+                   read_nebular is not False and \
+                   read_extinct is not False:
+                    phot_neb_ex = np.zeros((nchunk, nfilter))
+                for i in range(nchunk):
+                    if read_nebular is not True and \
+                       read_extinct is not True:
+                        phot[i,:] = data_list[(nftot+2)*i+2:
+                                              (nftot+2)*i+2+nfilter]
+                    ptr = 1
+                    if nebular:
+                        if read_nebular is not False and \
+                           read_extinct is not True:
+                            phot_neb[i,:] \
+                                = data_list[(nftot+2)*i+nfilter*ptr+2:
+                                            (nftot+2)*i+nfilter*(ptr+1)+2]
+                        ptr = ptr+1
+                    if extinct:
+                        if read_nebular is not True and \
+                           read_extinct is not False:
+                            phot_ex[i,:] \
+                                = data_list[(nftot+2)*i+nfilter*ptr+2:
+                                            (nftot+2)*i+nfilter*(ptr+1)+2]
+                        ptr = ptr+1
+                    if nebular and extinct:
+                        if read_nebular is not False and \
+                           read_extinct is not False:
+                            phot_neb_ex[i,:] \
+                                = data_list[(nftot+2)*i+nfilter*ptr+2:
+                                            (nftot+2)*i+nfilter*(ptr+1)+2]
+                        ptr = ptr+1
+
+            else:
+
+                # Figure oput which filters to read
+                fread = []
+                if hasattr(read_filters, '__iter__'):
+                    for f in filters:
+                        if f in read_filters:
+                            fread.append(True)
+                        else:
+                            fread.append(False)
+                else:
+                    for f in filters:
+                        if f == read_filters:
+                            fread.append(True)
+                        else:
+                            fread.append(False)
+
+                # Set up lists to hold data
+                trial = []
+                time = []
+                phot = []
+                phot_neb = []
+                phot_ex = []
+                phot_neb_ex = []
+
+                # Loop over times
+                while True:
+
+                    # Read trial and time
+                    data = fp.read(struct.calcsize('Ld'))
+                    if len(data) < struct.calcsize('Ld'):
+                        break
+                    data_list = struct.unpack('Ld', data)
+                    trial.append(data_list[0])
+                    time.append(data_list[1])
+
+                    # Loop over filters
+                    for i in range(nfilter):
+                        if fread[i] and \
+                           read_nebular is not True and \
+                           read_extinct is not True:
+                            data = fp.read(struct.calcsize('d'))
+                            data_list = struct.unpack('d', data)
+                            phot.extend(data_list)
+                        else:
+                            fp.seek(struct.calcsize('d'), 1)
+
+                    # Repeat for nebular
+                    if nebular:
+                        for i in range(nfilter):
+                            if fread[i] and \
+                               read_nebular is not False and \
+                               read_extinct is not True:
+                                data = fp.read(struct.calcsize('d'))
+                                data_list = struct.unpack('d', data)
+                                phot_neb.extend(data_list)
+                            else:
+                                fp.seek(struct.calcsize('d'), 1)
+
+                    # Repeat for extincted emission
+                    if extinct:
+                        for i in range(nfilter):
+                            if fread[i] and \
+                               read_nebular is not True and \
+                               read_extinct is not False:
+                                data = fp.read(struct.calcsize('d'))
+                                data_list = struct.unpack('d', data)
+                                phot_ex.extend(data_list)
+                            else:
+                                fp.seek(struct.calcsize('d'), 1)
+
+                    # Repeat for nebular plus extincted emission
+                    if nebular and extinct:
+                        for i in range(nfilter):
+                            if fread[i] and \
+                               read_nebular is not False and \
+                               read_extinct is not False:
+                                data = fp.read(struct.calcsize('d'))
+                                data_list = struct.unpack('d', data)
+                                phot_neb_ex.extend(data_list)
+                            else:
+                                fp.seek(struct.calcsize('d'), 1)
+
+                # Convert to arrays
+                trial = np.array(trial, dtype=np.uint64)
+                time = np.array(time, dtype='float')
+                if read_nebular is not True and \
+                   read_extinct is not True:
+                    phot = np.array(phot, dtype='float')
+                if nebular and \
+                   read_nebular is not False and \
+                   read_extinct is not True:
+                    phot_neb = np.array(phot_neb, dtype='float')
+                if extinct and \
+                   read_nebular is not True and \
+                   read_extinct is not False:
+                    phot_ex = np.array(phot_ex, dtype='float')
+                if nebular and extinct and \
+                   read_nebular is not False and \
+                   read_extinct is not False:
+                    phot_neb_ex = np.array(phot_neb_ex, dtype='float')
 
     elif fname.endswith('.fits'):
 
         # FITS mode
         if read_info is not None:
             read_info['format'] = 'fits'
-
-        # Get trial, time
-        trial = fp[1].data.field('Trial')
-        time = fp[1].data.field('Time')
 
         # Get filter names and units
         filters = []
@@ -329,38 +519,111 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         filters = filters[:nfilter]
         units = units[:nfilter]
 
-        # Get photometric data
-        phot = np.zeros((len(time), nfilter))
-        if nebular:
-            phot_neb = np.zeros((len(time), nfilter))
-        if extinct:
-            phot_ex = np.zeros((len(time), nfilter))
-            if nebular:
-                phot_neb_ex = np.zeros((len(time), nfilter))
-        for i in range(len(filters)):
-            phot[:,i] = fp[1].data.field(filters[i])
-            if nebular:
-                phot_neb[:,i] = fp[1].data.field(filters[i]+"_neb")
-            if extinct:
-                phot_ex[:,i] = fp[1].data.field(filters[i]+"_ex")
-                if nebular:
-                    phot_neb_ex[:,i] = fp[1].data.field(filters[i]+"_neb_ex")
+        # If only reading filters, skip the rest
+        if not filters_only:
+
+            # If requested to read only certain filters, figure out
+            # which ones are in our list to read
+            if read_filters is not None:
+                fread = []
+                nf_final = 0
+                if hasattr(read_filters, '__iter__'):
+                    for f in filters:
+                        if f in read_filters:
+                            fread.append(True)
+                            nf_final = nf_final+1
+                        else:
+                            fread.append(False)
+                else:
+                    for f in filters:
+                        if f == read_filters:
+                            fread.append(True)
+                            nf_final = nf_final+1
+                        else:
+                            fread.append(False)
+            else:
+                fread = [True] * len(filters)
+                nf_final = len(filters)
+
+            # Get trial, time
+            trial = fp[1].data.field('Trial')
+            time = fp[1].data.field('Time')
+
+            # Get photometric data
+            if read_nebular is not True and \
+               read_extinct is not True:
+                phot = np.zeros((len(time), nf_final))
+            if nebular and \
+               read_nebular is not False and \
+               read_extinct is not True:
+                phot_neb = np.zeros((len(time), nf_final))
+            if extinct and \
+               read_nebular is not True and \
+               read_extinct is not False:
+                phot_ex = np.zeros((len(time), nf_final))
+            if nebular and extinct and \
+               read_nebular is not False and \
+               read_extinct is not False:
+                phot_neb_ex = np.zeros((len(time), nf_final))
+            ptr = 0
+            for i in range(len(filters)):
+                if fread[i]:
+                    if read_nebular is not True and \
+                       read_extinct is not True:
+                        phot[:,ptr] = fp[1].data.field(filters[i])
+                    if nebular and \
+                       read_nebular is not False and \
+                       read_extinct is not True:
+                        phot_neb[:,ptr] = fp[1].data.field(filters[i]+"_neb")
+                    if extinct and \
+                       read_nebular is not True and \
+                       read_extinct is not False:
+                        phot_ex[:,ptr] = fp[1].data.field(filters[i]+"_ex")
+                    if nebular and extinct and \
+                       read_nebular is not False and \
+                       read_extinct is not False:
+                        phot_neb_ex[:,ptr] \
+                            = fp[1].data.field(filters[i]+"_neb_ex")
+                    ptr = ptr+1
 
     # Close file
     fp.close()
 
+    # If using only a subset of filters, truncate the filter list now
+    if read_filters is not None:
+        filters_tmp = []
+        units_tmp = []
+        for i in range(len(filters)):
+            if fread[i]:
+                filters_tmp.append(filters[i])
+                units_tmp.append(units[i])
+        filters = filters_tmp
+        units = units_tmp
+        nfilter = len(filters)
+
     # Reshape time and photometry arrays
-    ntrial = len(np.unique(trial))
-    ntime = len(time)/ntrial
-    if ntime != len(time):
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
-    phot = np.transpose(np.reshape(phot, (ntrial, ntime, nfilter)))
-    if nebular:
-        phot_neb = np.transpose(np.reshape(phot_neb, (ntrial, ntime, nfilter)))
-    if extinct:
-        phot_ex = np.transpose(np.reshape(phot_ex, (ntrial, ntime, nfilter)))
-        if nebular:
+    if not filters_only:
+        ntrial = len(np.unique(trial))
+        ntime = len(time)/ntrial
+        if ntime != len(time):
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
+        if read_nebular is not True and \
+           read_extinct is not True:
+            phot = np.transpose(np.reshape(phot, (ntrial, ntime, nfilter)))
+        if nebular and \
+           read_nebular is not False and \
+           read_extinct is not True:
+            phot_neb = np.transpose(np.reshape(phot_neb, 
+                                               (ntrial, ntime, nfilter)))
+        if extinct and \
+           read_nebular is not True and \
+           read_extinct is not False:
+            phot_ex = np.transpose(np.reshape(phot_ex, 
+                                              (ntrial, ntime, nfilter)))
+        if nebular and extinct and \
+           read_nebular is not False and \
+           read_extinct is not False:
             phot_neb_ex = np.transpose(
                 np.reshape(phot_neb_ex, (ntrial, ntime, nfilter)))
 
@@ -371,62 +634,102 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         wl_eff, wavelength, response, beta, wl_c = read_filter(filters)
 
     # Do photometric system conversion if requested
-    if photsystem is not None:
+    if photsystem is not None and not filters_only:
         if verbose:
             print("Converting photometric system")
         if nofilterdata:
             units_save = deepcopy(units)
-            photometry_convert(photsystem, phot, units, 
-                               filter_names=filters)
-            if nebular:
+            if read_nebular is not True and \
+               read_extinct is not True:
+                photometry_convert(photsystem, phot, units, 
+                                   filter_names=filters)
+                units_out = deepcopy(units)
+                units = deepcopy(units_save)
+            if nebular and \
+               read_nebular is not False and \
+               read_extinct is not True:
                 photometry_convert(photsystem, phot_neb, units_save, 
                                    filter_names=filters)
-            if extinct:
+                units_out = deepcopy(units)
+                units = deepcopy(units_save)
+            if extinct and \
+               read_nebular is not True and \
+               read_extinct is not False:
                 photometry_convert(photsystem, phot_ex, units_save, 
                                    filter_names=filters)
-                if nebular:
-                    photometry_convert(photsystem, phot_neb_ex, units_save, 
-                                       filter_names=filters)
+                units_out = deepcopy(units)
+                units = deepcopy(units_save)
+            if nebular and extinct and \
+               read_nebular is not False and \
+               read_extinct is not False:
+                photometry_convert(photsystem, phot_neb_ex, units_save, 
+                                   filter_names=filters)
+                units_out = deepcopy(units)
+                units = deepcopy(units_save)
+            units = units_out
         else:
             units_save = deepcopy(units)
-            photometry_convert(photsystem, phot, units, wl_eff, 
-                               filter_names=filters)
-            units_out = deepcopy(units)
-            units = deepcopy(units_save)
-            if nebular:
+            if read_nebular is not True and \
+               read_extinct is not True:
+                photometry_convert(photsystem, phot, units, wl_eff, 
+                                   filter_names=filters)
+                units_out = deepcopy(units)
+                units = deepcopy(units_save)
+            if nebular and \
+               read_nebular is not False and \
+               read_extinct is not True:
                 photometry_convert(photsystem, phot_neb, units, 
                                    wl_eff, filter_names=filters)
+                units_out = deepcopy(units)
                 units = deepcopy(units_save)
-            if extinct:
+            if extinct and \
+               read_nebular is not True and \
+               read_extinct is not False:
                 photometry_convert(photsystem, phot_ex, units, wl_eff, 
                                    filter_names=filters)
+                units_out = deepcopy(units)
                 units = deepcopy(units_save)
-                if nebular:
-                    photometry_convert(photsystem, phot_neb_ex, units, 
-                                       wl_eff, filter_names=filters)
-                    units = deepcopy(units_save)
+            if nebular and extinct and \
+               read_nebular is not False and \
+               read_extinct is not False:
+                photometry_convert(photsystem, phot_neb_ex, units, 
+                                   wl_eff, filter_names=filters)
+                units = deepcopy(units_save)
+                units_out = deepcopy(units)
             units = units_out
 
     # Construct return object
-    fieldnames = ['time', 'filter_names', 'filter_units']
-    fields = [time, filters, units]
+    if filters_only:
+        fieldnames = ['filter_names', 'filter_units']
+        fields = [filters, units]
+    else:
+        fieldnames = ['time', 'filter_names', 'filter_units']
+        fields = [time, filters, units]
     if not nofilterdata:
         fieldnames = fieldnames + ['filter_wl_eff', 'filter_wl',
                                    'filter_response', 'filter_beta',
                                    'filter_wl_c']
         fields = fields + [wl_eff, wavelength, response, beta, wl_c]
-    fieldnames = fieldnames + ['phot']
-    fields = fields + [phot]
-    if nebular:
+    if not filters_only and read_nebular is not True and \
+       read_extinct is not True:
+        fieldnames = fieldnames + ['phot']
+        fields = fields + [phot]
+    if nebular and not filters_only and \
+       read_nebular is not False and \
+       read_extinct is not True:
         fieldnames = fieldnames + ['phot_neb']
         fields = fields + [phot_neb]
-    if extinct:
+    if extinct and not filters_only and \
+       read_nebular is not True and \
+       read_extinct is not False:
         fieldnames = fieldnames + ['phot_ex']
         fields = fields + [phot_ex]
-        if nebular:
-            fieldnames = fieldnames + ['phot_neb_ex']
-            fields = fields + [phot_neb_ex]
-    out_type = namedtuple('integrated_spec', fieldnames)
+    if nebular and extinct and not filters_only and \
+       read_nebular is not False and \
+       read_extinct is not False:
+        fieldnames = fieldnames + ['phot_neb_ex']
+        fields = fields + [phot_neb_ex]
+    out_type = namedtuple('integrated_phot', fieldnames)
     out = out_type(*fields)
 
     # Return
