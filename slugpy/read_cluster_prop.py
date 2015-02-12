@@ -19,14 +19,14 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
           The directory where the output is located; if set to None,
           the current directory is searched, followed by the SLUG_DIR
           directory if that environment variable is set
-       fmt : string
-          Format for the file to be read. Allowed values are 'ascii',
-          'bin' or 'binary, and 'fits'. If one of these is set, the code
-          will only attempt to open ASCII-, binary-, or FITS-formatted
-          output, ending in .txt., .bin, or .fits, respectively. If set
-          to None, the code will try to open ASCII files first, then if
-          it fails try binary files, and if it fails again try FITS
-          files.
+       fmt : 'txt' | 'ascii' | 'bin' | 'binary' | 'fits' | 'fits2'
+          Format for the file to be read. If one of these is set, the
+          function will only attempt to open ASCII-('txt' or 'ascii'), 
+          binary ('bin' or 'binary'), or FITS ('fits' or 'fits2')
+          formatted output, ending in .txt., .bin, or .fits,
+          respectively. If set to None, the code will try to open
+          ASCII files first, then if it fails try binary files, and if
+          it fails again try FITS files.
        verbose : bool
           If True, verbose output is printed as code runs
        read_info : dict

@@ -25,14 +25,14 @@ def slug_open(filename, output_dir=None, fmt=None):
           the current directory is searched, followed by the
           SLUG_DIR/output directory if the SLUG_DIR environment variable
           is set
-       fmt : string
-          Format for the file to be read. Allowed values are 'ascii',
-          'bin' or 'binary, and 'fits'. If one of these is set, the code
-          will only attempt to open ASCII-, binary-, or FITS-formatted
-          output, ending in .txt., .bin, or .fits, respectively. If set
-          to None, the code will try to open ASCII files first, then if
-          it fails try binary files, and if it fails again try FITS
-          files.
+       fmt : 'txt' | 'ascii' | 'bin' | 'binary' | 'fits' | 'fits2'
+          Format for the file to be read. If one of these is set, the
+          function will only attempt to open ASCII-('txt' or 'ascii'), 
+          binary ('bin' or 'binary'), or FITS ('fits' or 'fits2')
+          formatted output, ending in .txt., .bin, or .fits,
+          respectively. If set to None, the code will try to open
+          ASCII files first, then if it fails try binary files, and if
+          it fails again try FITS files.
 
     Returns
        fp : file or astropy.io.fits.hdu.hdulist.HDUList
@@ -52,17 +52,18 @@ def slug_open(filename, output_dir=None, fmt=None):
         outdir = output_dir
 
     # Make sure fmt is valid
-    if fmt != 'ascii' and fmt != 'bin' and fmt != 'binary' and \
-       fmt != 'fits' and fmt is not None:
-        raise ValueError("fmt must be ascii, bin, binary, or fits")
+    if fmt != 'ascii' and fmt != 'txt' and fmt != 'bin' and \
+       fmt != 'binary' and fmt != 'fits' and fmt != 'fits2' and \
+              fmt is not None:
+        raise ValueError("unknown format {}".fmt)
 
     # Make sure we're not trying to do fits if we don't have astropy
-    if fmt == 'fits' and fits is None:
+    if (fmt == 'fits' or fmt == 'fits2') and fits is None:
         raise ValueError("Couldn't import astropy, so fits format "+
                          "is unavailable.")
 
     # See if we have a text file
-    if fmt is None or fmt=='ascii':
+    if fmt is None or fmt=='ascii' or fmt=='txt':
         fname = osp.join(outdir, filename+'.txt')
         try:
             fp = open(fname, 'r')
@@ -84,7 +85,7 @@ def slug_open(filename, output_dir=None, fmt=None):
 
     # If that failed, look for a fits file
     if fp is None:
-        if fmt is None or fmt=='fits':
+        if fmt is None or fmt=='fits' or fmt=='fits2':
             fname = osp.join(outdir, filename+'.fits')
             try:
                 fp = fits.open(fname)
@@ -98,7 +99,7 @@ def slug_open(filename, output_dir=None, fmt=None):
     if (fp is None) and (output_dir is None) and \
        ('SLUG_DIR' in os.environ):
         outdir = osp.join(os.environ['SLUG_DIR'], 'output')
-        if fmt is None or fmt == 'ascii':
+        if fmt is None or fmt == 'ascii' or fmt == 'txt':
             fname = osp.join(outdir,
                              filename+'.txt')
             try:
@@ -115,8 +116,8 @@ def slug_open(filename, output_dir=None, fmt=None):
                 fmt = 'bin'
             except IOError:
                 pass
-        if (fmt is None or fmt == 'fits') and fp is None \
-           and fits is not None:
+        if (fmt is None or fmt == 'fits' or fmt == 'fits2') \
+           and fp is None and fits is not None:
             fname = osp.join(outdir, 
                              filename+'.fits')
             try:

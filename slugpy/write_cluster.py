@@ -31,21 +31,24 @@ def write_cluster(data, model_name, fmt):
        model_name : string
           Base file name to give the model to be written. Can include a
           directory specification if desired.
-       fmt : string
-          Format for the output file. Allowed values are 'ascii', 'bin'
-          or 'binary, and 'fits'.
+       fmt : 'txt' | 'ascii' | 'bin' | 'binary' | 'fits' | 'fits2'
+          Format for the output file; 'txt' and 'ascii' produce ASCII
+          text files, 'bin' or 'binary' produce binary files, and
+          'fits' or 'fits2' product FITS files; 'fits2' uses an
+          ordering that allows for more efficient querying of outputs
+          too large to fit in memory
 
     Returns
        Nothing
     """
 
     # Make sure fmt is valid
-    if fmt != 'ascii' and fmt != 'bin' and fmt != 'binary' and \
-       fmt != 'fits':
-        raise ValueError("fmt must be ascii, bin, binary, or fits")
+    if fmt != 'ascii' and fmt != 'txt' and fmt != 'bin' and \
+       fmt != 'binary' and fmt != 'fits' and fmt != 'fits2':
+        raise ValueError("unrecognized format {}".format(fmt))
 
     # Make sure we're not trying to do fits if we don't have astropy
-    if fmt == 'fits' and fits is None:
+    if (fmt == 'fits' or fmt == 'fits2') and fits is None:
         raise ValueError("Couldn't import astropy, so fits format "+
                          "is unavailable.")
 
@@ -54,7 +57,7 @@ def write_cluster(data, model_name, fmt):
     ################################################################
     if 'form_time' in data._fields:
 
-        if fmt == 'ascii':
+        if fmt == 'ascii' or fmt == 'txt':
 
             ########################################################
             # ASCII mode
@@ -206,7 +209,7 @@ def write_cluster(data, model_name, fmt):
             # Close file
             fp.close()
 
-        elif fmt == 'fits':
+        elif fmt == 'fits' or fmt == 'fits2':
 
             ########################################################
             # FITS mode
@@ -256,7 +259,7 @@ def write_cluster(data, model_name, fmt):
     ################################################################
     if 'spec' in data._fields:
 
-        if fmt == 'ascii':
+        if fmt == 'ascii' or fmt == 'txt':
 
             ########################################################
             # ASCII mode
@@ -457,7 +460,7 @@ def write_cluster(data, model_name, fmt):
             # Close file
             fp.close()
 
-        elif fmt == 'fits':
+        elif fmt == 'fits' or fmt == 'fits2':
 
             ########################################################
             # FITS mode
@@ -543,7 +546,7 @@ def write_cluster(data, model_name, fmt):
     ################################################################
     if 'phot' in data._fields:
 
-        if fmt == 'ascii':
+        if fmt == 'ascii' or fmt == 'txt':
 
             ########################################################
             # ASCII mode
@@ -750,6 +753,83 @@ def write_cluster(data, model_name, fmt):
 
             # Create HDU list and write to file
             hdulist = fits.HDUList([prihdu, tbhdu])
+            hdulist.writeto(model_name+'_cluster_phot.fits',
+                            clobber=True)
+
+        elif fmt == 'fits2':
+
+            ########################################################
+            # FITS2 mode
+            ########################################################
+
+            # Create dummy primary HDU
+            prihdu = fits.PrimaryHDU()
+
+            # Convert trial, time, unique ID to FITS columns
+            hdu1cols = []
+            hdu1cols.append(fits.Column(name="Trial", format="1K",
+                                        unit="", array=data.trial))
+            hdu1cols.append(fits.Column(name="UniqueID", format="1K",
+                                        unit="", array=data.id))
+            hdu1cols.append(fits.Column(name="Time", format="1D",
+                                        unit="yr", array=data.time))
+
+            # Make HDU containing trial, time, unique ID
+            hdu1fitscol = fits.ColDefs(hdu1cols)
+            hdu1 = fits.BinTableHDU.from_columns(hdu1fitscol)
+
+            # Create master HDU list
+            hdulist = [prihdu, hdu1]
+
+            # Now loop over filters; each will be stored as a single
+            # column in its own HDU
+            for i in range(len(data.filter_names)):
+
+                # Create column
+                col = [fits.Column(name=data.filter_names[i],
+                                    unit=data.filter_units[i],
+                                    format="1D",
+                                    array=data.phot[:,i])]
+
+                # Create HDU from column
+                hdu = fits.BinTableHDU.from_columns(
+                    fits.ColDefs(col))
+
+                # Add to master HDU list
+                hdulist.append(hdu)
+
+            # Repeat loop over filters for nebular, extincted, and
+            # extincted+nebular photometry if we have those
+            if 'phot_neb' in data._fields:
+                for i in range(len(data.filter_names)):
+                    col = [fits.Column(name=data.filter_names[i]+'_neb',
+                                       unit=data.filter_units[i],
+                                       format="1D",
+                                       array=data.phot_neb[:,i])]
+                    hdu = fits.BinTableHDU.from_columns(
+                        fits.ColDefs(col))
+                    hdulist.append(hdu)
+            if 'phot_ex' in data._fields:
+                for i in range(len(data.filter_names)):
+                    col = [fits.Column(name=data.filter_names[i]+'_ex',
+                                       unit=data.filter_units[i],
+                                       format="1D",
+                                       array=data.phot_ex[:,i])]
+                    hdu = fits.BinTableHDU.from_columns(
+                        fits.ColDefs(col))
+                    hdulist.append(hdu)
+            if 'phot_neb_ex' in data._fields:
+                for i in range(len(data.filter_names)):
+                    col = [fits.Column(name=data.filter_names[i]+'_neb_ex',
+                                       unit=data.filter_units[i],
+                                       format="1D",
+                                       array=data.phot_neb_ex[:,i])]
+                    hdu = fits.BinTableHDU.from_columns(
+                        fits.ColDefs(col))
+                    hdulist.append(hdu)
+
+            # Create final HDU list and write to file
+            hdulist = fits.HDUList(hdulist)
             hdulist.writeto(model_name+'_cluster_phot.fits',
                             clobber=True)
 
