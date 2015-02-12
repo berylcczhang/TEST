@@ -619,22 +619,22 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             if nebular and \
                read_nebular is not False and \
                read_extinct is not True:
-                photometry_convert(photsystem, phot_neb, units_save, 
-                                   filter_names=filters)            
+                photometry_convert(photsystem, phot_neb, units, 
+                                   filter_last=True)            
                 units_out = deepcopy(units)
                 units = deepcopy(units_save)
             if extinct and \
                read_nebular is not True and \
                read_extinct is not False:
-                photometry_convert(photsystem, phot_ex, units_save, 
-                                   filter_names=filters)
+                photometry_convert(photsystem, phot_ex, units, 
+                                   filter_last=True)
                 units_out = deepcopy(units)
                 units = deepcopy(units_save)
             if nebular and extinct and \
                read_nebular is not False and \
                read_extinct is not False:
-                photometry_convert(photsystem, phot_neb_ex, units_save, 
-                                   filter_names=filters)
+                photometry_convert(photsystem, phot_neb_ex, units, 
+                                   filter_last=True)
                 units_out = deepcopy(units)
                 units = deepcopy(units_save)
             units = units_out
@@ -652,24 +652,24 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 photometry_convert(photsystem, phot_neb, units, 
                                    wl_eff, filter_names=filters,
                                    filter_last=True)
-                units = deepcopy(units_save)
                 units_out = deepcopy(units)
+                units = deepcopy(units_save)
             if extinct and \
                read_nebular is not True and \
                read_extinct is not False:
                 photometry_convert(photsystem, phot_ex, units, wl_eff, 
                                    filter_names=filters,
                                    filter_last=True)
-                units = deepcopy(units_save)
                 units_out = deepcopy(units)
+                units = deepcopy(units_save)
             if nebular and extinct and \
                read_nebular is not False and \
                read_extinct is not False:
                 photometry_convert(photsystem, phot_neb_ex, units, 
                                    wl_eff, filter_names=filters,
                                    filter_last=True)
-                units = deepcopy(units_save)
                 units_out = deepcopy(units)
+                units = deepcopy(units_save)
             units = units_out
 
     # Construct return object
