@@ -55,8 +55,54 @@
             
   <div class="section" id="sfr-slug-bayesian-inference-of-star-formation-rates">
 <span id="sec-sfr-slug"></span><h1>sfr_slug: Bayesian Inference of Star Formation Rates<a class="headerlink" href="#sfr-slug-bayesian-inference-of-star-formation-rates" title="Permalink to this headline">¶</a></h1>
+<p>The slugy.sfr_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the &#8220;point mass estimate&#8221; (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around <a class="reference internal" href="bayesphot.html#sec-bayesphot"><em>bayesphot: Bayesian Inference for Stochastic Stellar Populations</em></a>, so for details on how the calculation is performed see the bayesphot documentation.</p>
+<div class="section" id="getting-the-default-library">
+<h2>Getting the Default Library<a class="headerlink" href="#getting-the-default-library" title="Permalink to this headline">¶</a></h2>
+<p>The sfr_slug module requires a pre-computed library of slug simulations to use as a &#8220;training set&#8221; for its calculations. Due to its size, the default library <em>is not</em> included in the slug git repository. Instead, it is provided for download from the <a class="reference external" href="http://www.slugsps.com/data">SLUG data products website</a>. Download the two files <tt class="docutils literal"><span class="pre">SFR_SLUG_integrated_phot.fits</span></tt> and <tt class="docutils literal"><span class="pre">SFR_SLUG_integrated_prop.fits</span></tt> and save them in the <tt class="docutils literal"><span class="pre">sfr_slug</span></tt> directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use sfr_slug, you will be prompted to download the default library.</p>
+</div>
+<div class="section" id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>The <tt class="docutils literal"><span class="pre">sfr_slug/sfr_slug_example.py</span></tt> file in the repository provides an example of how to use sfr_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr_slug. The required steps are as follows:</p>
+<ol class="arabic">
+<li><p class="first">Import the library and instantiate an <tt class="docutils literal"><span class="pre">sfr_slug</span></tt> object (see <a class="reference internal" href="#sec-sfr-slug-full"><em>Full Documentation of slugpy.sfr_slug</em></a> for full details):</p>
+<div class="highlight-rest"><div class="highlight"><pre>from slugpy.sfr_slug import sfr_slug
+sfr_estimator = sfr_slug()
+</pre></div>
+</div>
+</li>
+</ol>
+<p>This creates an sfr_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/SFR_SLUG. If you have another library of simulations you&#8217;d rather use, you can use the <tt class="docutils literal"><span class="pre">libname</span></tt> keyword to the <tt class="docutils literal"><span class="pre">sfr_slug</span></tt> constructor to select it.</p>
+<ol class="arabic" start="2">
+<li><p class="first">Specify your filter(s), for example:</p>
+<div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.add_filters(&#39;QH0&#39;)
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The <tt class="docutils literal"><span class="pre">add_filter</span></tt> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <tt class="docutils literal"><span class="pre">add_filters</span></tt> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
+<ol class="arabic" start="3">
+<li><p class="first">Specify your priors, for example:</p>
+<div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.priors = &#39;schechter&#39;
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The <tt class="docutils literal"><span class="pre">priors</span></tt> property specifies the assumed prior probability distribution on the star formation rate. It can be either <tt class="docutils literal"><span class="pre">None</span></tt> (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, a callable that takes a star formation rate as input and returns the prior for it, or a string whose value is either &#8220;flat&#8221; or &#8220;prior&#8221;. The two strings specify, respectively, a prior distribution that is either flat in log SFR or follows the Schechter function SFR distribution from <a class="reference external" href="http://adsabs.harvard.edu/abs/2011MNRAS.415.1815B">Bothwell et al. (2011)</a>:</p>
+<div class="math">
+\[p(\log\mathrm{SFR}) \propto \mathrm{SFR}^{\alpha} \exp(-\mathrm{SFR}/\mathrm{SFR}_*)\]</div>
+<p>with <span class="math">\(\alpha = -0.51\)</span> and <span class="math">\(\mathrm{SFR}_* = 9.2\,M_\odot\,\mathrm{yr}^{-1}\)</span>.</p>
+<ol class="arabic" start="4">
+<li><p class="first">Generate the posterior probability distribuiton of SFR via:</p>
+<div class="highlight-rest"><div class="highlight"><pre>logSFR, pdf = sfr_estimator.mpdf(logSFR_in, logSFRphoterr = logSFR_err)
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The argument <tt class="docutils literal"><span class="pre">logSFR_in</span></tt> can be a float or an array specifying one or more point mass estimates of the SFR in your chosen filter. For a case with two or more filters, then <tt class="docutils literal"><span class="pre">logSFR_in</span></tt> must be an array whose trailing dimension matches the number of filters. If you have added two or more filter sets, you need to specify which one you want to use via the <tt class="docutils literal"><span class="pre">filters</span></tt> keyword. The optional argument <tt class="docutils literal"><span class="pre">logSFRphoterr</span></tt> can be used to provide errors on the photometric SFRs. Like <tt class="docutils literal"><span class="pre">logSFR_in</span></tt>, it can be a float or an array.</p>
+<p>The <tt class="docutils literal"><span class="pre">sfr_slug.mpdf</span></tt> method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#sec-sfr-slug-full"><em>Full Documentation of slugpy.sfr_slug</em></a>.</p>
+</div>
 <div class="section" id="full-documentation-of-slugpy-sfr-slug">
-<h2>Full Documentation of slugpy.sfr_slug<a class="headerlink" href="#full-documentation-of-slugpy-sfr-slug" title="Permalink to this headline">¶</a></h2>
+<span id="sec-sfr-slug-full"></span><h2>Full Documentation of slugpy.sfr_slug<a class="headerlink" href="#full-documentation-of-slugpy-sfr-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.sfr_slug.sfr_slug">
 <em class="property">class </em><tt class="descclassname">slugpy.sfr_slug.</tt><tt class="descname">sfr_slug</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug" title="Permalink to this definition">¶</a></dt>
@@ -336,6 +382,8 @@ dimensions match the dimensions of the output grid</dd>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">sfr_slug: Bayesian Inference of Star Formation Rates</a><ul>
+<li><a class="reference internal" href="#getting-the-default-library">Getting the Default Library</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 <li><a class="reference internal" href="#full-documentation-of-slugpy-sfr-slug">Full Documentation of slugpy.sfr_slug</a></li>
 </ul>
 </li>

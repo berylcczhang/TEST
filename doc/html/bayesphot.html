@@ -124,7 +124,7 @@ quantities from a set of input photometry in various bands, together
 with a training data set.</p>
 <dl class="class">
 <dt id="slugpy.bayesphot.bp.bp">
-<em class="property">class </em><tt class="descclassname">slugpy.bayesphot.bp.</tt><tt class="descname">bp</tt><big>(</big><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">slugpy.bayesphot.bp.</tt><tt class="descname">bp</tt><big>(</big><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-06</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.</p>
@@ -149,7 +149,7 @@ dimensions</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">__init__</tt><big>(</big><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-06</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a bp object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>

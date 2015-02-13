@@ -14,7 +14,7 @@
 
 
 \title{slug Documentation}
-\date{February 04, 2015}
+\date{February 12, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -75,10 +75,11 @@
 \expandafter\def\csname PYG@tok@c\endcsname{\let\PYG@it=\textit\def\PYG@tc##1{\textcolor[rgb]{0.25,0.50,0.56}{##1}}}
 \expandafter\def\csname PYG@tok@mf\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
 \expandafter\def\csname PYG@tok@err\endcsname{\def\PYG@bc##1{\setlength{\fboxsep}{0pt}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}
-\expandafter\def\csname PYG@tok@kd\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
+\expandafter\def\csname PYG@tok@mb\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
 \expandafter\def\csname PYG@tok@ss\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.32,0.47,0.09}{##1}}}
 \expandafter\def\csname PYG@tok@sr\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.14,0.33,0.53}{##1}}}
 \expandafter\def\csname PYG@tok@mo\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
+\expandafter\def\csname PYG@tok@kd\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@mi\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
 \expandafter\def\csname PYG@tok@kn\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@o\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
@@ -1031,9 +1032,9 @@ SLUG can produce 7 output files, though the actual number produced depends on th
 
 The only file that is always produced is the summary file, which is named \code{MODEL\_NAME\_summary.txt}, where \code{MODEL\_NAME} is the value given by the \code{model\_name} keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.
 
-The other six output files all have names of the form \code{MODEL\_NAME\_xxx.ext}, where the extension \code{.ext} is one of \code{.txt}, \code{.bin}, or \code{.fits} depending on the \code{output\_mode} specified in the parameter file, and \code{xxx} is \code{integrated\_prop}, \code{integrated\_spec}, \code{integrated\_phot}, \code{cluster\_prop}, \code{cluster\_spec}, or \code{cluster\_phot}. The production of these output files is controlled by the parameters \code{out\_integrated}, \code{out\_integrated\_spec}, \code{out\_integrated\_phot}, \code{out\_cluster}, \code{out\_cluster\_spec}, and \code{out\_cluster\_phot} in the parameter file. The files are formatted as described below.
+The other six output files all have names of the form \code{MODEL\_NAME\_xxx.ext}, where the extension \code{.ext} is one of \code{.txt}, \code{.bin}, or \code{.fits} depending on the \code{output\_mode} specified in the parameter file, and \code{xxx} is \code{integrated\_prop}, \code{integrated\_spec}, \code{integrated\_phot}, \code{cluster\_prop}, \code{cluster\_spec}, or \code{cluster\_phot}. The production of these output files is controlled by the parameters \code{out\_integrated}, \code{out\_integrated\_spec}, \code{out\_integrated\_phot}, \code{out\_cluster}, \code{out\_cluster\_spec}, and \code{out\_cluster\_phot} in the parameter file.
 
-The following conventions are used throughout, unless noted otherwise:
+The easiest way to read these output files is with {\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}}, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:
 \begin{itemize}
 \item {} 
 Masses are in \(M_\odot\)
@@ -1124,27 +1125,34 @@ This file contains data on the spectra of the entire galaxy, and consists of a s
 \code{Time}: evolution time at which the output is produced
 
 \item {} 
-\code{Wavelength}: observed frame wavelength at which the spectrum is evaluated
+\code{Wavelength}: observed frame wavelength at which the stellar spectrum is evaluated
 
 \item {} 
 \code{L\_lambda}: specific luminosity at the specified wavelength, before extinction or nebular effects are applied
 
 \item {} 
+\code{Wavelength\_neb}: observed frame wavelength at which the stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular emission enabled)
+
+\item {} 
 \code{L\_lambda\_neb}: specific luminosity at the specified wavelength, after the light has been processed through the nebula (only present if SLUG was run with nebular emission enabled)
 
 \item {} 
+\code{Wavelength\_ex}: observed frame wavelength at which the extincted stellar spectrum is evaluated (present only if SLUG was run with extinction enabled)
+
+\item {} 
 \code{L\_lambda\_ex}: specific luminosity at the specified wavelength after extinction is applied, but without the effects of the nebula (only present if SLUG was run with extinction enabled)
+
+\item {} 
+\code{Wavelength\_neb\_ex}: observed frame wavelength at which the extincted stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular processing and  extinction enabled)
 
 \item {} 
 \code{L\_lambda\_neb\_ex}: specific luminosity at the specified wavelength, after the light is first processed by the nebular and then subjected to dust extinction (only present if SLUG was run with both extinction and nebular emission enabled)
 
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. Note that some entries for \code{L\_lambda\_ex} and \code{L\_l\_neb\_ex} may be blank. This indicates wavelengths for which a stellar atmosphere model was available, but outside the wavelength range included in the user-specified extinction curve file. Extincted luminosities are unavailable at these wavelengths due to the lack of an extinction curve.
-\begin{quote}
+If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. In \code{ascii} mode, only a single \code{Wavelength} column is present, and for those wavelengths that are not included in one of the grids, some entries may be blank.
 
-If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field \code{Wavelength\_ex} listing the wavelengths at which the extincted spectrum is computed. The second table has three fields if SLUG was run without extinction, or four fields if it was run with extinction. The first three fields, always present, give the trial number, the time, and the spectrum \code{L\_lambda} at that time. The remaining fields \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex}, give the spectra including nebular processing, extinction, and both. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
-\end{quote}
+If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field \code{Wavelength} listing the wavelengths at which the stellar spectra are given; if nebular emission was enabled in the SLUG calculation, there is also a field \code{Wavelength\_neb} giving the nebular wavelength grid, and if extinction was enabled the table has a field \code{Wavelength\_ex} listing the wavelengths at which the extincted spectrum is computed. If both nebular emission and extinction were included, the field \code{Wavelength\_neb\_ex} exists as well, giving the wavelength grid for that spectrum. The second table has three fields, \code{Trial}, \code{Time}, and \code{L\_lambda} giving the trial number, time, and stellar spectrum. It may also contain fields \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} giving the stellar plus nebular spectrum, extincted stellar spectrum, and extincted stellar plus nebular spectrum. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 For binary output, the file is formatted as follows. The file starts with
 \begin{itemize}
@@ -1155,16 +1163,28 @@ For binary output, the file is formatted as follows. The file starts with
 \code{Extinct} (\code{byte}): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 
 \item {} 
-\code{NWavelength} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the spectra
+\code{NWavelength} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the stellar spectra
 
 \item {} 
 \code{Wavelength} (\code{NWavelength} entries of type \code{double})
 
 \item {} 
-\code{NWavelength\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extinted spectra; only present if \code{Extinct} is 1
+\code{NWavelength\_neb} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the stellar plus nebular spectra; only present if \code{Nebular} is 1
+
+\item {} 
+\code{Wavelength\_neb} (\code{NWavelength\_neb} entries of type \code{double})
+
+\item {} 
+\code{NWavelength\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extincted spectra; only present if \code{Extinct} is 1
 
 \item {} 
 \code{Wavelength\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
+
+\item {} 
+\code{NWavelength\_neb\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extincted nebular plus stellar spectra; only present if \code{Nebular} and \code{Extinct} are both 1
+
+\item {} 
+\code{Wavelength\_ex} (\code{NWavelength\_neb\_ex} entries of type \code{double}); only present if \code{Nebular} and \code{Extinct} are both 1
 
 \end{itemize}
 
@@ -1177,13 +1197,13 @@ and then contains a series of records in the format
 \code{L\_lambda} (\code{NWavelength} entries of type \code{double})
 
 \item {} 
-\code{L\_lambda\_neb} (\code{NWavelength} entries of type \code{double}); only present if \code{Nebular} is 1
+\code{L\_lambda\_neb} (\code{NWavelength\_neb} entries of type \code{double}); only present if \code{Nebular} is 1
 
 \item {} 
 \code{L\_lambda\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
 
 \item {} 
-\code{L\_lambda\_neb\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Nebular} and \code{Extinct} are both 1
+\code{L\_lambda\_neb\_ex} (\code{NWavelength\_neb\_ex} entries of type \code{double}); only present if \code{Nebular} and \code{Extinct} are both 1
 
 \end{itemize}
 
@@ -1415,25 +1435,34 @@ This file contains the spectra of the individual clusters, and each entry contai
 \code{Time}: evolution time at which the output is produced
 
 \item {} 
-\code{Wavelength}: observed frame wavelength at which the spectrum is evaluated
+\code{Wavelength}: observed frame wavelength at which the stellar spectrum is evaluated
 
 \item {} 
-\code{L\_lambda}: specific luminosity at the specified wavelength
+\code{L\_lambda}: specific luminosity at the specified wavelength, before extinction or nebular effects are applied
 
 \item {} 
-\code{L\_lambda\_neb}: specific luminosity at the specified wavelength after nebular processing is applied (only present if SLUG was run with nebular processing enabled)
+\code{Wavelength\_neb}: observed frame wavelength at which the stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular emission enabled)
 
 \item {} 
-\code{L\_lambda\_ex}: specific luminosity at the specified wavelength after extinction is applied (only present if SLUG was run with extinction enabled)
+\code{L\_lambda\_neb}: specific luminosity at the specified wavelength, after the light has been processed through the nebula (only present if SLUG was run with nebular emission enabled)
 
 \item {} 
-\code{L\_lambda\_neb\_ex}: specific luminosity at the specified wavelength after nebular processing and extinction are applied (only present if SLUG was run with both nebular processing and extinction enabled)
+\code{Wavelength\_ex}: observed frame wavelength at which the extincted stellar spectrum is evaluated (present only if SLUG was run with extinction enabled)
+
+\item {} 
+\code{L\_lambda\_ex}: specific luminosity at the specified wavelength after extinction is applied, but without the effects of the nebula (only present if SLUG was run with extinction enabled)
+
+\item {} 
+\code{Wavelength\_neb\_ex}: observed frame wavelength at which the extincted stellar plus nebular spectrum is evaluated (present only if SLUG was run with nebular processing and  extinction enabled)
+
+\item {} 
+\code{L\_lambda\_neb\_ex}: specific luminosity at the specified wavelength, after the light is first processed by the nebular and then subjected to dust extinction (only present if SLUG was run with both extinction and nebular emission enabled)
 
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. The column \code{L\_lambda\_ex} is present only if SLUG was run with extinction enabled. Some entries for \code{L\_lambda\_ex} may be empty; see {\hyperref[output:ssec-int-spec-file]{\emph{The integrated\_spec File}}}.
+If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. The columns \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} are present only if SLUG was run with the appropriate options enabled. Some entries in these fields may be empty; see {\hyperref[output:ssec-int-spec-file]{\emph{The integrated\_spec File}}}.
 
-If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given; if extinction was enabled in the SLUG calculation, it also contains a field \code{Wavelength\_ex} listing the wavelengths at which the extincted spectrum is computed. The second table has always contains the fields \code{UniqueId}, \code{Time}, \code{Trial}, and \code{L\_lambda} giving the cluster unique ID, time, trial number, and stellar spectrum. Depending on whether nebular processing and/or extinction were enabled when SLUG was run, it may also contain the fields \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} giving the nebular-processed, extincted, and nebular-processed plus extincted spectra. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given, in the same format as for {\hyperref[output:ssec-int-spec-file]{\emph{The integrated\_spec File}}}. The second table has always contains the fields \code{UniqueId}, \code{Time}, \code{Trial}, and \code{L\_lambda} giving the cluster unique ID, time, trial number, and stellar spectrum. Depending on whether nebular processing and/or extinction were enabled when SLUG was run, it may also contain the fields \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} giving the nebular-processed, extincted, and nebular-processed plus extincted spectra. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 Output in \code{binary} mode is formatted as follows.  The file starts with
 \begin{itemize}
@@ -1444,16 +1473,28 @@ Output in \code{binary} mode is formatted as follows.  The file starts with
 \code{Extinct} (\code{byte}): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
 
 \item {} 
-\code{NWavelength} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the spectra
+\code{NWavelength} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the stellar spectra
 
 \item {} 
 \code{Wavelength} (\code{NWavelength} entries of type \code{double})
 
 \item {} 
-\code{NWavelength\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extinted spectra; only present if \code{Extinct} is 1
+\code{NWavelength\_neb} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the stellar plus nebular spectra; only present if \code{Nebular} is 1
+
+\item {} 
+\code{Wavelength\_neb} (\code{NWavelength\_neb} entries of type \code{double})
+
+\item {} 
+\code{NWavelength\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extincted spectra; only present if \code{Extinct} is 1
 
 \item {} 
 \code{Wavelength\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
+
+\item {} 
+\code{NWavelength\_neb\_ex} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): the number of wavelength entries in the extincted nebular plus stellar spectra; only present if \code{Nebular} and \code{Extinct} are both 1
+
+\item {} 
+\code{Wavelength\_ex} (\code{NWavelength\_neb\_ex} entries of type \code{double}); only present if \code{Nebular} and \code{Extinct} are both 1
 
 \end{itemize}
 
@@ -1476,13 +1517,13 @@ This is followed by \code{NCluster} entries of the following form:
 \code{L\_lambda} (\code{NWavelength} entries of type \code{double})
 
 \item {} 
-\code{L\_lambda\_neb} (\code{NWavelength} entries of type \code{double}); only present if \code{Nebular} is 1
+\code{L\_lambda\_neb} (\code{NWavelength\_neb} entries of type \code{double}); only present if \code{Nebular} is 1
 
 \item {} 
 \code{L\_lambda\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Extinct} is 1
 
 \item {} 
-\code{L\_lambda\_neb\_ex} (\code{NWavelength\_ex} entries of type \code{double}); only present if \code{Nebular} and \code{Extinct} are both 1
+\code{L\_lambda\_neb\_ex} (\code{NWavelength\_neb\_ex} entries of type \code{double}); only present if \code{Nebular} and \code{Extinct} are both 1
 
 \end{itemize}
 
@@ -1694,7 +1735,10 @@ phot: photometry of the stars in each filter
 The following fields are present only if SLUG was run with nebular processing enabled:
 \begin{itemize}
 \item {} 
-spec\_neb: same as spec, but for the spectrum that emerges after the starlight has passed through the nebulae around the emitting clusters and field stars
+wl\_neb: same as wl, but for the spectrum that emerges after the starlight has passed through the nebulae around the emitting clusters and field stars. The nebular grid is finer than the stellar grid, because it contains wavelength extra entries around prominent lines so that the lines are resolved on the grid
+
+\item {} 
+spec\_neb: same as spec, but for the nebular-processed spectrum
 
 \item {} 
 phot\_neb: same as phot, but for the nebular-processed spectrum
@@ -1704,10 +1748,10 @@ phot\_neb: same as phot, but for the nebular-processed spectrum
 The following fields are present only if SLUG was run with extinction enabled:
 \begin{itemize}
 \item {} 
-wl\_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl\_ex may contain fewer elements than wl\_ex, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.
+wl\_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl\_ex will generally cover a smaller wavelength range than wl, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.
 
 \item {} 
-spec\_ex: same as spec, but for the extincted spectrum. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.
+spec\_ex: same as spec, but for the extincted spectrum
 
 \item {} 
 phot\_ex: same as phot, but for the extincted spectrum. Note that some values may be \code{NaN}. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
@@ -1717,7 +1761,10 @@ phot\_ex: same as phot, but for the extincted spectrum. Note that some values ma
 The following fields are present only if SLUG was run with both nebular processing and extinction enabled:
 \begin{itemize}
 \item {} 
-spec\_neb\_ex: same as spec\_neb, but with extinction applied. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.
+wl\_neb\_ex: same as wl\_neb, but for the extincted, nebular-processed spectrum. Will be limited to the same wavelength range as wl\_ex.
+
+\item {} 
+spec\_neb\_ex: same as spec\_neb, but with extinction applied
 
 \item {} 
 phot\_neb\_ex: same as phot\_neb, but wtih extinction applied. Note that some values may be \code{NaN}. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
@@ -2090,10 +2137,39 @@ wavelength, in Angstrom
 \item[{spec}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
 specific luminosity of each cluster at each wavelength, in erg/s/A
 
-\end{description}
+\item[{wl\_neb}] \leavevmode{[}array{]}
+wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)
 
-If extinction is enabled, wl\_ex and spec\_ex will contain the spectra 
-after extinction has been applied.
+\item[{spec\_neb}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity at each wavelength and each time for each
+trial, including emission and absorption by the HII region,
+in erg/s/A (present only if SLUG was run with nebular
+emission enabled)
+
+\item[{wl\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)
+
+\item[{spec\_ex}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity at each wavelength in wl\_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)
+
+\item[{wl\_neb\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)
+
+\item[{spec\_neb\_ex}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
+specific luminosity at each wavelength in wl\_ex and each
+time for each trial including emission and absorption by the
+HII region, after extinction has been applied, in erg/s/A
+(present only if SLUG was run with nebular emission and
+extinction both enabled)
+
+\end{description}
 
 (Present if the run being read contains a cluster\_phot file)
 \begin{description}
@@ -2226,7 +2302,7 @@ ValueError, if photsystem is set to an unknown values
 \index{read\_cluster\_phot() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_cluster_phot}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster\_phot}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+\phantomsection\label{slugpy:slugpy.read_cluster_phot}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster\_phot}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}, \emph{filters\_only=False}, \emph{read\_filters=None}, \emph{read\_nebular=None}, \emph{read\_extinct=None}, \emph{phot\_only=False}}{}
 Function to read a SLUG2 cluster\_phot file.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -2238,14 +2314,14 @@ The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG\_DIR
 directory if that environment variable is set
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the file to be read. Allowed values are `ascii',
-`bin' or `binary, and `fits'. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
 
 \item[{nofilterdata}] \leavevmode{[}bool{]}
 If True, the routine does not attempt to read the filter
@@ -2270,10 +2346,37 @@ On return, this dict will contain the keys `fname' and
 `format', giving the name of the file read and the format it
 was in; `format' will be one of `ascii', `binary', or `fits'
 
+\item[{filters\_only}] \leavevmode{[}bool{]}
+If True, the code only reads the data on the filters, not
+any of the actual photometry. If combined with nofilterdata,
+this can be used to return the list of available filters
+and nothing else.
+
+\item[{read\_filters}] \leavevmode{[}None \textbar{} string \textbar{} listlike containing strings{]}
+If this is None, data on all filters is read. Otherwise only
+filters whose name(s) match the input filter names ar
+read.
+
+\item[{read\_nebular}] \leavevmode{[}None \textbar{} bool{]}
+If True, only data with the nebular contribution is read; if
+False, only data without it is read. Default behavior is to
+read all data.
+
+\item[{read\_extinct}] \leavevmode{[}None \textbar{} bool{]}
+If True, only data with extinction applied is read; if
+False, only data without it is read. Default behavior is to
+read all data.
+
+\item[{phot\_only}] \leavevmode{[}bool{]}
+If true, id, trial, time, and filter information are not
+read, only photometry
+
 \end{description}
 
 \item[{Returns}] \leavevmode
-A namedtuple containing the following fields:
+A namedtuple, which can contain the following fields depending
+on the input options, and depending on which fields are present
+in the file being read:
 \begin{description}
 \item[{id}] \leavevmode{[}array, dtype uint{]}
 unique ID of cluster
@@ -2297,13 +2400,11 @@ True
 
 \item[{filter\_wl}] \leavevmode{[}list of arrays{]}
 a list giving the wavelength table for each filter; this is
-None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
-nofilterdata is True
+None for the filters Lbol, QH0, QHe0, and QHe1
 
 \item[{filter\_response}] \leavevmode{[}list of arrays{]}
 a list giving the photon response function for each filter;
-this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
-if nofilterdata is True
+this is None for the filters Lbol, QH0, QHe0, and QHe1
 
 \item[{filter\_beta}] \leavevmode{[}list{]}
 powerlaw index beta for each filter; used to normalize the
@@ -2318,24 +2419,20 @@ indicated in the units field
 
 \item[{phot\_neb}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
 same as phot, but for the light after it has passed through
-the HII region (present only if SLUG was run with nebular
-emission enabled)
+the HII region
 
 \item[{phot\_ex}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
-same as phot, but after extinction has been applied (present
-only if SLUG was run with extinction enabled)
+same as phot, but after extinction has been applied
 
 \item[{phot\_neb\_ex}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
 same as phot, but for the light after it has passed through
-the HII region and then had extinction applied (present only
-if SLUG was run with both nebular emission and extinction
-enabled)
+the HII region and then had extinction applied
 
 \end{description}
 
 \item[{Raises}] \leavevmode
 IOError, if no photometry file can be opened
-ValueError, if photsystem is set to an unknown values
+ValueError, if photsystem is set to an unknown value
 
 \end{description}
 
@@ -2356,14 +2453,14 @@ The directory where the output is located; if set to None,
 the current directory is searched, followed by the SLUG\_DIR
 directory if that environment variable is set
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the file to be read. Allowed values are `ascii',
-`bin' or `binary, and `fits'. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
 
 \item[{verbose}] \leavevmode{[}bool{]}
 If True, verbose output is printed as code runs
@@ -2433,14 +2530,14 @@ The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG\_DIR
 directory if that environment variable is set
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the file to be read. Allowed values are `ascii',
-`bin' or `binary, and `fits'. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
 
 \item[{verbose}] \leavevmode{[}bool{]}
 If True, verbose output is printed as code runs
@@ -2470,7 +2567,11 @@ wavelength, in Angstrom
 \item[{spec}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
 specific luminosity of each cluster at each wavelength, in erg/s/A
 
-\item[{spec\_neb}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+\item[{wl\_neb}] \leavevmode{[}array{]}
+wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)
+
+\item[{spec\_neb}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
 specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
 in erg/s/A (present only if SLUG was run with nebular
@@ -2486,7 +2587,12 @@ time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)
 
-\item[{spec\_neb\_ex}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+\item[{wl\_neb\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)
+
+\item[{spec\_neb\_ex}] \leavevmode{[}array, shape (N\_cluster, N\_wavelength){]}
 specific luminosity at each wavelength in wl\_ex and each
 time for each trial including emission and absorption by the
 HII region, after extinction has been applied, in erg/s/A
@@ -2651,10 +2757,39 @@ wavelengths, in Angstrom
 specific luminosity at each wavelength and each time for each
 trial, in erg/s/A
 
-\end{description}
+\item[{wl\_neb}] \leavevmode{[}array{]}
+wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)
 
-If extinction is enabled, wl\_ex and spec\_ex will contain the spectra 
-after extinction has been applied.
+\item[{spec\_neb}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity at each wavelength and each time for each
+trial, including emission and absorption by the HII region,
+in erg/s/A (present only if SLUG was run with nebular
+emission enabled)
+
+\item[{wl\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)
+
+\item[{spec\_ex}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity at each wavelength in wl\_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)
+
+\item[{wl\_neb\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)
+
+\item[{spec\_neb\_ex}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
+specific luminosity at each wavelength in wl\_ex and each
+time for each trial including emission and absorption by the
+HII region, after extinction has been applied, in erg/s/A
+(present only if SLUG was run with nebular emission and
+extinction both enabled)
+
+\end{description}
 
 (Only present if an integrated\_phot file is found)
 \begin{description}
@@ -2784,7 +2919,7 @@ indicated in the units field
 \index{read\_integrated\_phot() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_integrated_phot}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_integrated\_phot}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+\phantomsection\label{slugpy:slugpy.read_integrated_phot}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_integrated\_phot}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}, \emph{filters\_only=False}, \emph{read\_filters=None}, \emph{read\_nebular=None}, \emph{read\_extinct=None}}{}
 Function to read a SLUG2 integrated\_phot file.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -2796,14 +2931,14 @@ The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG\_DIR
 directory if that environment variable is set
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the file to be read. Allowed values are `ascii',
-`bin' or `binary, and `fits'. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
 
 \item[{nofilterdata}] \leavevmode{[}bool{]}
 If True, the routine does not attempt to read the filter
@@ -2828,10 +2963,33 @@ On return, this dict will contain the keys `fname' and
 `format', giving the name of the file read and the format it
 was in; `format' will be one of `ascii', `binary', or `fits'
 
+\item[{filters\_only}] \leavevmode{[}bool{]}
+If True, the code only reads the data on the filters, not
+any of the actual photometry. If combined with nofilterdata,
+this can be used to return the list of available filters
+and nothing else.
+
+\item[{read\_filters}] \leavevmode{[}None \textbar{} string \textbar{} listlike containing strings{]}
+If this is None, data on all filters is read. Otherwise only
+filters whose name(s) match the input filter names ar
+read.
+
+\item[{read\_nebular}] \leavevmode{[}None \textbar{} bool{]}
+If True, only data with the nebular contribution is read; if
+False, only data without it is read. Default behavior is to
+read all data.
+
+\item[{read\_extinct}] \leavevmode{[}None \textbar{} bool{]}
+If True, only data with extinction applied is read; if
+False, only data without it is read. Default behavior is to
+read all data.
+
 \end{description}
 
 \item[{Returns}] \leavevmode
-A namedtuple containing the following fields:
+A namedtuple , which can contain the following fields depending
+on the input options, and depending on which fields are present
+in the file being read:
 \begin{description}
 \item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
 Times at which data are output; shape is either N\_times (if
@@ -2851,13 +3009,11 @@ True
 
 \item[{filter\_wl}] \leavevmode{[}list of arrays{]}
 a list giving the wavelength table for each filter; this is
-None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
-nofilterdata is True
+None for the filters Lbol, QH0, QHe0, and QHe1
 
 \item[{filter\_response}] \leavevmode{[}list of arrays{]}
 a list giving the photon response function for each filter;
-this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
-if nofilterdata is True
+this is None for the filters Lbol, QH0, QHe0, and QHe1
 
 \item[{filter\_beta}] \leavevmode{[}list{]}
 powerlaw index beta for each filter; used to normalize the
@@ -2872,18 +3028,14 @@ units are as indicated in the units field
 
 \item[{phot\_neb}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
 same as phot, but for the light after it has passed through
-the HII region (present only if SLUG was run with nebular
-emission enabled)
+the HII region
 
 \item[{phot\_ex}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
-same as phot, but after extinction has been applied (present
-only if SLUG was run with extinction enabled)
+same as phot, but after extinction has been applied
 
 \item[{phot\_neb\_ex}] \leavevmode{[}array, shape (N\_filter, N\_times, N\_trials){]}
 same as phot, but for the light after it has passed through
-the HII region and then had extinction applied (present only
-if SLUG was run with both nebular emission and extinction
-enabled)
+the HII region and then had extinction applied
 
 \end{description}
 
@@ -2910,14 +3062,14 @@ The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG\_DIR
 directory if that environment variable is set
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the file to be read. Allowed values are `ascii',
-`bin' or `binary, and `fits'. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
 
 \item[{verbose}] \leavevmode{[}bool{]}
 If True, verbose output is printed as code runs
@@ -2983,14 +3135,14 @@ The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG\_DIR
 directory if that environment variable is set
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the file to be read. Allowed values are `ascii',
-`bin' or `binary, and `fits'. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
 
 \item[{verbose}] \leavevmode{[}bool{]}
 If True, verbose output is printed as code runs
@@ -3017,6 +3169,10 @@ wavelength, in Angstrom
 specific luminosity at each wavelength and each time for each
 trial, in erg/s/A
 
+\item[{wl\_neb}] \leavevmode{[}array{]}
+wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)
+
 \item[{spec\_neb}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
 specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
@@ -3032,6 +3188,11 @@ specific luminosity at each wavelength in wl\_ex and each
 time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)
+
+\item[{wl\_neb\_ex}] \leavevmode{[}array{]}
+wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)
 
 \item[{spec\_neb\_ex}] \leavevmode{[}array, shape (N\_wavelength, N\_times, N\_trials){]}
 specific luminosity at each wavelength in wl\_ex and each
@@ -3093,14 +3254,14 @@ the current directory is searched, followed by the
 SLUG\_DIR/output directory if the SLUG\_DIR environment variable
 is set
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the file to be read. Allowed values are `ascii',
-`bin' or `binary, and `fits'. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
 
 \end{description}
 
@@ -3136,9 +3297,12 @@ by read\_cluster
 Base file name to give the model to be written. Can include a
 directory specification if desired.
 
-\item[{fmt}] \leavevmode{[}string{]}
-Format for the output file. Allowed values are `ascii', `bin'
-or `binary, and `fits'.
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the output file; `txt' and `ascii' produce ASCII
+text files, `bin' or `binary' produce binary files, and
+`fits' or `fits2' product FITS files; `fits2' uses an
+ordering that allows for more efficient querying of outputs
+too large to fit in memory
 
 \end{description}
 
@@ -4934,7 +5098,7 @@ with a training data set.
 \index{bp (class in slugpy.bayesphot.bp)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}}{}
 A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.
@@ -4961,7 +5125,7 @@ dimensions
 \index{\_\_init\_\_() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}}{}
 Initialize a bp object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -5256,12 +5420,88 @@ simulation in the library
 
 \chapter{cluster\_slug: Bayesian Inference of Star Cluster Properties}
 \label{cluster_slug:sec-cluster-slug}\label{cluster_slug::doc}\label{cluster_slug:cluster-slug-bayesian-inference-of-star-cluster-properties}
+The slugpy.cluster\_slug module computes posterior probabilities for the mass, age, and extinction of star clusters from a set of input photometry.  It is implemented as a wrapper around {\hyperref[bayesphot:sec-bayesphot]{\emph{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}, so for details on how the calculation is performed see the bayesphot documentation.
+
+
+\section{Getting the Default Library}
+\label{cluster_slug:getting-the-default-library}
+The cluster\_slug module requires a pre-computed library of slug simulations to use as a ``training set'' for its calculations. Due to its size, the default library \emph{is not} included in the slug git repository. Instead, it is provided for download from the \href{http://www.slugsps.com/data}{SLUG data products website}. Download the two files \code{clusterslug\_mw\_cluster\_phot.fits} and \code{clusterslug\_mw\_cluster\_prop.fits} and save them in the \code{cluster\_slug} directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use cluster\_slug, you will be prompted to download the default library.
+
+
+\section{Basic Usage}
+\label{cluster_slug:basic-usage}
+For an example of how to use cluster\_slug, see the file \code{cluster\_slug/cluster\_slug\_example.py} in the repository. All funtionality is provided through the cluster\_slug class. The basic steps are as follows:
+\begin{enumerate}
+\item {} 
+Import the library and instantiate an \code{sfr\_slug} object (see {\hyperref[cluster_slug:ssec-cluster-slug-full]{\emph{Full Documentation of slugpy.cluster\_slug}}} for full details):
+
+\begin{Verbatim}[commandchars=\\\{\}]
+from slugpy.cluster\PYGZus{}slug import cluster\PYGZus{}slug
+cs = cluster\PYGZus{}slug(photsystem=photsystem)
+\end{Verbatim}
+
+\end{enumerate}
+
+This creates a cluster\_slug object, using the default simulation library, \$SLUG\_DIR/sfr\_slug/clusterslug\_mw. If you have another library of simulations you'd rather use, you can use the \code{libname} keyword to the \code{cluster\_slug} constructor to select it. The optional argument \code{photsystem} specifies the photometric system you will be using for your data. Possible values are \code{L\_nu} (flux per unit frequency, in erg/s/Hz), \code{L\_lambda} (flux per unit wavelength, in erg/s/Angstrom), \code{AB} (AB magnitudes), \code{STMAG} (ST magnitudes), and \code{Vega} (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the \code{L\_nu} system.
+\begin{enumerate}
+\setcounter{enumi}{1}
+\item {} 
+Specify your filter(s), for example:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+cs.add\PYGZus{}filters([\PYGZsq{}WFC3\PYGZus{}UVIS\PYGZus{}F336W\PYGZsq{}, \PYGZsq{}WFC3\PYGZus{}UVIS\PYGZus{}F438W\PYGZsq{}, \PYGZsq{}WFC3\PYGZus{}UVIS\PYGZus{}F555W\PYGZsq{},
+                \PYGZsq{}WFC3\PYGZus{}UVIS\PYGZus{}F814W\PYGZsq{}, \PYGZsq{}WFC3\PYGZus{}UVIS\PYGZus{}F657N\PYGZsq{}])
+\end{Verbatim}
+
+\end{enumerate}
+
+The \code{add\_filter} method takes as an argument a string or list of strings specifying which filters you're going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling \code{add\_filters} more than once), and then specify which set of filters you're using for any given calculation.
+\begin{enumerate}
+\setcounter{enumi}{2}
+\item {} 
+Specify your priors, for example:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZsh{} Set priors to be flat in log T and A\PYGZus{}V, but vary with log M as
+\PYGZsh{} p(log M) \PYGZti{} 1/M
+def priorfunc(physprop):
+   \PYGZsh{} Note: physprop is an array of shape (N, 3) where physprop[:,0] =
+   \PYGZsh{} log M, physprop[:,1] = log T, physprop[:,2] = A\PYGZus{}V
+   return 1.0/exp(physprop[:,0])
+cs.priors = prorfunc
+\end{Verbatim}
+
+\end{enumerate}
+
+The \code{priors} property specifies the assumed prior probability distribution on the physical properties of star clusters. It can be either \code{None} (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, or a callable that takes a vector of physical properties as input and returns the prior for it.
+\begin{enumerate}
+\setcounter{enumi}{3}
+\item {} 
+Generate a marginal posterior probability distribuiton via:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+logm, pdf = cs.mpdf(idx, phot, photerr = photerr)
+\end{Verbatim}
+
+\end{enumerate}
+
+The first argument \code{idx} is an index for which posterior distribution should be computed -- a value of 0 generates the posterior in log mass, a value of 1 generates the posterion on log age, and a value of generates the posterior in A\_V. The second argument \code{phot} is an array giving the photometric values in the filters specified in step 2; make sure you're using the same photometric system you used in step 1. For the array \code{phot}, the trailing dimension must match the number of filters, and the marginal posterior-finding exercise is repeated over every value in the leading dimensions. If you have added two or more filter sets, you need to specify which one you want to use via the \code{filters} keyword. The optional argument \code{photerr} can be used to provide errors on the photometric values. The shape rules on it are the same as on \code{phot}, and the two leading dimensions of the two arrays will be broadcast together using normal broadcasting rules.
+
+The \code{cluster\_slug.mpdf} method returns a tuple of two quantities. The first is a grid of values for log M, log T, or A\_V, depending on the value of \code{idx}. The second is the posterior probability distribution at each value of of the grid. Posteriors are normalized to have unit integral. If the input consisted of multiple sets of photometric values, the output will contains marginal posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see {\hyperref[cluster_slug:ssec-cluster-slug-full]{\emph{Full Documentation of slugpy.cluster\_slug}}}.
+
+
+\section{Making Your Own Library}
+\label{cluster_slug:making-your-own-library}
+You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug\_mw library) is included in the \code{cluster\_slug} directory. This file uses slug's capability to pick the output time and the cluster mass from specified PDFs.
+
+One subtle post-processing step you should take once you've generated your library is to read it in using {\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}} and then write the photometry back out using the \code{slugpy.write\_cluster\_phot} routine with the format set to \code{fits2}. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster\_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the \code{fits2} format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
+
 
 \section{Full Documentation of slugpy.cluster\_slug}
-\label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
+\label{cluster_slug:ssec-cluster-slug-full}\label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -5276,27 +5516,19 @@ of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
 
-\item[{bandwidth}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array, shape (M){]}
-bandwidth for kernel density estimation; if set to
-`auto', the bandwidth will be estimated automatically; if
-set to a float, the same bandwidth will be used in all
-dimensions; if set to None, the default bandwidth for
-the default library (0.1 dex in physical quantities, 0.3
-mag in photometric ones) will be used
-
 \end{description}
 
 \end{description}
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bandwidth=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
 \item[{libname}] \leavevmode{[}string{]}
 name of the SLUG model to load; if left as None, the default
-is \$SLUG\_DIR/cluster\_slug/CLUSTERSLUG\_MW
+is \$SLUG\_DIR/cluster\_slug/clusterslug\_mw
 
 \item[{filters}] \leavevmode{[}iterable of stringlike{]}
 list of filter names to be used for inferenence
@@ -5311,13 +5543,19 @@ values are `L\_nu', `L\_lambda', `AB', `STMAG', and
 code. Once this is set, any subsequent photometric data
 input are assumed to be in the same photometric system.
 
-\item[{bandwidth}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array, shape (M){]}
-bandwidth for kernel density estimation; if set to
-`auto', the bandwidth will be estimated automatically;
-if set to a scalar quantity, this will be used for all
-dimensions; if set to None, the default bandwidth for
-the default library (0.1 dex in physical quantities, 0.3
-mag in photometric ones) will be used
+\item[{bw\_phys}] \leavevmode{[}`auto' \textbar{} float \textbar{} array, shape (3){]}
+bandwidth for the physical quantities in the kernel
+density estimation; if set to `auto', the bandwidth will
+be estimated automatically; if set to a scalar quantity,
+this will be used for all physical quantities
+
+\item[{bw\_phot}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array{]}
+bandwidth for the photometric quantities; if set to
+None, defaults to 0.25 mag / 0.1 dex; if set to `auto',
+bandwidth is estimated automatically; if set to a float,
+this bandwidth is used for all photometric dimensions;
+if set to an array, the array must have the same number
+of dimensions as len(filters)
 
 \item[{ktype}] \leavevmode{[}string{]}
 type of kernel to be used in densty estimation; allowed
@@ -5389,12 +5627,20 @@ list of weak references to the object (if defined)
 \index{add\_filters() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.add_filters}\pysiglinewithargsret{\bfcode{add\_filters}}{\emph{filters}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.add_filters}\pysiglinewithargsret{\bfcode{add\_filters}}{\emph{filters}, \emph{bandwidth=None}}{}
 Add a set of filters to use for cluster property estimation
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
 \item[{filters}] \leavevmode{[}iterable of stringlike{]}
 list of filter names to be used for inferenence
+
+\item[{bandwidth}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array{]}
+bandwidth for the photometric quantities; if set to
+None, defaults to 0.3 mag / 0.12 dex; if set to `auto',
+bandwidth is estimated automatically; if set to a float,
+this bandwidth is used for all physical photometric
+dimensions; if set to an array, the array must have the
+same number of entries as 3+len(filters)
 
 \end{description}
 
@@ -5447,6 +5693,25 @@ distances between the matches and the input photometry
 
 \end{fulllineitems}
 
+\index{filter\_units() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.filter_units}\pysiglinewithargsret{\bfcode{filter\_units}}{}{}
+Returns list of all available filter units
+\begin{description}
+\item[{Parameters:}] \leavevmode
+None
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{units}] \leavevmode{[}list of strings{]}
+list of available filter units
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{filters() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
@@ -5461,6 +5726,29 @@ None
 list of available filter names
 
 \end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{load\_data() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.load_data}\pysiglinewithargsret{\bfcode{load\_data}}{\emph{filter\_name}}{}
+Loads photometric data for the specified filter into memory
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{filter\_name}] \leavevmode{[}string{]}
+name of filter to load
+
+\end{description}
+
+\item[{Returns:}] \leavevmode
+None
+
+\item[{Raises:}] \leavevmode
+ValueError, if filter\_name is not one of the available
+filters
 
 \end{description}
 
@@ -5638,9 +5926,75 @@ the dimensions of the output grid
 
 \chapter{sfr\_slug: Bayesian Inference of Star Formation Rates}
 \label{sfr_slug:sfr-slug-bayesian-inference-of-star-formation-rates}\label{sfr_slug::doc}\label{sfr_slug:sec-sfr-slug}
+The slugy.sfr\_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the ``point mass estimate'' (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around {\hyperref[bayesphot:sec-bayesphot]{\emph{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}, so for details on how the calculation is performed see the bayesphot documentation.
+
+
+\section{Getting the Default Library}
+\label{sfr_slug:getting-the-default-library}
+The sfr\_slug module requires a pre-computed library of slug simulations to use as a ``training set'' for its calculations. Due to its size, the default library \emph{is not} included in the slug git repository. Instead, it is provided for download from the \href{http://www.slugsps.com/data}{SLUG data products website}. Download the two files \code{SFR\_SLUG\_integrated\_phot.fits} and \code{SFR\_SLUG\_integrated\_prop.fits} and save them in the \code{sfr\_slug} directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use sfr\_slug, you will be prompted to download the default library.
+
+
+\section{Basic Usage}
+\label{sfr_slug:basic-usage}
+The \code{sfr\_slug/sfr\_slug\_example.py} file in the repository provides an example of how to use sfr\_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr\_slug. The required steps are as follows:
+\begin{enumerate}
+\item {} 
+Import the library and instantiate an \code{sfr\_slug} object (see {\hyperref[sfr_slug:sec-sfr-slug-full]{\emph{Full Documentation of slugpy.sfr\_slug}}} for full details):
+
+\begin{Verbatim}[commandchars=\\\{\}]
+from slugpy.sfr\PYGZus{}slug import sfr\PYGZus{}slug
+sfr\PYGZus{}estimator = sfr\PYGZus{}slug()
+\end{Verbatim}
+
+\end{enumerate}
+
+This creates an sfr\_slug object, using the default simulation library, \$SLUG\_DIR/sfr\_slug/SFR\_SLUG. If you have another library of simulations you'd rather use, you can use the \code{libname} keyword to the \code{sfr\_slug} constructor to select it.
+\begin{enumerate}
+\setcounter{enumi}{1}
+\item {} 
+Specify your filter(s), for example:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+sfr\PYGZus{}estimator.add\PYGZus{}filters(\PYGZsq{}QH0\PYGZsq{})
+\end{Verbatim}
+
+\end{enumerate}
+
+The \code{add\_filter} method takes as an argument a string or list of strings specifying which filters you're going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling \code{add\_filters} more than once), and then specify which set of filters you're using for any given calculation.
+\begin{enumerate}
+\setcounter{enumi}{2}
+\item {} 
+Specify your priors, for example:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+sfr\PYGZus{}estimator.priors = \PYGZsq{}schechter\PYGZsq{}
+\end{Verbatim}
+
+\end{enumerate}
+
+The \code{priors} property specifies the assumed prior probability distribution on the star formation rate. It can be either \code{None} (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, a callable that takes a star formation rate as input and returns the prior for it, or a string whose value is either ``flat'' or ``prior''. The two strings specify, respectively, a prior distribution that is either flat in log SFR or follows the Schechter function SFR distribution from \href{http://adsabs.harvard.edu/abs/2011MNRAS.415.1815B}{Bothwell et al. (2011)}:
+\begin{gather}
+\begin{split}p(\log\mathrm{SFR}) \propto \mathrm{SFR}^{\alpha} \exp(-\mathrm{SFR}/\mathrm{SFR}_*)\end{split}\notag
+\end{gather}
+with \(\alpha = -0.51\) and \(\mathrm{SFR}_* = 9.2\,M_\odot\,\mathrm{yr}^{-1}\).
+\begin{enumerate}
+\setcounter{enumi}{3}
+\item {} 
+Generate the posterior probability distribuiton of SFR via:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+logSFR, pdf = sfr\PYGZus{}estimator.mpdf(logSFR\PYGZus{}in, logSFRphoterr = logSFR\PYGZus{}err)
+\end{Verbatim}
+
+\end{enumerate}
+
+The argument \code{logSFR\_in} can be a float or an array specifying one or more point mass estimates of the SFR in your chosen filter. For a case with two or more filters, then \code{logSFR\_in} must be an array whose trailing dimension matches the number of filters. If you have added two or more filter sets, you need to specify which one you want to use via the \code{filters} keyword. The optional argument \code{logSFRphoterr} can be used to provide errors on the photometric SFRs. Like \code{logSFR\_in}, it can be a float or an array.
+
+The \code{sfr\_slug.mpdf} method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see {\hyperref[sfr_slug:sec-sfr-slug-full]{\emph{Full Documentation of slugpy.sfr\_slug}}}.
+
 
 \section{Full Documentation of slugpy.sfr\_slug}
-\label{sfr_slug:full-documentation-of-slugpy-sfr-slug}\index{sfr\_slug (class in slugpy.sfr\_slug)}
+\label{sfr_slug:sec-sfr-slug-full}\label{sfr_slug:full-documentation-of-slugpy-sfr-slug}\index{sfr\_slug (class in slugpy.sfr\_slug)}
 
 \begin{fulllineitems}
 \phantomsection\label{sfr_slug:slugpy.sfr_slug.sfr_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.sfr\_slug.}\bfcode{sfr\_slug}}{\emph{libname=None}, \emph{detname=None}, \emph{filters=None}, \emph{bandwidth=0.1}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density='read'}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}

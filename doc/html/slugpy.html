@@ -86,18 +86,20 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 </ul>
 <p>The following fields are present only if SLUG was run with nebular processing enabled:</p>
 <ul class="simple">
-<li>spec_neb: same as spec, but for the spectrum that emerges after the starlight has passed through the nebulae around the emitting clusters and field stars</li>
+<li>wl_neb: same as wl, but for the spectrum that emerges after the starlight has passed through the nebulae around the emitting clusters and field stars. The nebular grid is finer than the stellar grid, because it contains wavelength extra entries around prominent lines so that the lines are resolved on the grid</li>
+<li>spec_neb: same as spec, but for the nebular-processed spectrum</li>
 <li>phot_neb: same as phot, but for the nebular-processed spectrum</li>
 </ul>
 <p>The following fields are present only if SLUG was run with extinction enabled:</p>
 <ul class="simple">
-<li>wl_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl_ex may contain fewer elements than wl_ex, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.</li>
-<li>spec_ex: same as spec, but for the extincted spectrum. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.</li>
+<li>wl_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl_ex will generally cover a smaller wavelength range than wl, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.</li>
+<li>spec_ex: same as spec, but for the extincted spectrum</li>
 <li>phot_ex: same as phot, but for the extincted spectrum. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.</li>
 </ul>
 <p>The following fields are present only if SLUG was run with both nebular processing and extinction enabled:</p>
 <ul class="simple">
-<li>spec_neb_ex: same as spec_neb, but with extinction applied. May contain fewer entries than spec because the extinction curve does not cover the full wavelength range of the computed stellar spectra.</li>
+<li>wl_neb_ex: same as wl_neb, but for the extincted, nebular-processed spectrum. Will be limited to the same wavelength range as wl_ex.</li>
+<li>spec_neb_ex: same as spec_neb, but with extinction applied</li>
 <li>phot_neb_ex: same as phot_neb, but wtih extinction applied. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.</li>
 </ul>
 <p>The following fields are present only for runs that have been processed through the cloudy_slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><em>cloudy_slug: An Automated Interface to cloudy</em></a>):</p>
@@ -373,9 +375,33 @@ _name key will be omitted from the dict.</dd>
 <dd>wavelength, in Angstrom</dd>
 <dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
 <dd>specific luminosity of each cluster at each wavelength, in erg/s/A</dd>
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)</dd>
+<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
+trial, including emission and absorption by the HII region,
+in erg/s/A (present only if SLUG was run with nebular
+emission enabled)</dd>
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)</dd>
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)</dd>
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)</dd>
+<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
+time for each trial including emission and absorption by the
+HII region, after extinction has been applied, in erg/s/A
+(present only if SLUG was run with nebular emission and
+extinction both enabled)</dd>
 </dl>
-<p>If extinction is enabled, wl_ex and spec_ex will contain the spectra 
-after extinction has been applied.</p>
 <p>(Present if the run being read contains a cluster_phot file)</p>
 <dl class="docutils">
 <dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
@@ -476,7 +502,7 @@ ValueError, if photsystem is set to an unknown values</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_phot">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster_phot</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster_phot" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster_phot</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>phot_only=False</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster_phot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_phot file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -487,14 +513,14 @@ ValueError, if photsystem is set to an unknown values</dd>
 <dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
+binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.</dd>
 <dt>nofilterdata <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>If True, the routine does not attempt to read the filter
 response data from the standard location</dd>
@@ -514,10 +540,32 @@ central wavelength of the photometric filters is available.</dd>
 <dd>On return, this dict will contain the keys &#8216;fname&#8217; and
 &#8216;format&#8217;, giving the name of the file read and the format it
 was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
+<dt>filters_only <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the code only reads the data on the filters, not
+any of the actual photometry. If combined with nofilterdata,
+this can be used to return the list of available filters
+and nothing else.</dd>
+<dt>read_filters <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span></dt>
+<dd>If this is None, data on all filters is read. Otherwise only
+filters whose name(s) match the input filter names ar
+read.</dd>
+<dt>read_nebular <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with the nebular contribution is read; if
+False, only data without it is read. Default behavior is to
+read all data.</dd>
+<dt>read_extinct <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with extinction applied is read; if
+False, only data without it is read. Default behavior is to
+read all data.</dd>
+<dt>phot_only <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If true, id, trial, time, and filter information are not
+read, only photometry</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
-<dd><p class="first">A namedtuple containing the following fields:</p>
+<dd><p class="first">A namedtuple, which can contain the following fields depending
+on the input options, and depending on which fields are present
+in the file being read:</p>
 <dl class="last docutils">
 <dt>id <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span></dt>
 <dd>unique ID of cluster</dd>
@@ -535,12 +583,10 @@ filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
 <dt>filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
 <dd>a list giving the wavelength table for each filter; this is
-None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
-nofilterdata is True</dd>
+None for the filters Lbol, QH0, QHe0, and QHe1</dd>
 <dt>filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
 <dd>a list giving the photon response function for each filter;
-this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
-if nofilterdata is True</dd>
+this is None for the filters Lbol, QH0, QHe0, and QHe1</dd>
 <dt>filter_beta <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
 <dd>powerlaw index beta for each filter; used to normalize the
 photometry</dd>
@@ -551,21 +597,17 @@ photometry</dd>
 indicated in the units field</dd>
 <dt>phot_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
 <dd>same as phot, but for the light after it has passed through
-the HII region (present only if SLUG was run with nebular
-emission enabled)</dd>
+the HII region</dd>
 <dt>phot_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
-<dd>same as phot, but after extinction has been applied (present
-only if SLUG was run with extinction enabled)</dd>
+<dd>same as phot, but after extinction has been applied</dd>
 <dt>phot_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
 <dd>same as phot, but for the light after it has passed through
-the HII region and then had extinction applied (present only
-if SLUG was run with both nebular emission and extinction
-enabled)</dd>
+the HII region and then had extinction applied</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
 <dd>IOError, if no photometry file can be opened
-ValueError, if photsystem is set to an unknown values</dd>
+ValueError, if photsystem is set to an unknown value</dd>
 </dl>
 </dd></dl>
 
@@ -582,14 +624,14 @@ ValueError, if photsystem is set to an unknown values</dd>
 <dd>The directory where the output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
+binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.</dd>
 <dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>If True, verbose output is printed as code runs</dd>
 <dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
@@ -642,14 +684,14 @@ run with extinction enabled)</dd>
 <dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
+binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.</dd>
 <dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>If True, verbose output is printed as code runs</dd>
 <dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
@@ -671,7 +713,10 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dd>wavelength, in Angstrom</dd>
 <dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
 <dd>specific luminosity of each cluster at each wavelength, in erg/s/A</dd>
-<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)</dd>
+<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
 <dd>specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
 in erg/s/A (present only if SLUG was run with nebular
@@ -684,7 +729,11 @@ only if SLUG was run with extinction enabled)</dd>
 time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)</dd>
-<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)</dd>
+<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
 <dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial including emission and absorption by the
 HII region, after extinction has been applied, in erg/s/A
@@ -817,9 +866,33 @@ each time in each trial</dd>
 <dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
 <dd>specific luminosity at each wavelength and each time for each
 trial, in erg/s/A</dd>
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)</dd>
+<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
+trial, including emission and absorption by the HII region,
+in erg/s/A (present only if SLUG was run with nebular
+emission enabled)</dd>
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
+only if SLUG was run with extinction enabled)</dd>
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
+time for each trial after extinction has been applied, in
+erg/s/A (present only if SLUG was run with extinction
+enabled)</dd>
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)</dd>
+<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
+time for each trial including emission and absorption by the
+HII region, after extinction has been applied, in erg/s/A
+(present only if SLUG was run with nebular emission and
+extinction both enabled)</dd>
 </dl>
-<p>If extinction is enabled, wl_ex and spec_ex will contain the spectra 
-after extinction has been applied.</p>
 <p>(Only present if an integrated_phot file is found)</p>
 <dl class="docutils">
 <dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
@@ -918,7 +991,7 @@ indicated in the units field</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated_phot">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_integrated_phot</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_integrated_phot" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">slugpy.</tt><tt class="descname">read_integrated_phot</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em><big>)</big><a class="headerlink" href="#slugpy.read_integrated_phot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 integrated_phot file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -929,14 +1002,14 @@ indicated in the units field</dd>
 <dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
+binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.</dd>
 <dt>nofilterdata <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>If True, the routine does not attempt to read the filter
 response data from the standard location</dd>
@@ -956,10 +1029,29 @@ central wavelength of the photometric filters is available.</dd>
 <dd>On return, this dict will contain the keys &#8216;fname&#8217; and
 &#8216;format&#8217;, giving the name of the file read and the format it
 was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
+<dt>filters_only <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the code only reads the data on the filters, not
+any of the actual photometry. If combined with nofilterdata,
+this can be used to return the list of available filters
+and nothing else.</dd>
+<dt>read_filters <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span></dt>
+<dd>If this is None, data on all filters is read. Otherwise only
+filters whose name(s) match the input filter names ar
+read.</dd>
+<dt>read_nebular <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with the nebular contribution is read; if
+False, only data without it is read. Default behavior is to
+read all data.</dd>
+<dt>read_extinct <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with extinction applied is read; if
+False, only data without it is read. Default behavior is to
+read all data.</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
-<dd><p class="first">A namedtuple containing the following fields:</p>
+<dd><p class="first">A namedtuple , which can contain the following fields depending
+on the input options, and depending on which fields are present
+in the file being read:</p>
 <dl class="last docutils">
 <dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
 <dd>Times at which data are output; shape is either N_times (if
@@ -975,12 +1067,10 @@ filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
 <dt>filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
 <dd>a list giving the wavelength table for each filter; this is
-None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
-nofilterdata is True</dd>
+None for the filters Lbol, QH0, QHe0, and QHe1</dd>
 <dt>filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
 <dd>a list giving the photon response function for each filter;
-this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
-if nofilterdata is True</dd>
+this is None for the filters Lbol, QH0, QHe0, and QHe1</dd>
 <dt>filter_beta <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
 <dd>powerlaw index beta for each filter; used to normalize the
 photometry</dd>
@@ -991,16 +1081,12 @@ photometry</dd>
 units are as indicated in the units field</dd>
 <dt>phot_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
 <dd>same as phot, but for the light after it has passed through
-the HII region (present only if SLUG was run with nebular
-emission enabled)</dd>
+the HII region</dd>
 <dt>phot_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
-<dd>same as phot, but after extinction has been applied (present
-only if SLUG was run with extinction enabled)</dd>
+<dd>same as phot, but after extinction has been applied</dd>
 <dt>phot_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
 <dd>same as phot, but for the light after it has passed through
-the HII region and then had extinction applied (present only
-if SLUG was run with both nebular emission and extinction
-enabled)</dd>
+the HII region and then had extinction applied</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
@@ -1022,14 +1108,14 @@ ValueError, if photsystem is set to an unknown value</dd>
 <dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
+binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.</dd>
 <dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>If True, verbose output is printed as code runs</dd>
 <dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
@@ -1081,14 +1167,14 @@ each time in each trial</dd>
 <dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
+binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.</dd>
 <dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>If True, verbose output is printed as code runs</dd>
 <dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
@@ -1109,6 +1195,9 @@ the run was done with random output times)</dd>
 <dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
 <dd>specific luminosity at each wavelength and each time for each
 trial, in erg/s/A</dd>
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
+only if SLUG was run with nebular emission enabled)</dd>
 <dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
 <dd>specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
@@ -1122,6 +1211,10 @@ only if SLUG was run with extinction enabled)</dd>
 time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)</dd>
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
+in Angstrom (present only if SLUG was run with both nebular
+emission and extinction enabled)</dd>
 <dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
 <dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial including emission and absorption by the
@@ -1174,14 +1267,14 @@ extensions are tried, in order: .txt, .bin, .fits</dd>
 the current directory is searched, followed by the
 SLUG_DIR/output directory if the SLUG_DIR environment variable
 is set</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
-will only attempt to open ASCII-, binary-, or FITS-formatted
-output, ending in .txt., .bin, or .fits, respectively. If set
-to None, the code will try to open ASCII files first, then if
-it fails try binary files, and if it fails again try FITS
-files.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
+binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -1211,9 +1304,12 @@ by read_cluster</dd>
 <dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
 <dd>Base file name to give the model to be written. Can include a
 directory specification if desired.</dd>
-<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>Format for the output file. Allowed values are &#8216;ascii&#8217;, &#8216;bin&#8217;
-or &#8216;binary, and &#8216;fits&#8217;.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span></dt>
+<dd>Format for the output file; &#8216;txt&#8217; and &#8216;ascii&#8217; produce ASCII
+text files, &#8216;bin&#8217; or &#8216;binary&#8217; produce binary files, and
+&#8216;fits&#8217; or &#8216;fits2&#8217; product FITS files; &#8216;fits2&#8217; uses an
+ordering that allows for more efficient querying of outputs
+too large to fit in memory</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
