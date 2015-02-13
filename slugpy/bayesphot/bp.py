@@ -66,7 +66,7 @@ class bp(object):
     ##################################################################
     def __init__(self, dataset, nphys, filters=None, bandwidth='auto',
                  ktype='gaussian', priors=None, sample_density=None,
-                 reltol=1.0e-3, abstol=1.0e-10, leafsize=16):
+                 reltol=1.0e-2, abstol=1.0e-6, leafsize=16):
         """
         Initialize a bp object.
 
@@ -79,9 +79,9 @@ class bp(object):
               properties
            npys : int
               number of physical properties in dataset
-           filters : listlike of strings, nphys elements
-              names of photometric filters; if left as None, the
-              filters can be referred to by index, but not by name
+           filters : listlike of strings
+              names of photometric filters; not used, but can be
+              stored for convenience
            bandwidth : 'auto' | float | array, shape (M)
               bandwidth for kernel density estimation; if set to
               'auto', the bandwidth will be estimated automatically; if

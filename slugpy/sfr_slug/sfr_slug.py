@@ -170,7 +170,7 @@ class sfr_slug(object):
                 # We're not interactive; just raise an error
                 raise IOError(errstr + " " +
                               "Try downloading it from " +
-                              "https://sites.google.com/site/runslug/plots")
+                              "https://sites.google.com/site/runslug/data")
 
             # If we're here, we don't have hte library file, but we
             # are in interactive mode. Thus offer the user an option

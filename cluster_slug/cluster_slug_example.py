@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from slugpy.cluster_slug import cluster_slug
 
 # Read the Chandar et al photometric catalog
+print("Reading Chandar et al. (2010) data...")
 chdata \
     = ascii.read('hlsp_wfc3ers_hst_wfc3_m83_cat_cluster_auto_v1.txt')
 
@@ -87,6 +88,7 @@ filters = ['WFC3_UVIS_F336W', 'WFC3_UVIS_F438W', 'WFC3_UVIS_F555W',
 # Set up the cluster_slug object; this command will take care of
 # reading the library and converting the data to the Vega photometric
 # system
+print("Reading cluster_slug library...")
 cs=cluster_slug(photsystem='Vega', filters=filters)
 
 # Set priors to be flat in log T and A_V, but vary with logm as
@@ -98,6 +100,7 @@ def priorfunc(physprop):
 cs.priors = priorfunc
 
 # Start timing
+print("Computing posterior PDFs...")
 lasttime = time.clock()
 
 # Compute marginal PDFs of mass and age
@@ -127,7 +130,7 @@ for i in range(4):
 # overlaid
 xmra = [2, 6.95]
 xtra = [5, 10]
-yra = [0, 1.7]
+yra = [0, 1.9]
 for i in range(len(idx)):
 
     # Plot masses
@@ -215,7 +218,15 @@ plt.ylim([5,10])
 
 # Add colorbar
 axcbar = fig.add_axes([0.88, 0.14, 0.02, 0.79])
-plt.colorbar(cax=axcbar, label='Photometric distance [mag]')
+plt.colorbar(cax=axcbar, label='Log photometric distance [mag]')
 
 # Save
 plt.savefig('cluster_slug_example_2.pdf')
+
+# Print out some information
+pd = np.percentile(dist[:,0], [90, 95])
+print("Nearest neighbor photometric distances (mag):\n" +
+      "90th percentile = {}, 95th percentile = {}".format(pd[0], pd[1]))
+pd = np.percentile(dist[:,4], [90, 95])
+print("5th nearest neighbor photometric distances (mag):\n" +
+      "90th percentile = {}, 95th percentile = {}".format(pd[0], pd[1]))

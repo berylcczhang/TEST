@@ -9,6 +9,7 @@ import copy
 import os
 import os.path as osp
 import warnings
+import urllib2
 
 # Import the data reading and Bayesian inference stuff we need
 from ..bayesphot import bp
@@ -34,29 +35,22 @@ class cluster_slug(object):
           of shape (N, nphys), and return an array of shape (N)
           giving the prior probability at each data point; None:
           all data points have equal prior probability
-       bandwidth : None | 'auto' | float | array, shape (M)
-          bandwidth for kernel density estimation; if set to
-          'auto', the bandwidth will be estimated automatically; if
-          set to a float, the same bandwidth will be used in all
-          dimensions; if set to None, the default bandwidth for
-          the default library (0.1 dex in physical quantities, 0.3
-          mag in photometric ones) will be used
     """
 
     ##################################################################
     # Initializer method
     ##################################################################
     def __init__(self, libname=None, filters=None, photsystem=None,
-                 bandwidth=None, ktype='gaussian', priors=None, 
-                 sample_density=None, reltol=1.0e-3, abstol=1.0e-10,
-                 leafsize=16, use_nebular=True):
+                 bw_phys=0.1, bw_phot=None, ktype='gaussian', 
+                 priors=None, sample_density=None, reltol=1.0e-2,
+                 abstol=1.0e-6, leafsize=16, use_nebular=True):
         """
         Initialize a cluster_slug object.
 
         Parameters
            libname : string
               name of the SLUG model to load; if left as None, the default
-              is $SLUG_DIR/cluster_slug/CLUSTERSLUG_MW
+              is $SLUG_DIR/cluster_slug/clusterslug_mw
            filters : iterable of stringlike
               list of filter names to be used for inferenence
            photsystem : None or string
@@ -68,13 +62,18 @@ class cluster_slug(object):
               'Vega', corresponding to the options defined in the SLUG
               code. Once this is set, any subsequent photometric data
               input are assumed to be in the same photometric system.
-           bandwidth : None | 'auto' | float | array, shape (M)
-              bandwidth for kernel density estimation; if set to
-              'auto', the bandwidth will be estimated automatically;
-              if set to a scalar quantity, this will be used for all
-              dimensions; if set to None, the default bandwidth for
-              the default library (0.1 dex in physical quantities, 0.3
-              mag in photometric ones) will be used
+           bw_phys : 'auto' | float | array, shape (3)
+              bandwidth for the physical quantities in the kernel
+              density estimation; if set to 'auto', the bandwidth will
+              be estimated automatically; if set to a scalar quantity,
+              this will be used for all physical quantities
+           bw_phot : None | 'auto' | float | array
+              bandwidth for the photometric quantities; if set to
+              None, defaults to 0.25 mag / 0.1 dex; if set to 'auto',
+              bandwidth is estimated automatically; if set to a float,
+              this bandwidth is used for all photometric dimensions;
+              if set to an array, the array must have the same number
+              of dimensions as len(filters)
            ktype : string
               type of kernel to be used in densty estimation; allowed
               values are 'gaussian' (default), 'epanechnikov', and
@@ -123,140 +122,279 @@ class cluster_slug(object):
            IOError, if the library cannot be found
         """
 
-        # Suppress obnoxious numpy warning messages here
-        errstate = np.geterr()
-        np.seterr(divide='ignore', invalid='ignore', over='ignore',
-                  under='ignore')
-
-        # Load the cluster data
+        # If using the default library, assign the library name
         if libname is None:
-            self.__libname = osp.join('cluster_slug', 'CLUSTERSLUG_MW')
+            self.__libname = osp.join('cluster_slug', 'clusterslug_mw')
             if 'SLUG_DIR' in os.environ:
                 self.__libname = osp.join(os.environ['SLUG_DIR'], 
                                           self.__libname)
         else:
             self.__libname = libname
-        prop = read_cluster_prop(self.__libname)
-        phot = read_cluster_phot(self.__libname, photsystem=photsystem)
+
+        # Load the cluster physical properties
+        try:
+            prop = read_cluster_prop(self.__libname)
+        except IOError:
+
+            # If we're here, we failed to load the library. If we were
+            # given a library file name explicitly, just raise an
+            # error.
+            if libname is not None:
+                raise IOError("unable to open library {}".
+                              format(self.__libname))
+
+            # If we've made it to here, we were asked to open the
+            # default library but failed to do so. Check if the
+            # failure could be because we don't have astropy and thus
+            # can't open fits files. If that's the cause, print out a
+            # helpful error message.
+            try:
+                import astropy.io.fits as fits
+            except ImportError:
+                raise IOError("failed to read default cluster_slug " +
+                              "library cluster_slug/clusterslug_mw " +
+                              "due to missing " +
+                              "astropy.io.fits; install astropy " +
+                              "or specify a library in a non-FITS " +
+                              "format")
+
+            # If we're here, we couldn't open the default library, and
+            # it's not because we don't have FITS capability. The file
+            # must not exist, or must be damaged. Check if we're in
+            # interactive mode. If not, just raise an error and
+            # suggest the user to go get the library file.
+            errstr = "Unable to open default sfr_slug " + \
+                     "library file sfr_slug/SFR_SLUG."
+            import __main__ as main
+            if hasattr(main, '__file__'):
+                # We're not interactive; just raise an error
+                raise IOError(errstr + " " +
+                              "Try downloading it from " +
+                              "https://sites.google.com/site/runslug/data")
+
+            # If we're here, we don't have hte library file, but we
+            # are in interactive mode. Thus offer the user an option
+            # to go download the file now.
+            usr_response \
+                = raw_input(errstr + " Would you like to download it "
+                            "now (warning: 12 GB)? [y/n] ").\
+                lower().strip()
+            if not usr_response in ['yes', 'y', 'ye']:
+                # User didn't say yes, so raise error
+                raise IOError("Unable to proceeed")
+
+            # If we're here, download the files
+            print("Fetching clusterslug_mw_cluster_prop.fits " +
+                  "(this may take a while)...")
+            url = urllib2.urlopen(
+                'https://dl.dropboxusercontent.com/s/oxuuxa1ci0zird4/clusterslug_mw_cluster_prop.fits?dl=0')
+            rawdata = url.read()
+            url.close()
+            fp = open(osp.join(osp.dirname(self.__libname),
+                               'clusterslug_mw_cluster_prop.fits'), 'wb')
+            fp.write(rawdata)
+            fp.close()
+            print("Fetching clusterslug_mw_cluser_phot.fits " +
+                  "(this make take a while)...")
+            url = urllib2.urlopen(
+                'https://dl.dropboxusercontent.com/s/arwy8u0xwt9dnz2/clusterslug_mw_cluster_phot.fits?dl=0')
+            rawdata = url.read()
+            url.close()
+            fp = open(osp.join(osp.dirname(self.__libname),
+                               'clusterslug_mw_cluster_phot.fits'), 'wb')
+            fp.write(rawdata)
+            fp.close()
+
+            # Now try reading the data
+            try:
+                prop = read_integrated_prop(self.__libname)
+            except IOError:
+                raise IOError("still unable to open default library")
+
+        # Store the physical properties
+        self.__ds_phys = np.zeros((len(prop.id), 3))
+        self.__ds_phys[:,0] = np.log10(prop.actual_mass)
+        self.__ds_phys[:,1] = np.log10(prop.time - prop.form_time)
+        self.__ds_phys[:,2] = prop.A_V
 
         # Record available filters
-        self.__allfilters = phot.filter_names
-        self.filter_units = phot.filter_units
+        filter_info = read_cluster_phot(self.__libname,
+                                        filters_only=True, 
+                                        nofilterdata=True)
+        self.__allfilters = filter_info.filter_names
+        self.__allunits = filter_info.filter_units
 
-        # Record other stuff that we'll use to construct bp objects
-        # later
+        # Record other stuff that we'll use later
+        self.__photsystem = photsystem
+        self.__use_nebular = use_nebular
         self.__ktype = ktype
         self.__priors = priors
         self.__sample_density = sample_density
         self.__reltol = reltol
         self.__abstol = abstol
 
-        # See if we have nebular, extincted data
-        if 'phot_neb_ex' in phot._fields and use_nebular:
-            nebular = True
-            extinct = True
-            ph = phot.phot_neb_ex
-        elif 'phot_ex' in phot._fields:
-            warnstr = "cluster_slug: photometry including " + \
-                      "nebular contribution is not available;" + \
-                      " using starlight only"
-            if use_nebular:
-                warnings.warn(warnstr)
-            nebular = False
-            extinct = True
-            ph = phot.phot_ex
-        elif 'phot_neb' in phot._fields and use_nebular:
-            warnstr = "cluster_slug: photometry including " + \
-                      "extinction is not available;" + \
-                      " using unextincted light only"
-            warnings.warn(warnstr)
-            nebular = False
-            extinct = True
-            ph = phot.phot_ex
-        else:
-            warnstr = "cluster_slug: photometry including " + \
-                      "nebular contribution and extinction " + \
-                      "is not available; using unextincted " + \
-                      "starlight only"
-            if use_nebular:
-                warnings.warn(warnstr)
-            nebular = False
-            extinct = False
-            ph = phot.phot
+        # Set the physical bandwidth
+        self.__bw_phys = copy.deepcopy(bw_phys)
 
-        # Build dataset array; 1st 3 dimensions are log mass, log age,
-        # and A_V remaining ones are photometric values
-        self.__ds = np.zeros((len(phot.id),
-                                   3+len(phot.filter_names)))
-        self.__ds[:,0] = np.log10(prop.actual_mass)
-        self.__ds[:,1] = np.log10(prop.time - prop.form_time)
-        self.__ds[:,2] = prop.A_V
-        self.__ds[:,3:] = ph
+        # Initialize list of photometric data we've read to empty dict
+        self.__photdata = {}
+        self.__photbw = {}
 
-        # Treat ionizing fluxes as a special case, using the
-        # non-nebular, non-extincted value for them regardless of
-        # whether nebular emission or extinction are enabled
-        if 'QH0' in phot.filter_names:
-            idx1 = phot.filter_names.index('QH0')
-            self.__ds[:,3+idx1] = phot.phot[:,idx1]
-        if 'QHe0' in phot.filter_names:
-            idx1 = phot.filter_names.index('QHe0')
-            self.__ds[:,3+idx1] = phot.phot[:,idx1]
-        if 'QHe1' in phot.filter_names:
-            idx1 = phot.filter_names.index('QHe1')
-            self.__ds[:,3+idx1] = phot.phot[:,idx1]
-
-        # Fill in any cases where extincted photometry is not
-        # available
-        if extinct:
-            for i in np.where(np.isnan(self.__ds[0,3:]))[0]:
-                warnstr = "cluster_slug: extincted photometry " + \
-                          "unavailable for filter " + \
-                          phot.filter_names[i] + \
-                          ", probably because extinction curve " + \
-                          "does not cover the required wavelength " + \
-                          "range; using unextincted values instead"
-                warnings.warn(warnstr)
-                if nebular:
-                    self.__ds[:,3+i] = phot.phot_neb[:,i]
-                else:
-                    self.__ds[:,3+i] = phot.phot[:,i]
-
-        # Take log of photometric values if they are recorded in a
-        # linear system; ensure that linear values are non-negative,
-        # and that values in magnitudes are non-infinite
-        for i, f in enumerate(phot.filter_units):
-            if 'mag' not in f:
-                self.__ds[:,3+i][self.__ds[:,3+i] <= 0] = 1.0e-99
-                self.__ds[:,3+i] = np.log10(self.__ds[:,3+i])
-            else:
-                self.__ds[:,3+i][np.isinf(self.__ds[:,3+i])] = 99.0
-
-        # Initialize empty list containing filter sets
+        # Initialize an empty list of filter sets
         self.__filtersets = []
 
-        # Set the bandwidth
-        self.__bw_default = np.zeros(3 + len(phot.filter_names))
-        self.__bw_default[:3] = 0.1
-        for i, f in enumerate(phot.filter_units):
-            if 'mag' in f:
-                self.__bw_default[3+i] = 0.3
+        # If we have been given a filter list, create the data set to
+        # go with it
+        if filters is not None:
+            self.add_filters(filters, bandwidth=bw_phot)
+
+
+    ##################################################################
+    # Method to load the data off disk for a particular filter
+    ##################################################################
+    def load_data(self, filter_name):
+        """
+        Loads photometric data for the specified filter into memory
+
+        Parameters:
+           filter_name : string
+              name of filter to load
+
+        Returns:
+           None
+
+        Raises:
+           ValueError, if filter_name is not one of the available
+           filters
+        """
+
+        # Make sure we have this filter; if not, raise error
+        if filter_name not in self.__allfilters:
+            raise ValueError("no data available for filter {}".
+                             format(filter_name))
+
+        # Suppress obnoxious numpy warning messages here
+        errstate = np.geterr()
+        np.seterr(divide='ignore', invalid='ignore', over='ignore',
+                  under='ignore')
+
+        # Special case: for ionizing fluxes, always load the
+        # non-nebular, non-extincted value, and don't do any
+        # photometric system conversion
+        if filter_name == 'QH0' or filter_name == 'QHe0' or \
+           filter_name == 'QHe1':
+            phot = read_cluster_phot(self.__libname, 
+                                     read_filters=filter_name,
+                                     read_nebular=False,
+                                     read_extinct=False,
+                                     phot_only=True)
+        else:
+
+            # Load data; first try for nebular, extincted data, unless
+            # we've been told not to use nebular data
+            phot = read_cluster_phot(self.__libname, 
+                                     read_filters=filter_name,
+                                     read_nebular=self.__use_nebular,
+                                     read_extinct=True,
+                                     phot_only=True,
+                                     photsystem=self.__photsystem)
+
+            # Make sure we got nebular data if we wanted it; if not, try
+            # looking for non-nebular data
+            if self.__use_nebular:
+                if 'phot_neb_ex' in phot._fields:
+                    # We want nebular data, and we have it
+                    warn_nebular = False
+                    nebular = True
+                    phdata = phot.phot_neb_ex
+                else:
+                    # We want nebular data, but we don't have it
+                    warn_nebular = True
+                    nebular = False
+                    phot = read_cluster_phot(
+                        self.__libname, 
+                        read_filters=filter_name,
+                        read_nebular=False,
+                        read_extinct=True,
+                        phot_only=True,
+                        photsystem=self.__photsystem)
+                    phdata = phot.phot_ex
             else:
-                self.__bw_default[3+i] = 0.12
-        self.bandwidth = bandwidth
+                # We don't want nebular data
+                warn_nebular = False
+                nebular = False
+                phot = read_cluster_phot(
+                    self.__libname, 
+                    read_filters=filter_name,
+                    read_nebular=False,
+                    read_extinct=True,
+                    phot_only=True,
+                    photsystem=self.__photsystem)
+                phdata = phot.phot_ex
+        
+            # Make sure data aren't NaN's. If they are, that means we
+            # don't have extinction for this filter, so we need to use
+            # non-extincted data.
+            if np.isnan(phdata[0]):
+                warn_extinct = True
+                if nebular:
+                    phot = read_cluster_phot(
+                        self.__libname, 
+                        read_filters=filter_name,
+                        read_nebular=True,
+                        read_extinct=False,
+                        phot_only=True,
+                        photsystem=self.__photsystem)
+                    phdata = phot.phot_neb
+                else:
+                    phot = read_cluster_phot(
+                        self.__libname, 
+                        read_filters=filter_name,
+                        read_nebular=False,
+                        read_extinct=False,
+                        phot_only=True,
+                        photsystem=self.__photsystem)
+                    phdata = phot.phot
+            else:
+                warn_extinct = False
+
+            # Issue warnings if necessary
+            if warn_nebular:
+                warnstr = ("cluster_slug: nebular data requested for "+ \
+                           "filter {}, but is not available; using non-"+ \
+                           "nebular data instead").format(filter_name)
+                warnings.warn(warnstr)
+            if warn_extinct:
+                warnstr = ("cluster_slug: extincted data requested for "+ \
+                           "filter {}, but is not available; using non-"+ \
+                           "extinced data instead").format(filter_name)
+                warnings.warn(warnstr)
+
+        # Take the log of the photometric values if they're recorded
+        # in a linear system; also set the bandwidth based on whether
+        # we're in a magnitude system or not; we can override this
+        # later if we want
+        if 'mag' not in phot.filter_units[0]:
+            phdata[phdata <= 0] = 1.0e-99
+            phdata = np.log10(phdata)
+            self.__photbw[filter_name] = 0.1
+        else:
+            self.__photbw[filter_name] = 0.25
+
+        # Fix any inf's that were generated by photometric system
+        # conversions or taking logs
+        phdata[np.isinf(phdata)] = 99.0
+
+        # Store the data
+        self.__photdata[filter_name] = phdata
 
         # Restore the numpy error state
         np.seterr(divide=errstate['divide'], over=errstate['over'], 
                   under=errstate['under'], invalid=errstate['invalid'])
 
-        # If we have been given a filter list, create the data set to
-        # go with it
-        if filters is not None:
-            self.add_filters(filters)
-
 
     ##################################################################
-    # Method to return list of available filters
+    # Method to return list of available filters and filter units
     ##################################################################
     def filters(self):
         """
@@ -272,53 +410,89 @@ class cluster_slug(object):
 
         return copy.deepcopy(self.__allfilters)
 
+    def filter_units(self):
+        """
+        Returns list of all available filter units
+
+        Parameters:
+           None
+
+        Returns:
+           units : list of strings
+              list of available filter units
+        """
+
+        return copy.deepcopy(self.__allunits)
+
 
     ##################################################################
     # Method to prepare to analyze a particular set of filters
     ##################################################################
-    def add_filters(self, filters):
+    def add_filters(self, filters, bandwidth=None):
         """
         Add a set of filters to use for cluster property estimation
 
         Parameters
            filters : iterable of stringlike
               list of filter names to be used for inferenence
+           bandwidth : None | 'auto' | float | array
+              bandwidth for the photometric quantities; if set to
+              None, defaults to 0.3 mag / 0.12 dex; if set to 'auto',
+              bandwidth is estimated automatically; if set to a float,
+              this bandwidth is used for all physical photometric
+              dimensions; if set to an array, the array must have the
+              same number of entries as 3+len(filters)
 
         Returns
            nothing
         """
 
-        # If we already have this filter set in our dict, do nothing
-        for f in self.__filtersets:
+        # If we already have this filter set in our dict, just set the
+        # bandwidth and return
+        for i, f in enumerate(self.__filtersets):
             if filters == f['filters']:
+                if bandwidth is not None:
+                    self.__filtersets[i]['bp'].bandwidth = bandwidth
+                else:
+                    bw = np.zeros(3+len(filters))
+                    bw[:3] = self.__bw_phys
+                    for j in range(len(filters)):
+                        bw[3+j] = self.__photbw[filters[j]]
+                    self.__filtersets[i]['bp'].bandwidth = bw
                 return
 
         # We're adding a new filter set, so save its name
         newfilter = { 'filters' : copy.deepcopy(filters) }
 
         # Construct data set to use with this filter combination, and
-        # fill it in
-        newfilter['dataset'] = np.zeros((self.__ds.shape[0], 
+        # add the physical property data
+        newfilter['dataset'] = np.zeros((self.__ds_phys.shape[0], 
                                          3+len(filters)))
-        newfilter['dataset'][:,:3] = self.__ds[:,:3]
-        newfilter['idx'] = np.zeros(3+len(filters), dtype=int)
-        newfilter['idx'][0:3] = np.arange(3, dtype=int)
-        for i, f in enumerate(filters):
-            if f not in self.__allfilters:
-                raise ValueError("unknown filter "+str(f))
-            idx = self.__allfilters.index(f)
-            newfilter['dataset'][:,3+i] = self.__ds[:,3+idx]
-            newfilter['idx'][i+3] = 3+idx
+        newfilter['dataset'][:,:3] = self.__ds_phys
 
-        # Build a bp object to go with this data set
-        if self.__bandwidth is None:
-            bw = np.array(self.__bw_default)[newfilter['idx']]
-        elif self.__bandwidth == 'auto':
+        # Loop over filters
+        for i, f in enumerate(filters):
+
+            # Do we have this filter loaded already? If not, read it.
+            if f not in self.__photdata.keys():
+                self.load_data(f)
+
+            # Add data for this filter
+            newfilter['dataset'][:,3+i] = np.squeeze(self.__photdata[f])
+
+        # Set bandwidth
+        if self.__bw_phys == 'auto' or bandwidth == 'auto':
             bw = 'auto'
-        elif hasattr(self.__bandwidth, '__iter__'):
-            bw = np.array(self.__bandwidth)[newfilter['idx']]
         else:
-            bw = self.__bandwidth
+            bw = np.zeros(3+len(filters))
+            bw[:3] = self.__bw_phys
+            if bandwidth is not None:
+                bw[3:] = bandwidth
+            else:
+                for i in range(len(filters)):
+                    bw[3+i] = self.__photbw[f]
+
+        # Build the bp object
         newfilter['bp'] = bp(newfilter['dataset'], 3,
                              filters=filters,
                              bandwidth = bw,
@@ -346,28 +520,30 @@ class cluster_slug(object):
         for f in self.__filtersets:
             f['bp'].priors = self.__priors
 
-
     ##################################################################
-    # Define the bandwidth property. This just wraps around the
-    # corresponding property defined for bp objects.
+    # Define the abstol and reltol properties. These update the
+    # current values of thes, and reset them for all child bp
+    # objects.
     ##################################################################
     @property
-    def bandwidth(self):
-        return self.__bandwidth
+    def abstol(self):
+        return self.__abstol
 
-    @bandwidth.setter
-    def bandwidth(self, bandwidth):
-        self.__bandwidth = bandwidth
+    @abstol.setter
+    def abstol(self, newtol):
+        self.__abstol = newtol
         for f in self.__filtersets:
-            if self.__bandwidth is None:
-                f['bp'].bandwidth = self.__bw_default[f['idx']]
-            elif self.__bandwidth == 'auto':
-                f['bp'].bandwidth = 'auto'
-            elif hasattr(self.__bandwidth, '__iter__'):
-                f['bp'].bandwidth = self.__bandwidth[f['idx']]
-            else:
-                f['bp'].bandwidth = self.__bandwidth
+            f['bp'].abstol = self.__abstol
 
+    @property
+    def reltol(self):
+        return self.__reltol
+
+    @reltol.setter
+    def reltol(self, newtol):
+        self.__reltol = newtol
+        for f in self.__filtersets:
+            f['bp'].reltol = self.__reltol
 
     ##################################################################
     # Wrappers around the bp logL, mpdf, mcmc, and bestmatch functions
