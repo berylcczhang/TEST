@@ -5,11 +5,11 @@ SLUG is the Stochastically Lighting Up Galaxies Code. SLUG is a stellar populati
 
 ### Full documenation ###
 
-Full documentation of SLUG is available at [http://slug2.readthedocs.org/en/latest/](http://slug2.readthedocs.org/en/latest/). Documentation is also available in the source repository; see *doc/html/index.html* for the html version, and *doc/latex/slug.pdf* for a PDF version.
+Full documentation of SLUG is available at <http://slug2.readthedocs.org/en/latest/>. Documentation is also available in the source repository; see *doc/html/index.html* for the html version, and *doc/latex/slug.pdf* for a PDF version.
 
 ### Version history ###
 
-This repository contains SLUG v2. SLUG v1 is available at <https://sites.google.com/site/runslug/>. The code here is a complete re-implementation of SLUG, with a number of major improvements.
+This repository contains SLUG v2. SLUG v1 is available at <http://www.slugsps.com/downloads/v1>. The code here is a complete re-implementation of SLUG, with a number of major improvements.
 
 * The ability to predict full spectra as well as photometry
 * A vastly larger array of photometric filters, with the ability to add more without needing to alter the source code; there is also wide range of choices for photometric system
