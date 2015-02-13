@@ -57,9 +57,9 @@ for imf in imfs:
     fpout.close()
 
     # Run simulation
-    #call(['python ' + osp.join('bin', 'slug.py') + ' ' + 
-    #      osp.join('param', 'cluster_imf_compare.param')],
-    #     shell=True)
+    call(['python ' + osp.join('bin', 'slug.py') + ' ' + 
+          osp.join('param', 'cluster_imf_compare.param')],
+         shell=True)
 
 # Read runs
 tcomp = [1e6, 2e6, 4e6, 1e7]
@@ -121,21 +121,22 @@ for i, t in enumerate(tcomp):
 
     # Chabrier
     chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'g', lw=2)
-    chabrier_med,=plt.loglog(wl, percspec[0,i,1,:], 'g', lw=1)
-    plt.fill_between(wl, percspec[0,i,0,:], percspec[0,i,2,:], color='g',
-                     alpha=0.25)
+    chabrier_med,=plt.loglog(wl, percspec[0,i,1,:], 'g--', lw=1)
+    #import pdb; pdb.set_trace()
+    plt.fill_between(wl, percspec[0,i,0,:]+1.0, percspec[0,i,2,:]+1.0, 
+                     color='g', alpha=0.25)
 
     #  Kroupa
     kroupa_mean,=plt.loglog(wl, meanspec[1,i,:], 'b', lw=2)
-    kroupa_med,=plt.loglog(wl, percspec[1,i,1,:], 'b', lw=1)
-    plt.fill_between(wl, percspec[1,i,0,:], percspec[1,i,2,:], color='b',
-                     alpha=0.25)
+    kroupa_med,=plt.loglog(wl, percspec[1,i,1,:], 'b--', lw=1)
+    plt.fill_between(wl, percspec[1,i,0,:]+1.0, percspec[1,i,2,:]+1.0, 
+                     color='b', alpha=0.25)
 
     #  WK06
     wk06_mean,=plt.loglog(wl, meanspec[2,i,:], 'r', lw=2)
-    wk06_med,=plt.loglog(wl, percspec[2,i,1,:], 'r', lw=1)
-    plt.fill_between(wl, percspec[2,i,0,:], percspec[2,i,2,:], color='r',
-                     alpha=0.25)
+    wk06_med,=plt.loglog(wl, percspec[2,i,1,:], 'r--', lw=1)
+    plt.fill_between(wl, percspec[2,i,0,:]+1.0, percspec[2,i,2,:]+1.0, 
+                     color='r', alpha=0.25)
 
     # Legend
     if i == len(tcomp)-1:
