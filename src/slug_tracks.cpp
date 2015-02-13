@@ -132,7 +132,10 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	     << trackfileName << endl;
 	exit(1);
       }
-      tracktype.push_back(tokens[1]);
+      if (tokens.size() > 1)
+	tracktype.push_back(tokens[1]);
+      else
+	tracktype.push_back("");
 
       // Horrible hardcoding here, being forced on me by the fact that
       // this needs to be compatible with starburst99's data file
