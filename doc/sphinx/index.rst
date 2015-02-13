@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    license
+   getting
    intro
    compiling
    running
