@@ -112,53 +112,91 @@ for i, d in enumerate(data):
 
 
 # Plot spectra
-plt.figure(1, figsize=(7,8))
+plt.figure(1, figsize=(10,8))
 
 for i, t in enumerate(tcomp):
 
     # Create panel
-    ax=plt.subplot(4,1,i+1)
+    ax=plt.subplot(4,3,3*i+1)
 
     # Chabrier
     chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'g', lw=2)
-    chabrier_med,=plt.loglog(wl, percspec[0,i,1,:], 'g--', lw=1)
-    #import pdb; pdb.set_trace()
+    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'k', lw=1)
+    #chabrier_med,=plt.loglog(wl, percspec[0,i,1,:], 'g', lw=1)
     plt.fill_between(wl, percspec[0,i,0,:]+1.0, percspec[0,i,2,:]+1.0, 
                      color='g', alpha=0.25)
 
-    #  Kroupa
-    kroupa_mean,=plt.loglog(wl, meanspec[1,i,:], 'b', lw=2)
-    kroupa_med,=plt.loglog(wl, percspec[1,i,1,:], 'b--', lw=1)
-    plt.fill_between(wl, percspec[1,i,0,:]+1.0, percspec[1,i,2,:]+1.0, 
-                     color='b', alpha=0.25)
-
-    #  WK06
-    wk06_mean,=plt.loglog(wl, meanspec[2,i,:], 'r', lw=2)
-    wk06_med,=plt.loglog(wl, percspec[2,i,1,:], 'r--', lw=1)
-    plt.fill_between(wl, percspec[2,i,0,:]+1.0, percspec[2,i,2,:]+1.0, 
-                     color='r', alpha=0.25)
-
-    # Legend
-    if i == len(tcomp)-1:
-        plt.legend([chabrier_mean, kroupa_mean, wk06_mean],
-                   ['Chabrier', 'Kroupa', 'WK'],
-                   loc='upper left')
+    # Axis labels
+    if i != len(tcomp)-1:
+        plt.setp(ax.get_xticklabels(), visible=False)
+    else:
+        plt.xlabel(r'$\lambda$ [$\AA$]')
+    plt.ylabel(r'$L_\lambda$ [erg s$^{-1}$ $\AA^{-1}$]')
 
     # Limits
     plt.ylim([2e33,2e37])
     plt.xlim([1e2, 2e4])
 
-    # Labels
-    plt.ylabel(r'$L_\lambda$ [erg s$^{-1}$ $\AA^{-1}$]')
+    # Title
+    if i == 0:
+        plt.title('Chabrier')
+
+    # Create panel
+    ax=plt.subplot(4,3,3*i+2)
+
+    #  Kroupa
+    kroupa_mean,=plt.loglog(wl, meanspec[1,i,:], 'b', lw=2)
+    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'k', lw=1)
+    #kroupa_med,=plt.loglog(wl, percspec[1,i,1,:], 'b', lw=1)
+    plt.fill_between(wl, percspec[1,i,0,:]+1.0, percspec[1,i,2,:]+1.0, 
+                     color='b', alpha=0.25)
+
+    # Axis labels
     if i != len(tcomp)-1:
         plt.setp(ax.get_xticklabels(), visible=False)
     else:
         plt.xlabel(r'$\lambda$ [$\AA$]')
-    plt.text(8e3, 4e36, 't = {:d} Myr'.format(int(tcomp[i]/1e6)))
+    plt.setp(ax.get_yticklabels(), visible=False)
+
+    # Limits
+    plt.ylim([2e33,2e37])
+    plt.xlim([1e2, 2e4])
+
+    # Title
+    if i == 0:
+        plt.title('Kroupa')
+
+    # Create panel
+    ax=plt.subplot(4,3,3*i+3)
+
+    #  WK06
+    wk06_mean,=plt.loglog(wl, meanspec[2,i,:], 'r', lw=2)
+    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'k', lw=1)
+    #wk06_med,=plt.loglog(wl, percspec[2,i,1,:], 'r', lw=1)
+    plt.fill_between(wl, percspec[2,i,0,:]+1.0, percspec[2,i,2,:]+1.0, 
+                     color='r', alpha=0.25)
+
+    # Axis labels
+    if i != len(tcomp)-1:
+        plt.setp(ax.get_xticklabels(), visible=False)
+    else:
+        plt.xlabel(r'$\lambda$ [$\AA$]')
+    plt.setp(ax.get_yticklabels(), visible=False)
+
+    # Limits
+    plt.ylim([2e33,2e37])
+    plt.xlim([1e2, 2e4])
+
+    # Title
+    if i == 0:
+        plt.title('Weidner-Kroupa')
+
+    # Labels
+    plt.text(4e3, 4e36, 't = {:d} Myr'.format(int(tcomp[i]/1e6)))
 
 # Adjust subplot spacing
 plt.subplots_adjust(hspace=0, wspace=0, bottom=0.1, top=0.95, 
-                    left=0.15, right=0.95)
+                    left=0.12, right=0.95)
 
 # Save
 plt.savefig('imfvary1.pdf')
