@@ -553,7 +553,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_prop(cluster_prop_file, out_mode, i);
+	  cluster->write_prop(cluster_prop_file, out_mode, i, true);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_prop(cluster_prop_fits, i);
@@ -566,7 +566,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_spectrum(cluster_spec_file, out_mode, i);
+	  cluster->write_spectrum(cluster_spec_file, out_mode, i, true);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_spectrum(cluster_spec_fits, i);
@@ -579,7 +579,7 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_photometry(cluster_phot_file, out_mode, i);
+	  cluster->write_photometry(cluster_phot_file, out_mode, i, true);
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_photometry(cluster_phot_fits, i);
