@@ -208,8 +208,11 @@ slug_parmParser::parseFile(ifstream &paramFile) {
 	verbosity = lexical_cast<int>(tokens[1]);
       } else if (!(tokens[0].compare("sim_type"))) {
 	to_lower(tokens[1]);
-	if (tokens[1].compare("cluster") == 0)
+	if (tokens[1].compare("cluster") == 0) {
 	  run_galaxy_sim = false;
+	  writeIntegratedProp = writeIntegratedSpec =
+	    writeIntegratedPhot = false;
+	}
 	else if (tokens[1].compare("galaxy") == 0)
 	  run_galaxy_sim = true;
 	else {
