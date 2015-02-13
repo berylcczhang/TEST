@@ -3,6 +3,10 @@
 
 SLUG is the Stochastically Lighting Up Galaxies Code. SLUG is a stellar population synthesis code, and in many respects is similar to other commonly-used SPS codes such as [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm) and [FSPS](https://code.google.com/p/fsps/). Given an input star formation history, stellar initial mass function, and a set of evolutionary tracks and stellar atmospheres, all of these codes can predict the spectra and photometric properties of a stellar population. The main difference between SLUG and conventional SPS codes is that, instead of the usual approach of assuming that all stellar masses and ages are fully populated, SLUG is capable of stochastically sampling from the stellar initial mass function and age distribution, and thereby predicting not just the mean spectrum and photometry, but also the full distribution of spectra and photometry that results from stochastic sampling. This capability is critical in the regime of low star formation rates and total stellar masses, where finite sampling can lead to a distribution of properties that is extremely broad, and the mean values produced by other SPS codes are therefore of limited predictive power.
 
+### Full documenation ###
+
+Full documentation of SLUG is available at [http://slug2.readthedocs.org/en/latest/](http://slug2.readthedocs.org/en/latest/). Documentation is also available in the source repository; see *doc/html/index.html* for the html version, and *doc/latex/slug.pdf* for a PDF version.
+
 ### Version history ###
 
 This repository contains SLUG v2. SLUG v1 is available at <https://sites.google.com/site/runslug/>. The code here is a complete re-implementation of SLUG, with a number of major improvements.
@@ -20,6 +24,7 @@ This repository contains SLUG v2. SLUG v1 is available at <https://sites.google.
 * The ability to apply stochastically-selected extinctions to the predicted light output
 * Quick estimation of the nebular contribution to spectra and photometry
 * An automated interface to couple the code to [cloudy](http://nublado.org) in order to provide much more accurate predictions of nebular emission
+* A suite a Bayesian estimator tools that can be used to derive posterior probabilities on star formation rates and star cluster properties from libraries of SLUG simulations.
 
 SLUG v1 will no longer be maintained, so all users are encouraged to migrate to SLUG v2 as soon as possible.
 
@@ -29,6 +34,7 @@ The SLUG repository contains several subdirectories.
 
 * *bin*: this contains the slug source code when it is compiled, as well as the parallel wrapper python script
 * *cloudy_slug*: this contains the code for the interface to [cloudy](http://nublado.org)
+* *cluster_slug*: contains example code and data for cluster_slug
 * *doc*: this contains documentation for the code
     - *doc/html*: documentation in html format
     - *doc/latex*: documentation in latex/pdf format
@@ -45,6 +51,7 @@ The SLUG repository contains several subdirectories.
     - *lib/tracks*: contains stellar evolution tracks
 * *output*: this is the default location for writing output
 * *param*: this is the default location for parameter files that control slug simulations
+* *sfr_slug*: contains example code and data for sfr_slug
 * *slugpy*: this contains the python module slugpy, which includes routines for parsing and manipulating simulation outputs
     - *slugpy/bayesphot*: contains python routines to do Bayesian estimation of physical properties from photometry
     - *slugpy/cloudy*: contains parsing routines related to the [cloudy](http://nublado.org) interface
