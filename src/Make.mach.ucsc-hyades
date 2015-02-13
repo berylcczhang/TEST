@@ -1,21 +1,21 @@
 # Machine-specific settings for UCSC hyades
 
-# Default is icpc / icc
-MACH_CXX     = icpc
-MACH_CXX     = icc
+# Use gcc
+MACH_CXX     = gcc
+MACH_CXX     = g++
 
 # Flag needed to specify c++11 standard
 MACH_C11FLAG      = -std=c++11
 
 # Optimization flags
-MACH_CXXOPTFLAGS  = -O3 -ipo -xAVX
+MACH_CXXOPTFLAGS  = -Ofast
 MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
-MACH_LDOPTFLAGS	  = -O3 -ipo -xAVX
+MACH_LDOPTFLAGS	  = -Ofast
 
 # Debug flags
-MACH_CXXDEBFLAGS  = -g
+MACH_CXXDEBFLAGS  = -Og
 MACH_COPTFLAGS	  = $(MACH_CXXDEBFLAGS)
-MACH_LDDEBFLAGS   = -g
+MACH_LDDEBFLAGS   = -Og
 
 # Flags to compile shared libaries
 LIB_EXTENSION	   = .so
