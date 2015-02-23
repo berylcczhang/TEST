@@ -181,8 +181,8 @@ class cluster_slug(object):
             # must not exist, or must be damaged. Check if we're in
             # interactive mode. If not, just raise an error and
             # suggest the user to go get the library file.
-            errstr = "Unable to open default sfr_slug " + \
-                     "library file sfr_slug/SFR_SLUG."
+            errstr = "Unable to open default cluster_slug " + \
+                     "library file cluster_slug/clusterslug_mw."
             import __main__ as main
             if hasattr(main, '__file__'):
                 # We're not interactive; just raise an error
