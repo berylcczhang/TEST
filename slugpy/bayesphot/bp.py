@@ -157,7 +157,7 @@ class bp(object):
 
         self.__clib.kd_change_wgt.restype = None
         self.__clib.kd_change_wgt.argtypes \
-            = [ array_1d_double,   # wgt
+            = [ POINTER(c_double), # wgt
                 c_void_p ]         # kd
 
         self.__clib.kd_change_bandwidth.restype = None
@@ -532,7 +532,8 @@ class bp(object):
             # Compute the weights from the ratio of the prior to
             # the sample density, then adjust the weights in the kd
             self.__wgt = prior_data / self.__sample_density
-            self.__clib.kd_change_wgt(self.__wgt, self.__kd)
+            self.__clib.kd_change_wgt(self.__wgt.ctypes.data_as(POINTER(c_double)),
+                                      self.__kd)
 
 
     ##################################################################
@@ -878,7 +879,7 @@ class bp(object):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
         if (np.amax(idx) > self.__nphys) or (np.amin(idx) < 0) or \
-           (not (np.unique(idx) == idx)):
+           (not np.array_equal(np.unique(idx), idx)):
             raise ValueError("need non-repeating indices in " +
                              "the range 0 - {:d}!".
                              format(self.__nphys-1))
