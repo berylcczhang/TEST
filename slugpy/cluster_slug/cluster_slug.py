@@ -41,18 +41,24 @@ class cluster_slug(object):
           relative error tolerance for kernel density estimation
 
     Methods
-       filters() : returns list of filters available in the library
-       filter_units() : returns units for available filters
-       add_filters() : adds a set of filters for use in parameter
-                       estimation
-       logL() : compute log likelihood at a particular set of physical
-                and photometric parameters
-       mpdf() : computer marginal posterior probability distribution
-                for a set of photometric measurements
-       mcmc() : due MCMC estimation of the posterior PDF on a set of
-                photometric measurments
-       bestmatch() : find the simulations in the library that are the
-                     closest matches to the input photometry
+       filters() : 
+          returns list of filters available in the library
+       filter_units() :
+          returns units for available filters
+       add_filters() : 
+          adds a set of filters for use in parameter estimation
+       logL() : 
+          compute log likelihood at a particular set of physical and
+          photometric parameters
+       mpdf() : 
+          computer marginal posterior probability distribution for a
+          set of photometric measurements
+       mcmc() :
+          due MCMC estimation of the posterior PDF on a set of
+          photometric measurments
+       bestmatch() : 
+          find the simulations in the library that are the closest
+          matches to the input photometry
     """
 
     ##################################################################
