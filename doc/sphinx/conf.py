@@ -30,7 +30,7 @@ if on_rtd:
         @classmethod
         def __getattr__(cls, name):
             return Mock()
-    MOCK_MODULES = ['numpy', 'scipy', 'astropy']
+    MOCK_MODULES = ['numpy', 'scipy', 'astropy', 'scipy.interpolate']
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- General configuration ------------------------------------------------
