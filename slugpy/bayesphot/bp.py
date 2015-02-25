@@ -879,7 +879,8 @@ class bp(object):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
         if (np.amax(idx) > self.__nphys) or (np.amin(idx) < 0) or \
-           (not np.array_equal(np.unique(idx), idx)):
+           (not np.array_equal(np.squeeze(np.unique(np.array(idx))), 
+                               np.squeeze(np.array([idx])))):
             raise ValueError("need non-repeating indices in " +
                              "the range 0 - {:d}!".
                              format(self.__nphys-1))
