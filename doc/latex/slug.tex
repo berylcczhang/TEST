@@ -14,7 +14,7 @@
 
 
 \title{slug Documentation}
-\date{February 12, 2015}
+\date{February 25, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -145,7 +145,7 @@ In addition to the core SLUG code, the Bayesian inference tools cluster\_slug an
 
 \chapter{Introduction to SLUG}
 \label{intro:introduction-to-slug}\label{intro::doc}
-This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the \href{http://www.gnu.org/licenses/gpl.html}{GNU General Public License v. 3.0}. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method paper, \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, R. L., Fumagalli, M., \& Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145}. A second method paper, describing the upgraded version 2 code and a set of ancillary tools, is in preparation at this time.
+This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the \href{http://www.gnu.org/licenses/gpl.html}{GNU General Public License v. 3.0}. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method papers, \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, R. L., Fumagalli, M., \& Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145} and \href{http://adsabs.harvard.edu/abs/2015arXiv150205408K}{Krumholz, M. R., Fumagalli, M., da Silva, R. L., Rendahl, T., \& Parra, J. 2015, submitted to Monthly Notices of the Royal Astronomical Society, arXiv:1502.05408}.
 
 
 \section{What Does SLUG Do?}
@@ -5526,6 +5526,40 @@ callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
+
+\item[{abstol}] \leavevmode{[}float{]}
+absolute error tolerance for kernel density estimation
+
+\item[{reltol}] \leavevmode{[}float{]}
+relative error tolerance for kernel density estimation
+
+\end{description}
+
+\item[{Methods}] \leavevmode\begin{description}
+\item[{filters()}] \leavevmode{[}{]}
+returns list of filters available in the library
+
+\item[{filter\_units() :}] \leavevmode
+returns units for available filters
+
+\item[{add\_filters()}] \leavevmode{[}{]}
+adds a set of filters for use in parameter estimation
+
+\item[{logL()}] \leavevmode{[}{]}
+compute log likelihood at a particular set of physical and
+photometric parameters
+
+\item[{mpdf()}] \leavevmode{[}{]}
+computer marginal posterior probability distribution for a
+set of photometric measurements
+
+\item[{mcmc() :}] \leavevmode
+due MCMC estimation of the posterior PDF on a set of
+photometric measurments
+
+\item[{bestmatch()}] \leavevmode{[}{]}
+find the simulations in the library that are the closest
+matches to the input photometry
 
 \end{description}
 
