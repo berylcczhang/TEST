@@ -22,6 +22,17 @@ import os
 
 sys.path.insert(0, os.path.join(os.path.abspath('.'), '..', '..'))
 
+# Mock imports to avoid problems on readthedocs
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
+    from unittest.mock import MagicMock
+    class Mock(MagicMock):
+        @classmethod
+        def __getattr__(cls, name):
+            return Mock()
+    MOCK_MODULES = ['numpy', 'scipy', 'astropy']
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
