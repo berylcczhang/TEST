@@ -5,7 +5,11 @@ Routine to read a cloudy continuum output, produced by save last continuum
 import numpy as np
 from collections import namedtuple
 import scipy.constants as physcons
-c = physcons.c * 1e2   # c in CGS units
+try:
+    c = physcons.c * 1e2   # c in CGS units
+except:
+    # This exception is here to deal with readthedocs not having scipy
+    c = 3.0e10
 
 def read_cloudy_continuum(filename, r0=None):
     """

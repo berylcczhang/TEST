@@ -637,7 +637,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # If only reading filters, skip the rest
             if not filters_only:
 
-                # If requested to read only certain filters, figure
+               # If requested to read only certain filters, figure
                 # out which ones are in our list to read
                 if read_filters is not None:
                     fread = []

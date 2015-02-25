@@ -12,7 +12,11 @@ from int_tabulated import int_tabulated2
 from read_filter import read_filter
 
 # Constants and units conversions to cm
-c = physcons.c*100.0
+try:
+    c = physcons.c*100.0
+except:
+    # This exception is here to deal with readthedocs not having scipy
+    c = 3.0e10
 Angstrom = 1e-8
 pc = 3.0856775814671918e18
 

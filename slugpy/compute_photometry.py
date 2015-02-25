@@ -13,8 +13,13 @@ from read_filter import read_filter
 import scipy.constants as physcons
 
 # Units and constants
-c = physcons.c*1e2
-h = physcons.h*1e7
+try:
+    c = physcons.c*1e2
+    h = physcons.h*1e7
+except:
+    # This exception is here to deal with readthedocs not having scipy
+    c = 3.0e10
+    h = 6.63e-27
 ang = 1e-8
 pc = 3.0856775814671918e18
 Lsun = 3.846e33
