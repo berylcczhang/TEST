@@ -276,30 +276,6 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     logmDot[i][0] = logmDot[i][1];
   }
 
-#if 0
-  // Issue warning if lifetimes are non-monotonic at ages less than
-  // the maximum age we're going to use
-  double mwarn = -1.0;
-  double twarn = constants::big;
-  for (unsigned int i=0; i<ntrack-1; i++) {
-    if (logtimes[i][ntime-1] > logtimes[i+1][ntime-1]) {
-      if (exp(logtimes[i+1][ntime-1]) < twarn) {
-	twarn = exp(logtimes[i+1][ntime-1]);
-	mwarn = exp(logmass[i+1]);
-      }
-    }
-  }
-  if (mwarn > 0) {
-    if ((max_time == -1.0) || (twarn < max_time)) {
-      cerr << "slug: warning: Stellar lifetime is non-monotonic "
-	   << "for stellar mass " << mwarn << " Msun." << endl;
-      cerr << "slug: warning: Non-monotonic stellar lifetimes are "
-	   << "not currently supported. Calculation will proceed, but "
-	   << "results likely become inaccurate for stellar "
-	   << "population ages > " << twarn << " yr." << endl;
-    }
-  }
-#else
   // Check if tracks are non-monotonic (meaning that lifetime is
   // sometimes an increasing rather than a decreasing function of
   // mass). This requires special handling.
@@ -307,7 +283,6 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
   for (unsigned int i=0; i<ntrack-1; i++)
     if (logtimes[i][ntime-1] > logtimes[i+1][ntime-1])
       monotonic = false;
-#endif
 
   // Construct the slopes in the (log t, log m) plane; slopes[i, j] =
   // the slope of the segment connecting time[i, j] at mass[i] to
