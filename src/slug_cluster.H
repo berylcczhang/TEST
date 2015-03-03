@@ -190,6 +190,7 @@ private:
   double A_V;                         // A_V value
   double Lbol;                        // Bolometric luminosity
   double Lbol_ext;                    // Extincted bolometric luminosity
+  std::vector<double> deathMasses;    // Death masses for non-monotonic tracks
   std::vector<double> stars;          // List of stellar masses
   std::vector<slug_stardata> stardata; // Data on stellar properties
   std::vector<double> L_lambda;       // Spectrum

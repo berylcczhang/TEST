@@ -266,6 +266,79 @@ slug_specsyn::~slug_specsyn() { }
 // mass in the IMF, M_min,stoch is the minimm mass being treated
 // stochastically, and <M> is the expectation mass of a star computed
 // over the full IMF.
+
+void
+slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
+			       vector<double>& L_lambda, double& L_bol,
+			       const double tol) const {
+
+  // Do we have monotonic tracks?
+  if (tracks->check_monotonic()) {
+
+    // Yes, tracks are monotonic, so a single death mass exists
+
+    // Get the range of integration from the IMF and the stellar tracks:
+    // minimum mass is the larger of the smallest mass in the IMF and
+    // the lowest mass track maximum mass is the smallest of the edge of
+    // the non-stochastic range, the largest mass track, and the death
+    // mass at this age
+    double m_min = max(imf->get_xMin(), tracks->min_mass());
+    double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+		       tracks->death_mass(age));
+
+    // If m_min > m_max (can happen for strange IMFs if all stars have
+    // died), just leave L_lambda and L_bol as 0
+    if (m_min >= m_max) return;
+
+    // Now call the helper function, and that's it
+    get_spectrum_cts_range(m_tot, age, m_min, m_max, L_lambda,
+			   L_bol, tol);
+
+  } else {
+
+    // More complicated case: tracks are not monotonic, so we may have
+    // multiple disjoint "alive mass" intervals
+
+    // Initialize luminosity
+    L_lambda.assign(lambda_rest.size(), 0.0);
+    L_bol = 0.0;
+
+    // Grab the alive mass intervals at this time
+    vector<double> mass_cut = tracks->live_mass_range(age);
+
+    // Loop over mass intervals
+    for (unsigned int i=0; i<mass_cut.size()/2; i++) {
+
+      // Figure out the mass limits for this interval
+      double m_min = max(imf->get_xMin(), max(tracks->min_mass(), 
+					      mass_cut[2*i]));
+      double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+			 mass_cut[2*i+1]);
+
+      // If m_min >= m_max, no living stars in this interval being
+      // treated non-stochastically, so move on
+      if (m_min >= m_max) continue;
+
+      // Create temporaries to hold contribution for this interval
+      double L_bol_tmp;
+      vector<double> L_lambda_tmp;
+
+      // Do integral for this interval
+      get_spectrum_cts_range(m_tot, age, m_min, m_max, L_lambda_tmp,
+			     L_bol_tmp, tol);
+
+      // Add to total
+      for (unsigned int j=0; j<L_lambda.size(); j++)
+	L_lambda[j] += L_lambda_tmp[j];
+      L_bol += L_bol_tmp;
+    }
+  }
+}
+
+// This is a helper function for get_spectrum_cts. It performs the
+// integral required for get_spectrum_cts over a specified mass
+// range, which is guaranteed to contain only living stars. For the
+// simplest case of monotonic tracks, this will only be called once.
 //
 // The algorithm implemented here is an adaptive Gauss-Kronrod method;
 // the code is based on the GSL implementation (significantly
@@ -275,9 +348,11 @@ slug_specsyn::~slug_specsyn() { }
 // vector of masses all at once, rather than doing them one at a time.
 
 void
-slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
-			       vector<double>& L_lambda, double& L_bol,
-			       const double tol) const {
+slug_specsyn::
+get_spectrum_cts_range(const double m_tot, const double age,
+		       const double m_min, const double m_max,
+		       vector<double>& L_lambda, double& L_bol,
+		       const double tol) const {
 
   // Initialize L_lambda and L_bol
   L_lambda.assign(lambda_rest.size(), 0.0);
@@ -285,19 +360,6 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 
   // Allocate workspace
   qag_wksp q(lambda_rest.size(), gknum);
-
-  // Get the range of integration from the IMF and the stellar tracks:
-  // minimum mass is the larger of the smallest mass in the IMF and
-  // the lowest mass track maximum mass is the smallest of the edge of
-  // the non-stochastic range, the largest mass track, and the death
-  // mass at this age
-  double m_min = max(imf->get_xMin(), tracks->min_mass());
-  double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
-			    tracks->death_mass(age));
-
-  // If m_min > m_max (can happen for strange IMFs if all stars have
-  // died), just leave L_lambda and L_bol as 0
-  if (m_min >= m_max) return;
 
   // Do initial integration with Gauss-Kronrod
   double bol_err;
@@ -408,20 +470,70 @@ double
 slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
 			   const double tol) const {
 
+  // Do we have monotonic tracks?
+  if (tracks->check_monotonic()) {
+
+    // Yes, tracks are monotonic, so a single death mass exists
+
+    // Get the range of integration from the IMF and the stellar tracks:
+    // minimum mass is the larger of the smallest mass in the IMF and
+    // the lowest mass track maximum mass is the smallest of the edge of
+    // the non-stochastic range, the largest mass track, and the death
+    // mass at this age
+    double m_min = max(imf->get_xMin(), tracks->min_mass());
+    double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+		       tracks->death_mass(age));
+
+    // If m_min > m_max (can happen for strange IMFs if all stars have
+    // died), just return 0
+    if (m_min >= m_max) return(0.0);
+
+    // Now call the helper function, and that's it
+    return get_Lbol_cts_range(m_tot, age, m_min, m_max, tol);
+
+  } else {
+
+    // More complicated case: tracks are not monotonic, so we may have
+    // multiple disjoint "alive mass" intervals
+
+    // Initialize luminosity
+    double L_bol = 0.0;
+
+    // Grab the alive mass intervals at this time
+    vector<double> mass_cut = tracks->live_mass_range(age);
+
+    // Loop over mass intervals
+    for (unsigned int i=0; i<mass_cut.size()/2; i++) {
+
+      // Figure out the mass limits for this interval
+      double m_min = max(imf->get_xMin(), max(mass_cut[2*i],
+					      tracks->min_mass()));
+      double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+			 mass_cut[2*i+1]);
+
+      // If m_min >= m_max, no living stars in this interval being
+      // treated non-stochastically, so move on
+      if (m_min >= m_max) continue;
+
+      // Add integral for this interval
+      L_bol += get_Lbol_cts_range(m_tot, age, m_min, m_max, tol);
+    }
+
+    // Return
+    return L_bol;
+  }
+}
+
+double
+slug_specsyn::get_Lbol_cts_range(const double m_tot, const double age,
+				 const double m_min, const double m_max,
+				 const double tol) const {
+
   // Initialize L_bol
   double L_bol = 0.0;
 
   // Allocate workspace
   qag_wksp q(1, gknum);
-
-  // Get the range of integration from the IMF and the stellar tracks:
-  // minimum mass is the larger of the smallest mass in the IMF and
-  // the lowest mass track
-  // maximum mass is the smallest of the edge of the non-stochastic
-  // range, the largest mass track, and the death mass at this age
-  double m_min = max(imf->get_xMin(), tracks->min_mass());
-  double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
-			    tracks->death_mass(age));
 
   // Do initial integration with Gauss-Kronrod
   double bol_err;

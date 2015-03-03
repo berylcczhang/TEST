@@ -140,6 +140,16 @@ protected:
 
 private:
 
+  // Helper function to do spectral synthesis and get bolometric
+  // luminosity over a given mass range
+  void get_spectrum_cts_range(const double m_tot, const double age,
+			      const double m_min, const double m_max,
+			      std::vector<double>& L_lambda,
+			      double &L_bol, const double tol = 1e-3) const;  
+  double get_Lbol_cts_range(const double m_tot, const double age,
+			    const double m_min, const double m_max,
+			    const double tol = 1e-3) const;  
+
   // Helper function to do Gauss-Konrod integration on a particular
   // mass interval
   void get_spectrum_cts_gk(const double m_min, const double m_max,

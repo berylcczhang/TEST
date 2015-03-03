@@ -91,8 +91,17 @@ public:
   double max_mass() const { return exp(logmass[0]); }
   double min_mass() const { return exp(logmass[ntrack-1]); }
 
-  // Age of star dying at a particular time
+  // Age of star dying at a particular time; calling this causes an
+  // error if the tracks are non-monotonic, so a single death mass
+  // cannot be defined; in that case call death_mass_non_monotonic
   double death_mass(const double time) const;
+
+  // Live mass range
+  std::vector<double> live_mass_range(const double time) const;
+
+  // Check if the tracks are monotonic (meaning that death mass is a
+  // non-increasing function of mass at all masses and ages) or not
+  bool check_monotonic() const;
 
   // Lifetime of a star of a specified mass
   double star_lifetime(const double mass) const;
@@ -111,8 +120,19 @@ public:
 
 private:
 
+  // Computes the live mass range and also returns the index of the
+  // track immediately below each mass cut
+  void live_mass_range(const double time, 
+		       std::vector<double>& mass_cut,
+		       std::vector<int>& track_cut) const;
+
   // Method to set up the isochrone interpolator for a particular time
-  void compute_isochrone(const double logt) const;
+  void compute_isochrone(const double logt, 
+			 const unsigned int idx = 0,
+			 const std::vector<double>& mass_cut = 
+			 std::vector<double>(),
+			 const std::vector<int>& track_cut =
+			 std::vector<int> ()) const;
 
   // Private data
   std::string trackfileName;    // Name of the track file
@@ -136,8 +156,10 @@ private:
   double WR_mass;               // Mass at which WR stars form
   unsigned int ntrack;          // Number of tracks
   unsigned int ntime;           // Number of times per track
+  bool monotonic;               // Are tracks monotonic or not?
 
   // Storage for the isochrone
+  mutable unsigned int isochrone_idx;
   mutable double isochrone_logt;
   mutable gsl_spline *isochrone_logcur_mass, *isochrone_logL, 
     *isochrone_logTeff, *isochrone_h_surf, *isochrone_c_surf, 

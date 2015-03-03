@@ -153,26 +153,127 @@ slug_cluster::advance(double time) {
   // Get current age
   double clusterAge = time - formationTime;
 
-  // Get stellar death mass corresponding to this age; save the
-  // current one as a temporary in case we need it below
-  stellarDeathMass = tracks->death_mass(clusterAge);
+  // Handle cases of monotonic and non-monotonic tracks differently
+  if (tracks->check_monotonic()) {
 
-  // Traverse the list, popping off stars that have died, and
-  // correcting the mass downward as we go
-  while (stars.size() > 0) {
-    if (stars.back() > stellarDeathMass) {
-      aliveMass -= stars.back();
-      stars.pop_back();
-    } else break;
-  }
+    // Monotonic track case
 
-  // If the maximum mass for non-stochastic treatment is smaller than
-  // the stellar death mass, decrease the mass in the non-stochstic
-  // bin
-  if (stellarDeathMass < imf->get_xStochMin()) {
-    nonStochAliveMass = nonStochMass * 
-      imf->integral(imf->get_xStochMin(), stellarDeathMass) /
-      imf->integral_restricted();
+    // Get stellar death mass corresponding to this age; save the
+    // current one as a temporary in case we need it below
+    stellarDeathMass = tracks->death_mass(clusterAge);
+
+    // Traverse the list, popping off stars that have died, and
+    // correcting the mass downward as we go
+    while (stars.size() > 0) {
+      if (stars.back() > stellarDeathMass) {
+	aliveMass -= stars.back();
+	stars.pop_back();
+      } else break;
+    }
+
+    // If the maximum mass for non-stochastic treatment is smaller than
+    // the stellar death mass, decrease the mass in the non-stochstic
+    // bin
+    if (stellarDeathMass < imf->get_xStochMin()) {
+      nonStochAliveMass = nonStochMass * 
+	imf->integral(0, stellarDeathMass) /
+	imf->integral_restricted();
+    }
+
+  } else {
+
+    // Non-monotonic track case
+    vector<double> mass_cuts = tracks->live_mass_range(clusterAge);
+
+    // Traverse the list to pop off stars that are more massive than
+    // the upper end of the most massive "alive mass" interval
+    while (stars.size() > 0) {
+      if (stars.back() > mass_cuts.back()) {
+	aliveMass -= stars.back();
+	stars.pop_back();
+      } else break;
+    }
+
+    // Now kill off stars outside every other alive mass interval
+    int interval_ptr = mass_cuts.size()-2;
+    int starptr = stars.size()-1;
+    while (interval_ptr >= 0) {
+
+      // Stop if we reach the bottom of the star list
+      if (starptr < 0) break;
+
+      // Find the lowest mass star that is still alive
+      while (stars[starptr] > mass_cuts[interval_ptr]) {
+	starptr--;
+	if (starptr <= 0) break;
+      }
+
+      // If we've reached the bottom of the star list, we're done
+      if (starptr <= 0) break;
+
+      // If this star is below the minimum mass star we're killing
+      // off, go to next iteration
+      if (stars[starptr] < mass_cuts[interval_ptr-1]) {
+	interval_ptr -= 2;
+	continue;
+      }
+
+      // If we're here, starptr points to a star that should be dead
+      // and this age. We now proceed through the star list to find
+      // the minimum mass stars that is still alive.
+      int starptr2 = starptr;
+      for (; starptr2 > 0; starptr2--)
+	if (stars[starptr2-1] < mass_cuts[interval_ptr-1]) break;
+
+      // The interval from starptr2 to starptr represents stars whose
+      // masses are such that they are dead. First subtract their
+      // mass, then remove them from the list of stars. Note that we
+      // need to add 1 to starptr because the c++ vector erase method
+      // excludes the last element.
+      for (unsigned int i=starptr2; i<=starptr; i++)
+	aliveMass -= stars[i];
+      stars.erase(stars.begin()+starptr2, stars.begin()+starptr+1);
+
+      // Move the death mass point and star pointer
+      interval_ptr -= 2;
+      starptr = starptr2 - 1;
+
+    }
+
+    // Last step: if the minimum alive mass is non-zero, then we need
+    // to kill all stars smaller than the smallest alive mass
+    if (mass_cuts[0] > 0.0) {
+
+      // Find all stars smaller than the minimum alive mass
+      for (starptr=0; starptr<stars.size(); starptr++)
+	if (stars[starptr] > mass_cuts[0]) break;
+
+      // Kill those stars
+      for (unsigned int i=0; i<starptr; i++) aliveMass -= stars[i];
+      stars.erase(stars.begin(), stars.begin()+starptr);
+
+    }
+
+    // Recompute the non-stochastic alive mass by summing up all the
+    // mass intervals that are alive
+    if (imf->get_xStochMin() > 0.0) {
+      double imfsum = 0.0;
+      for (unsigned int i=0; i<mass_cuts.size()/2; i++) {
+
+	// If the minimum of this alive interval is bigger than the
+	// highest mass we're treating non-stochastically / the lowest
+	// mass we're treating non-stochastically, break
+	if (mass_cuts[2*i] > imf->get_xStochMin()) break;
+
+	// Integrate the contribution of this alive interval
+	imfsum += imf->integral(mass_cuts[2*i],
+				min(mass_cuts[2*i], imf->get_xStochMin()));
+      }
+
+      // Update non-stochastic alive mass
+      nonStochAliveMass = nonStochMass * imfsum /
+	imf->integral_restricted();
+    }
   }
 
   // Flag if we're disrupted

@@ -276,6 +276,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     logmDot[i][0] = logmDot[i][1];
   }
 
+#if 0
   // Issue warning if lifetimes are non-monotonic at ages less than
   // the maximum age we're going to use
   double mwarn = -1.0;
@@ -298,6 +299,15 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	   << "population ages > " << twarn << " yr." << endl;
     }
   }
+#else
+  // Check if tracks are non-monotonic (meaning that lifetime is
+  // sometimes an increasing rather than a decreasing function of
+  // mass). This requires special handling.
+  monotonic = true;
+  for (unsigned int i=0; i<ntrack-1; i++)
+    if (logtimes[i][ntime-1] > logtimes[i+1][ntime-1])
+      monotonic = false;
+#endif
 
   // Construct the slopes in the (log t, log m) plane; slopes[i, j] =
   // the slope of the segment connecting time[i, j] at mass[i] to
@@ -360,27 +370,32 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     }
 
     // Build splines
-    logcur_mass_m_interp[i] = gsl_spline_alloc(gsl_interp_akima, n_uniq);
+    const gsl_interp_type *interp_type;
+    if (n_uniq >= gsl_interp_type_min_size(gsl_interp_akima))
+      interp_type = gsl_interp_akima;
+    else
+      interp_type = gsl_interp_linear;
+    logcur_mass_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
     logcur_mass_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(logcur_mass_m_interp[i], tracktimes.data(),
 		    logcur_mass_tmp.data(), n_uniq);
-    logL_m_interp[i] = gsl_spline_alloc(gsl_interp_akima, n_uniq);
+    logL_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
     logL_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(logL_m_interp[i], tracktimes.data(),
 		    logL_tmp.data(), n_uniq);
-    logTeff_m_interp[i] = gsl_spline_alloc(gsl_interp_akima, n_uniq);
+    logTeff_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
     logTeff_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(logTeff_m_interp[i], tracktimes.data(),
 		    logTeff_tmp.data(), n_uniq);
-    h_surf_m_interp[i] = gsl_spline_alloc(gsl_interp_akima, n_uniq);
+    h_surf_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
     h_surf_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(h_surf_m_interp[i], tracktimes.data(),
 		    h_surf_tmp.data(), n_uniq);
-    c_surf_m_interp[i] = gsl_spline_alloc(gsl_interp_akima, n_uniq);
+    c_surf_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
     c_surf_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(c_surf_m_interp[i], tracktimes.data(),
 		    c_surf_tmp.data(), n_uniq);
-    n_surf_m_interp[i] = gsl_spline_alloc(gsl_interp_akima, n_uniq);
+    n_surf_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
     n_surf_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(n_surf_m_interp[i], tracktimes.data(),
 		    n_surf_tmp.data(), n_uniq);
@@ -446,27 +461,32 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     }
 
     // Build splines in the time direction
-    logcur_mass_t_interp[j] = gsl_spline_alloc(gsl_interp_akima, ntrack);
+    const gsl_interp_type *interp_type;
+    if (ntrack >= gsl_interp_type_min_size(gsl_interp_akima))
+      interp_type = gsl_interp_akima;
+    else
+      interp_type = gsl_interp_linear;
+    logcur_mass_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
     logcur_mass_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(logcur_mass_t_interp[j], dist.data(),
 		    logcur_mass_tmp.data(), ntrack);
-    logL_t_interp[j] = gsl_spline_alloc(gsl_interp_akima, ntrack);
+    logL_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
     logL_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(logL_t_interp[j], dist.data(),
 		    logL_tmp.data(), ntrack);
-    logTeff_t_interp[j] = gsl_spline_alloc(gsl_interp_akima, ntrack);
+    logTeff_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
     logTeff_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(logTeff_t_interp[j], dist.data(),
 		    logTeff_tmp.data(), ntrack);
-    h_surf_t_interp[j] = gsl_spline_alloc(gsl_interp_akima, ntrack);
+    h_surf_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
     h_surf_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(h_surf_t_interp[j], dist.data(),
 		    h_surf_tmp.data(), ntrack);
-    c_surf_t_interp[j] = gsl_spline_alloc(gsl_interp_akima, ntrack);
+    c_surf_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
     c_surf_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(c_surf_t_interp[j], dist.data(),
 		    c_surf_tmp.data(), ntrack);
-    n_surf_t_interp[j] = gsl_spline_alloc(gsl_interp_akima, ntrack);
+    n_surf_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
     n_surf_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(n_surf_t_interp[j], dist.data(),
 		    n_surf_tmp.data(), ntrack);
@@ -479,6 +499,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     isochrone_logTeff_acc = isochrone_h_surf_acc = 
     isochrone_c_surf_acc = isochrone_n_surf_acc = NULL;
   isochrone_logt = -constants::big;
+  isochrone_idx = -1;
 
   // If not already set, try to guess the metallicity from the file
   // name
@@ -632,12 +653,25 @@ slug_tracks::~slug_tracks() {
   }
 }
 
+////////////////////////////////////////////////////////////////////////
+// Return if the tracks are monotonic
+////////////////////////////////////////////////////////////////////////
+bool slug_tracks::check_monotonic() const {
+  return monotonic;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Age of star dying at a particular time
 ////////////////////////////////////////////////////////////////////////
 double
 slug_tracks::death_mass(const double time) const {
+
+  // Make sure the tracks are monotonic; if not, bail out
+  if (!monotonic) {
+    cerr << "slug_tracks::death_mass called on non-monotonic tracks!"
+	 << endl;
+    exit(1);
+  }
 
   // Work with log of time
   double logt;
@@ -667,6 +701,92 @@ slug_tracks::death_mass(const double time) const {
   return(exp(logm));
 }
 
+////////////////////////////////////////////////////////////////////////
+// Calculate what range of stellar masses are alive at the specified
+// time
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_tracks::live_mass_range(const double time) const {
+
+  // Work with log of time
+  double logt;
+  if (time > 0) logt = log(time);
+  else logt = -constants::big;
+
+  // Vector to hold result
+  vector<double> mass_cut;
+
+  // Is this time smaller than the death time of the lowest mass
+  // track? If so, set the first mass cut to zero
+  if (logt < logtimes[ntrack-1][ntime-1]) mass_cut.push_back(0.0);
+
+  // Start at the bottom of the grid and march upward. For each
+  // segment, check if the input time is between the death times of
+  // the two segments
+  for (int i=ntrack-2; i>=0; i--) {
+    if ((logtimes[i+1][ntime-1]-logt)*(logt-logtimes[i][ntime-1]) > 0) {
+      // Time is between these two, so get death mass
+      double m = exp(logmass[i] + slopes[i][ntime-1] *
+		     (logt - logtimes[i][ntime-1]));
+      mass_cut.push_back(m);
+    }
+  }
+
+  // If the total number of recorded death masses odd? If so, then
+  // the most massive star track is still alive, so add constants::big
+  // as a final death mass
+  if (mass_cut.size() % 2 == 1) mass_cut.push_back(constants::big);
+
+  // Return death mass
+  return(mass_cut);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Calculate what range of stellar masses are alive at the specified
+// time, and also return the indices
+////////////////////////////////////////////////////////////////////////
+void
+slug_tracks::live_mass_range(const double time,
+			     vector<double>& mass_cut,
+			     vector<int>& track_cut) const {
+
+  // Work with log of time
+  double logt;
+  if (time > 0) logt = log(time);
+  else logt = -constants::big;
+
+  // Erase input vectors
+  mass_cut.clear();
+  track_cut.clear();
+
+  // Is this time smaller than the death time of the lowest mass
+  // track? If so, set the first mass cut to zero
+  if (logt < logtimes[ntrack-1][ntime-1]) {
+    mass_cut.push_back(0.0);
+    track_cut.push_back(ntrack);
+  }
+
+  // Start at the bottom of the grid and march upward. For each
+  // segment, check if the input time is between the death times of
+  // the two segments
+  for (int i=ntrack-2; i>=0; i--) {
+    if ((logtimes[i+1][ntime-1]-logt)*(logt-logtimes[i][ntime-1]) > 0) {
+      // Time is between these two, so get death mass
+      double m = exp(logmass[i] + slopes[i][ntime-1] *
+		     (logt - logtimes[i][ntime-1]));
+      mass_cut.push_back(m);
+      track_cut.push_back(i+1);
+    }
+  }
+
+  // If the total number of recorded death masses odd? If so, then
+  // the most massive star track is still alive, so add constants::big
+  // as a final death mass
+  if (mass_cut.size() % 2 == 1) {
+    mass_cut.push_back(constants::big);
+    track_cut.push_back(0);
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Lifetime of a star of a specified mass
@@ -702,7 +822,10 @@ slug_tracks::star_lifetime(const double mass) const {
 // Method to set up the isochrone interpolator for a particular time
 ////////////////////////////////////////////////////////////////////////
 void
-slug_tracks::compute_isochrone(const double logt) const {
+slug_tracks::compute_isochrone(const double logt, 
+			       const unsigned int idx,
+			       const vector<double>& mass_cut,
+			       const vector<int>& track_cut) const {
 
   // De-allocate data for the current isochrone
   if (isochrone_logcur_mass != NULL) {
@@ -721,13 +844,11 @@ slug_tracks::compute_isochrone(const double logt) const {
     isochrone_logcur_mass = NULL;
   }
 
-  // If the time we've been given is longer than the lifetime of our
-  // lowest mass star, do nothing here. All stars are dead.
-  if (logt > logtimes[ntrack-1][ntime-1]) return;
-
-  // Vectors to hold the data along the isochrone.
+  // Variables to hold the data as we move along the isochrone
   vector<double> logm_tmp, logcur_mass_tmp, logL_tmp, logTeff_tmp, 
     h_surf_tmp, c_surf_tmp, n_surf_tmp;
+  unsigned int timeptr, trackptr;
+  double logmptr;
   logm_tmp.reserve(2*ntrack);
   logcur_mass_tmp.reserve(2*ntrack);
   logL_tmp.reserve(2*ntrack);
@@ -736,47 +857,149 @@ slug_tracks::compute_isochrone(const double logt) const {
   c_surf_tmp.reserve(2*ntrack);
   n_surf_tmp.reserve(2*ntrack);
 
-  // Get index in the time direction at starting point
-  unsigned int timeptr = 0;
-  while (logtimes[ntrack-1][timeptr+1] < logt) timeptr++;
+  // See if we've been given a finite mass interval over which to
+  // operate
+  if (mass_cut.size() == 0) {
 
-  // Add first point to the data vectors
-  logm_tmp.push_back(logmass[ntrack-1]);
-  if (logt > logtimes[ntrack-1][1]) {
-    // Case where the input time is within our track
-    logcur_mass_tmp.
-      push_back(gsl_spline_eval(logcur_mass_m_interp[ntrack-1],
-				logt, logcur_mass_m_acc[ntrack-1]));
-    logL_tmp.
-      push_back(gsl_spline_eval(logL_m_interp[ntrack-1],
-				logt, logL_m_acc[ntrack-1]));
-    logTeff_tmp.
-      push_back(gsl_spline_eval(logTeff_m_interp[ntrack-1],
-				logt, logTeff_m_acc[ntrack-1]));
-    h_surf_tmp.
-      push_back(gsl_spline_eval(h_surf_m_interp[ntrack-1],
-				logt, h_surf_m_acc[ntrack-1]));
-    c_surf_tmp.
-      push_back(gsl_spline_eval(c_surf_m_interp[ntrack-1],
-				logt, c_surf_m_acc[ntrack-1]));
-    n_surf_tmp.
-      push_back(gsl_spline_eval(n_surf_m_interp[ntrack-1],
-				logt, n_surf_m_acc[ntrack-1]));
+    // No mass cut specified, so start at the minimum mass
+
+    // If the time we've been given is longer than the lifetime of the
+    // starting track, do nothing.
+    if (logt > logtimes[ntrack-1][ntime-1]) return;
+
+    // Get index in the time direction at starting point
+    timeptr = 0;
+    while (logtimes[ntrack-1][timeptr+1] < logt) timeptr++;
+
+    // Add first point to the data vectors
+    logm_tmp.push_back(logmass[ntrack-1]);
+    if (logt > logtimes[ntrack-1][1]) {
+      // Case where the input time is within our track
+      logcur_mass_tmp.
+	push_back(gsl_spline_eval(logcur_mass_m_interp[ntrack-1],
+				  logt, logcur_mass_m_acc[ntrack-1]));
+      logL_tmp.
+	push_back(gsl_spline_eval(logL_m_interp[ntrack-1],
+				  logt, logL_m_acc[ntrack-1]));
+      logTeff_tmp.
+	push_back(gsl_spline_eval(logTeff_m_interp[ntrack-1],
+				  logt, logTeff_m_acc[ntrack-1]));
+      h_surf_tmp.
+	push_back(gsl_spline_eval(h_surf_m_interp[ntrack-1],
+				  logt, h_surf_m_acc[ntrack-1]));
+      c_surf_tmp.
+	push_back(gsl_spline_eval(c_surf_m_interp[ntrack-1],
+				  logt, c_surf_m_acc[ntrack-1]));
+      n_surf_tmp.
+	push_back(gsl_spline_eval(n_surf_m_interp[ntrack-1],
+				  logt, n_surf_m_acc[ntrack-1]));
+    } else {
+      // Handle the case where input time is smaller than smallest time
+      // in the track
+      logcur_mass_tmp.push_back(logcur_mass[ntrack-1][0]);
+      logL_tmp.push_back(logL[ntrack-1][0]);
+      logTeff_tmp.push_back(logTeff[ntrack-1][0]);
+      h_surf_tmp.push_back(h_surf[ntrack-1][0]);
+      c_surf_tmp.push_back(c_surf[ntrack-1][0]);
+      n_surf_tmp.push_back(n_surf[ntrack-1][0]);
+    }
+
+    // Point at lowest mass track
+    trackptr = ntrack-1;
+    logmptr = logmass[trackptr];
+
   } else {
-    // Handle the case where input time is smaller than smallest time
-    // in the track
-    logcur_mass_tmp.push_back(logcur_mass[ntrack-1][0]);
-    logL_tmp.push_back(logL[ntrack-1][0]);
-    logTeff_tmp.push_back(logTeff[ntrack-1][0]);
-    h_surf_tmp.push_back(h_surf[ntrack-1][0]);
-    c_surf_tmp.push_back(c_surf[ntrack-1][0]);
-    n_surf_tmp.push_back(n_surf[ntrack-1][0]);
+
+    // A mass cut has been specified, which means that the starting
+    // point is at the grid edge. Set the time and track pointers
+    // appropriately.
+    trackptr = track_cut[2*idx];
+    if (trackptr == ntrack) trackptr = ntrack-1;
+ 
+    // Add this point to the data vectors
+    if (mass_cut[2*idx] > exp(logmass.back())) {
+      logmptr = log(mass_cut[2*idx]);
+    } else {
+      logmptr = logmass.back();
+    }
+    logm_tmp.push_back(logmptr);
+
+    // See if we're exactly on a track
+    if (logmptr == logmass[trackptr]) {
+
+      // Yes, so treat this by interpolating in mass
+      if (logt > logtimes[trackptr][1]) {
+	// Case where the input time is within our track
+	logcur_mass_tmp.
+	  push_back(gsl_spline_eval(logcur_mass_m_interp[trackptr],
+				    logt, logcur_mass_m_acc[trackptr]));
+	logL_tmp.
+	  push_back(gsl_spline_eval(logL_m_interp[trackptr],
+				    logt, logL_m_acc[trackptr]));
+	logTeff_tmp.
+	  push_back(gsl_spline_eval(logTeff_m_interp[trackptr],
+				    logt, logTeff_m_acc[trackptr]));
+	h_surf_tmp.
+	  push_back(gsl_spline_eval(h_surf_m_interp[trackptr],
+				    logt, h_surf_m_acc[trackptr]));
+	c_surf_tmp.
+	  push_back(gsl_spline_eval(c_surf_m_interp[trackptr],
+				    logt, c_surf_m_acc[trackptr]));
+	n_surf_tmp.
+	  push_back(gsl_spline_eval(n_surf_m_interp[trackptr],
+				    logt, n_surf_m_acc[trackptr]));
+      } else {
+	// Case where input time is smaller than smallest time
+	// in the track
+	logcur_mass_tmp.push_back(logcur_mass[trackptr][0]);
+	logL_tmp.push_back(logL[trackptr][0]);
+	logTeff_tmp.push_back(logTeff[trackptr][0]);
+	h_surf_tmp.push_back(h_surf[trackptr][0]);
+	c_surf_tmp.push_back(c_surf[trackptr][0]);
+	n_surf_tmp.push_back(n_surf[trackptr][0]);
+      }
+
+      // Figure out wher we are in the time direction
+      timeptr = 0;
+      while (logtimes[ntrack-1][timeptr+1] < logt) timeptr++;
+
+    } else {
+
+      // No, we're not exactly on a mass track, so we must be exactly
+      // on a final time track. Thus interpolate in time.
+
+      // Compute distance to this point along the line for this time
+      // index in the tracks
+      timeptr = ntime-1;
+      double dist = 
+	sqrt(pow(logmptr - logmass[trackptr], 2) +
+	     pow(logt - logtimes[trackptr][timeptr], 2));
+      if (trackptr != ntrack-1) dist += trackdist[trackptr][timeptr];
+
+      // Do interpolation to get value at this point
+      logcur_mass_tmp.
+	push_back(gsl_spline_eval(logcur_mass_t_interp[timeptr],
+				  dist, logcur_mass_t_acc[timeptr]));
+      logL_tmp.
+	push_back(gsl_spline_eval(logL_t_interp[timeptr],
+				  dist, logL_t_acc[timeptr]));
+      logTeff_tmp.
+	push_back(gsl_spline_eval(logTeff_t_interp[timeptr],
+				  dist, logTeff_t_acc[timeptr]));
+      h_surf_tmp.
+	push_back(gsl_spline_eval(h_surf_t_interp[timeptr],
+				  dist, h_surf_t_acc[timeptr]));
+      c_surf_tmp.
+	push_back(gsl_spline_eval(c_surf_t_interp[timeptr],
+				  dist, c_surf_t_acc[timeptr]));
+      n_surf_tmp.
+	push_back(gsl_spline_eval(n_surf_t_interp[timeptr],
+				  dist, n_surf_t_acc[timeptr]));
+    }
   }
 
   // Now march upward through the grid. At each step, stop when we
   // reach the the horizontal or vertical edge of a cell
-  double logmptr = logmass[ntrack-1];
-  unsigned int trackptr = ntrack-1;
   while (1) {
 
     // Get distance to the next cell edge along a mass track
@@ -789,10 +1012,15 @@ slug_tracks::compute_isochrone(const double logt) const {
       slopes[trackptr-1][timeptr] * 
       (logt - logtimes[trackptr][timeptr]) - logmptr;
     if (dlogm_time_left <= 0) dlogm_time_left = constants::big;
-    double dlogm_time_right = logmass[trackptr] + 
-      slopes[trackptr-1][timeptr+1] * 
-      (logt - logtimes[trackptr][timeptr+1]) - logmptr;
-    if (dlogm_time_right <= 0) dlogm_time_right = constants::big;
+    double dlogm_time_right;
+    if (timeptr != ntime-1) {
+      dlogm_time_right = logmass[trackptr] + 
+	slopes[trackptr-1][timeptr+1] * 
+	(logt - logtimes[trackptr][timeptr+1]) - logmptr;
+      if (dlogm_time_right <= 0) dlogm_time_right = constants::big;
+    } else {
+      dlogm_time_right = constants::big;
+    }
 
     // Move logmptr upward to the next stopping point
     if ((dlogm_track < dlogm_time_left) && 
@@ -959,39 +1187,45 @@ slug_tracks::compute_isochrone(const double logt) const {
 
   // We have now filled up the data vectors for all quantities. Now
   // build the isochrone.
+  const gsl_interp_type *interp_type;
+  if (logm_tmp.size() >= gsl_interp_type_min_size(gsl_interp_akima))
+    interp_type = gsl_interp_akima;
+  else
+    interp_type = gsl_interp_linear;
   isochrone_logcur_mass 
-    = gsl_spline_alloc(gsl_interp_akima, logm_tmp.size());
+    = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_logcur_mass_acc = gsl_interp_accel_alloc();
   gsl_spline_init(isochrone_logcur_mass, logm_tmp.data(),
 		  logcur_mass_tmp.data(), logm_tmp.size());
   isochrone_logL 
-    = gsl_spline_alloc(gsl_interp_akima, logm_tmp.size());
+    = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_logL_acc = gsl_interp_accel_alloc();
   gsl_spline_init(isochrone_logL, logm_tmp.data(),
 		  logL_tmp.data(), logm_tmp.size());
   isochrone_logTeff 
-    = gsl_spline_alloc(gsl_interp_akima, logm_tmp.size());
+    = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_logTeff_acc = gsl_interp_accel_alloc();
   gsl_spline_init(isochrone_logTeff, logm_tmp.data(),
 		  logTeff_tmp.data(), logm_tmp.size());
   isochrone_h_surf 
-    = gsl_spline_alloc(gsl_interp_akima, logm_tmp.size());
+    = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_h_surf_acc = gsl_interp_accel_alloc();
   gsl_spline_init(isochrone_h_surf, logm_tmp.data(),
 		  h_surf_tmp.data(), logm_tmp.size());
   isochrone_c_surf 
-    = gsl_spline_alloc(gsl_interp_akima, logm_tmp.size());
+    = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_c_surf_acc = gsl_interp_accel_alloc();
   gsl_spline_init(isochrone_c_surf, logm_tmp.data(),
 		  c_surf_tmp.data(), logm_tmp.size());
   isochrone_n_surf 
-    = gsl_spline_alloc(gsl_interp_akima, logm_tmp.size());
+    = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_n_surf_acc = gsl_interp_accel_alloc();
   gsl_spline_init(isochrone_n_surf, logm_tmp.data(),
 		  n_surf_tmp.data(), logm_tmp.size());
 
-  // Save the time
+  // Save the time and isochrone index
   isochrone_logt = logt;
+  isochrone_idx = idx;
 }
 
 
@@ -1017,12 +1251,28 @@ get_isochrone(const double t, const vector<double> &m) const {
   stars.reserve(m.size());
   unsigned int starptr = 0;
 
-  // Build a new isochrone if required
+  // If the tracks are non-monotonic, we need to check the death
+  // masses, because we may be at an age when we require multiple
+  // disjoint isochrones. The variable isochrone_idx tracks which of
+  // these multiple disjoin isochrones we're currently on.
+  vector<double> mass_cut;
+  vector<int> track_cut;
+  if (!monotonic) live_mass_range(t, mass_cut, track_cut);
+
+  // Work with log of time
   double logt;
   if (t > 0) logt = log(t);
   else logt = -constants::big;
-  if ((isochrone_logcur_mass == NULL) || (logt != isochrone_logt))
-    compute_isochrone(logt);
+
+  // Build a new isochrone if required; we require one if one is not
+  // currently allocated, if the time has changed from the last time,
+  // or if the current isochrone index is not zero, indicating that
+  // what we have stored is an isochrone for a mass interval that is
+  // not the starting one
+  if ((isochrone_logcur_mass == NULL) ||
+      (logt != isochrone_logt) ||
+      (isochrone_idx != 0))
+    compute_isochrone(logt, 0, mass_cut, track_cut);
 
   // Use the isochrone to fill in the data
   for (unsigned int i=0; i<m.size(); i++) {
@@ -1033,6 +1283,15 @@ get_isochrone(const double t, const vector<double> &m) const {
 
     // Expand the star list
     stars.resize(starptr+1);
+
+    // Check if we have disjoint alive mass intervals
+    if (mass_cut.size() > 2) {
+
+      // Check if this star mass is above the death mass for our
+      // current interval; if so, compute a new isochrone for it
+      if (m[i] > mass_cut[2*isochrone_idx+1])
+	compute_isochrone(logt, isochrone_idx+1, mass_cut, track_cut);
+    }
 
     // L_bol
     stars[starptr].logL 
