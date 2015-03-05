@@ -9,9 +9,9 @@ MACH_C11FLAG      = -std=c++11
 
 # Optimization flags for clang; note that we omit -Wall because
 # g++ issues a ton of warnings about boost when -Wall is enabled
-MACH_CXXOPTFLAGS  = -Ofast
+MACH_CXXOPTFLAGS  = -O3
 MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
-MACH_LDOPTFLAGS   = -Ofast
+MACH_LDOPTFLAGS   = -O3
 
 # Debug flags for clang
 MACH_CXXDEBFLAGS  = -Og
