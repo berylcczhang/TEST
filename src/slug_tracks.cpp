@@ -936,7 +936,7 @@ slug_tracks::compute_isochrone(const double logt,
 
       // Figure out wher we are in the time direction
       timeptr = 0;
-      while (logtimes[ntrack-1][timeptr+1] < logt) timeptr++;
+      while (logtimes[trackptr][timeptr+1] < logt) timeptr++;
 
     } else {
 
@@ -1117,7 +1117,7 @@ slug_tracks::compute_isochrone(const double logt,
       double dist = 
 	sqrt(pow(logmptr - logmass[trackptr], 2) +
 	     pow(logt - logtimes[trackptr][timeptr], 2));
-      if (trackptr != 0) dist += trackdist[trackptr-1][timeptr];
+      if (trackptr != ntrack-1) dist += trackdist[trackptr][timeptr];
 
       // Do interpolation to get value at this point
       logcur_mass_tmp.
