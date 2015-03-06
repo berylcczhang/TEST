@@ -8,9 +8,9 @@ MACH_CXX     = g++
 MACH_C11FLAG      = -std=c++11
 
 # Optimization flags
-MACH_CXXOPTFLAGS  = -Ofast
+MACH_CXXOPTFLAGS  = -O3
 MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
-MACH_LDOPTFLAGS	  = -Ofast
+MACH_LDOPTFLAGS	  = -O3
 
 # Debug flags
 MACH_CXXDEBFLAGS  = -Og
