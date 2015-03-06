@@ -945,7 +945,7 @@ slug_tracks::compute_isochrone(const double logt,
 
       // Compute distance to this point along the line for this time
       // index in the tracks
-      timeptr = ntime-1;
+      timeptr = ntime-2;
       double dist = 
 	sqrt(pow(logmptr - logmass[trackptr], 2) +
 	     pow(logt - logtimes[trackptr][timeptr], 2));
@@ -1043,6 +1043,11 @@ slug_tracks::compute_isochrone(const double logt,
 
       // Have we hit the top of the grid? If so, we're done
       if (trackptr == 0) break;
+
+      // Have we hit the current death mass? If so, we're done.
+      if (track_cut.size() > 0) {
+	if (trackptr == track_cut[2*idx+1]) break;
+      }
 
     } else if (dlogm_time_right < dlogm_time_left) {
 
