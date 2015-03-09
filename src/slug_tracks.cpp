@@ -23,6 +23,7 @@ namespace std
 #endif
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
@@ -834,6 +835,7 @@ slug_tracks::compute_isochrone(const double logt,
 
   // See if we've been given a finite mass interval over which to
   // operate
+  bool no_right = false;
   if (mass_cut.size() == 0) {
 
     // No mass cut specified, so start at the minimum mass
@@ -850,24 +852,85 @@ slug_tracks::compute_isochrone(const double logt,
     logm_tmp.push_back(logmass[ntrack-1]);
     if (logt > logtimes[ntrack-1][1]) {
       // Case where the input time is within our track
-      logcur_mass_tmp.
-	push_back(gsl_spline_eval(logcur_mass_m_interp[ntrack-1],
-				  logt, logcur_mass_m_acc[ntrack-1]));
-      logL_tmp.
-	push_back(gsl_spline_eval(logL_m_interp[ntrack-1],
-				  logt, logL_m_acc[ntrack-1]));
-      logTeff_tmp.
-	push_back(gsl_spline_eval(logTeff_m_interp[ntrack-1],
-				  logt, logTeff_m_acc[ntrack-1]));
-      h_surf_tmp.
-	push_back(gsl_spline_eval(h_surf_m_interp[ntrack-1],
-				  logt, h_surf_m_acc[ntrack-1]));
-      c_surf_tmp.
-	push_back(gsl_spline_eval(c_surf_m_interp[ntrack-1],
-				  logt, c_surf_m_acc[ntrack-1]));
-      n_surf_tmp.
-	push_back(gsl_spline_eval(n_surf_m_interp[ntrack-1],
-				  logt, n_surf_m_acc[ntrack-1]));
+      double tmp;
+      int gsl_errstat = 
+	gsl_spline_eval_e(logcur_mass_m_interp[ntrack-1], logt,
+			  logcur_mass_m_acc[ntrack-1], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	logcur_mass_tmp.push_back(tmp);
+      else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate at first point in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	       << ", mass pointer " << ntrack-1 << endl;
+	  exit(1);
+      }
+      gsl_errstat = 
+	gsl_spline_eval_e(logL_m_interp[ntrack-1],
+			  logt, logL_m_acc[ntrack-1], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	logL_tmp.push_back(tmp);
+      else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate at first point in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	       << ", mass pointer " << ntrack-1 << endl;
+	  exit(1);
+      }
+      gsl_errstat = 
+	gsl_spline_eval_e(logTeff_m_interp[ntrack-1],
+			  logt, logTeff_m_acc[ntrack-1], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	logTeff_tmp.push_back(tmp);
+      else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate at first point in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	       << ", mass pointer " << ntrack-1 << endl;
+	  exit(1);
+      }
+      gsl_errstat =
+	gsl_spline_eval_e(h_surf_m_interp[ntrack-1],
+			  logt, h_surf_m_acc[ntrack-1], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	h_surf_tmp.push_back(tmp);
+      else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate at first point in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	       << ", mass pointer " << ntrack-1 << endl;
+	  exit(1);
+      }
+      gsl_errstat = 
+	gsl_spline_eval_e(c_surf_m_interp[ntrack-1],
+			  logt, c_surf_m_acc[ntrack-1], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	c_surf_tmp.push_back(tmp);
+      else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate at first point in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	       << ", mass pointer " << ntrack-1 << endl;
+	  exit(1);
+      }
+      gsl_errstat =
+	gsl_spline_eval_e(n_surf_m_interp[ntrack-1],
+			  logt, n_surf_m_acc[ntrack-1], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	n_surf_tmp.push_back(tmp);
+      else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate at first point in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	       << ", mass pointer " << ntrack-1 << endl;
+	  exit(1);
+      }
     } else {
       // Handle the case where input time is smaller than smallest time
       // in the track
@@ -886,7 +949,7 @@ slug_tracks::compute_isochrone(const double logt,
   } else {
 
     // A mass cut has been specified, which means that the starting
-    // point is at the grid edge. Set the time and track pointers
+    // point may be at the grid edge. Set the time and track pointers
     // appropriately.
     trackptr = track_cut[2*idx];
     if (trackptr == ntrack) trackptr = ntrack-1;
@@ -905,9 +968,20 @@ slug_tracks::compute_isochrone(const double logt,
       // Yes, so treat this by interpolating in mass
       if (logt > logtimes[trackptr][1]) {
 	// Case where the input time is within our track
-	logcur_mass_tmp.
-	  push_back(gsl_spline_eval(logcur_mass_m_interp[trackptr],
-				    logt, logcur_mass_m_acc[trackptr]));
+	double tmp;
+	int gsl_errstat = 
+	  gsl_spline_eval_e(logcur_mass_m_interp[trackptr], logt, 
+			    logcur_mass_m_acc[trackptr], &tmp);
+	if (gsl_errstat != GSL_EDOM)
+	  logcur_mass_tmp.push_back(tmp);
+	else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate at first point in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[trackptr])
+	       << ", mass pointer " << trackptr << endl;
+	  exit(1);
+	}
 	logL_tmp.
 	  push_back(gsl_spline_eval(logL_m_interp[trackptr],
 				    logt, logL_m_acc[trackptr]));
@@ -941,7 +1015,10 @@ slug_tracks::compute_isochrone(const double logt,
     } else {
 
       // No, we're not exactly on a mass track, so we must be exactly
-      // on a final time track. Thus interpolate in time.
+      // on a final time track. Thus interpolate in time. Also set a
+      // flag to prevent us from terminating early due to roundoff
+      // errors below.
+      no_right = true;
 
       // Set out initial time pointer, then move left if necessary to
       // avoid duplicate entries
@@ -962,9 +1039,23 @@ slug_tracks::compute_isochrone(const double logt,
       if (trackptr != ntrack-1) dist += trackdist[trackptr][timeptr];
 
       // Do interpolation to get value at this point
-      logcur_mass_tmp.
-	push_back(gsl_spline_eval(logcur_mass_t_interp[timeptr],
-				  dist, logcur_mass_t_acc[timeptr]));
+      double tmp;
+      int gsl_errstat = 
+	gsl_spline_eval_e(logcur_mass_t_interp[timeptr], dist, 
+			  logcur_mass_t_acc[timeptr], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	logcur_mass_tmp.push_back(tmp);
+      else {
+	cerr << "GSL interpolation error building isochrone!" << endl;
+	cerr << "   Failed to interpolate at first point in time direction "
+	     << "at time " << setprecision(20) << exp(logt)
+	     << ", time pointer " << timeptr << endl;
+	cerr << "   Distance along track " << setprecision(20) << dist 
+	     << ", max dist = " << setprecision(20) 
+	     << trackdist[trackptr][0]
+	     << endl;
+	exit(1);
+      }
       logL_tmp.
 	push_back(gsl_spline_eval(logL_t_interp[timeptr],
 				  dist, logL_t_acc[timeptr]));
@@ -998,13 +1089,14 @@ slug_tracks::compute_isochrone(const double logt,
       (logt - logtimes[trackptr][timeptr]) - logmptr;
     if (dlogm_time_left <= 0) dlogm_time_left = constants::big;
     double dlogm_time_right;
-    if (timeptr != ntime-1) {
+    if (!no_right) {
       dlogm_time_right = logmass[trackptr] + 
 	slopes[trackptr-1][timeptr+1] * 
 	(logt - logtimes[trackptr][timeptr+1]) - logmptr;
       if (dlogm_time_right <= 0) dlogm_time_right = constants::big;
     } else {
       dlogm_time_right = constants::big;
+      no_right = false;
     }
 
     // Move logmptr upward to the next stopping point
@@ -1022,9 +1114,20 @@ slug_tracks::compute_isochrone(const double logt,
       // smaller than the earliest age entry we have.
       if (logt > logtimes[trackptr][1]) {
 	// Case where the input time is within our track
-	logcur_mass_tmp.
-	  push_back(gsl_spline_eval(logcur_mass_m_interp[trackptr],
-				    logt, logcur_mass_m_acc[trackptr]));
+	double tmp;
+	int gsl_errstat =
+	  gsl_spline_eval_e(logcur_mass_m_interp[trackptr], logt, 
+			    logcur_mass_m_acc[trackptr], &tmp);
+	if (gsl_errstat != GSL_EDOM)
+	  logcur_mass_tmp.push_back(tmp);
+	else {
+	  cerr << "GSL interpolation error building isochrone!" << endl;
+	  cerr << "   Failed to interpolate in mass direction "
+	       << "at time " << setprecision(20) << exp(logt)
+	       << ", mass " << setprecision(20) << exp(logmass[trackptr])
+	       << ", mass pointer " << trackptr << endl;
+	  exit(1);
+	}
 	logL_tmp.
 	  push_back(gsl_spline_eval(logL_m_interp[trackptr],
 				    logt, logL_m_acc[trackptr]));
@@ -1087,9 +1190,22 @@ slug_tracks::compute_isochrone(const double logt,
       if (trackptr != ntrack-1) dist += trackdist[trackptr][timeptr];
 
       // Do interpolation to get value at this point
-      logcur_mass_tmp.
-	push_back(gsl_spline_eval(logcur_mass_t_interp[timeptr],
-				  dist, logcur_mass_t_acc[timeptr]));
+      double tmp;
+      int gsl_errstat = 
+	gsl_spline_eval_e(logcur_mass_t_interp[timeptr], dist, 
+			  logcur_mass_t_acc[timeptr], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	logcur_mass_tmp.push_back(tmp);
+      else {
+	cerr << "GSL interpolation error building isochrone!" << endl;
+	cerr << "   Failed to interpolate while moving right in time direction "
+	     << "at time " << setprecision(20) << exp(logt)
+	     << ", time pointer " << setprecision(20) << timeptr << endl;
+	cerr << "   Distance along track " << setprecision(20) << dist 
+	     << ", max dist = " << trackdist[trackptr][0]
+	     << endl;
+	exit(1);
+      }
       logL_tmp.
 	push_back(gsl_spline_eval(logL_t_interp[timeptr],
 				  dist, logL_t_acc[timeptr]));
@@ -1130,9 +1246,23 @@ slug_tracks::compute_isochrone(const double logt,
       if (trackptr != ntrack-1) dist += trackdist[trackptr][timeptr];
 
       // Do interpolation to get value at this point
-      logcur_mass_tmp.
-	push_back(gsl_spline_eval(logcur_mass_t_interp[timeptr],
-				  dist, logcur_mass_t_acc[timeptr]));
+      double tmp;
+      int gsl_errstat = 
+	gsl_spline_eval_e(logcur_mass_t_interp[timeptr], dist, 
+			  logcur_mass_t_acc[timeptr], &tmp);
+      if (gsl_errstat != GSL_EDOM)
+	logcur_mass_tmp.push_back(tmp);
+      else {
+	cerr << "GSL interpolation error building isochrone!" << endl;
+	cerr << "   Failed to interpolate while moving left in time direction "
+	     << "at time " << setprecision(20) << exp(logt)
+	     << ", time pointer " << timeptr << endl;
+	cerr << "   Distance along track " << setprecision(20) << dist 
+	     << ", max dist = " << setprecision(20) 
+	     << trackdist[trackptr][0]
+	     << endl;
+	exit(1);
+      }
       logL_tmp.
 	push_back(gsl_spline_eval(logL_t_interp[timeptr],
 				  dist, logL_t_acc[timeptr]));
@@ -1172,6 +1302,8 @@ slug_tracks::compute_isochrone(const double logt,
 
   // We have now filled up the data vectors for all quantities. Now
   // build the isochrone.
+  isochrone_logm_lim[0] = logm_tmp.front();
+  isochrone_logm_lim[1] = logm_tmp.back();
   const gsl_interp_type *interp_type;
   if (logm_tmp.size() >= gsl_interp_type_min_size(gsl_interp_akima))
     interp_type = gsl_interp_akima;
@@ -1180,8 +1312,21 @@ slug_tracks::compute_isochrone(const double logt,
   isochrone_logcur_mass 
     = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_logcur_mass_acc = gsl_interp_accel_alloc();
-  gsl_spline_init(isochrone_logcur_mass, logm_tmp.data(),
-		  logcur_mass_tmp.data(), logm_tmp.size());
+  int gsl_errstat = 
+    gsl_spline_init(isochrone_logcur_mass, logm_tmp.data(),
+		    logcur_mass_tmp.data(), logm_tmp.size());
+  if (gsl_errstat != 0) {
+    cerr << "GSL interpolation error building isochrone!" << endl;
+    cerr << "   Could not build an isochrone at time "
+	 << setprecision(20) << exp(logt) << " from data:" << endl;
+    cerr << "   log m         log m_cur" << endl;
+    for (unsigned int i=0; i<logm_tmp.size(); i++) {
+      cerr << "   " << setprecision(20) << logm_tmp[i] 
+	   << "   " << setprecision(20) << logcur_mass_tmp.size()
+	   << endl;
+    }
+    exit(1);
+  }
   isochrone_logL 
     = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_logL_acc = gsl_interp_accel_alloc();
@@ -1279,8 +1424,36 @@ get_isochrone(const double t, const vector<double> &m) const {
     }
 
     // L_bol
-    stars[starptr].logL 
-      = gsl_spline_eval(isochrone_logL, logm, isochrone_logL_acc);
+    double tmp;
+    int gsl_errstat =
+      gsl_spline_eval_e(isochrone_logL, logm, isochrone_logL_acc, &tmp);
+    if (gsl_errstat != GSL_EDOM)
+      stars[starptr].logL = tmp;
+    else {
+      cerr << "GSL interpolation error evaluating luminosity!" << endl;
+      cerr << "   Problem at time " 
+	   << setprecision(20) << exp(logt) << ", mass = "
+	   << setprecision(20) << exp(logm) << endl;
+      cerr << "   At this time, living mass intervals are: ";
+      if (monotonic) {
+	cerr << "0 - " << setprecision(20) 
+	     << death_mass(exp(logt)) << " (monotonic tracks)"
+	     << endl;
+      } else {
+	for (unsigned int j=0; j<mass_cut.size()/2; j++) {
+	  if (j != 0) cerr << ", ";
+	  cerr << setprecision(20) << mass_cut[2*j] << " - " 
+	       << setprecision(20) << mass_cut[2*j+1];
+	}
+	cerr << ", isochrone_idx = " << isochrone_idx
+	     << endl;
+      }
+      cerr << "   Isochrone mass limits = " 
+	   << setprecision(20) << exp(isochrone_logm_lim[0])
+	   << " - " 
+	   << setprecision(20) << exp(isochrone_logm_lim[1]) << endl;
+      exit(1);
+    }
 
     // Teff
     stars[starptr].logTeff

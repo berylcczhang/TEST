@@ -68,6 +68,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <boost/multi_array.hpp>
 extern "C" {
+#   include <gsl/gsl_errno.h>
 #   include <gsl/gsl_interp.h>
 #   include <gsl/gsl_spline.h>
 }
@@ -168,6 +169,7 @@ private:
     *isochrone_logL_acc, *isochrone_logTeff_acc, 
     *isochrone_h_surf_acc, *isochrone_c_surf_acc,
     *isochrone_n_surf_acc;
+  mutable double isochrone_logm_lim[2];
 
   // Interpolation functions for various quantities in the mass and
   // time directions; these correspond to the data arrays listed
