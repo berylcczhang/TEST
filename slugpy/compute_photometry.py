@@ -258,11 +258,12 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
                 = int_tabulated2(vega_logwl, vega_F_nu,
                                  filter_logwl[i],
                                  filter_response[i]) / filter_norm[i]
-            vega_mag_filter = -2.5*np.log10(vega_Fbar_nu)
+            vega_mag_filter = -2.5*np.log10(vega_Fbar_nu_filter)
 
             # Compute magnitude of Vega in this band from condition
             # that Vega has magnitude 0.02 in Johnson_V
             vega_mag = vega_mag_filter - vega_mag_offset + 0.02
+            print vega_mag
 
             # Now convert AB to Vega mag
             phot[i] = phot[i] - vega_mag
