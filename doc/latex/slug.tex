@@ -14,7 +14,7 @@
 
 
 \title{slug Documentation}
-\date{February 25, 2015}
+\date{March 20, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -75,11 +75,10 @@
 \expandafter\def\csname PYG@tok@c\endcsname{\let\PYG@it=\textit\def\PYG@tc##1{\textcolor[rgb]{0.25,0.50,0.56}{##1}}}
 \expandafter\def\csname PYG@tok@mf\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
 \expandafter\def\csname PYG@tok@err\endcsname{\def\PYG@bc##1{\setlength{\fboxsep}{0pt}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}
-\expandafter\def\csname PYG@tok@mb\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
+\expandafter\def\csname PYG@tok@kd\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@ss\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.32,0.47,0.09}{##1}}}
 \expandafter\def\csname PYG@tok@sr\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.14,0.33,0.53}{##1}}}
 \expandafter\def\csname PYG@tok@mo\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
-\expandafter\def\csname PYG@tok@kd\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@mi\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.13,0.50,0.31}{##1}}}
 \expandafter\def\csname PYG@tok@kn\endcsname{\let\PYG@bf=\textbf\def\PYG@tc##1{\textcolor[rgb]{0.00,0.44,0.13}{##1}}}
 \expandafter\def\csname PYG@tok@o\endcsname{\def\PYG@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
@@ -2050,7 +2049,7 @@ requires going between wavelength- and frequency-based systems
 \index{read\_cluster() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_cluster}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+\phantomsection\label{slugpy:slugpy.read_cluster}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_filters=None}, \emph{read\_nebular=None}, \emph{read\_extinct=None}, \emph{read\_info=None}}{}
 Function to read all cluster data for a SLUG2 run.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -2088,6 +2087,21 @@ central wavelength of the photometric filters is available.
 
 \item[{verbose}] \leavevmode{[}bool{]}
 If True, verbose output is printed as code runs
+
+\item[{read\_filters}] \leavevmode{[}None \textbar{} string \textbar{} listlike containing strings{]}
+If this is None, photometric data on all filters is
+read. Otherwise only filters whose name(s) match the input
+filter names ar read.
+
+\item[{read\_nebular}] \leavevmode{[}None \textbar{} bool{]}
+If True, only photometric data with the nebular contribution
+is read; if False, only data without it is read. Default
+behavior is to read all data.
+
+\item[{read\_extinct}] \leavevmode{[}None \textbar{} bool{]}
+If True, only photometric data with extinction applied is
+read; if False, only data without it is read. Default
+behavior is to read all data.
 
 \item[{read\_info}] \leavevmode{[}dict{]}
 On return, this dict will contain the keys `prop\_name',

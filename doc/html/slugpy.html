@@ -298,7 +298,7 @@ requires going between wavelength- and frequency-based systems</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read all cluster data for a SLUG2 run.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -332,6 +332,18 @@ frequency-based one, nofilterdata must be False so that the
 central wavelength of the photometric filters is available.</dd>
 <dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd>If True, verbose output is printed as code runs</dd>
+<dt>read_filters <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span></dt>
+<dd>If this is None, photometric data on all filters is
+read. Otherwise only filters whose name(s) match the input
+filter names ar read.</dd>
+<dt>read_nebular <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only photometric data with the nebular contribution
+is read; if False, only data without it is read. Default
+behavior is to read all data.</dd>
+<dt>read_extinct <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only photometric data with extinction applied is
+read; if False, only data without it is read. Default
+behavior is to read all data.</dd>
 <dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
 <dd>On return, this dict will contain the keys &#8216;prop_name&#8217;,
 &#8216;phot_name&#8217;, &#8216;spec_name&#8217;, &#8216;cloudyspec_name&#8217;, &#8216;cloudylines_name&#8217;
