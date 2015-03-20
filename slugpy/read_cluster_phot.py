@@ -195,6 +195,22 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
         filters = filters[:nfilter]
         units = units[:nfilter]
 
+        # If given a list of filters to read, make sure that we
+        # haven't been given ones that are not available; if we have,
+        # raise an error now
+        if read_filters is not None:
+            if hasattr(read_filters, '__iter__'):
+                for f in read_filters:
+                    if not f in filters:
+                        raise IOError(
+                            "requested filter {:s} not available!".
+                            format(f))
+            else:
+                if not read_filters in filters:
+                    raise IOError(
+                        "requested filter {:s} not available!".
+                        format(f))
+
         # If only reading filter data, don't read any further
         if not filters_only:
 
@@ -308,6 +324,22 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             line = fp.readline()
             filters.append(line.split()[0])
             units.append(line.split()[1])
+
+        # If given a list of filters to read, make sure that we
+        # haven't been given ones that are not available; if we have,
+        # raise an error now
+        if read_filters is not None:
+            if hasattr(read_filters, '__iter__'):
+                for f in read_filters:
+                    if not f in filters:
+                        raise IOError(
+                            "requested filter {:s} not available!".
+                            format(f))
+            else:
+                if not read_filters in filters:
+                    raise IOError(
+                        "requested filter {:s} not available!".
+                        format(f))
 
         # Read the bits that tells us if we're using nebular emission
         # and extinction
@@ -494,6 +526,22 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 i = i+1
             nfilter = len(filters)
 
+            # If given a list of filters to read, make sure that we
+            # haven't been given ones that are not available; if we have,
+            # raise an error now
+            if read_filters is not None:
+                if hasattr(read_filters, '__iter__'):
+                    for f in read_filters:
+                        if not f in filters:
+                            raise IOError(
+                                "requested filter {:s} not available!".
+                                format(f))
+                else:
+                    if not read_filters in filters:
+                        raise IOError(
+                            "requested filter {:s} not available!".
+                            format(f))
+
             # Search for filters with names that end in _neb, _ex, or
             # _neb_ex, indicating that they include the effects of the
             # nebula, extinction, or both
@@ -605,6 +653,22 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             units = [fp[i].header['TUNIT1'] for i in 
                        range(2,len(fp))]
             nfilter = len(filters)
+
+            # If given a list of filters to read, make sure that we
+            # haven't been given ones that are not available; if we have,
+            # raise an error now
+            if read_filters is not None:
+                if hasattr(read_filters, '__iter__'):
+                    for f in read_filters:
+                        if not f in filters:
+                            raise IOError(
+                                "requested filter {:s} not available!".
+                                format(f))
+                else:
+                    if not read_filters in filters:
+                        raise IOError(
+                            "requested filter {:s} not available!".
+                            format(f))
 
             # Search for filters with names that end in _neb, _ex, or
             # _neb_ex, indicating that they include the effects of the

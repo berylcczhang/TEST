@@ -12,7 +12,8 @@ from cloudy.read_cluster_cloudyspec import read_cluster_cloudyspec
 
 def read_cluster(model_name, output_dir=None, fmt=None,
                  nofilterdata=False, photsystem=None, verbose=False,
-                 read_info=None):
+                 read_filters=None, read_nebular=None, 
+                 read_extinct=None, read_info=None):
     """
     Function to read all cluster data for a SLUG2 run.
 
@@ -46,6 +47,18 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           central wavelength of the photometric filters is available.
        verbose : bool
           If True, verbose output is printed as code runs
+       read_filters : None | string | listlike containing strings
+          If this is None, photometric data on all filters is
+          read. Otherwise only filters whose name(s) match the input
+          filter names ar read.
+       read_nebular : None | bool
+          If True, only photometric data with the nebular contribution
+          is read; if False, only data without it is read. Default
+          behavior is to read all data.
+       read_extinct : None | bool
+          If True, only photometric data with extinction applied is
+          read; if False, only data without it is read. Default
+          behavior is to read all data.
        read_info : dict
           On return, this dict will contain the keys 'prop_name',
           'phot_name', 'spec_name', 'cloudyspec_name', 'cloudylines_name'
@@ -240,6 +253,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         phot = read_cluster_phot(model_name, output_dir, fmt=fmt, 
                                  nofilterdata=nofilterdata,
                                  photsystem=photsystem, verbose=verbose,
+                                 read_filters=read_filters,
+                                 read_nebular=read_nebular,
+                                 read_extinct=read_extinct,
                                  read_info=read_info)
         if read_info is not None:
             read_info['phot_name'] = read_info['fname']
