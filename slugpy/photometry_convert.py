@@ -149,7 +149,7 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
 
     # If our input data are in Vega mag, convert them to AB mag first
     for i in range(len(units)):
-        if (units[i] == 'Vega mag'):
+        if units[i] == 'Vega mag':
             if filter_last:
                 phot[:,i] = phot[:,i] + vega_mag[i]
             else:
@@ -177,8 +177,7 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
                 else:
                     phot[i,:] = phot[i,:] * wl_cen[i]**2 * Angstrom / c
             elif (units[i] == 'erg/s/A') and \
-                 ((target_units == 'AB mag') or 
-                  (target_units == 'Vega mag')):
+                 (target_units == 'AB mag'):
                 if filter_last:
                     L_nu = phot[:,i] * wl_cen[i]**2 * Angstrom / c
                     F_nu = L_nu / (4.0*np.pi*(10.0*pc)**2)
@@ -187,6 +186,16 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
                     L_nu = phot[i,:] * wl_cen[i]**2 * Angstrom / c
                     F_nu = L_nu / (4.0*np.pi*(10.0*pc)**2)
                     phot[i,:] = -2.5*np.log10(F_nu) - 48.6
+            elif (units[i] == 'erg/s/A') and \
+                 (target_units == 'Vega mag'):
+                if filter_last:
+                    L_nu = phot[:,i] * wl_cen[i]**2 * Angstrom / c
+                    F_nu = L_nu / (4.0*np.pi*(10.0*pc)**2)
+                    phot[:,i] = -2.5*np.log10(F_nu) - 48.6 - vega_mag[i]
+                else:
+                    L_nu = phot[i,:] * wl_cen[i]**2 * Angstrom / c
+                    F_nu = L_nu / (4.0*np.pi*(10.0*pc)**2)
+                    phot[i,:] = -2.5*np.log10(F_nu) - 48.6 - vega_mag[i]
             elif (units[i] == 'erg/s/A') and \
                  (target_units == 'ST mag'):
                 if filter_last:
@@ -206,14 +215,21 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
                     phot[i,:] = phot[i,:] * c / \
                                 (wl_cen[i]**2 * Angstrom)
             elif (units[i] == 'erg/s/Hz') and \
-                 ((target_units == 'AB mag') or
-                  (target_units == 'Vega mag')):
+                 (target_units == 'AB mag'):
                 if filter_last:
                     F_nu = phot[:,i] / (4.0*np.pi*(10.0*pc)**2)
                     phot[:,i] = -2.5*np.log10(F_nu) - 48.6
                 else:
                     F_nu = phot[i,:] / (4.0*np.pi*(10.0*pc)**2)
                     phot[i,:] = -2.5*np.log10(F_nu) - 48.6
+            elif (units[i] == 'erg/s/Hz') and \
+                 (target_units == 'Vega mag'):
+                if filter_last:
+                    F_nu = phot[:,i] / (4.0*np.pi*(10.0*pc)**2)
+                    phot[:,i] = -2.5*np.log10(F_nu) - 48.6 - vega_mag[i]
+                else:
+                    F_nu = phot[i,:] / (4.0*np.pi*(10.0*pc)**2)
+                    phot[i,:] = -2.5*np.log10(F_nu) - 48.6 - vega_mag[i]
             elif (units[i] == 'erg/s/Hz') and \
                  (target_units == 'ST mag'):
                 if filter_last:
@@ -305,14 +321,6 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
             raise ValueError("Requested photometric " +
                              "conversion requires " +
                              "filter wavelengths")
-
-        # If target units are Vega mag, at this point what we have is
-        # AB mag. Convert to Vega now.
-        if (target_units == 'Vega mag'):
-            if filter_last:
-                phot[:,i] = phot[:,i] - vega_mag[i]
-            else:
-                phot[i,:] = phot[i,:] - vega_mag[i]
 
         # Store new units
         units[i] = target_units
