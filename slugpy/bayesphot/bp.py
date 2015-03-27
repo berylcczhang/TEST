@@ -714,11 +714,13 @@ class bp(object):
             termcheck = np.zeros(pdf.shape, dtype=c_uint)
 
         # Make an array suitable for passing data to c routines
-        cdata = np.zeros((pdf.size, self.__nphys+self.__nphot))
+        cdata = np.zeros(pdf.shape + (self.__nphys+self.__nphot,))
         cdata[..., :self.__nphys] \
-            = np.vstack((physprop,) * (pdf.size/nphys_in))
+            = np.vstack((physprop,) * (pdf.size/nphys_in)). \
+            reshape(cdata[..., :self.__nphys].shape)
         cdata[..., self.__nphys:] \
-            = np.vstack((photprop,) * (pdf.size/nphot_in))
+            = np.vstack((photprop,) * (pdf.size/nphot_in)). \
+            reshape(cdata[..., self.__nphys:].shape)
 
         # Separate cases with single / no photometric errors from
         # cases with multiple sets of photometric errors
