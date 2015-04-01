@@ -1261,7 +1261,8 @@ class bp(object):
     # Function to return the N best matches in the library to an input
     # set of photometric properties
     ##################################################################
-    def bestmatch(self, phot, nmatch=1, bandwidth_units=False):
+    def bestmatch(self, phot, photerr=None, nmatch=1, 
+                  bandwidth_units=False):
         """
         Searches through the simulation library and returns the closest
         matches to an input set of photometry.
@@ -1271,6 +1272,13 @@ class bp(object):
               array giving the photometric values; for a
               multidimensional array, the operation is vectorized over
               the leading dimensions
+           photerr : arraylike, shape (nfilter) or (..., nfilter)
+              array giving photometric errors, which must have the
+              same shape as phot; if this is not None,
+              then distances will be measured in units of the
+              photometric error if bandwidth_units is False, or in
+              units of the bandwidth added in quadrature with the
+              errors if it is True
            nmatch : int
               number of matches to return; returned matches will be
               ordered by distance from the input
@@ -1293,19 +1301,43 @@ class bp(object):
            (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphot) +
                              " photometric properties!")
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot > 1):
+                raise ValueError("need " + str(self.__nphot) +
+                                 " photometric errors!")
+            if np.array(photerr).shape != np.array(phot).shape:
+                raise ValueError("phot and photerr must have the same shape!")
 
         # Reshape arrays if necessary
         if (np.array(phot).shape[-1] != self.__nphot) and \
            (self.__nphot == 1):
             phot = phot.reshape(phot.shape+(1,))
+        if photerr is not None:
+            if (np.array(photerr).shape[-1] != self.__nphot) and \
+               (self.__nphot == 1):
+                photerr = photerr.reshape(photerr.shape+(1,))
 
-        # Set up array to hold outputs
-        if np.array(phot).ndim == 1:
+        # Figure out how many distinct photometric values we've been
+        # given, and how many sets of photometric errors
+        nphot = np.array(phot).size/self.__nphot
+        nphot_err = np.array(photerr).size/self.__nphot
+
+        # Figure out what shape the output should have
+        if nphot == 1 and nphot_err == 1:
             outshape = [self.__nphys + self.__nphot]
+        elif photerr is None:
+            outshape = list(phot.shape[:-1]) + \
+                       [self.__nphys + self.__nphot]
         else:
-            outshape = list(phot.shape[:-1]) + [self.__nphys + self.__nphot]
+            outshape = list(
+                np.broadcast(np.array(phot)[..., 0],
+                             np.array(photerr)[..., 0]).shape) + \
+                [self.__nphys + self.__nphot]
         if nmatch > 1:
             outshape.insert(-1, nmatch)
+
+        # Create array to hold output
         matches = np.zeros(outshape)
         if len(outshape) > 1:
             wgts = np.zeros(outshape[:-1])
@@ -1314,16 +1346,83 @@ class bp(object):
             wgts = np.zeros([1])
             d2 = np.zeros([1])
 
-        # Call the c neighbor-finding routine
-        self.__clib.kd_neighbors_vec(
-            self.__kd, np.ravel(phot), 
-            np.arange(self.__nphys, self.__nphot+self.__nphys,
-                      dtype=ctypes.c_uint).
-            ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
-            self.__nphot, np.array(phot).size/self.__nphot,
-            nmatch, bandwidth_units, np.ravel(matches),
-            wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
-            np.ravel(d2))
+        # Do we have errors?
+        if photerr is None:
+
+            # No, so just call the c neighbor-finding routine
+            self.__clib.kd_neighbors_vec(
+                self.__kd, np.ravel(phot), 
+                np.arange(self.__nphys, self.__nphot+self.__nphys,
+                          dtype=ctypes.c_uint).
+                ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
+                self.__nphot, np.array(phot).size/self.__nphot,
+                nmatch, bandwidth_units, np.ravel(matches),
+                wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                np.ravel(d2))
+
+        elif nphot_err == 1:
+
+            # Yes, we have errors, but only one set, so no need to
+            # loop
+
+            # Change the bandwidth to match the input errors
+            err = np.zeros(self.__bandwidth.size)
+            err[self.__nphys:] = photerr
+            if bandwidth_units:
+                bandwidth = np.sqrt(self.__bandwidth**2+err**2)
+            else:
+                bandwidth = err
+            self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+
+            # Now call c neighbor-finding routine
+            self.__clib.kd_neighbors_vec(
+                self.__kd, np.ravel(phot), 
+                np.arange(self.__nphys, self.__nphot+self.__nphys,
+                          dtype=ctypes.c_uint).
+                ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
+                self.__nphot, np.array(phot).size/self.__nphot,
+                nmatch, True, np.ravel(matches),
+                wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                np.ravel(d2))
+
+            # Restore bandwidth to previous value
+            self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                            self.__kd)
+
+        else:
+
+            # We have multiple sets of errors, so loop
+            ptr = 0
+            for i in np.ndindex(*photerr.shape[:-1]):
+
+                # Set bandwidth based on photometric error for this
+                # iteration
+                err = np.zeros(self.__bandwidth.size)
+                err[self.__nphys:] = photerr[i]
+                if bandwidth_units:
+                    bandwidth = np.sqrt(self.bandwidth**2+err**2)
+                else:
+                    bandwidth = err
+                self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+
+                # Call c neighbor-finding routine
+                offset1 = ptr*nmatch
+                offset2 = offset1*(self.__nphot+self.__nphys)
+                self.__clib.kd_neighbors_vec(
+                    self.__kd, np.ravel(phot[i]), 
+                    np.arange(self.__nphys, self.__nphot+self.__nphys,
+                              dtype=ctypes.c_uint).
+                    ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
+                    self.__nphot, np.array(phot[i]).size/self.__nphot,
+                    nmatch, True, np.ravel(matches)[offset2:],
+                    wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                    np.ravel(d2)[offset1:])
+                ptr = ptr+1
+
+            # Restore bandwidth to previous value
+            self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                            self.__kd)
+
 
         # Return
         return matches, np.sqrt(d2)

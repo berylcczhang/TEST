@@ -120,7 +120,8 @@ void kd_change_wgt(const double *wgt, kernel_density *kd);
 
    Parameters
       INPUT wgts
-         Array giving the new weights
+         Array giving the new weights; can be NULL, in which case all
+         points are given equal weight
       INPUT/OUTPUT kd
          The kernel density object to be re-weighted
 
@@ -173,7 +174,7 @@ void kd_neighbors(const kernel_density *kd, const double *xpt,
          nneighbor elements long
       OUTPUT d2
          squared distances of all particles found from xpt; on entry,
-         this pointer mut point to a block of nneighbor elements, and
+         this pointer must point to a block of nneighbor elements, and
          on return dist2[i] gives the distance from the ith point
          found to xpt
 

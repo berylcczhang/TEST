@@ -778,8 +778,8 @@ class cluster_slug(object):
                            mc_burn_in)
 
 
-    def bestmatch(self, phot, nmatch=1, bandwidth_units=False,
-                  filters=None):
+    def bestmatch(self, phot, photerr=None, nmatch=1, 
+                  bandwidth_units=False, filters=None):
         """
         Searches through the simulation library and returns the closest
         matches to an input set of photometry.
@@ -816,7 +816,7 @@ class cluster_slug(object):
             # stored, just use it
             if len(self.__filtersets) == 1:
                 return self.__filtersets[0]['bp']. \
-                    bestmatch(phot, nmatch, bandwidth_units)
+                    bestmatch(phot, photerr, nmatch, bandwidth_units)
             else:
                 raise ValueError("must specify a filter set")
 
@@ -832,4 +832,4 @@ class cluster_slug(object):
                     break
 
             # Call the bestmatch method
-            return bp.bestmatch(phot, nmatch, bandwidth_units)
+            return bp.bestmatch(phot, photerr, nmatch, bandwidth_units)
