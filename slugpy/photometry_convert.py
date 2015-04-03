@@ -86,9 +86,9 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
         raise ValueError('Unknown photometric system ' +
                          photsystem)
 
-    # If we're using Vega magnitudes, compute the magnitude of Vega in
-    # each of our filters
-    if photsystem == 'Vega':
+    # If Vega magnitudes is either the current unit or the desination
+    # unit, compute the magnitude of Vega in each of our filters
+    if photsystem == 'Vega' or 'Vega mag' in units:
 
         # Make sure we have filter names
         if filter_names is None:
