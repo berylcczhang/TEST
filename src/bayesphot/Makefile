@@ -49,7 +49,7 @@ ifdef GSL_HDR_PATH
 endif
 
 # Link flags
-LDLIBFLAGS      = -lgsl
+LDLIBFLAGS      = -lgsl -lgslcblas
 ifdef LD_LIBRARY_PATH
      LDLIBFLAGS += -L$(LD_LIBRARY_PATH)
 endif
