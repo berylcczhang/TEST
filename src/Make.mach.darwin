@@ -8,9 +8,9 @@ MACH_CC		  = cc
 MACH_C11FLAG      = -std=c++11
 
 # Optimization flags for clang
-MACH_CXXOPTFLAGS  = -O3 -ffast-math -Wall
+MACH_CXXOPTFLAGS  = -O2 -Wall #-O3 -ffast-math -Wall
 MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
-MACH_LDOPTFLAGS   = -O4 -Wall
+MACH_LDOPTFLAGS   = -O2 -Wall #-O4 -Wall
 
 # Debug flags for clang
 MACH_CXXDEBFLAGS  = -g -Wall
