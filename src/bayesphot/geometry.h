@@ -360,6 +360,19 @@ double dist2(const double *x1, const double *x2,
 */
 
 
+double ds(unsigned int n);
+/* Returns the surface area element for an N-sphere.
+
+   Parameters:
+      INPUT n
+         number of dimensions
+
+   Returns:
+      OUTPUT ds
+         the surface area element
+*/
+
+
 bool sphere_in_box(const double *xcen1, const double *xbox2[2], 
 		   const unsigned int ndim1, const unsigned int ndim2,
 		   const unsigned int *dim1, const unsigned int *dim2,

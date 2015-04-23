@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_sf_gamma.h>
 #include "geometry.h"
 
 #define MAX(X,Y) ((X) > (Y) ? (X) : (Y))
@@ -526,6 +528,20 @@ double dist2(const double *x1, const double *x2,
 
   return dist;
 }    
+
+
+double ds(unsigned int n) {
+  /* Surface area element for an N-sphere */
+  unsigned int m;
+  if (n % 2) {
+    /* Case for n odd */
+    m = n/2;
+    return 2 * n * gsl_pow_uint(2.0*M_PI, m) / gsl_sf_doublefact(2*m+1);
+  } else {
+    /* Case for n even */
+    return n * gsl_pow_uint(M_PI, n/2) / gsl_sf_fact(n/2);
+  }
+}
 
 
 bool sphere_in_box(const double *xcen1, const double *xbox2[2], 
