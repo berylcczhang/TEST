@@ -461,6 +461,10 @@ class sfr_slug(object):
             # We were given a filter set; add it if it doesn't exist
             self.add_filters(filters)
 
+            # Handle the case where we're given just a string for one filter
+            if type(filters) is str:
+                filters = [filters]
+
             # Find the bp object we should use
             for f in self.__filtersets:
                 if f['filters'] == filters:
@@ -552,6 +556,10 @@ class sfr_slug(object):
             # We were given a filter set; add it if it doesn't exist
             self.add_filters(filters)
 
+            # Handle the case where we're given just a string for one filter
+            if type(filters) is str:
+                filters = [filters]
+
             # Find the bp object we should use
             for f in self.__filtersets:
                 if f['filters'] == filters:
@@ -632,6 +640,10 @@ class sfr_slug(object):
                 if f['filters'] == filters:
                     bp = f['bp']
                     break
+
+            # Handle the case where we're given just a string for one filter
+            if type(filters) is str:
+                filters = [filters]
 
             # Call the logL method
             return bp.mcmc(photprop, photerr, mc_walkers, mc_steps, 
