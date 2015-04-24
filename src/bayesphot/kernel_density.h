@@ -96,6 +96,70 @@ double kd_pdf(const kernel_density *kd, const double *x,
          input error tolerances
 */
 
+void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
+		 const unsigned int *dimfixed, 
+		 const unsigned int ndimfixed,
+		 const unsigned int nfixed,
+		 const double *xgrid,
+		 const unsigned int *dimgrid,
+		 const unsigned int ndimgrid,
+		 const unsigned int ngrid,
+		 const double reltol, const double abstol,
+		 double *pdf);
+/* This routine returns the value of the probability distribution
+   function for a kernel_density object evaluated on a grid where some
+   of the dimensions held fixed points and others are varying. This
+   can be used, for example, to specify a fixed set of photometric
+   values, and then evaluate the PDF on a grid of physical values to
+   generate the marginal PDF that goes with the photometry.
+
+   Parameters:
+      INPUT kd
+         the kernel_density object to be used to evaluate the PDF
+      INPUT xfixed
+         an ndimfixed * nfixed element array; each block of ndimfixed
+         elements gives a position in the dimensions specified by
+         dimfixed, and there are nfixed such blocks.
+      INPUT dimfixed
+         an ndimfixed element array specifying the dimensions in each
+         of the nfixed blocks in xfixed; dimensions must not be
+         repeated or appear in both dimfixed and dimgrid, and every
+         dimension in the kernel density object must appear in either
+         dimfixed or dimgrid
+      INPUT nfixed
+         number of fixed points
+      INPUT xgrid
+         an ndimgrid * ngrid element array; each block of ndimgrid
+         elements gives the position of a grid point, and there are
+         ngrid such blocks.
+      INPUT dimgrid
+         an ndimgrid element array specifying the dimensions in each
+         of the ngrid blocks in xgrid; dimensions must not be
+         repeated or appear in both dimfixed and dimgrid, and every
+         dimension in the kernel density object must appear in either
+         dimfixed or dimgrid
+      INPUT ngrid
+         number of grid points
+      INPUT reltol
+         Relative error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | / pdf_true < reltol.
+      INPUT abstol
+         Absolute error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | < abstol.
+      OUT pdf
+         an ngrid * nfixed element array giving an approximation to
+         the PDF evaluated at x, satisfying the input error
+         tolerances; element pdf[i*ngrid + j] gives the PDF for the
+         jth grid point evaluated for the ith fixed point; this array
+         must point to valid, allocated memory when it is passed
+
+   Returns:
+      Nothing
+*/
+
+
 double kd_pdf_int(const kernel_density *kd, const double *x,
 		  const unsigned int *dims, const unsigned int ndim,
 		  const double reltol, const double abstol
@@ -259,6 +323,7 @@ void kd_pdf_vec(const kernel_density *kd, const double *x,
    Returns:
       Nothing
 */
+
 
 #endif
 /* _KERNEL_DENSITY_H_ */
