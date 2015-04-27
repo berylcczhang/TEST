@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 kernel_density* build_kd(double *x, unsigned int ndim, 
 			 unsigned int npt, double *wgt,
 			 unsigned int leafsize, double *bandwidth, 
-			 kernel_type ktype);
+			 kernel_type ktype, unsigned int minsplit);
 /* This routine builds a kernel density object from a set of input
    samples and weights
 
@@ -56,6 +56,9 @@ kernel_density* build_kd(double *x, unsigned int ndim,
          each dimension
       INPUT ktype
          functional form of the kernel
+      INPUT minsplit
+         when building the KD tree, no splittings along dimensions <
+	 minsplit will be performed
 
    Returns:
       OUTPUT kd

@@ -57,6 +57,18 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
 		       const unsigned int ndim_int, const double fac,
 		       const unsigned int curnode);
 
+static inline
+double kd_pdf_node_int_grid(const kernel_density *kd, const double *xfixed, 
+			    const unsigned int *dimfixed,
+			    const unsigned int ndimfixed,
+			    const double *xgrid,
+			    const unsigned int *dimgrid,
+			    const unsigned int ndimgrid,
+			    const unsigned int ngrid,
+			    const unsigned int ndim_int,
+			    const double fac,
+			    const unsigned int curnode,
+			    double *pdf);
 
 /*********************************************************************/
 /* Function to evaluate the PDF approximately using a kernel_density */
@@ -184,13 +196,14 @@ double kd_pdf(const kernel_density *kd, const double *x,
       nalloc *= 2;
     }
 
-    /* If children are not leaves, push them onto the node list */
-    if (kd->tree->tree[lchild].splitdim != -1) {
+    /* If children have non-zero contribution, push them onto the node
+       list */
+    if ((kd->tree->tree[lchild].splitdim != -1) && (leftpdf > 0.0)) {
       nodelist[nnode] = lchild;
       nodepdf[nnode] = leftpdf;
       nnode++;
     }
-    if (kd->tree->tree[rchild].splitdim != -1) {
+    if ((kd->tree->tree[rchild].splitdim != -1) && (rightpdf > 0.0)) {
       nodelist[nnode] = rchild;
       nodepdf[nnode] = rightpdf;
       nnode++;
@@ -258,7 +271,7 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
     for (j=0; j<ngrid; j++) pdf[i*ngrid+j] = 0.0;
 
     /* Analyze root node */
-    pdfmax = kd_pdf_node_grid(kd, xfixed+fixedptr, dimfixed, nfixed,
+    pdfmax = kd_pdf_node_grid(kd, xfixed+fixedptr, dimfixed, ndimfixed,
 			      xgrid, dimgrid, ndimgrid, ngrid, ROOT,
 			      pdf+outptr);
 
@@ -310,10 +323,10 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
       /* Compute estimates for this node's children */
       lchild = LEFT(nodelist[ptr]);
       rchild = RIGHT(nodelist[ptr]);
-      leftpdf = kd_pdf_node_grid(kd, xfixed+fixedptr, dimfixed, nfixed,
+      leftpdf = kd_pdf_node_grid(kd, xfixed+fixedptr, dimfixed, ndimfixed,
 				 xgrid, dimgrid, ndimgrid, ngrid, lchild,
 				 pdf+outptr);
-      rightpdf = kd_pdf_node_grid(kd, xfixed+fixedptr, dimfixed, nfixed,
+      rightpdf = kd_pdf_node_grid(kd, xfixed+fixedptr, dimfixed, ndimfixed,
 				  xgrid, dimgrid, ndimgrid, ngrid, rchild,
 				  pdf+outptr);
 
@@ -324,19 +337,18 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
 	 save a factor of 2 by adding half the upper limit on the
 	 contribution to every point. */
       if (0.5*pdfmax < abstol) {
-	for (j=0; j<ngrid; j++) pdf[outptr+j] += pdfmax;
+	for (j=0; j<ngrid; j++) pdf[outptr+j] += 0.5*pdfmax;
 	break;
       }
 
       /* Check for termination on relative error. Again, we save a
 	 factor of 2 by adding half the upper limit on to each point. */
-      maxerr = 0.0;
       for (j=0; j<ngrid; j++) {
 	relerr = 0.5*pdfmax / (pdf[outptr+j] + 0.5*pdfmax + DBL_MIN);
-	if (relerr > maxerr) maxerr = relerr;
+	if (relerr >= reltol) break;
       }
-      if (maxerr < reltol) {
-	for (j=0; j<ngrid; j++) pdf[outptr+j] += pdfmax;
+      if (relerr < reltol) {
+	for (j=0; j<ngrid; j++) pdf[outptr+j] += 0.5*pdfmax;
 	break;
       }
 
@@ -544,17 +556,26 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
       nalloc *= 2;
     }
 
-    /* If children are not leaves, push them onto the node list */
-    if (kd->tree->tree[lchild].splitdim != -1) {
+    /* If children are not leaves, and make a non-zero contribution,
+       push them onto the node list */
+    if ((kd->tree->tree[lchild].splitdim != -1) && (leftpdf > 0.0)) {
       nodelist[nnode] = lchild;
       nodepdf[nnode] = leftpdf;
       nnode++;
     }
-    if (kd->tree->tree[rchild].splitdim != -1) {
+    if ((kd->tree->tree[rchild].splitdim != -1) && (rightpdf > 0.0)) {
       nodelist[nnode] = rchild;
       nodepdf[nnode] = rightpdf;
       nnode++;
     }
+
+    /*
+    printf("pdf = %e, abserr = %e, relerr = %e\n", pdf, abserr, relerr);
+    printf("nodes:");
+    for (i=0; i<nnode; i++)
+      printf(" ... %d %e", nodelist[i], nodepdf[i]);
+    printf("\n\n");
+    */
 
     /* Bail out if there are no non-leaf nodes left to be
        analyzed. This should also give abserr = relerr = 0, and thus
@@ -580,6 +601,212 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
 
   /* Return */
   return(pdf);
+}
+
+
+/*********************************************************************/
+/* Function to evaluate the PDF on a grid where some dimensions are  */
+/* fixed, others are varying, and still others are being integrated  */
+/* out (i.e., marginalized over)                                     */
+/*********************************************************************/
+
+void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
+		     const unsigned int *dimfixed, 
+		     const unsigned int ndimfixed,
+		     const unsigned int nfixed,
+		     const double *xgrid,
+		     const unsigned int *dimgrid,
+		     const unsigned int ndimgrid,
+		     const unsigned int ngrid,
+		     const double reltol, const double abstol,
+		     double *pdf) {
+
+  unsigned int i, j;
+  unsigned int nalloc=0, nnode, ptr, lchild, rchild, ndim_int;
+  unsigned long fixedptr, outptr;
+  unsigned int *nodelist = NULL;
+  double *nodepdf = NULL;
+  double hprod, ds_n, fac;
+  double maxerr, relerr, pdfmax, leftpdf, rightpdf;
+
+  /* Pre-compute constant factor in the integrals we're evaluating;
+     this is the part that depends only on h and the number of
+     dimensions. */
+  ndim_int = kd->tree->ndim - ndimfixed - ndimgrid;
+  ds_n = ds(ndim_int);
+  hprod = 1.0;
+  for (i=0; i<kd->tree->ndim; i++) hprod *= kd->h[i];
+  for (i=0; i<ndimfixed; i++) hprod /= kd->h[dimfixed[i]];
+  for (i=0; i<ndimgrid; i++) hprod /= kd->h[dimgrid[i]];
+  fac = hprod * ds_n;
+  switch (kd->ktype) {
+  case epanechnikov: {
+    fac *= 2.0 / (ndim_int * (ndim_int + 2));
+    break;
+  }
+  case tophat: {
+    fac /= ndim_int;
+    break;
+  }
+  case gaussian: {
+    fac *= pow(2.0, ndim_int/2.0 - 1) * gsl_sf_gamma(0.5*ndim_int);
+    break;
+  }
+  }
+
+  /* Loop over the input fixed points */
+  for (i=0; i<nfixed; i++) {
+
+    /* Move the pointers in the input and output arrays */
+    fixedptr = i*ndimfixed;
+    outptr = i*ngrid;
+
+    /* Initialize output array to zero */
+    for (j=0; j<ngrid; j++) pdf[i*ngrid+j] = 0.0;
+
+    /* Analyze root node */
+    pdfmax = kd_pdf_node_int_grid(kd, xfixed+fixedptr, dimfixed, 
+				  ndimfixed, xgrid, dimgrid, ndimgrid, 
+				  ngrid, ndim_int, fac, ROOT, pdf+outptr);
+
+    /* If root node is a leaf, we're done. Go to next fixed point. */
+    if (kd->tree->tree[ROOT].splitdim == -1) continue;
+
+    /* More common case where root node is not a leaf */
+
+    /* Allocate memory for node list if necessary */
+    if (nalloc == 0) {
+      if (!(nodelist = (unsigned int *) 
+	    calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int_grid\n");
+	exit(1);
+      }
+      if (!(nodepdf = (double *) 
+	    calloc(NODEBLOCKSIZE, sizeof(double)))) {
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int_grid\n");
+	exit(1);
+      }
+      nalloc = NODEBLOCKSIZE;  
+    }
+
+    /* Push root node onto the node list */
+    nodelist[0] = ROOT;
+    nodepdf[0] = pdfmax;
+    nnode = 1;
+
+    /* Now proceed through the tree, identifying the nodes that are
+       contributing the most error and recursively opening them. */
+    while (1) {
+
+      /* Find the node that is contributing the most error. */
+      maxerr = nodepdf[0];
+      ptr = 0;
+      for (j=1; j<nnode; j++) {
+	if (nodepdf[j] > maxerr) {
+	  ptr = j;
+	  maxerr = nodepdf[j];
+	}
+      }
+
+      /* Subtract this node's contribution to the maximum possible PDF
+	 contribution from unopened nodes. Enforce positivity to avoid
+	 spurious negative results coming from roundoff error. */
+      pdfmax -= nodepdf[ptr];
+      if (pdfmax < 0) pdfmax = 0.0;
+
+      /* Compute estimates for this node's children */
+      lchild = LEFT(nodelist[ptr]);
+      rchild = RIGHT(nodelist[ptr]);
+      leftpdf = kd_pdf_node_int_grid(kd, xfixed+fixedptr, dimfixed, 
+				     ndimfixed, xgrid, dimgrid, ndimgrid, 
+				     ngrid, ndim_int, fac, lchild, 
+				     pdf+outptr);
+      rightpdf = kd_pdf_node_int_grid(kd, xfixed+fixedptr, dimfixed, 
+				      ndimfixed, xgrid, dimgrid, ndimgrid, 
+				      ngrid, ndim_int, fac, rchild, 
+				      pdf+outptr);
+
+      /* Get new maximum contribution to PDF from unopened nodes */
+      pdfmax += leftpdf + rightpdf;
+
+      /* Check for termination on absolute error. Note that we can
+	 save a factor of 2 by adding half the upper limit on the
+	 contribution to every point. */
+      if (0.5*pdfmax < abstol) {
+	for (j=0; j<ngrid; j++) pdf[outptr+j] += 0.5*pdfmax;
+	break;
+      }
+
+      /* Check for termination on relative error. Again, we save a
+	 factor of 2 by adding half the upper limit on to each point. */
+      for (j=0; j<ngrid; j++) {
+	relerr = 0.5*pdfmax / (pdf[outptr+j] + 0.5*pdfmax + DBL_MIN);
+	if (relerr >= reltol) break;
+      }
+      if (relerr < reltol) {
+	for (j=0; j<ngrid; j++) pdf[outptr+j] += 0.5*pdfmax;
+	break;
+      }
+
+      /* If we're here, we haven't converged yet. Remove the node we
+	 just analyzed from the list. */
+      for (j=ptr; j<nnode-1; j++) {
+	nodelist[j] = nodelist[j+1];
+	nodepdf[j] = nodepdf[j+1];
+      }
+      nnode--;
+
+      /* Allocate more memory to hold child nodes if necessary */
+      if (nnode+2 >= nalloc) {
+	if (!(nodelist = (unsigned int *) 
+	      realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
+	  fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
+	  exit(1);
+	}
+	if (!(nodepdf = (double *) 
+	      realloc(nodepdf, 2*nalloc*sizeof(double)))) {
+	  fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
+	  exit(1);
+	}
+	nalloc *= 2;
+      }
+
+      /* If children are not leaves, and their maximum contribution to
+	 the PDF is not 0 (possible due to roundoff, or if the kernel
+	 is compact), push them onto the node list */
+      if (leftpdf > 0.0) {
+	nodelist[nnode] = lchild;
+	nodepdf[nnode] = leftpdf;
+	nnode++;
+      }
+      if (rightpdf > 0.0) {
+	nodelist[nnode] = rchild;
+	nodepdf[nnode] = rightpdf;
+	nnode++;
+      }
+
+      /*
+      printf("pdf[0] = %e, pdfmax = %e, abserr = %e, relerr = %e\n", 
+	     pdf[0], pdfmax, 0.5*pdfmax, relerr);
+      printf("nodes:");
+      for (j=0; j<nnode; j++)
+	printf(" ... %d %e", nodelist[j], nodepdf[j]);
+      printf("\n\n");
+      */
+
+      /* Bail out if there are no non-leaf nodes left to be
+	 analyzed. This should also give abserr = 0, and thus
+	 we should have exited the loop when we checked the termination
+	 condition. However, this can sometimes fail due to roundoff
+	 error if abstol and reltol are both very small, so this is a
+	 backstop. */
+      if (nnode == 0) break;
+    }
+  }
+
+  /* Free memory */
+  if (nodelist != NULL) free(nodelist);
+  if (nodepdf != NULL) free(nodepdf);
 }
 
 
@@ -781,14 +1008,14 @@ double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed,
     /* Return 0.5 * PDF at minimum distance */
     switch (kd->ktype) {
     case epanechnikov: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot 
+      return(d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot 
 	     * (1.0 - d2) : 0.0);
     }
     case tophat: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot : 0.0);
+      return(d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot : 0.0);
     }
     case gaussian: {
-      return(0.5 * kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0));
+      return(kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0));
     }
     }
   }
@@ -890,6 +1117,128 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
     }
   }
 }
+
+
+
+/*********************************************************************/
+/* Function to compute the contribution of a node to the PDF on a    */
+/* grid of input points, with a single fixed point, integrating out  */
+/* some of the dimensions. If the node is not a leaf, we return the  */
+/* maximum possible contribution to any point on the grid, without   */
+/* examining the grid points individualy. If it is a leaf, we add    */
+/* the contribution to each point on the grid, and return 0.         */
+/*********************************************************************/
+inline
+double kd_pdf_node_int_grid(const kernel_density *kd, 
+			    const double *xfixed, 
+			    const unsigned int *dimfixed,
+			    const unsigned int ndimfixed,
+			    const double *xgrid,
+			    const unsigned int *dimgrid,
+			    const unsigned int ndimgrid,
+			    const unsigned int ngrid,
+			    const unsigned int ndim_int,
+			    const double fac,
+			    const unsigned int curnode,
+			    double *pdf) {
+
+  unsigned int i, j;
+  unsigned int ndim_tot = kd->tree->ndim;
+  double d2, d2fixed, d2grid;
+
+  /* Is this node a leaf? If so, just sum over the points in it */
+  if (kd->tree->tree[curnode].splitdim == -1) {
+
+    /* Loop over points in this leaf */
+    for (i=0; i<kd->tree->tree[curnode].npt; i++) {
+
+      /* Get distance in the fixed dimensions */
+      d2fixed = dist2(&(kd->tree->tree[curnode].x[ndim_tot*i]),
+		      xfixed, ndim_tot, ndimfixed,
+		      NULL, dimfixed, kd->h, ndim_tot);
+
+      /* Loop over the points in the grid */
+      for (j=0; j<ngrid; j++) {
+
+	/* Get distance in the grid dimensions */
+	d2grid = dist2(&(kd->tree->tree[curnode].x[ndim_tot*i]),
+		       xgrid+j*ndimgrid, ndim_tot, ndimgrid,
+		       NULL, dimgrid, kd->h, ndim_tot);
+
+	/* Sum distances and get contribution to the PDF of this
+	   point */
+	d2 = d2fixed + d2grid;
+	if (kd->tree->tree[curnode].dptr != NULL) {
+	  switch (kd->ktype) {
+	  case epanechnikov: {
+	    if (d2 < 1)
+	      pdf[j] += ((double *) kd->tree->tree[curnode].dptr)[i] * 
+		pow(1.0-d2, 1.0+0.5*ndim_int) * fac * kd->norm_tot;
+	    break;
+	  }
+	  case tophat: {
+	    if (d2 < 1)
+	      pdf[j] += ((double *) kd->tree->tree[curnode].dptr)[i] *
+		pow(1.0-d2, 0.5*ndim_int) * fac * kd->norm_tot;
+	    break;
+	  }
+	  case gaussian: {
+	    pdf[j] += ((double *) kd->tree->tree[curnode].dptr)[i] *
+	      exp(-d2/2.0) * fac * kd->norm_tot;
+	    break;
+	  }
+	  }
+	} else {
+	  switch (kd->ktype) {
+	  case epanechnikov: {
+	    if (d2 < 1) 
+	      pdf[j] += pow(1.0-d2, 1.0+0.5*ndim_int) * fac * kd->norm_tot;
+	    break;
+	  }
+	  case tophat: {
+	    if (d2 < 1) 
+	      pdf[j] += pow(1.0-d2, 0.5*ndim_int) * fac * kd->norm_tot;
+	    break;
+	  }
+	  case gaussian: {
+	    pdf[j] += exp(-d2/2.0) * fac * kd->norm_tot;
+	    break;
+	  }
+	  }
+	}
+      }
+    }
+
+    /* Return */
+    return(0.0);
+
+  } else {
+
+    /* This node is not a leaf */
+
+    /* Get minimum distance in units of the kernel size */
+    d2 = box_min_dist2(xfixed, 
+		       (const double **) kd->tree->tree[curnode].xbnd,
+		       ndimfixed, ndim_tot, dimfixed, NULL, 
+		       kd->h, ndim_tot);
+
+    /* Return PDF at minimum distance */
+    switch (kd->ktype) {
+    case epanechnikov: {
+      return(d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot * fac * 
+	      pow(1.0-d2, 1.0+0.5*ndim_int) : 0.0);
+    }
+    case tophat: {
+      return(d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot * fac * 
+	     pow(1.0-d2, 0.5*ndim_int) : 0.0);
+    }
+    case gaussian: {
+      return(kd->nodewgt[curnode] * kd->norm_tot * fac * exp(-d2/2.0));
+    }
+    }
+  }
+}
+
 
 
 /*********************************************************************/

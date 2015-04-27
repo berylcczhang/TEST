@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>
 #include <string.h>
 #include <float.h>
+#include <assert.h>
 #include "geometry.h"
 #include "kdtree.h"
 
@@ -186,11 +187,15 @@ void xdata_alloc(unsigned int nnew, unsigned int *ncur, double **x,
 /* Routine to build the tree                                         */
 /*********************************************************************/
 KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
-		   unsigned int leafsize, void *dptr, size_t dsize) {
+		   unsigned int leafsize, void *dptr, size_t dsize,
+		   unsigned int minsplit) {
 
   unsigned int i, n, idx, curnode;
   KDtree *tree;
   void *dswap = NULL;
+
+  /* Safety assertion */
+  assert(minsplit < ndim);
 
   /* Allocate memory for the tree */
   if (!(tree = (KDtree *) malloc(sizeof(KDtree)))) {
@@ -290,9 +295,11 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
       /* Figure out which dimension to split along */
       if (curnode != ROOT)
 	tree->tree[curnode].splitdim = 
-	  (tree->tree[PARENT(curnode)].splitdim + 1) % tree->ndim;
+	  minsplit + 
+	  (tree->tree[PARENT(curnode)].splitdim + 1) % 
+	  (tree->ndim - minsplit);
       else
-	tree->tree[curnode].splitdim = 0;
+	tree->tree[curnode].splitdim = minsplit;
 
       /* Partition the points along the split dimension */
       partition_node(&(tree->tree[curnode]), tree->ndim, dswap, dsize);

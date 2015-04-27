@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 kernel_density* build_kd(double *x, unsigned int ndim, 
 			 unsigned int npt, double *wgt,
 			 unsigned int leafsize, double *bandwidth, 
-			 kernel_type ktype) {
+			 kernel_type ktype, unsigned int minsplit) {
   unsigned int i, j, curnode;
   double ds_n, hprod, wgttot=0.0;
   kernel_density *kd;
@@ -82,9 +82,10 @@ kernel_density* build_kd(double *x, unsigned int ndim,
 
   /* Build the KD tree around the data */
   if (wgt == NULL) {
-    kd->tree = build_tree(x, ndim, npt, leafsize, NULL, 0);
+    kd->tree = build_tree(x, ndim, npt, leafsize, NULL, 0, minsplit);
   } else {
-    kd->tree = build_tree(x, ndim, npt, leafsize, wgt, sizeof(double));
+    kd->tree = build_tree(x, ndim, npt, leafsize, wgt, 
+			  sizeof(double), minsplit);
   }
 
   /* Allocate memory to hold summed weights of the nodes of the tree */

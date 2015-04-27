@@ -75,7 +75,8 @@ typedef struct {
 /*********************************************************************/
 
 KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt, 
-		   unsigned int leafsize, void *dptr, size_t dsize);
+		   unsigned int leafsize, void *dptr, size_t dsize,
+		   unsigned int minsplit);
 /* This routine builds a KD tree from the input data.
 
    Parameters:
@@ -93,6 +94,9 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
          pointer to extra data associated to each position
       INPUT dsize
          size of each element of dptr
+      INPUT minsplit
+         when building the KD tree, no splittings along dimensions <
+	 minsplit will be performed
 
    Returns:
       OUTPUT tree
