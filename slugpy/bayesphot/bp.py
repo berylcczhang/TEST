@@ -150,7 +150,8 @@ class bp(object):
                 POINTER(c_double), # wgt
                 c_uint,            # leafsize
                 array_1d_double,   # bandwidth
-                c_int ]            # ktype
+                c_int,             # ktype
+                c_uint ]           # minsplit
 
         self.__clib.free_kd.restype = None
         self.__clib.free_kd.argtypes = [ c_void_p ]
@@ -235,6 +236,21 @@ class bp(object):
                     c_double,          # reltol
                     c_double ]         # abstol
 
+        self.__clib.kd_pdf_grid.restype = None
+        self.__clib.kd_pdf_grid.argtypes \
+            = [ c_void_p,              # kd
+                array_1d_double,       # xfixed
+                array_1d_uint,         # dimfixed
+                c_uint,                # ndimfixed
+                c_uint,                # nfixed
+                array_1d_double,       # xgrid
+                array_1d_uint,         # dimgrid
+                c_uint,                # ndimgrid
+                c_uint,                # ngrid
+                c_double,              # reltol
+                c_double,              # abstol
+                array_1d_double ]      # pdf
+
         self.__clib.kd_pdf_vec.restype = None
         if self.__diag_mode:
             self.__clib.kd_pdf_vec.argtypes \
@@ -299,6 +315,21 @@ class bp(object):
                     c_double,          # reltol
                     c_double,          # abstol
                     array_1d_double ]  # pdf
+        self.__clib.kd_pdf_int_grid.restype = None
+        self.__clib.kd_pdf_int_grid.argtypes \
+            = [ c_void_p,              # kd
+                array_1d_double,       # xfixed
+                array_1d_uint,         # dimfixed
+                c_uint,                # ndimfixed
+                c_uint,                # nfixed
+                array_1d_double,       # xgrid
+                array_1d_uint,         # dimgrid
+                c_uint,                # ndimgrid
+                c_uint,                # ngrid
+                c_double,              # reltol
+                c_double,              # abstol
+                array_1d_double ]      # pdf
+                
 
         # Record some of the input parameters
         if (ktype == 'gaussian'):
@@ -335,7 +366,7 @@ class bp(object):
                                          self.__dataset.shape[1],
                                          self.__ndata, None, 
                                          self.leafsize, self.__bandwidth,
-                                         self.__ktype)
+                                         self.__ktype, 0)
 
         # Initialize the bandwidth
         self.bandwidth = bandwidth
@@ -451,7 +482,7 @@ class bp(object):
                                 np.ravel(self.__dataset_phys), 
                                 self.__nphys, self.__ndata,
                                 None, self.leafsize, self.__bandwidth,
-                                self.__ktype)
+                                self.__ktype, self.__nphys)
 
                         # Use the unweighted kernel density object to
                         # evaluate the raw sample density near each data
@@ -939,38 +970,17 @@ class bp(object):
         else:
             pdf = np.zeros(np.array(photprop)[..., 0].shape +
                            out_shape)
-        if self.__diag_mode:
-            nodecheck = np.zeros(pdf.shape, dtype=c_uint)
-            leafcheck = np.zeros(pdf.shape, dtype=c_uint)
-            termcheck = np.zeros(pdf.shape, dtype=c_uint)
 
         # Prepare data for c library
         if hasattr(idx, '__len__'):
             nidx = len(idx)
-            ng = grid_out[nidx-1:].size / max(nphot_err, 1)
         else:
             nidx = 1
-            ng = grid_out.size / max(nphot_err, 1)
         dims = np.zeros(nidx+self.__nphot, dtype=np.uintc)
         dims[:nidx] = idx
         dims[nidx:] = self.__nphys+np.arange(self.__nphot, dtype='int')
         ndim = np.uintc(nidx + self.__nphot)
-        npt = np.uintc(ng)
-        cdata = np.zeros(pdf.shape+(ndim,))
-        if nidx == 1:
-            cdata[..., 0] = np.vstack((grid_out,) * 
-                                      photprop[...,0].size). \
-                reshape(cdata[..., 0].shape)
-            cdata[..., nidx:] = np.hstack((photprop,) * grid_out.size). \
-                                reshape(cdata[..., nidx:].shape)
-        else:
-            for i in range(nidx):
-                cdata[..., i] = np.vstack((grid_out[i,...],) * 
-                                          photprop[...,0].size). \
-                    reshape(cdata[..., i].shape)
-            cdata[..., nidx:] = np.hstack((photprop,) * 
-                                          grid_out[0,...].size). \
-                                reshape(cdata[..., nidx:].shape)
+        phottmp = np.array(photprop, dtype=c_double)
 
         # Separate cases with single / no photometric errors from
         # cases with multiple sets of photometric errors
@@ -992,29 +1002,21 @@ class bp(object):
             # nphys), but we invoke kd_pdf_vec if we're not actually
             # marginalizing (len(idx)==nphys) because then we don't
             # need to do any integration
-            if not self.__diag_mode:
-                if nidx < self.__nphys:
-                    self.__clib.kd_pdf_int_vec(
-                        self.__kd, np.ravel(cdata), dims, ndim,
-                        pdf.size, self.reltol, self.abstol,
-                        np.ravel(pdf))
-                else:
-                    self.__clib.kd_pdf_vec(
-                        self.__kd, np.ravel(cdata), pdf.size, 
-                        self.reltol, self.abstol, np.ravel(pdf))
+            if nidx < self.__nphys:
+                self.__clib.kd_pdf_int_grid(
+                    self.__kd, np.ravel(phottmp),
+                    dims[nidx:], self.__nphot, nphot,
+                    np.ravel(grid_out), dims[:nidx],
+                    nidx, grid_out.size,
+                    self.reltol, self.abstol,
+                    np.ravel(pdf))
             else:
-                if nidx < self.__nphys:                
-                    self.__clib.kd_pdf_int_vec(
-                        self.__kd, np.ravel(cdata), dims, ndim, 
-                        pdf.size, self.reltol, self.abstol,
-                        np.ravel(pdf), np.ravel(nodecheck), 
-                        np.ravel(leafcheck), np.ravel(termcheck))
-                else:
-                    self.__clib.kd_pdf_vec(
-                        self.__kd, np.ravel(cdata), pdf.size, 
-                        self.reltol, self.abstol, np.ravel(pdf),
-                        np.ravel(nodecheck), np.ravel(leafcheck), 
-                        np.ravel(termcheck))
+                self.__clib.kd_pdf_grid(
+                    self.__kd, np.ravel(phottmp),
+                    dims[nidx:], self.__nphot, nphot,
+                    np.ravel(grid_out), dims[:nidx],
+                    nidx, grid_out.size,
+                    self.reltol, self.abstol, np.ravel(pdf))
 
         else:
 
@@ -1032,30 +1034,31 @@ class bp(object):
 
                 # Grab the corresponding portions of the arrays going
                 # to and from the c code
-                cdata_sub = cdata[i]
+                if photprop.size < photerr.size:
+                    phot_sub = np.ravel(phottmp)
+                else:
+                    phot_sub = np.ravel(phottmp[i])
                 pdf_sub = np.zeros(np.array(pdf[i]).shape)
-                if self.__diag_mode:
-                    nodecheck_sub = np.zeros(np.array(nodecheck[i]).shape)
-                    leafcheck_sub = np.zeros(np.array(leafcheck[i]).shape)
-                    termcheck_sub = np.zeros(np.array(termcheck[i]).shape)
 
                 # Call kernel density estimate with this bandwidth
-                if not self.__diag_mode:
-                    self.__clib.kd_pdf_int_vec(
-                        self.__kd, np.ravel(cdata_sub), dims, ndim,
-                        pdf_sub.size, self.reltol, self.abstol, 
+                if nidx < self.__nphys:
+                    self.__clib.kd_pdf_int_grid(
+                        self.__kd, phot_sub,
+                        dims[nidx:], self.__nphot, 
+                        phot_sub.size/self.__nphot,
+                        np.ravel(grid_out), dims[:nidx],
+                        nidx, grid_out.size,
+                        self.reltol, self.abstol,
                         np.ravel(pdf_sub))
                 else:
-                    self.__clib.kd_pdf_int_vec(
-                        self.__kd, np.ravel(cdata_sub), dims, ndim,
-                        pdf_sub.size, self.reltol, self.abstol, 
-                        np.ravel(pdf_sub), np.ravel(nodecheck_sub), 
-                        np.ravel(leafcheck_sub), np.ravel(termcheck_sub))
+                    self.__clib.kd_pdf_grid(
+                        self.__kd, phot_sub,
+                        dims[nidx:], self.__nphot, 
+                        phot_sub.size/self.__nphot,
+                        np.ravel(grid_out), dims[:nidx],
+                        nidx, grid_out.size,
+                        self.reltol, self.abstol, np.ravel(pdf_sub))
                 pdf[i] = pdf_sub
-                if self.__diag_mode:
-                    nodecheck[i] = nodecheck_sub
-                    leafcheck[i] = leafcheck_sub
-                    termcheck[i] = termcheck_sub
 
 
         # Set the bandwidth back to its default if necessary
@@ -1095,10 +1098,7 @@ class bp(object):
             pdf = np.transpose(np.transpose(pdf)/normfac)
 
         # Return
-        if not self.__diag_mode:
-            return grid_out, pdf
-        else:
-            return grid_out, pdf, nodecheck, leafcheck, termcheck
+        return grid_out, pdf
 
 
     ##################################################################
