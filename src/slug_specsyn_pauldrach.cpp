@@ -83,7 +83,7 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
     cerr << "Warning: stellar track metallicity is [Z/H] = "
 	 << log10(my_tracks->get_metallicity())
 	 << ", closest Pauldrach atmosphere metallicity available is [Z/H] = "
-	 << zrel[idx]
+	 << log10(zrel[idx])
 	 << "; calculation will proceed" << endl;
   }
 
