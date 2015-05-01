@@ -18,8 +18,6 @@ try:
     from Queue import Queue    # python 2.x
 except ImportError:
     from queue import Queue    # python 3.x
-from scipy.constants import c
-from scipy.constants import k as kB
 import subprocess
 import sys
 from threading import Thread
@@ -37,6 +35,22 @@ except ImportError:
         sys.path = cur_path
     else:
         raise ImportError("No module named slugpy")
+
+# Set some constants; change to cgs units
+from scipy.constants import c
+from scipy.constants import k as kB
+from scipy.constants import m_e
+from scipy.constants import m_p
+from scipy.constants import physical_constants as physcons
+c = c*1e2
+kB = kB*1e7
+m_e = m_e * 1e-3
+m_p = m_p * 1e-3
+eps0 = physcons['Rydberg constant times hc in J'][0] * 1e7
+mH = m_e + m_p       # Hydrogen atom mass
+alphaB = 2.59e-13    # Case B recombination coefficient
+muH = 1.4            # Mean mass per H nucleus for standard cosmic composition
+
 
 # Step 1: set up and read command line arguments
 parser = argparse. \
@@ -69,6 +83,16 @@ parser.add_argument("-cm", "--clustermode", action='store_true',
                     "each cluster is a separate cloudy run "+
                     "(default: integrated mode, one cloudy run / "
                     "trial)")
+parser.add_argument('-cf', '--coveringfac', default=1.0, type=float,
+                    help="covering factor")
+parser.add_argument('-hd', '--hden', default=None, type=float,
+                    help='hydrogen number density')
+parser.add_argument('-ip', '--ionparam', default=None, type=float,
+                    help="ionization parameter")
+parser.add_argument('-nd', '--nodynamic', action='store_true', default=False,
+                    help='do not use dynamical expansion model in' +
+                    ' cluster mode (has no effect in integrated '
+                    'mode)')
 parser.add_argument('-nl', '--nicelevel', default=0, type=int,
                     help="nice level of the cloudy processes " +
                     "(default: 0)")
@@ -87,7 +111,7 @@ args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
 
-# Step 2: set some defaults
+# Step 2: set some defaults and check for consistency of arguments
 if args.cloudypath is None:
     if 'CLOUDY_DIR' in os.environ:
         cloudypath = osp.join(os.environ['CLOUDY_DIR'], 'cloudy.exe')
@@ -110,18 +134,21 @@ if args.cloudytemplate is None:
 else:
     cloudytemplate = args.cloudytemplate
 
+# Set input directory
 if args.slugpath is None:
-    #set input directory 
     if 'SLUG_DIR' in os.environ:
-        slugdir=osp.join(os.environ['SLUG_DIR'],'output/')
+        slugdir=osp.join(os.environ['SLUG_DIR'], 'output')
     else:
-        slugdir='output/'
-    #use cwd as output
-    outpath='./'
+        slugdir='output'
 else:
     slugdir=args.slugpath
-    #use selected output dir for  output
-    outpath=slugdir
+
+# Check for consistency of various ways of setting the density and radius
+if (args.hden is not None) and (args.ionparam is not None):
+    raise IOError(
+        "cloudy_slug: error: cannot simultaneously set hden and ionparam")
+if args.ionparam is not None:
+    args.nodynamic = True
 
 # Step 3: read the SLUG output to be processed, and check that we have
 # what we need
@@ -130,6 +157,7 @@ if (args.clustermode):
     data = read_cluster(args.slug_model_name, read_info=file_info, output_dir=slugdir)
 else:
     data = read_integrated(args.slug_model_name, read_info=file_info, output_dir=slugdir)
+outpath = osp.dirname(file_info['spec_name'])
 valid = True
 if 'spec' not in data._fields:
     valid = False
@@ -146,9 +174,10 @@ if not valid:
 if args.clustermode and 'form_time' not in data._fields:
     raise IOError("cloudy_slug: error: input slug data must " +
                   "contain cluster physical properties")
-freq = c/(data.wl*1e-10)          # Frequency in Hz
+freq = c/(data.wl*1e-8)           # Frequency in Hz
 logfreq = np.log10(freq)          # Log frequency in Hz
 basename = osp.basename(args.slug_model_name)
+tmpdirname = 'cloudy_tmp_'+basename
 if args.clustermode:
     if args.end_spec != -1:
         end_spec = min(args.end_spec, len(data.id))
@@ -174,9 +203,8 @@ elif 'Vega mag' in data.filter_units:
 else:
     photsystem = 'L_nu'
 
-# Number of filters
+# Get number of filters
 nfilt = len(data.filter_names)
-
 
 # Step 4: read the template cloudy input file template, and set up
 # storage for what we'll be computing
@@ -241,6 +269,8 @@ def do_cloudy_run(thread_num, q):
     global compute_continuum
     global compute_lines
     global data
+    global basename
+    global tmpdirname
     if compute_continuum:
         global cloudywl
         global cloudyspec
@@ -285,8 +315,7 @@ def do_cloudy_run(thread_num, q):
 
         # Write out the cloudy input file header, substituting a
         # custom name for OUTPUT_FILENAME
-        cloudy_in_fname = osp.join(cwd, 
-                                   'cloudy_tmp', 
+        cloudy_in_fname = osp.join(cwd, tmpdirname,
                                    'cloudy.in'+'_{0:05d}'.format(thread_num))
         fpout = open(cloudy_in_fname, 'w')
         radset = False
@@ -294,16 +323,17 @@ def do_cloudy_run(thread_num, q):
             linesplit = line.split()
             if len(linesplit) > 0:
                 if (linesplit[0] == 'hden'):
-                    hden = 10.0**float(linesplit[1])
-                    if not args.clustermode:
-                        fpout.write(line+'\n')
+                    if args.hden is None:
+                        hden = 10.0**float(linesplit[1])
+                    else:
+                        hden = args.hden
                 elif (linesplit[0] == 'radius'):
                     radset = True
                     fpout.write(line+'\n')
                 elif 'OUTPUT_FILENAME' in line:
                     newline \
                         = line.replace('OUTPUT_FILENAME',
-                                       osp.join(cwd, 'cloudy_tmp',
+                                       osp.join(cwd, tmpdirname,
                                                 basename+ext))
                     fpout.write(newline + '\n')
                     if 'continuum' in newline:
@@ -317,31 +347,19 @@ def do_cloudy_run(thread_num, q):
                 else:
                     fpout.write(line+'\n')
 
-        # In cluster mode, compute internal radius, starting density
-        # self-consistently; in integrated mode, set inner radius
-        # self-consistently
-        if not args.clustermode:
-            if not radset:
-                alphaB = 2.59e-13    # Case B recombination coefficient
-                rstrom = (3.0*qH0/(4.4*np.pi*alphaB*hden**2))**(1./3.)
-                r0 = rstrom/1e3
-                fpout.write("radius {0:f}\n".format(np.log10(r0)))
-        else:
-            # Get current age of this cluster
+        # Are we in dynamic mode? If so, that specifies the density
+        # and radius
+        if args.clustermode and (not args.nodynamic):
+            # Yes, use dynamic mode
             age = data.time[0] - data.form_time[0]
-            # Get characteristic radius and time; all quantities
-            # defined as in Krumholz & Matnzer (2009)
-            alphaB = 2.59e-13    # Case B recombination coefficient
-            mu = 2.34e-24        # Mean mass per H nucleus, in g
-            eps0 = 2.179e-11     # H ionization potential, in erg
             TII = 1e4            # HII region temp, in K
             psi = 3.2            # Mean photon energy / eps0
             ft = 2.0             # Trapping factor
             phi = 0.73           # Dust absorption fraction
             rch = alphaB/(12.0*np.pi*phi) * \
                   (eps0/(2.2*kB*1e7*TII))**2 * ft**2 * \
-                  psi**2 * qH0 / (c*1e2)**2
-            tch = (4.0*np.pi * mu*hden*c * rch**4 /
+                  psi**2 * qH0 / c**2
+            tch = (4.0*np.pi * muH*hden*c * rch**4 /
                    (3.0*ft*qH0*psi*eps0))**0.5
             # Get xIIgas, xIIrad
             tau = age*365.25*24.*3600./tch
@@ -350,13 +368,24 @@ def do_cloudy_run(thread_num, q):
             # Get outer radius, inner radius, density
             r = rch*(xIIrad**3.5 + xIIgas**3.5)**(2.0/7.0)
             r0 = r/1e3
-            nH = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
-            fpout.write("hden {0:f}\n".format(np.log10(nH)))
-            if not radset:
-                fpout.write("radius {0:f}\n".format(np.log10(r0)))
+            hden = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
+        else:
+            # Not in dynamic mode
+            # If given an ionization parameter, use it to recompute
+            # the density
+            if args.ionparam is not None:
+                hden = 288*np.pi*c**3*args.ionparam**3 / \
+                       (81*alphaB**2*qH0)
+            # Now compute Stromgren and inner radii
+            rstrom = (3.0*qH0/(4.4*np.pi*alphaB*hden**2))**(1./3.)
+            r0 = rstrom/1e3
+
+        # Write inner radius and density to cloudy input file
+        fpout.write("hden {0:f}\n".format(np.log10(hden)))
+        fpout.write("radius {0:f}\n".format(np.log10(r0)))
 
         # Write the ionizing luminosity to the cloudy input file
-        fpout.write("Q(H) = {0:f}\n".format(np.log10(qH0)))
+        fpout.write("Q(H) = {0:f}\n".format(np.log10(qH0*args.coveringfac)))
 
         # Write the spectral shape into the cloudy input file,
         # prepending and appending low values outside the range
@@ -389,7 +418,7 @@ def do_cloudy_run(thread_num, q):
             print("thread {0:d}: ".format(thread_num+1) + outstr)
 
         # Launch the cloudy process and wait for it to complete
-        cloudy_out_fname = osp.join(cwd, 'cloudy_tmp', 'cloudy.out'+ext)
+        cloudy_out_fname = osp.join(cwd, tmpdirname, 'cloudy.out'+ext)
         cmd = cloudypath + " < " + cloudy_in_fname + \
               " > " + cloudy_out_fname
         if args.nicelevel > 0:
@@ -470,7 +499,7 @@ def do_cloudy_run(thread_num, q):
 
 # Step 7: start a set of threads to do the job
 try: 
-    os.mkdir(osp.join(cwd, 'cloudy_tmp'))  # Temporary working directory
+    os.mkdir(osp.join(cwd, tmpdirname))  # Temporary working directory
 except OSError: pass           # Probably failed because dir exists
 if __name__ == '__main__' :
     for i in range(nproc):
@@ -677,7 +706,7 @@ if compute_continuum:
 # Step 12: final cleanup
 if not args.save:
     try:
-        os.rmdir(osp.join(cwd, 'cloudy_tmp'))
+        os.rmdir(osp.join(cwd, tmpdirname))
     except OSError:
         warnings.warn("unable to clean up temporary directory "+
-                      osp.join(cwd, 'cloudy_tmp'))
+                      osp.join(cwd, tmpdirname))
