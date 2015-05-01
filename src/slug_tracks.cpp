@@ -334,6 +334,18 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     n_surf_tmp[0] = n_surf[i][1];
     for (unsigned int j=2; j<ntime; j++) {
       if (logtimes[i][j] != logtimes[i][j-1]) {
+	if (logtimes[i][j] < logtimes[i][j-1]) {
+	  streamsize prec = cerr.precision();
+	  cerr << "Warning: tracks have non-monotonic time at mass "
+	       << exp(logmass[i]) << " Msun, times "
+	       << setprecision(20)
+	       << exp(logtimes[i][j-1]) << " - "
+	       << setprecision(20)
+	       << exp(logtimes[i][j]) 
+	       << " yr; entry will be ignored." << endl;
+	  cerr.precision(prec);
+	  continue;
+	}
 	tracktimes[n_uniq] = logtimes[i][j];
 	logcur_mass_tmp[n_uniq] = logcur_mass[i][j];
 	logL_tmp[n_uniq] = logL[i][j];
