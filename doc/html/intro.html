@@ -8,7 +8,7 @@
     
     <title>Introduction to SLUG &mdash; slug 2.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,13 +23,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="Compiling and Installing SLUG" href="compiling.html" />
-    <link rel="prev" title="Getting SLUG" href="getting.html" /> 
+    <link rel="prev" title="Getting SLUG" href="getting.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,14 +48,14 @@
         <li class="right" >
           <a href="getting.html" title="Getting SLUG"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="introduction-to-slug">
 <h1>Introduction to SLUG<a class="headerlink" href="#introduction-to-slug" title="Permalink to this headline">¶</a></h1>
@@ -66,13 +70,13 @@
 </div>
 <div class="section" id="probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution">
 <span id="ssec-slugpdfs"></span><h2>Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution<a class="headerlink" href="#probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution" title="Permalink to this headline">¶</a></h2>
-<p>As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a> for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see <a class="reference internal" href="pdfs.html#sec-pdfs"><em>Probability Distribution Functions</em></a>. SLUG will also, upon user request, randomly draw a visual extinction A_V to be applied to the light.</p>
+<p>As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see <a class="reference internal" href="pdfs.html#sec-pdfs"><span>Probability Distribution Functions</span></a> for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see <a class="reference internal" href="pdfs.html#sec-pdfs"><span>Probability Distribution Functions</span></a>. SLUG will also, upon user request, randomly draw a visual extinction A_V to be applied to the light.</p>
 <p>For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction <span class="math">\(f_c\)</span> of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction <span class="math">\(1-f_c\)</span> of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars <span class="math">\(M_*\)</span> that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses <span class="math">\((1-f_c)M_*\)</span> and <span class="math">\(f_c M_*\)</span>. For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case, and each star is given its own randomly-generated extinction. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. Again, each cluster gets its own extinction. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.</p>
 <p>Finally, star clusters can be disrupted independent of the fate of their parent stars. When each cluster is formed, it is assigned a lifetime drawn from the CLF. Once that time has passed, the cluster ceases to be entered in the lists of individual cluster spectra and photometry (see next section), although the individual stars continue to contribute to the integrated light of the galaxy.</p>
 </div>
 <div class="section" id="spectra-and-photometry">
 <span id="ssec-spec-phot"></span><h2>Spectra and Photometry<a class="headerlink" href="#spectra-and-photometry" title="Permalink to this headline">¶</a></h2>
-<p>Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength <span class="math">\(L_\lambda\)</span>. Third, if nebular emission is enabled, the code calculates the spectrum <span class="math">\(L_{\lambda,\mathrm{neb}}\)</span> that emerges after the starlight passes through the HII region aruond the star &#8211; see <a class="reference internal" href="#ssec-nebula"><em>Nebular Processing</em></a>. Fourth, if extinction is enabled, SLUG computes the extincted stellar and nebula-processed spectra <span class="math">\(L_{\lambda,\mathrm{ex}}\)</span> and <span class="math">\(L_{\lambda,\mathrm{neb,ex}}\)</span> &#8211; see <a class="reference internal" href="#ssec-extinction"><em>Extinction</em></a>. Fifth and finally, SLUG computes photometry for the stellar population by integrating all computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:</p>
+<p>Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength <span class="math">\(L_\lambda\)</span>. Third, if nebular emission is enabled, the code calculates the spectrum <span class="math">\(L_{\lambda,\mathrm{neb}}\)</span> that emerges after the starlight passes through the HII region aruond the star &#8211; see <a class="reference internal" href="#ssec-nebula"><span>Nebular Processing</span></a>. Fourth, if extinction is enabled, SLUG computes the extincted stellar and nebula-processed spectra <span class="math">\(L_{\lambda,\mathrm{ex}}\)</span> and <span class="math">\(L_{\lambda,\mathrm{neb,ex}}\)</span> &#8211; see <a class="reference internal" href="#ssec-extinction"><span>Extinction</span></a>. Fifth and finally, SLUG computes photometry for the stellar population by integrating all computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:</p>
 <ul class="simple">
 <li>The frequency-averaged luminosity across the filter, defined as</li>
 </ul>
@@ -161,14 +165,14 @@
 </div>
 <div class="section" id="extinction">
 <span id="ssec-extinction"></span><h2>Extinction<a class="headerlink" href="#extinction" title="Permalink to this headline">¶</a></h2>
-<p>If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor <span class="math">\(\phi_{\mathrm{dust}}\)</span> used in the nebular emission calculation (see <a class="reference internal" href="#ssec-nebula"><em>Nebular Processing</em></a>) is not affected by the value of <span class="math">\(A_V\)</span> used in the calculation.</p>
+<p>If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor <span class="math">\(\phi_{\mathrm{dust}}\)</span> used in the nebular emission calculation (see <a class="reference internal" href="#ssec-nebula"><span>Nebular Processing</span></a>) is not affected by the value of <span class="math">\(A_V\)</span> used in the calculation.</p>
 <p>SLUG computes the extincted spectrum as</p>
 <div class="math">
 \[L_{\lambda,\mathrm{ex}} = L_{\lambda} e^{-\tau_\lambda}\]</div>
 <p>where the optical depth <span class="math">\(\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1.086)\)</span>, <span class="math">\(A_V\)</span> is the visual extinction in mag, the factor 1.086 is the conversion between magnitudes and the true dimensionless optical depth, <span class="math">\(\kappa_\lambda\)</span> is a user-specified input extinction at wavelength <span class="math">\(\lambda\)</span>, and the V-band mean opacity is defined by</p>
 <div class="math">
 \[\kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}\]</div>
-<p>where <span class="math">\(R_\nu(V)\)</span> is the filter response function as frequency <span class="math">\(\nu\)</span> for the Johnson V filter. The extinction curve <span class="math">\(\kappa_\lambda\)</span> can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see <a class="reference internal" href="parameters.html#ssec-phys-keywords"><em>Physical Model Keywords</em></a> for details.</p>
+<p>where <span class="math">\(R_\nu(V)\)</span> is the filter response function as frequency <span class="math">\(\nu\)</span> for the Johnson V filter. The extinction curve <span class="math">\(\kappa_\lambda\)</span> can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see <a class="reference internal" href="parameters.html#ssec-phys-keywords"><span>Physical Model Keywords</span></a> for details.</p>
 <p>The computation for <span class="math">\(L_{\lambda,\mathrm{neb,ex}}\)</span> is analogous.</p>
 </div>
 </div>
@@ -177,7 +181,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
@@ -199,12 +203,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="compiling.html"
                         title="next chapter">Compiling and Installing SLUG</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/intro.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/intro.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -221,27 +227,20 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="compiling.html" title="Compiling and Installing SLUG"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="getting.html" title="Getting SLUG"
-             >previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/intro.txt"
+          rel="nofollow">Page source</a></li>
     </div>
+
+    
+
+    
   </body>
 </html>

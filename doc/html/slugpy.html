@@ -8,7 +8,7 @@
     
     <title>slugpy – The Python Helper Library &mdash; slug 2.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,13 +23,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="cloudy_slug: An Automated Interface to cloudy" href="cloudy.html" />
-    <link rel="prev" title="Filters and Filter Data" href="filters.html" /> 
+    <link rel="prev" title="Filters and Filter Data" href="filters.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,14 +48,14 @@
         <li class="right" >
           <a href="filters.html" title="Filters and Filter Data"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="slugpy-the-python-helper-library">
 <span id="sec-slugpy"></span><h1>slugpy &#8211; The Python Helper Library<a class="headerlink" href="#slugpy-the-python-helper-library" title="Permalink to this headline">¶</a></h1>
@@ -63,7 +67,7 @@ idata = read_integrated(&#39;SLUG_MODEL_NAME&#39;)
 cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 </pre></div>
 </div>
-<p>The <tt class="docutils literal"><span class="pre">read_integrated</span></tt> function reads all the integrated-light data (i.e., the data stored in the <tt class="docutils literal"><span class="pre">_integrated_*</span></tt> files &#8211; see <a class="reference internal" href="output.html#sec-output"><em>Output Files and Format</em></a>) for a SLUG output whose name is given as the argument. This is the base name specified by the <tt class="docutils literal"><span class="pre">model_name</span></tt> keyword (see <a class="reference internal" href="parameters.html#ssec-basic-keywords"><em>Basic Keywords</em></a>), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a <tt class="docutils literal"><span class="pre">namedtuple</span></tt> containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><em>cloudy_slug: An Automated Interface to cloudy</em></a>) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:</p>
+<p>The <code class="docutils literal"><span class="pre">read_integrated</span></code> function reads all the integrated-light data (i.e., the data stored in the <code class="docutils literal"><span class="pre">_integrated_*</span></code> files &#8211; see <a class="reference internal" href="output.html#sec-output"><span>Output Files and Format</span></a>) for a SLUG output whose name is given as the argument. This is the base name specified by the <code class="docutils literal"><span class="pre">model_name</span></code> keyword (see <a class="reference internal" href="parameters.html#ssec-basic-keywords"><span>Basic Keywords</span></a>), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a <code class="docutils literal"><span class="pre">namedtuple</span></code> containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><span>cloudy_slug: An Automated Interface to cloudy</span></a>) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:</p>
 <ul class="simple">
 <li>time: output times</li>
 <li>target_mass: target stellar mass at each time</li>
@@ -80,8 +84,8 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>filter_wl_eff: effective wavelength for each photometric filter</li>
 <li>filter_wl: list of wavelengths for each filter at which the response function is given (in Angstrom)</li>
 <li>filter_response: photon response function for each filter at each wavelength (dimensionless)</li>
-<li>filter_beta: index <span class="math">\(\beta\)</span> used to set the normalization for each filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra and Photometry</em></a></li>
-<li>filter_wl_c: pivot wavelength used to set the normalization for each filter for which <span class="math">\(\beta \neq 0\)</span> &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><em>Spectra and Photometry</em></a></li>
+<li>filter_beta: index <span class="math">\(\beta\)</span> used to set the normalization for each filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span>Spectra and Photometry</span></a></li>
+<li>filter_wl_c: pivot wavelength used to set the normalization for each filter for which <span class="math">\(\beta \neq 0\)</span> &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span>Spectra and Photometry</span></a></li>
 <li>phot: photometry of the stars in each filter</li>
 </ul>
 <p>The following fields are present only if SLUG was run with nebular processing enabled:</p>
@@ -94,15 +98,15 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <ul class="simple">
 <li>wl_ex: wavelengths of output stellar spectra after extinction has been applied(in Angstrom). Note that wl_ex will generally cover a smaller wavelength range than wl, because the extinction curve used may not cover the full wavelength range of the stellar spectra. Extincted spectra are computed only over the range covered by the extinction curve.</li>
 <li>spec_ex: same as spec, but for the extincted spectrum</li>
-<li>phot_ex: same as phot, but for the extincted spectrum. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.</li>
+<li>phot_ex: same as phot, but for the extincted spectrum. Note that some values may be <code class="docutils literal"><span class="pre">NaN</span></code>. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.</li>
 </ul>
 <p>The following fields are present only if SLUG was run with both nebular processing and extinction enabled:</p>
 <ul class="simple">
 <li>wl_neb_ex: same as wl_neb, but for the extincted, nebular-processed spectrum. Will be limited to the same wavelength range as wl_ex.</li>
 <li>spec_neb_ex: same as spec_neb, but with extinction applied</li>
-<li>phot_neb_ex: same as phot_neb, but wtih extinction applied. Note that some values may be <tt class="docutils literal"><span class="pre">NaN</span></tt>. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.</li>
+<li>phot_neb_ex: same as phot_neb, but wtih extinction applied. Note that some values may be <code class="docutils literal"><span class="pre">NaN</span></code>. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.</li>
 </ul>
-<p>The following fields are present only for runs that have been processed through the cloudy_slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><em>cloudy_slug: An Automated Interface to cloudy</em></a>):</p>
+<p>The following fields are present only for runs that have been processed through the cloudy_slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><span>cloudy_slug: An Automated Interface to cloudy</span></a>):</p>
 <ul class="simple">
 <li>cloudy_wl: wavelengths of the output nebular spectra (in Angstrom)</li>
 <li>cloudy_inc: incident stellar radiation field, expressed as a specific luminosity (erg/s/Angstrom) &#8211; should be the same as spec, but binned onto cloudy&#8217;s wavelength grid; provided mainly as a bug-checking diagnostic</li>
@@ -116,7 +120,7 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>cloudy_phot_trans, cloudy_phot_emit, and cloudy_phot_trans_emit: photometry of the transmitted, emitted, and transmitted+emitted radiation field provided by cloudy_trans, cloudy_emit, and cloudy_trans_emit</li>
 </ul>
 <p>For the above fields, quantities that are different for each trial and each time are stored as numpy arrays with a shape (N_times, N_trials) for scalar quantities (e.g., actual_mass), or a shape (N, N_times, N_trials) for quantities that are vectors of length N (e.g., the spectrum).</p>
-<p>The <tt class="docutils literal"><span class="pre">read_cluster</span></tt> function is analogous, except that instead of reading the whole-galaxy data, it reads data on the individual star clusters, as stored in the <tt class="docutils literal"><span class="pre">_cluster_*</span></tt> output files. It returns the following fields:</p>
+<p>The <code class="docutils literal"><span class="pre">read_cluster</span></code> function is analogous, except that instead of reading the whole-galaxy data, it reads data on the individual star clusters, as stored in the <code class="docutils literal"><span class="pre">_cluster_*</span></code> output files. It returns the following fields:</p>
 <ul class="simple">
 <li>id: a unique identifier number for each cluster; this is guaranteed to be unique across both times and trials, so that if two clusters in the list have the same id number, that means that the data given are for the same cluster at two different times in its evolution</li>
 <li>trial: the trial number in which that cluster appeared</li>
@@ -137,7 +141,7 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <span id="full-documentation-of-slugpy"></span><h2>Full Documentation of slugpy<a class="headerlink" href="#module-slugpy" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="slugpy.combine_cluster">
-<tt class="descclassname">slugpy.</tt><tt class="descname">combine_cluster</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#slugpy.combine_cluster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">combine_cluster</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.combine_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to combine cluster data from multiple SLUG2 runs,
 treating each input run as a separate set of trials. Trial and
 cluster unique ID numbers are altered as necessary to avoid
@@ -161,7 +165,7 @@ returned by read_cluster</dd>
 
 <dl class="function">
 <dt id="slugpy.combine_integrated">
-<tt class="descclassname">slugpy.</tt><tt class="descname">combine_integrated</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#slugpy.combine_integrated" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">combine_integrated</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.combine_integrated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to combine integrated data from multiple SLUG2 runs,
 treating each input run as a separate set of trials.</p>
 <dl class="docutils">
@@ -183,7 +187,7 @@ returned by read_integrated</dd>
 
 <dl class="function">
 <dt id="slugpy.compute_photometry">
-<tt class="descclassname">slugpy.</tt><tt class="descname">compute_photometry</tt><big>(</big><em>wl</em>, <em>spec</em>, <em>filtername</em>, <em>photsystem='L_nu'</em>, <em>filter_wl=None</em>, <em>filter_response=None</em>, <em>filter_beta=None</em>, <em>filter_wl_c=None</em>, <em>filter_dir=None</em><big>)</big><a class="headerlink" href="#slugpy.compute_photometry" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">compute_photometry</code><span class="sig-paren">(</span><em>wl</em>, <em>spec</em>, <em>filtername</em>, <em>photsystem='L_nu'</em>, <em>filter_wl=None</em>, <em>filter_response=None</em>, <em>filter_beta=None</em>, <em>filter_wl_c=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.compute_photometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function takes an input spectrum and a set of response
 functions for photometric filters, and returns the photometry
 through those filters.</p>
@@ -246,7 +250,7 @@ Vega &#8211;&gt; absolute Vega magnitude;</dd>
 
 <dl class="function">
 <dt id="slugpy.photometry_convert">
-<tt class="descclassname">slugpy.</tt><tt class="descname">photometry_convert</tt><big>(</big><em>photsystem</em>, <em>phot</em>, <em>units</em>, <em>wl_cen=None</em>, <em>filter_last=False</em>, <em>filter_names=None</em>, <em>filter_dir=None</em><big>)</big><a class="headerlink" href="#slugpy.photometry_convert" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">photometry_convert</code><span class="sig-paren">(</span><em>photsystem</em>, <em>phot</em>, <em>units</em>, <em>wl_cen=None</em>, <em>filter_last=False</em>, <em>filter_names=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.photometry_convert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to convert photometric data between photometric systems.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -298,7 +302,7 @@ requires going between wavelength- and frequency-based systems</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read all cluster data for a SLUG2 run.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -514,7 +518,7 @@ ValueError, if photsystem is set to an unknown values</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_phot">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster_phot</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>phot_only=False</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster_phot" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster_phot</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>phot_only=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster_phot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_phot file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -625,7 +629,7 @@ ValueError, if photsystem is set to an unknown value</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_prop">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster_prop</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster_prop" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster_prop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_prop file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -685,7 +689,7 @@ run with extinction enabled)</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_spec">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_cluster_spec</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_cluster_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster_spec</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_spec file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -760,7 +764,7 @@ extinction both enabled)</dd>
 
 <dl class="function">
 <dt id="slugpy.read_filter">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_filter</tt><big>(</big><em>filtername</em>, <em>filter_dir=None</em><big>)</big><a class="headerlink" href="#slugpy.read_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_filter</code><span class="sig-paren">(</span><em>filtername</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a filter or set of filters for SLUG2. By default
 this function searches the SLUG_DIR/lib/filter directory, followed
 by the current working directory. This can be overridden by the
@@ -800,7 +804,7 @@ requested filter cannot be found</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_integrated</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_integrated" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read all integrated light data for a SLUG2 run.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1003,7 +1007,7 @@ indicated in the units field</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated_phot">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_integrated_phot</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em><big>)</big><a class="headerlink" href="#slugpy.read_integrated_phot" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated_phot</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated_phot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 integrated_phot file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1109,7 +1113,7 @@ ValueError, if photsystem is set to an unknown value</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated_prop">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_integrated_prop</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_integrated_prop" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated_prop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 integrated_prop file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1168,7 +1172,7 @@ each time in each trial</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated_spec">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_integrated_spec</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><big>)</big><a class="headerlink" href="#slugpy.read_integrated_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated_spec</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 integrated_spec file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1240,7 +1244,7 @@ extinction both enabled)</dd>
 
 <dl class="function">
 <dt id="slugpy.read_summary">
-<tt class="descclassname">slugpy.</tt><tt class="descname">read_summary</tt><big>(</big><em>model_name</em>, <em>output_dir=None</em><big>)</big><a class="headerlink" href="#slugpy.read_summary" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_summary</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_summary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to open a SLUG output summary file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1266,7 +1270,7 @@ directory if that environment variable is set</dd>
 
 <dl class="function">
 <dt id="slugpy.slug_open">
-<tt class="descclassname">slugpy.</tt><tt class="descname">slug_open</tt><big>(</big><em>filename</em>, <em>output_dir=None</em>, <em>fmt=None</em><big>)</big><a class="headerlink" href="#slugpy.slug_open" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">slug_open</code><span class="sig-paren">(</span><em>filename</em>, <em>output_dir=None</em>, <em>fmt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.slug_open" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to open a SLUG2 output file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1304,7 +1308,7 @@ it fails again try FITS files.</dd>
 
 <dl class="function">
 <dt id="slugpy.write_cluster">
-<tt class="descclassname">slugpy.</tt><tt class="descname">write_cluster</tt><big>(</big><em>data</em>, <em>model_name</em>, <em>fmt</em><big>)</big><a class="headerlink" href="#slugpy.write_cluster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">write_cluster</code><span class="sig-paren">(</span><em>data</em>, <em>model_name</em>, <em>fmt</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.write_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to write a set of output cluster files in SLUG2 format,
 starting from a cluster data set as returned by read_cluster.</p>
 <dl class="docutils">
@@ -1331,7 +1335,7 @@ too large to fit in memory</dd>
 
 <dl class="function">
 <dt id="slugpy.write_integrated">
-<tt class="descclassname">slugpy.</tt><tt class="descname">write_integrated</tt><big>(</big><em>data</em>, <em>model_name</em>, <em>fmt</em><big>)</big><a class="headerlink" href="#slugpy.write_integrated" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">write_integrated</code><span class="sig-paren">(</span><em>data</em>, <em>model_name</em>, <em>fmt</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.write_integrated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to write a set of output integrated files in SLUG2 format,
 starting from an integrated data set as returned by
 read_integrated.</p>
@@ -1361,7 +1365,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
@@ -1378,12 +1382,14 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
   <h4>Next topic</h4>
   <p class="topless"><a href="cloudy.html"
                         title="next chapter">cloudy_slug: An Automated Interface to cloudy</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/slugpy.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/slugpy.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -1400,27 +1406,20 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="cloudy.html" title="cloudy_slug: An Automated Interface to cloudy"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="filters.html" title="Filters and Filter Data"
-             >previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/slugpy.txt"
+          rel="nofollow">Page source</a></li>
     </div>
+
+    
+
+    
   </body>
 </html>

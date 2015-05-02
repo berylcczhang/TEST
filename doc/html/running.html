@@ -8,7 +8,7 @@
     
     <title>Running a SLUG simulation &mdash; slug 2.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,13 +23,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="Parameter Specification" href="parameters.html" />
-    <link rel="prev" title="Compiling and Installing SLUG" href="compiling.html" /> 
+    <link rel="prev" title="Compiling and Installing SLUG" href="compiling.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,22 +48,22 @@
         <li class="right" >
           <a href="compiling.html" title="Compiling and Installing SLUG"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="running-a-slug-simulation">
 <h1>Running a SLUG simulation<a class="headerlink" href="#running-a-slug-simulation" title="Permalink to this headline">¶</a></h1>
-<p>Once SLUG is compiled, running a simulation is extremely simple. The first step, which is not required but makes life a lot simpler, is to set the environment variable <tt class="docutils literal"><span class="pre">SLUG_DIR</span></tt> to the directory where you have installed SLUG. If you are using a <tt class="docutils literal"><span class="pre">bash</span></tt>-like shell, the syntax for this is:</p>
+<p>Once SLUG is compiled, running a simulation is extremely simple. The first step, which is not required but makes life a lot simpler, is to set the environment variable <code class="docutils literal"><span class="pre">SLUG_DIR</span></code> to the directory where you have installed SLUG. If you are using a <code class="docutils literal"><span class="pre">bash</span></code>-like shell, the syntax for this is:</p>
 <div class="highlight-rest"><div class="highlight"><pre>export SLUG_DIR = /path/to/slug
 </pre></div>
 </div>
-<p>while for a <tt class="docutils literal"><span class="pre">csh</span></tt>-like shell, it is:</p>
+<p>while for a <code class="docutils literal"><span class="pre">csh</span></code>-like shell, it is:</p>
 <div class="highlight-rest"><div class="highlight"><pre>setenv SLUG_DIR /path/to/slug
 </pre></div>
 </div>
@@ -68,16 +72,16 @@
 <div class="highlight-rest"><div class="highlight"><pre>./bin/slug param/filename.param
 </pre></div>
 </div>
-<p>where <tt class="docutils literal"><span class="pre">filename.param</span></tt> is the name of a parameter file, formatted as specified in <a class="reference internal" href="parameters.html#sec-parameters"><em>Parameter Specification</em></a>. The code will write a series of output files as described in <a class="reference internal" href="output.html#sec-output"><em>Output Files and Format</em></a>.</p>
+<p>where <code class="docutils literal"><span class="pre">filename.param</span></code> is the name of a parameter file, formatted as specified in <a class="reference internal" href="parameters.html#sec-parameters"><span>Parameter Specification</span></a>. The code will write a series of output files as described in <a class="reference internal" href="output.html#sec-output"><span>Output Files and Format</span></a>.</p>
 <p>If you have more than one core at your disposal, you can also run SLUG in parallel, using the command line:</p>
 <div class="highlight-rest"><div class="highlight"><pre>python ./bin/slug.py param/filename.param
 </pre></div>
 </div>
 <p>This called a python script that automatically divides up the Monte Carlo trials you have requested between the available processors, then consolidates the output so that it looks the same as if you had run a single-processor job. The python script allows fairly fine-grained control of the parallelism. It accepts the following command line arguments:</p>
 <ul class="simple">
-<li><tt class="docutils literal"><span class="pre">-n</span> <span class="pre">NPROC,</span> <span class="pre">--nproc</span> <span class="pre">NPROC</span></tt>: this parameter specifies the number of simultaneous SLUG processes to run. It defaults to the number of cores present on the machine where the code is running</li>
-<li><tt class="docutils literal"><span class="pre">-b</span> <span class="pre">BATCHSIZE,</span> <span class="pre">--batchsize</span> <span class="pre">BATCHSIZE</span></tt>: this specifies how to many trials to do per SLUG process. It defaults to the total number of trials requested divided by the total number of processes, rounded up, so that only one SLUG process is run per processor. <em>Rationale</em>: The default behavior is optimal from the standpoint of minimizing the overhead associated with reading data from disk, etc. However, if you are doing a very large number of runs that are going to require hours, days, or weeks to complete, and you probably want the code to checkpoint along the way. In that case it is probably wise to set this to a value smaller than the default in order to force output to be dumped periodically.</li>
-<li><tt class="docutils literal"><span class="pre">-nc,</span> <span class="pre">--noconsolidate</span></tt>: by default the <tt class="docutils literal"><span class="pre">slug.py</span></tt> script will take all the outputs produced by the parallel runs and consolidate them into single output files, matching what would have been produced had the code been run in serial mode. If set, this flag suppresses that behavior, and instead leaves the output as a series of files whose root names match the model name given in the parameter file, plus the extension <tt class="docutils literal"><span class="pre">_pPPPPP_nNNNNN</span></tt>, where the digits <tt class="docutils literal"><span class="pre">PPPPP</span></tt> give the number of the processor that produces that file, and the digits <tt class="docutils literal"><span class="pre">NNNNN</span></tt> give the run number on that processor. <em>Rationale</em>: normally consolidation is convenient. However, if the output is very large, this may produce undesirably bulky files. Furthermore, if one is doing a very large number of simulations over an extended period, and the <tt class="docutils literal"><span class="pre">slug.py</span></tt> script is going to be run multiple times (e.g.due to wall clock limits on a cluster), it may be preferable to leave the files unconsolidated until all runs have been completed.</li>
+<li><code class="docutils literal"><span class="pre">-n</span> <span class="pre">NPROC,</span> <span class="pre">--nproc</span> <span class="pre">NPROC</span></code>: this parameter specifies the number of simultaneous SLUG processes to run. It defaults to the number of cores present on the machine where the code is running</li>
+<li><code class="docutils literal"><span class="pre">-b</span> <span class="pre">BATCHSIZE,</span> <span class="pre">--batchsize</span> <span class="pre">BATCHSIZE</span></code>: this specifies how to many trials to do per SLUG process. It defaults to the total number of trials requested divided by the total number of processes, rounded up, so that only one SLUG process is run per processor. <em>Rationale</em>: The default behavior is optimal from the standpoint of minimizing the overhead associated with reading data from disk, etc. However, if you are doing a very large number of runs that are going to require hours, days, or weeks to complete, and you probably want the code to checkpoint along the way. In that case it is probably wise to set this to a value smaller than the default in order to force output to be dumped periodically.</li>
+<li><code class="docutils literal"><span class="pre">-nc,</span> <span class="pre">--noconsolidate</span></code>: by default the <code class="docutils literal"><span class="pre">slug.py</span></code> script will take all the outputs produced by the parallel runs and consolidate them into single output files, matching what would have been produced had the code been run in serial mode. If set, this flag suppresses that behavior, and instead leaves the output as a series of files whose root names match the model name given in the parameter file, plus the extension <code class="docutils literal"><span class="pre">_pPPPPP_nNNNNN</span></code>, where the digits <code class="docutils literal"><span class="pre">PPPPP</span></code> give the number of the processor that produces that file, and the digits <code class="docutils literal"><span class="pre">NNNNN</span></code> give the run number on that processor. <em>Rationale</em>: normally consolidation is convenient. However, if the output is very large, this may produce undesirably bulky files. Furthermore, if one is doing a very large number of simulations over an extended period, and the <code class="docutils literal"><span class="pre">slug.py</span></code> script is going to be run multiple times (e.g.due to wall clock limits on a cluster), it may be preferable to leave the files unconsolidated until all runs have been completed.</li>
 </ul>
 </div>
 
@@ -85,7 +89,7 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="compiling.html"
@@ -93,12 +97,14 @@
   <h4>Next topic</h4>
   <p class="topless"><a href="parameters.html"
                         title="next chapter">Parameter Specification</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/running.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/running.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -115,27 +121,20 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="parameters.html" title="Parameter Specification"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="compiling.html" title="Compiling and Installing SLUG"
-             >previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/running.txt"
+          rel="nofollow">Page source</a></li>
     </div>
+
+    
+
+    
   </body>
 </html>

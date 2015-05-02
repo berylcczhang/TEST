@@ -8,7 +8,7 @@
     
     <title>bayesphot: Bayesian Inference for Stochastic Stellar Populations &mdash; slug 2.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,13 +23,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="cluster_slug: Bayesian Inference of Star Cluster Properties" href="cluster_slug.html" />
-    <link rel="prev" title="cloudy_slug: An Automated Interface to cloudy" href="cloudy.html" /> 
+    <link rel="prev" title="cloudy_slug: An Automated Interface to cloudy" href="cloudy.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,25 +48,25 @@
         <li class="right" >
           <a href="cloudy.html" title="cloudy_slug: An Automated Interface to cloudy"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="bayesphot-bayesian-inference-for-stochastic-stellar-populations">
 <span id="sec-bayesphot"></span><h1>bayesphot: Bayesian Inference for Stochastic Stellar Populations<a class="headerlink" href="#bayesphot-bayesian-inference-for-stochastic-stellar-populations" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="what-does-bayesphot-do">
 <h2>What Does bayesphot Do?<a class="headerlink" href="#what-does-bayesphot-do" title="Permalink to this headline">¶</a></h2>
 <p>Bayesphot is a package for performing Bayesian inference for the physical properties of a stellar system using its measured photometric properties, in a case where the photometric properties vary non-deterministically with the physical properties. Formally, bayesphot answers the following question: consider a stellar system characterized by a vector of <span class="math">\(\mathbf{x} = (x_1, x_2, \ldots x_N)\)</span> physical properties. We have a physical model that lets us sample the expected photometric properties as a function of physical properties, i.e., that for some sample of <span class="math">\(K\)</span> systems with physical properties <span class="math">\(\mathbf{x}_k\)</span> we are able to compute the corresponding photometric properties <span class="math">\(\mathbf{y}_k = \mathbf{y} = (y_1, y_2, \ldots y_M)_k\)</span>. Now suppose that we observe such a system, and we observe it to have photometric properties <span class="math">\(\mathbf{y}_{\mathrm{obs}}\)</span>, with some set of photometric errors <span class="math">\(\mathbf{\sigma}_{\mathbf{y}} = (\sigma_{y_1}, \sigma_{y_2}, \ldots \sigma_{y_M})\)</span>, which are assumed to be Gaussian-distributed. What should we infer about the posterior probability distribution of the physical properties, i.e., given a set of prior probabilities <span class="math">\(p(\mathbf{x})\)</span>, plus our measurements, what is <span class="math">\(p(\mathbf{x} \mid \mathbf{y}_{\mathrm{obs}}, \mathbf{\sigma}_{\mathrm{y}})\)</span>?</p>
-<p>The kernel density estimation algorithm that bayesphot uses to answer this question is described and derived in the slug methods paper. Bayesphot is implemented in two parts: a shared object library that is implemented in c, and that is compiled at the same time that slug is built, and a python wrapper class called <tt class="docutils literal"><span class="pre">bp</span></tt> that is included in the slugpy.bayesphot module. The following sections describe how to use <tt class="docutils literal"><span class="pre">bp</span></tt> objects to generate posterior PDFs.</p>
+<p>The kernel density estimation algorithm that bayesphot uses to answer this question is described and derived in the slug methods paper. Bayesphot is implemented in two parts: a shared object library that is implemented in c, and that is compiled at the same time that slug is built, and a python wrapper class called <code class="docutils literal"><span class="pre">bp</span></code> that is included in the slugpy.bayesphot module. The following sections describe how to use <code class="docutils literal"><span class="pre">bp</span></code> objects to generate posterior PDFs.</p>
 </div>
 <div class="section" id="creating-bp-objects">
-<h2>Creating <tt class="docutils literal"><span class="pre">bp</span></tt> Objects<a class="headerlink" href="#creating-bp-objects" title="Permalink to this headline">¶</a></h2>
-<p>The <tt class="docutils literal"><span class="pre">bp</span></tt> class can be imported via:</p>
+<h2>Creating <code class="docutils literal"><span class="pre">bp</span></code> Objects<a class="headerlink" href="#creating-bp-objects" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">bp</span></code> class can be imported via:</p>
 <div class="highlight-rest"><div class="highlight"><pre>from slugpy.bayesphot import *
 </pre></div>
 </div>
@@ -70,26 +74,26 @@
 <div class="highlight-rest"><div class="highlight"><pre>from slugpy.bayesphot import bp<span class="s">``</span>
 </pre></div>
 </div>
-<p>Once imported, a <tt class="docutils literal"><span class="pre">bp</span></tt> object can be instantiated. The call signature for the <tt class="docutils literal"><span class="pre">bp</span></tt> constructor class is:</p>
+<p>Once imported, a <code class="docutils literal"><span class="pre">bp</span></code> object can be instantiated. The call signature for the <code class="docutils literal"><span class="pre">bp</span></code> constructor class is:</p>
 <div class="highlight-rest"><div class="highlight"><pre>def __init__(self, dataset, nphys, filters=None, bandwidth=&#39;auto&#39;,
              ktype=&#39;gaussian&#39;, priors=None, sample_density=None,
              reltol=1.0e-3, abstol=1.0e-10, leafsize=16):
 </pre></div>
 </div>
-<p>A full description of all options is included in the <a class="reference internal" href="#ssec-slugpy-bayesphot"><em>Full Documentation of slugpy.bayesphot</em></a>, but the essential features are summarized here.</p>
-<p>The argument <tt class="docutils literal"><span class="pre">dataset</span></tt> is an array of shape (N, M) that contains the library of N models that represents the training set for the Bayesian analysis. Each model consists of M properties; the first <tt class="docutils literal"><span class="pre">nphys</span></tt> of these are physical properties that are the quantities to be inferred from the observations, while the remaining ones are photometric properties. An important point is that the <tt class="docutils literal"><span class="pre">dataset</span></tt> object is NOT copied, so altering it after the <tt class="docutils literal"><span class="pre">bp</span></tt> object is created will result in erroneous results.</p>
-<p>The <tt class="docutils literal"><span class="pre">priors</span></tt> and <tt class="docutils literal"><span class="pre">sample_density</span></tt> arguments are used to compute the weighting to apply to the input models. The <tt class="docutils literal"><span class="pre">priors</span></tt> argument specifies the prior probability to assign to each model; it can be either an array giving a prior probability directly, or a callable that can take the physical properties of models as an input and return the prior probability as an output. Similarly, the <tt class="docutils literal"><span class="pre">sample_density</span></tt> argument specifies the probablity distribution from which the physical models were selected; as with <tt class="docutils literal"><span class="pre">priors</span></tt>, it can be an array or a callable.</p>
-<p>The <tt class="docutils literal"><span class="pre">bandwidth</span></tt> argument specifies the bandwidth to use in the kernel density estimation; this need not be the same in each dimension. The <tt class="docutils literal"><span class="pre">bandwidth</span></tt> can be specified as a float, in which case it is the same for every dimension, or as an array of M elements giving the bandwidth for every dimension. Finally, it can be set to the string <tt class="docutils literal"><span class="pre">auto</span></tt>, in which case the <tt class="docutils literal"><span class="pre">bp</span></tt> will attempt to make a reasonable choice of bandwidth autonomously. However, this autonomous choice will probably perform less well than something that is hand-chosen by the user based on their knowledge of the library. As a rule of thumb, bandwidths should be chosen so that, for typical input photometric values, there are ~10 simulations within the 1 kernel size.</p>
-<p>Note that both <tt class="docutils literal"><span class="pre">priors</span></tt> and <tt class="docutils literal"><span class="pre">bandwidth</span></tt> are properties of the <tt class="docutils literal"><span class="pre">bp</span></tt> class, and can be altered after the <tt class="docutils literal"><span class="pre">bp</span></tt> object is created. This makes it possible to alter the priors and bandwidth without incurring the computational or memory cost of generating an entirely new <tt class="docutils literal"><span class="pre">bp</span></tt> object.</p>
+<p>A full description of all options is included in the <a class="reference internal" href="#ssec-slugpy-bayesphot"><span>Full Documentation of slugpy.bayesphot</span></a>, but the essential features are summarized here.</p>
+<p>The argument <code class="docutils literal"><span class="pre">dataset</span></code> is an array of shape (N, M) that contains the library of N models that represents the training set for the Bayesian analysis. Each model consists of M properties; the first <code class="docutils literal"><span class="pre">nphys</span></code> of these are physical properties that are the quantities to be inferred from the observations, while the remaining ones are photometric properties. An important point is that the <code class="docutils literal"><span class="pre">dataset</span></code> object is NOT copied, so altering it after the <code class="docutils literal"><span class="pre">bp</span></code> object is created will result in erroneous results.</p>
+<p>The <code class="docutils literal"><span class="pre">priors</span></code> and <code class="docutils literal"><span class="pre">sample_density</span></code> arguments are used to compute the weighting to apply to the input models. The <code class="docutils literal"><span class="pre">priors</span></code> argument specifies the prior probability to assign to each model; it can be either an array giving a prior probability directly, or a callable that can take the physical properties of models as an input and return the prior probability as an output. Similarly, the <code class="docutils literal"><span class="pre">sample_density</span></code> argument specifies the probablity distribution from which the physical models were selected; as with <code class="docutils literal"><span class="pre">priors</span></code>, it can be an array or a callable.</p>
+<p>The <code class="docutils literal"><span class="pre">bandwidth</span></code> argument specifies the bandwidth to use in the kernel density estimation; this need not be the same in each dimension. The <code class="docutils literal"><span class="pre">bandwidth</span></code> can be specified as a float, in which case it is the same for every dimension, or as an array of M elements giving the bandwidth for every dimension. Finally, it can be set to the string <code class="docutils literal"><span class="pre">auto</span></code>, in which case the <code class="docutils literal"><span class="pre">bp</span></code> will attempt to make a reasonable choice of bandwidth autonomously. However, this autonomous choice will probably perform less well than something that is hand-chosen by the user based on their knowledge of the library. As a rule of thumb, bandwidths should be chosen so that, for typical input photometric values, there are ~10 simulations within the 1 kernel size.</p>
+<p>Note that both <code class="docutils literal"><span class="pre">priors</span></code> and <code class="docutils literal"><span class="pre">bandwidth</span></code> are properties of the <code class="docutils literal"><span class="pre">bp</span></code> class, and can be altered after the <code class="docutils literal"><span class="pre">bp</span></code> object is created. This makes it possible to alter the priors and bandwidth without incurring the computational or memory cost of generating an entirely new <code class="docutils literal"><span class="pre">bp</span></code> object.</p>
 </div>
 <div class="section" id="using-bp-objects">
-<h2>Using <tt class="docutils literal"><span class="pre">bp</span></tt> Objects<a class="headerlink" href="#using-bp-objects" title="Permalink to this headline">¶</a></h2>
-<p>Once a <tt class="docutils literal"><span class="pre">bp</span></tt> object is instantiated, it can be used to compute likelihood functions, marginal probabilities, and MCMC sample ensembles, and to search the library for the best matches to an input set of photometry.</p>
-<p>The likelihood function is implemented via the <tt class="docutils literal"><span class="pre">bp.logL</span></tt> method, which has the call signature:</p>
+<h2>Using <code class="docutils literal"><span class="pre">bp</span></code> Objects<a class="headerlink" href="#using-bp-objects" title="Permalink to this headline">¶</a></h2>
+<p>Once a <code class="docutils literal"><span class="pre">bp</span></code> object is instantiated, it can be used to compute likelihood functions, marginal probabilities, and MCMC sample ensembles, and to search the library for the best matches to an input set of photometry.</p>
+<p>The likelihood function is implemented via the <code class="docutils literal"><span class="pre">bp.logL</span></code> method, which has the call signature:</p>
 <div class="highlight-rest"><div class="highlight"><pre>def logL(self, physprop, photprop, photerr=None):
 </pre></div>
 </div>
-<p>The argument <tt class="docutils literal"><span class="pre">physprop</span></tt> is a set of physical properties, the argument <tt class="docutils literal"><span class="pre">photprop</span></tt> is a set of photometric properties, and the argument <tt class="docutils literal"><span class="pre">photerr</span></tt> is an (optional) set of photometric errors. All of these must be arrays, the size of whose trailing dimension matches the number of physical properties (for <tt class="docutils literal"><span class="pre">physprop</span></tt>) or the number of photometric properties (for <tt class="docutils literal"><span class="pre">photprop</span></tt> and <tt class="docutils literal"><span class="pre">photerr</span></tt>); the leading dimensions of these arrays are broadcast together using normal broadcasting rules. The quantity returned is the log of the joint probability distribution of physical and photometric properties. Specifically, the quantity returned for each input set of physical and photometric properties is</p>
+<p>The argument <code class="docutils literal"><span class="pre">physprop</span></code> is a set of physical properties, the argument <code class="docutils literal"><span class="pre">photprop</span></code> is a set of photometric properties, and the argument <code class="docutils literal"><span class="pre">photerr</span></code> is an (optional) set of photometric errors. All of these must be arrays, the size of whose trailing dimension matches the number of physical properties (for <code class="docutils literal"><span class="pre">physprop</span></code>) or the number of photometric properties (for <code class="docutils literal"><span class="pre">photprop</span></code> and <code class="docutils literal"><span class="pre">photerr</span></code>); the leading dimensions of these arrays are broadcast together using normal broadcasting rules. The quantity returned is the log of the joint probability distribution of physical and photometric properties. Specifically, the quantity returned for each input set of physical and photometric properties is</p>
 <div class="math">
 \[\log p(\mathbf{x}, \mathbf{y}, \sigma_{\mathbf{y}}) = \log A \sum_{i=1}^N w_i G(\mathbf{x}, \mathbf{y}; \mathbf{h}')\]</div>
 <p>where <span class="math">\(A\)</span> is a normalization constant chosen to ensure that the PDF integrated over all space is unity, <span class="math">\(\mathbf{x}\)</span> is the vector of physical properties, <span class="math">\(\mathbf{y}\)</span> is the vector of photometric properties, <span class="math">\(\sigma_\mathbf{y}\)</span> is the vector of photomtric errors, <span class="math">\(w_i\)</span> is the weight of the ith model as determined by the priors and sample density,</p>
@@ -99,23 +103,23 @@
 <div class="math">
 \[\mathbf{h'} = \sqrt{\mathbf{h}^2 + \sigma_{\mathbf{y}}^2}\]</div>
 <p>is the modified bandwidth, which is equal to the bandwidth used for kernel density estimation added in quadrature sum with the errors in the photometric quantities (see the slug method paper for details).</p>
-<p>Estimation of marginal PDFs is done via the <tt class="docutils literal"><span class="pre">bp.mpdf</span></tt> method, which has the call signature:</p>
+<p>Estimation of marginal PDFs is done via the <code class="docutils literal"><span class="pre">bp.mpdf</span></code> method, which has the call signature:</p>
 <div class="highlight-rest"><div class="highlight"><pre>def mpdf(self, idx, photprop, photerr=None, ngrid=128,
          qmin=None, qmax=None, grid=None, norm=True):
 </pre></div>
 </div>
-<p>The argument <tt class="docutils literal"><span class="pre">idx</span></tt> is an int or a list of ints between 0 and nphys-1, which specifies for which physical quantity or physical quantities the marginal PDF is to be computed. These indices refer to the indices in the <tt class="docutils literal"><span class="pre">dataset</span></tt> array that was input when the <tt class="docutils literal"><span class="pre">bp</span></tt> object was instantiated. The arguments <tt class="docutils literal"><span class="pre">photprop</span></tt> and <tt class="docutils literal"><span class="pre">photerr</span></tt> give the photometric measurements and their errors for which the marginal PDFs are to be computed; they must be arrays whose trailing dimension is equal to the number of photometric quantities. The leading dimensions of these arrays are broadcast together following the normal broadcasting rules. By default each physical quantity will be estimated on a grid of 128 points, evenly spaced from the lowest value of that physical property in the model library to the highest value. The parameters <tt class="docutils literal"><span class="pre">qmin</span></tt>, <tt class="docutils literal"><span class="pre">qmax</span></tt>, <tt class="docutils literal"><span class="pre">ngrid</span></tt>, and <tt class="docutils literal"><span class="pre">grid</span></tt> can be used to override this behavior and set the grid of evaluation points manually. The function returns a tuple <tt class="docutils literal"><span class="pre">grid_out,</span> <span class="pre">pdf</span></tt>; here <tt class="docutils literal"><span class="pre">grid_out</span></tt> is the grid of points on which the marginal PDF has been computed, and <tt class="docutils literal"><span class="pre">pdf</span></tt> is the value of the marginal PDF evaluated at those gridpoints.</p>
-<p>MCMC calculations are implemented via the method <tt class="docutils literal"><span class="pre">bp.mcmc</span></tt>; this method relies on the <a class="reference external" href="http://dan.iel.fm/emcee/current/">emcee</a> python module, and will only function if it is installed. The call signature is:</p>
+<p>The argument <code class="docutils literal"><span class="pre">idx</span></code> is an int or a list of ints between 0 and nphys-1, which specifies for which physical quantity or physical quantities the marginal PDF is to be computed. These indices refer to the indices in the <code class="docutils literal"><span class="pre">dataset</span></code> array that was input when the <code class="docutils literal"><span class="pre">bp</span></code> object was instantiated. The arguments <code class="docutils literal"><span class="pre">photprop</span></code> and <code class="docutils literal"><span class="pre">photerr</span></code> give the photometric measurements and their errors for which the marginal PDFs are to be computed; they must be arrays whose trailing dimension is equal to the number of photometric quantities. The leading dimensions of these arrays are broadcast together following the normal broadcasting rules. By default each physical quantity will be estimated on a grid of 128 points, evenly spaced from the lowest value of that physical property in the model library to the highest value. The parameters <code class="docutils literal"><span class="pre">qmin</span></code>, <code class="docutils literal"><span class="pre">qmax</span></code>, <code class="docutils literal"><span class="pre">ngrid</span></code>, and <code class="docutils literal"><span class="pre">grid</span></code> can be used to override this behavior and set the grid of evaluation points manually. The function returns a tuple <code class="docutils literal"><span class="pre">grid_out,</span> <span class="pre">pdf</span></code>; here <code class="docutils literal"><span class="pre">grid_out</span></code> is the grid of points on which the marginal PDF has been computed, and <code class="docutils literal"><span class="pre">pdf</span></code> is the value of the marginal PDF evaluated at those gridpoints.</p>
+<p>MCMC calculations are implemented via the method <code class="docutils literal"><span class="pre">bp.mcmc</span></code>; this method relies on the <a class="reference external" href="http://dan.iel.fm/emcee/current/">emcee</a> python module, and will only function if it is installed. The call signature is:</p>
 <div class="highlight-rest"><div class="highlight"><pre>def mcmc(self, photprop, photerr=None, mc_walkers=100,
          mc_steps=500, mc_burn_in=50):
 </pre></div>
 </div>
-<p>The quantities <tt class="docutils literal"><span class="pre">photprop</span></tt> and <tt class="docutils literal"><span class="pre">photerr</span></tt> have the same meaning as for <tt class="docutils literal"><span class="pre">bp.mpdf</span></tt>, and the quantities <tt class="docutils literal"><span class="pre">mc_walkers</span></tt>, <tt class="docutils literal"><span class="pre">mc_steps</span></tt>, and <tt class="docutils literal"><span class="pre">mc_burn_in</span></tt> are passed directly to <tt class="docutils literal"><span class="pre">emcee</span></tt>, and are described in <a class="reference external" href="http://dan.iel.fm/emcee/current/">emcee&#8217;s documentation</a>. The quantity returned is an array of sample points computed by the MCMC; its format is also described in <a class="reference external" href="http://dan.iel.fm/emcee/current/">emcee&#8217;s documentation</a>. Note that, although <tt class="docutils literal"><span class="pre">bp.mcmc</span></tt> can be used to compute marginal PDFs of the physical quantities, for marginal PDFs of 1 quantity or joint PDFs of 2 quantities it is almost always faster to use <tt class="docutils literal"><span class="pre">bp.mpdf</span></tt> than <tt class="docutils literal"><span class="pre">bp.mcmc</span></tt>. This is because <tt class="docutils literal"><span class="pre">bp.mpdf</span></tt> takes advantage of the fact that integrals of cuts through N-dimensional Gaussians can be integrated analytically to compute the marginal PDFs directly, though needing to evaluate the likelihood function point by point. In contrast, the general MCMC algorithm used by <tt class="docutils literal"><span class="pre">emcee</span></tt> effectively does the integral numerically.</p>
-<p>The <tt class="docutils literal"><span class="pre">bp.bestmatch</span></tt> method searches through the model library and finds the N library entries that are closest to an input set of photometry. The call signature is:</p>
+<p>The quantities <code class="docutils literal"><span class="pre">photprop</span></code> and <code class="docutils literal"><span class="pre">photerr</span></code> have the same meaning as for <code class="docutils literal"><span class="pre">bp.mpdf</span></code>, and the quantities <code class="docutils literal"><span class="pre">mc_walkers</span></code>, <code class="docutils literal"><span class="pre">mc_steps</span></code>, and <code class="docutils literal"><span class="pre">mc_burn_in</span></code> are passed directly to <code class="docutils literal"><span class="pre">emcee</span></code>, and are described in <a class="reference external" href="http://dan.iel.fm/emcee/current/">emcee&#8217;s documentation</a>. The quantity returned is an array of sample points computed by the MCMC; its format is also described in <a class="reference external" href="http://dan.iel.fm/emcee/current/">emcee&#8217;s documentation</a>. Note that, although <code class="docutils literal"><span class="pre">bp.mcmc</span></code> can be used to compute marginal PDFs of the physical quantities, for marginal PDFs of 1 quantity or joint PDFs of 2 quantities it is almost always faster to use <code class="docutils literal"><span class="pre">bp.mpdf</span></code> than <code class="docutils literal"><span class="pre">bp.mcmc</span></code>. This is because <code class="docutils literal"><span class="pre">bp.mpdf</span></code> takes advantage of the fact that integrals of cuts through N-dimensional Gaussians can be integrated analytically to compute the marginal PDFs directly, though needing to evaluate the likelihood function point by point. In contrast, the general MCMC algorithm used by <code class="docutils literal"><span class="pre">emcee</span></code> effectively does the integral numerically.</p>
+<p>The <code class="docutils literal"><span class="pre">bp.bestmatch</span></code> method searches through the model library and finds the N library entries that are closest to an input set of photometry. The call signature is:</p>
 <div class="highlight-rest"><div class="highlight"><pre>def bestmatch(self, phot, nmatch=1, bandwidth_units=False):
 </pre></div>
 </div>
-<p>Here <tt class="docutils literal"><span class="pre">phot</span></tt> is the set of photometric properties, which is identical to the <tt class="docutils literal"><span class="pre">photprop</span></tt> parameter used by <tt class="docutils literal"><span class="pre">logL</span></tt>, <tt class="docutils literal"><span class="pre">mpdf</span></tt>, and <tt class="docutils literal"><span class="pre">mcmc</span></tt>. The argument <tt class="docutils literal"><span class="pre">nmatch</span></tt> specifies how many matches to return, and the argument <tt class="docutils literal"><span class="pre">bandwidth_units</span></tt> specifies whether distances are to be measured using an ordinary Euclidean metric, or in units of the kernel bandwidth in a given direction. The function returns, for each input set of photometry, the physical and photometric properties of the <tt class="docutils literal"><span class="pre">nmatch</span></tt> models in the library that are closest to the input photometric values. This can be used to judge if a good match to the input photometry is present in the library.</p>
+<p>Here <code class="docutils literal"><span class="pre">phot</span></code> is the set of photometric properties, which is identical to the <code class="docutils literal"><span class="pre">photprop</span></code> parameter used by <code class="docutils literal"><span class="pre">logL</span></code>, <code class="docutils literal"><span class="pre">mpdf</span></code>, and <code class="docutils literal"><span class="pre">mcmc</span></code>. The argument <code class="docutils literal"><span class="pre">nmatch</span></code> specifies how many matches to return, and the argument <code class="docutils literal"><span class="pre">bandwidth_units</span></code> specifies whether distances are to be measured using an ordinary Euclidean metric, or in units of the kernel bandwidth in a given direction. The function returns, for each input set of photometry, the physical and photometric properties of the <code class="docutils literal"><span class="pre">nmatch</span></code> models in the library that are closest to the input photometric values. This can be used to judge if a good match to the input photometry is present in the library.</p>
 </div>
 <div class="section" id="module-slugpy.bayesphot.bp">
 <span id="full-documentation-of-slugpy-bayesphot"></span><span id="ssec-slugpy-bayesphot"></span><h2>Full Documentation of slugpy.bayesphot<a class="headerlink" href="#module-slugpy.bayesphot.bp" title="Permalink to this headline">¶</a></h2>
@@ -124,7 +128,7 @@ quantities from a set of input photometry in various bands, together
 with a training data set.</p>
 <dl class="class">
 <dt id="slugpy.bayesphot.bp.bp">
-<em class="property">class </em><tt class="descclassname">slugpy.bayesphot.bp.</tt><tt class="descname">bp</tt><big>(</big><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-06</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.bayesphot.bp.</code><code class="descname">bp</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-06</em>, <em>leafsize=16</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.</p>
@@ -149,7 +153,7 @@ dimensions</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-06</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-06</em>, <em>leafsize=16</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a bp object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -217,19 +221,19 @@ true value</dd>
 
 <dl class="attribute">
 <dt id="slugpy.bayesphot.bp.bp.__weakref__">
-<tt class="descname">__weakref__</tt><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__weakref__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__weakref__</code><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__weakref__" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of weak references to the object (if defined)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="slugpy.bayesphot.bp.bp.bandwidth">
-<tt class="descname">bandwidth</tt><a class="headerlink" href="#slugpy.bayesphot.bp.bp.bandwidth" title="Permalink to this definition">¶</a></dt>
+<code class="descname">bandwidth</code><a class="headerlink" href="#slugpy.bayesphot.bp.bp.bandwidth" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current bandwidth</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.bestmatch">
-<tt class="descname">bestmatch</tt><big>(</big><em>phot</em>, <em>nmatch=1</em>, <em>bandwidth_units=False</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp.bestmatch" title="Permalink to this definition">¶</a></dt>
+<code class="descname">bestmatch</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>nmatch=1</em>, <em>bandwidth_units=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.bestmatch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Searches through the simulation library and returns the closest
 matches to an input set of photometry.</p>
 <dl class="docutils">
@@ -239,6 +243,13 @@ matches to an input set of photometry.</p>
 <dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors, which must have the
+same shape as phot; if this is not None,
+then distances will be measured in units of the
+photometric error if bandwidth_units is False, or in
+units of the bandwidth added in quadrature with the
+errors if it is True</dd>
 <dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
 <dd>number of matches to return; returned matches will be
 ordered by distance from the input</dd>
@@ -263,7 +274,7 @@ nmatch == 1 then that dimension will be omitted</dd>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.logL">
-<tt class="descname">logL</tt><big>(</big><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp.logL" title="Permalink to this definition">¶</a></dt>
+<code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.logL" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns the natural log of the likelihood
 function evaluated at a particular log mass, log age,
 extinction, and set of log luminosities</p>
@@ -295,7 +306,7 @@ dimensions</dd>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.mcmc">
-<tt class="descname">mcmc</tt><big>(</big><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mcmc" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mcmc</code><span class="sig-paren">(</span><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mcmc" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns a sample of MCMC walkers sampling the
 physical parameters at a specified set of photometric values.</p>
 <dl class="docutils">
@@ -328,7 +339,7 @@ dimensions</dd>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.mpdf">
-<tt class="descname">mpdf</tt><big>(</big><em>idx</em>, <em>photprop</em>, <em>photerr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em><big>)</big><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mpdf" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mpdf</code><span class="sig-paren">(</span><em>idx</em>, <em>photprop</em>, <em>photerr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mpdf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the marginal probability for one or mode physical
 quantities for one or more input sets of photometric
 properties. Output quantities are computed on a grid of
@@ -389,7 +400,7 @@ the dimensions of the output grid</dd>
 
 <dl class="attribute">
 <dt id="slugpy.bayesphot.bp.bp.priors">
-<tt class="descname">priors</tt><a class="headerlink" href="#slugpy.bayesphot.bp.bp.priors" title="Permalink to this definition">¶</a></dt>
+<code class="descname">priors</code><a class="headerlink" href="#slugpy.bayesphot.bp.bp.priors" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current set of prior probabilities for every
 simulation in the library</p>
 </dd></dl>
@@ -403,14 +414,14 @@ simulation in the library</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">bayesphot: Bayesian Inference for Stochastic Stellar Populations</a><ul>
 <li><a class="reference internal" href="#what-does-bayesphot-do">What Does bayesphot Do?</a></li>
-<li><a class="reference internal" href="#creating-bp-objects">Creating <tt class="docutils literal"><span class="pre">bp</span></tt> Objects</a></li>
-<li><a class="reference internal" href="#using-bp-objects">Using <tt class="docutils literal"><span class="pre">bp</span></tt> Objects</a></li>
+<li><a class="reference internal" href="#creating-bp-objects">Creating <code class="docutils literal"><span class="pre">bp</span></code> Objects</a></li>
+<li><a class="reference internal" href="#using-bp-objects">Using <code class="docutils literal"><span class="pre">bp</span></code> Objects</a></li>
 <li><a class="reference internal" href="#module-slugpy.bayesphot.bp">Full Documentation of slugpy.bayesphot</a></li>
 </ul>
 </li>
@@ -422,12 +433,14 @@ simulation in the library</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="cluster_slug.html"
                         title="next chapter">cluster_slug: Bayesian Inference of Star Cluster Properties</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/bayesphot.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/bayesphot.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -444,27 +457,20 @@ simulation in the library</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="cluster_slug.html" title="cluster_slug: Bayesian Inference of Star Cluster Properties"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="cloudy.html" title="cloudy_slug: An Automated Interface to cloudy"
-             >previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/bayesphot.txt"
+          rel="nofollow">Page source</a></li>
     </div>
+
+    
+
+    
   </body>
 </html>

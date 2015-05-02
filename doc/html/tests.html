@@ -8,7 +8,7 @@
     
     <title>Test Problems &mdash; slug 2.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,13 +23,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="Contributors and Acknowledgements" href="acknowledgements.html" />
-    <link rel="prev" title="sfr_slug: Bayesian Inference of Star Formation Rates" href="sfr_slug.html" /> 
+    <link rel="prev" title="sfr_slug: Bayesian Inference of Star Formation Rates" href="sfr_slug.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,36 +48,36 @@
         <li class="right" >
           <a href="sfr_slug.html" title="sfr_slug: Bayesian Inference of Star Formation Rates"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="test-problems">
 <span id="sec-tests"></span><h1>Test Problems<a class="headerlink" href="#test-problems" title="Permalink to this headline">¶</a></h1>
 <p>This section describes a set of problems that can be used to test and explore the different capabilities of SLUG. SLUG ships a
-set of problems <tt class="docutils literal"><span class="pre">problemname</span></tt> that are specified by a parameter file <tt class="docutils literal"><span class="pre">param/problemname.param</span></tt>. Problems that require
-multiple simulations are described instead by multiple paramater files, each with unique ID XX:  <tt class="docutils literal"><span class="pre">param/problemnameXX.param</span></tt>.
-Users can reproduce the output of the test problems with the provided executable scripts  <tt class="docutils literal"><span class="pre">test/run_problemname.sh</span></tt>.
-For each problem, a script for analysis is distributed  in <tt class="docutils literal"><span class="pre">test/problemname.py</span></tt>. Details for each test problem are given below. Throughout this section, it is assumed that the <tt class="docutils literal"><span class="pre">SLUG_DIR</span></tt> has been properly set.
+set of problems <code class="docutils literal"><span class="pre">problemname</span></code> that are specified by a parameter file <code class="docutils literal"><span class="pre">param/problemname.param</span></code>. Problems that require
+multiple simulations are described instead by multiple paramater files, each with unique ID XX:  <code class="docutils literal"><span class="pre">param/problemnameXX.param</span></code>.
+Users can reproduce the output of the test problems with the provided executable scripts  <code class="docutils literal"><span class="pre">test/run_problemname.sh</span></code>.
+For each problem, a script for analysis is distributed  in <code class="docutils literal"><span class="pre">test/problemname.py</span></code>. Details for each test problem are given below. Throughout this section, it is assumed that the <code class="docutils literal"><span class="pre">SLUG_DIR</span></code> has been properly set.
 These test problems are designed to work with outputs in FITS format, but that can be easily changed in the
-<tt class="docutils literal"><span class="pre">.param</span></tt> files. To run all the problems and the analysis scripts in one go, the user can simply
-run <tt class="docutils literal"><span class="pre">test/run_alltest.sh</span></tt>. It will take around 15 minutes
+<code class="docutils literal"><span class="pre">.param</span></code> files. To run all the problems and the analysis scripts in one go, the user can simply
+run <code class="docutils literal"><span class="pre">test/run_alltest.sh</span></code>. It will take around 15 minutes
 for the script to complete on a standard laptop. About 700MB of data are generated.
 If SLUG is correctly installed and working, the first part of the script (i.e. the SLUG
 simulations) should run flawlessly. The second part of the script relies instead on external python procedures,
 including slugpy, numpy, and matplotlib. While these packages are fairly standard, the user needs to ensure that
 they are properly installed and visible to the script. This script has been written for and tested with Python 2.7.</p>
 <div class="section" id="problem-example-galaxy-basic-galaxy-simulation">
-<h2>Problem <tt class="docutils literal"><span class="pre">example_galaxy</span></tt>: basic galaxy simulation<a class="headerlink" href="#problem-example-galaxy-basic-galaxy-simulation" title="Permalink to this headline">¶</a></h2>
-<p>This problem illustrates the basic usage of slugin <tt class="docutils literal"><span class="pre">galaxy</span></tt> mode by running 48 realizations of a galaxy with constant
+<h2>Problem <code class="docutils literal"><span class="pre">example_galaxy</span></code>: basic galaxy simulation<a class="headerlink" href="#problem-example-galaxy-basic-galaxy-simulation" title="Permalink to this headline">¶</a></h2>
+<p>This problem illustrates the basic usage of slugin <code class="docutils literal"><span class="pre">galaxy</span></code> mode by running 48 realizations of a galaxy with constant
 <span class="math">\(\mathrm{SFR}=0.001\; M_\odot\;\mathrm{yr}^{-1}\)</span>, up to a maximum time of <span class="math">\(2\times 10^8\)</span> yr. By issuing the
-command <tt class="docutils literal"><span class="pre">test/run_example_galaxy.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_GALAXY_EXAMPLE*</span></tt> are generated. Once the models are ready,
-<tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_galaxy.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_GALAXY_EXAMPLE_f1.pdf</span></tt>.</p>
+command <code class="docutils literal"><span class="pre">test/run_example_galaxy.sh</span></code> the output files <code class="docutils literal"><span class="pre">SLUG_GALAXY_EXAMPLE*</span></code> are generated. Once the models are ready,
+<code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_galaxy.py</span></code> produces a multi-panel figure <code class="docutils literal"><span class="pre">test/SLUG_GALAXY_EXAMPLE_f1.pdf</span></code>.</p>
 <p>The top-left panel shows the actual mass produced by SLUG for each of the 48 models at different time steps as a
 function of the targeted mass. One can see that SLUG realizations only approximate the desired mass, which is a consequence
 of SLUG core algorithm. The 1:1 relation is shown by a red dashed line.
@@ -85,16 +89,16 @@ continuous star formation rate of <span class="math">\(\mathrm{SFR}=0.001\; M_\o
 by red dashed lines in the relevant panels.</p>
 </div>
 <div class="section" id="problem-example-cluster-basic-cluster-simulation">
-<h2>Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation<a class="headerlink" href="#problem-example-cluster-basic-cluster-simulation" title="Permalink to this headline">¶</a></h2>
-<p>This problem illustrates the basic usage of SLUG in <tt class="docutils literal"><span class="pre">cluster</span></tt> mode by running 1000 realizations of a cluster
+<h2>Problem <code class="docutils literal"><span class="pre">example_cluster</span></code>: basic cluster simulation<a class="headerlink" href="#problem-example-cluster-basic-cluster-simulation" title="Permalink to this headline">¶</a></h2>
+<p>This problem illustrates the basic usage of SLUG in <code class="docutils literal"><span class="pre">cluster</span></code> mode by running 1000 realizations of a cluster
 with mass 500 <span class="math">\(M_\odot\)</span>, up to a maximum time of 10 Myr. By issuing the command
-<tt class="docutils literal"><span class="pre">test/run_example_cluster.sh</span></tt> the output files <tt class="docutils literal"><span class="pre">SLUG_CLUSTER_EXAMPLE*</span></tt> are
-generated. Once the models are ready, <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_cluster.py</span></tt> produces a multi-panel
-figure <tt class="docutils literal"><span class="pre">test/SLUG_CLUSTER_EXAMPLE_f1.pdf</span></tt>.</p>
+<code class="docutils literal"><span class="pre">test/run_example_cluster.sh</span></code> the output files <code class="docutils literal"><span class="pre">SLUG_CLUSTER_EXAMPLE*</span></code> are
+generated. Once the models are ready, <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_example_cluster.py</span></code> produces a multi-panel
+figure <code class="docutils literal"><span class="pre">test/SLUG_CLUSTER_EXAMPLE_f1.pdf</span></code>.</p>
 <p>This figure is divided in two columns: the left one shows outputs at the first time step, 1 Myr, while
 the second one shows outputs at the last time step, 10 Myr.  The top row shows the actual cluster mass for an
 input mass of <span class="math">\(500\;M_\odot\)</span>.
-In <tt class="docutils literal"><span class="pre">cluster</span></tt> mode, all clusters are generated at the first time step and they evolve
+In <code class="docutils literal"><span class="pre">cluster</span></code> mode, all clusters are generated at the first time step and they evolve
 passively after that. Thus, the mass does not change. As a consequence of the
 random drawing from the IMF, masses are distributed around the input mass.
 As the wanted mass is large enough to allow for many stars to be drawn, the
@@ -108,13 +112,13 @@ most sensitive to the presence of massive stars, change accordingly
 (third and fourth row for <span class="math">\(Q_{H_0}\)</span> and FUV).</p>
 </div>
 <div class="section" id="problem-constsampl-importance-of-constrained-sampling">
-<span id="probsampl-label"></span><h2>Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling<a class="headerlink" href="#problem-constsampl-importance-of-constrained-sampling" title="Permalink to this headline">¶</a></h2>
+<span id="probsampl-label"></span><h2>Problem <code class="docutils literal"><span class="pre">constsampl</span></code>: importance of constrained sampling<a class="headerlink" href="#problem-constsampl-importance-of-constrained-sampling" title="Permalink to this headline">¶</a></h2>
 <p>This problem illustrates in more detail the effects of constrained sampling on SLUG simulations.
-This is the first key ingredient in the core algorithm of SLUG. With the command <tt class="docutils literal"><span class="pre">test/run_constsampl.sh</span></tt>,
-three different <tt class="docutils literal"><span class="pre">cluster</span></tt> simulations are run, each with 1000 trials, but with masses of <span class="math">\(50\;M_\odot\)</span>,
+This is the first key ingredient in the core algorithm of SLUG. With the command <code class="docutils literal"><span class="pre">test/run_constsampl.sh</span></code>,
+three different <code class="docutils literal"><span class="pre">cluster</span></code> simulations are run, each with 1000 trials, but with masses of <span class="math">\(50\;M_\odot\)</span>,
 <span class="math">\(250\;M_\odot\)</span>, and <span class="math">\(500\;M_\odot\)</span>. A single timestep of <span class="math">\(10^6\)</span> yr is generated.
-The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_constsampl.py</span></tt> produces a multi-panel
-figure <tt class="docutils literal"><span class="pre">test/SLUG_CONSTSAMPL_f1.pdf</span></tt>.</p>
+The analysis script <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_constsampl.py</span></code> produces a multi-panel
+figure <code class="docutils literal"><span class="pre">test/SLUG_CONSTSAMPL_f1.pdf</span></code>.</p>
 <p>This figure shows the maximum mass of the stars in these realizations (top row), the
 rate of ionizing photons <span class="math">\(Q_{H_0}\)</span> (central row), and the FUV luminosity (bottom row).
 Histograms refer, form left to right, to clusters with <span class="math">\(50\;M_\odot\)</span>, <span class="math">\(250\;M_\odot\)</span>,
@@ -143,17 +147,17 @@ are instead suppresses, due to the lack of massive stars. However, tails to high
 in all cases.</p>
 </div>
 <div class="section" id="problem-sampling-different-sampling-techniques">
-<h2>Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques<a class="headerlink" href="#problem-sampling-different-sampling-techniques" title="Permalink to this headline">¶</a></h2>
+<h2>Problem <code class="docutils literal"><span class="pre">sampling</span></code>: different sampling techniques<a class="headerlink" href="#problem-sampling-different-sampling-techniques" title="Permalink to this headline">¶</a></h2>
 <p>As highlighted in the previous section, the method with which stars are sampled from the
 IMF has a great influence on the final output. Starting from v2, SLUG has the capability of
 specifying the desired sampling algorithm for a given PDF.
-The command  <tt class="docutils literal"><span class="pre">test/run_sampling.sh</span></tt> runs four <tt class="docutils literal"><span class="pre">cluster</span></tt> simulations, each with 1000 trials
+The command  <code class="docutils literal"><span class="pre">test/run_sampling.sh</span></code> runs four <code class="docutils literal"><span class="pre">cluster</span></code> simulations, each with 1000 trials
 of masses of <span class="math">\(50\;M_\odot\)</span>, and a Kroupa (2002) IMF.
-The following four sampling methods are chosen for each simulation: 1) <tt class="docutils literal"><span class="pre">stop_nearest</span></tt>,
-which is the default in SLUG; 2) <tt class="docutils literal"><span class="pre">stop_before</span></tt>; 3) <tt class="docutils literal"><span class="pre">stop_after</span></tt>; 4) <tt class="docutils literal"><span class="pre">sorted_sampling</span></tt>.
-A description of each method is provided in Section <a class="reference internal" href="pdfs.html#sampling-metod-label"><em>Sampling Methods</em></a>.
-The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_sampling.py</span></tt> produces a multi-panel
-figure <tt class="docutils literal"><span class="pre">test/SLUG_SAMPLING_f1.pdf</span></tt>.</p>
+The following four sampling methods are chosen for each simulation: 1) <code class="docutils literal"><span class="pre">stop_nearest</span></code>,
+which is the default in SLUG; 2) <code class="docutils literal"><span class="pre">stop_before</span></code>; 3) <code class="docutils literal"><span class="pre">stop_after</span></code>; 4) <code class="docutils literal"><span class="pre">sorted_sampling</span></code>.
+A description of each method is provided in Section <a class="reference internal" href="pdfs.html#sampling-metod-label"><span>Sampling Methods</span></a>.
+The analysis script <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_sampling.py</span></code> produces a multi-panel
+figure <code class="docutils literal"><span class="pre">test/SLUG_SAMPLING_f1.pdf</span></code>.</p>
 <p>By comparing the panels in each column, one can understand the fundamental differences
 induced by the sampling technique. The top row shows the maximum stellar mass drawn from the
 IMF in each realization. The targeted cluster mass is also shown with red vertical lines.
@@ -170,13 +174,13 @@ shape of the IMF. The second and third row show how the sampling techniques affe
 photometry.</p>
 </div>
 <div class="section" id="problem-imfchoice-different-imf-implementations">
-<span id="probimf-label"></span><h2>Problem <tt class="docutils literal"><span class="pre">imfchoice</span></tt>: different IMF implementations<a class="headerlink" href="#problem-imfchoice-different-imf-implementations" title="Permalink to this headline">¶</a></h2>
+<span id="probimf-label"></span><h2>Problem <code class="docutils literal"><span class="pre">imfchoice</span></code>: different IMF implementations<a class="headerlink" href="#problem-imfchoice-different-imf-implementations" title="Permalink to this headline">¶</a></h2>
 <p>This problem highlights how SLUG can handle different IMF implementations by running
 three simulations with a Kroupa, a Salpeter, and a Chabrier IMF. However, SLUG is not
 restricted to these choices, as the user can in fact easily input an arbitrary IMF.
-The command  <tt class="docutils literal"><span class="pre">test/run_imfchoice.sh</span></tt> runs three <tt class="docutils literal"><span class="pre">cluster</span></tt> simulations, each with 1000 trials
+The command  <code class="docutils literal"><span class="pre">test/run_imfchoice.sh</span></code> runs three <code class="docutils literal"><span class="pre">cluster</span></code> simulations, each with 1000 trials
 of masses of <span class="math">\(500\;M_\odot\)</span> and different IMF. The analysis script
-<tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_imfchoice.py</span></tt> produces a multi-panel figure <tt class="docutils literal"><span class="pre">test/SLUG_IMFCHOICE_f1.pdf</span></tt>.
+<code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_imfchoice.py</span></code> produces a multi-panel figure <code class="docutils literal"><span class="pre">test/SLUG_IMFCHOICE_f1.pdf</span></code>.
 Each column shows different statistics for the three IMF. From top to bottom, these are:
 the maximum stellar mass in a cluster, the number of stars that SLUG treats stochastically,
 and the distributions of <span class="math">\(Q_{H_0}\)</span>  and bolometric luminosities.
@@ -184,30 +188,30 @@ As expected for a steep lower-end of the IMF, in the Salpeter case SLUG prefers 
 clusters with a higher number of low mass stars.</p>
 </div>
 <div class="section" id="problem-clfraction-cluster-fraction-at-work">
-<h2>Problem <tt class="docutils literal"><span class="pre">clfraction</span></tt>: cluster fraction at work<a class="headerlink" href="#problem-clfraction-cluster-fraction-at-work" title="Permalink to this headline">¶</a></h2>
+<h2>Problem <code class="docutils literal"><span class="pre">clfraction</span></code>: cluster fraction at work<a class="headerlink" href="#problem-clfraction-cluster-fraction-at-work" title="Permalink to this headline">¶</a></h2>
 <p>With the exception of the first example, these test problems have focused on how SLUG handles
 cluster simulations, and how these clusters are filled with stars drawn from the IMF.
 This new problem highlights instead the presence of additional stochasticity induced by a
-second level in the hierarchy of <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations: how clusters are drawn from the CMF to satisfy the
+second level in the hierarchy of <code class="docutils literal"><span class="pre">galaxy</span></code> simulations: how clusters are drawn from the CMF to satisfy the
 targeted galaxy mass. Although it may not appear obvious at first,
 the fraction of stars that are formed in clusters, <span class="math">\(f_c\)</span>, is a very important parameter that regulates
 the stochastic behavior of SLUG. This can be understood by considering two limiting cases.
 In the limit <span class="math">\(f_c \rightarrow 0\)</span>, SLUG fills a galaxy by drawing stars from the
 IMF. Thus, because the mass of a galaxy is typically much larger than the mass of the upper
-end of the IMF, the effects of mass-constrained sampling highlighted in <a class="reference internal" href="#probsampl-label"><em>Problem constsampl: importance of constrained sampling</em></a> are simply
+end of the IMF, the effects of mass-constrained sampling highlighted in <a class="reference internal" href="#probsampl-label"><span>Problem constsampl: importance of constrained sampling</span></a> are simply
 not relevant anymore. In this case, stochasticity is minimal.
 Conversely, in the limit <span class="math">\(f_c \rightarrow 1\)</span>, not only the IMF sampling contributes to the
 stochastic behavior of SLUG, but also clusters themselves contribute to additional stochasticity,
 as clusters are now drawn from the CMF to fill the targeted galaxy mass following the similar rules
 to those specified for the IMF draws. Thus, in this case, constrained mass sampling applies to both
 stars in clusters and clusters in galaxies, and stochasticity is amplified.</p>
-<p>The command  <tt class="docutils literal"><span class="pre">test/run_clfraction.sh</span></tt> runs three <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations, each with 500 trials
+<p>The command  <code class="docutils literal"><span class="pre">test/run_clfraction.sh</span></code> runs three <code class="docutils literal"><span class="pre">galaxy</span></code> simulations, each with 500 trials
 of continuous  SFR <span class="math">\(=0.001\rm\;M_\odot\;yr^{-1}\)</span> which are evolved for a
 single timestep of  <span class="math">\(2\times 10^6\rm\;yr\)</span>. A Chabrier IMF and a cluster mass function
 <span class="math">\(\propto M^{-2}\)</span> are adopted. Cluster disruption is disabled. The three simulations
 differ only for the fraction of stars formed in clusters, respectively <span class="math">\(f_c=1,0.5,0.01\)</span>.
-The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_clfraction.py</span></tt> produces a multi-panel figure
-<tt class="docutils literal"><span class="pre">test/SLUG_CLFRACTION_f1.pdf</span></tt>. Each column shows properties of simulations for different
+The analysis script <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_clfraction.py</span></code> produces a multi-panel figure
+<code class="docutils literal"><span class="pre">test/SLUG_CLFRACTION_f1.pdf</span></code>. Each column shows properties of simulations for different
 fractions of stars formed in clusters.</p>
 <p>The top row shows the maximum stellar mass in clusters. Clearly, <span class="math">\(f_c\)</span> has no effect on the way
 clusters are filled up with stars, but the normalization changes. Thus,  the least probable realizations
@@ -234,10 +238,10 @@ very massive stars and thus suppressing the flux of ionizing radiation. Converse
 is typically much greater than the mass of the most massive stars, one recovers higher fluxes on average.</p>
 </div>
 <div class="section" id="problem-cmfchoice-different-cmf-implementations">
-<h2>Problem <tt class="docutils literal"><span class="pre">cmfchoice</span></tt>: different CMF implementations<a class="headerlink" href="#problem-cmfchoice-different-cmf-implementations" title="Permalink to this headline">¶</a></h2>
+<h2>Problem <code class="docutils literal"><span class="pre">cmfchoice</span></code>: different CMF implementations<a class="headerlink" href="#problem-cmfchoice-different-cmf-implementations" title="Permalink to this headline">¶</a></h2>
 <p>Given the ability of SLUG v2 to handle generic PDFs, the user can specify arbitrary CMF,
-similarly to what shown in  <a class="reference internal" href="#probimf-label"><em>Problem imfchoice: different IMF implementations</em></a>.
-The command  <tt class="docutils literal"><span class="pre">test/run_cmfchoice.sh</span></tt> runs three <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations, each with 500 trials
+similarly to what shown in  <a class="reference internal" href="#probimf-label"><span>Problem imfchoice: different IMF implementations</span></a>.
+The command  <code class="docutils literal"><span class="pre">test/run_cmfchoice.sh</span></code> runs three <code class="docutils literal"><span class="pre">galaxy</span></code> simulations, each with 500 trials
 of continuous  SFR <span class="math">\(=0.001\rm\;M_\odot\;yr^{-1}\)</span> which are evolved for a
 single timestep of  <span class="math">\(2\times 10^6\rm\;yr\)</span>. A Chabrier IMF and <span class="math">\(f_c=1\)</span>
 are adopted. Cluster disruption is disabled. The three simulations
@@ -245,8 +249,8 @@ differ only for the cluster mass function, which are:
 1) the default powerlaw <span class="math">\(M^{-2}\)</span> between <span class="math">\(20-10^{7}~\rm M_\odot\)</span>;
 2) a truncated powerlaw <span class="math">\(M^{-2}\)</span> between <span class="math">\(20-100~\rm M_\odot\)</span>;
 3) a mass-independent CMF <span class="math">\(M^{0}\)</span> between <span class="math">\(20-10^3~\rm M_\odot\)</span>.
-The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_cmfchoice.py</span></tt> produces a multi-panel figure
-<tt class="docutils literal"><span class="pre">test/SLUG_CMFCHOICE_f1.pdf</span></tt>. Each column shows properties of simulations for the different
+The analysis script <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_cmfchoice.py</span></code> produces a multi-panel figure
+<code class="docutils literal"><span class="pre">test/SLUG_CMFCHOICE_f1.pdf</span></code>. Each column shows properties of simulations for the different
 cluster mass functions.</p>
 <p>The top row shows the maximum stellar mass in clusters. Compared to the default case,
 the histogram of the truncated CMF is steeper towards low masses. Given that the upper end of the
@@ -267,7 +271,7 @@ a pure powerlaw without cutoff at the high mass end, and thus clusters as massiv
 are accessible to SLUG.</p>
 </div>
 <div class="section" id="problem-sfhsampling-realizations-of-sfh">
-<h2>Problem <tt class="docutils literal"><span class="pre">sfhsampling</span></tt>: realizations of SFH<a class="headerlink" href="#problem-sfhsampling-realizations-of-sfh" title="Permalink to this headline">¶</a></h2>
+<h2>Problem <code class="docutils literal"><span class="pre">sfhsampling</span></code>: realizations of SFH<a class="headerlink" href="#problem-sfhsampling-realizations-of-sfh" title="Permalink to this headline">¶</a></h2>
 <p>The algorithm at the heart of SLUG is quite simple: for a given star formation history
 <span class="math">\(\dot\psi(t)\)</span> a stellar population with mass <span class="math">\(\dot\psi(t)\times \Delta t\)</span>
 is generated at each timestep, according to the constraints set by IMF, CMF and other
@@ -277,13 +281,13 @@ the input SFH and the output SFHs are not identical. SLUG receives an input SFH 
 is used to constrain the rate with which clusters and stars are drawn to achieve the
 desired targeted mass in each timestep. However, the output SFHs are only realizations
 and not exact copies  of the input SFH. This problem is designed to illustrate this behavior.</p>
-<p>The command  <tt class="docutils literal"><span class="pre">test/run_sfhsampling.sh</span></tt> runs two <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations, each with 100 trials
+<p>The command  <code class="docutils literal"><span class="pre">test/run_sfhsampling.sh</span></code> runs two <code class="docutils literal"><span class="pre">galaxy</span></code> simulations, each with 100 trials
 of continuous  SFR <span class="math">\(=0.0001\rm\;M_\odot\;yr^{-1}\)</span> which are evolved for a
 10 timesteps of  <span class="math">\(5\times 10^6\rm\;yr\)</span>. A Chabrier IMF and a <span class="math">\(M^{-2}\)</span>
 CMF are adopted. Cluster disruption is disabled. The two simulations
 differ only for the fraction of stars in clusters, <span class="math">\(f_c = 1\)</span> and <span class="math">\(f_c = 0\)</span> respectively.
-The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_sfhsampling.py</span></tt> produces a two-panel figure
-<tt class="docutils literal"><span class="pre">test/SLUG_SFHSAMPLING_f1.pdf</span></tt>, showing the box plot for the output SFH of the two simulations
+The analysis script <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_sfhsampling.py</span></code> produces a two-panel figure
+<code class="docutils literal"><span class="pre">test/SLUG_SFHSAMPLING_f1.pdf</span></code>, showing the box plot for the output SFH of the two simulations
 (<span class="math">\(f_c = 1\)</span> top, and <span class="math">\(f_c = 0\)</span> bottom).</p>
 <p>In each panel, the median SFH over 100 trials is represented by the red lines, while the red squares
 show the mean. The box sizes represent instead the first and third quartile, with the
@@ -303,18 +307,18 @@ will be present in the output photometry, especially for the traces that are mor
 to variations in the SFHs on short timescales.</p>
 </div>
 <div class="section" id="problem-cldisrupt-cluster-disruption-at-work">
-<h2>Problem <tt class="docutils literal"><span class="pre">cldisrupt</span></tt>: cluster disruption at work<a class="headerlink" href="#problem-cldisrupt-cluster-disruption-at-work" title="Permalink to this headline">¶</a></h2>
+<h2>Problem <code class="docutils literal"><span class="pre">cldisrupt</span></code>: cluster disruption at work<a class="headerlink" href="#problem-cldisrupt-cluster-disruption-at-work" title="Permalink to this headline">¶</a></h2>
 <p>One additional ingredient in SLUG is the lifetime distribution for clusters. Since v2, SLUG is flexible in
 controlling the rate with which clusters are disrupted. This problem shows a comparison between
 two simulations with and without cluster disruption.</p>
-<p>The command  <tt class="docutils literal"><span class="pre">test/run_cldisrup.sh</span></tt> runs two <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations, each with 100 trials
+<p>The command  <code class="docutils literal"><span class="pre">test/run_cldisrup.sh</span></code> runs two <code class="docutils literal"><span class="pre">galaxy</span></code> simulations, each with 100 trials
 which are evolved in timesteps of  <span class="math">\(5\times 10^5\rm\;yr\)</span> up to a maximum age of
 <span class="math">\(1\times 10^7\rm\;yr\)</span>. Both simulations are characterized by a burst of star formation
 <span class="math">\(=0.001\rm\;M_\odot\;yr^{-1}\)</span> within the first Myr. A Chabrier IMF and a <span class="math">\(M^{-2}\)</span>
 CMF are adopted, and <span class="math">\(f_c = 1\)</span>. For the first simulation, cluster disruption is
 disabled. In the second simulation, cluster disruption operates at times <span class="math">\(&gt;1\rm\;Myr\)</span>,
 with a cluster lifetime function which is a powerlaw of index -1.9.
-The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_cldisrup.py</span></tt> produces the figure <tt class="docutils literal"><span class="pre">test/SLUG_CLDISRUP_f1.pdf</span></tt>.
+The analysis script <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_cldisrup.py</span></code> produces the figure <code class="docutils literal"><span class="pre">test/SLUG_CLDISRUP_f1.pdf</span></code>.
 The two columns show results with (right) and without (left) cluster disruption.</p>
 <p>The first row shows the median stellar mass of the 100 trials as a function of time.
 The blue dashed lines show the mass inside the galaxy, while the black solid lines show the
@@ -337,11 +341,11 @@ are the SFH and the sampling techniques, which do not depend on the cluster disr
 photometry of stars in cluster would exhibit instead a similar dependence to what shown in the top panels.</p>
 </div>
 <div class="section" id="problem-spectra-full-spectra">
-<h2>Problem <tt class="docutils literal"><span class="pre">spectra</span></tt>: full spectra<a class="headerlink" href="#problem-spectra-full-spectra" title="Permalink to this headline">¶</a></h2>
+<h2>Problem <code class="docutils literal"><span class="pre">spectra</span></code>: full spectra<a class="headerlink" href="#problem-spectra-full-spectra" title="Permalink to this headline">¶</a></h2>
 <p>Since v2, SLUG is able to generate spectra for star clusters and for galaxies, which can also be computed for
 arbitrary redshifts. This problem highlights the new features.
 It also demonstrates how SLUG can handle dust extinction, both in a deterministic and stochastic way.</p>
-<p>The command  <tt class="docutils literal"><span class="pre">test/run_spectra.sh</span></tt> runs four <tt class="docutils literal"><span class="pre">galaxy</span></tt> simulations, each with 500 trials
+<p>The command  <code class="docutils literal"><span class="pre">test/run_spectra.sh</span></code> runs four <code class="docutils literal"><span class="pre">galaxy</span></code> simulations, each with 500 trials
 of continuous SFR <span class="math">\(=0.001\rm\;M_\odot\;yr^{-1}\)</span> which are evolved for a
 single timestep of  <span class="math">\(2\times 10^6\rm\;yr\)</span>. A Chabrier IMF and a <span class="math">\(M^{-2}\)</span>
 CMF are adopted, cluster disruption is disabled, and <span class="math">\(f_c = 1\)</span>.
@@ -351,7 +355,7 @@ The simulations differ in the following way:
 3) same as the reference model at <span class="math">\(z = 0\)</span>, but with a deterministic extinction of <span class="math">\(A_V = 0.5\)</span> and
 a Calzetti+2000 starburst attenuation curve;
 4) same as model number 3, but with stochastic extinction.
-The analysis script <tt class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_spectra.py</span></tt> produces the figure <tt class="docutils literal"><span class="pre">test/SLUG_SPECTRA_f1.pdf</span></tt>,
+The analysis script <code class="docutils literal"><span class="pre">python</span> <span class="pre">test/plot_spectra.py</span></code> produces the figure <code class="docutils literal"><span class="pre">test/SLUG_SPECTRA_f1.pdf</span></code>,
 which shows a gallery of galaxy SEDs for each model. The median SED is shown in black, the blue region
 corresponds to the first and third quartile of the distribution, and the red shaded region
 marks the 5 and 95 percentiles.</p>
@@ -371,21 +375,21 @@ the stochasticity in the optical due to a simple shift of wavelengths.</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Test Problems</a><ul>
-<li><a class="reference internal" href="#problem-example-galaxy-basic-galaxy-simulation">Problem <tt class="docutils literal"><span class="pre">example_galaxy</span></tt>: basic galaxy simulation</a></li>
-<li><a class="reference internal" href="#problem-example-cluster-basic-cluster-simulation">Problem <tt class="docutils literal"><span class="pre">example_cluster</span></tt>: basic cluster simulation</a></li>
-<li><a class="reference internal" href="#problem-constsampl-importance-of-constrained-sampling">Problem <tt class="docutils literal"><span class="pre">constsampl</span></tt>: importance of constrained sampling</a></li>
-<li><a class="reference internal" href="#problem-sampling-different-sampling-techniques">Problem <tt class="docutils literal"><span class="pre">sampling</span></tt>: different sampling techniques</a></li>
-<li><a class="reference internal" href="#problem-imfchoice-different-imf-implementations">Problem <tt class="docutils literal"><span class="pre">imfchoice</span></tt>: different IMF implementations</a></li>
-<li><a class="reference internal" href="#problem-clfraction-cluster-fraction-at-work">Problem <tt class="docutils literal"><span class="pre">clfraction</span></tt>: cluster fraction at work</a></li>
-<li><a class="reference internal" href="#problem-cmfchoice-different-cmf-implementations">Problem <tt class="docutils literal"><span class="pre">cmfchoice</span></tt>: different CMF implementations</a></li>
-<li><a class="reference internal" href="#problem-sfhsampling-realizations-of-sfh">Problem <tt class="docutils literal"><span class="pre">sfhsampling</span></tt>: realizations of SFH</a></li>
-<li><a class="reference internal" href="#problem-cldisrupt-cluster-disruption-at-work">Problem <tt class="docutils literal"><span class="pre">cldisrupt</span></tt>: cluster disruption at work</a></li>
-<li><a class="reference internal" href="#problem-spectra-full-spectra">Problem <tt class="docutils literal"><span class="pre">spectra</span></tt>: full spectra</a></li>
+<li><a class="reference internal" href="#problem-example-galaxy-basic-galaxy-simulation">Problem <code class="docutils literal"><span class="pre">example_galaxy</span></code>: basic galaxy simulation</a></li>
+<li><a class="reference internal" href="#problem-example-cluster-basic-cluster-simulation">Problem <code class="docutils literal"><span class="pre">example_cluster</span></code>: basic cluster simulation</a></li>
+<li><a class="reference internal" href="#problem-constsampl-importance-of-constrained-sampling">Problem <code class="docutils literal"><span class="pre">constsampl</span></code>: importance of constrained sampling</a></li>
+<li><a class="reference internal" href="#problem-sampling-different-sampling-techniques">Problem <code class="docutils literal"><span class="pre">sampling</span></code>: different sampling techniques</a></li>
+<li><a class="reference internal" href="#problem-imfchoice-different-imf-implementations">Problem <code class="docutils literal"><span class="pre">imfchoice</span></code>: different IMF implementations</a></li>
+<li><a class="reference internal" href="#problem-clfraction-cluster-fraction-at-work">Problem <code class="docutils literal"><span class="pre">clfraction</span></code>: cluster fraction at work</a></li>
+<li><a class="reference internal" href="#problem-cmfchoice-different-cmf-implementations">Problem <code class="docutils literal"><span class="pre">cmfchoice</span></code>: different CMF implementations</a></li>
+<li><a class="reference internal" href="#problem-sfhsampling-realizations-of-sfh">Problem <code class="docutils literal"><span class="pre">sfhsampling</span></code>: realizations of SFH</a></li>
+<li><a class="reference internal" href="#problem-cldisrupt-cluster-disruption-at-work">Problem <code class="docutils literal"><span class="pre">cldisrupt</span></code>: cluster disruption at work</a></li>
+<li><a class="reference internal" href="#problem-spectra-full-spectra">Problem <code class="docutils literal"><span class="pre">spectra</span></code>: full spectra</a></li>
 </ul>
 </li>
 </ul>
@@ -396,12 +400,14 @@ the stochasticity in the optical due to a simple shift of wavelengths.</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="acknowledgements.html"
                         title="next chapter">Contributors and Acknowledgements</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/tests.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/tests.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -418,27 +424,20 @@ the stochasticity in the optical due to a simple shift of wavelengths.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="acknowledgements.html" title="Contributors and Acknowledgements"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="sfr_slug.html" title="sfr_slug: Bayesian Inference of Star Formation Rates"
-             >previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/tests.txt"
+          rel="nofollow">Page source</a></li>
     </div>
+
+    
+
+    
   </body>
 </html>

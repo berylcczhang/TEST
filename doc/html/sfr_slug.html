@@ -8,7 +8,7 @@
     
     <title>sfr_slug: Bayesian Inference of Star Formation Rates &mdash; slug 2.0 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,13 +23,17 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="slug 2.0 documentation" href="index.html" />
     <link rel="next" title="Test Problems" href="tests.html" />
-    <link rel="prev" title="cluster_slug: Bayesian Inference of Star Cluster Properties" href="cluster_slug.html" /> 
+    <link rel="prev" title="cluster_slug: Bayesian Inference of Star Cluster Properties" href="cluster_slug.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -44,34 +48,34 @@
         <li class="right" >
           <a href="cluster_slug.html" title="cluster_slug: Bayesian Inference of Star Cluster Properties"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="sfr-slug-bayesian-inference-of-star-formation-rates">
 <span id="sec-sfr-slug"></span><h1>sfr_slug: Bayesian Inference of Star Formation Rates<a class="headerlink" href="#sfr-slug-bayesian-inference-of-star-formation-rates" title="Permalink to this headline">¶</a></h1>
-<p>The slugy.sfr_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the &#8220;point mass estimate&#8221; (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around <a class="reference internal" href="bayesphot.html#sec-bayesphot"><em>bayesphot: Bayesian Inference for Stochastic Stellar Populations</em></a>, so for details on how the calculation is performed see the bayesphot documentation.</p>
+<p>The slugy.sfr_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the &#8220;point mass estimate&#8221; (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around <a class="reference internal" href="bayesphot.html#sec-bayesphot"><span>bayesphot: Bayesian Inference for Stochastic Stellar Populations</span></a>, so for details on how the calculation is performed see the bayesphot documentation.</p>
 <div class="section" id="getting-the-default-library">
 <h2>Getting the Default Library<a class="headerlink" href="#getting-the-default-library" title="Permalink to this headline">¶</a></h2>
-<p>The sfr_slug module requires a pre-computed library of slug simulations to use as a &#8220;training set&#8221; for its calculations. Due to its size, the default library <em>is not</em> included in the slug git repository. Instead, it is provided for download from the <a class="reference external" href="http://www.slugsps.com/data">SLUG data products website</a>. Download the two files <tt class="docutils literal"><span class="pre">SFR_SLUG_integrated_phot.fits</span></tt> and <tt class="docutils literal"><span class="pre">SFR_SLUG_integrated_prop.fits</span></tt> and save them in the <tt class="docutils literal"><span class="pre">sfr_slug</span></tt> directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use sfr_slug, you will be prompted to download the default library.</p>
+<p>The sfr_slug module requires a pre-computed library of slug simulations to use as a &#8220;training set&#8221; for its calculations. Due to its size, the default library <em>is not</em> included in the slug git repository. Instead, it is provided for download from the <a class="reference external" href="http://www.slugsps.com/data">SLUG data products website</a>. Download the two files <code class="docutils literal"><span class="pre">SFR_SLUG_integrated_phot.fits</span></code> and <code class="docutils literal"><span class="pre">SFR_SLUG_integrated_prop.fits</span></code> and save them in the <code class="docutils literal"><span class="pre">sfr_slug</span></code> directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use sfr_slug, you will be prompted to download the default library.</p>
 </div>
 <div class="section" id="basic-usage">
 <h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
-<p>The <tt class="docutils literal"><span class="pre">sfr_slug/sfr_slug_example.py</span></tt> file in the repository provides an example of how to use sfr_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr_slug. The required steps are as follows:</p>
+<p>The <code class="docutils literal"><span class="pre">sfr_slug/sfr_slug_example.py</span></code> file in the repository provides an example of how to use sfr_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr_slug. The required steps are as follows:</p>
 <ol class="arabic">
-<li><p class="first">Import the library and instantiate an <tt class="docutils literal"><span class="pre">sfr_slug</span></tt> object (see <a class="reference internal" href="#sec-sfr-slug-full"><em>Full Documentation of slugpy.sfr_slug</em></a> for full details):</p>
+<li><p class="first">Import the library and instantiate an <code class="docutils literal"><span class="pre">sfr_slug</span></code> object (see <a class="reference internal" href="#sec-sfr-slug-full"><span>Full Documentation of slugpy.sfr_slug</span></a> for full details):</p>
 <div class="highlight-rest"><div class="highlight"><pre>from slugpy.sfr_slug import sfr_slug
 sfr_estimator = sfr_slug()
 </pre></div>
 </div>
 </li>
 </ol>
-<p>This creates an sfr_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/SFR_SLUG. If you have another library of simulations you&#8217;d rather use, you can use the <tt class="docutils literal"><span class="pre">libname</span></tt> keyword to the <tt class="docutils literal"><span class="pre">sfr_slug</span></tt> constructor to select it.</p>
+<p>This creates an sfr_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/SFR_SLUG. If you have another library of simulations you&#8217;d rather use, you can use the <code class="docutils literal"><span class="pre">libname</span></code> keyword to the <code class="docutils literal"><span class="pre">sfr_slug</span></code> constructor to select it.</p>
 <ol class="arabic" start="2">
 <li><p class="first">Specify your filter(s), for example:</p>
 <div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.add_filters(&#39;QH0&#39;)
@@ -79,7 +83,7 @@ sfr_estimator = sfr_slug()
 </div>
 </li>
 </ol>
-<p>The <tt class="docutils literal"><span class="pre">add_filter</span></tt> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <tt class="docutils literal"><span class="pre">add_filters</span></tt> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
+<p>The <code class="docutils literal"><span class="pre">add_filter</span></code> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <code class="docutils literal"><span class="pre">add_filters</span></code> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
 <ol class="arabic" start="3">
 <li><p class="first">Specify your priors, for example:</p>
 <div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.priors = &#39;schechter&#39;
@@ -87,7 +91,7 @@ sfr_estimator = sfr_slug()
 </div>
 </li>
 </ol>
-<p>The <tt class="docutils literal"><span class="pre">priors</span></tt> property specifies the assumed prior probability distribution on the star formation rate. It can be either <tt class="docutils literal"><span class="pre">None</span></tt> (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, a callable that takes a star formation rate as input and returns the prior for it, or a string whose value is either &#8220;flat&#8221; or &#8220;prior&#8221;. The two strings specify, respectively, a prior distribution that is either flat in log SFR or follows the Schechter function SFR distribution from <a class="reference external" href="http://adsabs.harvard.edu/abs/2011MNRAS.415.1815B">Bothwell et al. (2011)</a>:</p>
+<p>The <code class="docutils literal"><span class="pre">priors</span></code> property specifies the assumed prior probability distribution on the star formation rate. It can be either <code class="docutils literal"><span class="pre">None</span></code> (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, a callable that takes a star formation rate as input and returns the prior for it, or a string whose value is either &#8220;flat&#8221; or &#8220;prior&#8221;. The two strings specify, respectively, a prior distribution that is either flat in log SFR or follows the Schechter function SFR distribution from <a class="reference external" href="http://adsabs.harvard.edu/abs/2011MNRAS.415.1815B">Bothwell et al. (2011)</a>:</p>
 <div class="math">
 \[p(\log\mathrm{SFR}) \propto \mathrm{SFR}^{\alpha} \exp(-\mathrm{SFR}/\mathrm{SFR}_*)\]</div>
 <p>with <span class="math">\(\alpha = -0.51\)</span> and <span class="math">\(\mathrm{SFR}_* = 9.2\,M_\odot\,\mathrm{yr}^{-1}\)</span>.</p>
@@ -98,14 +102,14 @@ sfr_estimator = sfr_slug()
 </div>
 </li>
 </ol>
-<p>The argument <tt class="docutils literal"><span class="pre">logSFR_in</span></tt> can be a float or an array specifying one or more point mass estimates of the SFR in your chosen filter. For a case with two or more filters, then <tt class="docutils literal"><span class="pre">logSFR_in</span></tt> must be an array whose trailing dimension matches the number of filters. If you have added two or more filter sets, you need to specify which one you want to use via the <tt class="docutils literal"><span class="pre">filters</span></tt> keyword. The optional argument <tt class="docutils literal"><span class="pre">logSFRphoterr</span></tt> can be used to provide errors on the photometric SFRs. Like <tt class="docutils literal"><span class="pre">logSFR_in</span></tt>, it can be a float or an array.</p>
-<p>The <tt class="docutils literal"><span class="pre">sfr_slug.mpdf</span></tt> method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#sec-sfr-slug-full"><em>Full Documentation of slugpy.sfr_slug</em></a>.</p>
+<p>The argument <code class="docutils literal"><span class="pre">logSFR_in</span></code> can be a float or an array specifying one or more point mass estimates of the SFR in your chosen filter. For a case with two or more filters, then <code class="docutils literal"><span class="pre">logSFR_in</span></code> must be an array whose trailing dimension matches the number of filters. If you have added two or more filter sets, you need to specify which one you want to use via the <code class="docutils literal"><span class="pre">filters</span></code> keyword. The optional argument <code class="docutils literal"><span class="pre">logSFRphoterr</span></code> can be used to provide errors on the photometric SFRs. Like <code class="docutils literal"><span class="pre">logSFR_in</span></code>, it can be a float or an array.</p>
+<p>The <code class="docutils literal"><span class="pre">sfr_slug.mpdf</span></code> method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#sec-sfr-slug-full"><span>Full Documentation of slugpy.sfr_slug</span></a>.</p>
 </div>
 <div class="section" id="full-documentation-of-slugpy-sfr-slug">
 <span id="sec-sfr-slug-full"></span><h2>Full Documentation of slugpy.sfr_slug<a class="headerlink" href="#full-documentation-of-slugpy-sfr-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.sfr_slug.sfr_slug">
-<em class="property">class </em><tt class="descclassname">slugpy.sfr_slug.</tt><tt class="descname">sfr_slug</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.sfr_slug.</code><code class="descname">sfr_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of true star
 formation rate from a set of input point mass estimates of the
 star formation rate.</p>
@@ -132,7 +136,7 @@ measured by Bothwell et al. (2011)</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div>Initialize an sfr_slug object.</div></blockquote>
 <dl class="docutils">
@@ -206,13 +210,13 @@ true value</dd>
 
 <dl class="attribute">
 <dt id="slugpy.sfr_slug.sfr_slug.__weakref__">
-<tt class="descname">__weakref__</tt><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__weakref__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__weakref__</code><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__weakref__" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of weak references to the object (if defined)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.add_filters">
-<tt class="descname">add_filters</tt><big>(</big><em>filters</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.add_filters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_filters</code><span class="sig-paren">(</span><em>filters</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.add_filters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a set of filters to use for cluster property estimation</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -228,7 +232,7 @@ true value</dd>
 
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.filters">
-<tt class="descname">filters</tt><big>(</big><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.filters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">filters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.filters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns list of all available filters</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
@@ -244,7 +248,7 @@ true value</dd>
 
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.logL">
-<tt class="descname">logL</tt><big>(</big><em>logSFR</em>, <em>logSFRphot</em>, <em>logSFRphoterr=None</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.logL" title="Permalink to this definition">¶</a></dt>
+<code class="descname">logL</code><span class="sig-paren">(</span><em>logSFR</em>, <em>logSFRphot</em>, <em>logSFRphoterr=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.logL" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns the natural log of the likelihood
 function evaluated at a particular log SFR and set of log
 luminosities</p>
@@ -280,7 +284,7 @@ be used by default</dd>
 
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.mcmc">
-<tt class="descname">mcmc</tt><big>(</big><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mcmc" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mcmc</code><span class="sig-paren">(</span><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mcmc" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns a sample of MCMC walkers for log SFR</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
@@ -317,7 +321,7 @@ default</dd>
 
 <dl class="method">
 <dt id="slugpy.sfr_slug.sfr_slug.mpdf">
-<tt class="descname">mpdf</tt><big>(</big><em>logSFRphot</em>, <em>logSFRphoterr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><big>)</big><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mpdf" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mpdf</code><span class="sig-paren">(</span><em>logSFRphot</em>, <em>logSFRphoterr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mpdf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the marginal probability of log SFR for one or more
 input sets of photometric properties. Output quantities are
 computed on a grid of values, in the same style as meshgrid</p>
@@ -377,7 +381,7 @@ dimensions match the dimensions of the output grid</dd>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
@@ -395,12 +399,14 @@ dimensions match the dimensions of the output grid</dd>
   <h4>Next topic</h4>
   <p class="topless"><a href="tests.html"
                         title="next chapter">Test Problems</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/sfr_slug.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/sfr_slug.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -417,27 +423,20 @@ dimensions match the dimensions of the output grid</dd>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="tests.html" title="Test Problems"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="cluster_slug.html" title="cluster_slug: Bayesian Inference of Star Cluster Properties"
-             >previous</a> |</li>
-        <li><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
     <div class="footer">
-        &copy; Copyright 2014, Mark Krumholz, Michele Fumagalli, et al..
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/sfr_slug.txt"
+          rel="nofollow">Page source</a></li>
     </div>
+
+    
+
+    
   </body>
 </html>

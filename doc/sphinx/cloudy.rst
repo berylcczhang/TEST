@@ -125,12 +125,13 @@ Cluster Mode
 In cluster mode, cloudy_slug will read all the individual cluster
 spectra contained in the SLUG cluster_spec file, and for each one it
 will perform a cloudy calculation to determine the corresponding
-nebular emission. The density and radius are handled somewhat
+nebular emission. By default the density and radius are handled somewhat
 differently in this case, since, for a mono-age stellar population, it
 is possible to compute the time evolution of the HII region radius and
 density.
 
-In cluster mode, the hydrogen number density :math:`n_{\mathrm{H}}`
+Default behavior in cluster mode is as follows:
+the hydrogen number density :math:`n_{\mathrm{H}}`
 stored in the cloudy input template (see :ref:`ssec-cloudy-template`)
 is taken to specify the density of the *neutral* gas around the HII
 region, not the density of the gas inside the HII region. The outer
@@ -257,8 +258,10 @@ The ``cloudy_slug.py`` script provides the interface between SLUG and
 cloudy. Usage for this script is as follows::
 
    cloudy_slug.py [-h] [-a AGEMAX] [--cloudypath CLOUDYPATH]
-                  [--cloudytemplate CLOUDYTEMPLATE] [-cm] [-nl NICELEVEL]
-                  [-n NPROC] [-s] [--slugpath SLUGPATH] [-v]
+                  [--cloudytemplate CLOUDYTEMPLATE] [-cm] 
+                  [-cf COVERINGFAC] [-hd HDEN] [-ip IONPARAM] [-nd]
+                  [-nl NICELEVEL] [-n NPROC] [-s] [--slugpath SLUGPATH]
+                  [-v]
                   slug_model_name [start_spec] [end_spec]
 
 The positional arguments are as follows:
@@ -299,6 +302,28 @@ The optional arguments are as follows:
 * ``-cm, --clustermode``: if this argument is set, then cloudy_slug
   will run in :ref:`sssec-cloudy-cluster-mode`; default behavior is to
   run in :ref:`sssec-cloudy-integrated-mode`
+* ``-cf COVERINGFRAC, --coveringfrac COVERINGFRAC``: this sets the
+  covering fraction of the HII region; formally, the effect of this
+  parameter is that the ionizing luminosity that is passed to cloudy
+  is reduced by the specified factor; defaults to 1.0, i.e., the full
+  ionizing luminosity is passed to cloudy
+* ``-hd HDEN, --hden HDEN``: hydrogen density; if set, this value
+  overrides the value of hden found in the cloudy template file
+* ``-ip IONPARAM, --ionparam IONPARAM``: ionization parameter; this is
+  an alternate means of setting the hydrogen density, which will set
+  the density :math:`n_{\mathrm{II}}` so that the volume-averaged
+  ionization parameter :math:`\mathcal{U}` for a spherically-symmetric
+  uniform-density HII region is ``IONPARAM``. The relationship used to
+  define the density is
+
+.. math:: \mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}} 
+	  Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}
+
+* ``-nd, --nodynamic``: this disables the dynamical calculation of the
+  HII region radius and density for calculations in
+  :ref:`sssec-cloudy-cluster-mode`, and instead treats the density as
+  the starting density for the cloudy calculation, exactly as in
+  :ref:`sssec-cloudy-integrated-mode`
 * ``-nl NICELEVEL, --nicelevel NICELEVEL``: if this is set, then the
   cloudy processes launched by the script will be run at this nice
   level. If it is not set, they will not be nice'd. Note that this
