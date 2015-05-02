@@ -1,8 +1,10 @@
 title Cloudy computation on a SLUG output spectrum
 abundances HII region
 sphere static
+constant pressure no abort
 cosmic rays background
-hden 3
+cmb redshift 0
+hden 2
 stop temperature 1000
 stop efrac 0.1
 save last continuum "OUTPUT_FILENAME.con"
