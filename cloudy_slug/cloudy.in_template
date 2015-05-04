@@ -1,11 +1,12 @@
 title Cloudy computation on a SLUG output spectrum
 abundances HII region
-sphere static
+sphere expanding
 constant pressure no abort
 cosmic rays background
 cmb redshift 0
-hden 2
+hden 0
 stop temperature 1000
 stop efrac 0.1
+iterate to convergence
 save last continuum "OUTPUT_FILENAME.con"
 save last line list emergent absolute column "OUTPUT_FILENAME.lines" "LineList_HII.dat"
