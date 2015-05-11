@@ -142,7 +142,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       // this needs to be compatible with starburst99's data file
       // format, and starburst99 is written in fortran, and uses
       // fortran's godawful IO formatting techniques to break up
-      // intput data based on column positions. Claus, please, please
+      // input data based on column positions. Claus, please, please
       // switch to a modern computer language... like cobol... or
       // bcpl...
       vector<unsigned int> breaks;
@@ -277,6 +277,37 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     logmDot[i][0] = logmDot[i][1];
   }
 
+  // Check if the tracks have age inversions, meaning that time
+  // entries at a given mass sometimes decrease. If so, sort them into
+  // the proper order and issue a warning.
+  for (unsigned int i=0; i<ntrack; i++) {
+    for (unsigned int j=2; j<ntime; j++) {
+	if (logtimes[i][j] < logtimes[i][j-1]) {
+	  streamsize prec = cerr.precision();
+	  cerr << "Warning: tracks have non-monotonic time at mass "
+	       << exp(logmass[i]) << " Msun, entries "
+	       << j-1 << " and " << j << ", times "
+	       << setprecision(20)
+	       << exp(logtimes[i][j-1]) << " and "
+	       << setprecision(20)
+	       << exp(logtimes[i][j]) 
+	       << " yr; entries will be swapped." << endl;
+	  cerr.precision(prec);
+	  swap(logtimes[i][j-1], logtimes[i][j]);
+	  swap(logcur_mass[i][j-1], logcur_mass[i][j]);
+	  swap(logL[i][j-1], logL[i][j]);
+	  swap(logTeff[i][j-1], logTeff[i][j]);
+	  swap(h_surf[i][j-1], h_surf[i][j]);
+	  swap(he_surf[i][j-1], he_surf[i][j]);
+	  swap(c_surf[i][j-1], c_surf[i][j]);
+	  swap(n_surf[i][j-1], n_surf[i][j]);
+	  swap(o_surf[i][j-1], o_surf[i][j]);
+	  swap(logTstar[i][j-1], logTstar[i][j]);
+	  swap(logmDot[i][j-1], logmDot[i][j]);
+	}
+    }
+  }
+
   // Check if tracks are non-monotonic (meaning that lifetime is
   // sometimes an increasing rather than a decreasing function of
   // mass). This requires special handling.
@@ -334,18 +365,6 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     n_surf_tmp[0] = n_surf[i][1];
     for (unsigned int j=2; j<ntime; j++) {
       if (logtimes[i][j] != logtimes[i][j-1]) {
-	if (logtimes[i][j] < logtimes[i][j-1]) {
-	  streamsize prec = cerr.precision();
-	  cerr << "Warning: tracks have non-monotonic time at mass "
-	       << exp(logmass[i]) << " Msun, times "
-	       << setprecision(20)
-	       << exp(logtimes[i][j-1]) << " - "
-	       << setprecision(20)
-	       << exp(logtimes[i][j]) 
-	       << " yr; entry will be ignored." << endl;
-	  cerr.precision(prec);
-	  continue;
-	}
 	tracktimes[n_uniq] = logtimes[i][j];
 	logcur_mass_tmp[n_uniq] = logcur_mass[i][j];
 	logL_tmp[n_uniq] = logL[i][j];
