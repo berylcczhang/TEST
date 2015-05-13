@@ -187,8 +187,9 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
+        if ntime > 1:
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
         lum \
             = np.transpose(
                 np.reshape(lum, (ntrial, ntime, len(wavelength))))
