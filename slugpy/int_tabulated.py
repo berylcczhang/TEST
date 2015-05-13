@@ -38,9 +38,13 @@ def int_tabulated(x, y, sorted=True):
     # Figure out how many segments we want
     nseg = int(np.ceil((len(x)-1)/4.0)*4)
 
-    # Compute step size and set up interpolation grid
+    # Compute step size and set up interpolation grid; be careful to
+    # set the last point exactly so that the interpolator doesn't give
+    # us NaN because the last point in the interpolated grid is
+    # outside the region of the data due to truncation error
     stepsize = (x[-1] - x[0])/nseg
     xinterp = x[0] + np.arange(nseg+1)*stepsize
+    xinterp[-1] = x[-1]
 
     # Interpolate data onto grid
     finterp = akima(x, y)
@@ -108,6 +112,7 @@ def int_tabulated2(x1, f1, x2, f2, sorted=True):
     # Compute step size and set up interpolation grid
     stepsize = (x[-1] - x[0])/nseg
     xinterp = x[0] + np.arange(nseg+1)*stepsize
+    xinterp[-1] = x[-1]    # Avoid problems due to truncation error
 
     # Interpolate data onto grid
     interp1 = akima(x1, f1)
