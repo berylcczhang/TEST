@@ -134,8 +134,9 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         # array appropriately
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
+        if ntime > 1:
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
 
         # Reshape the spectral arrays
         inc = np.transpose(np.reshape(inc, (ntrial, ntime, nl)))
@@ -166,8 +167,9 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         time = np.array(data_list[1::4*nl+2])
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
+        if ntime > 1:
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
 
         # Put spectra into arrays
         inc = np.zeros((nl, ntime, ntrial))
@@ -203,8 +205,9 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
         ntime = len(time)/ntrial
-        if np.amin(time[:ntime] == time[ntime:2*ntime]):
-            time = time[:ntime]
+        if ntime > 1:
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
         inc \
             = np.transpose(
                 np.reshape(inc, (ntrial, ntime, len(wavelength))))
