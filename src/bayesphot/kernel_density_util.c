@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <gsl/gsl_math.h>
 #include "geometry.h"
 #include "kernel_density_util.h"
 
