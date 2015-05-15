@@ -19,17 +19,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // This class defines a method to compute approximate nebular emission
 // from an input stellar spectrum. The computation is done for a
-// uniform temperature, uniform density, metal-free HII region in
-// which the He is all singly-ionized; these assumptions let one
-// compute a fixed conversion rate of ionizing photons to nebular line
-// production. This method is intended as a "quick and dirty" estimate
-// that can stand in for a much more accurate (but much more
-// expensive) calculation with cloudy. The processes included are:
+// uniform temperature, uniform density, HII region. This method is
+// intended as a "quick and dirty" estimate that can stand in for a
+// much more accurate (but much more expensive) calculation with
+// cloudy. The processes included are:
 // 1. Hydrogen and helium free-free
 // 2. Hydrogen and helium bound-free
 // 3. Hydrogen 2-photon emission
 // 4. Hydrogen recombination lines
-// 5. Helium recombination and collisionally-excited lines
+// 5. He and metal lines, which are handled using pre-tabulated values
 ////////////////////////////////////////////////////////////////////////
 
 #ifndef _slug_nebular_H_
@@ -51,17 +49,20 @@ public:
   // Constructor
   slug_nebular(const char *atomic_dir,
 	       const std::vector<double>& lambda_in,
-	       const double n_in = 1.0e4, const double T_in = 1.0e4, 
-	       const double phi_dust_in = 0.73,
-	       const double z = 0.0);
+	       const char *trackname,
+	       const double n_in = 1.0e2,
+	       const double T_in = 1.0e4, 
+	       const double logU = -3.0, 
+	       const double phi_in = 0.73,
+	       const double z = 0.0,
+	       const bool no_metals = false);
 
   // Destructor
   ~slug_nebular();
 
   // Routines to set the physical parameters for the HII region
-  void set_properties(const double n_in = 1.0e4, 
-		      const double T_in = 1.0e4, 
-		      const double phi_dust_in = 0.73);
+  void set_properties(const double n_in = 1.0e2, 
+		      const double phi_in = 0.73);
 
   // Routine to return the nebular wavelength grid
   std::vector<double>::size_type n_lambda() const
@@ -72,20 +73,36 @@ public:
   }
 
   // Routine to return spectrum with nebular contribution added to
-  // stellar spectrum
+  // stellar spectrum; age gives the age of the stellar population,
+  // used for the tabulated metal line interpolation; values < 0
+  // indicate that we use the results computed for a spectrum
+  // corresponding to continuous star formation at an age of 10 Myr
   std::vector<double> 
-  get_tot_spec(const std::vector<double>& L_lambda) const;
+  get_tot_spec(const std::vector<double>& L_lambda, 
+	       const double age = -1.0) const;
 
   // Routines to return just the nebular spectrum
   std::vector<double> 
-  get_neb_spec(const std::vector<double>& L_lambda) const;
-  std::vector<double> get_neb_spec(const double QH0) const;
+  get_neb_spec(const std::vector<double>& L_lambda, 
+	       const double age = -1.0) const;
+  std::vector<double> get_neb_spec(const double QH0, 
+				   const double age = -1.0) const;
 
   // Routine to interpolate a spectrum from the stellar wavelength
   // grid to the nebular one
   std::vector<double>
   interp_stellar(const std::vector<double> &L_lambda_star,
 		 const std::vector<double>::size_type offset = 0) const;
+
+  // Routines to get the emission per ionizing photon from free-free,
+  // bound-free, 2-photon, H recombination lines, metal lines; for
+  // metal lines, age index is which cloudy age to use; values < 0
+  // result in the continuous SF case being used
+  std::vector<double> get_ff(const double T);
+  std::vector<double> get_bf(const double T);
+  std::vector<double> get_2p(const double T);
+  std::vector<double> get_Hrecomb(const double T);
+  std::vector<double> get_metlines(const int ageidx);
 
 private:
 
@@ -107,9 +124,10 @@ private:
   slug_filter *ion_filter;
 
   // Physical properties of nebula
-  double phi_dust; // Fraction of ionizing photons absorbed by H
+  double phi;      // Fraction of ionizing photons absorbed by H
   double den;      // Gas density
-  double T;        // Gas temperature
+  double T_cts;    // Temperature for continuous star formation
+  std::vector<double> T_ssp;   // Temperature for mono-age populations
 
   // Hydrogen bound-free emission data
   unsigned int HIbf_nT, HIbf_nE;
@@ -149,14 +167,23 @@ private:
   std::vector<double> Hlines_T, Hlines_den;
   array4d Hlines_emiss;
 
+#if 0
   // Helium line data
   unsigned int Helines_nLines, Helines_nDen;
   std::vector<double> Helines_lambda, Helines_den;
   array2d Helines_a, Helines_b, Helines_c;
+#endif
+
+  // Tabular data from cloudy
+  bool use_metals;
+  std::vector<double> cloudy_time, cloudy_lambda, cloudy_lum_cts;
+  array2d cloudy_lum;
+  std::vector<std::string> cloudy_labels;
 
   // Conversion between ionizing luminosity and nebular emission, for
   // clusters and integrated
-  std::vector<double> LperQ;
+  std::vector<double> LperQ_cts;
+  array2d LperQ;
 };
 
 #endif

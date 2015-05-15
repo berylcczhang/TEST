@@ -34,7 +34,7 @@ namespace std
 #include <boost/lexical_cast.hpp>
 
 typedef boost::multi_array<double, 2> array2d;
-typedef boost::multi_array<double, 3> array3d;
+typedef boost::multi_array<double, 4> array4d;
 
 using namespace std;
 using namespace boost;
@@ -48,9 +48,12 @@ using namespace boost::filesystem;
 slug_nebular::
 slug_nebular(const char *atomic_dir,
 	     const std::vector<double>& lambda_in,
+	     const char *trackname,
 	     const double n_in, const double T_in,
-	     const double phi_dust_in,
-	     const double z) :
+	     const double logU,
+	     const double phi_in,
+	     const double z,
+	     const bool no_metals) :
   lambda_star(lambda_in) {
 
   // Set up the filter object we'll use to extract ionizing fluxes
@@ -60,13 +63,15 @@ slug_nebular(const char *atomic_dir,
   ion_filter = new slug_filter(lambda_tmp, response, 0.0, 0.0, true);
 
   // Check and the density and temperature are in the allowed range
-  if ((T_in < Tmin) || (T_in > Tmax)) {
-    cerr << "slug: error: nebular temperature set to " << T_in
-	 << "; allowed range is " << Tmin << " - " << Tmax << endl;
-    exit (1);
+  if (T_in > 0) {
+    if ((T_in < Tmin) || (T_in > Tmax)) {
+      cerr << "slug: error: nebular temperature set to " << T_in
+	   << "; allowed range is " << Tmin << " - " << Tmax << endl;
+      exit (1);
+    }
   }
-  if ((n_in < nMin) || (n_in >= nMax)) {
-    cerr << "slug: error: nebular density set to " << n_in
+  if ((den < nMin) || (den >= nMax)) {
+    cerr << "slug: error: nebular density set to " << den
 	 << "; allowed range is " << nMin << " - " << nMax << endl;
     exit (1);
   }
@@ -98,8 +103,8 @@ slug_nebular(const char *atomic_dir,
 
   // We've found the first line, which contains number of temperatures
   // and energies; extract them
-  stringstream ssHI(hdr);
-  ssHI >> HIbf_nT >> HIbf_nE;
+  stringstream ss(hdr);
+  ss >> HIbf_nT >> HIbf_nE;
 
   // Now read the log temperature table
   HIbf_logT.resize(HIbf_nT);
@@ -145,8 +150,9 @@ slug_nebular(const char *atomic_dir,
 
   // We've found the first line, which contains number of temperatures
   // and energies; extract them
-  stringstream ssHeI(hdr);
-  ssHeI >> HeIbf_nT >> HeIbf_nE;
+  ss.str(hdr);
+  ss.clear();
+  ss >> HeIbf_nT >> HeIbf_nE;
 
   // Now read the log temperature table
   HeIbf_logT.resize(HeIbf_nT);
@@ -192,14 +198,16 @@ slug_nebular(const char *atomic_dir,
   }
 
   // This line contains the grid of densities; parse it
-  stringstream ss1(hdr);
+  ss.str(hdr);
+  ss.clear();
   double tmp;
-  while (ss1 >> tmp) H2p_den.push_back(tmp);
+  while (ss >> tmp) H2p_den.push_back(tmp);
 
   // Now read the grid of temperatures
   getline(Halpha2s_file, hdr);
-  stringstream ss2(hdr);
-  while (ss2 >> tmp) H2p_T_alpha2s.push_back(tmp);
+  ss.str(hdr);
+  ss.clear();
+  while (ss >> tmp) H2p_T_alpha2s.push_back(tmp);
 
   // Now read the alpha2s data
   H2p_alpha2s.resize(extent2[H2p_T_alpha2s.size()][H2p_den.size()]);
@@ -244,8 +252,9 @@ slug_nebular(const char *atomic_dir,
 
   // We've found the first line, which contains number of temperatures
   // and densities; extract them
-  stringstream ss3(hdr);
-  ss3 >> Hlines_nT >> Hlines_nDen;
+  ss.str(hdr);
+  ss.clear();
+  ss >> Hlines_nT >> Hlines_nDen;
 
   // Loop over models
   Hlines_T.resize(Hlines_nT);
@@ -288,52 +297,156 @@ slug_nebular(const char *atomic_dir,
   Hlines_file.close();
 
   //////////////////////////////////////////////////////////////////////
-  // Read the data for He lines
+  // Read the cloudy tabulation
   //////////////////////////////////////////////////////////////////////
 
-  // Open file
-  fname = "Helines.txt";
-  ifstream Helines_file;
-  path Helines_path = dirname / path(fname.c_str());
-  Helines_file.open(Helines_path.c_str());
-  if (!Helines_file.is_open()) {
-    // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open He data file " 
-	 << Helines_path.string() << endl;
-    exit(1);
-  }
+  use_metals = !no_metals;
+  if (use_metals || (T_in <= 0)) {
 
-  // Read until we find a non-comment, non-blank line
-  while (getline(Helines_file, hdr)) {
-    trim(hdr);
-    if (hdr.length() == 0) continue;
-    if (hdr[0] == '#') continue;
-    break;
-  }
+    // Preparation: strip directory information from the track file
+    // we've been given
+    path track_path(trackname);
+    string trackfile = track_path.filename().native();
 
-  // We've found the first line, which contains number of temperatures
-  // and densities; extract them
-  stringstream ss4(hdr);
-  ss4 >> Helines_nDen >> Helines_nLines;
-
-  // Resize data arrays
-  Helines_den.resize(Helines_nDen);
-  Helines_lambda.resize(Helines_nLines);
-  Helines_a.resize(extent2[Helines_nDen][Helines_nLines]);
-  Helines_b.resize(extent2[Helines_nDen][Helines_nLines]);
-  Helines_c.resize(extent2[Helines_nDen][Helines_nLines]);
-
-  // Loop over densities and lines
-  for (unsigned int i=0; i<Helines_nDen; i++) {
-    Helines_file >> Helines_den[i];
-    for (unsigned int j=0; j<Helines_nLines; j++) {
-      Helines_file >> Helines_lambda[j] >> Helines_a[i][j] 
-		   >> Helines_b[i][j] >> Helines_c[i][j];
+    // Open file
+    fname = "cloudy_tab.txt";
+    ifstream cloudytab_file;
+    path cloudytab_path = dirname / path(fname.c_str());
+    cloudytab_file.open(cloudytab_path.c_str());
+    if (!cloudytab_file.is_open()) {
+      // Couldn't open file, so bail out
+      cerr << "slug: error: unable to open cloudy tabulation data file " 
+	   << cloudytab_path.string() << endl;
+      exit(1);
     }
-  }
 
-  // Close file
-  Helines_file.close();
+    // Read until we find a non-comment, non-blank line
+    while (getline(cloudytab_file, hdr)) {
+      trim(hdr);
+      if (hdr.length() == 0) continue;
+      if (hdr[0] == '#') continue;
+      break;
+    }
+
+    // We've found the first line, which contains number of tracks,
+    // times, and logU values; extract them
+    ss.str(hdr);
+    ss.clear();
+    unsigned int cloudy_nTrack, cloudy_nTime, cloudy_nLogU;
+    ss >> cloudy_nTrack >> cloudy_nTime >> cloudy_nLogU;
+
+    // The next line is the list of times; read it
+    cloudy_time.resize(cloudy_nTime);
+    T_ssp.resize(cloudy_nTime);
+    for (unsigned int i=0; i<cloudy_nTime; i++)
+      cloudytab_file >> cloudy_time[i];
+
+    // Next line is list of ionization parameters; read that, and see
+    // which ionization parameter we're going to use
+    double logU_in, logU_match, logU_diff = constants::big;
+    for (unsigned int i=0; i<cloudy_nLogU; i++) {
+      cloudytab_file >> logU_in;
+      if (fabs(logU_in - logU) < logU_diff) {
+	logU_diff = fabs(logU_in - logU);
+	logU_match = logU_in;
+      }
+    }
+    if (logU_diff > 0) {
+      cerr << "slug: warning: requested ionization parameter log U = "
+	   << logU << ", closest match in cloudy table is log U = "
+	   << logU_match << "; calculation will proceed"
+	   << endl;
+    }
+
+    // Now loop through the blocks
+    getline(cloudytab_file, hdr); // Burn a newline
+    while (getline(cloudytab_file, hdr)) {
+
+      // Check for EOF; if we reach EOF, we've failed to find the
+      // tracks we were looking for
+      if (cloudytab_file.eof()) {
+	cerr << "slug: error: could not find track set " 
+	     << trackfile << " in cloudy_tab.txt; try "
+	     << "running with compute_nebular = 0 or "
+	     << "(nebular_metals = 0 and nebular_temp > 0)"
+	     << endl;
+	exit(1);
+      }
+
+      // Parse the header for this block
+      vector<string> tokens;
+      trim(hdr);
+      split(tokens, hdr, is_any_of("\t "), token_compress_on);
+      double logU_track = lexical_cast<double>(tokens[1]);
+      unsigned int cloudy_nLine = lexical_cast<unsigned int>(tokens[2]);
+    
+      // Do the tracks and ionization parameter match what we're
+      // looking for?
+      bool match = (tokens[0].compare(trackfile) == 0) &&
+	(logU_track == logU_match);
+
+      // If we have a match, resize arrays to hold data
+      if (match) {
+	cloudy_lambda.resize(cloudy_nLine);
+	cloudy_lum_cts.resize(cloudy_nLine);
+	cloudy_lum.resize(extent2[cloudy_nTime][cloudy_nLine]);
+	cloudy_labels.resize(cloudy_nLine);
+      }
+
+      // Read the temperatures line; if we've found a match, store the
+      // temperatures
+      string line;
+      getline(cloudytab_file, line);
+      if (match) {
+	ss.str(line);
+	ss.clear();
+	if (T_in <= 0) {
+	  ss >> T_cts;
+	  for (unsigned int i=0; i<cloudy_nTime; i++) ss >> T_ssp[i];
+	} else {
+	  // If given a fixed temperature, override what we read
+	  T_cts = T_in;
+	  for (unsigned int i=0; i<cloudy_nTime; i++) T_ssp[i] = T_in;
+	}
+      }
+
+      // Read through this block
+      for (unsigned int i=0; i<cloudy_nLine; i++) {
+
+	// Read line
+	getline(cloudytab_file, line);
+
+	// If this isn't a match, just continue to next block
+	if (!match) continue;
+
+	// Extract first 11 characters: these are the label
+	cloudy_labels[i] = line.substr(0, 11);
+
+	// Now tokenize the remainder of the string; the first
+	// number is the wavelength of that line, the second is the
+	// luminosity per ionizing photon for continuous star
+	// formation at 10 Myr, and the remainder are the luminosity
+	// per ionizing photon for mono-age populations at the
+	// specified times
+	vector<string> tokens;
+	string line_remainder = line.substr(11);
+	trim(line_remainder);
+	split(tokens, line_remainder, is_any_of("\t "), 
+	      token_compress_on);
+	cloudy_lambda[i] = lexical_cast<double>(tokens[0]);
+	cloudy_lum_cts[i] = lexical_cast<double>(tokens[1]);
+	for (unsigned int j=0; j<cloudy_nTime; j++)
+	  cloudy_lum[j][i] = lexical_cast<double>(tokens[j+2]);
+      }
+
+      // If we found our data, we can stop
+      if (match) break;
+
+    }
+
+    // Close the file
+    cloudytab_file.close();
+  }
 
   //////////////////////////////////////////////////////////////////////
   // Construct the wavelength grid for nebular spectra; this will be
@@ -372,11 +485,11 @@ slug_nebular(const char *atomic_dir,
     }
   }
 
-  // Do the same for He lines
-  for (unsigned int i=0; i<Helines_nLines; i++) {
+  // Add metal lines to the grid
+  for (unsigned int i=0; i<cloudy_lambda.size(); i++) {
 
     // Get central wavelength and line width for this line
-    double wlcen = Helines_lambda[i];
+    double wlcen = cloudy_lambda[i];
     double lw = wlcen * linewidth / constants::c;
 
     // If we're off the wavelength table, skip this line
@@ -423,7 +536,7 @@ slug_nebular(const char *atomic_dir,
   //////////////////////////////////////////////////////////////////////
   // Compute L_lambda / Q
   //////////////////////////////////////////////////////////////////////
-  set_properties(n_in, T_in, phi_dust_in);
+  set_properties(n_in, phi_in);
 }
 
 
@@ -439,28 +552,221 @@ slug_nebular::~slug_nebular() {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_nebular::
-set_properties(const double n_in, const double T_in, 
-	       const double phi_dust_in) {
+set_properties(const double n_in, const double phi_in) {
 
   // Store the properties
   den = n_in;
-  T = T_in;
-  phi_dust = phi_dust_in;
+  phi = phi_in;
 
-  // Zero out the L/Q conversion
-  LperQ.assign(lambda_neb.size(), 0);
+  // Allocate memory and initialize to zero
+  LperQ_cts.resize(lambda_neb.size());
+  array2d::extent_gen extent2;
+  LperQ.resize(extent2[cloudy_time.size()][lambda_neb.size()]);
+  for (unsigned int i=0; i<lambda_neb.size(); i++) LperQ_cts[i] = 0.0;
+  for (unsigned int j=0; j<cloudy_time.size(); j++)
+    for (unsigned int i=0; i<lambda_neb.size(); i++)
+      LperQ[j][i] = 0.0;
 
-  // Compute alphaB for our HII region; eqn. 14.6 of Draine (2011)
+  // Do continuous case
+  vector<double> LperQ_tmp = get_ff(T_cts); // H / He free-free
+  for (unsigned int i=0; i<lambda_neb.size(); i++) 
+    LperQ_cts[i] += LperQ_tmp[i];
+  LperQ_tmp = get_bf(T_cts);   // H / He bound-free
+  for (unsigned int i=0; i<lambda_neb.size(); i++) 
+    LperQ_cts[i] += LperQ_tmp[i];
+  LperQ_tmp = get_2p(T_cts);   // H 2-photon
+  for (unsigned int i=0; i<lambda_neb.size(); i++) 
+    LperQ_cts[i] += LperQ_tmp[i];
+  LperQ_tmp = get_Hrecomb(T_cts);   // H recombination lines
+  for (unsigned int i=0; i<lambda_neb.size(); i++) 
+    LperQ_cts[i] += LperQ_tmp[i];
+  if (use_metals) {
+    LperQ_tmp = get_metlines(-1);   // Metal lines
+    for (unsigned int i=0; i<lambda_neb.size(); i++) 
+      LperQ_cts[i] += LperQ_tmp[i];
+  }
+
+  // Loop over times and get emission and each time
+  for (unsigned int j=0; j<cloudy_time.size(); j++) {
+    LperQ_tmp = get_ff(T_ssp[j]); // H / He free-free
+    for (unsigned int i=0; i<lambda_neb.size(); i++) 
+      LperQ[j][i] += LperQ_tmp[i];
+    LperQ_tmp = get_bf(T_ssp[j]); // H / He bound-free
+    for (unsigned int i=0; i<lambda_neb.size(); i++) 
+      LperQ[j][i] += LperQ_tmp[i];
+    LperQ_tmp = get_2p(T_ssp[j]); // H 2-photon
+    for (unsigned int i=0; i<lambda_neb.size(); i++) 
+      LperQ[j][i] += LperQ_tmp[i];
+    LperQ_tmp = get_Hrecomb(T_ssp[j]); // H recombination
+    for (unsigned int i=0; i<lambda_neb.size(); i++) 
+      LperQ[j][i] += LperQ_tmp[i];
+    if (use_metals) {
+      LperQ_tmp = get_metlines(j); // Metal lines
+      for (unsigned int i=0; i<lambda_neb.size(); i++) 
+	LperQ[j][i] += LperQ_tmp[i];
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Compute nebular spectrum from ionizing luminosity
+////////////////////////////////////////////////////////////////////////
+vector<double> 
+slug_nebular::get_neb_spec(const double QH0,
+			   const double age) const {
+
+  // Allocate memory for result
+  vector<double> L_lambda(lambda_neb.size(), 0.0);
+
+  // Decide which spectrum to use
+  if (age < 0.0) {
+
+    // Continuous SF spectrum
+    for (unsigned int i=0; i<lambda_neb.size(); i++)
+      L_lambda[i] = LperQ_cts[i]*QH0;
+
+  } else if (age < cloudy_time.front()) {
+
+    // SSP, age < smallest age we have
+    for (unsigned int i=0; i<lambda_neb.size(); i++)
+      L_lambda[i] = LperQ[0][i]*QH0;
+
+  } else if (age < cloudy_time.back()) {
+
+    // SSP, inside our age grid, so interpolate
+
+    // Find neighboring ages and get weight between them
+    unsigned int idx = 0;
+    for (unsigned int i=1; i<cloudy_time.size(); i++) {
+      if (cloudy_time[i] >= age) {
+	idx = i-1;
+	break;
+      }
+    }
+    double wgt = (cloudy_time[idx+1] - age) /
+      (cloudy_time[idx+1] - cloudy_time[idx]);
+
+    // Interpolate
+    for (unsigned int i=0; i<lambda_neb.size(); i++)
+      L_lambda[i] += ((1.0-wgt) * LperQ[idx][i] +
+		      wgt * LperQ[idx+1][i]) * QH0;
+
+  }
+
+  // Return
+  return L_lambda;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Compute nebular spectrum from input spectrum
+////////////////////////////////////////////////////////////////////////
+vector<double> 
+slug_nebular::get_neb_spec(const vector<double>& L_lambda,
+			   const double age) const {
+
+  // Get ionizing photon flux from input spectrum
+  double QH0 = ion_filter->compute_photon_lum(lambda_star, L_lambda);
+
+  // Return value from get_spectrum routine with ionizing flux
+  return get_neb_spec(QH0, age);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Interpolate a spectrum from the stellar to the nebular grid
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::interp_stellar(const vector<double> &L_lambda_star,
+			     const vector<double>::size_type offset) 
+  const {
+
+  // Find the part of the nebular grid that lies within the range of
+  // the input stellar spectrum
+  vector<double>::size_type ptr1, ptr2;
+  if (L_lambda_star.size() == lambda_star.size()) {
+    // Input spectrum covers full stellar wavelength grid
+    assert(offset == 0);
+    ptr1 = 0;
+    ptr2 = lambda_neb.size();
+  } else {
+    // Input spectrum is smaller than full stellar wavelength grid
+    ptr1=0;
+    while (lambda_neb[ptr1] < lambda_star[offset]) ptr1++;
+    ptr2=ptr1+1;
+    while (lambda_neb[ptr2] < lambda_star[offset+L_lambda_star.size()-1]) {
+      ptr2++;
+      if (ptr2 == lambda_neb.size()) break;
+    }
+  }
+
+  // Create array to return
+  vector<double> L_lambda_neb(ptr2-ptr1);
+
+  // Loop over nebular grid
+  unsigned int ptr = offset;
+  for (vector<double>::size_type i=ptr1; i<ptr2; i++) {
+
+    if (lambda_neb[i] == lambda_star[ptr]) {
+
+      // This point on the nebular grid matches one on the stellar
+      // grid, so just copy
+      L_lambda_neb[i-ptr1] = L_lambda_star[ptr-offset];
+      ptr++;
+
+    } else {
+
+      // This point on nebular grid is between two points on the
+      // stellar grid, so linearly interpolate
+      double wgt = log(lambda_neb[i]/lambda_star[ptr-1]) / 
+	log(lambda_star[ptr]/lambda_star[ptr-1]);
+      L_lambda_neb[i-ptr1] = pow(L_lambda_star[ptr-offset-1], 1.0-wgt) *
+	pow(L_lambda_star[ptr-offset], wgt);
+
+    }
+  }
+
+  // Return
+  return L_lambda_neb;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Compute total stellar + nebular spectrum
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::get_tot_spec(const vector<double>& L_lambda,
+			   const double age) const {
+
+  // Get nebular contribution to spectrum
+  vector<double> tot_spec = get_neb_spec(L_lambda, age);
+
+  // Get stellar spectrum interpolated onto nebular grid
+  vector<double> star_spec = interp_stellar(L_lambda);
+
+  // Add stellar contribution at wavelengths longer than 912 Angstrom
+  unsigned int i=0;
+  while (lambda_neb[i] < constants::lambdaHI) i++;
+  for ( ; i<lambda_neb.size(); i++) tot_spec[i] += star_spec[i];
+
+  // Return
+  return tot_spec;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Compute the free-free luminosity per ionizing photon
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::get_ff(const double T) {
+
+  // Storage for result
+  vector<double> LperQ_ret(lambda_neb.size());
+
+  // Compute alphaB; eqn. 14.6 of Draine (2011)
   double alphaB = 2.54e-13*pow(T/1e4, -0.8163-0.0208*log(T/1e4));
-
-  //////////////////////////////////////////////////////////////////////
-  // Step 1. Hydrogen and helium free-free
-  //////////////////////////////////////////////////////////////////////
 
   // This calculation uses the analytic formulae given in chapter 10
   // of Draine (2011); abundances are computed assuming ne = (1+xHe)
   // nH, nHe+ = (1+xHe) nH
-  for (unsigned int i=0; i<LperQ.size(); i++) {
+  for (unsigned int i=0; i<LperQ_ret.size(); i++) {
 
     // Skip ionizing wavelengths
     if (lambda_neb[i] < constants::lambdaHI) continue;
@@ -483,15 +789,27 @@ set_properties(const double n_in, const double T_in,
 
     // Contribution to L/Q, including conversion from energy Hz^-1 to
     // energy Angstrom^-1
-    LperQ[i] += 4.0*M_PI*jff * constants::c / 
+    LperQ_ret[i] += 4.0*M_PI*jff * constants::c / 
       (lambda_neb[i]*lambda_neb[i]*constants::Angstrom)
-      * phi_dust / alphaB;
-
+      * phi / alphaB;
   }
 
-  //////////////////////////////////////////////////////////////////////
-  // Step 2. Hydrogen and helium bound-free
-  //////////////////////////////////////////////////////////////////////
+  // Return
+  return(LperQ_ret);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Compute the bound-free luminosity per ionizing photon
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::get_bf(const double T) {
+
+  // Storage for result
+  vector<double> LperQ_ret(lambda_neb.size());
+
+  // Compute alphaB; eqn. 14.6 of Draine (2011)
+  double alphaB = 2.54e-13*pow(T/1e4, -0.8163-0.0208*log(T/1e4));
 
   // Get index and coefficient for interpolation of temperature
   unsigned int HIbf_T_idx = 0;
@@ -554,7 +872,7 @@ set_properties(const double n_in, const double T_in,
 	(lambda_neb[j]*lambda_neb[j]*constants::Angstrom);
 
       // Contribtuion to L/Q
-      LperQ[j] += gamma_wl * phi_dust / alphaB;
+      LperQ_ret[j] += gamma_wl * phi / alphaB;
     }
 
     // Move index
@@ -627,8 +945,8 @@ set_properties(const double n_in, const double T_in,
 	(lambda_neb[j]*lambda_neb[j]*constants::Angstrom);
 
       // Contribtuion to L/Q
-      LperQ[j] += constants::xHe *
-	gamma_wl * phi_dust / alphaB;
+      LperQ_ret[j] += constants::xHe *
+	gamma_wl * phi / alphaB;
     }
 
     // Move index
@@ -638,9 +956,22 @@ set_properties(const double n_in, const double T_in,
     if (lambda_neb[idx1] < constants::lambdaHI) break;
   }
 
-  //////////////////////////////////////////////////////////////////////
-  // Step 3. Hydrogen two-photon
-  //////////////////////////////////////////////////////////////////////
+  // Return
+  return(LperQ_ret);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Compute the 2-photon luminosity per ionizing photon
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::get_2p(const double T) {
+
+  // Storage for result
+  vector<double> LperQ_ret(lambda_neb.size());
+
+  // Compute alphaB; eqn. 14.6 of Draine (2011)
+  double alphaB = 2.54e-13*pow(T/1e4, -0.8163-0.0208*log(T/1e4));
 
   // Get indices and interpolation coefficients in temperature and
   // density 
@@ -672,14 +1003,38 @@ set_properties(const double n_in, const double T_in,
     (1.0 + (den*q2s2p_p + (1+constants::xHe)*den*q2s2p_e) / A2s1s);
 
   // Add 2-photon emissivity
-  for (unsigned int i=0; i<LperQ.size(); i++) {
-    LperQ[i] += phi_dust * (alpha2s / alphaB) * H2p_emiss[i] 
+  for (unsigned int i=0; i<LperQ_ret.size(); i++) {
+    LperQ_ret[i] += phi * (alpha2s / alphaB) * H2p_emiss[i] 
       * collfac;
   }
 
-  //////////////////////////////////////////////////////////////////////
-  // Step 4. Hydrogen recombination lines
-  //////////////////////////////////////////////////////////////////////
+  // Return
+  return(LperQ_ret);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Compute the H recombination line luminosity per ionizing photon
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::get_Hrecomb(const double T) {
+
+  // Storage for result
+  vector<double> LperQ_ret(lambda_neb.size());
+
+  // Compute alphaB; eqn. 14.6 of Draine (2011)
+  double alphaB = 2.54e-13*pow(T/1e4, -0.8163-0.0208*log(T/1e4));
+
+  // Get indices and interpolation coefficients in temperature and
+  // density 
+  unsigned int H_T_idx = 0;
+  while (H2p_T_alpha2s[H_T_idx+1] < T) H_T_idx++;
+  double H_T_wgt = log(T/H2p_T_alpha2s[H_T_idx]) / 
+    log(H2p_T_alpha2s[H_T_idx+1]/H2p_T_alpha2s[H_T_idx]);
+  unsigned int H_den_idx = 0;
+  while (H2p_den[H_den_idx+1] < den) H_den_idx++;
+  double H_den_wgt = log(den/H2p_den[H_den_idx]) / 
+    log(H2p_den[H_den_idx+1]/H2p_den[H_den_idx]);
 
   // Loop over pairs of states; we already have the interpolation
   // indices and weights from the previous step. Note that we only
@@ -709,195 +1064,65 @@ set_properties(const double n_in, const double T_in,
 
       // Add contribution for this level pair
       for (unsigned int k=0; k<lambda_neb.size(); k++)
-	LperQ[k] += 1.0/(sqrt(2.0*M_PI)*lw) * 
+	LperQ_ret[k] += 1.0/(sqrt(2.0*M_PI)*lw) * 
 	  exp(-pow(lambda_neb[k]-wl, 2) / (2.0 * pow(lw, 2))) *
-	  emiss * phi_dust / alphaB;
-
-#if 0
-      // If we're off the wavelength table, skip this line
-      if ((wl < exp(2*log(lambda[0]) - log(lambda[1]))) || 
-	  (wl > exp(2*log(lambda[lambda.size()-1]) - 
-		    log(lambda[lambda.size()-2])))) continue;
-
-      // Find correct wavelength bin and bin width
-      double dlogLambda;
-      unsigned int k;
-      for (k=0; k<lambda.size()-1; k++) {
-	if (wl < sqrt(lambda[k]*lambda[k+1])) break;
-      }
-      if (k == 0) {
-	dlogLambda = 2.0 * (log(lambda[1]) - log(lambda[0]));
-      } else if (k == lambda.size()-1) {
-	dlogLambda = 2.0 * (log(lambda[lambda.size()-1]) - 
-			    log(lambda[lambda.size()-2]));
-      } else {
-	dlogLambda = log(lambda[k+1]) - log(lambda[k-1]);
-      }
-
-      // Compute conversion factor
-      LperQ[k] += emiss / (lambda[k]*dlogLambda) 
-	* phi_dust / alphaB;
-#endif
+	  emiss * phi / alphaB;
     }
   }
 
-  //////////////////////////////////////////////////////////////////////
-  // Step 5. Helium lines
-  //////////////////////////////////////////////////////////////////////
-
-  // Prepare to interpolate in density
-  unsigned int He_idx = 0;
-  double He_wgt;
-  if (Helines_den[0] > den) He_wgt = 1.0;
-  else {
-    while (Helines_den[He_idx+1] < den) He_idx++;
-    He_wgt = log(den/Helines_den[He_idx]) / 
-      log(Helines_den[He_idx+1]/Helines_den[He_idx]);
-  }
-
-  // Loop over lines
-  for (unsigned int i=0; i<Helines_nLines; i++) {
-
-    // Get emissivitiy for this line
-    double emiss = 
-      (1.0 - He_wgt) * Helines_a[He_idx][i] *
-      pow(T/1e4, Helines_b[He_idx][i]) * 
-      exp(Helines_c[He_idx][i]/(T/1e4)) +
-      He_wgt * Helines_a[He_idx+1][i] *
-      pow(T/1e4, Helines_b[He_idx+1][i]) * 
-      exp(Helines_c[He_idx+1][i]/(T/1e4));
-
-    // Get central wavelength and line width for this line
-    double wlcen = Helines_lambda[i];
-    double lw = wlcen * linewidth / constants::c;
-
-    // Add contribution for this level
-    for (unsigned int k=0; k<lambda_neb.size(); k++)
-      LperQ[k] += 1.0/(sqrt(2.0*M_PI)*lw) * 
-	exp(-pow(lambda_neb[k]-wlcen, 2) / (2.0 * pow(lw, 2))) *
-	constants::xHe * emiss * phi_dust / alphaB;
-
-#if 0
-    // Find correct wavelength bin and bin width
-    double dlogLambda;
-    unsigned int k;
-    for (k=0; k<lambda.size()-1; k++) {
-      if (Helines_lambda[i] < sqrt(lambda[k]*lambda[k+1])) break;
-    }
-    if (k == 0) {
-      dlogLambda = 2.0 * (log(lambda[1]) - log(lambda[0]));
-    } else if (k == lambda.size()-1) {
-      dlogLambda = 2.0 * (log(lambda[lambda.size()-1]) - 
-			  log(lambda[lambda.size()-2]));
-    } else {
-      dlogLambda = log(lambda[k+1]) - log(lambda[k-1]);
-    }
-
-    // Compute conversion factor
-    LperQ[k] += constants::xHe * emiss / (lambda[k]*dlogLambda) 
-      * phi_dust / alphaB;
-#endif
-  }
+  // Return
+  return(LperQ_ret);
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Compute nebular spectrum from ionizing luminosity
-////////////////////////////////////////////////////////////////////////
-vector<double> 
-slug_nebular::get_neb_spec(const double QH0) const {
-  vector<double> L_lambda(lambda_neb.size(), 0.0);
-  for (unsigned int i=0; i<lambda_neb.size(); i++)
-    L_lambda[i] = LperQ[i] * QH0;
-  return L_lambda;
-}
-
-////////////////////////////////////////////////////////////////////////
-// Compute nebular spectrum from input spectrum
-////////////////////////////////////////////////////////////////////////
-vector<double> 
-slug_nebular::get_neb_spec(const vector<double>& L_lambda) const {
-
-  // Get ionizing photon flux from input spectrum
-  double QH0 = ion_filter->compute_photon_lum(lambda_star, L_lambda);
-
-  // Return value from get_spectrum routine with ionizing flux
-  return get_neb_spec(QH0);
-}
-
-////////////////////////////////////////////////////////////////////////
-// Interpolate a spectrum from the stellar to the nebular grid
+// Compute metal line luminosity per ionizing photon
 ////////////////////////////////////////////////////////////////////////
 vector<double>
-slug_nebular::interp_stellar(const vector<double> &L_lambda_star,
-			     const vector<double>::size_type offset) 
-  const {
+slug_nebular::get_metlines(const int ageidx) {
 
-  // Find the part of the nebular grid that lies within the range of
-  // the input stellar spectrum
-  vector<double>::size_type ptr1, ptr2;
-  if (L_lambda_star.size() == lambda_star.size()) {
-    // Input spectrum covers full stellar wavelength grid
-    assert(offset == 0);
-    ptr1 = 0;
-    ptr2 = lambda_neb.size();
+  // Storage for result
+  vector<double> LperQ_ret(lambda_neb.size());
+
+  // Continuous or SSP case
+  if (ageidx < 0) {
+
+    // Continuous case
+
+    // Loop over lines
+    for (unsigned int i=0; i<cloudy_lambda.size(); i++) {
+
+      // Get central wavelength and line width for this line
+      double wlcen = cloudy_lambda[i];
+      double lw = wlcen * linewidth / constants::c;
+
+      // Add contribution for this line
+      for (unsigned int j=0; j<lambda_neb.size(); j++)
+	LperQ_ret[j] += 1.0/(sqrt(2.0*M_PI)*lw) * 
+	  exp(-pow(lambda_neb[j]-wlcen, 2) / (2.0 * pow(lw, 2))) *
+	  cloudy_lum_cts[i];
+    }
+
   } else {
-    // Input spectrum is smaller than full stellar wavelength grid
-    ptr1=0;
-    while (lambda_neb[ptr1] < lambda_star[offset]) ptr1++;
-    ptr2=ptr1+1;
-    while (lambda_neb[ptr2] < lambda_star[offset+L_lambda_star.size()-1]) {
-      ptr2++;
-      if (ptr2 == lambda_neb.size()) break;
-    }
-  }
 
-  // Create array to return
-  vector<double> L_lambda_neb(ptr2-ptr1);
+    // SSP case
 
-  // Loop over nebular grid
-  unsigned int ptr = offset;
-  for (vector<double>::size_type i=ptr1; i<ptr2; i++) {
+    // Loop over lines
+    for (unsigned int i=0; i<cloudy_lambda.size(); i++) {
 
-    if (lambda_neb[i] == lambda_star[ptr]) {
+      // Get central wavelength and line width for this line
+      double wlcen = cloudy_lambda[i];
+      double lw = wlcen * linewidth / constants::c;
 
-      // This point on the nebular grid matches one on the stellar
-      // grid, so just copy
-      L_lambda_neb[i-ptr1] = L_lambda_star[ptr-offset];
-      ptr++;
-
-    } else {
-
-      // This point on nebular grid is between two points on the
-      // stellar grid, so linearly interpolate
-      double wgt = log(lambda_neb[i]/lambda_star[ptr-1]) / 
-	log(lambda_star[ptr]/lambda_star[ptr-1]);
-      L_lambda_neb[i-ptr1] = pow(L_lambda_star[ptr-offset-1], 1.0-wgt) *
-	pow(L_lambda_star[ptr-offset], wgt);
-
+      // Add contribution for this line
+      for (unsigned int j=0; j<lambda_neb.size(); j++)
+	LperQ_ret[j] += 1.0/(sqrt(2.0*M_PI)*lw) * 
+	  exp(-pow(lambda_neb[j]-wlcen, 2) / (2.0 * pow(lw, 2))) *
+	  cloudy_lum[ageidx][i];
     }
   }
 
   // Return
-  return L_lambda_neb;
+  return(LperQ_ret);
 }
 
-////////////////////////////////////////////////////////////////////////
-// Compute total stellar + nebular spectrum
-////////////////////////////////////////////////////////////////////////
-vector<double>
-slug_nebular::get_tot_spec(const vector<double>& L_lambda) const {
 
-  // Get nebular contribution to spectrum
-  vector<double> tot_spec = get_neb_spec(L_lambda);
-
-  // Get stellar spectrum interpolated onto nebular grid
-  vector<double> star_spec = interp_stellar(L_lambda);
-
-  // Add stellar contribution at wavelengths longer than 912 Angstrom
-  unsigned int i=0;
-  while (lambda_neb[i] < constants::lambdaHI) i++;
-  for ( ; i<lambda_neb.size(); i++) tot_spec[i] += star_spec[i];
-
-  // Return
-  return tot_spec;
-}

@@ -226,10 +226,13 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.get_use_nebular()) {
     nebular = new slug_nebular(pp.get_atomic_dir(),
 			       specsyn->lambda(true),
+			       pp.get_trackFile(),
 			       pp.get_nebular_den(),
 			       pp.get_nebular_temp(),
-			       pp.get_nebular_phidust(),
-			       pp.get_z());
+			       pp.get_nebular_logU(),
+			       pp.get_nebular_phi(),
+			       pp.get_z(),
+			       pp.nebular_no_metals());
   } else {
     nebular = NULL;
   }

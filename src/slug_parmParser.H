@@ -46,6 +46,7 @@ public:
   bool get_random_output_time() const;    // Are output times random?
   bool get_random_cluster_mass() const;   // Is cluster mass randomly drawn?
   bool get_use_nebular() const;           // Compute nebular emission or not?
+  bool nebular_no_metals() const;         // No metals in nebular emission
   double get_SFR() const;                 // SFR value for constant SFR
   double get_AV() const;                  // A_V value for constant A_V
   double get_z() const;                   // Return the redshift
@@ -54,7 +55,8 @@ public:
   double get_min_stoch_mass() const;      // Min mass to treat stochstically
   double get_nebular_den() const;         // Density for nebular calculation
   double get_nebular_temp() const;        // Temperature for nebular calc
-  double get_nebular_phidust() const;     // phi_dust for nebular calc
+  double get_nebular_phi() const;         // phi for nebular calculation
+  double get_nebular_logU() const;        // log U for nebular calculation
   const char *get_SFR_file() const;       // SFR file name for random SFR
   const char *get_SFH() const;            // SF history file name
   const char *get_IMF() const;            // IMF file name
@@ -118,13 +120,15 @@ private:
   double cluster_mass;                    // Cluster mass for cluster sims
   double nebular_den;                     // Density for nebular calculation
   double nebular_temp;                    // Temp for nebular calculation
-  double nebular_phidust;                 // phi_dust for nebular calc
+  double nebular_phi;                     // phi for nebular calc
+  double nebular_logU;                    // log U for nebular calculation
   bool constantSFR;                       // Is SFR constant?
   bool randomSFR;                         // Is SFR drawn randomly?
   bool constantAV;                        // Is A_V constant?
   bool randomClusterMass;                 // Is cluster mass drawn randomly?
   bool randomOutputTime;                  // Are output times random?
   bool use_nebular;                       // Compute nebular emission or not?
+  bool neb_no_metals;                     // Exclude metals from neb. emission
   bool writeClusterProp;                  // Write out cluster properties?
   bool writeClusterPhot;                  // Write out cluster photometry?
   bool writeClusterSpec;                  // Write out cluster spectra?

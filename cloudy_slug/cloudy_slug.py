@@ -315,8 +315,7 @@ def do_cloudy_run(thread_num, q):
 
         # Write out the cloudy input file header, substituting a
         # custom name for OUTPUT_FILENAME
-        cloudy_in_fname = osp.join(cwd, tmpdirname,
-                                   'cloudy.in'+'_{0:05d}'.format(thread_num))
+        cloudy_in_fname = osp.join(cwd, tmpdirname, 'cloudy.in'+ext)
         fpout = open(cloudy_in_fname, 'w')
         radset = False
         for line in tempfile:

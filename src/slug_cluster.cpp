@@ -381,7 +381,7 @@ slug_cluster::set_spectrum() {
 
   // If using nebular emission, compute the stellar+nebular spectrum
   if (nebular != NULL) 
-    L_lambda_neb = nebular->get_tot_spec(L_lambda);
+    L_lambda_neb = nebular->get_tot_spec(L_lambda, this->get_age());
 
   // If using extinction, compute the extincted spectrum and the
   // bolometric luminosity after extinction is applied

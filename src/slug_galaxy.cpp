@@ -426,7 +426,8 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     Lbol += pow(10.0, field_data[i].logL);
     vector<double> spec_neb;
     if (nebular != NULL) {
-      spec_neb = nebular->get_tot_spec(spec);
+      spec_neb = nebular->get_tot_spec(spec, 
+				       curTime-field_stars[i].birth_time);
       for (vector<double>::size_type j=0; j<nebular->n_lambda(); j++) 
 	L_lambda_neb[j] += spec_neb[j];
     }
@@ -459,7 +460,7 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     Lbol += Lbol_tmp;
     vector<double> spec_neb;
     if (nebular != NULL) {
-      spec_neb = nebular->get_tot_spec(spec);
+      spec_neb = nebular->get_tot_spec(spec, -1.0);
       for (vector<double>::size_type i=0; i<nebular->n_lambda(); i++) 
 	L_lambda_neb[i] += spec_neb[i];
     }

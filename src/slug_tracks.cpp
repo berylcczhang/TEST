@@ -39,6 +39,20 @@ using namespace boost::algorithm;
 using namespace boost::filesystem;
 
 ////////////////////////////////////////////////////////////////////////
+// Convenient comparator function to sort tracks into increasing age
+// order
+////////////////////////////////////////////////////////////////////////
+namespace tracks {
+  typedef struct {
+    double logt, logm, logL, logTeff, hsurf, hesurf, csurf, nsurf, 
+      osurf, logTstar, logmDot;
+  } track_data;
+  bool tracksort (const track_data &data1, const track_data& data2) {
+    return data1.logt < data2.logt;
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 
@@ -277,34 +291,65 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     logmDot[i][0] = logmDot[i][1];
   }
 
-  // Check if the tracks have age inversions, meaning that time
-  // entries at a given mass sometimes decrease. If so, sort them into
-  // the proper order and issue a warning.
+  // Make sure tracks are properly sorted by age. If not, sort them.
   for (unsigned int i=0; i<ntrack; i++) {
-    for (unsigned int j=2; j<ntime; j++) {
-	if (logtimes[i][j] < logtimes[i][j-1]) {
+    vector<double> logt_tmp(ntime);
+    for (unsigned int j=0; j<ntime; j++) logt_tmp[j] = logtimes[i][j];
+    if (!(is_sorted(logt_tmp.begin(), logt_tmp.end()))) {
+
+      // Find where monotonicity is violated and print out a warning
+      // message
+      double logt_max = logtimes[i][0];
 	  streamsize prec = cerr.precision();
-	  cerr << "Warning: tracks have non-monotonic time at mass "
-	       << exp(logmass[i]) << " Msun, entries "
-	       << j-1 << " and " << j << ", times "
+      cerr << "Warning: tracks have non-monotonic time at mass "
+	   << exp(logmass[i]) << " Msun, entries:";
+      bool flag_tmp = false;
+      for (unsigned int j=1; j<ntime; j++) {
+	if (logtimes[i][j] < logt_max) {
+	  if (flag_tmp == false) flag_tmp = true;
+	  else cerr << ",";
+	  cerr << " " << j << ", t = "
 	       << setprecision(20)
-	       << exp(logtimes[i][j-1]) << " and "
-	       << setprecision(20)
-	       << exp(logtimes[i][j]) 
-	       << " yr; entries will be swapped." << endl;
-	  cerr.precision(prec);
-	  swap(logtimes[i][j-1], logtimes[i][j]);
-	  swap(logcur_mass[i][j-1], logcur_mass[i][j]);
-	  swap(logL[i][j-1], logL[i][j]);
-	  swap(logTeff[i][j-1], logTeff[i][j]);
-	  swap(h_surf[i][j-1], h_surf[i][j]);
-	  swap(he_surf[i][j-1], he_surf[i][j]);
-	  swap(c_surf[i][j-1], c_surf[i][j]);
-	  swap(n_surf[i][j-1], n_surf[i][j]);
-	  swap(o_surf[i][j-1], o_surf[i][j]);
-	  swap(logTstar[i][j-1], logTstar[i][j]);
-	  swap(logmDot[i][j-1], logmDot[i][j]);
+	       << exp(logtimes[i][j]);
+	} else {
+	  logt_max = logtimes[i][j];
 	}
+      }
+      cerr << "; entries will be sorted, and computation will continue"
+	   << endl;
+      cerr.precision(prec);
+
+      // Now sort the tracks
+      vector<tracks::track_data> trackdat(ntime);
+      for (unsigned int j=0; j<ntime; j++) {
+	trackdat[j].logt = logtimes[i][j];
+	trackdat[j].logm = logcur_mass[i][j];
+	trackdat[j].logL = logL[i][j];
+	trackdat[j].logTeff = logTeff[i][j];
+	trackdat[j].hsurf = h_surf[i][j];
+	trackdat[j].hesurf = he_surf[i][j];
+	trackdat[j].hesurf = he_surf[i][j];
+	trackdat[j].csurf = c_surf[i][j];
+	trackdat[j].nsurf = n_surf[i][j];
+	trackdat[j].osurf = o_surf[i][j];
+	trackdat[j].logTstar = logTstar[i][j];
+	trackdat[j].logmDot = logmDot[i][j];
+      }
+      sort(trackdat.begin(), trackdat.end(), tracks::tracksort);
+      for (unsigned int j=0; j<ntime; j++) {
+	logtimes[i][j] = trackdat[j].logt;
+	logcur_mass[i][j] = trackdat[j].logm;
+	logL[i][j] = trackdat[j].logL;
+	logTeff[i][j] = trackdat[j].logTeff;
+	h_surf[i][j] = trackdat[j].hsurf;
+	he_surf[i][j] = trackdat[j].hesurf;
+	he_surf[i][j] = trackdat[j].hesurf;
+	c_surf[i][j] = trackdat[j].csurf;
+	n_surf[i][j] = trackdat[j].nsurf;
+	o_surf[i][j] = trackdat[j].osurf;
+	logTstar[i][j] = trackdat[j].logTstar;
+	logmDot[i][j] = trackdat[j].logmDot;
+      }
     }
   }
 

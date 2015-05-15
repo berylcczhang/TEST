@@ -82,7 +82,7 @@ time_step    	  2.0e7
 #start_time        2.0e7
 
 # Maximum evolution time, in yr.
-end_time	  2.0e8
+end_time	  4.0e7
 
 # Star formation rate in case where sim_type = galaxy, in Msun/yr; can
 # be omitted, and will be ignored, if sim_type = cluster. If, instead
@@ -264,20 +264,37 @@ A_V                  lib/avdist/slug_default.av
 # Default: lib/atomic
 #atomic_dir           lib/atomic
 
+# Turn of metal line emission (also includes He line emission) in the
+# nebular computation?
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 0
+#nebular_no_metals    0
+
 # Hydrogen number density to assume for nebular emission computation,
 # in cm^-3
-# Default: 1.0e3
-#nebular_den          1.0e3
+# Default: 1.0e2
+#nebular_den          1.0e2
 
-# Gas temperature to assume for nebular emission computation, in K
-# Default: 1.0e4
-#nebular_temp         1.0e4
+# Gas temperature to assume for nebular emission computation, in K; if
+# set to a value <= 0, temperatures will be computed based on the
+# tabulated cloudy results
+# Default: -1.0
+#nebular_temp         -1.0
 
-# Fraction of ionizing photons assumed to absorbed by H instead of
-# dust inside HII regions
-# Default: 0.73 (i.e, 73% of ionizing photons absorbed by H, 27% by
-# dust)
-#nebular_phidust      0.73
+# Log of dimensionless ionization parameter (volume-weighted mean
+# value) for nebular emission computation; allowed values are -3,
+# -2.5, and -2
+# Default: -3.0
+#nebular_logU          -3.0
+
+# Fraction of ionizing photons assumed to absorbed by H and produce
+# nebular emission within the observed aperture; values < 1 can
+# represent either absorption by dust instead of gas, or escape of
+# ionizing photons outside the observed aperture
+# Default: 0.73 (i.e, 73% of ionizing photons absorbed by H within the
+# observed aperture, 27% not)
+#nebular_phi          0.73
 
 #############################################
 # Parameters describing photometric filters #
