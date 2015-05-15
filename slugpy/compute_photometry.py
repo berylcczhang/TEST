@@ -145,6 +145,10 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
 
             # Get log wavelength in the range we want
             logwl_sub = logwl[wl < lambda_thresh[fname]]
+            if len(logwl_sub) == 0:
+                # No ionizing part to the spectrum
+                phot[i] = 0.0
+                continue
 
             # Get integrand, lambda^2 L_lambda / hc
             integrand = spec[wl < lambda_thresh[fname]] * \
