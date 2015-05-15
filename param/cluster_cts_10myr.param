@@ -80,7 +80,7 @@ time_step    	  2.0e5
 # Starting time (in yr)
 # Default: start_time = time_step, only if log_time = 0; otherwise
 # must be set
-start_time        2.0e5
+start_time        1.0e3
 
 # Maximum evolution time, in yr.
 end_time	  1.01e7
