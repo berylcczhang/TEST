@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{May 01, 2015}
+\date{May 15, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -249,11 +249,11 @@ The steps described in the previous two section are those required for a single 
 \label{intro:ssec-nebula}\label{intro:nebular-processing}
 SLUG includes methods for post-processing the output starlight to compute the light that will emerge from the HII region around star clusters, and to further apply extinction to that light.
 
-Nebular emission is computed by assuming that all the ionizing photons are absorbed in a uniform-density, uniform-temperature HII region around each star cluster / star, and then computing the resulting emission at non-ionizing energies. The calculation assumes that the HII region is in photoionization equilibrium, and consists of hydrogen that is fully ionized and helium that is singly ionized. Under these assumptions the volume \(V\), electron density \(n_e\), and hydrogen density \(n_{\mathrm{H}}\) are related to the hydrogen ionizing luminosity \(Q(\mathrm{H}^0)\) via
+Nebular emission is computed by assuming that, for stars / star clusters younger than 10 Myr, all the ionizing photons are absorbed in a uniform-density, uniform-temperature HII region around each star cluster / star, and then computing the resulting emission at non-ionizing energies. The calculation assumes that the HII region is in photoionization equilibrium, and consists of hydrogen that is fully ionized and helium that is singly ionized. Under these assumptions the volume \(V\), electron density \(n_e\), and hydrogen density \(n_{\mathrm{H}}\) are related to the hydrogen ionizing luminosity \(Q(\mathrm{H}^0)\) via
 \begin{gather}
-\begin{split}\phi_{\mathrm{dust}} Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V\end{split}\notag
+\begin{split}\phi Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V\end{split}\notag
 \end{gather}
-Here \(\phi_{\mathrm{dust}}\) is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and \(\alpha_{\mathrm{B}}(T)\) is the temperature-dependent case B recombination rate coefficient. SLUG approximates \(\alpha_{\mathrm{B}}(T)\) using the analytic approximation given by equation 14.6 of \href{http://adsabs.harvard.edu/abs/2011piim.book.....D}{Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press)}, while \(\phi_{\mathrm{dust}}\) and \(T\) are user-chosen parameters.
+Here \(\phi\) is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and \(\alpha_{\mathrm{B}}(T)\) is the temperature-dependent case B recombination rate coefficient. SLUG approximates \(\alpha_{\mathrm{B}}(T)\) using the analytic approximation given by equation 14.6 of \href{http://adsabs.harvard.edu/abs/2011piim.book.....D}{Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press)}, while \(\phi\) is a user-chosen parameter. The temperature can either be set by the user directly, or can be looked up automatically based on the age of the stellar population.
 
 The relation above determines \(n_e n_{\mathrm{H}} V\), and from this SLUG computes the nebular emission including the following processes:
 \begin{itemize}
@@ -270,13 +270,13 @@ Hydrogen 2-photon emission
 Hydrogen recombination lines from all lines with upper levels \(n_u \leq 25\)
 
 \item {} 
-The brightest 33 brightest He I recombination and collisionally-excited lines
+Non-hydrogen line emission based on a tabulation (see below)
 
 \end{itemize}
 
 Formally, the luminosity per unit wavelength is computed as
 \begin{gather}
-\begin{split}L_{\lambda,\mathrm{neb}} = \left[\gamma_{\mathrm{ff}}^{(\mathrm{H})} + \gamma_{\mathrm{bf}}^{(\mathrm{H})} + \gamma_{\mathrm{2p}}^{(\mathrm{H})} + \sum_{n,n' \leq 25, n<n'} \alpha_{nn'}^{\mathrm{eff,B,(H)}} E_{nn'}^{(\mathrm{H})} +  x_{\mathrm{He}} \gamma_{\mathrm{ff}}^{(\mathrm{He})} +  x_{\mathrm{He}} \gamma_{\mathrm{bf}}^{(\mathrm{He})} +  x_{\mathrm{He}} \sum_{i=1}^{33} \gamma_{i,\mathrm{line}}^{(\mathrm{He})}\right] n_e n_{\mathrm{H}}{V}\end{split}\notag
+\begin{split}L_{\lambda,\mathrm{neb}} = \left[\gamma_{\mathrm{ff}}^{(\mathrm{H})} + \gamma_{\mathrm{bf}}^{(\mathrm{H})} + \gamma_{\mathrm{2p}}^{(\mathrm{H})} + \sum_{n,n' \leq 25, n<n'} \alpha_{nn'}^{\mathrm{eff,B,(H)}} E_{nn'}^{(\mathrm{H})} +  x_{\mathrm{He}} \gamma_{\mathrm{ff}}^{(\mathrm{He})} +  x_{\mathrm{He}} \gamma_{\mathrm{bf}}^{(\mathrm{He})} + \sum_i \gamma_{i,\mathrm{line}}^{(\mathrm{M})}\right] n_e n_{\mathrm{H}}{V}\end{split}\notag
 \end{gather}
 Here \(n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_{\mathrm{B}}(T)\) from photoionization equilibrium, \(E_{nn'}\) is the energy difference between hydrogen levels \(n\) and \(n'\), and the remaining terms and their sources appearing in this equation are:
 \begin{itemize}
@@ -290,7 +290,7 @@ Here \(n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_{\mat
 \(\alpha_{nn'}^{\mathrm{eff,B,(H)}}\) is the effective emission rate coefficient for the \(n\) to \(n'\) H recombination line, taken from the tabulation of \href{http://adsabs.harvard.edu/abs/1995MNRAS.272...41S}{Storey \& Hummer (1995, MNRAS, 272, 41)}
 
 \item {} 
-\(\gamma_{i,\mathrm{line}}^{(\mathrm{He})}\) is the emissivity for the brightest recombination and collisionally-excited lines of \(\mathrm{He}^+\), taken from the tabulation of \href{http://adsabs.harvard.edu/abs/1999ApJ...514..307B}{Benjamin et al. (1999, ApJ, 514, 307)}
+\(\gamma_{i,\mathrm{line}}^{(\mathrm{M})}\) is the emissivity for the brightest non-hydrogen lines, computed using a set of pre-tabulated values, following the procedure described in the \href{http://adsabs.harvard.edu/abs/2015arXiv150205408K}{SLUG 2 method paper}
 
 \item {} 
 \(\gamma_{\mathrm{2p}}^{(\mathrm{H})}\): hydrogen two-photon emissivity, computed as
@@ -684,13 +684,19 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \code{atomic\_dir} (default: \code{lib/atomic/}): directory where the atomic data used for nebular emission calculations is located
 
 \item {} 
-\code{nebular\_den} (default: \code{1e3}): hydrogen number density in \(\mathrm{cm}^{-3}\) to use in nebular emission computations
+\code{nebular\_no\_metals} (default: 0): if set to 1, metal lines are not used when computing nebular emission
 
 \item {} 
-\code{nebular\_temp} (default: \code{1e4}): gas kinetic temperature in K to use in nebular emission computations
+\code{nebular\_den} (default: \code{1e2}): hydrogen number density in \(\mathrm{cm}^{-3}\) to use in nebular emission computations
 
 \item {} 
-\code{nebular\_phidust} (default: \code{0.73}): fraction of ionizing photons absorbed by H atoms rather than by dust grains inside the HII region; the default value of \code{0.73}, taken from \href{http://adsabs.harvard.edu/abs/1997ApJ...476..144M}{McKee \& Williams (1997, ApJ, 476, 144)} means that 73\% of ionizing photons are absorbed by H and 27\% by dust
+\code{nebular\_temp} (default: \code{-1}): gas kinetic temperature in K to use in nebular emission computations; if set to non-positive value, the temperature will be determined via the lookup table of cloudy runs for fully sampled IMFs
+
+\item {} 
+\code{nebular\_logU} (default: \code{-3}): log of dimensionless volume-weighted ionization parameter to assume when computing metal line emission and HII region temperatures from the tabulated cloudy data. At present the allowed values are -3, -2.5, and -2.
+
+\item {} 
+\code{nebular\_phi} (default: \code{0.73}): fraction of ionizing photons absorbed by H atoms rather than being absorbed by dust grains or rescaping; the default value of \code{0.73}, taken from \href{http://adsabs.harvard.edu/abs/1997ApJ...476..144M}{McKee \& Williams (1997, ApJ, 476, 144)} means that 73\% of ionizing photons are absorbed by H
 
 \end{itemize}
 

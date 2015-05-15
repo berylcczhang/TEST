@@ -87,11 +87,11 @@ Nebular Processing
 
 SLUG includes methods for post-processing the output starlight to compute the light that will emerge from the HII region around star clusters, and to further apply extinction to that light.
 
-Nebular emission is computed by assuming that all the ionizing photons are absorbed in a uniform-density, uniform-temperature HII region around each star cluster / star, and then computing the resulting emission at non-ionizing energies. The calculation assumes that the HII region is in photoionization equilibrium, and consists of hydrogen that is fully ionized and helium that is singly ionized. Under these assumptions the volume :math:`V`, electron density :math:`n_e`, and hydrogen density :math:`n_{\mathrm{H}}` are related to the hydrogen ionizing luminosity :math:`Q(\mathrm{H}^0)` via
+Nebular emission is computed by assuming that, for stars / star clusters younger than 10 Myr, all the ionizing photons are absorbed in a uniform-density, uniform-temperature HII region around each star cluster / star, and then computing the resulting emission at non-ionizing energies. The calculation assumes that the HII region is in photoionization equilibrium, and consists of hydrogen that is fully ionized and helium that is singly ionized. Under these assumptions the volume :math:`V`, electron density :math:`n_e`, and hydrogen density :math:`n_{\mathrm{H}}` are related to the hydrogen ionizing luminosity :math:`Q(\mathrm{H}^0)` via
 
-.. math:: \phi_{\mathrm{dust}} Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V
+.. math:: \phi Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V
 
-Here :math:`\phi_{\mathrm{dust}}` is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and :math:`\alpha_{\mathrm{B}}(T)` is the temperature-dependent case B recombination rate coefficient. SLUG approximates :math:`\alpha_{\mathrm{B}}(T)` using the analytic approximation given by equation 14.6 of `Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_, while :math:`\phi_{\mathrm{dust}}` and :math:`T` are user-chosen parameters.
+Here :math:`\phi` is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and :math:`\alpha_{\mathrm{B}}(T)` is the temperature-dependent case B recombination rate coefficient. SLUG approximates :math:`\alpha_{\mathrm{B}}(T)` using the analytic approximation given by equation 14.6 of `Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_, while :math:`\phi` is a user-chosen parameter. The temperature can either be set by the user directly, or can be looked up automatically based on the age of the stellar population.
 
 The relation above determines :math:`n_e n_{\mathrm{H}} V`, and from this SLUG computes the nebular emission including the following processes:
 
@@ -99,11 +99,11 @@ The relation above determines :math:`n_e n_{\mathrm{H}} V`, and from this SLUG c
 * :math:`\mathrm{H}` and :math:`\mathrm{He}` bound-free emission
 * Hydrogen 2-photon emission
 * Hydrogen recombination lines from all lines with upper levels :math:`n_u \leq 25`
-* The brightest 33 brightest He I recombination and collisionally-excited lines
+* Non-hydrogen line emission based on a tabulation (see below)
 
 Formally, the luminosity per unit wavelength is computed as
 
-.. math:: L_{\lambda,\mathrm{neb}} = \left[\gamma_{\mathrm{ff}}^{(\mathrm{H})} + \gamma_{\mathrm{bf}}^{(\mathrm{H})} + \gamma_{\mathrm{2p}}^{(\mathrm{H})} + \sum_{n,n' \leq 25, n<n'} \alpha_{nn'}^{\mathrm{eff,B,(H)}} E_{nn'}^{(\mathrm{H})} +  x_{\mathrm{He}} \gamma_{\mathrm{ff}}^{(\mathrm{He})} +  x_{\mathrm{He}} \gamma_{\mathrm{bf}}^{(\mathrm{He})} +  x_{\mathrm{He}} \sum_{i=1}^{33} \gamma_{i,\mathrm{line}}^{(\mathrm{He})}\right] n_e n_{\mathrm{H}}{V}
+.. math:: L_{\lambda,\mathrm{neb}} = \left[\gamma_{\mathrm{ff}}^{(\mathrm{H})} + \gamma_{\mathrm{bf}}^{(\mathrm{H})} + \gamma_{\mathrm{2p}}^{(\mathrm{H})} + \sum_{n,n' \leq 25, n<n'} \alpha_{nn'}^{\mathrm{eff,B,(H)}} E_{nn'}^{(\mathrm{H})} +  x_{\mathrm{He}} \gamma_{\mathrm{ff}}^{(\mathrm{He})} +  x_{\mathrm{He}} \gamma_{\mathrm{bf}}^{(\mathrm{He})} + \sum_i \gamma_{i,\mathrm{line}}^{(\mathrm{M})}\right] n_e n_{\mathrm{H}}{V}
 
 Here :math:`n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_{\mathrm{B}}(T)` from photoionization equilibrium, :math:`E_{nn'}` is the energy difference between hydrogen levels :math:`n` and :math:`n'`, and the remaining terms and their sources appearing in this equation are:
 
@@ -113,7 +113,7 @@ Here :math:`n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_
 
 * :math:`\alpha_{nn'}^{\mathrm{eff,B,(H)}}` is the effective emission rate coefficient for the :math:`n` to :math:`n'` H recombination line, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
 
-* :math:`\gamma_{i,\mathrm{line}}^{(\mathrm{He})}` is the emissivity for the brightest recombination and collisionally-excited lines of :math:`\mathrm{He}^+`, taken from the tabulation of `Benjamin et al. (1999, ApJ, 514, 307) <http://adsabs.harvard.edu/abs/1999ApJ...514..307B>`_
+* :math:`\gamma_{i,\mathrm{line}}^{(\mathrm{M})}` is the emissivity for the brightest non-hydrogen lines, computed using a set of pre-tabulated values, following the procedure described in the `SLUG 2 method paper <http://adsabs.harvard.edu/abs/2015arXiv150205408K>`_
 
 * :math:`\gamma_{\mathrm{2p}}^{(\mathrm{H})}`: hydrogen two-photon emissivity, computed as
 

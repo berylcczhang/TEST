@@ -184,11 +184,15 @@
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">atomic_dir</span></code> (default: <code class="docutils literal"><span class="pre">lib/atomic/</span></code>): directory where the atomic data used for nebular emission calculations is located</p>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_den</span></code> (default: <code class="docutils literal"><span class="pre">1e3</span></code>): hydrogen number density in <span class="math">\(\mathrm{cm}^{-3}\)</span> to use in nebular emission computations</p>
+<li><p class="first"><code class="docutils literal"><span class="pre">nebular_no_metals</span></code> (default: 0): if set to 1, metal lines are not used when computing nebular emission</p>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_temp</span></code> (default: <code class="docutils literal"><span class="pre">1e4</span></code>): gas kinetic temperature in K to use in nebular emission computations</p>
+<li><p class="first"><code class="docutils literal"><span class="pre">nebular_den</span></code> (default: <code class="docutils literal"><span class="pre">1e2</span></code>): hydrogen number density in <span class="math">\(\mathrm{cm}^{-3}\)</span> to use in nebular emission computations</p>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_phidust</span></code> (default: <code class="docutils literal"><span class="pre">0.73</span></code>): fraction of ionizing photons absorbed by H atoms rather than by dust grains inside the HII region; the default value of <code class="docutils literal"><span class="pre">0.73</span></code>, taken from <a class="reference external" href="http://adsabs.harvard.edu/abs/1997ApJ...476..144M">McKee &amp; Williams (1997, ApJ, 476, 144)</a> means that 73% of ionizing photons are absorbed by H and 27% by dust</p>
+<li><p class="first"><code class="docutils literal"><span class="pre">nebular_temp</span></code> (default: <code class="docutils literal"><span class="pre">-1</span></code>): gas kinetic temperature in K to use in nebular emission computations; if set to non-positive value, the temperature will be determined via the lookup table of cloudy runs for fully sampled IMFs</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">nebular_logU</span></code> (default: <code class="docutils literal"><span class="pre">-3</span></code>): log of dimensionless volume-weighted ionization parameter to assume when computing metal line emission and HII region temperatures from the tabulated cloudy data. At present the allowed values are -3, -2.5, and -2.</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">nebular_phi</span></code> (default: <code class="docutils literal"><span class="pre">0.73</span></code>): fraction of ionizing photons absorbed by H atoms rather than being absorbed by dust grains or rescaping; the default value of <code class="docutils literal"><span class="pre">0.73</span></code>, taken from <a class="reference external" href="http://adsabs.harvard.edu/abs/1997ApJ...476..144M">McKee &amp; Williams (1997, ApJ, 476, 144)</a> means that 73% of ionizing photons are absorbed by H</p>
 </li>
 </ul>
 </div>

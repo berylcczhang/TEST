@@ -103,9 +103,11 @@ These specify the physical models to be used for stellar evolution, atmospheres,
    * ``SMC_EXT_SLUG.dat`` : SMC extinction curve from `Bouchet, P., et al., 1985, A&A, 149, 330 <http://adsabs.harvard.edu/abs/1985A%26A...149..330B>`_
 * ``compute_nebular`` (default: ``1``): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.
 * ``atomic_dir`` (default: ``lib/atomic/``): directory where the atomic data used for nebular emission calculations is located
-* ``nebular_den`` (default: ``1e3``): hydrogen number density in :math:`\mathrm{cm}^{-3}` to use in nebular emission computations
-* ``nebular_temp`` (default: ``1e4``): gas kinetic temperature in K to use in nebular emission computations
-* ``nebular_phidust`` (default: ``0.73``): fraction of ionizing photons absorbed by H atoms rather than by dust grains inside the HII region; the default value of ``0.73``, taken from `McKee & Williams (1997, ApJ, 476, 144) <http://adsabs.harvard.edu/abs/1997ApJ...476..144M>`_ means that 73% of ionizing photons are absorbed by H and 27% by dust
+* ``nebular_no_metals`` (default: 0): if set to 1, metal lines are not used when computing nebular emission
+* ``nebular_den`` (default: ``1e2``): hydrogen number density in :math:`\mathrm{cm}^{-3}` to use in nebular emission computations
+* ``nebular_temp`` (default: ``-1``): gas kinetic temperature in K to use in nebular emission computations; if set to non-positive value, the temperature will be determined via the lookup table of cloudy runs for fully sampled IMFs
+* ``nebular_logU`` (default: ``-3``): log of dimensionless volume-weighted ionization parameter to assume when computing metal line emission and HII region temperatures from the tabulated cloudy data. At present the allowed values are -3, -2.5, and -2.
+* ``nebular_phi`` (default: ``0.73``): fraction of ionizing photons absorbed by H atoms rather than being absorbed by dust grains or rescaping; the default value of ``0.73``, taken from `McKee & Williams (1997, ApJ, 476, 144) <http://adsabs.harvard.edu/abs/1997ApJ...476..144M>`_ means that 73% of ionizing photons are absorbed by H
 
 
 .. _ssec-phot-keywords:
