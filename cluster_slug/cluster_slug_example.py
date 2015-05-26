@@ -81,22 +81,33 @@ photerr[:,2] = m555err[valid]
 photerr[:,3] = m814err[valid]
 photerr[:,4] = m657err[valid]
 
-# Set up two filter lists, one including the Ha filter and one without
+# Set up filter list
 filters = ['WFC3_UVIS_F336W', 'WFC3_UVIS_F438W', 'WFC3_UVIS_F555W', 
            'WFC3_UVIS_F814W', 'WFC3_UVIS_F657N']
+
+# Define the sample density
+def sample_density(physprop):
+    logm = physprop[:,0]
+    logt = physprop[:,1]
+    sden = np.ones(len(logm))
+    sden[logm > 4] = sden[logm > 4] * 1.0/10.**(logm[logm > 4]-4)
+    sden[logt > 8] = sden[logt > 8] * 1.0/10.**(logt[logt > 8]-8)
+    return sden
 
 # Set up the cluster_slug object; this command will take care of
 # reading the library and converting the data to the Vega photometric
 # system
 print("Reading cluster_slug library...")
-cs=cluster_slug(photsystem='Vega', filters=filters)
+cs=cluster_slug(photsystem='Vega', filters=filters, bw_phot=0.25,
+                sample_density=sample_density,
+                libname='modp020_chabrier_MW')
 
 # Set priors to be flat in log T and A_V, but vary with logm as
 # p(log M) ~ 1/M
 def priorfunc(physprop):
     # Note: physprop is an array of shape (N, 3) where physprop[:,0] =
     # log M, physprop[:,1] = log T, physprop[:,2] = A_V
-    return 1.0/exp(physprop[:,0])
+    return 1.0/np.exp(physprop[:,0])
 cs.priors = priorfunc
 
 # Start timing
@@ -129,8 +140,8 @@ for i in range(4):
 # distributions of mass and age, with the SSP fits from Chandar
 # overlaid
 xmra = [2, 6.95]
-xtra = [5, 10]
-yra = [0, 1.9]
+xtra = [5, 10.5]
+yra = [0, 2.2]
 for i in range(len(idx)):
 
     # Plot masses
@@ -173,18 +184,18 @@ tmean = np.sum(logt*tpdf*(logt[1]-logt[0]), axis=1)
 # Compute the 25th, 50th, and 75th percentiles of the posterior PDFs
 mpdfsum = np.cumsum(mpdf, axis=1)*(logm[1]-logm[0])
 mpercentiles = np.array([
-    logm[np.argmax(np.greater(mpdfsum, 0.25), axis=1)],
+    logm[np.argmax(np.greater(mpdfsum, 0.1), axis=1)],
     logm[np.argmax(np.greater(mpdfsum, 0.5), axis=1)],
-    logm[np.argmax(np.greater(mpdfsum, 0.75), axis=1)]])
+    logm[np.argmax(np.greater(mpdfsum, 0.9), axis=1)]])
 tpdfsum = np.cumsum(tpdf, axis=1)*(logt[1]-logt[0])
 tpercentiles = np.array([
-    logt[np.argmax(np.greater(tpdfsum, 0.25), axis=1)],
+    logt[np.argmax(np.greater(tpdfsum, 0.1), axis=1)],
     logt[np.argmax(np.greater(tpdfsum, 0.5), axis=1)],
-    logt[np.argmax(np.greater(tpdfsum, 0.75), axis=1)]])
+    logt[np.argmax(np.greater(tpdfsum, 0.9), axis=1)]])
 
 # For each model, find the best match in the library
 matches, dist = cs.bestmatch(phot, filters=filters, nmatch=5)
-dist = dist/sqrt(len(filters))
+dist = dist/np.sqrt(len(filters))
 
 # Make a scatter plot of our median mass vs. Chandar's fit, coloring
 # points by how close they are to a cluster_slug model
@@ -199,7 +210,7 @@ plt.xlim([2,7])
 plt.ylim([2,7])
 
 # Add errorbars showing inter-quartile range
-err = -abs(mpercentiles[1,:]-mpercentiles[::2,:])
+err = np.abs(mpercentiles[1,:]-mpercentiles[::2,:])
 plt.errorbar(chfit_logm[valid], mpercentiles[1,:], yerr=err, 
              fmt='none', ecolor='k', errorevery=20)
 
@@ -207,14 +218,14 @@ plt.errorbar(chfit_logm[valid], mpercentiles[1,:], yerr=err,
 ax2 = fig.add_axes([0.51, 0.14, 0.35, 0.79])
 plt.scatter(chfit_logt[valid], tpercentiles[1,:], c=log10(dist[:,-1]), 
             vmin=-1.5, vmax=0)
-plt.plot([5,10], [5,10], 'k--')   # overplot 1-1 line
-err = -abs(tpercentiles[1,:]-tpercentiles[::2,:])
+plt.plot([5,10.5], [5,10.5], 'k--')   # overplot 1-1 line
+err = np.abs(tpercentiles[1,:]-tpercentiles[::2,:])
 plt.errorbar(chfit_logt[valid], tpercentiles[1,:], yerr=err, 
              fmt='none', ecolor='k', errorevery=20)
 plt.xlabel('$\log\,(T/\mathrm{yr})$ (Chandar+)')
 plt.ylabel('$\log\,(T/\mathrm{yr})$ (cluster_slug)')
-plt.xlim([5,10])
-plt.ylim([5,10])
+plt.xlim([5,10.5])
+plt.ylim([5,10.5])
 
 # Add colorbar
 axcbar = fig.add_axes([0.88, 0.14, 0.02, 0.79])
