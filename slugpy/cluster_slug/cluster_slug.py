@@ -17,6 +17,17 @@ from ..read_cluster_prop import read_cluster_prop
 from ..read_cluster_phot import read_cluster_phot
 
 ##################################################################
+# Sample density of the default library                          #
+##################################################################
+def _default_sample_density(physprop):
+    logm = physprop[:,0]
+    logt = physprop[:,1]
+    sden = np.ones(len(logm))
+    sden[logm > 4] = sden[logm > 4] * 1.0/10.**(logm[logm > 4]-4)
+    sden[logt > 8] = sden[logt > 8] * 1.0/10.**(logt[logt > 8]-8)
+    return sden
+
+##################################################################
 # Define the cluster_slug class                                  #
 ##################################################################
 
@@ -67,14 +78,14 @@ class cluster_slug(object):
     def __init__(self, libname=None, filters=None, photsystem=None,
                  bw_phys=0.1, bw_phot=None, ktype='gaussian', 
                  priors=None, sample_density=None, reltol=1.0e-2,
-                 abstol=1.0e-6, leafsize=16, use_nebular=True):
+                 abstol=1.0e-8, leafsize=16, use_nebular=True):
         """
         Initialize a cluster_slug object.
 
         Parameters
            libname : string
               name of the SLUG model to load; if left as None, the default
-              is $SLUG_DIR/cluster_slug/clusterslug_mw
+              is $SLUG_DIR/cluster_slug/modp020_chabrier_MW
            filters : iterable of stringlike
               list of filter names to be used for inferenence
            photsystem : None or string
@@ -122,7 +133,8 @@ class cluster_slug(object):
               directly from the data set; note that this can be quite
               slow for large data sets, so it is preferable to specify
               this analytically if it is known; None: data are assumed
-              to be uniformly sampled
+              to be uniformly sampled, or to be sampled as the default
+              library is if libname is also None
            reltol : float
               relative error tolerance; errors on all returned
               probabilities p will satisfy either
@@ -148,7 +160,7 @@ class cluster_slug(object):
 
         # If using the default library, assign the library name
         if libname is None:
-            self.__libname = osp.join('cluster_slug', 'clusterslug_mw')
+            self.__libname = osp.join('cluster_slug', 'modp020_chabrier_MW')
             if 'SLUG_DIR' in os.environ:
                 self.__libname = osp.join(os.environ['SLUG_DIR'], 
                                           self.__libname)
@@ -201,31 +213,31 @@ class cluster_slug(object):
             # to go download the file now.
             usr_response \
                 = raw_input(errstr + " Would you like to download it "
-                            "now (warning: 12 GB)? [y/n] ").\
+                            "now (warning: 20 GB)? [y/n] ").\
                 lower().strip()
             if not usr_response in ['yes', 'y', 'ye']:
                 # User didn't say yes, so raise error
                 raise IOError("Unable to proceeed")
 
             # If we're here, download the files
-            print("Fetching clusterslug_mw_cluster_prop.fits " +
+            print("Fetching modp020_chabrier_MW_cluster_prop " +
                   "(this may take a while)...")
             url = urllib2.urlopen(
-                'https://dl.dropboxusercontent.com/s/oxuuxa1ci0zird4/clusterslug_mw_cluster_prop.fits?dl=0')
+                'https://www.dropbox.com/s/tg2ogad713nfux0/modp020_chabrier_MW_cluster_prop.fits?dl=0')
             rawdata = url.read()
             url.close()
             fp = open(osp.join(osp.dirname(self.__libname),
-                               'clusterslug_mw_cluster_prop.fits'), 'wb')
+                               'modp020_chabrier_MW_cluster_phot.fits'), 'wb')
             fp.write(rawdata)
             fp.close()
-            print("Fetching clusterslug_mw_cluser_phot.fits " +
+            print("Fetching modp020_chabrier_MW_cluster_phot.fits " +
                   "(this make take a while)...")
             url = urllib2.urlopen(
-                'https://dl.dropboxusercontent.com/s/arwy8u0xwt9dnz2/clusterslug_mw_cluster_phot.fits?dl=0')
+                'https://www.dropbox.com/s/inmeeuldkxsazzs/modp020_chabrier_MW_cluster_phot.fits?dl=0')
             rawdata = url.read()
             url.close()
             fp = open(osp.join(osp.dirname(self.__libname),
-                               'clusterslug_mw_cluster_phot.fits'), 'wb')
+                               'modp020_chabrier_MW_cluster_phot.fits'), 'wb')
             fp.write(rawdata)
             fp.close()
 
@@ -253,7 +265,11 @@ class cluster_slug(object):
         self.__use_nebular = use_nebular
         self.__ktype = ktype
         self.__priors = priors
-        self.__sample_density = sample_density
+        if (sample_density is not None) or \
+           (libname is not None):
+            self.__sample_density = sample_density
+        else:
+            self.__sample_density = _default_sample_density
         self.__reltol = reltol
         self.__abstol = abstol
 
