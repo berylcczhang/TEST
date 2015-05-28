@@ -949,12 +949,20 @@ class bp(object):
                 grid_out = np.array(np.meshgrid(*griddims,
                                                 indexing='ij'))
                 out_shape = grid_out[0, ...].shape
+                # Create a copy of the grid_out array that is ordered
+                # the way it needs to be for the c code, which is the
+                # opposite of what meshgrid returns; we need the data
+                # ordered to so that all the coordinates for each
+                # point are together, rather than all the x's, then
+                # all the y's, then all the z's, etc.
+                grid_out_c = np.copy(np.transpose(grid_out))
             else:
                 # Case for a single index
                 grid_out = qmin + \
                            np.arange(ngrid) * \
                            float(qmax-qmin)/(ngrid-1)
                 out_shape = grid_out.shape
+                grid_out_c = grid_out
 
         # Figure out how many distinct photometric values we've been
         # given, and how many sets of photometric errors
@@ -1006,7 +1014,7 @@ class bp(object):
                 self.__clib.kd_pdf_int_grid(
                     self.__kd, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
-                    np.ravel(grid_out), dims[:nidx],
+                    np.ravel(grid_out_c), dims[:nidx],
                     nidx, grid_out.size/nidx,
                     self.reltol, self.abstol,
                     np.ravel(pdf))
@@ -1014,7 +1022,7 @@ class bp(object):
                 self.__clib.kd_pdf_grid(
                     self.__kd, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
-                    np.ravel(grid_out), dims[:nidx],
+                    np.ravel(grid_out_c), dims[:nidx],
                     nidx, grid_out.size/nidx,
                     self.reltol, self.abstol, np.ravel(pdf))
 
@@ -1046,7 +1054,7 @@ class bp(object):
                         self.__kd, phot_sub,
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
-                        np.ravel(grid_out), dims[:nidx],
+                        np.ravel(grid_out_c), dims[:nidx],
                         nidx, grid_out.size/nidx,
                         self.reltol, self.abstol,
                         np.ravel(pdf_sub))
@@ -1055,7 +1063,7 @@ class bp(object):
                         self.__kd, phot_sub,
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
-                        np.ravel(grid_out), dims[:nidx],
+                        np.ravel(grid_out_c), dims[:nidx],
                         nidx, grid_out.size/nidx,
                         self.reltol, self.abstol, np.ravel(pdf_sub))
                 pdf[i] = pdf_sub
