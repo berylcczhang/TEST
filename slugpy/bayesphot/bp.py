@@ -1007,7 +1007,7 @@ class bp(object):
                     self.__kd, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
                     np.ravel(grid_out), dims[:nidx],
-                    nidx, grid_out.size,
+                    nidx, grid_out.size/nidx,
                     self.reltol, self.abstol,
                     np.ravel(pdf))
             else:
@@ -1015,7 +1015,7 @@ class bp(object):
                     self.__kd, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
                     np.ravel(grid_out), dims[:nidx],
-                    nidx, grid_out.size,
+                    nidx, grid_out.size/nidx,
                     self.reltol, self.abstol, np.ravel(pdf))
 
         else:
@@ -1047,7 +1047,7 @@ class bp(object):
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
                         np.ravel(grid_out), dims[:nidx],
-                        nidx, grid_out.size,
+                        nidx, grid_out.size/nidx,
                         self.reltol, self.abstol,
                         np.ravel(pdf_sub))
                 else:
@@ -1056,7 +1056,7 @@ class bp(object):
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
                         np.ravel(grid_out), dims[:nidx],
-                        nidx, grid_out.size,
+                        nidx, grid_out.size/nidx,
                         self.reltol, self.abstol, np.ravel(pdf_sub))
                 pdf[i] = pdf_sub
 
