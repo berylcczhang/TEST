@@ -252,9 +252,9 @@ double box_min_dist2(const double *x1, const double *xbox2[2],
          corresponding to x1 being a point
       INPUT dim2
          Array of ndim2 elements specifying which dimensions of the
-         space are specified by the entries in x1; if left as NULL,
+         space are specified by the entries in x2; if left as NULL,
          dimensions are assumed to be [0, 1, 2, ... ndim - 1],
-         corresponding to x1 being a point
+         corresponding to x2 being a point
       INPUT scale
          Array of ndim elements giving scale factors to describe
          relative sizes of dimensions; if left as NULL, scale[i] = 1

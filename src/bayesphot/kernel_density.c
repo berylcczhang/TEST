@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /*********************************************************************/
 
 #define SQR(x) ((x)*(x))
-#define NODEBLOCKSIZE 1024
+#define NODEBLOCKSIZE 16384
 
 /*********************************************************************/
 /* Static functions                                                  */
@@ -569,14 +569,6 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
       nnode++;
     }
 
-    /*
-    printf("pdf = %e, abserr = %e, relerr = %e\n", pdf, abserr, relerr);
-    printf("nodes:");
-    for (i=0; i<nnode; i++)
-      printf(" ... %d %e", nodelist[i], nodepdf[i]);
-    printf("\n\n");
-    */
-
     /* Bail out if there are no non-leaf nodes left to be
        analyzed. This should also give abserr = relerr = 0, and thus
        we should have exited the loop when we checked the termination
@@ -682,7 +674,8 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
 	exit(1);
       }
       if (!(nodepdf = (double *) 
-	    calloc(NODEBLOCKSIZE, sizeof(double)))) {
+	    malloc(NODEBLOCKSIZE*sizeof(double)))) {
+	printf("alloc error flag\n");
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int_grid\n");
 	exit(1);
       }
@@ -784,15 +777,6 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
 	nodepdf[nnode] = rightpdf;
 	nnode++;
       }
-
-      /*
-      printf("pdf[0] = %e, pdfmax = %e, abserr = %e, relerr = %e\n", 
-	     pdf[0], pdfmax, 0.5*pdfmax, relerr);
-      printf("nodes:");
-      for (j=0; j<nnode; j++)
-	printf(" ... %d %e", nodelist[j], nodepdf[j]);
-      printf("\n\n");
-      */
 
       /* Bail out if there are no non-leaf nodes left to be
 	 analyzed. This should also give abserr = 0, and thus
