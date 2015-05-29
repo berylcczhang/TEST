@@ -1069,6 +1069,10 @@ class bp(object):
                 pdf[i] = pdf_sub
 
 
+        # Rotate the output PDF so that its ordering matches the
+        # output grid, which is transposed relative to the c ordering
+        pdf = np.transpose(pdf)
+
         # Set the bandwidth back to its default if necessary
         if photerr is not None:
             self.__clib.kd_change_bandwidth(self.__bandwidth, 
