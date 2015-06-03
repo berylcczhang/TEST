@@ -1767,7 +1767,8 @@ double kd_pdf_node_int_reggrid(const kernel_density *kd,
 			       const unsigned int curnode,
 			       double *pdf) {
 
-  unsigned int i, j, k;
+  unsigned int i, j;
+  int k;
   int *ctr, *offset;
   int on_grid, pdf_offset;
   unsigned int ndim_tot = kd->tree->ndim;
@@ -1835,10 +1836,10 @@ double kd_pdf_node_int_reggrid(const kernel_density *kd,
 
 	  /* Figure out where in the PDF array this point in the stencil
 	     corresponds to */
-	  pdf_offset = ctr[ndimgrid-1] + offset[ndimgrid-1];
-	  for (k=ndimgrid-1; k>0; k--) {
+	  pdf_offset = ctr[0] + offset[0];
+	  for (k=1; k<ndimgrid; k++) {
 	    pdf_offset *= ngrid[k];
-	    pdf_offset += ctr[k-1] + offset[k-1];
+	    pdf_offset += ctr[k] + offset[k];
 	  }
 
 	  /* Get total distance to this point */
@@ -1892,7 +1893,7 @@ double kd_pdf_node_int_reggrid(const kernel_density *kd,
 	}
 
 	/* Update the offsets and distances */
-	for (k=0; k<ndimgrid; k++) {
+	for (k=ndimgrid-1; k>=0; k--) {
 	  offset[k]++;
 	  if (offset[k] > (int) nstencil[k]) offset[k] = -(int) nstencil[k];
 	  d2grid[k] = 
@@ -1964,7 +1965,8 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
 			   const unsigned int curnode,
 			   double *pdf) {
 
-  unsigned int i, j, k;
+  unsigned int i, j;
+  int k;
   int *ctr, *offset;
   int on_grid, pdf_offset;
   unsigned int ndim_tot = kd->tree->ndim;
@@ -2032,10 +2034,10 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
 
 	  /* Figure out where in the PDF array this point in the stencil
 	     corresponds to */
-	  pdf_offset = ctr[ndimgrid-1] + offset[ndimgrid-1];
-	  for (k=ndimgrid-1; k>0; k--) {
+	  pdf_offset = ctr[0] + offset[0];
+	  for (k=1; k<ndimgrid; k++) {
 	    pdf_offset *= ngrid[k];
-	    pdf_offset += ctr[k-1] + offset[k-1];
+	    pdf_offset += ctr[k] + offset[k];
 	  }
 
 	  /* Get total distance to this point */
@@ -2084,7 +2086,7 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
 	}
 
 	/* Update the offsets and distances */
-	for (k=0; k<ndimgrid; k++) {
+	for (k=ndimgrid-1; k>=0; k--) {
 	  offset[k]++;
 	  if (offset[k] > (int) nstencil[k]) offset[k] = -(int) nstencil[k];
 	  d2grid[k] = 

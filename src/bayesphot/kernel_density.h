@@ -353,13 +353,12 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
          an ngrid[0] * ngrid[1] * ... ngrid[ndimgrid-1] * nfixed
          element array giving an approximation to the PDF, satisfying
          the input error tolerances; this array must point to valid,
-         allocated memory when it is passed; data are packed so that
-         dimgrid[0] is the fastest varying dimension, dimgrid[1] is
-         the next fastest varying, ..., and the fixed points are the
-         slowest varying. For example, if ngrid = [5, 4, 2] and nfixed
-         = 3, then the PDF for element (3, 4, 0) of the grid,
-         evaluated for fixed point 1, is located at
-	 pdf[3+ngrid[0]*(4+ngrid[1]*(0+ngrid[2]*1))]
+         allocated memory when it is passed; data are packed in
+         standard c order, with nfixed as the slowest varying
+         dimension. For example, if ngrid = [5, 4, 2] and nfixed
+         = 3, then the PDF for element (4, 3, 1) of the grid,
+         evaluated for fixed point 2, is located at
+	 pdf[1 + ngrid[2]*(3+ngrid[1]*(4+ngrid[0]*nfixed))]
 
    Returns:
       Nothing
@@ -493,13 +492,12 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
          an ngrid[0] * ngrid[1] * ... ngrid[ndimgrid-1] * nfixed
          element array giving an approximation to the PDF, satisfying
          the input error tolerances; this array must point to valid,
-         allocated memory when it is passed; data are packed so that
-         dimgrid[0] is the fastest varying dimension, dimgrid[1] is
-         the next fastest varying, ..., and the fixed points are the
-         slowest varying. For example, if ngrid = [5, 4, 2] and nfixed
-         = 3, then the PDF for element (3, 4, 0) of the grid,
-         evaluated for fixed point 1, is located at
-	 pdf[3+ngrid[0]*(4+ngrid[1]*(0+ngrid[2]*1))]
+         allocated memory when it is passed; data are packed in
+         standard c order, with nfixed as the slowest varying
+         dimension. For example, if ngrid = [5, 4, 2] and nfixed
+         = 3, then the PDF for element (4, 3, 1) of the grid,
+         evaluated for fixed point 2, is located at
+	 pdf[1 + ngrid[2]*(3+ngrid[1]*(4+ngrid[0]*nfixed))]
 
    Returns:
       Nothing
