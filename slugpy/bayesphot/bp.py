@@ -250,6 +250,21 @@ class bp(object):
                 c_double,              # reltol
                 c_double,              # abstol
                 array_1d_double ]      # pdf
+        self.__clib.kd_pdf_reggrid.restype = None
+        self.__clib.kd_pdf_reggrid.argtypes \
+            = [ c_void_p,              # kd
+                array_1d_double,       # xfixed
+                array_1d_uint,         # dimfixed
+                c_uint,                # ndimfixed
+                c_uint,                # nfixed
+                array_1d_double,       # xgridlo
+                array_1d_double,       # xgridhi
+                array_1d_uint,         # ngrid
+                array_1d_uint,         # dimgrid
+                c_uint,                # ndimgrid
+                c_double,              # reltol
+                c_double,              # abstol
+                array_1d_double ]      # pdf
 
         self.__clib.kd_pdf_vec.restype = None
         if self.__diag_mode:
@@ -329,7 +344,22 @@ class bp(object):
                 c_double,              # reltol
                 c_double,              # abstol
                 array_1d_double ]      # pdf
-                
+        self.__clib.kd_pdf_int_reggrid.restype = None
+        self.__clib.kd_pdf_int_reggrid.argtypes \
+            = [ c_void_p,              # kd
+                array_1d_double,       # xfixed
+                array_1d_uint,         # dimfixed
+                c_uint,                # ndimfixed
+                c_uint,                # nfixed
+                array_1d_double,       # xgridlo
+                array_1d_double,       # xgridhi
+                array_1d_uint,         # ngrid
+                array_1d_uint,         # dimgrid
+                c_uint,                # ndimgrid
+                c_double,              # reltol
+                c_double,              # abstol
+                array_1d_double ]      # pdf                
+
 
         # Record some of the input parameters
         if (ktype == 'gaussian'):
@@ -927,9 +957,15 @@ class bp(object):
                (self.__nphot == 1):
                 photerr = photerr.reshape(photerr.shape+(1,))
 
-        # Set up the grid of outputs
+        # Set up the grid of outputs, and the versions of it that we
+        # will be passing to the c code
         if grid is not None:
-            grid_out = grid
+            grid_out = np.array(grid)
+            qmin_tmp \
+                = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
+            qmax_tmp \
+                = np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)])
+            ngrid_tmp = np.array(grid_out.shape[1:], dtype=np.uintc)
         else:
             if qmin is None:
                 qmin = np.amin(self.__dataset[:,idx], axis=0)
@@ -940,29 +976,28 @@ class bp(object):
                 # Case for multiple indices
                 griddims = []
                 if hasattr(ngrid, '__len__'):
-                    ngrid_tmp = ngrid
+                    ngrid_tmp = np.array(ngrid, dtype=np.uintc)
                 else:
-                    ngrid_tmp = [ngrid]*len(idx)
+                    ngrid_tmp = np.array([ngrid]*len(idx), dtype=np.uintc)
                 for i in range(len(idx)):
                     griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
                                     float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
                 grid_out = np.array(np.meshgrid(*griddims,
                                                 indexing='ij'))
                 out_shape = grid_out[0, ...].shape
-                # Create a copy of the grid_out array that is ordered
-                # the way it needs to be for the c code, which is the
-                # opposite of what meshgrid returns; we need the data
-                # ordered to so that all the coordinates for each
-                # point are together, rather than all the x's, then
-                # all the y's, then all the z's, etc.
-                grid_out_c = np.copy(np.transpose(grid_out))
+                qmin_tmp \
+                    = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
+                qmax_tmp \
+                    = np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)])
             else:
                 # Case for a single index
+                ngrid_tmp = np.array([ngrid], dtype=np.uintc)
+                qmin_tmp = np.array([qmin]).reshape(1)
+                qmax_tmp = np.array([qmax]).reshape(1)
                 grid_out = qmin + \
                            np.arange(ngrid) * \
                            float(qmax-qmin)/(ngrid-1)
                 out_shape = grid_out.shape
-                grid_out_c = grid_out
 
         # Figure out how many distinct photometric values we've been
         # given, and how many sets of photometric errors
@@ -1011,20 +1046,18 @@ class bp(object):
             # marginalizing (len(idx)==nphys) because then we don't
             # need to do any integration
             if nidx < self.__nphys:
-                self.__clib.kd_pdf_int_grid(
+                self.__clib.kd_pdf_int_reggrid(
                     self.__kd, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
-                    np.ravel(grid_out_c), dims[:nidx],
-                    nidx, grid_out.size/nidx,
-                    self.reltol, self.abstol,
-                    np.ravel(pdf))
-            else:
-                self.__clib.kd_pdf_grid(
-                    self.__kd, np.ravel(phottmp),
-                    dims[nidx:], self.__nphot, nphot,
-                    np.ravel(grid_out_c), dims[:nidx],
-                    nidx, grid_out.size/nidx,
+                    qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
                     self.reltol, self.abstol, np.ravel(pdf))
+            else:
+                self.__clib.kd_pdf_reggrid(
+                    self.__kd, np.ravel(phottmp),
+                    dims[nidx:], self.__nphot, nphot,
+                    qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
+                    dims[:nidx], nidx, self.reltol, self.abstol,
+                    np.ravel(pdf))
 
         else:
 
@@ -1050,22 +1083,21 @@ class bp(object):
 
                 # Call kernel density estimate with this bandwidth
                 if nidx < self.__nphys:
-                    self.__clib.kd_pdf_int_grid(
+                    self.__clib.kd_pdf_int_reggrid(
                         self.__kd, phot_sub,
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
-                        np.ravel(grid_out_c), dims[:nidx],
-                        nidx, grid_out.size/nidx,
-                        self.reltol, self.abstol,
-                        np.ravel(pdf_sub))
-                else:
-                    self.__clib.kd_pdf_grid(
-                        self.__kd, phot_sub,
-                        dims[nidx:], self.__nphot, 
-                        phot_sub.size/self.__nphot,
-                        np.ravel(grid_out_c), dims[:nidx],
-                        nidx, grid_out.size/nidx,
+                        qmin_tmp, qmax_tmp, ngrid_tmp, 
+                        dims[:nidx], nidx,
                         self.reltol, self.abstol, np.ravel(pdf_sub))
+                else:
+                    self.__clib.kd_pdf_reggrid(
+                        self.__kd, phot_sub,
+                        dims[nidx:], self.__nphot, 
+                        phot_sub.size/self.__nphot,
+                        qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
+                        dims[:nidx], nidx, self.reltol, self.abstol,
+                        np.ravel(pdf_sub))
                 pdf[i] = pdf_sub
 
 

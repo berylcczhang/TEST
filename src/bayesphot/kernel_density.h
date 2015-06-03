@@ -150,10 +150,10 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
 	 | pdf_approx - pdf_true | < abstol.
       OUT pdf
          an ngrid * nfixed element array giving an approximation to
-         the PDF evaluated at x, satisfying the input error
-         tolerances; element pdf[i*ngrid + j] gives the PDF for the
-         jth grid point evaluated for the ith fixed point; this array
-         must point to valid, allocated memory when it is passed
+         the PDF, satisfying the input error tolerances; element
+         pdf[i*ngrid + j] gives the PDF for the jth grid point
+         evaluated for the ith fixed point; this array must point to
+         valid, allocated memory when it is passed
 
    Returns:
       Nothing
@@ -288,6 +288,91 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
       Nothing
 */
 
+void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
+			const unsigned int *dimfixed, 
+			const unsigned int ndimfixed,
+			const unsigned int nfixed,
+			const double *xgridlo,
+			const double *xgridhi,
+			const unsigned int *ngrid,
+			const unsigned int *dimgrid,
+			const unsigned int ndimgrid,
+			const double reltol, const double abstol,
+			double *pdf);
+/* This routine returns the value of the probability distribution
+   function for a kernel_density object evaluated on a grid where some
+   of the dimensions held at fixed points, others are varying, and
+   still others are integrated out. This can be used, for example, to
+   specify a fixed set of photometric values, and then evaluate the
+   PDF on a grid of physical values, marginalizing over other physical
+   values. This routine is identical to kd_pdf_int_grid, except that
+   the grid is required to be regular, which allows for a significant
+   computational speedup.
+
+   Parameters:
+      INPUT kd
+         the kernel_density object to be used to evaluate the PDF
+      INPUT xfixed
+         an ndimfixed * nfixed element array; each block of ndimfixed
+         elements gives a position in the dimensions specified by
+         dimfixed, and there are nfixed such blocks.
+      INPUT dimfixed
+         an ndimfixed element array specifying the dimensions in each
+         of the nfixed blocks in xfixed; dimensions must not be
+         repeated or appear in both dimfixed and dimgrid; dimensions
+         that are not included in either dimfixed or dimgrid will be
+         integrated over (i.e., marginalized out)
+      INPUT nfixed
+         number of fixed points
+      INPUT xgridlo
+         an ndimgrid element array, giving the coordinates of the
+         lower left corner of the grid on which the PDF is to be
+         evaluated
+      INPUT xgridlo
+         an ndimgrid element array, giving the coordinates of the
+         upper right corner of the grid on which the PDF is to be
+         evaluated
+      INPUT ngrid
+         an ndimgrid element array specifying the number of grid
+         points in each dimension of the grid; must be > 0
+      INPUT dimgrid
+         an ndimgrid element array specifying the dimensions in each
+         of the ngrid blocks in xgrid; dimensions must not be
+         repeated or appear in both dimfixed and dimgrid, and every
+         dimension in the kernel density object must appear in either
+         dimfixed or dimgrid
+      INPUT reltol
+         Relative error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | / max(pdf_true) < reltol.
+      INPUT abstol
+         Absolute error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | < abstol.
+      OUT pdf
+         an ngrid[0] * ngrid[1] * ... ngrid[ndimgrid-1] * nfixed
+         element array giving an approximation to the PDF, satisfying
+         the input error tolerances; this array must point to valid,
+         allocated memory when it is passed; data are packed so that
+         dimgrid[0] is the fastest varying dimension, dimgrid[1] is
+         the next fastest varying, ..., and the fixed points are the
+         slowest varying. For example, if ngrid = [5, 4, 2] and nfixed
+         = 3, then the PDF for element (3, 4, 0) of the grid,
+         evaluated for fixed point 1, is located at
+	 pdf[3+ngrid[0]*(4+ngrid[1]*(0+ngrid[2]*1))]
+
+   Returns:
+      Nothing
+
+   Notes:
+      Grids points for PDF evaluationa are placed so that the jth grid
+      point along dimension dimgrid[i] will be placed at position
+      xgridlo[i] + (xgridhi[i] - xgridlo[i]) / (ngrid[i]-1) * j
+      for j = 0 ... ngrid[i]-1. Special case: if ngrid[i] = 1,
+      then a single grid point will be placed at xgridlo[i], and
+      xgridhi[i] is ignored.
+*/
+
 
 void kd_pdf_int_vec(const kernel_density *kd, const double *x, 
 		    const unsigned int *dims, const unsigned int ndim,
@@ -342,6 +427,91 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
          specified error tolerances
 */
 
+
+void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
+		    const unsigned int *dimfixed, 
+		    const unsigned int ndimfixed,
+		    const unsigned int nfixed,
+		    const double *xgridlo,
+		    const double *xgridhi,
+		    const unsigned int *ngrid,
+		    const unsigned int *dimgrid,
+		    const unsigned int ndimgrid,
+		    const double reltol, const double abstol,
+		    double *pdf);
+/* This routine returns the value of the probability distribution
+   function for a kernel_density object evaluated on a regular grid
+   where some of the dimensions held at fixed points and others are
+   varying. This can be used, for example, to specify a fixed set of
+   photometric values, and then evaluate the PDF on a grid of physical
+   values at that fixed value of the photometry. This routine differs
+   from kd_pdf_grid in that the grid for this routine is required to
+   be regularly spaced in the varying dimensions. This requirement
+   allows a significant computational speedup.
+
+   Parameters:
+      INPUT kd
+         the kernel_density object to be used to evaluate the PDF
+      INPUT xfixed
+         an ndimfixed * nfixed element array; each block of ndimfixed
+         elements gives a position in the dimensions specified by
+         dimfixed, and there are nfixed such blocks.
+      INPUT dimfixed
+         an ndimfixed element array specifying the dimensions in each
+         of the nfixed blocks in xfixed; dimensions must not be
+         repeated or appear in both dimfixed and dimgrid, and every
+         dimension in the kernel density object must appear in either
+         dimfixed or dimgrid
+      INPUT nfixed
+         number of fixed points
+      INPUT xgridlo
+         an ndimgrid element array, giving the coordinates of the
+         lower left corner of the grid on which the PDF is to be
+         evaluated
+      INPUT xgridlo
+         an ndimgrid element array, giving the coordinates of the
+         upper right corner of the grid on which the PDF is to be
+         evaluated
+      INPUT ngrid
+         an ndimgrid element array specifying the number of grid
+         points in each dimension of the grid; must be > 0
+      INPUT dimgrid
+         an ndimgrid element array specifying the dimensions in each
+         of the ngrid blocks in xgrid; dimensions must not be
+         repeated or appear in both dimfixed and dimgrid, and every
+         dimension in the kernel density object must appear in either
+         dimfixed or dimgrid
+      INPUT reltol
+         Relative error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | / max(pdf_true) < reltol.
+      INPUT abstol
+         Absolute error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | < abstol.
+      OUT pdf
+         an ngrid[0] * ngrid[1] * ... ngrid[ndimgrid-1] * nfixed
+         element array giving an approximation to the PDF, satisfying
+         the input error tolerances; this array must point to valid,
+         allocated memory when it is passed; data are packed so that
+         dimgrid[0] is the fastest varying dimension, dimgrid[1] is
+         the next fastest varying, ..., and the fixed points are the
+         slowest varying. For example, if ngrid = [5, 4, 2] and nfixed
+         = 3, then the PDF for element (3, 4, 0) of the grid,
+         evaluated for fixed point 1, is located at
+	 pdf[3+ngrid[0]*(4+ngrid[1]*(0+ngrid[2]*1))]
+
+   Returns:
+      Nothing
+
+   Notes:
+      Grids points for PDF evaluationa are placed so that the jth grid
+      point along dimension dimgrid[i] will be placed at position
+      xgridlo[i] + (xgridhi[i] - xgridlo[i]) / (ngrid[i]-1) * j
+      for j = 0 ... ngrid[i]-1. Special case: if ngrid[i] = 1,
+      then a single grid point will be placed at xgridlo[i], and
+      xgridhi[i] is ignored.
+*/
 
 void kd_pdf_vec(const kernel_density *kd, const double *x, 
 		const unsigned int npt, const double reltol, 
