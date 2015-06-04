@@ -962,9 +962,13 @@ class bp(object):
         if grid is not None:
             grid_out = np.array(grid)
             qmin_tmp \
-                = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)]),
+                    dtype=np.double)
             qmax_tmp \
-                = np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)])
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)]),
+                    dtype-np.double)
             ngrid_tmp = np.array(grid_out.shape[1:], dtype=np.uintc)
         else:
             if qmin is None:
@@ -992,8 +996,8 @@ class bp(object):
             else:
                 # Case for a single index
                 ngrid_tmp = np.array([ngrid], dtype=np.uintc)
-                qmin_tmp = np.array([qmin]).reshape(1)
-                qmax_tmp = np.array([qmax]).reshape(1)
+                qmin_tmp = np.array([qmin], dtype=np.double).reshape(1)
+                qmax_tmp = np.array([qmax], dtype=np.double).reshape(1)
                 grid_out = qmin + \
                            np.arange(ngrid) * \
                            float(qmax-qmin)/(ngrid-1)
@@ -1056,8 +1060,7 @@ class bp(object):
                     self.__kd, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
                     qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
-                    dims[:nidx], nidx, self.reltol, self.abstol,
-                    np.ravel(pdf))
+                    self.reltol, self.abstol, np.ravel(pdf))
 
         else:
 
@@ -1096,8 +1099,7 @@ class bp(object):
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
                         qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
-                        dims[:nidx], nidx, self.reltol, self.abstol,
-                        np.ravel(pdf_sub))
+                        self.reltol, self.abstol, np.ravel(pdf_sub))
                 pdf[i] = pdf_sub
 
 
