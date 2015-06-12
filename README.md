@@ -63,6 +63,14 @@ The SLUG repository contains several subdirectories.
 
 ### Installing and configuring ###
 
+#### Downloading ####
+
+The easiest way to get SLUG is via git. From the command line, just do
+
+`git clone https://bitbucket.org/krumholz/slug2.git`
+
+You can also download the entire repository from the [SLUG downloads page](https://bitbucket.org/krumholz/slug2/downloads), but git is the preferred method.
+
 #### Dependencies ####
 
 The core SLUG c++ code requires:
@@ -83,7 +91,7 @@ The interface to cloudy (obviously) requires:
 
 #### Compiling ####
 
-SLUG comes with a Makefile in the main directory, and it shoudl be possible to build the code in most environments simply by typing "make". Compliation requires that the GSL and BOOST header files be included in the include path, and that their shared object libraries be included in the link path. If FITS capability is desired, the cfitsio library and header must be included as well.
+SLUG comes with a Makefile in the main directory, and it should be possible to build the code in most environments simply by typing "make". Compliation requires that the GSL and BOOST header files be included in the include path, and that their shared object libraries be included in the link path. If FITS capability is desired, the cfitsio library and header must be included as well.
 
 #### Running ####
 
