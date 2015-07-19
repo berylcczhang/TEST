@@ -182,7 +182,19 @@ class Menu(object):
             ('nebular_phi', Menu_opt(
                 'phi (ioniz. photon absorption frac.)',
                 '0.73', 'ISM', ItemType.Real,
-                only_if = [('compute_nebular', True)]))
+                only_if = [('compute_nebular', True)])),
+            ('phot_mode', Menu_opt(
+                'Photometry output mode', 'L_nu',
+                'Photometry', ItemType.Vals,
+                allowed_vals = ['L_nu', 'L_lambda', 'AB', 'STMAG',
+                                'VEGA'])),
+            ('filters', Menu_opt(
+                'Filter library directory', 
+                osp.join('lib', 'filters') + osp.sep,
+                'Photometry', ItemType.Str)),
+            ('phot_bands', Menu_opt(
+                'Photometric bands', 'Lbol, QH0',
+                'Photometry', ItemType.Str))
         ])
 
         # List of menus and names
@@ -191,7 +203,8 @@ class Menu(object):
             ('Control', 'Simulation control keywords'),
             ('Output', 'Output control keywords'),
             ('Stellar', 'Stellar model keywords'),
-            ('ISM', 'ISM model keywords')
+            ('ISM', 'ISM model keywords'),
+            ('Photometry', 'Photometry keywords')
         ])
 
         # Hide the cursor
@@ -315,6 +328,7 @@ class Menu(object):
                 ncols = self.winx-int(self.offset*self.winx)-1
                 win = curses.newwin(1, ncols,
                                     posy, int(self.offset*self.winx))
+                win.addstr(old_val)
                 tb = curses.textpad.Textbox(win)
 
                 # Turn cursor back on and edit; make sure that the
