@@ -1,4 +1,3 @@
-
 ### What is SLUG ###
 
 SLUG is the Stochastically Lighting Up Galaxies Code. SLUG is a stellar population synthesis code, and in many respects is similar to other commonly-used SPS codes such as [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm) and [FSPS](https://code.google.com/p/fsps/). Given an input star formation history, stellar initial mass function, and a set of evolutionary tracks and stellar atmospheres, all of these codes can predict the spectra and photometric properties of a stellar population. The main difference between SLUG and conventional SPS codes is that, instead of the usual approach of assuming that all stellar masses and ages are fully populated, SLUG is capable of stochastically sampling from the stellar initial mass function and age distribution, and thereby predicting not just the mean spectrum and photometry, but also the full distribution of spectra and photometry that results from stochastic sampling. This capability is critical in the regime of low star formation rates and total stellar masses, where finite sampling can lead to a distribution of properties that is extremely broad, and the mean values produced by other SPS codes are therefore of limited predictive power.
@@ -97,7 +96,7 @@ SLUG comes with a Makefile in the main directory, and it should be possible to b
 
 Once the code is compiled, running a SLUG simulation is fairly straightforward. The required steps are:
 
-1. Set the environment variable SLUG_DIR to the directory where you have installed SLUG. This is not strictly necessary, but it avoids the need for you to specify manually the locations of all the data files the SLUG needs. If you plan to use the [cloudy](http://nublado.org) interface, you should also set the environment variable CLOUDY_DIR to the directory where the cloudy executable is located.
+1. Set the environment variable SLUG_DIR to the directory where you have installed SLUG. This is not strictly necessary, but it avoids the need to specify manually the locations of all the data files that SLUG needs. If you plan to use the [cloudy](http://nublado.org) interface, you should also set the environment variable CLOUDY_DIR to the directory where the cloudy executable is located.
 2. Create a parameter file, or edit one of the provided examples, to set up the desired simulation. The files *param/example.param* and *param/example_cluster.param* can provide useful starting points for creating your own parameter files.
 3. Run the simulation with the command line `./bin/slug param/mysimulation.param`. Alternately, you can run the simulation in parallel by doing `python ./bin/slug.py param/mysimulation.param`.
 4. Once the simulation is done, you can examine the output by eye (if you chose to write the output in ASCII format) or, more likely, read the data using the provided python routines. The two basic output reading routines can be invoked by doing the following in a python program of the command prompt of an interactive session:
@@ -114,7 +113,7 @@ If you have questions about SLUG, have discovered any bugs, or want to contribut
 
 ### Acknowledgements ###
 
-SLUG was the product of many people's work. The core code was originally written by Robert da Silva and Michele Fumagalli, with contributions from Jonathan Parra. The reimplementation and python parsing routines were written by Mark Krumholz. SLUG benefitted enormously from the methods and library of track and atmosphere models curated by Claus Leitherer as part of [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm). The extensive set of filters available started with the compilation provided by Charlie Conroy, who maintains a filter list as part of [FSPS](https://code.google.com/p/fsps/). The predefined extinction curves are courtesty of Daniela Calzetti.
+SLUG was the product of many people's work. The core code was originally written by Robert da Silva and Michele Fumagalli, with contributions from Jonathan Parra. The reimplementation and python parsing routines were written by Mark Krumholz. SLUG benefitted enormously from the methods and library of track and atmosphere models curated by Claus Leitherer as part of [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm). The extensive set of filters available started with the compilation provided by Charlie Conroy, who maintains a filter list as part of [FSPS](https://code.google.com/p/fsps/). The predefined extinction curves are courtesy of Daniela Calzetti.
 
 ### License ###
 
