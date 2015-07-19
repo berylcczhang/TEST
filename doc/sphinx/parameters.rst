@@ -41,7 +41,7 @@ These control the operation of the simulation.
 * ``sim_type`` (default: ``galaxy``): set to ``galaxy`` to run a galaxy simulation (a composite stellar population), or to ``cluster`` to run a cluster simulation (a simple stellar population)
 * ``n_trials`` (default: ``1``): number of trials to run
 * ``log_time`` (default: ``0``): set to 1 for logarithmic time step, 0 for linear time steps
-* ``time_step``: size of the time step. If ``log_time`` is set to 0, this is in yr. If ``log_time`` is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time). Alternately, if ``time_step`` is set to any value that cannot be converted to a real number, then this is interpreted as giving the name of a PDF file, which must be formatted as described in :ref:`sec-pdfs`. In this case one output time will be selected randomly for each trial from the specified PDF. This option is useful, for example, for generating a library of simulations that are randomly sampled in stellar population age.
+* ``time_step``: size of the time step. If ``log_time`` is set to 0, this is in yr. If ``log_time`` is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time). Alternately, if ``time_step`` is set to any value that cannot be converted to a real number, then this is interpreted as giving the name of a PDF file, which must be formatted as described in :ref:`sec-pdfs`. In this case one output time will be selected randomly for each trial from the specified PDF. This option is useful, for example, for generating a library of simulations that are randomly sampled in stellar population age. For the PDF option, the options ``log_time``, ``start_time`` and ``end_time`` will all be ignored, as the relevant parameters will be taken from the specified PDF file.
 * ``start_time``: first output time. This may be omitted if ``log_time`` is set to 0, in which case it defaults to a value equal to ``time_step``.
 * ``end_time``: last output time, in yr. Note that not all the tracks include entries going out to times >1 Gyr, and the results will become inaccurate if the final time is larger than the tracks allow.
 * ``sfr``: star formation rate. Only used if ``sim_type`` is ``galaxy``; for ``cluster``, it will be ignored, and can be omitted. If, instead of specifying a numerical value for this parameter, you specify the string ``sfh``, the code will interpret this as a flag that a star formation history should be read from the file specified by the ``sfh`` keyword.
@@ -63,10 +63,10 @@ These control what quantities are computed and written to disk. Full a full desc
 * ``out_integrated_spec`` (default: ``1``): write out the integrated spectra of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if ``sim_type`` is ``cluster``.
 * ``output_mode`` (default: ``ascii``): set to ``ascii``, ``binary``, or ``fits``. Selecting ``ascii`` causes the output to be written in ASCII text, which is human-readable, but produces much larger files. Selecting ``binary`` causes the output to be written in raw binary. Selecting ``fits`` causes the output to be written FITS format. This will be somewhat larger than raw binary output, but the resulting files will be portable between machines, which the raw binary files are not guaranteed to be. All three output modes can be read by the python library, though with varying speed -- ASCII output is slowest, FITS is intermediate, and binary is fastest.
 
-.. _ssec-phys-keywords:
+.. _ssec-stellar-keywords:
 
-Physical Model Keywords
------------------------
+Stellar Model Keywords
+----------------------
 
 These specify the physical models to be used for stellar evolution, atmospheres, the IMF, extinction, etc.
 
@@ -95,6 +95,12 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 * ``min_stoch_mass`` (default: ``0.0``): minimum stellar mass to be treated stochastically. All stars with masses below this value are assumed to be sampled continuously from the IMF.
 * ``metallicity``: metallicity of the stellar population, relative to solar. This may be omitted if ``tracks`` is set to one of the default sets of tracks that ships with SLUG, as the metallicities for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.
 * ``WR_mass``: minimum starting mass that stars must have in order to pass through a Wolf-Rayet phase. This can be omitted if ``tracks`` is set to one of the default sets of tracks that ships with SLUG, as the WR cutoff masses for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.
+
+.. _ssec-ism-keywords:
+
+Interstellar Medium Model Keywords
+----------------------------------
+
 * ``A_V`` (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter ``A_V`` is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value :math:`A_V`, in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in :ref:`sec-pdfs`, specifying the probability distribution of :math:`A_V` values, in mag.
 * ``extinction_curve`` (default: ``lib/extinct/SB_ATT_SLUG.dat``) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction :math:`\kappa_\nu` at that wavelength / frequency in :math:`\mathrm{cm}^2`. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see :ref:`ssec-spec-phot`). SLUG ships with the following extinction curves (all in ``lib/extinct``):
    * ``LMC_EXT_SLUG.dat`` : LMC extinction curve; optical-UV from `Fitzpatrick, E. L., 1999, PASP, 111, 63 <http://adsabs.harvard.edu/abs/1999PASP..111...63F>`_, IR from `Landini, M., et al., 1984, A&A, 134, 284 <http://adsabs.harvard.edu/abs/1984A%26A...134..284L>`_; parts combined by D. Calzetti

@@ -142,6 +142,6 @@ where the optical depth :math:`\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1
 
 .. math:: \kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}
 
-where :math:`R_\nu(V)` is the filter response function as frequency :math:`\nu` for the Johnson V filter. The extinction curve :math:`\kappa_\lambda` can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see :ref:`ssec-phys-keywords` for details.
+where :math:`R_\nu(V)` is the filter response function as frequency :math:`\nu` for the Johnson V filter. The extinction curve :math:`\kappa_\lambda` can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see :ref:`ssec-ism-keywords` for details.
 
 The computation for :math:`L_{\lambda,\mathrm{neb,ex}}` is analogous.

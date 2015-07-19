@@ -32,7 +32,7 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 * ``ClusterMass``: actual mass of stars produced in the galaxy up to that time that are still members of non-disrupted clusters
 * ``NumClusters``: number of non-disrupted clusters present in the galaxy at this time
 * ``NumDisClust``: number of disrupted clusters present in the galaxy at this time
-* ``NumFldStars``: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-phys-keywords`)
+* ``NumFldStars``: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 
 
 If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
@@ -180,8 +180,8 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 * ``TargetMass``: target mass of stars in the cluster, if the IMF were perfectly sampled
 * ``BirthMass``: actual mass of stars present in the cluster at formation
 * ``LiveMass``: actual mass of stars produced in the cluster at this output time that have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)
-* ``NumStar``: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-phys-keywords`)
-* ``MaxStarMass``: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-phys-keywords`)
+* ``NumStar``: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
+* ``MaxStarMass``: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 * ``A_V``: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled
 
 If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
