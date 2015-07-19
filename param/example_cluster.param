@@ -171,8 +171,7 @@ output_mode      binary
 
 
 #####################################################################
-# Parameters controlling the physical models used for star and star #
-# cluster formation, and stellar properties
+# Parameters controlling the physical models used for stars         #
 #####################################################################
 
 # IMF (initial mass function) file name
@@ -237,6 +236,11 @@ specsyn_mode	   sb99
 # spectra are computed in the observed frame.
 # Default: 0
 #redshift             0
+
+
+#####################################################################
+# Parameters controlling the physical models used for the ISM       #
+#####################################################################
 
 # Extinction; to turn on extintion, set the parameter A_V. If set to a
 # number, this extinction will be applied to all spectra and

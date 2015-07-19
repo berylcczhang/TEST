@@ -170,8 +170,7 @@ output_mode      fits
 
 
 #####################################################################
-# Parameters controlling the physical models used for star and star #
-# cluster formation, stellar properties, and extinction             #
+# Parameters controlling the physical models used for stars         #
 #####################################################################
 
 # IMF (initial mass function) file name
@@ -236,6 +235,11 @@ min_stoch_mass    0.0
 # spectra are computed in the observed frame.
 # Default: 0
 redshift             0
+
+
+#####################################################################
+# Parameters controlling the physical models used for the ISM       #
+#####################################################################
 
 # Extinction; to turn on extintion, set the parameter A_V. If set to a
 # number, this extinction will be applied to all spectra and
