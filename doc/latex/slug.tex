@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{May 15, 2015}
+\date{July 19, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -517,7 +517,7 @@ These control the operation of the simulation.
 \code{log\_time} (default: \code{0}): set to 1 for logarithmic time step, 0 for linear time steps
 
 \item {} 
-\code{time\_step}: size of the time step. If \code{log\_time} is set to 0, this is in yr. If \code{log\_time} is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time).
+\code{time\_step}: size of the time step. If \code{log\_time} is set to 0, this is in yr. If \code{log\_time} is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time). Alternately, if \code{time\_step} is set to any value that cannot be converted to a real number, then this is interpreted as giving the name of a PDF file, which must be formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}. In this case one output time will be selected randomly for each trial from the specified PDF. This option is useful, for example, for generating a library of simulations that are randomly sampled in stellar population age.
 
 \item {} 
 \code{start\_time}: first output time. This may be omitted if \code{log\_time} is set to 0, in which case it defaults to a value equal to \code{time\_step}.
@@ -5641,7 +5641,7 @@ Initialize a cluster\_slug object.
 \item[{Parameters}] \leavevmode\begin{description}
 \item[{libname}] \leavevmode{[}string{]}
 name of the SLUG model to load; if left as None, the default
-is \$SLUG\_DIR/cluster\_slug/clusterslug\_mw
+is \$SLUG\_DIR/cluster\_slug/modp020\_chabrier\_MW
 
 \item[{filters}] \leavevmode{[}iterable of stringlike{]}
 list of filter names to be used for inferenence
@@ -5696,7 +5696,8 @@ point; `auto': the sample density will be computed
 directly from the data set; note that this can be quite
 slow for large data sets, so it is preferable to specify
 this analytically if it is known; None: data are assumed
-to be uniformly sampled
+to be uniformly sampled, or to be sampled as the default
+library is if libname is also None
 
 \item[{reltol}] \leavevmode{[}float{]}
 relative error tolerance; errors on all returned
