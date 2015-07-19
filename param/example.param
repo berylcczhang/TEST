@@ -100,6 +100,12 @@ sfr    		  0.001
 # cmf; can be omitted, and will be ignored, if sim_type = galaxy
 #cluster_mass      1e3
 
+# Redshift; if set to a non-zero value, this causes all spectra to be
+# redshifted by the specified amount. In this case photometry and
+# spectra are computed in the observed frame.
+# Default: 0
+redshift             0
+
 # Read a random number generator seed from a file?
 # -- 0 (no, seed is automatically generated)
 # -- 1 (yes)
@@ -117,6 +123,7 @@ sfr    		  0.001
 # is NOT assumed to be relative to the SLUG_DIR directory if given as
 # a relative path.
 #rng_seed_file     seed.txt
+
 
 #############################################
 # Parameters controlling simulation outputs #
@@ -229,12 +236,6 @@ min_stoch_mass    0.0
 # work for the tracks that SLUG ships with. If you use your own
 # tracks, you will have to set this parameter manually.
 #WR_mass           25.0
-
-# Redshift; if set to a non-zero value, this causes all spectra to be
-# redshifted by the specified amount. In this case photometry and
-# spectra are computed in the observed frame.
-# Default: 0
-redshift             0
 
 
 #####################################################################

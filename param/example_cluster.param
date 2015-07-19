@@ -101,6 +101,12 @@ end_time	  1.0e7
 # cmf; can be omitted, and will be ignored, if sim_type = galaxy
 cluster_mass      5e2
 
+# Redshift; if set to a non-zero value, this causes all spectra to be
+# redshifted by the specified amount. In this case photometry and
+# spectra are computed in the observed frame.
+# Default: 0
+#redshift             0
+
 # Read a random number generator seed from a file?
 # -- 0 (no, seed is automatically generated)
 # -- 1 (yes)
@@ -230,12 +236,6 @@ specsyn_mode	   sb99
 # work for the tracks that SLUG ships with. If you use your own
 # tracks, you will have to set this parameter manually.
 #WR_mass           25.0
-
-# Redshift; if set to a non-zero value, this causes all spectra to be
-# redshifted by the specified amount. In this case photometry and
-# spectra are computed in the observed frame.
-# Default: 0
-#redshift             0
 
 
 #####################################################################
