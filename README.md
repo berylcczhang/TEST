@@ -97,10 +97,7 @@ SLUG comes with a Makefile in the main directory, and it should be possible to b
 Once the code is compiled, running a SLUG simulation is fairly straightforward. The required steps are:
 
 1. Set the environment variable SLUG_DIR to the directory where you have installed SLUG. This is not strictly necessary, but it avoids the need to specify manually the locations of all the data files that SLUG needs. If you plan to use the [cloudy](http://nublado.org) interface, you should also set the environment variable CLOUDY_DIR to the directory where the cloudy executable is located.
-2. Create a parameter file to set up the desired simulation. The files *param/example.param* and *param/example_cluster.param* can provide useful starting points for creating your own parameter files. Alternately, you can use the menu-driven parameter file generator script to create a parameter file for you by doing
-
-`python bin/write_param.py`
-
+2. Create a parameter file to set up the desired simulation. The files *param/example.param* and *param/example_cluster.param* can provide useful starting points for creating your own parameter files. Alternately, you can use the menu-driven parameter file generator script to create a parameter file for you by doing `python bin/write_param.py`.
 3. Run the simulation with the command line `./bin/slug param/mysimulation.param`. Alternately, you can run the simulation in parallel by doing `python ./bin/slug.py param/mysimulation.param`.
 4. Once the simulation is done, you can examine the output by eye (if you chose to write the output in ASCII format) or, more likely, read the data using the provided python routines. The two basic output reading routines can be invoked by doing the following in a python program of the command prompt of an interactive session:
 
