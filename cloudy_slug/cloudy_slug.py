@@ -68,10 +68,10 @@ parser.add_argument("end_spec", nargs="?", type=int, default=-1,
                     "(default: last spectrum)")
 
 # Optional arguments
-parser.add_argument('-a', '--agemax', default=4, type=float,
+parser.add_argument('-a', '--agemax', default=10, type=float,
                     help="maximum cluster age in Myr for which to " +
                     "compute nebular emission; only used in clustermode " +
-                    "(default: 4 Myr)")
+                    "(default: 10 Myr)")
 parser.add_argument("--cloudypath", default=None, type=str,
                     help="path to the cloudy executable (default: "+
                     "$CLOUDY_DIR/cloudy.exe)")
