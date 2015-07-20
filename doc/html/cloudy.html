@@ -293,14 +293,14 @@ cluster spectra (in <a class="reference internal" href="#sssec-cloudy-cluster-mo
 argument is set, cloudy will only be run in spectra starting with
 the specified trial number (in <a class="reference internal" href="#sssec-cloudy-integrated-mode"><span>Integrated Mode</span></a>)
 or cluster number (in <a class="reference internal" href="#sssec-cloudy-cluster-mode"><span>Cluster Mode</span></a>); numbers are
-0-offset, to the first trial/cluster is 0, the next is 1, etc.</li>
+0-offset, so the first trial/cluster is 0, the next is 1, etc.</li>
 <li><code class="docutils literal"><span class="pre">end_spec</span></code>: default behavior is to run cloudy on all the
 integrated spectra (in <a class="reference internal" href="#sssec-cloudy-integrated-mode"><span>Integrated Mode</span></a>) or
 cluster spectra (in <a class="reference internal" href="#sssec-cloudy-cluster-mode"><span>Cluster Mode</span></a>). If this
 argument is set, cloudy will only be run on spectra up to the
 specified trial number (in <a class="reference internal" href="#sssec-cloudy-integrated-mode"><span>Integrated Mode</span></a>) or
 cluster number (in <a class="reference internal" href="#sssec-cloudy-cluster-mode"><span>Cluster Mode</span></a>); numbers are
-0-offset, to the first trial/cluster is 0, the next is 1, etc.</li>
+0-offset, so the first trial/cluster is 0, the next is 1, etc.</li>
 </ul>
 <p>The optional arguments are as follows:</p>
 <ul class="simple">
@@ -308,7 +308,7 @@ cluster number (in <a class="reference internal" href="#sssec-cloudy-cluster-mod
 <li><code class="docutils literal"><span class="pre">-a</span> <span class="pre">AGEMAX,</span> <span class="pre">--agemax</span> <span class="pre">AGEMAX</span></code>: maximum cluster age in Myr for
 cloudy computation. Cloudy will not be run on clusters older than
 this value, and the predicted nebular emission for such clusters
-will be recorded as zero. Default value is 4 Myr. This argument only
+will be recorded as zero. Default value is 10 Myr. This argument only
 has an effect if running in <a class="reference internal" href="#sssec-cloudy-cluster-mode"><span>Cluster Mode</span></a>;
 otherwise it is ignored.</li>
 <li><code class="docutils literal"><span class="pre">--cloudypath</span> <span class="pre">CLOUDYPATH</span></code>: path to the cloudy executable; default

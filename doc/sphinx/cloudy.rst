@@ -276,14 +276,14 @@ The positional arguments are as follows:
   argument is set, cloudy will only be run in spectra starting with
   the specified trial number (in :ref:`sssec-cloudy-integrated-mode`)
   or cluster number (in :ref:`sssec-cloudy-cluster-mode`); numbers are
-  0-offset, to the first trial/cluster is 0, the next is 1, etc.
+  0-offset, so the first trial/cluster is 0, the next is 1, etc.
 * ``end_spec``: default behavior is to run cloudy on all the
   integrated spectra (in :ref:`sssec-cloudy-integrated-mode`) or
   cluster spectra (in :ref:`sssec-cloudy-cluster-mode`). If this
   argument is set, cloudy will only be run on spectra up to the
   specified trial number (in :ref:`sssec-cloudy-integrated-mode`) or
   cluster number (in :ref:`sssec-cloudy-cluster-mode`); numbers are
-  0-offset, to the first trial/cluster is 0, the next is 1, etc.
+  0-offset, so the first trial/cluster is 0, the next is 1, etc.
 
 The optional arguments are as follows:
 
@@ -291,7 +291,7 @@ The optional arguments are as follows:
 * ``-a AGEMAX, --agemax AGEMAX``: maximum cluster age in Myr for
   cloudy computation. Cloudy will not be run on clusters older than
   this value, and the predicted nebular emission for such clusters
-  will be recorded as zero. Default value is 4 Myr. This argument only
+  will be recorded as zero. Default value is 10 Myr. This argument only
   has an effect if running in :ref:`sssec-cloudy-cluster-mode`;
   otherwise it is ignored.
 * ``--cloudypath CLOUDYPATH``: path to the cloudy executable; default

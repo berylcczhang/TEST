@@ -59,6 +59,14 @@
             
   <div class="section" id="parameter-specification">
 <span id="sec-parameters"></span><h1>Parameter Specification<a class="headerlink" href="#parameter-specification" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="automated-parameter-file-generation">
+<h2>Automated Parameter File Generation<a class="headerlink" href="#automated-parameter-file-generation" title="Permalink to this headline">¶</a></h2>
+<p>The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience SLUG comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing:</p>
+<div class="highlight-rest"><div class="highlight"><pre>python bin/write_param.py
+</pre></div>
+</div>
+<p>Once started, the script provides a series of menus that allow the user to set all the keywords specified below. The script can then write a validly-formatted parameter file based on the options chosen.</p>
+</div>
 <div class="section" id="file-format">
 <h2>File Format<a class="headerlink" href="#file-format" title="Permalink to this headline">¶</a></h2>
 <p>An example parameter file is included as <code class="docutils literal"><span class="pre">param/example.param</span></code> in the source tree. Parameter files for SLUG are generically formatted as a series of entries of the form:</p>
@@ -243,6 +251,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Parameter Specification</a><ul>
+<li><a class="reference internal" href="#automated-parameter-file-generation">Automated Parameter File Generation</a></li>
 <li><a class="reference internal" href="#file-format">File Format</a></li>
 <li><a class="reference internal" href="#basic-keywords">Basic Keywords</a></li>
 <li><a class="reference internal" href="#simulation-control-keywords">Simulation Control Keywords</a></li>

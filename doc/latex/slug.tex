@@ -457,6 +457,17 @@ This called a python script that automatically divides up the Monte Carlo trials
 \chapter{Parameter Specification}
 \label{parameters:sec-parameters}\label{parameters::doc}\label{parameters:parameter-specification}
 
+\section{Automated Parameter File Generation}
+\label{parameters:automated-parameter-file-generation}
+The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience SLUG comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+python bin/write\PYGZus{}param.py
+\end{Verbatim}
+
+Once started, the script provides a series of menus that allow the user to set all the keywords specified below. The script can then write a validly-formatted parameter file based on the options chosen.
+
+
 \section{File Format}
 \label{parameters:file-format}
 An example parameter file is included as \code{param/example.param} in the source tree. Parameter files for SLUG are generically formatted as a series of entries of the form:
@@ -3670,7 +3681,7 @@ cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}
 argument is set, cloudy will only be run in spectra starting with
 the specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}})
 or cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}); numbers are
-0-offset, to the first trial/cluster is 0, the next is 1, etc.
+0-offset, so the first trial/cluster is 0, the next is 1, etc.
 
 \item {} 
 \code{end\_spec}: default behavior is to run cloudy on all the
@@ -3679,7 +3690,7 @@ cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}
 argument is set, cloudy will only be run on spectra up to the
 specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}}) or
 cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}); numbers are
-0-offset, to the first trial/cluster is 0, the next is 1, etc.
+0-offset, so the first trial/cluster is 0, the next is 1, etc.
 
 \end{itemize}
 
@@ -3692,7 +3703,7 @@ The optional arguments are as follows:
 \code{-a AGEMAX, -{-}agemax AGEMAX}: maximum cluster age in Myr for
 cloudy computation. Cloudy will not be run on clusters older than
 this value, and the predicted nebular emission for such clusters
-will be recorded as zero. Default value is 4 Myr. This argument only
+will be recorded as zero. Default value is 10 Myr. This argument only
 has an effect if running in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}};
 otherwise it is ignored.
 
