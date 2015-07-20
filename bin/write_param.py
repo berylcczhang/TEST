@@ -8,8 +8,7 @@ import curses.textpad
 from curses.wrapper import wrapper
 import os.path as osp
 from collections import OrderedDict
-
-import time
+import textwrap
 
 # An enum to represent types of menu items
 class ItemType:
@@ -20,8 +19,9 @@ class Menu_opt(object):
     def __init__(self, menu_str, start_val, menu_loc, 
                  param_type, allowed_vals = None,
                  optional = False, required_if = None, 
-                 only_if_not = None,
-                 only_if = None, trigger_redraw = False):
+                 only_if_num = None, only_if_not = None,                  
+                 only_if = None, trigger_redraw = False,
+                 help_txt = None):
         self.menu_str = menu_str
         self.val = start_val
         self.menu_loc = menu_loc
@@ -30,9 +30,11 @@ class Menu_opt(object):
             self.allowed_vals = allowed_vals
         self.optional = optional
         self.required_if = required_if
+        self.only_if_num = only_if_num
         self.only_if_not = only_if_not
         self.only_if = only_if
         self.trigger_redraw = True
+        self.help_txt = help_txt
 
 class Menu(object):
 
@@ -45,156 +47,270 @@ class Menu(object):
         # Get the window size
         self.winy, self.winx = self.stdscr.getmaxyx()
 
+        # Set up the text wrapper utility class
+        self.wrapper = textwrap.TextWrapper(
+            width = self.winx-4, initial_indent='* ',
+            subsequent_indent='  ')
+
         # Set the location of the options column
         self.offset = 0.5
 
         # Store default parameter values and menu keys
         self.params = OrderedDict([
-            ('file_name' , Menu_opt('Parameter file', 
-                                    osp.join('param', 'default.param'),
-                                    'Home', ItemType.Str)),
-            ('model_name' , Menu_opt('Model name', 'SLUG_DEF', 
-                                     'Home', ItemType.Str)),
-            ('out_dir' , Menu_opt('Output directory', 
-                                  'output'+osp.sep,
-                                  'Home', ItemType.Str)),
-            ('sim_type' , Menu_opt('Simulation Type', 'galaxy',
-                                   'Control', ItemType.Vals,
-                                   allowed_vals = ['galaxy', 'cluster'],
-                                   trigger_redraw = True)),
-            ('ntrials' , Menu_opt('Number of Trials', 1,
-                                  'Control', ItemType.PosInt)),
-            ('log_time' , Menu_opt('Logarithmic Timestepping', False,
-                                   'Control', ItemType.Bool)),
-            ('time_step' , Menu_opt('Time Step [yr]', '1.0e6',
-                                    'Control', ItemType.PosReal)),
-            ('start_time' , Menu_opt('Start Time [yr]', ' ',
-                                     'Control', ItemType.PosReal,
-                                     optional = True,
-                                     required_if = [('log_time', True)])),
-            ('end_time' , Menu_opt('End Time [yr]', '1.0e8',
-                                   'Control', ItemType.PosReal)),
-            ('sfr' , Menu_opt('Star Formation Rate [Msun/yr or sfh]', '1.0',
-                              'Control', ItemType.Str,
-                              only_if = [('sim_type', 'galaxy')])),
-            ('sfh' , Menu_opt('Star Formation History', ' ',
-                              'Control', ItemType.Str,
-                              optional = True,
-                              only_if = [('sim_type', 'galaxy'),
-                                         ('sfr', 'sfh')])),
-            ('cluster_mass', Menu_opt('Cluster Mass [Msun]', '1.0e3',
-                                      'Control', ItemType.Str,
-                                      only_if=[('sim_type', 'cluster')])), 
-            ('redshift' , Menu_opt('Redshift', ' ',
-                                   'Control', ItemType.PosReal,
-                                   optional=True)),
-            ('out_integrated', Menu_opt('Write integrated properties', True,
-                                        'Output', ItemType.Bool,
-                                        only_if = [('sim_type', 'galaxy')])),
+            ('file_name', Menu_opt(
+                'Parameter file', osp.join('param', 'default.param'),
+                'Home', ItemType.Str, help_txt = 
+                'name of parameter file to be written')),
+            ('model_name', Menu_opt(
+                'Model name', 'SLUG_DEF', 'Home', ItemType.Str,
+                help_txt = 
+                'name of model (base name of SLUG output files)')),
+            ('out_dir', Menu_opt(
+                'Output directory', 'output'+osp.sep, 'Home', 
+                ItemType.Str, help_txt = 
+                'directory in which to place SLUG output files')),
+            ('verbosity', Menu_opt(
+                'Verbosity level', '1', 'Home', ItemType.Vals,
+                allowed_vals = ['0', '1', '2'], help_txt = 
+                '0 = SLUG runs silently, 1 = SLUG produces '
+                + 'moderate output, 2 = SLUG produces verbose '
+                + 'output')),
+            ('sim_type', Menu_opt(
+                'Simulation Type', 'galaxy', 'Control', ItemType.Vals,
+                allowed_vals = ['galaxy', 'cluster'],
+                trigger_redraw = True, help_txt =
+                'type of stellar popualtion to simulate; cluster = ' +
+                'simple stellar population, galaxy = '+
+                'composite stellar population')),
+            ('ntrials', Menu_opt(
+                'Number of Trials', 1, 'Control', ItemType.PosInt,
+                help_txt = 'number of Monte Carlo simulations to run')),
+            ('log_time', Menu_opt(
+                'Logarithmic Timestepping', False, 'Control', 
+                ItemType.Bool, only_if_num = ['time_step'],
+                trigger_redraw = True,
+                help_txt =
+                'true = logarithmically-spaced outputs, false = ' +
+                'linearly-spaced outputs')),
+            ('time_step', Menu_opt(
+                'Time Step [yr, dex, or file name]', '1.0e6',
+                'Control', ItemType.Str, trigger_redraw = True,
+                help_txt = 'time step in yr (for linear time step) ' +
+                'or dex (for logarithmic time step), or name of PDF file ' +
+                'giving distribution of output times')),
+            ('start_time', Menu_opt(
+                'Start Time [yr]', ' ', 'Control', ItemType.PosReal,
+                only_if_num = ['time_step'],
+                optional = True, required_if = [('log_time', True)],
+                help_txt = 'time of first output; if left ' +
+                'unspecified, and time stepping is linear, defaults '+
+                'to the time step')),
+            ('end_time', Menu_opt(
+                'End Time [yr]', '1.0e8', 'Control', ItemType.PosReal,
+                only_if_num = ['time_step'],
+                help_txt = 'time at which to end simulation')),
+            ('sfr', Menu_opt(
+                'Star Formation Rate [Msun/yr or "sfh"]', '1.0',
+                'Control', ItemType.Str,
+                only_if = [('sim_type', 'galaxy')],
+                help_txt = 'numerical values are interpreted as ' +
+                'a constant SFR; the string "sfh" is interpreted ' +
+                'specifying that a star formation history file ' +
+                'should be read')),
+            ('sfh', Menu_opt(
+                'Star Formation History', ' ', 'Control', 
+                ItemType.Str, optional = True,
+                only_if = [('sim_type', 'galaxy'),
+                           ('sfr', 'sfh')],
+                help_txt = 'name of a PDF file specifying the star ' +
+                'formation history')),
+            ('cluster_mass', Menu_opt(
+                'Cluster Mass [Msun or file name]', '1.0e3', 'Control', 
+                ItemType.Str, only_if=[('sim_type', 'cluster')], help_txt =
+                'numerical values are interpreted as giving a star ' +
+                'cluster mass; non-numerical values are ' +
+                'interpreted as a file name ' +
+                'giving the PDF from which the star cluster mass ' +
+                'should be drawn')), 
+            ('redshift', Menu_opt(
+                'Redshift', ' ', 'Control', ItemType.PosReal,
+                optional=True, help_txt = 
+                'redshift of the system; all output spectra and ' +
+                'photometry will be computed in the observed frame;' +
+                ' defaults to 0')),
+            ('out_integrated', Menu_opt(
+                'Write integrated properties', True, 'Output', 
+                ItemType.Bool, only_if = [('sim_type', 'galaxy')], 
+                help_txt = 'if true, write out physical properties ' +
+                'of whole galaxy')),
             ('out_integrated_phot', Menu_opt(
-                'Write integrated photometry', True,
-                'Output', ItemType.Bool,
-                only_if = [('sim_type', 'galaxy')])),
+                'Write integrated photometry', True, 'Output', 
+                ItemType.Bool, only_if = [('sim_type', 'galaxy')],
+                help_txt = 'if true, write out photometric ' +
+                'properties of galaxy as a whole')),
             ('out_integrated_spec', Menu_opt(
                 'Write integrated spectra', True,
                 'Output', ItemType.Bool,
-                only_if = [('sim_type', 'galaxy')])),
-            ('out_cluster', Menu_opt('Write cluster properties', True,
-                                     'Output', ItemType.Bool)),
-            ('out_cluster_phot', Menu_opt('Write cluster photometry', True,
-                                     'Output', ItemType.Bool)),
-            ('out_cluster_spec', Menu_opt('Write cluster spectra', True,
-                                     'Output', ItemType.Bool)),
+                only_if = [('sim_type', 'galaxy')],
+                help_txt = 'if true, write out spectra of ' +
+                'galaxy as a whole')),
+            ('out_cluster', Menu_opt(
+                'Write cluster properties', True,
+                'Output', ItemType.Bool,
+                help_txt = 'if true, write out physical ' +
+                'properties of each star cluster')),
+            ('out_cluster_phot', Menu_opt(
+                'Write cluster photometry', True,
+                'Output', ItemType.Bool,
+                help_txt = 'if true, write out photometric ' +
+                'properties of each star cluster')),
+            ('out_cluster_spec', Menu_opt(
+                'Write cluster spectra', True,
+                'Output', ItemType.Bool,
+                help_txt = 'if true, write out spectra ' +
+                'of each star cluster')),
             ('output_mode', Menu_opt(
                 'Output format', 'ascii', 'Output', ItemType.Vals,
-                allowed_vals = ['ascii', 'binary', 'fits'])),
+                allowed_vals = ['ascii', 'binary', 'fits'],
+                help_txt = 'format of output files: ASCII, binary, '+
+                'or FITS')),
             ('imf', Menu_opt(
                 'Initial mass function', 
                 osp.join('lib', 'imf', 'chabrier.imf'),
-                'Stellar', ItemType.Str)),
+                'Stellar', ItemType.Str,
+                help_txt = 'name of file specifying the stellar ' +
+                'IMF')),
             ('cmf', Menu_opt(
                 'Cluster mass function', 
                 osp.join('lib', 'cmf', 'slug_default.cmf'),
-                'Stellar', ItemType.Str)),
+                'Stellar', ItemType.Str, help_txt = 
+                'name of file specifying cluster ' +
+                'mass function')),
             ('clf', Menu_opt(
                 'Cluster lifetime function', 
                 osp.join('lib', 'clf', 'slug_default.clf'),
-                'Stellar', ItemType.Str)),
+                'Stellar', ItemType.Str, help_txt = 
+                'file giving the cluster ' +
+                'lifetime distribution')),
             ('tracks', Menu_opt(
                 'Stellar evolution tracks', 
                 osp.join('lib', 'tracks', 'Z0140v00.txt'),
-                'Stellar', ItemType.Str)),
+                'Stellar', ItemType.Str, help_txt =
+                'name of the stellar evolution ' +
+                'tracks file')),
             ('atmospheres', Menu_opt(
                 'Stellar atmosphere directory',
                 osp.join('lib', 'atmospheres')+osp.sep,
-                'Stellar', ItemType.Str)),
+                'Stellar', ItemType.Str, help_txt = 
+                'directory containing the stellar ' +
+                'atmospheres')),
             ('specsyn_mode', Menu_opt(
                 'Spectral synthesis mode', 'SB99',
                 'Stellar', ItemType.Vals,
                 allowed_vals = ['planck', 'Kurucz', 'Kurucz+Hillier',
-                                'Kurucz+Pauldrach', 'SB99'])),
+                                'Kurucz+Pauldrach', 'SB99'],
+                help_txt = 'method to use for stellar spectrum '+
+                'calculation')),
             ('clust_frac', Menu_opt(
-                'Cluster fraction', '1.0', 'Stellar', ItemType.Real)),
+                'Cluster fraction', '1.0', 'Stellar', ItemType.Real,
+                help_txt = 'fraction of stars formed in clusters')),
             ('min_stoch_mass', Menu_opt(
                 'Minimum stochastic mass [Msun]', '0.0',
-                'Stellar', ItemType.Real)),
+                'Stellar', ItemType.Real, help_txt = 
+                'minimum star mass to treat stochastically')),
             ('metallicity', Menu_opt(
                 'Metallicity [Zsun]', ' ',
-                'Stellar', ItemType.PosReal, optional=True)),
+                'Stellar', ItemType.PosReal, optional=True,
+                help_txt = 'metallicity normalized to Solar')),
             ('WR_mass', Menu_opt(
                 'Minimum WR mass [Msun]', ' ',
-                'Stellar', ItemType.PosReal, optional=True)),
+                'Stellar', ItemType.PosReal, optional=True,
+                help_txt = 'minimum mass of star that will have a '+
+                'WR phase')),
             ('A_V', Menu_opt(
                 'A_V [mag or file name]',
                 ' ',
                 'ISM', ItemType.Str, optional=True,
-                trigger_redraw=True)),
+                trigger_redraw=True, help_txt =
+                'visual extinction; numeric values give a constant '+
+                'extinction, non-numeric values give a file name '+
+                'containing the PDF of extinction; if omitted, no '+
+                'extinction is included')),
             ('extinction_curve', Menu_opt(
                 'Extinction curve', osp.join('lib', 'extinct',
                                              'SB_ATT_SLUG.dat'),
                 'ISM', ItemType.Str, optional=True,
-                only_if_not = [('A_V', ' ')])),
+                only_if_not = [('A_V', ' ')], help_txt =
+                'file containing the shape of the extinction curve')),
             ('compute_nebular', Menu_opt(
                 'Compute nebular emission', True,
-                'ISM', ItemType.Bool)),
+                'ISM', ItemType.Bool, help_txt =
+                'true = compute nebular contribution for clusters < '+
+                '10 Myr old; false = do not comput nebular ' +
+                'contribution')),
             ('atomic_dir', Menu_opt(
                 'Atomic data directory', 
                 osp.join('lib', 'atomic')+osp.sep,
                 'ISM', ItemType.Str,
-                only_if = [('compute_nebular', True)])),
+                only_if = [('compute_nebular', True)], help_txt =
+                'directory containing atomic data used in nebular '+
+                'computations')),
             ('nebular_no_metals', Menu_opt(
                 'Omit nebular metal lines', False,
                 'ISM', ItemType.Bool, 
-                only_if = [('compute_nebular', True)])),
+                only_if = [('compute_nebular', True)], help_txt =
+                'true = treat nebula as pure H; false = nebular of '+
+                'scaled Solar composition')),
             ('nebular_den', Menu_opt(
                 'Nebular density [cm^-3]', '1.0e2',
                 'ISM', ItemType.PosReal,
-                only_if = [('compute_nebular', True)])),
+                only_if = [('compute_nebular', True)], help_txt =
+                'density of nebula to be used in computing '+
+                'continuum emission')),
             ('nebular_temp', Menu_opt(
                 'Nebular temp. [K, or -1 for auto]',
                 '-1', 'ISM', ItemType.Real,
-                only_if = [('compute_nebular', True)])),
+                only_if = [('compute_nebular', True)], help_txt =
+                'temperature of nebular to be used in computing '+
+                'continuum emission; if set to a value < 0, '+
+                'temperature is determined automatically from the ' +
+                'value of log U')),
             ('nebular_logU', Menu_opt(
                 'log ionization parameter (U)',
                 '-3', 'ISM', ItemType.Vals,
                 allowed_vals = ['-3', '-2.5', '-2'],
-                only_if = [('compute_nebular', True)])),
+                only_if = [('compute_nebular', True)], help_txt =
+                'value of log U to use in computing the nebular '+
+                'emission')),
             ('nebular_phi', Menu_opt(
                 'phi (ioniz. photon absorption frac.)',
                 '0.73', 'ISM', ItemType.Real,
-                only_if = [('compute_nebular', True)])),
+                only_if = [('compute_nebular', True)], help_txt =
+                'fraction of ionizing photons absorbed by H ' +
+                'within the observational aperture and thus ' +
+                'able to contribute to nebular emission')),
             ('phot_mode', Menu_opt(
                 'Photometry output mode', 'L_nu',
                 'Photometry', ItemType.Vals,
                 allowed_vals = ['L_nu', 'L_lambda', 'AB', 'STMAG',
-                                'VEGA'])),
+                                'VEGA'], help_txt = 
+                'photometric system to use for output; L_nu = '+
+                'frequency-averaged luminosity (erg/s/Hz), '+
+                'L_lambda = wavelength-averaed luminosity '+
+                '(erg/s/Ang), AB = AB magnitudes, STMAG = '+
+                'ST magnitudes, VEGA = Vega magnitudes')),
             ('filters', Menu_opt(
                 'Filter library directory', 
                 osp.join('lib', 'filters') + osp.sep,
-                'Photometry', ItemType.Str)),
+                'Photometry', ItemType.Str, help_txt = 
+                'directory containing photometric filter data')),
             ('phot_bands', Menu_opt(
                 'Photometric bands', 'Lbol, QH0',
-                'Photometry', ItemType.Str))
+                'Photometry', ItemType.Str, help_txt =
+                'comma-separated list of filters / bands for ' +
+                'which photometry should be computed; see ' +
+                osp.join('lib', 'filters', 'FILTER_LIST') +
+                ' for a full list of available filters'))
         ])
 
         # List of menus and names
@@ -212,6 +328,7 @@ class Menu(object):
 
         # Draw the home menu
         self.draw_menu('Home')
+        self.show_help()
 
         # Main loop to read user input
         self.done = False
@@ -219,16 +336,22 @@ class Menu(object):
             c = self.stdscr.getch()
             if c == curses.KEY_DOWN:
                 self.navigate_updown(1)
+                self.show_help()
             elif c == curses.KEY_UP:
                 self.navigate_updown(-1)
+                self.show_help()
             elif c == curses.KEY_RIGHT:
                 self.navigate_leftright(1)
+                self.show_help()
             elif c == curses.KEY_LEFT:
                 self.navigate_leftright(-1)
+                self.show_help()
             elif c == curses.KEY_HOME:
                 self.reset_cursor()
+                self.show_help()
             elif c == ord('\n'):
                 self.navigate_select()
+
 
     # Function to write out a parameter file
     def write_file(self):
@@ -255,6 +378,15 @@ class Menu(object):
                         include = False
                 if include == False:
                     continue
+            if self.params[k].only_if_num is not None:
+                include = True
+                for con in self.params[k].only_if_num:
+                    try:
+                        numval = float(self.params[con].val)
+                    except ValueError:
+                        include = False
+                if include == False:
+                    continue
 
             # Skip optional parameters that have been left blank
             if self.params[k].optional and self.params[k].val == ' ':
@@ -278,6 +410,7 @@ class Menu(object):
         # Close and report status
         fp.close()
         self.message('Wrote '+self.params['file_name'].val)
+
 
     # Function to handle when the user hits return
     def navigate_select(self):
@@ -413,6 +546,9 @@ class Menu(object):
                 self.draw_menu(self.cur_menu, start_opt=p.menu_str,
                                start_right=True)
 
+            # Put help message back
+            self.show_help()
+
     # Function to navigate the menu left and right
     def navigate_leftright(self, dx):
 
@@ -446,11 +582,8 @@ class Menu(object):
             self.highlight(False)
 
             # Move to next line if possible
-            idx = self.selectable_lines.index(linenum) + dy
-            if idx < 0:
-                idx = 0
-            elif idx >= len(self.selectable_lines):
-                idx = len(self.selectable_lines) - 1
+            idx = (self.selectable_lines.index(linenum) + dy) \
+                  % len(self.selectable_lines)
             linenum = self.selectable_lines[idx]
             self.stdscr.move(linenum, 1)
 
@@ -508,6 +641,34 @@ class Menu(object):
 
         # Redraw
         self.stdscr.refresh()
+
+    # Show the help text
+    def show_help(self):
+
+        # Read the line we're on
+        posy, posx = self.stdscr.getyx()
+
+        # Show the help text if available
+        if posy in self.opt_lines:
+            name = self.cur_menu_params[
+                self.opt_lines.index(posy)].menu_str
+            txt = self.cur_menu_params[
+                self.opt_lines.index(posy)].help_txt
+            if txt is not None:
+                self.message(name + ': ' + txt)
+        elif posy in self.menu_lines:
+            self.clear_message()
+        elif posy in self.com_lines:
+            idx = self.com_lines.index(posy)
+            if idx == 0:
+                self.message('Write out ' +
+                             self.params['file_name'].val)
+            elif idx == 1:
+                self.message('Write out ' +
+                             self.params['file_name'].val +
+                             ' and exit')
+            elif idx == 2:
+                self.message('Exit without writing output')
 
 
     # Function to highlight the currently-selected option
@@ -578,6 +739,7 @@ class Menu(object):
 
         # Record which lines contain options and which contain commands
         self.opt_lines = []
+        self.menu_lines = []
         self.com_lines = []
 
         # Figure out which parameters go on this menu
@@ -585,7 +747,8 @@ class Menu(object):
         self.cur_menu_params = []
         for p in self.params.values():
             if p.menu_loc == name:
-                # Skip if only_if or only_if_not condition is not met
+
+                # Skip if conditions are not met
                 if p.only_if is not None:
                     show = True
                     for con in p.only_if:
@@ -600,6 +763,17 @@ class Menu(object):
                             show = False
                     if show == False:
                         continue
+                if p.only_if_num is not None:
+                    show = True
+                    for con in p.only_if_num:
+                        try:
+                            numval = float(self.params[con].val)
+                        except ValueError:
+                            show = False
+                    if show == False:
+                        continue
+
+                # Add to menu
                 self.cur_menu_params.append(p)
 
         # Draw the part of the menu containing options
@@ -632,7 +806,7 @@ class Menu(object):
         for m in self.menus.keys():
             if m != name:
                 self.write_opt(self.menus[m], None, linenum)
-                self.com_lines.append(linenum)
+                self.menu_lines.append(linenum)
                 linenum = linenum+1
 
         # Draw the part of the menu for writing out files, if we're on
@@ -650,9 +824,11 @@ class Menu(object):
             linenum = linenum+1
             self.write_opt('Exit without writing', None, linenum)
             self.com_lines.append(linenum)
+            linenum = linenum+1
 
         # Get all lines
-        self.selectable_lines = self.com_lines + self.opt_lines
+        self.selectable_lines = self.com_lines + self.menu_lines \
+                                + self.opt_lines
         self.selectable_lines.sort()
 
         # Set the initial cursor line
@@ -666,21 +842,31 @@ class Menu(object):
                 self.stdscr.move(start_line, 1)
             self.highlight(True)            
 
+        # Store the number of the line after the end of the text; this
+        # is used to issue messages
+        linenum = linenum+1
+        self.msg_top_line = linenum
+
         # Redraw
         self.stdscr.refresh()
 
     # Function to write a message at the bottom of the screen
     def message(self, msg):
+        self.clear_message()
         posy, posx = self.stdscr.getyx()
-        self.stdscr.addnstr(self.winy-2, 2, msg, len(msg))
+        msg_break = self.wrapper.wrap(msg)
+        for i, m in enumerate(msg_break):
+            self.stdscr.addnstr(self.winy-1-len(msg_break)+i, 
+                                2, m, len(m))
         self.stdscr.move(posy, posx)
         self.stdscr.refresh()
 
     # Function to clear the message at the bottom of the screen
     def clear_message(self):
         posy, posx = self.stdscr.getyx()
-        self.stdscr.addnstr(self.winy-2, 1, ' '*(self.winx-2), 
-                            self.winx-2)
+        for i in range(self.msg_top_line, self.winy-1):
+            self.stdscr.addnstr(i, 1, ' '*(self.winx-2), 
+                                self.winx-2)
         self.stdscr.move(posy, posx)
         self.stdscr.refresh()
 
