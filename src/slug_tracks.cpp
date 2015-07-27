@@ -896,6 +896,10 @@ slug_tracks::compute_isochrone(const double logt,
     isochrone_logcur_mass = NULL;
   }
 
+  // Turn off GSL error handling so that we can handle this on our own
+  // and print out more informative error messages
+  gsl_error_handler_t *gsl_err = gsl_set_error_handler_off();
+
   // Variables to hold the data as we move along the isochrone
   vector<double> logm_tmp, logcur_mass_tmp, logL_tmp, logTeff_tmp, 
     h_surf_tmp, c_surf_tmp, n_surf_tmp;
@@ -1180,9 +1184,15 @@ slug_tracks::compute_isochrone(const double logt,
 	(dlogm_track < dlogm_time_right)) {
 
       // We hit the next mass track. Move the mass pointer to it, and
-      // increment the track pointer
+      // increment the track pointer. Be careful to handle the corner
+      // case where we hit a mass and age track simulatneously (to
+      // machine precision), in which case we don't want to add this
+      // point, we just want to move the track pointer.
       trackptr--;
       logmptr = logmass[trackptr];
+      if (logm_tmp.size() > 0) {
+	if (logmptr == logm_tmp.back()) continue;
+      }
       logm_tmp.push_back(logmptr);
 
       // Add data to the inteprolation vectors. As above, we have two
@@ -1395,12 +1405,24 @@ slug_tracks::compute_isochrone(const double logt,
     cerr << "GSL interpolation error building isochrone!" << endl;
     cerr << "   Could not build an isochrone at time "
 	 << setprecision(20) << exp(logt) << " from data:" << endl;
-    cerr << "   log m         log m_cur" << endl;
+    cerr << "   i            log m         log m_cur" << endl;
     for (unsigned int i=0; i<logm_tmp.size(); i++) {
-      cerr << "   " << setprecision(20) << logm_tmp[i] 
-	   << "   " << setprecision(20) << logcur_mass_tmp.size()
+      cerr << "   " << i
+	   << "   " << setprecision(20) << logm_tmp[i] 
+	   << "   " << setprecision(20) << logcur_mass_tmp[i]
 	   << endl;
     }
+    unsigned int i=0;
+    while (logm_tmp[i+1] > logm_tmp[i]) {
+      if (i == logm_tmp.size()-2) break;
+      i++;
+    }
+    if (i != logm_tmp.size()-1)
+      cerr << "logm non-monotonic: (" << i << ", "
+	   << setprecision(20) << logm_tmp[i]
+	   << ") and (" << i+1 << ", " 
+	   << setprecision(20) << logm_tmp[i+1] << ")"
+	   << endl;
     exit(1);
   }
   isochrone_logL 
@@ -1432,6 +1454,9 @@ slug_tracks::compute_isochrone(const double logt,
   // Save the time and isochrone index
   isochrone_logt = logt;
   isochrone_idx = idx;
+
+  // Restore the GSL error handler
+  gsl_set_error_handler(gsl_err);
 }
 
 
@@ -1541,13 +1566,13 @@ get_isochrone(const double t, const vector<double> &m) const {
       - 0.5*constants::logsigmaSB - 2.0*stars[starptr].logTeff
       - constants::logRsun;
 
-    // Current mass; used to get log g
-    double log10_cur_mass = constants::loge *
+    // Current mass
+    stars[starptr].logM = constants::loge *
       gsl_spline_eval(isochrone_logcur_mass, logm, 
 		      isochrone_logcur_mass_acc);
 
     // log g
-    stars[starptr].logg = constants::logG + log10_cur_mass +
+    stars[starptr].logg = constants::logG + stars[starptr].logM +
       constants::logMsun - 2.0*stars[starptr].logR - 
       2.0*constants::logRsun;
 
