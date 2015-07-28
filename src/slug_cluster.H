@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_extinction.H"
 #include "slug_filter_set.H"
 #include "slug_galaxy.H"
+#include "slug_imf_integrator.H"
 #include "slug_PDF.H"
 #include "slug_nebular.H"
 #include "slug_specsyn.H"
@@ -176,6 +177,7 @@ private:
   const slug_filter_set *filters;     // Photometric filters
   const slug_extinction *extinct;     // Extinction
   const slug_nebular *nebular;        // Nebular
+  slug_imf_integrator<double> integ; // Integration helper class
 
   // Malleable data
   unsigned long id;                   // Unique ID

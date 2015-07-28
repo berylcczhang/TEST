@@ -68,7 +68,7 @@ namespace constants {
   // Numeric limits
   const double big = std::numeric_limits<double>::max();
   const double small = std::numeric_limits<double>::min();
-   
 }
+
 #endif
 // _constants_H_

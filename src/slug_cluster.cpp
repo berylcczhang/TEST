@@ -32,6 +32,16 @@ namespace std
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
+// Trivial little helper function that just takes stardata and returns
+// the current stellar mass. Used below.
+////////////////////////////////////////////////////////////////////////
+namespace cluster {
+  double curMass(const slug_stardata &data) {
+    return exp(data.logM/constants::loge);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_cluster::slug_cluster(const unsigned long my_id, 
@@ -45,7 +55,8 @@ slug_cluster::slug_cluster(const unsigned long my_id,
 			   const slug_PDF *my_clf) :
   targetMass(my_mass), imf(my_imf), clf(my_clf), tracks(my_tracks), 
   specsyn(my_specsyn), filters(my_filters), extinct(my_extinct),
-  nebular(my_nebular), id(my_id), formationTime(time), curTime(time)
+  nebular(my_nebular), integ(my_tracks, my_imf, nullptr), id(my_id),
+  formationTime(time), curTime(time)
 {
 
   // Initialize to non-disrupted
@@ -279,11 +290,68 @@ slug_cluster::advance(double time) {
   // Flag if we're disrupted
   if (clusterAge > lifetime) is_disrupted = true;
 
+  // Record the present-day masses of the surviving stars using the
+  // old isochrone; note that, if cluster was just born, this mass is
+  // equal to the birth mass
+  double oldCurMass;
+  if (curTime == formationTime) oldCurMass = birthMass;
+  else {
+    oldCurMass = 0.0;
+    // Present day mass of stochastic stars. We use the present-day
+    // mass from the tracks if available, and the birth mass for stars
+    // below the smallest mass in our tracks.
+    for (vector<double>::size_type i=0; i<stars.size(); i++) { 
+      if (stars[i] >= tracks->min_mass()) break;
+      oldCurMass += stars[i];
+    }
+    for (vector<slug_stardata>::size_type i=0; i<stardata.size(); i++) 
+      oldCurMass += exp(stardata[i].logM / constants::loge);
+    // Add contribution from stars being treated
+    // non-stochastically. As with the stochastic stars, use the birth
+    // mass for stars below the minimum track mass, and the
+    // present-day mass for other stars.
+    if (imf->get_xStochMin() > imf->get_xMin()) {
+      if (imf->get_xMin() < tracks->min_mass()) {
+	oldCurMass += birthMass * 
+	  imf->mass_frac(imf->get_xMin(), 
+			 min(tracks->min_mass(), imf->get_xStochMin()));
+      }
+      oldCurMass += integ.integrate(birthMass, curTime-formationTime,
+				    cluster::curMass);
+    }
+  }
+
   // Set current time
   curTime = time;
 
   // Mark that data are not current
   data_set = spec_set = Lbol_set = phot_set = false;
+
+  // Update all the stellar data to the new isochrone
+  set_isochrone();
+
+  // Recompute the present-day masses of the surviving stars using the
+  // new isochrone
+  double newCurMass = 0.0;
+  for (vector<double>::size_type i=0; i<stars.size(); i++) { 
+    if (stars[i] >= tracks->min_mass()) break;
+    newCurMass += stars[i];
+  }
+  for (vector<slug_stardata>::size_type i=0; i<stardata.size(); i++) 
+    newCurMass += exp(stardata[i].logM / constants::loge);
+  if (imf->get_xStochMin() > imf->get_xMin()) {
+    if (imf->get_xMin() < tracks->min_mass()) {
+      newCurMass += birthMass * 
+	imf->mass_frac(imf->get_xMin(), 
+		       min(tracks->min_mass(), imf->get_xStochMin()));
+    }
+    newCurMass += integ.integrate(birthMass, curTime-formationTime,
+				  cluster::curMass);
+  }
+
+  // Subtract the difference between the new and old masses from the
+  // alive mass to include the effects of mass loss
+  aliveMass += newCurMass - oldCurMass;
 }
 
 

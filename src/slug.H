@@ -73,9 +73,9 @@ typedef struct {
   double death_time; // Time when star dies
 } slug_star;
 
-
 // Struct to hold a lot of data about a star
 typedef struct { 
+  double logM;       // Log_10 current mass in Msun
   double logL;       // Log_10 luminoisty in Lsun
   double logR;       // Log_10 radius in Rsun
   double logTeff;    // Log_10 Teff in K
@@ -85,8 +85,6 @@ typedef struct {
 
 // Random number generator type
 typedef boost::random::mt19937 rng_type;
-
-
 
 #endif
 // _slug_H_

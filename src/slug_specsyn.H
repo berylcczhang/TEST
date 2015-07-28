@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include "slug_tracks.H"
 #include "slug_PDF.H"
-
+#include "slug_imf_integrator.H"
 
 ////////////////////////////////////////////////////////////////////////
 // Helper class that just holds workspace data for doing numerical
@@ -57,7 +57,6 @@ public:
   std::vector<double> a, b, me, rbol, ebol;
   std::vector<std::vector<double> > r, e;
 };
-
 
 ////////////////////////////////////////////////////////////////////////
 // Main specsyn class
@@ -124,13 +123,14 @@ public:
   void get_spectrum_cts_sfh(const double t, 
 			    std::vector<double>& L_lambda, 
 			    double& L_bol, 
-			    const double tol = 1e-2) const;
+			    const double tol = 1e-3) const;
   double get_Lbol_cts_sfh(const double t, 
 			  const double tol = 1e-2) const;
 
 
 protected:
 
+  // Private data
   std::vector<double> lambda_rest; // Rest wavelengths, in A
   std::vector<double> lambda_obs;  // Observed wavelenghts, in A
   const double z;                  // Redshift
@@ -138,17 +138,15 @@ protected:
   const slug_PDF *imf;             // IMF
   const slug_PDF *sfh;             // Star formation history
 
+  // Integration helpers
+  slug_imf_integrator<double> integ; 
+  slug_imf_integrator<std::vector<double>> v_integ;
+
 private:
 
-  // Helper function to do spectral synthesis and get bolometric
-  // luminosity over a given mass range
-  void get_spectrum_cts_range(const double m_tot, const double age,
-			      const double m_min, const double m_max,
-			      std::vector<double>& L_lambda,
-			      double &L_bol, const double tol = 1e-3) const;  
-  double get_Lbol_cts_range(const double m_tot, const double age,
-			    const double m_min, const double m_max,
-			    const double tol = 1e-3) const;  
+  // Helper function that returns the spectrum and Lbol packed into a
+  // single array, for convenience integrating both at once.
+  std::vector<double> get_spec_Lbol(const slug_stardata &data) const;
 
   // Helper function to do Gauss-Konrod integration on a particular
   // mass interval

@@ -84,12 +84,17 @@ public:
   double integral(double a, double b) const;
 
   // Fraction of the PDF by number and by mass that is in the
-  // restricted range that we're treating stochstically
+  // restricted range that we're treating stochstically; also a
+  // generic mass fraction over any range
   double num_frac_restrict() const { 
     return PDFintegral_restrict / PDFintegral;
   }
   double mass_frac_restrict() const {
     return expectVal_restrict * PDFintegral_restrict / 
+      (expectVal * PDFintegral);
+  }
+  double mass_frac(double a, double b) const {
+    return expectationVal(a, b) * integral(a, b) / 
       (expectVal * PDFintegral);
   }
 
