@@ -520,7 +520,7 @@ slug_parmParser::checkParams() {
   }
   if (!writeClusterProp && !writeClusterPhot 
       && !writeClusterSpec && !writeIntegratedPhot
-      && !writeIntegratedSpec) {
+      && !writeIntegratedSpec && !writeIntegratedProp) {
     cerr << "slug: error: nothing to be written!" << endl;
     exit(1);
   }
