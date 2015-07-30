@@ -134,15 +134,19 @@ private:
   const slug_filter_set *filters;     // Filter set
   const slug_extinction *extinct;     // Extinction object
   const slug_nebular *nebular;        // Nebular object
+  const slug_imf_integrator<double> integ; // Integration helper class
 
   // Simulation data
   double curTime;                     // Current time
   double mass;                        // Mass of stars created so far
   double targetMass;                  // Target mass at this time
   double aliveMass;                   // Mass of currently alive stars
+  double nonStochAliveMass;           // Non-stochastic component of aliveMass
+  double clusterAliveMass;            // Cluster component of aliveMass
+  double fieldAliveMass;              // Stochastic field component of aliveMass
   double clusterMass;                 // Mass in non-disrupted clusters
   double fc;                          // Fraction of stars in clusters
-  double nonStochFieldMass;           // Mass of field stars w/out stochasticity
+  double nonStochFieldMass;           // Birth mass of field stars w/out stochasticity
   double Lbol;                        // Bolometric luminosity of galaxy
   double Lbol_ext;                    // Bolometric luminsoity w/extinction
   unsigned long cluster_id;           // Cluster ID counter

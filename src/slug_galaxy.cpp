@@ -34,12 +34,19 @@ namespace std
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
-// A trivial little helper function, used below
+// Some trivial helper functions
 ////////////////////////////////////////////////////////////////////////
 namespace galaxy {
+
+  // Sorts stars by death time
   bool sort_death_time_decreasing(const slug_star star1, 
 				  const slug_star star2) {
     return (star1.death_time > star2.death_time);
+  }
+
+  // Returns current mass from star data
+  double curMass(const slug_stardata &data) {
+    return exp(data.logM/constants::loge);
   }
 }
 
@@ -64,14 +71,15 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   specsyn(my_specsyn),
   filters(my_filters),
   extinct(my_extinct),
-  nebular(my_nebular)
+  nebular(my_nebular),
+  integ(my_tracks, my_imf, my_sfh)
  {
 
   // Initialize mass and time
   curTime = 0.0;
   mass = 0.0;
   targetMass = 0.0;
-  aliveMass = 0.0;
+  aliveMass = nonStochAliveMass = fieldAliveMass = clusterAliveMass = 0.0;
   clusterMass = 0.0;
   nonStochFieldMass = 0.0;
 
@@ -113,7 +121,8 @@ slug_galaxy::reset(bool reset_cluster_id) {
   // N.B. By default we do NOT reset the cluster_id pointer here,
   // because if we're doing multiple trials, we want the cluster IDs
   // for different trials to be distinct.
-  curTime = mass = targetMass = aliveMass = clusterMass 
+  curTime = mass = targetMass = aliveMass = nonStochAliveMass
+    = fieldAliveMass = clusterMass = clusterAliveMass 
     = nonStochFieldMass = 0.0;
   Lbol_set = spec_set = field_data_set = phot_set = false;
   field_stars.resize(0);
@@ -175,17 +184,21 @@ slug_galaxy::advance(double time) {
 			   extinct, nebular, clf);
 	clusters.push_back(new_cluster);
 	mass += new_cluster->get_birth_mass();
-	aliveMass += new_cluster->get_birth_mass();
 	clusterMass += new_cluster->get_birth_mass();
+	clusterAliveMass += new_cluster->get_alive_mass();
       }
     }
 
     // Create new field stars
     if (fc != 1) {
 
+      // Figure out what fraction of the mass is to be treated
+      // stochastically
+      double fstoch = imf->mass_frac_restrict();
+
       // Get masses of new field stars
       vector<double> new_star_masses;
-      imf->drawPopulation((1.0-fc)*mass_to_draw, new_star_masses);
+      imf->drawPopulation((1.0-fc)*fstoch*mass_to_draw, new_star_masses);
 
       // Get extinctions to field stars
       vector<double> AV;
@@ -203,36 +216,34 @@ slug_galaxy::advance(double time) {
 	field_stars.push_back(new_star);
 	if (extinct != NULL) field_star_AV.push_back(AV[i]);
 	mass += new_star.mass;
-	aliveMass += new_star.mass;
       }
 
       // Sort field star list by death time, from largest to smallest
       sort(field_stars.begin(), field_stars.end(), 
 	   galaxy::sort_death_time_decreasing);
 
-      // Increase the non-stochastic field star mass by the mass of
-      // field stars that should have formed below the stochstic limit
-      if (imf->has_stoch_lim())
-	nonStochFieldMass += 
-	  (1.0-fc)*new_mass*imf->integral_restricted();
+      // Increase the non-stochastic field star mass and the total
+      // mass by the mass of field stars that should have formed below
+      // the stochastic limit 
+      mass += (1.0-fc)*(1.0-fstoch)*mass_to_draw;
+      nonStochFieldMass += (1.0-fc)*(1.0-fstoch)*mass_to_draw;
     }
   }
 
-  // Advance all clusters to current time; track how the currently
-  // alive star mass in the galaxy changes due to this evolution
+  // Advance all clusters to current time; recompute the clusterAliveMass
   list<slug_cluster *>::iterator it;
   for (it = clusters.begin(); it != clusters.end(); it++) {
-    aliveMass -= (*it)->get_alive_mass();
+    clusterAliveMass -= (*it)->get_alive_mass();
     clusterMass -= (*it)->get_alive_mass();
     (*it)->advance(time);
-    aliveMass += (*it)->get_alive_mass();
+    clusterAliveMass += (*it)->get_alive_mass();
     clusterMass += (*it)->get_alive_mass();
   }
   for (it = disrupted_clusters.begin(); 
        it != disrupted_clusters.end(); it++) {
-    aliveMass -= (*it)->get_alive_mass();
+    clusterAliveMass -= (*it)->get_alive_mass();
     (*it)->advance(time);
-    aliveMass += (*it)->get_alive_mass();
+    clusterAliveMass += (*it)->get_alive_mass();
   }
 
   // See if any clusters were disrupted over the last time step, and,
@@ -252,7 +263,6 @@ slug_galaxy::advance(double time) {
   // have died
   while (field_stars.size() > 0) {
     if (field_stars.back().death_time < time) {
-      aliveMass -= field_stars.back().mass;
       field_stars.pop_back();
       if (extinct != NULL) field_star_AV.pop_back();
     } else {
@@ -266,6 +276,34 @@ slug_galaxy::advance(double time) {
   // Store new time
   curTime = time;
 
+  // Update the field star data
+  set_field_data();
+
+  // Recompute the alive mass of the field stars; assume that field
+  // stars below the lowest mass in our tracks have zero mass lass
+  fieldAliveMass = 0.0;
+  for (vector<double>::size_type i=0; i<field_stars.size(); i++) { 
+    if (field_stars[i].mass >= tracks->min_mass()) break;
+    fieldAliveMass += field_stars[i].mass;
+  }
+  for (vector<slug_stardata>::size_type i=0; i<field_data.size(); i++) 
+    fieldAliveMass += exp(field_data[i].logM / constants::loge);
+
+  // Compute the alive mass for non-stochastic field stars; be sure to
+  // include the contribution from the part of the IMF that's below
+  // the minimum track mass
+  nonStochAliveMass = 0.0;
+  if (imf->get_xStochMin() > imf->get_xMin()) {
+    if (imf->get_xMin() < tracks->min_mass()) {
+      nonStochAliveMass += targetMass * 
+	imf->mass_frac(imf->get_xMin(), 
+		       min(tracks->min_mass(), imf->get_xStochMin()));
+    }
+    nonStochAliveMass += integ.integrate_sfh(time, galaxy::curMass);
+  }
+
+  // Recompute the alive mass
+  aliveMass = nonStochAliveMass + clusterAliveMass + fieldAliveMass;
 }
 
 

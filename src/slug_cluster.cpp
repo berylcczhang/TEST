@@ -63,17 +63,18 @@ slug_cluster::slug_cluster(const unsigned long my_id,
   is_disrupted = false;
 
   // Populate with stars
-  birthMass = imf->drawPopulation(targetMass, stars);
+  stochBirthMass = stochAliveMass = 
+    imf->drawPopulation(targetMass, stars);
 
   // If the population only represents part of the mass range due to
   // restrictions on what range is being treated stochastically, be
   // sure to account for that
-  nonStochMass = nonStochAliveMass = 
+  nonStochBirthMass = nonStochAliveMass = 
      targetMass * (1.0 - imf->mass_frac_restrict());
-  birthMass += nonStochMass;
 
-  // Initialize the living star mass
-  aliveMass = birthMass;
+  // Set the birth and alive masses
+  birthMass = stochBirthMass + nonStochBirthMass;
+  aliveMass = stochAliveMass + nonStochAliveMass;
 
   // Sort the stars
   sort(stars.begin(), stars.end());
@@ -118,17 +119,18 @@ slug_cluster::reset(bool keep_id) {
 #endif
 
   // Re-populate with stars
-  birthMass = imf->drawPopulation(targetMass, stars);
+  stochBirthMass = stochAliveMass 
+    = imf->drawPopulation(targetMass, stars);
 
   // If the population only represents part of the mass range due to
   // restrictions on what range is being treated stochastically, be
   // sure to account for that
-  nonStochMass = nonStochAliveMass = 
-     targetMass * (1.0 - imf->mass_frac_restrict());
-  birthMass += nonStochMass;
+  nonStochBirthMass = nonStochAliveMass 
+     = targetMass * (1.0 - imf->mass_frac_restrict());
 
-  // Initialize the living star mass
-  aliveMass = birthMass;
+  // Set the birth and alive masses
+  birthMass = stochBirthMass + nonStochBirthMass;
+  aliveMass = stochAliveMass + nonStochAliveMass;
 
   // Sort the stars
   sort(stars.begin(), stars.end());
@@ -177,18 +179,9 @@ slug_cluster::advance(double time) {
     // correcting the mass downward as we go
     while (stars.size() > 0) {
       if (stars.back() > stellarDeathMass) {
-	aliveMass -= stars.back();
+	stochAliveMass -= stars.back();
 	stars.pop_back();
       } else break;
-    }
-
-    // If the maximum mass for non-stochastic treatment is smaller than
-    // the stellar death mass, decrease the mass in the non-stochstic
-    // bin
-    if (stellarDeathMass < imf->get_xStochMin()) {
-      nonStochAliveMass = nonStochMass * 
-	imf->integral(0, stellarDeathMass) /
-	imf->integral_restricted();
     }
 
   } else {
@@ -200,7 +193,7 @@ slug_cluster::advance(double time) {
     // the upper end of the most massive "alive mass" interval
     while (stars.size() > 0) {
       if (stars.back() > mass_cuts.back()) {
-	aliveMass -= stars.back();
+	stochAliveMass -= stars.back();
 	stars.pop_back();
       } else break;
     }
@@ -242,7 +235,7 @@ slug_cluster::advance(double time) {
       // need to add 1 to starptr because the c++ vector erase method
       // excludes the last element.
       for (unsigned int i=starptr2; i<=starptr; i++)
-	aliveMass -= stars[i];
+	stochAliveMass -= stars[i];
       stars.erase(stars.begin()+starptr2, stars.begin()+starptr+1);
 
       // Move the death mass point and star pointer
@@ -260,66 +253,14 @@ slug_cluster::advance(double time) {
 	if (stars[starptr] > mass_cuts[0]) break;
 
       // Kill those stars
-      for (unsigned int i=0; i<starptr; i++) aliveMass -= stars[i];
+      for (unsigned int i=0; i<starptr; i++) stochAliveMass -= stars[i];
       stars.erase(stars.begin(), stars.begin()+starptr);
 
-    }
-
-    // Recompute the non-stochastic alive mass by summing up all the
-    // mass intervals that are alive
-    if (imf->get_xStochMin() > 0.0) {
-      double imfsum = 0.0;
-      for (unsigned int i=0; i<mass_cuts.size()/2; i++) {
-
-	// If the minimum of this alive interval is bigger than the
-	// highest mass we're treating non-stochastically / the lowest
-	// mass we're treating non-stochastically, break
-	if (mass_cuts[2*i] > imf->get_xStochMin()) break;
-
-	// Integrate the contribution of this alive interval
-	imfsum += imf->integral(mass_cuts[2*i],
-				min(mass_cuts[2*i], imf->get_xStochMin()));
-      }
-
-      // Update non-stochastic alive mass
-      nonStochAliveMass = nonStochMass * imfsum /
-	imf->integral_restricted();
     }
   }
 
   // Flag if we're disrupted
   if (clusterAge > lifetime) is_disrupted = true;
-
-  // Record the present-day masses of the surviving stars using the
-  // old isochrone; note that, if cluster was just born, this mass is
-  // equal to the birth mass
-  double oldCurMass;
-  if (curTime == formationTime) oldCurMass = birthMass;
-  else {
-    oldCurMass = 0.0;
-    // Present day mass of stochastic stars. We use the present-day
-    // mass from the tracks if available, and the birth mass for stars
-    // below the smallest mass in our tracks.
-    for (vector<double>::size_type i=0; i<stars.size(); i++) { 
-      if (stars[i] >= tracks->min_mass()) break;
-      oldCurMass += stars[i];
-    }
-    for (vector<slug_stardata>::size_type i=0; i<stardata.size(); i++) 
-      oldCurMass += exp(stardata[i].logM / constants::loge);
-    // Add contribution from stars being treated
-    // non-stochastically. As with the stochastic stars, use the birth
-    // mass for stars below the minimum track mass, and the
-    // present-day mass for other stars.
-    if (imf->get_xStochMin() > imf->get_xMin()) {
-      if (imf->get_xMin() < tracks->min_mass()) {
-	oldCurMass += birthMass * 
-	  imf->mass_frac(imf->get_xMin(), 
-			 min(tracks->min_mass(), imf->get_xStochMin()));
-      }
-      oldCurMass += integ.integrate(birthMass, curTime-formationTime,
-				    cluster::curMass);
-    }
-  }
 
   // Set current time
   curTime = time;
@@ -330,28 +271,32 @@ slug_cluster::advance(double time) {
   // Update all the stellar data to the new isochrone
   set_isochrone();
 
-  // Recompute the present-day masses of the surviving stars using the
-  // new isochrone
-  double newCurMass = 0.0;
+  // Recompute the present-day masses of the surviving stochastic
+  // stars using the new isochrone. We sum the masses of stars below
+  // the minimum track mass assuming they have no mass loss, and for
+  // all other stars we use the present-day mass from the tracks.
+  stochAliveMass = 0.0;
   for (vector<double>::size_type i=0; i<stars.size(); i++) { 
     if (stars[i] >= tracks->min_mass()) break;
-    newCurMass += stars[i];
+    stochAliveMass += stars[i];
   }
   for (vector<slug_stardata>::size_type i=0; i<stardata.size(); i++) 
-    newCurMass += exp(stardata[i].logM / constants::loge);
+    stochAliveMass += exp(stardata[i].logM / constants::loge);
+
+  // Now do the same calculation for the non-stochastic stars
+  nonStochAliveMass = 0.0;
   if (imf->get_xStochMin() > imf->get_xMin()) {
     if (imf->get_xMin() < tracks->min_mass()) {
-      newCurMass += birthMass * 
+      nonStochAliveMass += targetMass * 
 	imf->mass_frac(imf->get_xMin(), 
 		       min(tracks->min_mass(), imf->get_xStochMin()));
     }
-    newCurMass += integ.integrate(birthMass, curTime-formationTime,
+    nonStochAliveMass += integ.integrate(targetMass, curTime-formationTime,
 				  cluster::curMass);
   }
 
-  // Subtract the difference between the new and old masses from the
-  // alive mass to include the effects of mass loss
-  aliveMass += newCurMass - oldCurMass;
+  // Compute the new alive mass
+  aliveMass = nonStochAliveMass + stochAliveMass;
 }
 
 

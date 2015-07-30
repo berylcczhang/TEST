@@ -28,8 +28,8 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 * ``Time``: evolution time at which the output is produced
 * ``TargetMass``: target mass of stars in the galaxy up that time, if the IMF and SFH were perfectly sampled
 * ``ActualMass``: actual mass of stars produced in the galaxy up to that time; generally not exactly equal to ``TargetMass`` due to finite sampling of the IMF and SFH
-* ``LiveMass``: actual mass of stars produced in the galaxy up to that time, and which have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)
-* ``ClusterMass``: actual mass of stars produced in the galaxy up to that time that are still members of non-disrupted clusters
+* ``LiveMass``:  current mass of all stars in the galaxy, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
+* ``ClusterMass``: current mass of all stars in the galaxy that are presently in clusters; same as ``LiveMass``, but only including the stars in clusters
 * ``NumClusters``: number of non-disrupted clusters present in the galaxy at this time
 * ``NumDisClust``: number of disrupted clusters present in the galaxy at this time
 * ``NumFldStars``: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
@@ -179,7 +179,7 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 * ``Lifetime``: amount of time from birth to when the cluster will disrupt
 * ``TargetMass``: target mass of stars in the cluster, if the IMF were perfectly sampled
 * ``BirthMass``: actual mass of stars present in the cluster at formation
-* ``LiveMass``: actual mass of stars produced in the cluster at this output time that have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)
+* ``LiveMass``: current mass of all stars in the cluster, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
 * ``NumStar``: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 * ``MaxStarMass``: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 * ``A_V``: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled

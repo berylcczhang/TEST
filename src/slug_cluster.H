@@ -177,14 +177,16 @@ private:
   const slug_filter_set *filters;     // Photometric filters
   const slug_extinction *extinct;     // Extinction
   const slug_nebular *nebular;        // Nebular
-  slug_imf_integrator<double> integ; // Integration helper class
+  const slug_imf_integrator<double> integ; // Integration helper class
 
   // Malleable data
   unsigned long id;                   // Unique ID
   double birthMass;                   // Actual mass at birth
   double aliveMass;                   // Mass of still-living stars
-  double nonStochMass;                // Mass not being treated stochastically
-  double nonStochAliveMass;           // Mass of still-living stars w/out stochasticity
+  double stochBirthMass;           // Birth mass of non-stochastic stars
+  double stochAliveMass;           // Mass of still-living non-stochastic stars
+  double nonStochBirthMass;           // Birth mass of non-stochastic stars
+  double nonStochAliveMass;           // Mass of still-living non-stochastic stars
   double formationTime;               // Cluster birth time
   double curTime;                     // Current time
   double lifetime;                    // Time at which this cluster disrupts

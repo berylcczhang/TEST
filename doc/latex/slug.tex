@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{July 19, 2015}
+\date{July 30, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -1106,10 +1106,10 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 \code{ActualMass}: actual mass of stars produced in the galaxy up to that time; generally not exactly equal to \code{TargetMass} due to finite sampling of the IMF and SFH
 
 \item {} 
-\code{LiveMass}: actual mass of stars produced in the galaxy up to that time, and which have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)
+\code{LiveMass}:  current mass of all stars in the galaxy, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
 
 \item {} 
-\code{ClusterMass}: actual mass of stars produced in the galaxy up to that time that are still members of non-disrupted clusters
+\code{ClusterMass}: current mass of all stars in the galaxy that are presently in clusters; same as \code{LiveMass}, but only including the stars in clusters
 
 \item {} 
 \code{NumClusters}: number of non-disrupted clusters present in the galaxy at this time
@@ -1398,7 +1398,7 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 \code{BirthMass}: actual mass of stars present in the cluster at formation
 
 \item {} 
-\code{LiveMass}: actual mass of stars produced in the cluster at this output time that have not yet reached the end of their lives (as marked by the final entry in the stellar evolution tracks)
+\code{LiveMass}: current mass of all stars in the cluster, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
 
 \item {} 
 \code{NumStar}: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{\DUspan{}{Stellar Model Keywords}}}})
