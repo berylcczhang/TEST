@@ -29,6 +29,7 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 * ``TargetMass``: target mass of stars in the galaxy up that time, if the IMF and SFH were perfectly sampled
 * ``ActualMass``: actual mass of stars produced in the galaxy up to that time; generally not exactly equal to ``TargetMass`` due to finite sampling of the IMF and SFH
 * ``LiveMass``:  current mass of all stars in the galaxy, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
+* ``StellarMass``: same as ``LiveMass``, but including the mass of stellar remnants; at present, remnant mass calculation is hard-coded to use the initial-final mass relation of `Kruijssen (2009, A&A, 507, 1409) <http://adsabs.harvard.edu/abs/2009A%26A...507.1409K>`_
 * ``ClusterMass``: current mass of all stars in the galaxy that are presently in clusters; same as ``LiveMass``, but only including the stars in clusters
 * ``NumClusters``: number of non-disrupted clusters present in the galaxy at this time
 * ``NumDisClust``: number of disrupted clusters present in the galaxy at this time
@@ -43,6 +44,7 @@ For ``binary`` output, the file consists of a series of records containing the f
 * ``TargetMass`` (``double``)
 * ``ActualMass`` (``double``)
 * ``LiveMass`` (``double``)
+* ``StellarMass`` (``double``)
 * ``ClusterMass`` (``double``)
 * ``NumClusters`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
 * ``NumDisClust`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
@@ -180,6 +182,7 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 * ``TargetMass``: target mass of stars in the cluster, if the IMF were perfectly sampled
 * ``BirthMass``: actual mass of stars present in the cluster at formation
 * ``LiveMass``: current mass of all stars in the cluster, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
+* ``StellarMass``: same as ``LiveMass``, but including the mass of stellar remnants; at present, remnant mass calculation is hard-coded to use the initial-final mass relation of `Kruijssen (2009, A&A, 507, 1409) <http://adsabs.harvard.edu/abs/2009A%26A...507.1409K>`_
 * ``NumStar``: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 * ``MaxStarMass``: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 * ``A_V``: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled
@@ -203,6 +206,7 @@ This is followed by ``NCluster`` entries of the following form:
 * ``TargetMass`` (``double``)
 * ``BirthMass`` (``double``)
 * ``LiveMass`` (``double``)
+* ``StellarMass`` (``double``)
 * ``NumStar`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
 * ``MaxStarMass`` (``double``)
 * ``A_V`` (``double``); present only if ``Extinct`` is 1

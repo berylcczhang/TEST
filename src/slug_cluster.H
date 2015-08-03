@@ -80,6 +80,7 @@ public:
   double get_birth_mass() const { return birthMass; }
   double get_alive_mass() const { return aliveMass; }
   double get_non_stoch_alive_mass() const { return nonStochAliveMass; }
+  double get_stellar_mass() const { return stellarMass; }
   double get_age() const { return curTime - formationTime; }
   double get_stellar_death_mass() const { return stellarDeathMass; }
 
@@ -183,10 +184,15 @@ private:
   unsigned long id;                   // Unique ID
   double birthMass;                   // Actual mass at birth
   double aliveMass;                   // Mass of still-living stars
-  double stochBirthMass;           // Birth mass of non-stochastic stars
-  double stochAliveMass;           // Mass of still-living non-stochastic stars
+  double stochBirthMass;              // Birth mass of stochastic stars
+  double stochAliveMass;              // Mass of still-living stochastic stars
   double nonStochBirthMass;           // Birth mass of non-stochastic stars
   double nonStochAliveMass;           // Mass of still-living non-stochastic stars
+  double stochRemnantMass;            // Mass of stochastic stellar remnants
+  double nonStochRemnantMass;         // Mass of non-stochastic stellar remnants
+  double stellarMass;                 // Mass of all stars including remnants
+  double stochStellarMass;            // Stochastic part of stellarMass
+  double nonStochStellarMass;         // Non-stochastic part of stellarMass
   double formationTime;               // Cluster birth time
   double curTime;                     // Current time
   double lifetime;                    // Time at which this cluster disrupts

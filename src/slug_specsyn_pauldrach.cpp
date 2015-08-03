@@ -180,6 +180,10 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
     kurucz = NULL;
     planck = NULL;
   }
+
+  // Set the size of the integrator for continuous IMFs to #
+  // wavelengths + 1 (for the bolometric luminosity)
+  v_integ.set_nvec(lambda_rest.size()+1);
 }
 
 

@@ -102,8 +102,7 @@ slug_specsyn::get_spectrum_cts(const double m_tot, const double age,
 			       const double tol) const {
   vector<double> spec_Lbol = 
     v_integ.integrate(m_tot, age, 
-		      boost::bind(&slug_specsyn::get_spec_Lbol, this, _1), 
-		      lambda_rest.size()+1, tol);
+		      boost::bind(&slug_specsyn::get_spec_Lbol, this, _1));
   L_bol = spec_Lbol.back();
   spec_Lbol.pop_back();
   L_lambda = spec_Lbol;
@@ -113,7 +112,7 @@ double
 slug_specsyn::get_Lbol_cts(const double m_tot, const double age,
 			   const double tol) const {
 
-  return integ.integrate(m_tot, age, specsyn::Lbol, 0, tol);
+  return integ.integrate(m_tot, age, specsyn::Lbol);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -154,8 +153,7 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
 #if 0
   vector<double> spec_Lbol = 
     v_integ.integrate_sfh(t, 
-			  boost::bind(&slug_specsyn::get_spec_Lbol, this, _1), 
-			  lambda_rest.size()+1, tol);
+			  boost::bind(&slug_specsyn::get_spec_Lbol, this, _1));
   L_bol = spec_Lbol.back();
   spec_Lbol.pop_back();
   L_lambda = spec_Lbol;
@@ -271,7 +269,7 @@ slug_specsyn::
 get_Lbol_cts_sfh(const double t, const double tol) const {
 
 #if 0
-  return integ.integrate_sfh(t, specsyn::Lbol, 0, tol);
+  return integ.integrate_sfh(t, specsyn::Lbol);
 #else
   // Allocate workspace
   double L_bol, err_bol;

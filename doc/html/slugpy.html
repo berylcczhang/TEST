@@ -380,6 +380,8 @@ _name key will be omitted from the dict.</dd>
 <dd>actual mass at formation</dd>
 <dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>mass of currently living stars</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
 <dt>num_star <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype ulonglong</span></dt>
 <dd>number of living stars in cluster being treated stochastically</dd>
 <dt>max_star_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
@@ -675,6 +677,8 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dd>actual mass at formation</dd>
 <dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>mass of currently living stars</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
 <dt>num_star <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype ulonglong</span></dt>
 <dd>number of living stars in cluster being treated stochastically</dd>
 <dt>max_star_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
@@ -862,6 +866,8 @@ _name key will be omitted from the dict.</dd>
 <dd>Actual mass of stars created up to each time in each trial</dd>
 <dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
 <dd>Mass of currently-alive stars at each time in each trial</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
 <dt>cluster_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
 <dd>Mass of living stars in non-disrupted clusters at each time in
 each trial</dd>
@@ -1153,9 +1159,11 @@ the run was done with random output times)</dd>
 <dd>Actual mass of stars created up to each time in each trial</dd>
 <dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
 <dd>Mass of currently-alive stars at each time in each trial</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
 <dt>cluster_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
-<dd>Mass of living stars in non-disrupted clusters at each time in
-each trial</dd>
+<dd>Stellar mass in non-disrupted clusters at each time in each
+trial</dd>
 <dt>num_clusters <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span></dt>
 <dd>Number of non-disrupted clusters present at each time in each
 trial</dd>

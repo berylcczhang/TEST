@@ -91,6 +91,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           actual mass at formation
        live_mass : array
           mass of currently living stars
+       stellar_mass : array
+          mass of all stars, living and stellar remnants
        num_star : array, dtype ulonglong
           number of living stars in cluster being treated stochastically
        max_star_mass : array

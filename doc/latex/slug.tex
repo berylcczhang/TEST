@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{July 30, 2015}
+\date{August 03, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -1109,6 +1109,9 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 \code{LiveMass}:  current mass of all stars in the galaxy, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
 
 \item {} 
+\code{StellarMass}: same as \code{LiveMass}, but including the mass of stellar remnants; at present, remnant mass calculation is hard-coded to use the initial-final mass relation of \href{http://adsabs.harvard.edu/abs/2009A\%26A...507.1409K}{Kruijssen (2009, A\&A, 507, 1409)}
+
+\item {} 
 \code{ClusterMass}: current mass of all stars in the galaxy that are presently in clusters; same as \code{LiveMass}, but only including the stars in clusters
 
 \item {} 
@@ -1137,6 +1140,9 @@ For \code{binary} output, the file consists of a series of records containing th
 
 \item {} 
 \code{LiveMass} (\code{double})
+
+\item {} 
+\code{StellarMass} (\code{double})
 
 \item {} 
 \code{ClusterMass} (\code{double})
@@ -1401,6 +1407,9 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 \code{LiveMass}: current mass of all stars in the cluster, accounting for the effects of stellar evolution (mass loss, supernovae); does not include the mass of stellar remnants (black holes, neutron stars, white dwarfs)
 
 \item {} 
+\code{StellarMass}: same as \code{LiveMass}, but including the mass of stellar remnants; at present, remnant mass calculation is hard-coded to use the initial-final mass relation of \href{http://adsabs.harvard.edu/abs/2009A\%26A...507.1409K}{Kruijssen (2009, A\&A, 507, 1409)}
+
+\item {} 
 \code{NumStar}: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{\DUspan{}{Stellar Model Keywords}}}})
 
 \item {} 
@@ -1449,6 +1458,9 @@ This is followed by \code{NCluster} entries of the following form:
 
 \item {} 
 \code{LiveMass} (\code{double})
+
+\item {} 
+\code{StellarMass} (\code{double})
 
 \item {} 
 \code{NumStar} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long})
@@ -2174,6 +2186,9 @@ actual mass at formation
 \item[{live\_mass}] \leavevmode{[}array{]}
 mass of currently living stars
 
+\item[{stellar\_mass}] \leavevmode{[}array{]}
+mass of all stars, living and stellar remnants
+
 \item[{num\_star}] \leavevmode{[}array, dtype ulonglong{]}
 number of living stars in cluster being treated stochastically
 
@@ -2552,6 +2567,9 @@ actual mass at formation
 \item[{live\_mass}] \leavevmode{[}array{]}
 mass of currently living stars
 
+\item[{stellar\_mass}] \leavevmode{[}array{]}
+mass of all stars, living and stellar remnants
+
 \item[{num\_star}] \leavevmode{[}array, dtype ulonglong{]}
 number of living stars in cluster being treated stochastically
 
@@ -2782,6 +2800,9 @@ Actual mass of stars created up to each time in each trial
 
 \item[{live\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
 Mass of currently-alive stars at each time in each trial
+
+\item[{stellar\_mass}] \leavevmode{[}array{]}
+mass of all stars, living and stellar remnants
 
 \item[{cluster\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
 Mass of living stars in non-disrupted clusters at each time in
@@ -3151,9 +3172,12 @@ Actual mass of stars created up to each time in each trial
 \item[{live\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
 Mass of currently-alive stars at each time in each trial
 
+\item[{stellar\_mass}] \leavevmode{[}array{]}
+mass of all stars, living and stellar remnants
+
 \item[{cluster\_mass}] \leavevmode{[}array, shape (N\_times, N\_trials){]}
-Mass of living stars in non-disrupted clusters at each time in
-each trial
+Stellar mass in non-disrupted clusters at each time in each
+trial
 
 \item[{num\_clusters}] \leavevmode{[}array, shape (N\_times, N\_trials), dtype ulonglong{]}
 Number of non-disrupted clusters present at each time in each

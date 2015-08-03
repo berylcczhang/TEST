@@ -70,6 +70,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
           Actual mass of stars created up to each time in each trial
        live_mass : array, shape (N_times, N_trials)
           Mass of currently-alive stars at each time in each trial
+       stellar_mass : array
+          mass of all stars, living and stellar remnants
        cluster_mass : array, shape (N_times, N_trials)
           Mass of living stars in non-disrupted clusters at each time in
           each trial

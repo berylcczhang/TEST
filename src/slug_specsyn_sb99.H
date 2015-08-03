@@ -53,6 +53,7 @@ public:
   {
     lambda_obs = kurucz.lambda();
     lambda_rest = kurucz.lambda(true);
+    v_integ.set_nvec(lambda_rest.size()+1);
   }
 
   // Destructor

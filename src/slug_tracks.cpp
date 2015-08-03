@@ -869,6 +869,60 @@ slug_tracks::star_lifetime(const double mass) const {
 	      slopes[trackptr][ntime-1] );
 }
 
+////////////////////////////////////////////////////////////////////////
+// Mass of remnant left by a star of a given mass; for now this is
+// hardcoded to the compilation of Kruijssen (2009). Versions
+// including an age argument return 0 if the star has not yet died.
+////////////////////////////////////////////////////////////////////////
+double
+slug_tracks::remnant_mass(const double mass) const {
+  if (mass < 8.0) return 0.109*mass + 0.394;
+  else if (mass < 30) return 0.03636*(mass-8.0) + 1.02;
+  else return 0.06*(mass-30.0) + 8.3;
+}
+
+double
+slug_tracks::remnant_mass(const double mass, const double age) const {
+  if (age < star_lifetime(mass)) return 0.0;
+  else if (mass < 8.0) return 0.109*mass + 0.394;
+  else if (mass < 30) return 0.03636*(mass-8.0) + 1.02;
+  else return 0.06*(mass-30.0) + 8.3;
+}
+
+vector<double>
+slug_tracks::remnant_mass(const vector<double> mass) const {
+  vector<double> rmass(mass.size(), 0.0);
+  for (std::vector<double>::size_type i=0; i<mass.size(); i++) {
+    if (mass[i] < 8.0) rmass[i] = 0.109*mass[i] + 0.394;
+    else if (mass[i] < 30) rmass[i] = 0.03636*(mass[i]-8.0) + 1.02;
+    else rmass[i] = 0.06*(mass[i]-30.0) + 8.3;
+  }
+  return rmass;
+}
+
+vector<double>
+slug_tracks::remnant_mass(const vector<double> mass, 
+			  const double age) const {
+  // Get range of masses that are alive
+  vector<double> mass_cuts = live_mass_range(age);
+
+  // Get remnant masses, checking if each remnant is in the live mass
+  // range
+  vector<double> rmass(mass.size(), 0.0);
+  for (vector<double>::size_type i=0; i<mass.size(); i++) {
+    bool dead = false;
+    for (vector<double>::size_type j=0; j<mass_cuts.size(); j++) {
+      if (mass[i] < mass_cuts[j]) break;
+      dead = !dead;
+    }
+    if (!dead) continue;
+    else if (mass[i] < 8.0) rmass[i] = 0.109*mass[i] + 0.394;
+    else if (mass[i] < 30) rmass[i] = 0.03636*(mass[i]-8.0) + 1.02;
+    else rmass[i] = 0.06*(mass[i]-30.0) + 8.3;
+  }
+  return rmass;
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 // Method to set up the isochrone interpolator for a particular time

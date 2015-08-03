@@ -202,24 +202,24 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.get_verbosity() > 1)
     std::cout << "slug: reading atmospheres" << std::endl;
   if (pp.get_specsynMode() == PLANCK) {
-    specsyn = (slug_specsyn *) 
-      new slug_specsyn_planck(tracks, imf, sfh, pp.get_z());
+    specsyn = static_cast<slug_specsyn *>
+      (new slug_specsyn_planck(tracks, imf, sfh, pp.get_z()));
   } else if (pp.get_specsynMode() == KURUCZ) {
-    specsyn = (slug_specsyn *) 
-      new slug_specsyn_kurucz(pp.get_atmos_dir(), tracks, 
-			      imf, sfh, pp.get_z());
+    specsyn = static_cast<slug_specsyn *>
+      (new slug_specsyn_kurucz(pp.get_atmos_dir(), tracks, 
+			       imf, sfh, pp.get_z()));
   } else if (pp.get_specsynMode() == KURUCZ_HILLIER) {
-    specsyn = (slug_specsyn *) 
-      new slug_specsyn_hillier(pp.get_atmos_dir(), tracks, 
-			       imf, sfh, pp.get_z());
+    specsyn = static_cast<slug_specsyn *>
+      (new slug_specsyn_hillier(pp.get_atmos_dir(), tracks, 
+				imf, sfh, pp.get_z()));
   } else if (pp.get_specsynMode() == KURUCZ_PAULDRACH) {
-    specsyn = (slug_specsyn *) 
-      new slug_specsyn_pauldrach(pp.get_atmos_dir(), tracks, 
-				 imf, sfh, pp.get_z());
+    specsyn = static_cast<slug_specsyn *>
+      (new slug_specsyn_pauldrach(pp.get_atmos_dir(), tracks, 
+				  imf, sfh, pp.get_z()));
   } else if (pp.get_specsynMode() == SB99) {
-    specsyn = (slug_specsyn *) 
-      new slug_specsyn_sb99(pp.get_atmos_dir(), tracks,
-			    imf, sfh, pp.get_z());
+    specsyn = static_cast<slug_specsyn *> 
+      (new slug_specsyn_sb99(pp.get_atmos_dir(), tracks,
+			     imf, sfh, pp.get_z()));
   }
 
   // If using nebular emission, initialize the computation of that
@@ -650,6 +650,7 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "TargetMass"
 		  << setw(14) << left << "ActualMass"
 		  << setw(14) << left << "LiveMass"
+		  << setw(14) << left << "StellarMass"
 		  << setw(14) << left << "ClusterMass"
 		  << setw(14) << left << "NumClusters"
 		  << setw(14) << left << "NumDisClust"
@@ -660,11 +661,13 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "(Msun)"
 		  << setw(14) << left << "(Msun)"
 		  << setw(14) << left << "(Msun)"
+		  << setw(14) << left << "(Msun)"
 		  << setw(14) << left << ""
 		  << setw(14) << left << ""
 		  << setw(14) << left << ""
 		  << endl;
     int_prop_file << setw(14) << left << "-----------"
+		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
@@ -682,21 +685,22 @@ void slug_sim::open_integrated_prop() {
     // way to avoid lots of compiler warnings.
     vector<string> ttype_str = 
       { "Trial", "Time", "TargetMass", "ActualMass", "LiveMass", 
-	"ClusterMass", "NumClusters", "NumDisClust", "NumFldStar" };
+	"StellarMass", "ClusterMass", "NumClusters", "NumDisClust", 
+	"NumFldStar" };
     vector<string> tform_str = 
-      { "1K", "1D", "1D", "1D", "1D", "1D", "1K", "1K", "1K" };
+      { "1K", "1D", "1D", "1D", "1D", "1D", "1D", "1K", "1K", "1K" };
     vector<string> tunit_str = 
-      { "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "", "" };
-    char *ttype[9], *tform[9], *tunit[9];
+      { "Msun", "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "", "" };
+    char *ttype[10], *tform[10], *tunit[10];
 
-    for (int i=0; i<9; i++) {
+    for (int i=0; i<10; i++) {
       ttype[i] = const_cast<char*>(ttype_str[i].c_str());
       tform[i] = const_cast<char*>(tform_str[i].c_str());
       tunit[i] = const_cast<char*>(tunit_str[i].c_str());
     }
 
     int fits_status = 0;
-    fits_create_tbl(int_prop_fits, BINARY_TBL, 0, 9,
+    fits_create_tbl(int_prop_fits, BINARY_TBL, 0, 10,
 		    ttype, tform, tunit, NULL, &fits_status);
     
   }
@@ -764,6 +768,7 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "TargetMass"
 		      << setw(14) << left << "BirthMass"
 		      << setw(14) << left << "LiveMass"
+		      << setw(14) << left << "StellarMass"
 		      << setw(14) << left << "NumStar"
 		      << setw(14) << left << "MaxStarMass";
     if (extinct != NULL)
@@ -776,12 +781,14 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "(Msun)"
 		      << setw(14) << left << "(Msun)"
 		      << setw(14) << left << "(Msun)"
+		      << setw(14) << left << "(Msun)"
 		      << setw(14) << left << ""
 		      << setw(14) << left << "(Msun)";
     if (extinct != NULL)
       cluster_prop_file << setw(14) << left << "(mag)";
     cluster_prop_file << endl;
     cluster_prop_file << setw(14) << left << "-----------"
+		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
@@ -804,15 +811,17 @@ void slug_sim::open_cluster_prop() {
     // string, then cast them to arrays of char *, because the cfitsio
     // library wants that. Unfortunately this awkwardness is the only
     // way to avoid lots of compiler warnings.
-    int ncol = 10;
+    int ncol = 11;
     vector<string> ttype_str = 
       { "Trial", "UniqueID", "Time", "FormTime", "Lifetime",
-	"TargetMass", "BirthMass", "LiveMass",
+	"TargetMass", "BirthMass", "LiveMass", "StellarMass",
 	"NumStar", "MaxStarMass" };
     vector<string> tform_str = 
-      { "1K", "1K", "1D", "1D", "1D", "1D", "1D", "1D", "1K", "1D" };
+      { "1K", "1K", "1D", "1D", "1D", "1D", "1D", "1D", "1D", 
+	"1K", "1D" };
     vector<string> tunit_str = 
-      { "", "", "yr", "yr", "yr", "Msun", "Msun", "Msun", "", "Msun" };
+      { "", "", "yr", "yr", "yr", "Msun", "Msun", "Msun", "Msun", 
+	"", "Msun" };
     if (extinct != NULL) {
       ttype_str.push_back("A_V");
       tform_str.push_back("1D");

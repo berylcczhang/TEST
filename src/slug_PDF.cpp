@@ -332,13 +332,24 @@ slug_PDF::expectationVal(double a, double b) const {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Operator to return the PDF evaluated at a particular value x
+// Operator to return the PDF evaluated at a particular value x, or
+// set of x's
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF::operator() (const double x) const {
   double val = 0.0;
   for (unsigned int i=0; i<segments.size(); i++)
     val += weights[i] * (*segments[i])(x);
+  return val;
+}
+
+vector<double>
+slug_PDF::operator() (const vector<double> x) const {
+  vector<double> val(x.size(), 0.0);
+  for (vector<double>::size_type j=0; j<x.size(); j++) {
+    for (vector<double>::size_type i=0; i<segments.size(); i++)
+      val[j] += weights[i] * (*segments[i])(x[j]);
+  }
   return val;
 }
 

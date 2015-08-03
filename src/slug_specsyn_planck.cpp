@@ -44,6 +44,7 @@ slug_specsyn_planck(const slug_tracks *my_tracks,
 			  pow(10., i/1000.0*4));
     lambda_obs.push_back(lambda_rest[i]*(1.0+z));
   }
+  v_integ.set_nvec(lambda_rest.size()+1);
 }
 
 

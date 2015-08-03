@@ -114,8 +114,9 @@ public:
   // fraction that is in the stochastic range.
   double drawPopulation(double target, std::vector<double>& pop) const;
 
-  // Operator to return the PDF evaluated at a particular x
+  // Operator to return the PDF evaluated at a particular x or set of x's
   double operator()(const double x) const;
+  std::vector<double> operator()(const std::vector<double> x) const;
 
 private:
   // Functions to parse basic and advanced mode PDF files

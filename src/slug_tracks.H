@@ -107,6 +107,15 @@ public:
   // Lifetime of a star of a specified mass
   double star_lifetime(const double mass) const;
 
+  // Remnant mass produced by a star of a given mass; versions that
+  // take an age argument return 0 for stars that have not yet died as
+  // the specified age
+  double remnant_mass(const double mass) const;
+  std::vector<double> remnant_mass(const std::vector<double> mass) const;
+  double remnant_mass(const double mass, const double age) const;
+  std::vector<double> remnant_mass(const std::vector<double> mass,
+				   const double age) const;
+
   // Method to return the metallicity (normalized to Solar)
   double get_metallicity() const { return metallicity; }
 

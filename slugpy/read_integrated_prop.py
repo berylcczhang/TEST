@@ -47,9 +47,11 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
           Actual mass of stars created up to each time in each trial
        live_mass : array, shape (N_times, N_trials)
           Mass of currently-alive stars at each time in each trial
+       stellar_mass : array
+          mass of all stars, living and stellar remnants
        cluster_mass : array, shape (N_times, N_trials)
-          Mass of living stars in non-disrupted clusters at each time in
-          each trial
+          Stellar mass in non-disrupted clusters at each time in each
+          trial
        num_clusters : array, shape (N_times, N_trials), dtype ulonglong
           Number of non-disrupted clusters present at each time in each
           trial
@@ -77,6 +79,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     target_mass = []
     actual_mass = []
     live_mass = []
+    stellar_mass = []
     cluster_mass = []
     num_clusters = []
     num_dis_clusters = []
@@ -89,8 +92,18 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'ascii'
 
-        # Burn the three header lines
-        fp.readline()
+        # Read the first header line
+        hdr = fp.readline()
+
+        # See if we have the stellar mass field; this was added later,
+        # so we check in order to maintain backwards compatibility
+        hdrsplit = hdr.split()
+        if 'StellarMass' in hdrsplit:
+            has_st_mass = True
+        else:
+            has_st_mass = False
+
+        # Burn two header lines
         fp.readline()
         fp.readline()
 
@@ -107,10 +120,18 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             target_mass.append(float(data[1]))
             actual_mass.append(float(data[2]))
             live_mass.append(float(data[3]))
-            cluster_mass.append(float(data[4]))
-            num_clusters.append(int(data[5]))
-            num_dis_clusters.append(int(data[6]))
-            num_fld_stars.append(int(data[7]))
+            if has_st_mass:
+                stellar_mass.append(float(data[4]))
+                cluster_mass.append(float(data[5]))
+                num_clusters.append(int(data[6]))
+                num_dis_clusters.append(int(data[7]))
+                num_fld_stars.append(int(data[8]))
+            else:
+                stellar_mass.append(0.0)
+                cluster_mass.append(float(data[4]))
+                num_clusters.append(int(data[5]))
+                num_dis_clusters.append(int(data[6]))
+                num_fld_stars.append(int(data[7]))
 
     elif fname.endswith('.bin'):
 
@@ -122,19 +143,20 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         data = fp.read()
 
         # Interpret data
-        nentry = len(data)/struct.calcsize('LdddddQQQ')
-        data_list = struct.unpack('LdddddQQQ'*nentry, data)
+        nentry = len(data)/struct.calcsize('LddddddQQQ')
+        data_list = struct.unpack('LddddddQQQ'*nentry, data)
 
         # Stick data into correctly-named lists
-        trial = data_list[0::9]
-        time = data_list[1::9]
-        target_mass = data_list[2::9]
-        actual_mass = data_list[3::9]
-        live_mass = data_list[4::9]
-        cluster_mass = data_list[5::9]
-        num_clusters = data_list[6::9]
-        num_dis_clusters = data_list[7::9]
-        num_fld_stars = data_list[8::9]
+        trial = data_list[0::10]
+        time = data_list[1::10]
+        target_mass = data_list[2::10]
+        actual_mass = data_list[3::10]
+        live_mass = data_list[4::10]
+        stellar_mass = data_list[5::10]
+        cluster_mass = data_list[6::10]
+        num_clusters = data_list[7::10]
+        num_dis_clusters = data_list[8::10]
+        num_fld_stars = data_list[9::10]
 
     elif fname.endswith('fits'):
 
@@ -146,6 +168,10 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         target_mass = fp[1].data.field('TargetMass')
         actual_mass = fp[1].data.field('ActualMass')
         live_mass = fp[1].data.field('LiveMass')
+        try:
+            stellar_mass = fp[1].data.field('StellarMass')
+        except KeyError:
+            stellar_mass = np.zeros(live_mass.shape)
         cluster_mass = fp[1].data.field('ClusterMass')
         num_clusters = fp[1].data.field('NumClusters')
         num_dis_clusters = fp[1].data.field('NumDisClust')
@@ -160,6 +186,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     target_mass = np.array(target_mass)
     actual_mass = np.array(actual_mass)
     live_mass = np.array(live_mass)
+    stellar_mass = np.array(stellar_mass)
     cluster_mass = np.array(cluster_mass)
     num_clusters = np.array(num_clusters, dtype='ulonglong')
     num_dis_clusters = np.array(num_dis_clusters, dtype='ulonglong')
@@ -178,6 +205,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     target_mass = np.transpose(target_mass.reshape(ntrial, ntime))
     actual_mass = np.transpose(actual_mass.reshape(ntrial, ntime))
     live_mass = np.transpose(live_mass.reshape(ntrial, ntime))
+    stellar_mass = np.transpose(stellar_mass.reshape(ntrial, ntime))
     cluster_mass = np.transpose(cluster_mass.reshape(ntrial, ntime))
     num_clusters = np.transpose(num_clusters.reshape(ntrial, ntime))
     num_dis_clusters = np.transpose(num_dis_clusters.reshape(ntrial, ntime))
@@ -186,11 +214,12 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     # Build the namedtuple to hold output
     out_type = namedtuple('integrated_prop',
                           ['time', 'target_mass', 'actual_mass',
-                           'live_mass', 'cluster_mass', 'num_clusters',
+                           'live_mass', 'stellar_mass',
+                           'cluster_mass', 'num_clusters',
                            'num_dis_clusters', 'num_fld_stars'])
     out = out_type(time, target_mass, actual_mass, live_mass,
-                   cluster_mass, num_clusters, num_dis_clusters,
-                   num_fld_stars)
+                   stellar_mass, cluster_mass, num_clusters, 
+                   num_dis_clusters, num_fld_stars)
 
     # Return
     return out

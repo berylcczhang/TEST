@@ -62,6 +62,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/function.hpp>
 #include "slug_tracks.H"
 #include "slug_PDF.H"
+#include "constants.H"
 
 ////////////////////////////////////////////////////////////////////////
 // Data for Gauss-Kronrod quadratures. These are copied directly from
@@ -188,7 +189,8 @@ public:
 		const double &s2, const double &fac) const
   { lhs += fac * (v1*s1 + v2*s2); }
   // Return abs(err/val)
-  T rel_err(const T &err, const T &val) const { return std::abs(err/val); }
+  T rel_err(const T &err, const T &val) const 
+  { return std::abs(err)/(std::abs(val)+constants::small); }
   // Update sum and error based on new values for an interval
   void update(T &val, const T &val_l, const T &val_r, 
 	      const T &val_old) const {
@@ -241,7 +243,7 @@ public:
 		 const std::vector<T, A> &val) const {
     double re = 0.0;
     for (typename std::vector<T, A>::size_type i=0; i<err.size(); i++) 
-      re = std::max(re, std::abs(err[i]/val[i]));
+      re = std::max(re, std::abs(err[i])/(std::abs(val[i])+constants::small));
     return re;
   }
   void update(std::vector<T, A> &val, const std::vector<T, A> &val_l,
@@ -262,42 +264,76 @@ class slug_imf_integrator {
 
 public:
 
-  // Constructor
-  slug_imf_integrator(const slug_tracks *my_tracks, 
-		      const slug_PDF *my_imf,
-		      const slug_PDF *my_sfh);
+  // Constructor; this sets some default options
+  slug_imf_integrator(const slug_tracks *tracks_, 
+		      const slug_PDF *imf_,
+		      const slug_PDF *sfh_,
+		      typename std::vector<T>::size_type nvec_ = 0,
+		      const double tol_ = 1.0e-3,
+		      const bool include_stoch_ = false) :
+    tracks(tracks_), imf(imf_), sfh(sfh_), help(), nvec(nvec_), 
+    tol(tol_), include_stoch(include_stoch_) { }
 
   // Destructor
   ~slug_imf_integrator() { }
 
-  // Routine to integrate a specified quantity over IMF; it takes a
-  // total mass for the population, an age, a function that takes
-  // stardata as input and returns the desired quantity, and 
-  // optionals value for the tolerance and to specify that the
-  // integral should be over all of the IMF, including the stochastic
-  // part (default behavior is to integrate over the non-stochastic
-  // part only).
-  T integrate(const double m_tot, const double age,
-	      boost::function<T(const slug_stardata &)> func_in = 0,
-	      typename std::vector<T>::size_type nvec_in = 0,
-	      const double tol = 1e-3,
-	      bool include_stoch = false) const;
+  // Routines to get and set various options:
+  // -- nvec specifies the length of the vector returned for vector
+  //    functions
+  // -- tol specifies the relative accuracy tolerance of the
+  //    integration
+  // -- include_stoch specifies whether the integration should just be
+  //    over the non-stochastic portion of the IMF (if false) or the
+  //    entire IMF (if true)
+  typename std::vector<T>::size_type get_nvec() const { return nvec; }
+  void set_nvec(typename std::vector<T>::size_type nvec_) { nvec = nvec_; }
+  double get_tol() const { return tol; }
+  void set_tol(double tol_) { tol = tol_; }
+  bool get_include_stoch() const { return include_stoch; }
+  void set_include_stoch(bool include_stoch_) 
+  { include_stoch = include_stoch_; }
 
-  // Routine to integrate a specified quantity over bot the IMF and
-  // the star formation history
+  // Routine to integrate a specified quantity over IMF; the
+  // integrate routine takes a total mass for the population, an age,
+  // and a function that takes stardata as input and returns the desired
+  // quantity. Note that, because this routine makes
+  // use of the tracks, it treats the integrand as zero for any parts
+  // of the IMF that are outside the mass range that the tracks
+  // cover.
+  T integrate(const double m_tot, const double age,
+	      boost::function<T(const slug_stardata &)> func_in = 0) const;
+
+  // These two functions are simlar to the integrate function, but
+  // they take as arguments functions that just take the mass, or take
+  // just the mass and age (or just mass), as inputs, rather than
+  // taking stardata as input. Because they do not need stardata,
+  // these functions do not call the track routines to generate 
+  // isochrones (hence the _nt extension), and so can integrate over
+  // mass ranges that the tracks do not cover.
+  T integrate_nt(const double m_tot, const double age,
+		 boost::function<T(const double &, const double &)> 
+		 func_ = 0) const;
+  T integrate_nt(const double m_tot,
+		 boost::function<T(const double &)> func_ = 0) const;
+
+  // Routines to integrate a specified quantity over bot the IMF and
+  // the star formation history. This has two of the three forms that
+  // appear for the integrate routines. It is missing the form for a
+  // function that only takes mass (as opposed to mass and age) as an
+  // argument, because in that case the integration is trivial, since
+  // the mass and time parts are separable.
   T integrate_sfh(const double t,
-		  boost::function<T(const slug_stardata &)> func_in,
-		  typename std::vector<T>::size_type nvec_in = 0,
-		  const double tol = 1e-3,
-		  bool include_stoch = false) const;
+		  boost::function<T(const slug_stardata &)> func_) const;
+  T integrate_sfh_nt(const double t,
+		     boost::function<T(const double &, const double &)> 
+		     func_) const;
 
 private:
 
   // Helper function to do integral over a particular mass range; the
   // IMF must be defined over this range
   T integrate_range(const double m_tot, const double age,
-		    const double m_min, const double m_max,
-		    const double tol = 1e-3) const;
+		    const double m_min, const double m_max) const;
 
   // Helper function to do Gauss-Kronrod integration on a single mass
   // interval
@@ -305,9 +341,7 @@ private:
 		    const double age, 
 		    T &result, T &err) const;
   void integrate_sfh_gk(const double t_min, const double t_max,
-			const double t, 
-			double tol, T &result, T &err, 
-			bool include_stoch) const;
+			const double t, T &result, T &err) const;
 
   // Data on the tracks, IMF, SFH
   const slug_tracks *tracks;    // Tracks
@@ -318,11 +352,13 @@ private:
   // operating on scalar or vector data
   const slug_imf_integrator_helper<T> help;
 
-  // Variables to store the function we've been asked to integrate,
-  // and the number of elements in the vector we're integrating;
-  // stored here to save having to pass them around
+  // Variables that control internal behavior
   mutable boost::function<T(const slug_stardata &)> *func = 0;
+  mutable boost::function<T(const double &)> *func_mass = 0;
+  mutable boost::function<T(const double &, const double &)> *func_mass_age = 0;
   mutable typename std::vector<T>::size_type nvec;
+  mutable double tol;
+  bool include_stoch;
 };
 
 #endif // _slug_imf_integrator_H_

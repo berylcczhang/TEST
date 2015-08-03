@@ -141,9 +141,13 @@ private:
   double mass;                        // Mass of stars created so far
   double targetMass;                  // Target mass at this time
   double aliveMass;                   // Mass of currently alive stars
+  double stellarMass;                 // Mass of all stars, including remnants
   double nonStochAliveMass;           // Non-stochastic component of aliveMass
+  double nonStochRemnantMass;         // Non-stochastic remnant mass
   double clusterAliveMass;            // Cluster component of aliveMass
+  double clusterStellarMass;          // Cluster component of stellarMass
   double fieldAliveMass;              // Stochastic field component of aliveMass
+  double fieldRemnantMass;            // Mass of field star remnants
   double clusterMass;                 // Mass in non-disrupted clusters
   double fc;                          // Fraction of stars in clusters
   double nonStochFieldMass;           // Birth mass of field stars w/out stochasticity

@@ -21,6 +21,7 @@ namespace std
      typedef decltype(nullptr) nullptr_t;
 }
 #endif
+#include <boost/bind.hpp>
 #include "constants.H"
 #include "slug_cluster.H"
 #include "slug_galaxy.H"
@@ -79,7 +80,8 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   curTime = 0.0;
   mass = 0.0;
   targetMass = 0.0;
-  aliveMass = nonStochAliveMass = fieldAliveMass = clusterAliveMass = 0.0;
+  aliveMass = nonStochAliveMass = fieldAliveMass = stellarMass
+    = clusterAliveMass = clusterStellarMass = fieldRemnantMass = 0.0;
   clusterMass = 0.0;
   nonStochFieldMass = 0.0;
 
@@ -123,7 +125,8 @@ slug_galaxy::reset(bool reset_cluster_id) {
   // for different trials to be distinct.
   curTime = mass = targetMass = aliveMass = nonStochAliveMass
     = fieldAliveMass = clusterMass = clusterAliveMass 
-    = nonStochFieldMass = 0.0;
+    = nonStochFieldMass = stellarMass = clusterStellarMass 
+    = fieldRemnantMass = 0.0;
   Lbol_set = spec_set = field_data_set = phot_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
@@ -186,6 +189,7 @@ slug_galaxy::advance(double time) {
 	mass += new_cluster->get_birth_mass();
 	clusterMass += new_cluster->get_birth_mass();
 	clusterAliveMass += new_cluster->get_alive_mass();
+	clusterStellarMass += new_cluster->get_stellar_mass();
       }
     }
 
@@ -235,15 +239,19 @@ slug_galaxy::advance(double time) {
   for (it = clusters.begin(); it != clusters.end(); it++) {
     clusterAliveMass -= (*it)->get_alive_mass();
     clusterMass -= (*it)->get_alive_mass();
+    clusterStellarMass -= (*it)->get_stellar_mass();
     (*it)->advance(time);
     clusterAliveMass += (*it)->get_alive_mass();
     clusterMass += (*it)->get_alive_mass();
+    clusterStellarMass += (*it)->get_stellar_mass();
   }
   for (it = disrupted_clusters.begin(); 
        it != disrupted_clusters.end(); it++) {
     clusterAliveMass -= (*it)->get_alive_mass();
+    clusterStellarMass -= (*it)->get_stellar_mass();
     (*it)->advance(time);
     clusterAliveMass += (*it)->get_alive_mass();
+    clusterStellarMass += (*it)->get_stellar_mass();
   }
 
   // See if any clusters were disrupted over the last time step, and,
@@ -263,6 +271,7 @@ slug_galaxy::advance(double time) {
   // have died
   while (field_stars.size() > 0) {
     if (field_stars.back().death_time < time) {
+      fieldRemnantMass += tracks->remnant_mass(field_stars.back().mass);
       field_stars.pop_back();
       if (extinct != NULL) field_star_AV.pop_back();
     } else {
@@ -302,8 +311,22 @@ slug_galaxy::advance(double time) {
     nonStochAliveMass += integ.integrate_sfh(time, galaxy::curMass);
   }
 
-  // Recompute the alive mass
+  // Recompute the remnant mass for non-stochastic field stars; note a
+  // bit of fancy footwork here: the slug_tracks::remnant_mass
+  // function is overloaded, so we need to static_cast to the version
+  // of it we want before passing to boost::bind
+  nonStochRemnantMass = 0.0;
+  if (imf->get_xStochMin() > imf->get_xMin())
+    nonStochRemnantMass = 
+      integ.integrate_sfh_nt(time, 
+			     boost::bind(static_cast<double (slug_tracks::*)
+					 (const double, const double) const> 
+					 (&slug_tracks::remnant_mass), 
+					 tracks, _1, _2));
+
+  // Recompute the alive mass and stellar mass
   aliveMass = nonStochAliveMass + clusterAliveMass + fieldAliveMass;
+  stellarMass = aliveMass + nonStochRemnantMass + fieldRemnantMass;
 }
 
 
@@ -620,6 +643,7 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 		  << setw(11) << right << targetMass << "   "
 		  << setw(11) << right << mass << "   "
 		  << setw(11) << right << aliveMass << "   "
+		  << setw(11) << right << stellarMass << "   "
 		  << setw(11) << right << clusterMass << "   "
 		  << setw(11) << right << clusters.size() << "   "
 		  << setw(11) << right << disrupted_clusters.size() << "   "
@@ -631,6 +655,7 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
     int_prop_file.write((char *) &targetMass, sizeof targetMass);
     int_prop_file.write((char *) &mass, sizeof mass);
     int_prop_file.write((char *) &aliveMass, sizeof aliveMass);
+    int_prop_file.write((char *) &stellarMass, sizeof stellarMass);
     int_prop_file.write((char *) &clusterMass, sizeof clusterMass);
     vector<slug_cluster *>::size_type n = clusters.size();
     int_prop_file.write((char *) &n, sizeof n);
@@ -666,16 +691,18 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits,
 		 &fits_status);
   fits_write_col(int_prop_fits, TDOUBLE, 5, nrows+1, 1, 1, &aliveMass, 
 		 &fits_status);
-  fits_write_col(int_prop_fits, TDOUBLE, 6, nrows+1, 1, 1, 
+  fits_write_col(int_prop_fits, TDOUBLE, 6, nrows+1, 1, 1, &stellarMass, 
+		 &fits_status);
+  fits_write_col(int_prop_fits, TDOUBLE, 7, nrows+1, 1, 1, 
 		 &clusterMass, &fits_status);
   vector<slug_cluster *>::size_type n = clusters.size();
-  fits_write_col(int_prop_fits, TULONG, 7, nrows+1, 1, 1, &n,	 
-		 &fits_status);
-  n = disrupted_clusters.size();
   fits_write_col(int_prop_fits, TULONG, 8, nrows+1, 1, 1, &n,	 
 		 &fits_status);
-  n = field_stars.size();
+  n = disrupted_clusters.size();
   fits_write_col(int_prop_fits, TULONG, 9, nrows+1, 1, 1, &n,	 
+		 &fits_status);
+  n = field_stars.size();
+  fits_write_col(int_prop_fits, TULONG, 10, nrows+1, 1, 1, &n,	 
 		 &fits_status);
 }
 #endif

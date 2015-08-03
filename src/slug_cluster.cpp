@@ -28,6 +28,7 @@ namespace std
 #include <cassert>
 #include <cmath>
 #include <iomanip>
+#include <boost/bind.hpp>
 
 using namespace std;
 
@@ -63,18 +64,20 @@ slug_cluster::slug_cluster(const unsigned long my_id,
   is_disrupted = false;
 
   // Populate with stars
-  stochBirthMass = stochAliveMass = 
+  stochBirthMass = stochAliveMass = stochStellarMass =
     imf->drawPopulation(targetMass, stars);
 
   // If the population only represents part of the mass range due to
   // restrictions on what range is being treated stochastically, be
   // sure to account for that
-  nonStochBirthMass = nonStochAliveMass = 
+  nonStochBirthMass = nonStochAliveMass = nonStochStellarMass =
      targetMass * (1.0 - imf->mass_frac_restrict());
 
-  // Set the birth and alive masses
+  // Set the various mass tallies
   birthMass = stochBirthMass + nonStochBirthMass;
   aliveMass = stochAliveMass + nonStochAliveMass;
+  stellarMass = stochStellarMass + nonStochStellarMass;
+  stochRemnantMass = nonStochRemnantMass = 0.0;
 
   // Sort the stars
   sort(stars.begin(), stars.end());
@@ -119,18 +122,20 @@ slug_cluster::reset(bool keep_id) {
 #endif
 
   // Re-populate with stars
-  stochBirthMass = stochAliveMass 
+  stochBirthMass = stochAliveMass = stochStellarMass
     = imf->drawPopulation(targetMass, stars);
 
   // If the population only represents part of the mass range due to
   // restrictions on what range is being treated stochastically, be
   // sure to account for that
-  nonStochBirthMass = nonStochAliveMass 
+  nonStochBirthMass = nonStochAliveMass = nonStochStellarMass
      = targetMass * (1.0 - imf->mass_frac_restrict());
 
-  // Set the birth and alive masses
+  // Reset the various mass tallies
   birthMass = stochBirthMass + nonStochBirthMass;
   aliveMass = stochAliveMass + nonStochAliveMass;
+  stellarMass = stochStellarMass + nonStochStellarMass;
+  stochRemnantMass = nonStochRemnantMass = 0.0;
 
   // Sort the stars
   sort(stars.begin(), stars.end());
@@ -175,13 +180,14 @@ slug_cluster::advance(double time) {
     // current one as a temporary in case we need it below
     stellarDeathMass = tracks->death_mass(clusterAge);
 
-    // Traverse the list, popping off stars that have died, and
-    // correcting the mass downward as we go
+    // Traverse the list, popping off stars that have died, and adding
+    // to the remannt mass tally as we go
     while (stars.size() > 0) {
       if (stars.back() > stellarDeathMass) {
-	stochAliveMass -= stars.back();
+	stochRemnantMass += tracks->remnant_mass(stars.back());
 	stars.pop_back();
-      } else break;
+      }
+      else break;
     }
 
   } else {
@@ -190,12 +196,14 @@ slug_cluster::advance(double time) {
     vector<double> mass_cuts = tracks->live_mass_range(clusterAge);
 
     // Traverse the list to pop off stars that are more massive than
-    // the upper end of the most massive "alive mass" interval
+    // the upper end of the most massive "alive mass" interval; add to
+    // the remnant mass total
     while (stars.size() > 0) {
       if (stars.back() > mass_cuts.back()) {
-	stochAliveMass -= stars.back();
+	stochRemnantMass += tracks->remnant_mass(stars.back());
 	stars.pop_back();
-      } else break;
+      }
+      else break;
     }
 
     // Now kill off stars outside every other alive mass interval
@@ -230,12 +238,12 @@ slug_cluster::advance(double time) {
 	if (stars[starptr2-1] < mass_cuts[interval_ptr-1]) break;
 
       // The interval from starptr2 to starptr represents stars whose
-      // masses are such that they are dead. First subtract their
-      // mass, then remove them from the list of stars. Note that we
-      // need to add 1 to starptr because the c++ vector erase method
-      // excludes the last element.
-      for (unsigned int i=starptr2; i<=starptr; i++)
-	stochAliveMass -= stars[i];
+      // masses are such that they are dead. First add their
+      // contribution to the remnant mass, then remove them from the
+      // list of stars. Note that we need to add 1 to starptr because
+      // the c++ vector erase method excludes the last element.
+      for (vector<double>::size_type i=starptr2; i<=starptr; i++)
+	stochRemnantMass += tracks->remnant_mass(stars[i]);
       stars.erase(stars.begin()+starptr2, stars.begin()+starptr+1);
 
       // Move the death mass point and star pointer
@@ -252,8 +260,9 @@ slug_cluster::advance(double time) {
       for (starptr=0; starptr<stars.size(); starptr++)
 	if (stars[starptr] > mass_cuts[0]) break;
 
-      // Kill those stars
-      for (unsigned int i=0; i<starptr; i++) stochAliveMass -= stars[i];
+      // Kill those stars, adding to the remnant mass
+      for (unsigned int i=0; i<starptr; i++) 
+	stochRemnantMass += tracks->remnant_mass(stars[i]);
       stars.erase(stars.begin(), stars.begin()+starptr);
 
     }
@@ -292,11 +301,24 @@ slug_cluster::advance(double time) {
 		       min(tracks->min_mass(), imf->get_xStochMin()));
     }
     nonStochAliveMass += integ.integrate(targetMass, curTime-formationTime,
-				  cluster::curMass);
+					 boost::bind(cluster::curMass, _1));
   }
 
-  // Compute the new alive mass
+  // Recompute the remnant mass from the non-stochastic stars; note a
+  // bit of fancy footwork here: the slug_tracks::remnant_mass
+  // function is overloaded, so we need to static_cast to the version
+  // of it we want before passing to boost::bind
+  nonStochRemnantMass = 
+    integ.integrate_nt(targetMass, 
+		       curTime-formationTime,
+		       boost::bind(static_cast<double (slug_tracks::*)
+				   (const double, const double) const> 
+				   (&slug_tracks::remnant_mass), 
+				   tracks, _1, _2));
+
+  // Compute the new alive and total stellar masses
   aliveMass = nonStochAliveMass + stochAliveMass;
+  stellarMass = aliveMass + stochRemnantMass + nonStochRemnantMass;
 }
 
 
@@ -613,6 +635,7 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
 	    << setw(11) << right << targetMass << "   "
 	    << setw(11) << right << birthMass << "   "
 	    << setw(11) << right << aliveMass << "   "
+	    << setw(11) << right << stellarMass << "   "
 	    << setw(11) << right << stars.size() << "   ";
     if (stars.size() > 0)
       outfile << setw(11) << right << stars[stars.size()-1];
@@ -634,6 +657,7 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
     outfile.write((char *) &targetMass, sizeof targetMass);
     outfile.write((char *) &birthMass, sizeof birthMass);
     outfile.write((char *) &aliveMass, sizeof aliveMass);
+    outfile.write((char *) &stellarMass, sizeof stellarMass);
     vector<double>::size_type n = stars.size();
     outfile.write((char *) &n, sizeof n);
     if (stars.size() > 0)
@@ -679,16 +703,18 @@ slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial) {
 		 &fits_status);
   fits_write_col(out_fits, TDOUBLE, 8, nrows+1, 1, 1, &aliveMass,
 		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 9, nrows+1, 1, 1, &stellarMass,
+		 &fits_status);
   vector<double>::size_type n = stars.size();
-  fits_write_col(out_fits, TULONG, 9, nrows+1, 1, 1, &n,
+  fits_write_col(out_fits, TULONG, 10, nrows+1, 1, 1, &n,
 		 &fits_status);
   double mstar;
   if (n>0) mstar = stars.back();
   else mstar = 0.0;
-  fits_write_col(out_fits, TDOUBLE, 10, nrows+1, 1, 1, &mstar,
+  fits_write_col(out_fits, TDOUBLE, 11, nrows+1, 1, 1, &mstar,
 		 &fits_status);
   if (extinct != NULL)
-    fits_write_col(out_fits, TDOUBLE, 11, nrows+1, 1, 1, &A_V,
+    fits_write_col(out_fits, TDOUBLE, 12, nrows+1, 1, 1, &A_V,
 		   &fits_status);
 }
 #endif

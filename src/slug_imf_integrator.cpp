@@ -19,103 +19,157 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 using namespace gkdata;
 
-////////////////////////////////////////////////////////////////////////
-// Constructor
-////////////////////////////////////////////////////////////////////////
-template <typename T>
-slug_imf_integrator<T>::
-slug_imf_integrator(const slug_tracks *my_tracks, 
-		    const slug_PDF *my_imf,
-		    const slug_PDF *my_sfh) :
-  tracks(my_tracks), imf(my_imf), sfh(my_sfh), help() { }
 
 ////////////////////////////////////////////////////////////////////////
-// Main integration driver
+// Main integration driver for case using the tracks
 ////////////////////////////////////////////////////////////////////////
 
 template <typename T> 
 T slug_imf_integrator<T>::
 integrate(const double m_tot, const double age,
-	  boost::function<T(const slug_stardata &)> func_in,
-	  typename std::vector<T>::size_type nvec_in,
-	  const double tol, bool include_stoch) const {
+	  boost::function<T(const slug_stardata &)> func_) const {
 
-  // Store the input function information
-  if (!func_in.empty()) func = &func_in;
-  nvec = nvec_in;
+  // Store the input function
+  if (!func_.empty()) {
+    func = &func_;
+    func_mass = nullptr;
+    func_mass_age = nullptr;
+  }
 
-  // Do we have monotonic tracks?
-  if (tracks->check_monotonic()) {
+  // Are we working on a function that operates on star data filtered
+  // through tracks, or directly on mass and age?
+  if (func == nullptr) {
 
-    // Yes, tracks are monotonic, so a single death mass exists
+    // Directly on mass and age; in this case, we don't need to worry
+    // about figuring out which stellar masses are within the tracks,
+    // and we can just integrate over the full IMF
 
-    // Get the range of integration from the IMF and the stellar tracks:
-    // minimum mass is the larger of the smallest mass in the IMF and
-    // the lowest mass track; maximum mass is the smallest of the edge of
-    // the non-stochastic range (unless stated otherwise), the largest
-    // mass track, and the death mass at this age
-    double m_min = max(imf->get_xMin(), tracks->min_mass());
-    double m_max = min(tracks->max_mass(), tracks->death_mass(age));
+    // Get max mass
+    double m_max = tracks->max_mass();
     if (!include_stoch) m_max = min(m_max, imf->get_xStochMin());
 
-    // Ensure m_min <= m_max; if not, just return 0
-    if (m_min > m_max) return help.init(nvec);
-
-    // Now call the helper function, and that's it
-    return integrate_range(m_tot, age, m_min, m_max, tol);
+    // Call integration over range
+    return integrate_range(m_tot, age, imf->get_xMin(), m_max);
 
   } else {
 
-    // More complicated case: tracks are not monotonic, so we may have
-    // multiple disjoint "alive mass" intervals
+    // We're working on a function that requires data interpolated
+    // from the tracks, so we need to filter out the mass range where
+    // stars are dead, or that are above or below the masses contained
+    // in the tracks
 
-    // Initialize variable to hold the sum
-    T sum = help.init(nvec);
+    // Do we have monotonic tracks?
+    if (tracks->check_monotonic()) {
 
-    // Grab the alive mass intervals at this time
-    vector<double> mass_cut = tracks->live_mass_range(age);
+      // Yes, tracks are monotonic, so a single death mass exists
 
-    // Loop over mass intervals
-    for (unsigned int i=0; i<mass_cut.size()/2; i++) {
+      // Get the range of integration from the IMF and the stellar tracks:
+      // minimum mass is the larger of the smallest mass in the IMF and
+      // the lowest mass track; maximum mass is the smallest of the edge of
+      // the non-stochastic range (unless stated otherwise), the largest
+      // mass track, and the death mass at this age
+      double m_min = max(imf->get_xMin(), tracks->min_mass());
+      double m_max = min(tracks->max_mass(), tracks->death_mass(age));
+      if (!include_stoch) m_max = min(m_max, imf->get_xStochMin());
 
-      // Figure out the mass limits for this interval
-      double m_min = max(imf->get_xMin(), max(mass_cut[2*i],
-					      tracks->min_mass()));
-      double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
-			 mass_cut[2*i+1]);
+      // Ensure m_min <= m_max; if not, just return 0
+      if (m_min > m_max) return help.init(nvec);
 
-      // If m_min >= m_max, no living stars in this interval being
-      // treated non-stochastically, so move on
-      if (m_min >= m_max) continue;
+      // Now call the helper function, and that's it
+      return integrate_range(m_tot, age, m_min, m_max);
 
-      // Add integral for this interval
-      help.plusequal(sum, integrate_range(m_tot, age, m_min, m_max, tol));
+    } else {
+
+      // More complicated case: tracks are not monotonic, so we may have
+      // multiple disjoint "alive mass" intervals
+
+      // Initialize variable to hold the sum
+      T sum = help.init(nvec);
+
+      // Grab the alive mass intervals at this time
+      vector<double> mass_cut = tracks->live_mass_range(age);
+      
+      // Loop over mass intervals
+      for (unsigned int i=0; i<mass_cut.size()/2; i++) {
+
+	// Figure out the mass limits for this interval
+	double m_min = max(imf->get_xMin(), max(mass_cut[2*i],
+						tracks->min_mass()));
+	double m_max = min(min(imf->get_xStochMin(), tracks->max_mass()),
+			   mass_cut[2*i+1]);
+
+	// If m_min >= m_max, no living stars in this interval being
+	// treated non-stochastically, so move on
+	if (m_min >= m_max) continue;
+
+	// Add integral for this interval
+	help.plusequal(sum, integrate_range(m_tot, age, m_min, m_max));
+      }
+
+      // Return
+      return sum;
     }
-
-    // Return
-    return sum;
   }
 }
 
+////////////////////////////////////////////////////////////////////////
+// Main integration driver for functions that don't use the tracks
+////////////////////////////////////////////////////////////////////////
+
+template <typename T> 
+T slug_imf_integrator<T>::
+integrate_nt(const double m_tot,
+	     boost::function<T(const double &)> func_) const {
+  if (!func_.empty()) {
+    func_mass = &func_;
+    func = nullptr;
+    func_mass_age = nullptr;
+  }
+  boost::function<T(const double &, const double &)> dummy = 0;
+  return integrate_nt(m_tot, 0.0, dummy);
+}
+
+template <typename T> 
+T slug_imf_integrator<T>::
+integrate_nt(const double m_tot, const double age,
+	     boost::function<T(const double &, const double &)> func_)
+  const {
+
+  // Store inputs
+  if (!func_.empty()) {
+    func_mass_age = &func_;
+    func = nullptr;
+    func_mass = nullptr;
+  }
+
+  // Get max mass
+  double m_max = tracks->max_mass();
+  if (!include_stoch) m_max = min(m_max, imf->get_xStochMin());
+
+  // Call integration over range
+  return integrate_range(m_tot, age, imf->get_xMin(), m_max);
+}
 
 ////////////////////////////////////////////////////////////////////////
-// Main integration driver for double integration over IMF and SFH
+// Main integration driver for double integration over IMF and SFH, in
+// the case where the function uses tracks
 ////////////////////////////////////////////////////////////////////////
 
 template <typename T> 
 T slug_imf_integrator<T>::
 integrate_sfh(const double t,
-	      boost::function<T(const slug_stardata &)> func_in,
-	      typename std::vector<T>::size_type nvec_in,
-	      const double tol, bool include_stoch) const {
+	      boost::function<T(const slug_stardata &)> func_) const {
 
   // Store the input function information
-  func = &func_in;
-  nvec = nvec_in;
+  if (!func_.empty()) {
+    func = &func_;
+    func_mass = nullptr;
+    func_mass_age = nullptr;
+  }
 
   // Do the initial Gauss-Kronrod integration
   T sum, err;
-  integrate_sfh_gk(0, t, t, tol, sum, err, include_stoch);
+  integrate_sfh_gk(0, t, t, sum, err);
 
   // Check error condition; if already met, return
   double rel_err = help.rel_err(err, sum);
@@ -140,10 +194,8 @@ integrate_sfh(const double t,
 
     // Compute integrals on two bisected sub-sections
     T tmp_l, tmp_r, err_l, err_r;
-    integrate_sfh_gk(t_left, t_cen, t, tol, tmp_l, err_l, 
-		     include_stoch);
-    integrate_sfh_gk(t_cen, t_right, t, tol, tmp_r, err_r, 
-		     include_stoch);
+    integrate_sfh_gk(t_left, t_cen, t, tmp_l, err_l);
+    integrate_sfh_gk(t_cen, t_right, t, tmp_r, err_r);
 
     // Update result and error estimate
     help.update(sum, tmp_l, tmp_r, s[intervalptr]);
@@ -183,6 +235,24 @@ integrate_sfh(const double t,
   return sum;
 }
 
+////////////////////////////////////////////////////////////////////////
+// Main integration driver for double integration over IMF and SFH, in
+// the case where the function doesn't use tracks
+////////////////////////////////////////////////////////////////////////
+
+template <typename T> 
+T slug_imf_integrator<T>::
+integrate_sfh_nt(const double t,
+		 boost::function<T(const double &, const double &)> 
+		 func_) const {
+  if (!func_.empty()) {
+    func_mass_age = &func_;
+    func_mass = nullptr;
+    func = nullptr;
+  }
+  boost::function<T(const slug_stardata &)> dummy = 0;
+  return integrate_sfh(t, dummy);
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Function to integrate over a specified range, with error checking
@@ -192,8 +262,7 @@ integrate_sfh(const double t,
 template <typename T>
 T slug_imf_integrator<T>::
 integrate_range(const double m_tot, const double age,
-		const double m_min, const double m_max,
-		const double tol) const {
+		const double m_min, const double m_max) const {
 
   // Do the initial Gauss-Kronrod integration
   T sum, err;
@@ -292,9 +361,10 @@ integrate_gk(const double m_min, const double m_max,
   }
   x_k[gknum/2] = m_cen;
 
-  // Get stellar data for the mass grid
-  const vector<slug_stardata> &stardata = 
-    tracks->get_isochrone(age, x_k);
+  // Get stellar data for the mass grid if using a function that
+  // operates on it
+  vector<slug_stardata> stardata;
+  if (func != nullptr) stardata = tracks->get_isochrone(age, x_k);
 
   // Now form the Gauss and Kronrod sums
 
@@ -302,20 +372,26 @@ integrate_gk(const double m_min, const double m_max,
   unsigned int ptr1 = gknum/2;
   unsigned int ptr2;
 
-  // Apply user-supplied function at central mass point
-  T tmp1 = (*func)(stardata[ptr1]);
-  T tmp2;
+  // Apply user-supplied function at every mass point
+  vector<T> tmp;
+  tmp.resize(gknum);
+  if (func != nullptr)
+    for (unsigned int i=0; i<gknum; i++) tmp[i] = (*func)(stardata[i]);
+  else if (func_mass != nullptr)
+    for (unsigned int i=0; i<gknum; i++) tmp[i] = (*func_mass)(x_k[i]);
+  else
+    for (unsigned int i=0; i<gknum; i++) 
+      tmp[i] = (*func_mass_age)(x_k[i], age);
 
-  // Get IMF at central mass point
-  double imf_val1 = (*imf)(x_k[ptr1]);
-  double imf_val2;
+  // Get IMF at every mass point
+  vector<double> imf_val = (*imf)(x_k);
 
   // Add to Kronrod sum, and to Gauss sum if central point in grid is
   // included in it
-  result = help.times(tmp1, imf_val1*wgk[gknum1-1]);
+  result = help.times(tmp[ptr1], imf_val[ptr1]*wgk[gknum1-1]);
   T gaussQuad;
   if (gknum1 % 2 == 0) 
-    gaussQuad = help.times(tmp1, imf_val1*wg[gknum1/2 - 1]);
+    gaussQuad = help.times(tmp[ptr1], imf_val[ptr1]*wg[gknum1/2 - 1]);
   else
     gaussQuad = help.init(nvec);
 
@@ -324,17 +400,15 @@ integrate_gk(const double m_min, const double m_max,
 
     // Point on the left side of the mass interval
     ptr1 = 2*i+1;
-    tmp1 = (*func)(stardata[ptr1]);
-    imf_val1 = (*imf)(x_k[ptr1]);
 
     // Point on the right side of the mass interval
     ptr2 = gknum - 2*i - 2;
-    tmp2 = (*func)(stardata[ptr2]);
-    imf_val2 = (*imf)(x_k[ptr2]);
 
     // Compute the contribution to the Gaussian and Kronrod quadratures
-    help.gkupdate(gaussQuad, tmp1, tmp2, imf_val1, imf_val2, wg[i]);
-    help.gkupdate(result, tmp1, tmp2, imf_val1, imf_val2, wgk[ptr1]);
+    help.gkupdate(gaussQuad, tmp[ptr1], tmp[ptr2], 
+		  imf_val[ptr1], imf_val[ptr2], wg[i]);
+    help.gkupdate(result, tmp[ptr1], tmp[ptr2], 
+		  imf_val[ptr1],imf_val[ptr2], wgk[ptr1]);
   }
 
   // Compute the terms that appear only in the Kronrod sum
@@ -342,16 +416,13 @@ integrate_gk(const double m_min, const double m_max,
 
     // Point on left half of interval
     ptr1 = 2*i;
-    tmp1 = (*func)(stardata[ptr1]);
-    imf_val1 = (*imf)(x_k[ptr1]);
 
     // Point on right half of interval
     ptr2 = gknum - 2*i - 1;
-    tmp2 = (*func)(stardata[ptr2]);
-    imf_val2 = (*imf)(x_k[ptr2]);
 
     // Add to Kronrod sum
-    help.gkupdate(result, tmp1, tmp2, imf_val1, imf_val2, wgk[ptr1]);
+    help.gkupdate(result, tmp[ptr1], tmp[ptr2], 
+		  imf_val[ptr1], imf_val[ptr2], wgk[ptr1]);
   }
 
   // Scale results by length of mass interval to properly normalize
@@ -371,9 +442,7 @@ integrate_gk(const double m_min, const double m_max,
 template <typename T>
 void slug_imf_integrator<T>::
 integrate_sfh_gk(const double t_min, const double t_max,
-		 const double t, 
-		 double tol, T &result, T &err,
-		 bool include_stoch) const {
+		 const double t, T &result, T &err) const {
 
   // Construct grid of time points
   double t_cen = 0.5 * (t_min + t_max);
@@ -391,11 +460,14 @@ integrate_sfh_gk(const double t_min, const double t_max,
   unsigned int ptr1 = gknum/2;
   unsigned int ptr2;
 
+  // Reduce tolerance for mass integration
+  tol /= 10.0;
+
   // Get Q at the central time, leaving a fair margin of error
   // in the tolerance; note that we normalize to 1 Msun here, and fix
   // the normalization later
-  T tmp1 = integrate(1.0, t-x_k[gknum/2], 0, nvec, tol/10.0, 
-		     include_stoch);
+  boost::function<T(const slug_stardata &)> dummy = 0;
+  T tmp1 = integrate(1.0, t-x_k[gknum/2], dummy);
   T tmp2;
 
   // Get SFR at central time
@@ -416,14 +488,12 @@ integrate_sfh_gk(const double t_min, const double t_max,
 
     // Point on the left side of the mass interval
     ptr1 = 2*i+1;
-    tmp1 = integrate(1.0, t-x_k[ptr1], 0, nvec, tol/10.0, 
-		     include_stoch);
+    tmp1 = integrate(1.0, t-x_k[ptr1], dummy);
     sfh_val1 = (*sfh)(x_k[ptr1]);
 
     // Point on the right side of the mass interval
     ptr2 = gknum - 2*i - 2;
-    tmp2 = integrate(1.0, t-x_k[ptr2], 0, nvec, tol/10.0, 
-		     include_stoch);
+    tmp2 = integrate(1.0, t-x_k[ptr2], dummy);
     sfh_val2 = (*sfh)(x_k[ptr2]);
 
     // Compute the contribution to the Gaussian and Kronrod quadratures
@@ -436,14 +506,12 @@ integrate_sfh_gk(const double t_min, const double t_max,
 
     // Point on left half of interval
     ptr1 = 2*i;
-    tmp1 = integrate(1.0, t-x_k[ptr1], 0, nvec,
-		     tol/10.0, include_stoch);
+    tmp1 = integrate(1.0, t-x_k[ptr1], dummy);
     sfh_val1 = (*sfh)(x_k[ptr1]);
 
     // Point on right half of interval
     ptr2 = gknum - 2*i - 1;
-    tmp2 = integrate(1.0, t-x_k[ptr2], 0, nvec,
-		     tol/10.0, include_stoch);
+    tmp2 = integrate(1.0, t-x_k[ptr2], dummy);
     sfh_val2 = (*sfh)(x_k[ptr2]);
 
     // Add to Kronrod sum
@@ -453,6 +521,9 @@ integrate_sfh_gk(const double t_min, const double t_max,
   // Scale results by length of mass interval to properly normalize
   help.timesequal(result, half_length);
   help.timesequal(gaussQuad, half_length);
+
+  // Reset tolerance
+  tol *= 10.0;
 
   // Compute error
   err = help.absdiff(result, gaussQuad);
