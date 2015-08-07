@@ -38,70 +38,70 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Functions to compute PDFs and integrals thereof on single tree nodes */
 static inline
 double kd_pdf_node(const kernel_density *kd, const double *x, 
-		   const unsigned int curnode);
+		   const unsigned long curnode);
 
 static inline
 double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed, 
-			const unsigned int *dimfixed,
-			const unsigned int ndimfixed,
+			const unsigned long *dimfixed,
+			const unsigned long ndimfixed,
 			const double *xgrid,
-			const unsigned int *dimgrid,
-			const unsigned int ndimgrid,
-			const unsigned int ngrid,
-			const unsigned int curnode,
+			const unsigned long *dimgrid,
+			const unsigned long ndimgrid,
+			const unsigned long ngrid,
+			const unsigned long curnode,
 			double *pdf);
 
 static inline
 double kd_pdf_node_int(const kernel_density *kd, const double *x, 
-		       const unsigned int *dims, const unsigned int ndim,
-		       const unsigned int ndim_int, const double fac,
-		       const unsigned int curnode);
+		       const unsigned long *dims, const unsigned long ndim,
+		       const unsigned long ndim_int, const double fac,
+		       const unsigned long curnode);
 
 static inline
 double kd_pdf_node_int_grid(const kernel_density *kd, const double *xfixed, 
-			    const unsigned int *dimfixed,
-			    const unsigned int ndimfixed,
+			    const unsigned long *dimfixed,
+			    const unsigned long ndimfixed,
 			    const double *xgrid,
-			    const unsigned int *dimgrid,
-			    const unsigned int ndimgrid,
-			    const unsigned int ngrid,
-			    const unsigned int ndim_int,
+			    const unsigned long *dimgrid,
+			    const unsigned long ndimgrid,
+			    const unsigned long ngrid,
+			    const unsigned long ndim_int,
 			    const double fac,
-			    const unsigned int curnode,
+			    const unsigned long curnode,
 			    double *pdf);
 
 static inline
 double kd_pdf_node_int_reggrid(const kernel_density *kd, 
 			       const double *xfixed, 
-			       const unsigned int *dimfixed,
-			       const unsigned int ndimfixed,
+			       const unsigned long *dimfixed,
+			       const unsigned long ndimfixed,
 			       const double *xgridlo,
 			       const double *dxgrid,
-			       const unsigned int *ngrid,
-			       const unsigned int *nstencil,
+			       const unsigned long *ngrid,
+			       const unsigned long *nstencil,
 			       const unsigned long ngridtot,
 			       const unsigned long nstenciltot,
-			       const unsigned int *dimgrid,
-			       const unsigned int ndimgrid,
-			       const unsigned int ndim_int,
+			       const unsigned long *dimgrid,
+			       const unsigned long ndimgrid,
+			       const unsigned long ndim_int,
 			       const double fac,
-			       const unsigned int curnode,
+			       const unsigned long curnode,
 			       double *pdf);
 
 static inline
 double kd_pdf_node_reggrid(const kernel_density *kd, 
 			   const double *xfixed, 
-			   const unsigned int *dimfixed,
-			   const unsigned int ndimfixed,
+			   const unsigned long *dimfixed,
+			   const unsigned long ndimfixed,
 			   const double *xgridlo,
 			   const double *dxgrid,
-			   const unsigned int *ngrid,
-			   const unsigned int *nstencil,
+			   const unsigned long *ngrid,
+			   const unsigned long *nstencil,
 			   const unsigned long ngridtot,
 			   const unsigned long nstenciltot,
-			   const unsigned int *dimgrid,
-			   const unsigned int ndimgrid,
-			   const unsigned int curnode,
+			   const unsigned long *dimgrid,
+			   const unsigned long ndimgrid,
+			   const unsigned long curnode,
 			   double *pdf);
 
 /**********************************************************************/
@@ -111,12 +111,12 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
 double kd_pdf(const kernel_density *kd, const double *x,
 	      const double reltol, const double abstol
 #ifdef DIAGNOSTIC
-	      , unsigned int *nodecheck, unsigned int *leafcheck,
-	      unsigned int *termcheck
+	      , unsigned long *nodecheck, unsigned long *leafcheck,
+	      unsigned long *termcheck
 #endif
 	      ) {
-  unsigned int i, nnode, nalloc, ptr, lchild, rchild;
-  unsigned int *nodelist;
+  unsigned long i, nnode, nalloc, ptr, lchild, rchild;
+  unsigned long *nodelist;
   double *nodepdf;
   double maxerr, relerr, abserr;
   double pdf, leftpdf, rightpdf;
@@ -148,8 +148,8 @@ double kd_pdf(const kernel_density *kd, const double *x,
     /* The usual case: root node is not a leaf */
 
     /* Allocate memory for node list */
-    if (!(nodelist = (unsigned int *) 
-	  calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
+    if (!(nodelist = (unsigned long *) 
+	  calloc(NODEBLOCKSIZE, sizeof(unsigned long)))) {
       fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
       exit(1);
     }
@@ -217,8 +217,8 @@ double kd_pdf(const kernel_density *kd, const double *x,
 
     /* Allocate more memory to hold child nodes if necessary */
     if (nnode+2 >= nalloc) {
-      if (!(nodelist = (unsigned int *) 
-	    realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
+      if (!(nodelist = (unsigned long *) 
+	    realloc(nodelist, 2*nalloc*sizeof(unsigned long)))) {
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
 	exit(1);
       }
@@ -276,20 +276,20 @@ double kd_pdf(const kernel_density *kd, const double *x,
 /*********************************************************************/
 
 void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
-		 const unsigned int *dimfixed, 
-		 const unsigned int ndimfixed,
-		 const unsigned int nfixed,
+		 const unsigned long *dimfixed, 
+		 const unsigned long ndimfixed,
+		 const unsigned long nfixed,
 		 const double *xgrid,
-		 const unsigned int *dimgrid,
-		 const unsigned int ndimgrid,
-		 const unsigned int ngrid,
+		 const unsigned long *dimgrid,
+		 const unsigned long ndimgrid,
+		 const unsigned long ngrid,
 		 const double reltol, const double abstol,
 		 double *pdf) {
 
-  unsigned int i, j;
-  unsigned int nalloc=0, nnode, ptr, lchild, rchild;
+  unsigned long i, j;
+  unsigned long nalloc=0, nnode, ptr, lchild, rchild;
   unsigned long fixedptr, outptr;
-  unsigned int *nodelist = NULL;
+  unsigned long *nodelist = NULL;
   double *nodepdf = NULL;
   double relerr, maxerr;
   double pdfmax, leftpdf, rightpdf;
@@ -316,8 +316,8 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
 
     /* Allocate memory for node list if necessary */
     if (nalloc == 0) {
-      if (!(nodelist = (unsigned int *) 
-	    calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
+      if (!(nodelist = (unsigned long *) 
+	    calloc(NODEBLOCKSIZE, sizeof(unsigned long)))) {
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
 	exit(1);
       }
@@ -396,8 +396,8 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
 
       /* Allocate more memory to hold child nodes if necessary */
       if (nnode+2 >= nalloc) {
-	if (!(nodelist = (unsigned int *) 
-	      realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
+	if (!(nodelist = (unsigned long *) 
+	      realloc(nodelist, 2*nalloc*sizeof(unsigned long)))) {
 	  fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
 	  exit(1);
 	}
@@ -443,15 +443,15 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
 /* approximately using a kernel_density object                       */
 /*********************************************************************/
 double kd_pdf_int(const kernel_density *kd, const double *x,
-		  const unsigned int *dims, const unsigned int ndim,
+		  const unsigned long *dims, const unsigned long ndim,
 		  const double reltol, const double abstol
 #ifdef DIAGNOSTIC
-		  , unsigned int *nodecheck, unsigned int *leafcheck,
-		  unsigned int *termcheck
+		  , unsigned long *nodecheck, unsigned long *leafcheck,
+		  unsigned long *termcheck
 #endif
 		  ) {
-  unsigned int i, ndim_int, nnode, nalloc, ptr, lchild, rchild;
-  unsigned int *nodelist = NULL;
+  unsigned long i, ndim_int, nnode, nalloc, ptr, lchild, rchild;
+  unsigned long *nodelist = NULL;
   double hprod, ds_n, fac;
   double *nodepdf= NULL;
   double maxerr, relerr, abserr;
@@ -501,8 +501,8 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
     /* The usual case: root node is not a leaf */
 
     /* Allocate memory for node list */
-    if (!(nodelist = (unsigned int *) 
-	  calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
+    if (!(nodelist = (unsigned long *) 
+	  calloc(NODEBLOCKSIZE, sizeof(unsigned long)))) {
       fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
       exit(1);
     }
@@ -577,8 +577,8 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
 
     /* Allocate more memory to hold child nodes if necessary */
     if (nnode+2 >= nalloc) {
-      if (!(nodelist = (unsigned int *) 
-	    realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
+      if (!(nodelist = (unsigned long *) 
+	    realloc(nodelist, 2*nalloc*sizeof(unsigned long)))) {
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
 	exit(1);
       }
@@ -637,20 +637,20 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
 /*********************************************************************/
 
 void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
-		     const unsigned int *dimfixed, 
-		     const unsigned int ndimfixed,
-		     const unsigned int nfixed,
+		     const unsigned long *dimfixed, 
+		     const unsigned long ndimfixed,
+		     const unsigned long nfixed,
 		     const double *xgrid,
-		     const unsigned int *dimgrid,
-		     const unsigned int ndimgrid,
-		     const unsigned int ngrid,
+		     const unsigned long *dimgrid,
+		     const unsigned long ndimgrid,
+		     const unsigned long ngrid,
 		     const double reltol, const double abstol,
 		     double *pdf) {
 
-  unsigned int i, j;
-  unsigned int nalloc=0, nnode, ptr, lchild, rchild, ndim_int;
+  unsigned long i, j;
+  unsigned long nalloc=0, nnode, ptr, lchild, rchild, ndim_int;
   unsigned long fixedptr, outptr;
-  unsigned int *nodelist = NULL;
+  unsigned long *nodelist = NULL;
   double *nodepdf = NULL;
   double hprod, ds_n, fac;
   double maxerr, relerr, pdfmax, leftpdf, rightpdf;
@@ -702,8 +702,8 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
 
     /* Allocate memory for node list if necessary */
     if (nalloc == 0) {
-      if (!(nodelist = (unsigned int *) 
-	    calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
+      if (!(nodelist = (unsigned long *) 
+	    calloc(NODEBLOCKSIZE, sizeof(unsigned long)))) {
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int_grid\n");
 	exit(1);
       }
@@ -785,8 +785,8 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
 
       /* Allocate more memory to hold child nodes if necessary */
       if (nnode+2 >= nalloc) {
-	if (!(nodelist = (unsigned int *) 
-	      realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
+	if (!(nodelist = (unsigned long *) 
+	      realloc(nodelist, 2*nalloc*sizeof(unsigned long)))) {
 	  fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
 	  exit(1);
 	}
@@ -832,21 +832,21 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
 /* Same as kd_pdf_int_grid, but for regular grids                    */
 /*********************************************************************/
 void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
-			const unsigned int *dimfixed, 
-			const unsigned int ndimfixed,
-			const unsigned int nfixed,
+			const unsigned long *dimfixed, 
+			const unsigned long ndimfixed,
+			const unsigned long nfixed,
 			const double *xgridlo,
 			const double *xgridhi,
-			const unsigned int *ngrid,
-			const unsigned int *dimgrid,
-			const unsigned int ndimgrid,
+			const unsigned long *ngrid,
+			const unsigned long *dimgrid,
+			const unsigned long ndimgrid,
 			const double reltol, const double abstol,
 			double *pdf)
 {
-  unsigned int i, j;
-  unsigned int nalloc=0, nnode, ptr, lchild, rchild, ndim_int;
+  unsigned long i, j;
+  unsigned long nalloc=0, nnode, ptr, lchild, rchild, ndim_int;
   unsigned long ngridtot, nstenciltot, fixedptr, outptr;
-  unsigned int *nodelist = NULL, *nstencil;
+  unsigned long *nodelist = NULL, *nstencil;
   double *dxgrid;
   double *nodepdf = NULL;
   double hprod, ds_n, fac;
@@ -885,7 +885,7 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
   if (!(dxgrid = (double *) 
 	calloc(ndimgrid, sizeof(double)))) {
     fprintf(stderr, 
-	    "bayesphot: error: unable to allocate memory in kd_pdf_reggrid\n");
+	    "bayesphot: error: unable to allocate memory in kd_pdf_int_reggrid\n");
     exit(1);
   }
   for (i=0; i<ndimgrid; i++) {
@@ -896,10 +896,10 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
   }
 
   /* Figure out how big a stencil we need */
-  if (!(nstencil = (unsigned int *) 
-	calloc(ndimgrid, sizeof(unsigned int)))) {
+  if (!(nstencil = (unsigned long *) 
+	calloc(ndimgrid, sizeof(unsigned long)))) {
     fprintf(stderr, 
-	    "bayesphot: error: unable to allocate memory in kd_pdf_reggrid\n");
+	    "bayesphot: error: unable to allocate memory in kd_pdf_int_reggrid\n");
     exit(1);
   }
   nstenciltot = 1;
@@ -956,14 +956,13 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
 
     /* Allocate memory for node list if necessary */
     if (nalloc == 0) {
-      if (!(nodelist = (unsigned int *) 
-	    calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
+      if (!(nodelist = (unsigned long *) 
+	    calloc(NODEBLOCKSIZE, sizeof(unsigned long)))) {
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int_grid\n");
 	exit(1);
       }
       if (!(nodepdf = (double *) 
 	    malloc(NODEBLOCKSIZE*sizeof(double)))) {
-	printf("alloc error flag\n");
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int_grid\n");
 	exit(1);
       }
@@ -1043,8 +1042,8 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
 
       /* Allocate more memory to hold child nodes if necessary */
       if (nnode+2 >= nalloc) {
-	if (!(nodelist = (unsigned int *) 
-	      realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
+	if (!(nodelist = (unsigned long *) 
+	      realloc(nodelist, 2*nalloc*sizeof(unsigned long)))) {
 	  fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
 	  exit(1);
 	}
@@ -1093,21 +1092,21 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
 /* held fixed and the others are varied along a regular grid.        */
 /*********************************************************************/
 void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
-		    const unsigned int *dimfixed, 
-		    const unsigned int ndimfixed,
-		    const unsigned int nfixed,
+		    const unsigned long *dimfixed, 
+		    const unsigned long ndimfixed,
+		    const unsigned long nfixed,
 		    const double *xgridlo,
 		    const double *xgridhi,
-		    const unsigned int *ngrid,
-		    const unsigned int *dimgrid,
-		    const unsigned int ndimgrid,
+		    const unsigned long *ngrid,
+		    const unsigned long *dimgrid,
+		    const unsigned long ndimgrid,
 		    const double reltol, const double abstol,
 		    double *pdf)
 {
-  unsigned int i, j;
-  unsigned int nalloc=0, nnode, ptr, lchild, rchild;
+  unsigned long i, j;
+  unsigned long nalloc=0, nnode, ptr, lchild, rchild;
   unsigned long ngridtot, nstenciltot, fixedptr, outptr;
-  unsigned int *nodelist = NULL, *nstencil;
+  unsigned long *nodelist = NULL, *nstencil;
   double *dxgrid;
   double *nodepdf = NULL;
   double relerr, maxerr;
@@ -1132,8 +1131,8 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
   }
 
   /* Figure out how big a stencil we need */
-  if (!(nstencil = (unsigned int *) 
-	calloc(ndimgrid, sizeof(unsigned int)))) {
+  if (!(nstencil = (unsigned long *) 
+	calloc(ndimgrid, sizeof(unsigned long)))) {
     fprintf(stderr, 
 	    "bayesphot: error: unable to allocate memory in kd_pdf_reggrid\n");
     exit(1);
@@ -1190,8 +1189,8 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
 
     /* Allocate memory for node list if necessary */
     if (nalloc == 0) {
-      if (!(nodelist = (unsigned int *) 
-	    calloc(NODEBLOCKSIZE, sizeof(unsigned int)))) {
+      if (!(nodelist = (unsigned long *) 
+	    calloc(NODEBLOCKSIZE, sizeof(unsigned long)))) {
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
 	exit(1);
       }
@@ -1272,8 +1271,8 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
 
       /* Allocate more memory to hold child nodes if necessary */
       if (nnode+2 >= nalloc) {
-	if (!(nodelist = (unsigned int *) 
-	      realloc(nodelist, 2*nalloc*sizeof(unsigned int)))) {
+	if (!(nodelist = (unsigned long *) 
+	      realloc(nodelist, 2*nalloc*sizeof(unsigned long)))) {
 	  fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_grid\n");
 	  exit(1);
 	}
@@ -1330,9 +1329,9 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
 /*********************************************************************/
 inline
 double kd_pdf_node(const kernel_density *kd, const double *x,
-		   const unsigned int curnode) {
-  unsigned int i;
-  unsigned int ndim = kd->tree->ndim;
+		   const unsigned long curnode) {
+  unsigned long i;
+  unsigned long ndim = kd->tree->ndim;
   double d2, pdf;
 
   /* Is this node a leaf? If so, just sum over it and return that */
@@ -1426,17 +1425,17 @@ double kd_pdf_node(const kernel_density *kd, const double *x,
 /*********************************************************************/
 inline
 double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed, 
-			const unsigned int *dimfixed,
-			const unsigned int ndimfixed,
+			const unsigned long *dimfixed,
+			const unsigned long ndimfixed,
 			const double *xgrid,
-			const unsigned int *dimgrid,
-			const unsigned int ndimgrid,
-			const unsigned int ngrid,
-			const unsigned int curnode,
+			const unsigned long *dimgrid,
+			const unsigned long ndimgrid,
+			const unsigned long ngrid,
+			const unsigned long curnode,
 			double *pdf) {
 
-  unsigned int i, j;
-  unsigned int ndim_tot = kd->tree->ndim;
+  unsigned long i, j;
+  unsigned long ndim_tot = kd->tree->ndim;
   double d2, d2fixed, d2grid;
 
   /* Is this node a leaf? If so, just sum over the points in it */
@@ -1536,11 +1535,11 @@ double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed,
 /*********************************************************************/
 inline
 double kd_pdf_node_int(const kernel_density *kd, const double *x,
-		       const unsigned int *dims, const unsigned int ndim,
-		       const unsigned int ndim_int, const double fac,
-		       const unsigned int curnode) {
-  unsigned int i;
-  unsigned int ndim_tot = kd->tree->ndim;
+		       const unsigned long *dims, const unsigned long ndim,
+		       const unsigned long ndim_int, const double fac,
+		       const unsigned long curnode) {
+  unsigned long i;
+  unsigned long ndim_tot = kd->tree->ndim;
   double d2, pdf;
 
   /* Is this node a leaf? If so, just sum over it and return that */
@@ -1638,19 +1637,19 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
 inline
 double kd_pdf_node_int_grid(const kernel_density *kd, 
 			    const double *xfixed, 
-			    const unsigned int *dimfixed,
-			    const unsigned int ndimfixed,
+			    const unsigned long *dimfixed,
+			    const unsigned long ndimfixed,
 			    const double *xgrid,
-			    const unsigned int *dimgrid,
-			    const unsigned int ndimgrid,
-			    const unsigned int ngrid,
-			    const unsigned int ndim_int,
+			    const unsigned long *dimgrid,
+			    const unsigned long ndimgrid,
+			    const unsigned long ngrid,
+			    const unsigned long ndim_int,
 			    const double fac,
-			    const unsigned int curnode,
+			    const unsigned long curnode,
 			    double *pdf) {
 
-  unsigned int i, j;
-  unsigned int ndim_tot = kd->tree->ndim;
+  unsigned long i, j;
+  unsigned long ndim_tot = kd->tree->ndim;
   double d2, d2fixed, d2grid;
 
   /* Is this node a leaf? If so, just sum over the points in it */
@@ -1752,26 +1751,27 @@ double kd_pdf_node_int_grid(const kernel_density *kd,
 inline
 double kd_pdf_node_int_reggrid(const kernel_density *kd, 
 			       const double *xfixed, 
-			       const unsigned int *dimfixed,
-			       const unsigned int ndimfixed,
+			       const unsigned long *dimfixed,
+			       const unsigned long ndimfixed,
 			       const double *xgridlo,
 			       const double *dxgrid,
-			       const unsigned int *ngrid,
-			       const unsigned int *nstencil,
+			       const unsigned long *ngrid,
+			       const unsigned long *nstencil,
 			       const unsigned long ngridtot,
 			       const unsigned long nstenciltot,
-			       const unsigned int *dimgrid,
-			       const unsigned int ndimgrid,
-			       const unsigned int ndim_int,
+			       const unsigned long *dimgrid,
+			       const unsigned long ndimgrid,
+			       const unsigned long ndim_int,
 			       const double fac,
-			       const unsigned int curnode,
+			       const unsigned long curnode,
 			       double *pdf) {
 
-  unsigned int i, j;
-  int k;
-  int *ctr, *offset;
-  int on_grid, pdf_offset;
-  unsigned int ndim_tot = kd->tree->ndim;
+  unsigned long i, j;
+  long k;
+  long *ctr, *offset;
+  long pdf_offset;
+  long on_grid;
+  unsigned long ndim_tot = kd->tree->ndim;
   double d2, d2fixed;
   double *d2grid;
 
@@ -1779,12 +1779,12 @@ double kd_pdf_node_int_reggrid(const kernel_density *kd,
   if (kd->tree->tree[curnode].splitdim == -1) {
 
     /* Allocate memory we'll need */
-    if (!(ctr = (int *) calloc(ndimgrid, sizeof(int)))) {
+    if (!(ctr = (long *) calloc(ndimgrid, sizeof(long)))) {
       fprintf(stderr, 
 	      "bayesphot: error: unable to allocate memory in kd_pdf_int_reggrid\n");
       exit(1);
     }
-    if (!(offset = (int *) calloc(ndimgrid, sizeof(int)))) {
+    if (!(offset = (long *) calloc(ndimgrid, sizeof(long)))) {
       fprintf(stderr, 
 	      "bayesphot: error: unable to allocate memory in kd_pdf_int_reggrid\n");
       exit(1);
@@ -1952,24 +1952,25 @@ double kd_pdf_node_int_reggrid(const kernel_density *kd,
 inline
 double kd_pdf_node_reggrid(const kernel_density *kd, 
 			   const double *xfixed, 
-			   const unsigned int *dimfixed,
-			   const unsigned int ndimfixed,
+			   const unsigned long *dimfixed,
+			   const unsigned long ndimfixed,
 			   const double *xgridlo,
 			   const double *dxgrid,
-			   const unsigned int *ngrid,
-			   const unsigned int *nstencil,
+			   const unsigned long *ngrid,
+			   const unsigned long *nstencil,
 			   const unsigned long ngridtot,
 			   const unsigned long nstenciltot,
-			   const unsigned int *dimgrid,
-			   const unsigned int ndimgrid,
-			   const unsigned int curnode,
+			   const unsigned long *dimgrid,
+			   const unsigned long ndimgrid,
+			   const unsigned long curnode,
 			   double *pdf) {
 
-  unsigned int i, j;
-  int k;
-  int *ctr, *offset;
-  int on_grid, pdf_offset;
-  unsigned int ndim_tot = kd->tree->ndim;
+  unsigned long i, j;
+  long k;
+  long *ctr, *offset;
+  int on_grid;
+  long pdf_offset;
+  unsigned long ndim_tot = kd->tree->ndim;
   double d2, d2fixed;
   double *d2grid;
 
@@ -1977,12 +1978,12 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
   if (kd->tree->tree[curnode].splitdim == -1) {
 
     /* Allocate memory we'll need */
-    if (!(ctr = (int *) calloc(ndimgrid, sizeof(int)))) {
+    if (!(ctr = (long *) calloc(ndimgrid, sizeof(long)))) {
       fprintf(stderr, 
 	      "bayesphot: error: unable to allocate memory in kd_pdf_reggrid\n");
       exit(1);
     }
-    if (!(offset = (int *) calloc(ndimgrid, sizeof(int)))) {
+    if (!(offset = (long *) calloc(ndimgrid, sizeof(long)))) {
       fprintf(stderr, 
 	      "bayesphot: error: unable to allocate memory in kd_pdf_reggrid\n");
       exit(1);
@@ -2139,16 +2140,16 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
 /* Vectorized version of kd_pdf_int                                  */
 /*********************************************************************/
 void kd_pdf_int_vec(const kernel_density *kd, const double *x, 
-		    const unsigned int *dims, const unsigned int ndim,
-		    const unsigned int npt, const double reltol, 
+		    const unsigned long *dims, const unsigned long ndim,
+		    const unsigned long npt, const double reltol, 
 		    const double abstol, double *pdf
 #ifdef DIAGNOSTIC
-		    , unsigned int *nodecheck, unsigned int *leafcheck,
-		    unsigned int *termcheck
+		    , unsigned long *nodecheck, unsigned long *leafcheck,
+		    unsigned long *termcheck
 #endif
 		    ) {
 
-  unsigned int i;
+  unsigned long i;
 #pragma omp parallel private(i)
   {
     #pragma omp for
@@ -2168,15 +2169,15 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
 /* vector of inputs positions                                        */
 /*********************************************************************/
 void kd_pdf_vec(const kernel_density *kd, const double *x, 
-		const unsigned int npt, const double reltol, 
+		const unsigned long npt, const double reltol, 
 		const double abstol, double *pdf
 #ifdef DIAGNOSTIC
-		, unsigned int *nodecheck, unsigned int *leafcheck,
-		unsigned int *termcheck
+		, unsigned long *nodecheck, unsigned long *leafcheck,
+		unsigned long *termcheck
 #endif
 		) {
 
-  unsigned int i;
+  unsigned long i;
 #pragma omp parallel private(i)
   {
   #pragma omp for

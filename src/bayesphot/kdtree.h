@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /*********************************************************************/
 typedef struct {
   /* Number of points in this node */
-  unsigned int npt;
+  unsigned long npt;
   /* Corners of box bounding region occupied by this node. */
   double *xlim[2];
   /* Corners of box tightly bounding the data points in this node */
@@ -54,15 +54,15 @@ typedef struct {
 
 typedef struct {
   /* Number of dimensions in the tree */
-  unsigned int ndim;
+  unsigned long ndim;
   /* Number of levels in the tree */
-  unsigned int levels;
+  unsigned long levels;
   /* Number of leaves in the tree */
-  unsigned int leaves;
+  unsigned long leaves;
   /* Number of nodes in the tree */
-  unsigned int nodes;
+  unsigned long nodes;
   /* Maximum size of a leaf */
-  unsigned int leafsize;
+  unsigned long leafsize;
   /* Size of extra data elements associated with positions */
   size_t dsize;
   /* Pointer to tree root */
@@ -74,9 +74,9 @@ typedef struct {
 /* Function definitions                                              */
 /*********************************************************************/
 
-KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt, 
-		   unsigned int leafsize, void *dptr, size_t dsize,
-		   unsigned int minsplit);
+KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt, 
+		   unsigned long leafsize, void *dptr, size_t dsize,
+		   unsigned long minsplit);
 /* This routine builds a KD tree from the input data.
 
    Parameters:
@@ -103,6 +103,41 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
          a pointer to a KD tree decomposition of the data
 */
 
+KDtree* build_tree_sortdims(double *x, unsigned long ndim, 
+			    unsigned long npt, unsigned long leafsize, 
+			    void *dptr, size_t dsize,
+			    int *nosort);
+/* This routine builds a KD tree from the input data. It differs from
+   the basic build_tree routine in that it allows users to specify
+   that the tree is only to be sorted in certain dimensions. This can
+   be useful in cases where it is known in advance that tree will be
+   searched exclusively in certain dimensions.
+
+   Parameters:
+      INPUT/OUTPUT x
+         array of npt * ndim elements containing the positions,
+         ordered so that element x[j + i*ndim] is the jth coordinate
+         of point i; on return, this will be sorted into a tree
+      INPUT ndim
+         number of dimensions in the data set
+      INPUT npt
+         number of data points
+      INPUT leafsize
+         number of points to place in a leaf of the tree
+      INPUT/OUTPUT dptr
+         pointer to extra data associated to each position
+      INPUT dsize
+         size of each element of dptr
+      INPUT nosort
+         array of ndim values; for any dimension for which nosort is
+         non-zero, the tree will not be partitioned along that
+         dimension
+
+   Returns:
+      OUTPUT tree
+         a pointer to a KD tree decomposition of the data
+*/
+
 void free_tree(KDtree *tree);
 /* Frees the memory associated with a KD tree.
 
@@ -115,8 +150,8 @@ void free_tree(KDtree *tree);
 */
 
 void neighbors(const KDtree *tree, const double *xpt, 
-	       const unsigned int *dims, const unsigned int ndim, 
-	       const unsigned int nneighbor,
+	       const unsigned long *dims, const unsigned long ndim, 
+	       const unsigned long nneighbor,
 	       const double *scale, double *pos,
 	       void *dptr, double *d2);
 /* Routine to find the N nearest neighbors to an input point; input
@@ -167,8 +202,8 @@ void neighbors(const KDtree *tree, const double *xpt,
       Nothing
 */
 
-void neighbors_all(const KDtree *tree, const unsigned int nneighbor,
-		   const double *scale, unsigned int *idx, 
+void neighbors_all(const KDtree *tree, const unsigned long nneighbor,
+		   const double *scale, unsigned long *idx, 
 		   double *d2);
 /* Routine to find the N nearest neighbors of every point in the KD
    tree. Points are not considered their own neighbors.
@@ -197,9 +232,9 @@ void neighbors_all(const KDtree *tree, const unsigned int nneighbor,
       Nothing
 */
 
-void neighbors_point(const KDtree *tree, const unsigned int idxpt,
-		     const unsigned int nneighbor,
-		     const double *scale, unsigned int *idx, 
+void neighbors_point(const KDtree *tree, const unsigned long idxpt,
+		     const unsigned long nneighbor,
+		     const double *scale, unsigned long *idx, 
 		     double *d2);
 /* Routine to find the N nearest neighbors of a point in the KD
    tree. The result is essentially the same as calling neighbors using
@@ -232,10 +267,10 @@ void neighbors_point(const KDtree *tree, const unsigned int idxpt,
 */
 
 
-unsigned int query_box(const KDtree *tree, const double *xbox[2], 
-		       unsigned int ndim, const unsigned int *dim, 
-		       const double *scale, double **x, void **dptr,
-		       double **d2);
+unsigned long query_box(const KDtree *tree, const double *xbox[2], 
+			unsigned long ndim, const unsigned long *dim, 
+			const double *scale, double **x, void **dptr,
+			double **d2);
 /* This routine searches the KD tree and finds all the points that lie
    within a specified box; the box may have fewer dimensions than the
    KD tree, in which case it is interpreted as a hyperslab.
@@ -283,10 +318,10 @@ unsigned int query_box(const KDtree *tree, const double *xbox[2],
 */
 
 
-unsigned int query_sphere(const KDtree *tree, const double *xcen,
-			  unsigned int ndim, const unsigned int *dim, 
-			  const double radius, const double *scale,
-			  double **x, void **dptr, double **d2);
+unsigned long query_sphere(const KDtree *tree, const double *xcen,
+			   unsigned long ndim, const unsigned long *dim, 
+			   const double radius, const double *scale,
+			   double **x, void **dptr, double **d2);
 /* This routine searches the KD tree and finds all the points that lie
    within a specified sphere; the sphere may have fewer dimensions than the
    KD tree, in which case it is interpreted as a hypercylinder that is

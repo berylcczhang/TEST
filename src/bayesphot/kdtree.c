@@ -27,11 +27,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Routine to exchange a pair of points                              */
 /*********************************************************************/
 static inline
-void exchange_points(double *pt1, double *pt2, unsigned int ndim,
+void exchange_points(double *pt1, double *pt2, unsigned long ndim,
 		     void *dptr1, void *dptr2, void *dswap,
 		     size_t dsize) {
   double tmp;
-  unsigned int i;
+  unsigned long i;
   for (i=0; i<ndim; i++) {
     tmp = pt1[i];
     pt1[i] = pt2[i];
@@ -49,10 +49,10 @@ void exchange_points(double *pt1, double *pt2, unsigned int ndim,
 /* Routine to partition a node                                       */
 /*********************************************************************/
 static inline
-void partition_node(KDnode *node, unsigned int ndim, void *dswap, 
+void partition_node(KDnode *node, unsigned long ndim, void *dswap, 
 		    size_t dsize) {
 
-  unsigned int l, r, m, lptr, rptr;
+  unsigned long l, r, m, lptr, rptr;
   double splitval;
 
   /* Initialize pointers */
@@ -112,11 +112,11 @@ void partition_node(KDnode *node, unsigned int ndim, void *dswap,
 /*********************************************************************/
 #define MEMBLOCKSIZE 256
 static inline
-void xdata_alloc(unsigned int nnew, unsigned int *ncur, double **x, 
-		 void **dptr, double **d2, unsigned int ndim,
+void xdata_alloc(unsigned long nnew, unsigned long *ncur, double **x, 
+		 void **dptr, double **d2, unsigned long ndim,
 		 size_t dsize, bool shrink) {
 
-  unsigned int nblock;
+  unsigned long nblock;
   size_t memsize;
 
   /* Do nothing if enough memory is already available and we aren't
@@ -186,11 +186,12 @@ void xdata_alloc(unsigned int nnew, unsigned int *ncur, double **x,
 /*********************************************************************/
 /* Routine to build the tree                                         */
 /*********************************************************************/
-KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
-		   unsigned int leafsize, void *dptr, size_t dsize,
-		   unsigned int minsplit) {
+KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
+		   unsigned long leafsize, void *dptr, size_t dsize,
+		   unsigned long minsplit) {
 
-  unsigned int i, n, idx, curnode;
+  unsigned long n, idx;
+  unsigned long i, curnode;
   KDtree *tree;
   void *dswap = NULL;
 
@@ -393,10 +394,230 @@ KDtree* build_tree(double *x, unsigned int ndim, unsigned int npt,
 
 
 /*********************************************************************/
+/* Routine to build the tree with specified dimensions used for      */
+/* sorting                                                           */
+/*********************************************************************/
+KDtree* build_tree_sortdims(double *x, unsigned long ndim, 
+			    unsigned long npt, unsigned long leafsize,
+			    void *dptr, size_t dsize, int *nosort) {
+
+  unsigned long n, idx;
+  unsigned long i, curnode;
+  KDtree *tree;
+#ifndef NDEBUG
+  int nosort_all = 1;
+#endif
+  void *dswap = NULL;
+
+#ifndef NDEBUG
+  /* Safety assertion -- make sure we're allowed to sort along at
+     least one search dimension, since if not we'll get into an
+     infinite loop below */
+  for (n=0; n<ndim; n++) nosort_all = nosort_all && nosort[n];
+  assert(!nosort_all);
+#endif
+
+  /* Allocate memory for the tree */
+  if (!(tree = (KDtree *) malloc(sizeof(KDtree)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
+    exit(1);
+  }
+
+  /* Allocate swap space */
+  if (dsize > 0) {
+    if (!(dswap = malloc(dsize))) {
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
+      exit(1);
+    }
+  }
+
+  /* Figure out the dimensions of the tree */
+  tree->ndim = ndim;
+  for (n=npt, tree->nodes=1, tree->leaves=1, tree->levels=1; 
+       n>=leafsize; n=n>>1) {
+    tree->leaves = tree->leaves << 1;
+    tree->nodes += tree->leaves;
+    tree->levels++;
+  }
+  tree->leafsize = leafsize;
+  tree->dsize = dsize;
+
+  /* Allocate memory for the tree  */
+  if (!(tree->tree = (KDnode *) calloc(tree->nodes, sizeof(KDnode)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
+    exit(1);
+  }
+  tree->tree--; /* Offset by 1 so tree->tree[1] is the root node */
+  for (n=1; n<=tree->nodes; n++) {
+    if (!(tree->tree[n].xlim[0] = 
+	  (double *) calloc(tree->ndim, sizeof(double)))) {
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
+      exit(1);
+    }
+    if (!(tree->tree[n].xlim[1] = 
+	  (double *) calloc(tree->ndim, sizeof(double)))) {
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
+      exit(1);
+    }
+    if (!(tree->tree[n].xbnd[0] = 
+	  (double *) calloc(tree->ndim, sizeof(double)))) {
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
+      exit(1);
+    }
+    if (!(tree->tree[n].xbnd[1] = 
+	  (double *) calloc(tree->ndim, sizeof(double)))) {
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
+      exit(1);
+    }
+  }
+
+  /* As a safety measure, initialize all nodes to have no points;
+     this is important for breadth-first traversals of the tree,
+     where we may encounter nodes with no points */
+  for (i=1; i<=tree->nodes; i++) tree->tree[i].npt = 0;
+
+  /* Initialize data in the root node */
+  curnode = ROOT;
+  tree->tree[curnode].npt = npt;
+  tree->tree[curnode].x = x;
+  tree->tree[curnode].dptr = dptr;
+
+  /* Set bounding box for root node */
+  for (i=0; i<ndim; i++)
+    tree->tree[curnode].xlim[0][i] = tree->tree[curnode].xlim[1][i] = x[i];
+  for (n=1; n<npt; n++) {
+    for (i=0; i<ndim; i++) {
+      tree->tree[curnode].xlim[0][i] 
+	= fmin(tree->tree[curnode].xlim[0][i], x[n*tree->ndim+i]);
+      tree->tree[curnode].xlim[1][i] 
+	= fmax(tree->tree[curnode].xlim[1][i], x[n*tree->ndim+i]);
+    }
+  }
+  for (i=0; i<ndim; i++) {
+    tree->tree[curnode].xbnd[0][i] = tree->tree[curnode].xlim[0][i];
+    tree->tree[curnode].xbnd[1][i] = tree->tree[curnode].xlim[1][i];
+  }
+
+  /* Now build the rest of the tree */
+  while (1) {
+
+    /* See if we should be a leaf or a parent */
+    if (tree->tree[curnode].npt <= leafsize) {
+
+      /* We are a leaf; mark us as having no split, then move to next node */
+      tree->tree[curnode].splitdim = -1;
+      SETNEXT(curnode);
+
+    } else {
+
+      /* We are a parent */
+
+      /* Figure out which dimension to split along */
+      if (curnode != ROOT)
+	tree->tree[curnode].splitdim 
+	  = tree->tree[PARENT(curnode)].splitdim + 1;
+      else
+	tree->tree[curnode].splitdim = 0;
+      while (nosort[tree->tree[curnode].splitdim])
+	tree->tree[curnode].splitdim 
+	  = (tree->tree[curnode].splitdim + 1) % ndim;
+
+      /* Partition the points along the split dimension */
+      partition_node(&(tree->tree[curnode]), tree->ndim, dswap, dsize);
+
+      /* Set the bounding box on the child nodes */
+      for (i=0; i<tree->ndim; i++) {
+	if (i==tree->tree[curnode].splitdim) {
+	  /* In splitting dimension, split at middle index */
+	  idx = ndim*((tree->tree[curnode].npt-1)/2) + 
+	    tree->tree[curnode].splitdim;
+	  tree->tree[LEFT(curnode)].xlim[0][i] = 
+	    tree->tree[curnode].xlim[0][i];
+	  tree->tree[LEFT(curnode)].xlim[1][i] = 
+	    tree->tree[curnode].x[idx];
+	  tree->tree[RIGHT(curnode)].xlim[0][i] = 
+	    tree->tree[curnode].x[idx];
+	  tree->tree[RIGHT(curnode)].xlim[1][i] =
+	    tree->tree[curnode].xlim[1][i];
+	} else {
+	  /* Every other dimension just copies values */
+	  tree->tree[LEFT(curnode)].xlim[0][i] = 
+	    tree->tree[curnode].xlim[0][i];
+	  tree->tree[LEFT(curnode)].xlim[1][i] = 
+	    tree->tree[curnode].xlim[1][i];
+	  tree->tree[RIGHT(curnode)].xlim[0][i] = 
+	    tree->tree[curnode].xlim[0][i];
+	  tree->tree[RIGHT(curnode)].xlim[1][i] = 
+	    tree->tree[curnode].xlim[1][i];
+	}
+      }
+
+      /* Set counters and pointers for child nodes */
+      tree->tree[LEFT(curnode)].npt = (tree->tree[curnode].npt+1) / 2;
+      tree->tree[RIGHT(curnode)].npt = tree->tree[curnode].npt / 2;
+      tree->tree[LEFT(curnode)].x = tree->tree[curnode].x;
+      tree->tree[RIGHT(curnode)].x = tree->tree[curnode].x + 
+	tree->tree[LEFT(curnode)].npt*tree->ndim;
+      tree->tree[LEFT(curnode)].dptr = tree->tree[curnode].dptr;
+      tree->tree[RIGHT(curnode)].dptr = 
+	((char *) tree->tree[curnode].dptr) +
+	dsize*tree->tree[LEFT(curnode)].npt;
+
+      /* Get actual data limits on child nodes */
+      if (tree->tree[LEFT(curnode)].npt > 0) {
+	for (i=0; i<tree->ndim; i++) 
+	  tree->tree[LEFT(curnode)].xbnd[0][i] =
+	    tree->tree[LEFT(curnode)].xbnd[1][i] = 
+	    tree->tree[LEFT(curnode)].x[i];
+	for (n=1; n<tree->tree[LEFT(curnode)].npt; n++) {
+	  for (i=0; i<ndim; i++) {
+	    tree->tree[LEFT(curnode)].xbnd[0][i] 
+	      = fmin(tree->tree[LEFT(curnode)].xbnd[0][i], 
+		     tree->tree[LEFT(curnode)].x[n*tree->ndim+i]);
+	    tree->tree[LEFT(curnode)].xbnd[1][i] 
+	      = fmax(tree->tree[LEFT(curnode)].xbnd[1][i], 
+		     tree->tree[LEFT(curnode)].x[n*tree->ndim+i]);
+	  }
+	}
+      }
+      if (tree->tree[RIGHT(curnode)].npt > 0) {
+	for (i=0; i<tree->ndim; i++) 
+	  tree->tree[RIGHT(curnode)].xbnd[0][i] =
+	    tree->tree[RIGHT(curnode)].xbnd[1][i] = 
+	    tree->tree[RIGHT(curnode)].x[i];
+	for (n=1; n<tree->tree[RIGHT(curnode)].npt; n++) {
+	  for (i=0; i<ndim; i++) {
+	    tree->tree[RIGHT(curnode)].xbnd[0][i] 
+	      = fmin(tree->tree[RIGHT(curnode)].xbnd[0][i], 
+		     tree->tree[RIGHT(curnode)].x[n*tree->ndim+i]);
+	    tree->tree[RIGHT(curnode)].xbnd[1][i] 
+	      = fmax(tree->tree[RIGHT(curnode)].xbnd[1][i], 
+		     tree->tree[RIGHT(curnode)].x[n*tree->ndim+i]);
+	  }
+	}
+      }
+
+      /* Continue to next node */
+      curnode = LEFT(curnode);
+    }
+
+    /* Check if we're done */
+    if (curnode == ROOT) break;
+  }
+
+  /* Free memory */
+  if (dswap != NULL) free(dswap);
+
+  /* Return */
+  return tree;
+}
+
+
+/*********************************************************************/
 /* Routine to free a tree                                            */
 /*********************************************************************/
 void free_tree(KDtree *tree) {
-  unsigned int i;
+  unsigned long i;
   for (i=1; i<=tree->nodes; i++) {
     free(tree->tree[i].xlim[0]);
     free(tree->tree[i].xlim[1]);
@@ -413,12 +634,12 @@ void free_tree(KDtree *tree) {
 /* Neighbor search routine                                           */
 /*********************************************************************/
 void neighbors(const KDtree *tree, const double *xpt, 
-	       const unsigned int *dims, const unsigned int ndim, 
-	       const unsigned int nneighbor,
+	       const unsigned long *dims, const unsigned long ndim, 
+	       const unsigned long nneighbor,
 	       const double *scale, double *pos,
 	       void *dptr, double *d2) {
-  unsigned int i, j, k;
-  unsigned int curnode, ptr;
+  unsigned long i, j, k;
+  unsigned long curnode, ptr;
   double r2;
 
   /* Initialize all distances to something big */
@@ -499,20 +720,21 @@ void neighbors(const KDtree *tree, const double *xpt,
 /*********************************************************************/
 /* Neighbor search routine for all points in the tree                */
 /*********************************************************************/
-void neighbors_all(const KDtree *tree, const unsigned int nneighbor,
-		   const double *scale, unsigned int *idx, 
+void neighbors_all(const KDtree *tree, const unsigned long nneighbor,
+		   const double *scale, unsigned long *idx, 
 		   double *d2) {
   /* This routine is much like neighbors_point, but takes advantage of
      some efficiencies that arise when we know we need to find the
      nearest neighbors of every point. */
-  unsigned int curnode = ROOT;
-  unsigned int npt = tree->tree[ROOT].npt;
-  unsigned int i, j, k, offset, idxtmp, ptr;
-  unsigned int *homenode;
+  unsigned long curnode = ROOT;
+  unsigned long npt = tree->tree[ROOT].npt;
+  unsigned long i, k;
+  unsigned long j, offset, idxtmp, ptr;
+  unsigned long *homenode;
   double r2, *xpt;
 
   /* Allocate temporary storage */
-  if (!(homenode = calloc(npt, sizeof(unsigned int)))) {
+  if (!(homenode = calloc(npt, sizeof(unsigned long)))) {
     fprintf(stderr, "bayesphot error: unable to allocate memory in neighbors_all\n");
     exit(1);
   }
@@ -670,18 +892,18 @@ void neighbors_all(const KDtree *tree, const unsigned int nneighbor,
 /*********************************************************************/
 /* Neighbor search routine for points known to be in the tree        */
 /*********************************************************************/
-void neighbors_point(const KDtree *tree, const unsigned int idxpt,
-		     const unsigned int nneighbor,
-		     const double *scale, unsigned int *idx, 
+void neighbors_point(const KDtree *tree, const unsigned long idxpt,
+		     const unsigned long nneighbor,
+		     const double *scale, unsigned long *idx, 
 		     double *d2) {
 
   /* This routine does essentially the same thing as neighbors, but
      with the added step that we initialize the distances using the
      points in the same leaf as the input point. This significantly
      reduces worst-case search time. */
-  unsigned int curnode = ROOT;
-  unsigned int spdim = tree->tree[ROOT].splitdim;
-  unsigned int i, j, idxtmp, homenode, ptr;
+  unsigned long curnode = ROOT;
+  unsigned long spdim = tree->tree[ROOT].splitdim;
+  unsigned long i, j, idxtmp, homenode, ptr;
   double *xpt = &(tree->tree[ROOT].x[tree->ndim*idxpt]);
   double r2;
 
@@ -825,13 +1047,13 @@ void neighbors_point(const KDtree *tree, const unsigned int idxpt,
 /*********************************************************************/
 /* Routine to search a box                                           */
 /*********************************************************************/
-unsigned int query_box(const KDtree *tree, const double *xbox[2], 
-		       unsigned int ndim, const unsigned int *dim, 
+unsigned long query_box(const KDtree *tree, const double *xbox[2], 
+		       unsigned long ndim, const unsigned long *dim, 
 		       const double *scale, double **x, void **dptr,
 		       double **d2) {
-  unsigned int i, j, ptr;
-  unsigned int npt = 0, nalloc = 0;
-  unsigned int curnode = ROOT;
+  unsigned long i, j, ptr;
+  unsigned long npt = 0, nalloc = 0;
+  unsigned long curnode = ROOT;
   char *dptr1, *dptr2;
   double *xcen;
   bool contained;
@@ -957,13 +1179,13 @@ unsigned int query_box(const KDtree *tree, const double *xbox[2],
 /*********************************************************************/
 /* Routine to search a sphere                                        */
 /*********************************************************************/
-unsigned int query_sphere(const KDtree *tree, const double *xcen,
-			  unsigned int ndim, const unsigned int *dim, 
+unsigned long query_sphere(const KDtree *tree, const double *xcen,
+			  unsigned long ndim, const unsigned long *dim, 
 			  const double radius, const double *scale,
 			  double **x, void **dptr, double **d2) {
-  unsigned int i, j, ptr;
-  unsigned int npt = 0, nalloc = 0;
-  unsigned int curnode=ROOT;
+  unsigned long i, j, ptr;
+  unsigned long npt = 0, nalloc = 0;
+  unsigned long curnode=ROOT;
   char *dptr1, *dptr2;
   double r2;
   double *xbox[2];

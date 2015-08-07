@@ -25,8 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 bool box_in_box(const double *xbox1[2], const double *xbox2[2], 
-		const unsigned int ndim1, const unsigned int ndim2,
-		const unsigned int *dim1, const unsigned int *dim2);
+		const unsigned long ndim1, const unsigned long ndim2,
+		const unsigned long *dim1, const unsigned long *dim2);
 /* Returns true if box 1 is entirely contained within box 2, false
    otherwise; note that the boxes need not match up in dimensions, in
    which case one or the other is infinite in extent in certain
@@ -62,10 +62,10 @@ bool box_in_box(const double *xbox1[2], const double *xbox2[2],
 
 
 bool box_in_sphere(const double *xbox1[2], const double *xcen2, 
-		   const unsigned int ndim1, const unsigned int ndim2,
-		   const unsigned int *dim1, const unsigned int *dim2,
+		   const unsigned long ndim1, const unsigned long ndim2,
+		   const unsigned long *dim1, const unsigned long *dim2,
 		   const double radius, const double *scale,
-		   const unsigned int ndim);
+		   const unsigned long ndim);
 /* Returns true if xbox1 is entirely contained within a sphere centered
    at xcen2 of specified radius. Also works for the more general cases
    where xbox1 has fewer dimensions than the space (so it is a slab,
@@ -111,8 +111,8 @@ bool box_in_sphere(const double *xbox1[2], const double *xcen2,
 
 
 bool box_intersects_box(const double *xbox1[2], const double *xbox2[2], 
-			const unsigned int ndim1, const unsigned int ndim2,
-			const unsigned int *dim1, const unsigned int *dim2);
+			const unsigned long ndim1, const unsigned long ndim2,
+			const unsigned long *dim1, const unsigned long *dim2);
 /* Returns true if box 1 and box2 have non-zero intersection, false
    otherwise; note that the boxes need not match up in dimensions, in
    which case one or the other is infinite in extent in certain
@@ -148,9 +148,9 @@ bool box_intersects_box(const double *xbox1[2], const double *xbox2[2],
 
 
 double box_max_dist2(const double *x1, const double *xbox2[2],
-		     const unsigned int ndim1, const unsigned int ndim2,
-		     const unsigned int *dim1, const unsigned int *dim2,
-		     const double *scale, const unsigned int ndim);
+		     const unsigned long ndim1, const unsigned long ndim2,
+		     const unsigned long *dim1, const unsigned long *dim2,
+		     const double *scale, const unsigned long ndim);
 /* Returns the squared distance between an input object (point, line,
    plane, or higher-dimensional analog) and the most distant point in
    the box or semi-infinite slab, rectangular prism, or
@@ -226,9 +226,9 @@ double box_max_dist2(const double *x1, const double *xbox2[2],
 
 
 double box_min_dist2(const double *x1, const double *xbox2[2],
-		     const unsigned int ndim1, const unsigned int ndim2,
-		     const unsigned int *dim1, const unsigned int *dim2,
-		     const double *scale, const unsigned int ndim);
+		     const unsigned long ndim1, const unsigned long ndim2,
+		     const unsigned long *dim1, const unsigned long *dim2,
+		     const double *scale, const unsigned long ndim);
 /* Returns the squared distance between an input object (point, line,
    plane, or higher-dimensional analog) and the closest point in the
    box (or semi-infinite slab, rectangular prism, or
@@ -303,9 +303,9 @@ double box_min_dist2(const double *x1, const double *xbox2[2],
 
 
 double dist2(const double *x1, const double *x2, 
-	     const unsigned int ndim1, const unsigned int ndim2,
-	     const unsigned int *dim1, const unsigned int *dim2, 
-	     const double *scale, const unsigned int ndim);
+	     const unsigned long ndim1, const unsigned long ndim2,
+	     const unsigned long *dim1, const unsigned long *dim2, 
+	     const double *scale, const unsigned long ndim);
 /* Returns the squared distance between a pair of points, lines,
    plane, or similar higher dimensional object using the N-dimensional
    Euclidean metric, with scale factors for different directions.
@@ -374,10 +374,10 @@ double ds(unsigned int n);
 
 
 bool sphere_in_box(const double *xcen1, const double *xbox2[2], 
-		   const unsigned int ndim1, const unsigned int ndim2,
-		   const unsigned int *dim1, const unsigned int *dim2,
+		   const unsigned long ndim1, const unsigned long ndim2,
+		   const unsigned long *dim1, const unsigned long *dim2,
 		   const double radius, const double *scale,
-		   const unsigned int ndim);
+		   const unsigned long ndim);
 /* Returns true if a sphere centered at xcen1 of of the specified
    radius is entirely contained in xbox2. Also works for the more
    general case where xbox2 has fewer dimensions than the space (so it

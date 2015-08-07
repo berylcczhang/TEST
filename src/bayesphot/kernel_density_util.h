@@ -22,16 +22,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _KERNEL_DENSITY_UTIL_H_
 #define _KERNEL_DENSITY_UTIL_H_
 
+#include <stdbool.h>
 #include "kernel_density.h"
 
 /*********************************************************************/
 /* Function definitions                                              */
 /*********************************************************************/
 
-kernel_density* build_kd(double *x, unsigned int ndim, 
-			 unsigned int npt, double *wgt,
-			 unsigned int leafsize, double *bandwidth, 
-			 kernel_type ktype, unsigned int minsplit);
+kernel_density* build_kd(double *x, unsigned long ndim, 
+			 unsigned long npt, double *wgt,
+			 unsigned long leafsize, double *bandwidth, 
+			 kernel_type ktype, unsigned long minsplit);
 /* This routine builds a kernel density object from a set of input
    samples and weights
 
@@ -59,6 +60,48 @@ kernel_density* build_kd(double *x, unsigned int ndim,
       INPUT minsplit
          when building the KD tree, no splittings along dimensions <
 	 minsplit will be performed
+
+   Returns:
+      OUTPUT kd
+         a kernel_density object
+*/
+
+kernel_density* build_kd_sortdims(double *x, unsigned long ndim, 
+				  unsigned long npt, double *wgt,
+				  unsigned long leafsize, double *bandwidth, 
+				  kernel_type ktype, int *nosort);
+/* This routine builds a kernel density object from a set of input
+   samples and weights. It differs from build_kd in that it allows
+   users to specify that the tree is only to be sorted in certain
+   dimensions. This can be useful in cases where it is known in
+   advance that tree will be searched exclusively in certain
+   dimensions.
+
+   Parameters:
+      INPUT/OUTPUT x
+         array of npt * ndim elements containing the positions,
+         ordered so that element x[j + i*ndim] is the jth coordinate
+         of point i; the data are re-ordered but not copied, so
+         altering x after calling build_kd will lead to bogus results
+      INPUT ndim
+         number of dimensions in the data set
+      INPUT npt
+         number of data points
+      INPUT/OUTPUT wgt
+         array of npt elements giving weights of all points; set to
+         NULL for equal weighting; data are not copied, so altering
+         wgt will lead to bogus results
+      INPUT leafsize
+         number of points to place in a leaf of the tree
+      INPUT bandwidth
+         array of ndim elements giving the bandwidth of the kernel in
+         each dimension
+      INPUT ktype
+         functional form of the kernel
+      INPUT nosort
+         array of ndim values; for any dimension for which nosort is
+         non-zero, the tree will not be partitioned along that
+         dimension
 
    Returns:
       OUTPUT kd

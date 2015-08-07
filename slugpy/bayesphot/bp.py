@@ -13,6 +13,7 @@ from ctypes import POINTER
 from ctypes import c_void_p
 from ctypes import c_int
 from ctypes import c_uint
+from ctypes import c_ulong
 from ctypes import c_double
 from ctypes import c_bool
 import numpy.ctypeslib as npct
@@ -30,10 +31,12 @@ import multiprocessing as mp
 ##################################################################
 # Define some types for use later                                #
 ##################################################################
-array_1d_double = npct.ndpointer(dtype=np.double, ndim=1,
+array_1d_double = npct.ndpointer(dtype=c_double, ndim=1,
                                  flags="CONTIGUOUS")
-array_1d_uint = npct.ndpointer(dtype=np.uintc, ndim=1,
+array_1d_ulong = npct.ndpointer(dtype=c_ulong, ndim=1,
                                flags="CONTIGUOUS")
+array_1d_int = npct.ndpointer(dtype=c_int, ndim=1,
+                              flags="CONTIGUOUS")
 
 ##################################################################
 # Define the cluster_slug class                                  #
@@ -66,18 +69,19 @@ class bp(object):
     ##################################################################
     def __init__(self, dataset, nphys, filters=None, bandwidth='auto',
                  ktype='gaussian', priors=None, sample_density=None,
-                 reltol=1.0e-2, abstol=1.0e-6, leafsize=16):
+                 reltol=1.0e-2, abstol=1.0e-6, leafsize=16,
+                 nosort=None):
         """
         Initialize a bp object.
 
         Parameters
            dataset : array, shape (N, M)
               training data set; this is a set of N sample stellar
-              populations, having M properties each; the first npys
+              populations, having M properties each; the first nphys
               represent physical properties (e.g., log mass, log age),
               while the next M - nphys represent photometric
               properties
-           npys : int
+           nphys : int
               number of physical properties in dataset
            filters : listlike of strings
               names of photometric filters; not used, but can be
@@ -123,6 +127,9 @@ class bp(object):
               absolute error tolerance; see above
            leafsize : int
               number of data points in each leaf of the KD tree
+           nosort : arraylike of bool, shape (N) | None
+              if specified, this keyword causes the KD tree not to be
+              sorted along the dimensions for which nosort is True
 
         Returns
            Nothing
@@ -144,14 +151,26 @@ class bp(object):
         self.__clib.build_kd.restype = c_void_p
         self.__clib.build_kd.argtypes \
             = [ array_1d_double,   # x
-                c_uint,            # ndim
-                c_uint,            # npt
+                c_ulong,            # ndim
+                c_ulong,           # npt
                 ctypes.
                 POINTER(c_double), # wgt
-                c_uint,            # leafsize
+                c_ulong,           # leafsize
                 array_1d_double,   # bandwidth
                 c_int,             # ktype
-                c_uint ]           # minsplit
+                c_ulong ]          # minsplit
+
+        self.__clib.build_kd_sortdims.restype = c_void_p
+        self.__clib.build_kd_sortdims.argtypes \
+            = [ array_1d_double,   # x
+                c_ulong,           # ndim
+                c_ulong,           # npt
+                ctypes.
+                POINTER(c_double), # wgt
+                c_ulong,           # leafsize
+                array_1d_double,   # bandwidth
+                c_int,             # ktype
+                array_1d_int ]     # nosort
 
         self.__clib.free_kd.restype = None
         self.__clib.free_kd.argtypes = [ c_void_p ]
@@ -170,9 +189,9 @@ class bp(object):
         self.__clib.kd_neighbors.argtypes \
             = [ c_void_p,          # kd
                 array_1d_double,   # xpt
-                POINTER(c_uint),   # dims
-                c_uint,            # ndim
-                c_uint,            # nneighbor
+                POINTER(c_ulong),  # dims
+                c_ulong,           # ndim
+                c_ulong,           # nneighbor
                 c_bool,            # bandwidth_units
                 array_1d_double,   # pos
                 POINTER(c_double), # dptr
@@ -181,10 +200,10 @@ class bp(object):
         self.__clib.kd_neighbors_vec.argtypes \
             = [ c_void_p,          # kd
                 array_1d_double,   # xpt
-                POINTER(c_uint),   # dims
-                c_uint,            # ndim
-                c_uint,            # npt
-                c_uint,            # nneighbor
+                POINTER(c_ulong),  # dims
+                c_ulong,           # ndim
+                c_ulong,           # npt
+                c_ulong,           # nneighbor
                 c_bool,            # bandwidth_units
                 array_1d_double,   # pos
                 POINTER(c_double), # dptr
@@ -193,27 +212,27 @@ class bp(object):
         self.__clib.kd_neighbors_point.restype = None
         self.__clib.kd_neighbors_point.argtypes \
             = [ c_void_p,          # kd
-                c_uint,            # idxpt
-                c_uint,            # nneighbor
+                c_ulong,           # idxpt
+                c_ulong,           # nneighbor
                 c_bool,            # bandwidth_units
-                array_1d_uint,     # idx
+                array_1d_ulong,     # idx
                 array_1d_double ]  # d2
         self.__clib.kd_neighbors_point_vec.restype = None
         self.__clib.kd_neighbors_point_vec.argtypes \
             = [ c_void_p,          # kd
-                array_1d_uint,     # idxpt
-                c_uint,            # npt
-                c_uint,            # nneighbor
+                array_1d_ulong,     # idxpt
+                c_ulong,           # npt
+                c_ulong,           # nneighbor
                 c_bool,            # bandwidth_units
-                array_1d_uint,     # idx
+                array_1d_ulong,     # idx
                 array_1d_double ]  # d2
 
         self.__clib.kd_neighbors_all.restype = None
         self.__clib.kd_neighbors_all.argtypes \
             = [ c_void_p,          # kd
-                c_uint,            # nneighbor
+                c_ulong,           # nneighbor
                 c_bool,            # bandwidth_units
-                array_1d_uint,     # idx
+                array_1d_ulong,     # idx
                 array_1d_double ]  # d2
 
         self.__clib.kd_pdf.restype = c_double
@@ -223,12 +242,9 @@ class bp(object):
                     array_1d_double,   # x
                     c_double,          # reltol
                     c_double,          # abstol
-                    ctypes.POINTER(
-                        c_uint),       # nodecheck
-                    ctypes.POINTER(
-                        c_uint),       # leafcheck
-                    ctypes.POINTER(
-                        c_uint) ]      # termcheck
+                    POINTER(c_ulong),  # nodecheck
+                    POINTER(c_ulong),  # leafcheck
+                    POINTER(c_ulong) ] # termcheck
         else:
             self.__clib.kd_pdf.argtypes \
                 = [ c_void_p,          # kd
@@ -240,13 +256,13 @@ class bp(object):
         self.__clib.kd_pdf_grid.argtypes \
             = [ c_void_p,              # kd
                 array_1d_double,       # xfixed
-                array_1d_uint,         # dimfixed
-                c_uint,                # ndimfixed
-                c_uint,                # nfixed
+                array_1d_ulong,         # dimfixed
+                c_ulong,               # ndimfixed
+                c_ulong,               # nfixed
                 array_1d_double,       # xgrid
-                array_1d_uint,         # dimgrid
-                c_uint,                # ndimgrid
-                c_uint,                # ngrid
+                array_1d_ulong,         # dimgrid
+                c_ulong,               # ndimgrid
+                c_ulong,               # ngrid
                 c_double,              # reltol
                 c_double,              # abstol
                 array_1d_double ]      # pdf
@@ -254,14 +270,14 @@ class bp(object):
         self.__clib.kd_pdf_reggrid.argtypes \
             = [ c_void_p,              # kd
                 array_1d_double,       # xfixed
-                array_1d_uint,         # dimfixed
-                c_uint,                # ndimfixed
-                c_uint,                # nfixed
+                array_1d_ulong,         # dimfixed
+                c_ulong,               # ndimfixed
+                c_ulong,               # nfixed
                 array_1d_double,       # xgridlo
                 array_1d_double,       # xgridhi
-                array_1d_uint,         # ngrid
-                array_1d_uint,         # dimgrid
-                c_uint,                # ndimgrid
+                array_1d_ulong,         # ngrid
+                array_1d_ulong,         # dimgrid
+                c_ulong,               # ndimgrid
                 c_double,              # reltol
                 c_double,              # abstol
                 array_1d_double ]      # pdf
@@ -271,18 +287,18 @@ class bp(object):
             self.__clib.kd_pdf_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    c_uint,            # npt
+                    c_ulong,           # npt
                     c_double,          # reltol
                     c_double,          # abstol
                     array_1d_double,   # pdf
-                    array_1d_uint,     # nodecheck
-                    array_1d_uint,     # leafcheck
-                    array_1d_uint ]    # termcheck
+                    array_1d_ulong,     # nodecheck
+                    array_1d_ulong,     # leafcheck
+                    array_1d_ulong ]    # termcheck
         else:
             self.__clib.kd_pdf_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    c_uint,            # npt
+                    c_ulong,           # npt
                     c_double,          # reltol
                     c_double,          # abstol
                     array_1d_double ]  # pdf
@@ -291,19 +307,19 @@ class bp(object):
             self.__clib.kd_pdf_int.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_uint,     # dims
-                    c_uint,            # ndim
+                    array_1d_ulong,     # dims
+                    c_ulong,           # ndim
                     c_double,          # reltol
                     c_double,          # abstol
-                    array_1d_uint,     # nodecheck
-                    array_1d_uint,     # leafcheck
-                    array_1d_uint ]    # termcheck
+                    array_1d_ulong,     # nodecheck
+                    array_1d_ulong,     # leafcheck
+                    array_1d_ulong ]    # termcheck
         else:
             self.__clib.kd_pdf_int.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_uint,     # dims
-                    c_uint,            # ndim
+                    array_1d_ulong,     # dims
+                    c_ulong,           # ndim
                     c_double,          # reltol
                     c_double ]         # abstol
         self.__clib.kd_pdf_int_vec.restype = None
@@ -311,22 +327,22 @@ class bp(object):
             self.__clib.kd_pdf_int_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_uint,     # dims
-                    c_uint,            # ndim
-                    c_uint,            # npt
+                    array_1d_ulong,     # dims
+                    c_ulong,           # ndim
+                    c_ulong,           # npt
                     c_double,          # reltol
                     c_double,          # abstol
                     array_1d_double,   # pdf
-                    array_1d_uint,     # nodecheck
-                    array_1d_uint,     # leafcheck
-                    array_1d_uint ]    # termcheck
+                    array_1d_ulong,     # nodecheck
+                    array_1d_ulong,     # leafcheck
+                    array_1d_ulong ]    # termcheck
         else:
             self.__clib.kd_pdf_int_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_uint,     # dims
-                    c_uint,            # ndim
-                    c_uint,            # npt
+                    array_1d_ulong,     # dims
+                    c_ulong,           # ndim
+                    c_ulong,           # npt
                     c_double,          # reltol
                     c_double,          # abstol
                     array_1d_double ]  # pdf
@@ -334,13 +350,13 @@ class bp(object):
         self.__clib.kd_pdf_int_grid.argtypes \
             = [ c_void_p,              # kd
                 array_1d_double,       # xfixed
-                array_1d_uint,         # dimfixed
-                c_uint,                # ndimfixed
-                c_uint,                # nfixed
+                array_1d_ulong,         # dimfixed
+                c_ulong,               # ndimfixed
+                c_ulong,               # nfixed
                 array_1d_double,       # xgrid
-                array_1d_uint,         # dimgrid
-                c_uint,                # ndimgrid
-                c_uint,                # ngrid
+                array_1d_ulong,         # dimgrid
+                c_ulong,               # ndimgrid
+                c_ulong,               # ngrid
                 c_double,              # reltol
                 c_double,              # abstol
                 array_1d_double ]      # pdf
@@ -348,18 +364,35 @@ class bp(object):
         self.__clib.kd_pdf_int_reggrid.argtypes \
             = [ c_void_p,              # kd
                 array_1d_double,       # xfixed
-                array_1d_uint,         # dimfixed
-                c_uint,                # ndimfixed
-                c_uint,                # nfixed
+                array_1d_ulong,         # dimfixed
+                c_ulong,               # ndimfixed
+                c_ulong,               # nfixed
                 array_1d_double,       # xgridlo
                 array_1d_double,       # xgridhi
-                array_1d_uint,         # ngrid
-                array_1d_uint,         # dimgrid
-                c_uint,                # ndimgrid
+                array_1d_ulong,         # ngrid
+                array_1d_ulong,         # dimgrid
+                c_ulong,               # ndimgrid
                 c_double,              # reltol
                 c_double,              # abstol
                 array_1d_double ]      # pdf                
 
+        self.__clib.kd_rep.restype = c_ulong
+        self.__clib.kd_rep.argtypes \
+            = [ c_void_p,              # kd
+                array_1d_double,       # x
+                array_1d_ulong,        # dims
+                c_ulong,               # ndim
+                c_double,              # reltol
+                POINTER(POINTER(
+                    c_double)),        # xpt
+                POINTER(POINTER(
+                    c_double)) ]        # wgts
+        self.__clib.free_kd_rep.restype = None
+        self.__clib.free_kd_rep.argtypes \
+            = [ POINTER(POINTER(
+                c_double)),            # xpt
+               POINTER(POINTER(
+                   c_double)) ]        # wgts
 
         # Record some of the input parameters
         if (ktype == 'gaussian'):
@@ -392,11 +425,19 @@ class bp(object):
         # Build the initial kernel density estimation object, using a
         # dummy bandwidth
         self.__bandwidth = np.ones(self.__nphys + self.__nphot)
-        self.__kd = self.__clib.build_kd(np.ravel(self.__dataset),
-                                         self.__dataset.shape[1],
-                                         self.__ndata, None, 
-                                         self.leafsize, self.__bandwidth,
-                                         self.__ktype, 0)
+        if nosort is None:
+            self.__kd = self.__clib.build_kd(
+                np.ravel(self.__dataset), self.__dataset.shape[1],
+                self.__ndata, None, self.leafsize, self.__bandwidth,
+                self.__ktype, 0)
+        else:
+            nosort_c = np.zeros(nosort.shape, dtype=np.intc)
+            nosort_c[:] = nosort == True
+            self.__kd = self.__clib.build_kd_sortdims(
+                np.ravel(self.__dataset), self.__dataset.shape[1],
+                self.__ndata, None, self.leafsize, self.__bandwidth,
+                self.__ktype, nosort_c)
+
 
         # Initialize the bandwidth
         self.bandwidth = bandwidth
@@ -532,9 +573,9 @@ class bp(object):
                                     self.__ndata, self.reltol, self.abstol,
                                     self.__sample_density)
                             else:
-                                nodecheck = np.zeros(self.__ndata, dtype=c_uint)
-                                leafcheck = np.zeros(self.__ndata, dtype=c_uint)
-                                termcheck = np.zeros(self.__ndata, dtype=c_uint)
+                                nodecheck = np.zeros(self.__ndata, dtype=c_ulong)
+                                leafcheck = np.zeros(self.__ndata, dtype=c_ulong)
+                                termcheck = np.zeros(self.__ndata, dtype=c_ulong)
                                 self.__clib.kd_pdf_vec(
                                     self.__kd_phys, pts,
                                     self.__ndata, self.reltol, self.abstol,
@@ -544,7 +585,7 @@ class bp(object):
                             # Many data points, so choose a sample at random
                             idxpt = np.array(
                                 random.sample(np.arange(self.__ndata), 
-                                              nsamp), dtype=np.uintc)
+                                              nsamp), dtype=c_ulong)
                             pos = np.copy(self.__dataset_phys[idxpt,:])
                             # Add points at the edges of the dataset
                             # to ensure we enclose all the points
@@ -562,9 +603,9 @@ class bp(object):
                                     nsamp+2, self.reltol, self.abstol,
                                     sample_density)
                             else:
-                                nodecheck = np.zeros(nsamp+2, dtype=c_uint)
-                                leafcheck = np.zeros(nsamp+2, dtype=c_uint)
-                                termcheck = np.zeros(nsamp+2, dtype=c_uint)
+                                nodecheck = np.zeros(nsamp+2, dtype=c_ulong)
+                                leafcheck = np.zeros(nsamp+2, dtype=c_ulong)
+                                termcheck = np.zeros(nsamp+2, dtype=c_ulong)
                                 self.__clib.kd_pdf_vec(
                                     self.__kd_phys, np.ravel(pos), 
                                     nsamp+2, self.reltol, self.abstol,
@@ -643,9 +684,9 @@ class bp(object):
                     # to get a reasonable estimate of the distribution
                     idxpt = np.array(
                         random.sample(np.arange(self.__ndata), 
-                                      5000), dtype=np.uintc)
+                                      5000), dtype=c_ulong)
                     neighbors = np.zeros(nneighbor*5000, 
-                                              dtype=np.uintc)
+                                              dtype=c_ulong)
                     d2 = np.zeros(nneighbor*5000)
                     self.__clib.kd_neighbors_point_vec(
                         self.__kd, idxpt, 5000, nneighbor, False,
@@ -654,9 +695,9 @@ class bp(object):
                 else:
                     # For smaller data sets, use it all
                     neighbors = np.zeros(nneighbor*self.__ndata, 
-                                         dtype=np.uintc)
+                                         dtype=c_ulong)
                     d2 = np.zeros(nneighbor*self.__ndata)
-                    idxpt = np.arange(self.__ndata, dtype=np.uintc)
+                    idxpt = np.arange(self.__ndata, dtype=c_ulong)
                     self.__clib.kd_neighbors_all(self.__kd, nneighbor, 
                                                  False, neighbors, d2)
 
@@ -770,9 +811,9 @@ class bp(object):
                 np.broadcast(np.array(physprop)[..., 0],
                              np.array(photprop)[..., 0]).shape)
         if self.__diag_mode:
-            nodecheck = np.zeros(pdf.shape, dtype=c_uint)
-            leafcheck = np.zeros(pdf.shape, dtype=c_uint)
-            termcheck = np.zeros(pdf.shape, dtype=c_uint)
+            nodecheck = np.zeros(pdf.shape, dtype=c_ulong)
+            leafcheck = np.zeros(pdf.shape, dtype=c_ulong)
+            termcheck = np.zeros(pdf.shape, dtype=c_ulong)
 
         # Make an array suitable for passing data to c routines
         cdata = np.zeros(pdf.shape + (self.__nphys+self.__nphot,))
@@ -872,8 +913,8 @@ class bp(object):
 
 
     ##################################################################
-    # Function to return the marginal distribution of one of the
-    # physical properties for a specified set of photometric
+    # Function to return the marginal distribution of one or more of
+    # the physical properties for a specified set of photometric
     # properties
     ##################################################################
     def mpdf(self, idx, photprop, photerr=None, ngrid=128,
@@ -969,7 +1010,7 @@ class bp(object):
                 = np.array(
                     np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)]),
                     dtype-np.double)
-            ngrid_tmp = np.array(grid_out.shape[1:], dtype=np.uintc)
+            ngrid_tmp = np.array(grid_out.shape[1:], dtype=c_ulong)
         else:
             if qmin is None:
                 qmin = np.amin(self.__dataset[:,idx], axis=0)
@@ -980,14 +1021,14 @@ class bp(object):
                 # Case for multiple indices
                 griddims = []
                 if hasattr(ngrid, '__len__'):
-                    ngrid_tmp = np.array(ngrid, dtype=np.uintc)
+                    ngrid_tmp = np.array(ngrid, dtype=c_ulong)
                 else:
-                    ngrid_tmp = np.array([ngrid]*len(idx), dtype=np.uintc)
+                    ngrid_tmp = np.array([ngrid]*len(idx), dtype=c_ulong)
                 for i in range(len(idx)):
                     griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
                                     float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
-                grid_out = np.array(np.meshgrid(*griddims,
-                                                indexing='ij'))
+                grid_out = np.squeeze(np.array(np.meshgrid(*griddims,
+                                                           indexing='ij')))
                 out_shape = grid_out[0, ...].shape
                 qmin_tmp \
                     = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
@@ -995,7 +1036,7 @@ class bp(object):
                     = np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)])
             else:
                 # Case for a single index
-                ngrid_tmp = np.array([ngrid], dtype=np.uintc)
+                ngrid_tmp = np.array([ngrid], dtype=c_ulong)
                 qmin_tmp = np.array([qmin], dtype=np.double).reshape(1)
                 qmax_tmp = np.array([qmax], dtype=np.double).reshape(1)
                 grid_out = qmin + \
@@ -1023,10 +1064,10 @@ class bp(object):
             nidx = len(idx)
         else:
             nidx = 1
-        dims = np.zeros(nidx+self.__nphot, dtype=np.uintc)
+        dims = np.zeros(nidx+self.__nphot, dtype=c_ulong)
         dims[:nidx] = idx
-        dims[nidx:] = self.__nphys+np.arange(self.__nphot, dtype='int')
-        ndim = np.uintc(nidx + self.__nphot)
+        dims[nidx:] = self.__nphys+np.arange(self.__nphot, dtype=c_ulong)
+        ndim = c_ulong(nidx + self.__nphot)
         phottmp = np.array(photprop, dtype=c_double)
 
         # Separate cases with single / no photometric errors from
@@ -1134,7 +1175,7 @@ class bp(object):
 
             # Compute integral
             normfac = np.sum(pdf*cellsize, axis = 
-                             tuple(range(photprop.ndim-1, pdf.ndim)))
+                             tuple(range(np.array(photprop).ndim-1, pdf.ndim)))
 
             # Normalize
             pdf = np.transpose(np.transpose(pdf)/normfac)
@@ -1157,9 +1198,9 @@ class bp(object):
             return np.log(self.__clib.kd_pdf(self.__kd, x, self.reltol,
                                              self.abstol))
         else:
-            nodecheck = c_uint(0)
-            leafcheck = c_uint(0)
-            termcheck = c_uint(0)
+            nodecheck = c_ulong(0)
+            leafcheck = c_ulong(0)
+            termcheck = c_ulong(0)
             return np.log(self.__clib.kd_pdf(self.__kd, x, self.reltol,
                                              self.abstol, nodecheck,
                                              leafcheck, termcheck))
@@ -1260,7 +1301,7 @@ class bp(object):
                 dist2 = np.zeros(1)
                 self.__clib. \
                     kd_neighbors(self.__kd, ph_tmp,
-                                 dims.ctypes.data_as(POINTER(c_uint)),
+                                 dims.ctypes.data_as(POINTER(c_ulong)),
                                  self.__nphot, 1, True, nearpt, 
                                  wgt.ctypes.data_as(POINTER(c_double)),
                                  dist2)
@@ -1392,14 +1433,14 @@ class bp(object):
         if photerr is None:
 
             # No, so just call the c neighbor-finding routine
+            dims = np.arange(self.__nphys, self.__nphot+self.__nphys,
+                             dtype=c_ulong)
             self.__clib.kd_neighbors_vec(
                 self.__kd, np.ravel(phot), 
-                np.arange(self.__nphys, self.__nphot+self.__nphys,
-                          dtype=ctypes.c_uint).
-                ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
+                dims.ctypes.data_as(POINTER(c_ulong)),
                 self.__nphot, np.array(phot).size/self.__nphot,
                 nmatch, bandwidth_units, np.ravel(matches),
-                wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                wgts.ctypes.data_as(POINTER(c_double)), 
                 np.ravel(d2))
 
         elif nphot_err == 1:
@@ -1408,23 +1449,25 @@ class bp(object):
             # loop
 
             # Change the bandwidth to match the input errors
-            err = np.zeros(self.__bandwidth.size)
-            err[self.__nphys:] = photerr
             if bandwidth_units:
+                err = np.zeros(self.__bandwidth.size)
+                err[self.__nphys:] = photerr
                 bandwidth = np.sqrt(self.__bandwidth**2+err**2)
             else:
-                bandwidth = err
+                bandwidth = np.zeros(self.__bandwidth.size)
+                bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
+                bandwidth[self.__nphys:] = photerr
             self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
 
             # Now call c neighbor-finding routine
+            dims = np.arange(self.__nphys, self.__nphot+self.__nphys,
+                             dtype=c_ulong)
             self.__clib.kd_neighbors_vec(
                 self.__kd, np.ravel(phot), 
-                np.arange(self.__nphys, self.__nphot+self.__nphys,
-                          dtype=ctypes.c_uint).
-                ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
+                dims.ctypes.data_as(POINTER(c_ulong)),
                 self.__nphot, np.array(phot).size/self.__nphot,
                 nmatch, True, np.ravel(matches),
-                wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                wgts.ctypes.data_as(POINTER(c_double)), 
                 np.ravel(d2))
 
             # Restore bandwidth to previous value
@@ -1439,25 +1482,27 @@ class bp(object):
 
                 # Set bandwidth based on photometric error for this
                 # iteration
-                err = np.zeros(self.__bandwidth.size)
-                err[self.__nphys:] = photerr[i]
                 if bandwidth_units:
-                    bandwidth = np.sqrt(self.bandwidth**2+err**2)
+                    err = np.zeros(self.__bandwidth.size)
+                    err[self.__nphys:] = photerr[i]
+                    bandwidth = np.sqrt(self.__bandwidth**2+err**2)
                 else:
-                    bandwidth = err
+                    bandwidth = np.zeros(self.__bandwidth.size)
+                    bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
+                    bandwidth[self.__nphys:] = err
                 self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
 
                 # Call c neighbor-finding routine
                 offset1 = ptr*nmatch
                 offset2 = offset1*(self.__nphot+self.__nphys)
+                dims = np.arange(self.__nphys, self.__nphot+self.__nphys,
+                                 dtype=c_ulong)                
                 self.__clib.kd_neighbors_vec(
                     self.__kd, np.ravel(phot[i]), 
-                    np.arange(self.__nphys, self.__nphot+self.__nphys,
-                              dtype=ctypes.c_uint).
-                    ctypes.data_as(ctypes.POINTER(ctypes.c_uint)),
+                    dims.ctypes.data_as(POINTER(c_ulong)),
                     self.__nphot, np.array(phot[i]).size/self.__nphot,
                     nmatch, True, np.ravel(matches)[offset2:],
-                    wgts.ctypes.data_as(ctypes.POINTER(ctypes.c_double)), 
+                    wgts.ctypes.data_as(POINTER(c_double)), 
                     np.ravel(d2)[offset1:])
                 ptr = ptr+1
 
@@ -1468,3 +1513,79 @@ class bp(object):
 
         # Return
         return matches, np.sqrt(d2)
+
+    ##################################################################
+    # Functions to return an approximate kernel density representation
+    # of a given point; that is, for an input physical point or
+    # photometric point (there are two versions below), this routine
+    # returns a set of points and weights that can be used to compute
+    # an approximation to the PDF for it anywhere in space, much
+    # faster than could be done using the full data set
+    ##################################################################
+    def make_approx_phys(self, phys):
+        """
+        Returns an object that can be used for a fast approximation of
+        the PDF of photometric properties that corresponds to a set of
+        physical properties.
+
+        Parameters:
+           phys : arraylike, shape (nphys) or (N, nphys)
+              the set or sets of physical properties for which the
+              approximation is to be generated
+
+        Returns:
+           x : array, shape (M, nphot), or a list of such arrays
+              an array containing the list of points to be used for
+              the approximation
+           wgts : array, shape (M), or a list of such arrays
+              an array containing the weights of the points
+        """
+
+        # If given only one set of physical variables, make a
+        # temporary list we can loop over
+        if hasattr(phys[0], '__iter__'):
+            phystmp = phys
+        else:
+            phystmp = [phys]
+
+        # Loop over input physical variables
+        x = []
+        wgts = []
+        for ph in phystmp:
+
+            # Safety check
+            if len(ph) != self.__nphys:
+                raise ValueError("need " + str(self.__nphys) + 
+                                 " physical properties!")
+
+            # Call c library routine
+            xout = POINTER(c_double)()
+            wgtsout = POINTER(c_double)()
+            npts = self.__clib.kd_rep(self.__kd, np.array(ph), 
+                                      np.arange(self.__nphys, dtype=c_ulong),
+                                      self.__nphys, self.reltol, 
+                                      ctypes.byref(xout), 
+                                      ctypes.byref(wgtsout))
+
+            # Convert the returned values into numpy arrays; copy the
+            # data so that we can free the c buffers
+            xsave = np.copy(npct.as_array(xout, shape=(npts, self.__nphot)))
+            wgtssave = np.copy(npct.as_array(wgtsout, shape=(npts,)))
+
+            # Free the c buffers
+            self.__clib.free_kd_rep(ctypes.byref(xout), 
+                                    ctypes.byref(wgtsout))
+
+            # Append to the lists we'll be returning
+            x.append(xsave)
+            wgts.append(wgtssave)
+
+        # If we were given a single object, return something in the
+        # same shape
+        if not hasattr(phys[0], '__iter__'):
+            x = x[0]
+            wgts = wgts[0]
+
+        # Return
+        return x, wgts
+            

@@ -57,8 +57,8 @@ typedef struct {
 double kd_pdf(const kernel_density *kd, const double *x,
 	      const double reltol, const double abstol
 #ifdef DIAGNOSTIC
-	      , unsigned int *nodecheck, unsigned int *leafcheck,
-	      unsigned int *termcheck
+	      , unsigned long *nodecheck, unsigned long *leafcheck,
+	      unsigned long *termcheck
 #endif
 	      );
 /* This routine returns the value of the probability distribution
@@ -97,13 +97,13 @@ double kd_pdf(const kernel_density *kd, const double *x,
 */
 
 void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
-		 const unsigned int *dimfixed, 
-		 const unsigned int ndimfixed,
-		 const unsigned int nfixed,
+		 const unsigned long *dimfixed, 
+		 const unsigned long ndimfixed,
+		 const unsigned long nfixed,
 		 const double *xgrid,
-		 const unsigned int *dimgrid,
-		 const unsigned int ndimgrid,
-		 const unsigned int ngrid,
+		 const unsigned long *dimgrid,
+		 const unsigned long ndimgrid,
+		 const unsigned long ngrid,
 		 const double reltol, const double abstol,
 		 double *pdf);
 /* This routine returns the value of the probability distribution
@@ -161,11 +161,11 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
 
 
 double kd_pdf_int(const kernel_density *kd, const double *x,
-		  const unsigned int *dims, const unsigned int ndim,
+		  const unsigned long *dims, const unsigned long ndim,
 		  const double reltol, const double abstol
 #ifdef DIAGNOSTIC
-		  , unsigned int *nodecheck, unsigned int *leafcheck,
-		  unsigned int *termcheck
+		  , unsigned long *nodecheck, unsigned long *leafcheck,
+		  unsigned long *termcheck
 #endif
 		  );
 /* This routine returns the value of the input probability distrbution
@@ -225,13 +225,13 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
 
 
 void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
-		     const unsigned int *dimfixed, 
-		     const unsigned int ndimfixed,
-		     const unsigned int nfixed,
+		     const unsigned long *dimfixed, 
+		     const unsigned long ndimfixed,
+		     const unsigned long nfixed,
 		     const double *xgrid,
-		     const unsigned int *dimgrid,
-		     const unsigned int ndimgrid,
-		     const unsigned int ngrid,
+		     const unsigned long *dimgrid,
+		     const unsigned long ndimgrid,
+		     const unsigned long ngrid,
 		     const double reltol, const double abstol,
 		     double *pdf);
 /* This routine returns the value of the probability distribution
@@ -289,14 +289,14 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
 */
 
 void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
-			const unsigned int *dimfixed, 
-			const unsigned int ndimfixed,
-			const unsigned int nfixed,
+			const unsigned long *dimfixed, 
+			const unsigned long ndimfixed,
+			const unsigned long nfixed,
 			const double *xgridlo,
 			const double *xgridhi,
-			const unsigned int *ngrid,
-			const unsigned int *dimgrid,
-			const unsigned int ndimgrid,
+			const unsigned long *ngrid,
+			const unsigned long *dimgrid,
+			const unsigned long ndimgrid,
 			const double reltol, const double abstol,
 			double *pdf);
 /* This routine returns the value of the probability distribution
@@ -374,12 +374,12 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
 
 
 void kd_pdf_int_vec(const kernel_density *kd, const double *x, 
-		    const unsigned int *dims, const unsigned int ndim,
-		    const unsigned int npt, const double reltol, 
+		    const unsigned long *dims, const unsigned long ndim,
+		    const unsigned long npt, const double reltol, 
 		    const double abstol, double *pdf
 #ifdef DIAGNOSTIC
-		    , unsigned int *nodecheck, unsigned int *leafcheck,
-		    unsigned int *termcheck
+		    , unsigned long *nodecheck, unsigned long *leafcheck,
+		    unsigned long *termcheck
 #endif
 		    );
 /* This routine is identical to kd_pdf_int, except that it operates
@@ -428,14 +428,14 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
 
 
 void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
-		    const unsigned int *dimfixed, 
-		    const unsigned int ndimfixed,
-		    const unsigned int nfixed,
+		    const unsigned long *dimfixed, 
+		    const unsigned long ndimfixed,
+		    const unsigned long nfixed,
 		    const double *xgridlo,
 		    const double *xgridhi,
-		    const unsigned int *ngrid,
-		    const unsigned int *dimgrid,
-		    const unsigned int ndimgrid,
+		    const unsigned long *ngrid,
+		    const unsigned long *dimgrid,
+		    const unsigned long ndimgrid,
 		    const double reltol, const double abstol,
 		    double *pdf);
 /* This routine returns the value of the probability distribution
@@ -512,11 +512,11 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
 */
 
 void kd_pdf_vec(const kernel_density *kd, const double *x, 
-		const unsigned int npt, const double reltol, 
+		const unsigned long npt, const double reltol, 
 		const double abstol, double *pdf
 #ifdef DIAGNOSTIC
-		, unsigned int *nodecheck, unsigned int *leafcheck,
-		unsigned int *termcheck
+		, unsigned long *nodecheck, unsigned long *leafcheck,
+		unsigned long *termcheck
 #endif
 		);
 /* This routine returns the value of the probability distribution

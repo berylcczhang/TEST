@@ -26,9 +26,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 bool box_in_box(const double *xbox1[2], const double *xbox2[2], 
-		const unsigned int ndim1, const unsigned int ndim2,
-		const unsigned int *dim1, const unsigned int *dim2) {
-  unsigned int i, j;
+		const unsigned long ndim1, const unsigned long ndim2,
+		const unsigned long *dim1, const unsigned long *dim2) {
+  unsigned long i, j;
 
   /* Handle cases of dimensional specifications being present or absent */
   if (dim1 == NULL) {
@@ -109,10 +109,10 @@ bool box_in_box(const double *xbox1[2], const double *xbox2[2],
 
 
 bool box_in_sphere(const double *xbox1[2], const double *xcen2, 
-		   const unsigned int ndim1, const unsigned int ndim2,
-		   const unsigned int *dim1, const unsigned int *dim2,
+		   const unsigned long ndim1, const unsigned long ndim2,
+		   const unsigned long *dim1, const unsigned long *dim2,
 		   const double radius, const double *scale,
-		   const unsigned int ndim) {
+		   const unsigned long ndim) {
   /* Note: we make use of the fact that a cube is entirely contained
      within a sphere if and only if all its corners are inside the 
      sphere. Thus we only need to check if box_max_dist2 is less than
@@ -125,9 +125,9 @@ bool box_in_sphere(const double *xbox1[2], const double *xcen2,
 
 
 bool box_intersects_box(const double *xbox1[2], const double *xbox2[2], 
-			const unsigned int ndim1, const unsigned int ndim2,
-			const unsigned int *dim1, const unsigned int *dim2) {
-  unsigned int i, j;
+			const unsigned long ndim1, const unsigned long ndim2,
+			const unsigned long *dim1, const unsigned long *dim2) {
+  unsigned long i, j;
 
   /* Handle cases of dimensional specifications being present or absent */
   if (dim1 == NULL) {
@@ -197,13 +197,13 @@ bool box_intersects_box(const double *xbox1[2], const double *xbox2[2],
 
 
 double box_max_dist2(const double *x1, const double *xbox2[2],
-		     const unsigned int ndim1, const unsigned int ndim2,
-		     const unsigned int *dim1, const unsigned int *dim2,
-		     const double *scale, const unsigned int ndim) {
+		     const unsigned long ndim1, const unsigned long ndim2,
+		     const unsigned long *dim1, const unsigned long *dim2,
+		     const double *scale, const unsigned long ndim) {
   /* Here we make use of the fact that the most distant point is
      always a corner, so we just need to check all the corners */
-  unsigned int i, j, dm1, dm2, mask, ptr;
-  unsigned int ncorner=1;
+  unsigned long i, j, dm1, dm2, mask, ptr;
+  unsigned long ncorner=1;
   double *corner = NULL;
   double d2max = 0.0;
 
@@ -255,10 +255,10 @@ double box_max_dist2(const double *x1, const double *xbox2[2],
 
 
 double box_min_dist2(const double *x1, const double *xbox2[2],
-		     const unsigned int ndim1, const unsigned int ndim2,
-		     const unsigned int *dim1, const unsigned int *dim2,
-		     const double *scale, const unsigned int ndim) {
-  unsigned int i, j;
+		     const unsigned long ndim1, const unsigned long ndim2,
+		     const unsigned long *dim1, const unsigned long *dim2,
+		     const double *scale, const unsigned long ndim) {
+  unsigned long i, j;
   double tmp, dist2 = 0.0;
 
   /* Handle various cases */
@@ -412,10 +412,10 @@ double box_min_dist2(const double *x1, const double *xbox2[2],
 
 
 double dist2(const double *x1, const double *x2, 
-	     const unsigned int ndim1, const unsigned int ndim2,
-	     const unsigned int *dim1, const unsigned int *dim2, 
-	     const double *scale, const unsigned int ndim) {
-  unsigned int i, j;
+	     const unsigned long ndim1, const unsigned long ndim2,
+	     const unsigned long *dim1, const unsigned long *dim2, 
+	     const double *scale, const unsigned long ndim) {
+  unsigned long i, j;
   double tmp, dist = 0.0;
 
   /* Handle various cases */
@@ -545,15 +545,15 @@ double ds(unsigned int n) {
 
 
 bool sphere_in_box(const double *xcen1, const double *xbox2[2], 
-		   const unsigned int ndim1, const unsigned int ndim2,
-		   const unsigned int *dim1, const unsigned int *dim2,
+		   const unsigned long ndim1, const unsigned long ndim2,
+		   const unsigned long *dim1, const unsigned long *dim2,
 		   const double radius, const double *scale,
-		   const unsigned int ndim) {
+		   const unsigned long ndim) {
   /* Note: we make use of the fact that a sphere x1 is entirely
      contained within cube x2 if and only if the cube in which x1 is
      inscribed is entirely contained in x2. */
   double *xbox1[2];
-  unsigned int i;
+  unsigned long i;
   bool res;
 
   /* Allocate memory */

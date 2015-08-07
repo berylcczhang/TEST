@@ -20,8 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Finds nearest neighbors to a specified input point                */
 /*********************************************************************/
 void kd_neighbors(const kernel_density *kd, const double *xpt, 
-		  const unsigned int *dims, const unsigned int ndim, 
-		  const unsigned int nneighbor,
+		  const unsigned long *dims, const unsigned long ndim, 
+		  const unsigned long nneighbor,
 		  const bool bandwidth_units, double *pos,
 		  void *dptr, double *d2) {
   /* Call KDtree neighbor finding routine */
@@ -36,8 +36,8 @@ void kd_neighbors(const kernel_density *kd, const double *xpt,
 /* Find the N nearest neighbors to all points in the KDtree          */
 /*********************************************************************/
 void kd_neighbors_all(const kernel_density *kd, 
-		      const unsigned int nneighbor, 
-		      const bool bandwidth_units, unsigned int *idx, 
+		      const unsigned long nneighbor, 
+		      const bool bandwidth_units, unsigned long *idx, 
 		      double *d2) {
   /* Call the KDtree neighbor finding routine */
   if (bandwidth_units) {
@@ -51,10 +51,10 @@ void kd_neighbors_all(const kernel_density *kd,
 /* Find N nearest neighbors to a single point in the KD tree         */
 /*********************************************************************/
 void kd_neighbors_point(const kernel_density *kd, 
-			const unsigned int idxpt, 
-			const unsigned int nneighbor,
+			const unsigned long idxpt, 
+			const unsigned long nneighbor,
 			const bool bandwidth_units,
-			unsigned int *idx, double *d2) {
+			unsigned long *idx, double *d2) {
   /* Just call the KDtree routine */
   if (bandwidth_units) {
     neighbors_point(kd->tree, idxpt, nneighbor, kd->h, idx, d2);
@@ -67,12 +67,12 @@ void kd_neighbors_point(const kernel_density *kd,
 /* Vectorized version of kd_neighbors_point                          */
 /*********************************************************************/
 void kd_neighbors_point_vec(const kernel_density *kd, 
-			    const unsigned int *idxpt, 
-			    const unsigned int npt,
-			    const unsigned int nneighbor,
+			    const unsigned long *idxpt, 
+			    const unsigned long npt,
+			    const unsigned long nneighbor,
 			    const bool bandwidth_units,
-			    unsigned int *idx, double *d2) {
-  unsigned int i;
+			    unsigned long *idx, double *d2) {
+  unsigned long i;
   for (i=0; i<npt; i++) {
     if (bandwidth_units) {
       neighbors_point(kd->tree, idxpt[i], nneighbor, kd->h, 
@@ -88,11 +88,11 @@ void kd_neighbors_point_vec(const kernel_density *kd,
 /* Same as kd_neighbors, but for a vector of input points            */
 /*********************************************************************/
 void kd_neighbors_vec(const kernel_density *kd, const double *xpt, 
-		      const unsigned int *dims, const unsigned int ndim, 
-		      const unsigned int npt, const unsigned int nneighbor,
+		      const unsigned long *dims, const unsigned long ndim, 
+		      const unsigned long npt, const unsigned long nneighbor,
 		      const bool bandwidth_units, double *pos,
 		      void *dptr, double *d2) {
-  unsigned int i;
+  unsigned long i;
 
   /* Loop over input points, calling KDtree neighbor find routine on each */
   for (i=0; i<npt; i++) {

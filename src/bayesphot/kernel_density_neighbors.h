@@ -26,8 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "kernel_density.h"
 
 void kd_neighbors(const kernel_density *kd, const double *xpt, 
-		  const unsigned int *dims, const unsigned int ndim, 
-		  const unsigned int nneighbor,
+		  const unsigned long *dims, const unsigned long ndim, 
+		  const unsigned long nneighbor,
 		  const bool bandwidth_units, double *pos,
 		  void *dptr, double *d2);
 /* Routine to find the N nearest neighbors to an input point; input
@@ -79,8 +79,8 @@ void kd_neighbors(const kernel_density *kd, const double *xpt,
 */
 
 void kd_neighbors_all(const kernel_density *kd, 
-		      const unsigned int nneighbor, 
-		      const bool bandwidth_units, unsigned int *idx, 
+		      const unsigned long nneighbor, 
+		      const bool bandwidth_units, unsigned long *idx, 
 		      double *d2);
 /* This routine returns the indices of the N nearest neighbors for
    every point in the data set indexed by the kernel density
@@ -111,10 +111,10 @@ void kd_neighbors_all(const kernel_density *kd,
 */
 
 void kd_neighbors_point(const kernel_density *kd, 
-			const unsigned int idxpt, 
-			const unsigned int nneighbor,
+			const unsigned long idxpt, 
+			const unsigned long nneighbor,
 			const bool bandwidth_units,
-			unsigned int *idx, double *d2);
+			unsigned long *idx, double *d2);
 /* This routine finds the N nearest neighbors of a data point in the
    data set. Points are not considered their own neighbors.
 
@@ -143,11 +143,11 @@ void kd_neighbors_point(const kernel_density *kd,
 */
 
 void kd_neighbors_point_vec(const kernel_density *kd, 
-			    const unsigned int *idxpt, 
-			    const unsigned int npt,
-			    const unsigned int nneighbor,
+			    const unsigned long *idxpt, 
+			    const unsigned long npt,
+			    const unsigned long nneighbor,
 			    const bool bandwidth_units,
-			    unsigned int *idx, double *d2);
+			    unsigned long *idx, double *d2);
 /* This routine is identical to kd_neighbors_point, except that it
    operates on a vector of input points instead of a single point.
 
@@ -181,8 +181,8 @@ void kd_neighbors_point_vec(const kernel_density *kd,
 
 
 void kd_neighbors_vec(const kernel_density *kd, const double *xpt, 
-		      const unsigned int *dims, const unsigned int ndim, 
-		      const unsigned int npt, const unsigned int nneighbor,
+		      const unsigned long *dims, const unsigned long ndim, 
+		      const unsigned long npt, const unsigned long nneighbor,
 		      const bool bandwidth_units, double *pos,
 		      void *dptr, double *d2);
 /* This routine is identical to kd_neighbors, except that it operates
