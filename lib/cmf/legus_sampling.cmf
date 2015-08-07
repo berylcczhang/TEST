@@ -1,0 +1,17 @@
+###############################################################
+# This is an CMF definition file for SLUG v2.
+###############################################################
+
+# Breakpoints: mass values where the functional form changes
+# The first and last breakpoint will define the minimum and
+# maximum mass
+breakpoints 1.0e2 1.0e4 1.0e8
+
+# Definitions of segments between the breakpoints
+segment
+type powerlaw
+slope -1
+
+segment
+type powerlaw
+slope -2
