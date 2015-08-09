@@ -65,16 +65,17 @@ def write_integrated(data, model_name, fmt):
             fp = open(model_name+'_integrated_prop.txt', 'w')
 
             # Write header lines
-            fp.write(("{:<14s}"*8).
+            fp.write(("{:<14s}"*9).
                      format('Time', 'TargetMass', 'ActualMass',
-                            'LiveMass', 'ClusterMass', 'NumClusters',
-                            'NumDisClust', 'NumFldStar') + "\n")
-            fp.write(("{:<14s}"*8).
+                            'LiveMass', 'StellarMass', 'ClusterMass', 
+                            'NumClusters', 'NumDisClust', 'NumFldStar')
+                     + "\n")
+            fp.write(("{:<14s}"*9).
                      format('(yr)', '(Msun)', '(Msun)', '(Msun)',
-                            '(Msun)', '', '', '') + "\n")
-            fp.write(("{:<14s}"*8).
+                            '(Msun)', '(Msun)', '', '', '') + "\n")
+            fp.write(("{:<14s}"*9).
                      format('-----------', '-----------', '-----------',
-                            '-----------', '-----------',
+                            '-----------', '-----------', '-----------',
                             '-----------', '-----------',
                             '-----------') + "\n")
 
@@ -87,19 +88,20 @@ def write_integrated(data, model_name, fmt):
                 random_time = False
             for i in range(ntrial):
                 if i != 0:
-                    fp.write("-"*(8*14-3)+"\n")
+                    fp.write("-"*(9*14-3)+"\n")
                 for j in range(ntime):
                     if random_time:
                         t_out = data.time[i]
                     else:
                         t_out = data.time[j]
                     fp.write(("{:11.5e}   {:11.5e}   {:11.5e}   " +
-                              "{:11.5e}   {:11.5e}   {:11d}   " +
-                              "{:11d}   {:11d}\n")
+                              "{:11.5e}   {:11.5e}   {:11.5e}   " +
+                              "{:11d}   {:11d}   {:11d}\n")
                              .format(t_out, 
                                      data.target_mass[j,i],
                                      data.actual_mass[j,i],
                                      data.live_mass[j,i],
+                                     data.stellar_mass[j,i],
                                      data.cluster_mass[j,i],
                                      data.num_clusters[j,i],
                                      data.num_dis_clusters[j,i],
@@ -134,6 +136,7 @@ def write_integrated(data, model_name, fmt):
                     fp.write(data.target_mass[j,i])
                     fp.write(data.actual_mass[j,i])
                     fp.write(data.live_mass[j,i])
+                    fp.write(data.stellar_mass[j,i])
                     fp.write(data.cluster_mass[j,i])
                     fp.write(data.num_clusters[j,i])
                     fp.write(data.num_dis_clusters[j,i])
@@ -177,6 +180,10 @@ def write_integrated(data, model_name, fmt):
                 fits.Column(name="LiveMass", format="1D",
                             unit="Msun", 
                             array=np.transpose(data.live_mass).flatten()))
+            cols.append(
+                fits.Column(name="StellarMass", format="1D",
+                            unit="Msun", 
+                            array=np.transpose(data.stellar_mass).flatten()))
             cols.append(
                 fits.Column(name="ClusterMass", format="1D",
                             unit="Msun", 

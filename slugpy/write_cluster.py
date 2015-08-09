@@ -67,36 +67,36 @@ def write_cluster(data, model_name, fmt):
 
             # Write header lines
             if 'A_V' in data._fields:
-                fp.write(("{:<14s}"*10).
+                fp.write(("{:<14s}"*11).
                          format('UniqueID', 'Time', 'FormTime',
                                 'Lifetime', 'TargetMass',
-                                'BirthMass', 'LiveMass',
+                                'BirthMass', 'LiveMass', 'StellarMass',
                                 'NumStar', 'MaxStarMass', 'A_V') + "\n")
-                fp.write(("{:<14s}"*10).
+                fp.write(("{:<14s}"*11).
                          format('', '(yr)', '(yr)',
-                                '(yr)', '(Msun)',
+                                '(yr)', '(Msun)', '(Msun)'
                                 '(Msun)', '(Msun)',
                                 '', '(Msun)', '(mag)') + "\n")
-                fp.write(("{:<14s}"*10).
+                fp.write(("{:<14s}"*11).
                          format('-----------', '-----------', '-----------',
-                                '-----------', '-----------',
+                                '-----------', '-----------', '-----------',
                                 '-----------', '-----------',
                                 '-----------', '-----------',
                                 '-----------') + "\n")
             else:
-                fp.write(("{:<14s}"*9).
+                fp.write(("{:<14s}"*10).
                          format('UniqueID', 'Time', 'FormTime',
                                 'Lifetime', 'TargetMass',
-                                'BirthMass', 'LiveMass',
+                                'BirthMass', 'LiveMass', 'StellarMass',
                                 'NumStar', 'MaxStarMass') + "\n")
-                fp.write(("{:<14s}"*9).
+                fp.write(("{:<14s}"*10).
                          format('', '(yr)', '(yr)',
-                                '(yr)', '(Msun)',
+                                '(yr)', '(Msun)', '(Msun)',
                                 '(Msun)', '(Msun)',
                                 '', '(Msun)') + "\n")
-                fp.write(("{:<14s}"*9).
+                fp.write(("{:<14s}"*10).
                          format('-----------', '-----------', '-----------',
-                                '-----------', '-----------',
+                                '-----------', '-----------', '-----------',
                                 '-----------', '-----------',
                                 '-----------', '-----------') + "\n")
 
@@ -106,30 +106,32 @@ def write_cluster(data, model_name, fmt):
                     # If this is a new trial, write a separator
                     if i != 0:
                         if data.trial[i] != data.trial[i-1]:
-                            fp.write("-"*(10*14-3)+"\n")
+                            fp.write("-"*(11*14-3)+"\n")
                     fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
-                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11d}   "
-                             "{:11.5e}   {:11.5e}\n".
+                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11.5e}   "
+                             "{:11d}   {:11.5e}   {:11.5e}\n".
                              format(data.id[i], data.time[i], 
                                     data.form_time[i], data.lifetime[i],
                                     data.target_mass[i],
                                     data.actual_mass[i],
                                     data.live_mass[i],
+                                    data.stellar_mass[i],
                                     data.num_star[i],
                                     data.max_star_mass[i],
                                     data.A_V[i]))
                 else:
                     if i != 0:
                         if data.trial[i] != data.trial[i-1]:
-                            fp.write("-"*(9*14-3)+"\n")
+                            fp.write("-"*(10*14-3)+"\n")
                     fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
-                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11d}   "
-                             "{:11.5e}\n".
+                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11.5e}   "
+                             "{:11d}   {:11.5e}\n".
                              format(data.id[i], data.time[i], 
                                     data.form_time[i], data.lifetime[i],
                                     data.target_mass[i],
                                     data.actual_mass[i],
                                     data.live_mass[i],
+                                    data.stellar_mass[i],
                                     data.num_star[i],
                                     data.max_star_mass[i]))
 
@@ -198,6 +200,7 @@ def write_cluster(data, model_name, fmt):
                         fp.write(data.target_mass[k])
                         fp.write(data.actual_mass[k])
                         fp.write(data.live_mass[k])
+                        fp.write(data.stellar_mass[k])
                         fp.write(data.num_star[k])
                         fp.write(data.max_star_mass[k])
                         if 'A_V' in data._fields:
@@ -233,6 +236,8 @@ def write_cluster(data, model_name, fmt):
                                     unit="Msun", array=data.actual_mass))
             cols.append(fits.Column(name="LiveMass", format="1D",
                                     unit="Msun", array=data.live_mass))
+            cols.append(fits.Column(name="StellarMass", format="1D",
+                                    unit="Msun", array=data.stellar_mass))
             cols.append(fits.Column(name="NumStar", format="1K",
                                     unit="", array=data.num_star))
             cols.append(fits.Column(name="MaxStarMass", format="1D",

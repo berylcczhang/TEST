@@ -8,7 +8,8 @@ import struct
 from slug_open import slug_open
 
 def read_cluster_prop(model_name, output_dir=None, fmt=None, 
-                      verbose=False, read_info=None):
+                      verbose=False, read_info=None,
+                      no_stellar_mass=False):
     """
     Function to read a SLUG2 cluster_prop file.
 
@@ -33,6 +34,12 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
           On return, this dict will contain the keys 'fname' and
           'format', giving the name of the file read and the format it
           was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       no_stellar_mass : bool
+          Prior to 7/15, output files did not contain the stellar_mass
+          field; this can be detected automatically for ASCII and FITS
+          formats, but not for binary format; if True, this specifies
+          that the binary file being read does not contain a
+          stellar_mass field; it has no effect for ASCII or FITS files
 
     Returns
        A namedtuple containing the following fields:
@@ -140,7 +147,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 if extinct:
                     A_V.append(float(data[10]))
             else:
-                stellar_mass.append(0.0)
+                stellar_mass.append(np.nan)
                 num_star.append(long(data[7]))
                 max_star_mass.append(float(data[8]))
                 if extinct:
@@ -174,7 +181,10 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 continue
 
             # Read the next block of clusters
-            datastr = 'LddddddQd'
+            if no_stellar_mass:
+                datastr = 'LdddddQd'
+            else:
+                datastr = 'LddddddQd'
             if extinct:
                 datastr = datastr+'d'
             data = fp.read(struct.calcsize(datastr)*ncluster)
@@ -185,6 +195,8 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 nfield = 10
             else:
                 nfield = 9
+            if no_stellar_mass:
+                nfield = nfield-1
             cluster_id.extend(data_list[0::nfield])
             time.extend([t]*ncluster)
             trial.extend([trialptr]*ncluster)
@@ -193,11 +205,18 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             target_mass.extend(data_list[3::nfield])
             actual_mass.extend(data_list[4::nfield])
             live_mass.extend(data_list[5::nfield])
-            stellar_mass.extend(data_list[6::nfield])
-            num_star.extend(data_list[7::nfield])
-            max_star_mass.extend(data_list[8::nfield])
-            if extinct:
-                A_V.extend(data_list[9::nfield])
+            if no_stellar_mass:
+                stellar_mass.extend([np.nan]*(len(data_list)/nfield))
+                num_star.extend(data_list[5::nfield])
+                max_star_mass.extend(data_list[7::nfield])
+                if extinct:
+                    A_V.extend(data_list[8::nfield])
+            else:
+                stellar_mass.extend(data_list[6::nfield])
+                num_star.extend(data_list[7::nfield])
+                max_star_mass.extend(data_list[8::nfield])
+                if extinct:
+                    A_V.extend(data_list[9::nfield])
 
     elif fname.endswith('.fits'):
 
@@ -216,6 +235,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             stellar_mass = fp[1].data.field('StellarMass')
         except KeyError:
             stellar_mass = np.zeros(live_mass.shape)
+            stellar_mass[...] = np.nan
         num_star = fp[1].data.field('NumStar')
         max_star_mass = fp[1].data.field('MaxStarMass')
         if 'A_V' in fp[1].data.columns.names:

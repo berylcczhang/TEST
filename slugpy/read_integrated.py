@@ -12,7 +12,8 @@ from cloudy.read_integrated_cloudyspec import read_integrated_cloudyspec
 
 def read_integrated(model_name, output_dir=None, fmt=None,
                     nofilterdata=False, photsystem=None, 
-                    verbose=False, read_info=None):
+                    verbose=False, read_info=None,
+                    no_stellar_mass=False):
     """
     Function to read all integrated light data for a SLUG2 run.
 
@@ -53,6 +54,12 @@ def read_integrated(model_name, output_dir=None, fmt=None,
           they were in; 'format' will be one of 'ascii', 'binary', or
           'fits'. If one of the files is not present, the corresponding
           _name key will be omitted from the dict.
+       no_stellar_mass : bool
+          Prior to 7/15, output files did not contain the stellar_mass
+          field; this can be detected automatically for ASCII and FITS
+          formats, but not for binary format; if True, this specifies
+          that the binary file being read does not contain a
+          stellar_mass field; it has no effect for ASCII or FITS files
 
     Returns
        A namedtuple containing the following fields:
@@ -217,7 +224,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     try:
         prop = read_integrated_prop(model_name, output_dir, fmt=fmt,
                                     verbose=verbose, 
-                                    read_info=read_info)
+                                    read_info=read_info,
+                                    no_stellar_mass=no_stellar_mass)
         if read_info is not None:
             read_info['prop_name'] = read_info['fname']
             del read_info['fname']

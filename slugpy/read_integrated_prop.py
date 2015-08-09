@@ -8,7 +8,8 @@ import struct
 from slug_open import slug_open
 
 def read_integrated_prop(model_name, output_dir=None, fmt=None, 
-                         verbose=False, read_info=None):
+                         verbose=False, read_info=None,
+                         no_stellar_mass=False):
     """
     Function to read a SLUG2 integrated_prop file.
 
@@ -33,6 +34,12 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
           On return, this dict will contain the keys 'fname' and
           'format', giving the name of the file read and the format it
           was in; 'format' will be one of 'ascii', 'binary', or 'fits'
+       no_stellar_mass : bool
+          Prior to 7/15, output files did not contain the stellar_mass
+          field; this can be detected automatically for ASCII and FITS
+          formats, but not for binary format; if True, this specifies
+          that the binary file being read does not contain a
+          stellar_mass field; it has no effect for ASCII or FITS files
 
     Returns
        A namedtuple containing the following fields:
@@ -127,7 +134,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
                 num_dis_clusters.append(int(data[7]))
                 num_fld_stars.append(int(data[8]))
             else:
-                stellar_mass.append(0.0)
+                stellar_mass.append(np.nan)
                 cluster_mass.append(float(data[4]))
                 num_clusters.append(int(data[5]))
                 num_dis_clusters.append(int(data[6]))
@@ -143,20 +150,33 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         data = fp.read()
 
         # Interpret data
-        nentry = len(data)/struct.calcsize('LddddddQQQ')
-        data_list = struct.unpack('LddddddQQQ'*nentry, data)
+        if not no_stellar_mass:
+            datstr = 'LddddddQQQ'
+            nfield = 10
+        else:
+            nfield = 9
+        nentry = len(data)/struct.calcsize(datstr)
+        data_list = struct.unpack(datstr*nentry, data)
 
         # Stick data into correctly-named lists
-        trial = data_list[0::10]
-        time = data_list[1::10]
-        target_mass = data_list[2::10]
-        actual_mass = data_list[3::10]
-        live_mass = data_list[4::10]
-        stellar_mass = data_list[5::10]
-        cluster_mass = data_list[6::10]
-        num_clusters = data_list[7::10]
-        num_dis_clusters = data_list[8::10]
-        num_fld_stars = data_list[9::10]
+        trial = data_list[0::nfield]
+        time = data_list[1::nfield]
+        target_mass = data_list[2::nfield]
+        actual_mass = data_list[3::nfield]
+        live_mass = data_list[4::nfield]
+        if not no_stellar_mass:
+            stellar_mass = data_list[5::nfield]
+            cluster_mass = data_list[6::nfield]
+            num_clusters = data_list[7::nfield]
+            num_dis_clusters = data_list[8::nfield]
+            num_fld_stars = data_list[9::nfield]
+        else:
+            cluster_mass = data_list[5::nfield]
+            num_clusters = data_list[6::nfield]
+            num_dis_clusters = data_list[7::nfield]
+            num_fld_stars = data_list[8::nfield]
+            stellar_mass = np.copy(np.array(cluster_mass))
+            stellar_mass[...] = np.nan
 
     elif fname.endswith('fits'):
 
@@ -172,6 +192,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             stellar_mass = fp[1].data.field('StellarMass')
         except KeyError:
             stellar_mass = np.zeros(live_mass.shape)
+            stellar_mass[...] = np.nan
         cluster_mass = fp[1].data.field('ClusterMass')
         num_clusters = fp[1].data.field('NumClusters')
         num_dis_clusters = fp[1].data.field('NumDisClust')
