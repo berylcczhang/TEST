@@ -27,10 +27,10 @@ CLIBFLAGS	   = -fPIC
 DYNLIBFLAG	   = -shared
 
 #Locations of library files [need to link libraries with gnu4.8.1]
-BOOST_HDR_PATH	= /cosma/home/miki/library/boost/1.57/c4/gnu_4.8.1/include/
-BOOST_LIB_PATH	= /cosma/home/miki/library/boost/1.57/c4/gnu_4.8.1/lib/
-GSL_HDR_PATH = /cosma/home/miki/library/gsl/1.16/c4/gnu_4.8.1/include/
-GSL_LIB_PATH = /cosma/home/miki/library/gsl/1.16/c4/gnu_4.8.1/lib/
+BOOST_HDR_PATH	= /cosma/local/boost/c4/gnu_4.8.1/1_57_0/include/
+BOOST_LIB_PATH	= /cosma/local/boost/c4/gnu_4.8.1/1_57_0/lib/
+GSL_HDR_PATH = /cosma/local/gsl/c4/gnu_4.8.1/1.15/include/
+GSL_LIB_PATH = /cosma/local/gsl/c4/gnu_4.8.1/1.15/lib/
 CXX_INCLUDE_PATH = /cosma/home/miki/library/cfitsio/c4/gnu_4.8.1/include/
 LD_LIBRARY_PATH = /cosma/home/miki/library/cfitsio/c4/gnu_4.8.1/lib/
 
