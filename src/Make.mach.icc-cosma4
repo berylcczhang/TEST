@@ -3,6 +3,9 @@
 #load the following modules *before* running make 
 #module purge
 #module load gnu_comp/c4/4.8.1
+#module load gsl/1.15
+#module load boost/1_57_0
+
 #Remember to include libraries at runtime with setenv LD_LIBRARY_PATH
 
 # Default is g++
@@ -11,8 +14,8 @@ MACH_CXX     = g++
 # Flag needed to specify c++11 standard
 MACH_C11FLAG      = -std=c++11
 
-# Optimization flags
-MACH_CXXOPTFLAGS  = -O3 -ffast-math 
+# Optimization flags [fast-math is not well behaving from tests on Aug 2015]
+MACH_CXXOPTFLAGS  = -O3  
 MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
 #MACH_LDOPTFLAGS  = 
 
