@@ -1489,7 +1489,7 @@ class bp(object):
                 else:
                     bandwidth = np.zeros(self.__bandwidth.size)
                     bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
-                    bandwidth[self.__nphys:] = err
+                    bandwidth[self.__nphys:] = photerr[i]
                 self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
 
                 # Call c neighbor-finding routine
