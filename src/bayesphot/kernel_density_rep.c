@@ -20,7 +20,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <gsl/gsl_sort.h>
 #include "geometry.h"
+#include "kernel_density_util.h"
 #include "kernel_density_rep.h"
+#include "kernel_density_rep_data.h"
+
+
+
+/*********************************************************************/
+/* Declarations of local functions                                   */
+/*********************************************************************/
+
+static inline
+double node_merge_error(double w, double logdx);
 
 /*********************************************************************/
 /* Functions to build the representation                             */
@@ -31,8 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 unsigned long kd_rep(const kernel_density *kd, const double *x,
 		     const unsigned long *dims, 
-		     const unsigned long ndim,
-		     const double reltol,
+		     const unsigned long ndim, const double reltol,
 		     double **xpt, double **wgts) {
 
   unsigned long i, j, k, ptr, curnode, nlist, nlist_alloc, npt_alloc, npt;
@@ -226,10 +236,10 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
      keep the points we need to achieve the required level of accuracy */
   wgt_out += wgt_in;
   wgt_in = 0.0;
-  for (i = npt-1, npt_final = 0; 
-       wgt_in / (wgt_in + wgt_out) > 1.0-reltol;
-       i--, npt_final++) {
+  for (npt_final = 0;  wgt_in / (wgt_in + wgt_out) < 1.0-reltol;
+       npt_final++) {
     /* Copy point */
+    i = npt - npt_final - 1;
     (*wgts)[npt_final] = wgttmp[idx[i]];
     for (j=0; j<ndim_ret; j++) 
       (*xpt)[npt_final*ndim_ret+j] = xtmp[idx[i]*ndim_ret+j];
@@ -259,6 +269,120 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 #undef PTSIZE
 
 /*********************************************************************/
+/* Function to squeeze a kernel density representation by merging    */
+/* Gaussians that lie close to one antoher                           */
+/*********************************************************************/
+unsigned long squeeze_rep(const unsigned long npt, 
+			  const unsigned int ndim, double *h, 
+			  const double tol, double **x, 
+			  double **wgts) {
+  kernel_density *kd;
+  unsigned long i, j, levptr, offset, npt_final;
+  double d2, w, log_hmin, logdx, *node_err;
+
+  /* Get minimum bandwidth */
+  log_hmin = log10(h[0]);
+  for (i=1; i<ndim; i++) 
+    log_hmin = log_hmin < log10(h[i]) ? log_hmin : log10(h[i]);
+
+  /* Build a kernel density representation of the data, with leaves
+     consisting of two points */
+  kd = build_kd(*x, ndim, npt, *wgts, 2, h, gaussian, 0);
+
+  /* Allocate temporaries */
+  if (!(node_err = (double *) calloc(kd->tree->nodes, sizeof(double)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in squeeze_rep\n");
+    exit(1);
+  }
+  for (i=0; i<kd->tree->nodes; i++) node_err[i] = 0.0;
+
+  /* Go to leftmost node of the tree */
+  levptr = ROOT;
+  while (kd->tree->tree[levptr].splitdim != -1) 
+    levptr = LEFT(levptr);
+
+  /* Breadth-first traversal of the tree, starting with the leaves
+     and working up */
+  for (offset = 1; levptr != 0; 
+       levptr=PARENT(levptr), offset *=2) {
+
+    /* Traverse the list of nodes from least weight to greatest */
+    for (i=levptr; i<2*levptr; i++) {
+
+      /* Skip nodes with < 2 points; we don't need to do anything with
+	 them */
+      if (kd->tree->tree[i].npt <= 1) continue;
+
+      /* If we're not at the leaf level, and we've already declined to
+	 merge of this node's children, go to next node */
+      if (kd->tree->tree[i].splitdim != -1) {
+	if (((double *) kd->tree->tree[LEFT(i)].dptr)[0] != 
+	    kd->nodewgt[LEFT(i)])
+	  continue;
+	if (((double *) kd->tree->tree[RIGHT(i)].dptr)[0] != 
+	    kd->nodewgt[RIGHT(i)])
+	  continue;
+      }
+
+      /* Get relative weights of the two points */
+      w = ((double *) kd->tree->tree[i].dptr)[0] /
+	(((double *) kd->tree->tree[i].dptr)[0] +
+	 ((double *) kd->tree->tree[i].dptr)[offset]);
+
+      /* Get log separation of node points in units of the minimum
+	 bandwidth */ 
+      d2 = dist2(&(kd->tree->tree[i].x[0]),
+		 &(kd->tree->tree[i].x[ndim*offset]),
+		 ndim, ndim, NULL, NULL, NULL, ndim);
+      logdx = 0.5 * log10(d2) - log_hmin;
+
+      /* Compute the error associated with merging the points in this
+	 node */
+      node_err[i] = kd->nodewgt[i] * kd->norm * 
+	node_merge_error(w, logdx);
+
+      /* Add in errors from children, if any */
+      if (kd->tree->tree[i].splitdim != -1) 
+	node_err[i] += node_err[LEFT(i)] + node_err[RIGHT(i)];
+
+      /* If the error is too big, do nothing; go to next node */
+      if (node_err[i] / (kd->nodewgt[i] * kd->norm) > tol)
+	continue;
+
+      /* If we're here, this node should be merged */
+
+      /* Compute the location of the merged point, and store in first
+	 slot for this node */
+      for (j=0; j<ndim; j++)
+	kd->tree->tree[i].x[j] = w * kd->tree->tree[i].x[j] +
+	  (1.0-w) * kd->tree->tree[i].x[ndim*offset+j];
+
+      /* Set the weight of the merged point to the weight of the
+	 entire node, and zero out the other point */
+      ((double *) kd->tree->tree[i].dptr)[0] = kd->nodewgt[i];
+      ((double *) kd->tree->tree[i].dptr)[offset] = 0.0;
+    }
+  }
+
+  /* Last step: compress the final arrays, resize them in memory, then
+     return the new size */
+  for (i=0, npt_final=0; i<npt; i++) {
+    if ((*wgts)[i] != 0) {
+      /* Keep this point */
+      if (npt_final < i) {
+	for (j=0; j<ndim; j++) (*x)[npt_final*ndim+j] = (*x)[i*ndim+j];
+	(*wgts)[npt_final] = (*wgts)[i];
+      }
+      npt_final++;
+    }
+  }
+  (*x) = realloc(*x, npt_final*ndim*sizeof(double));
+  (*wgts) = realloc(*wgts, npt_final*sizeof(double));
+  return npt_final;
+}
+
+
+/*********************************************************************/
 /* Memory freeing convenience function                               */
 /*********************************************************************/
 
@@ -269,3 +393,46 @@ void free_kd_rep(double **xpt, double **wgts) {
   *wgts = NULL;
 }
 
+
+/*********************************************************************/
+/* Return the maximum error that results from merging the points in  */
+/* a node; the quantity returns is normalized to the maximum of the  */
+/* merged Gaussian                                                   */
+/*********************************************************************/
+
+inline
+double node_merge_error(double w, double logdx) {
+  double wwgt, dxwgt;
+  int widx, dxidx;
+
+  /* Get indices into the table */
+  if (w>0.5) w=1.0-w;
+  widx = (int) ((w-wmin) / dw);
+  dxidx = (int) ((logdx-logdxmin) / dlogdx);
+
+  /* Get weights in the table, being sure to catch cases off the table */
+  if (widx < 0) {
+    widx = 0;
+    wwgt = 1.0;
+  } else if (widx >= nw) {
+    widx = nw-1;
+    wwgt = -1.0;
+  } else {
+    wwgt = 1.0 + widx - (w-wmin)/dw; 
+  }
+  if (dxidx < 0) {
+    dxidx = 0;
+    dxwgt = 1.0;
+  } else if (widx >= nw) {
+    dxidx = ndx-1;
+    dxwgt = -1.0;
+  } else {
+    dxwgt = 1.0 + dxidx - (logdx-logdxmin)/dlogdx; 
+  }
+
+  /* Do linear interpolation to get result */
+  return pow(10, wwgt * dxwgt * gauss_err_tab[widx][dxidx] +
+	     (1.0-wwgt) * dxwgt * gauss_err_tab[widx+1][dxidx] +
+	     wwgt * (1.0-dxwgt) * gauss_err_tab[widx][dxidx+1] +
+	     (1.0-wwgt) * (1.0-dxwgt) * gauss_err_tab[widx+1][dxidx+1]);
+}

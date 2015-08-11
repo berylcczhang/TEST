@@ -30,9 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 unsigned long kd_rep(const kernel_density *kd, const double *x,
 		     const unsigned long *dims, 
-		     const unsigned long ndim,
-		     const double reltol, double **xpt,
-		     double **wgts);
+		     const unsigned long ndim, const double reltol,
+		     double **xpt, double **wgts);
 /* This routine returns a list of points that can be used to do fast
    kernel density estimation for a given input point. Performing the
    estimate using the list of points returned is guaranteed to
@@ -55,9 +54,12 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
       INPUT ndims
          the number of dimensions in x and dims
       INPUT reltol
-         Relative error tolerance; the nodes returned are guaranteed
-         to include points that account for at least 1-reltol of the
-         integrated probability
+         Tolerance on the integral of the returned approximation; the
+         sample points returned are guaranteed to account for >
+	 1-inttol of the integrated probability, i.e., if reltol =
+         0.01 then if one integrates the PDF that results from
+         computing a kernel density estimate just on the returned
+         points, that will recover 99% of the total probability
       OUTPUT xpt
          Array of positions for the approximate representation, in the
          dimensions that are not included in dims; there are
@@ -89,6 +91,12 @@ void free_kd_rep(double **xpt, double **wgts);
    Returns:
       Nothing
 */
+
+unsigned long squeeze_rep(const unsigned long npts, 
+			  const unsigned int ndim, double *h, 
+			  const double smoothfac, double **x, 
+			  double **wgts);
+
 
 #endif
 /* _KERNEL_DENSITY_REP_H_ */

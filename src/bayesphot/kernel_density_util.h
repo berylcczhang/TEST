@@ -109,7 +109,9 @@ kernel_density* build_kd_sortdims(double *x, unsigned long ndim,
 */
 
 void free_kd(kernel_density *kd);
-/* Frees the memory associated with a kernel_density object.
+/* Frees the memory associated with a kernel_density object. Note that
+   this does not free any of the memory associated with the data
+   indexed by the KD tree, just the metadata specific to the tree.
 
    Parameters
       INPUT/OUTPUT kd
