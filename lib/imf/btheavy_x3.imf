@@ -1,0 +1,14 @@
+###############################################################
+# This is an IMF definition file for SLUG v2.
+# This file defines a bottom-heavy IMF with x = -3.0
+###############################################################
+
+# Breakpoints: mass values where the functional form changes
+breakpoints 0.1 120
+
+# Definitions of segments between the breakpoints
+
+# This segment is a powerlaw of slope -3.0
+segment
+type powerlaw
+slope -3.0
