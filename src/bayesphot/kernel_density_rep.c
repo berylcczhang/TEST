@@ -277,7 +277,7 @@ unsigned long squeeze_rep(const unsigned long npt,
 			  const double tol, double **x, 
 			  double **wgts) {
   kernel_density *kd;
-  unsigned long i, j, levptr, offset, npt_final;
+  unsigned long i, j, levptr, npt_final;
   double d2, w, log_hmin, logdx, *node_err;
 
   /* Get minimum bandwidth */
@@ -303,71 +303,104 @@ unsigned long squeeze_rep(const unsigned long npt,
 
   /* Breadth-first traversal of the tree, starting with the leaves
      and working up */
-  for (offset = 1; levptr != 0; 
-       levptr=PARENT(levptr), offset *=2) {
+  for (; levptr != 0; levptr=PARENT(levptr)) {
 
     /* Traverse the list of nodes from least weight to greatest */
     for (i=levptr; i<2*levptr; i++) {
 
-      /* Skip nodes with < 2 points; we don't need to do anything with
+      /* Skip nodes with 0 points ; we don't need to do anything with
 	 them */
       if (kd->tree->tree[i].npt <= 1) continue;
 
-      /* If we're not at the leaf level, and we've already declined to
-	 merge of this node's children, go to next node */
-      if (kd->tree->tree[i].splitdim != -1) {
+      /* Case where the node is a leaf */
+      if (kd->tree->tree[i].splitdim == -1) {
+
+	/* Get relative weights of the two points */
+	w = ((double *) kd->tree->tree[i].dptr)[0] /
+	  (((double *) kd->tree->tree[i].dptr)[0] +
+	   ((double *) kd->tree->tree[i].dptr)[1]);
+
+	/* Get log separation of node points in units of the minimum
+	   bandwidth */ 
+	d2 = dist2(&(kd->tree->tree[i].x[0]),
+		   &(kd->tree->tree[i].x[ndim]),
+		   ndim, ndim, NULL, NULL, NULL, ndim);
+	logdx = 0.5 * log10(d2) - log_hmin;
+
+	/* Compute the error associated with merging the points in this
+	   node */
+	node_err[i] = kd->nodewgt[i] * kd->norm * 
+	  node_merge_error(w, logdx);
+
+	/* If the error is too big, do nothing; go to next node */
+	if (node_err[i] / (kd->nodewgt[i] * kd->norm) > tol)
+	  continue;
+
+	/* Compute the location of the merged point, and store in first
+	   slot for this node */
+	for (j=0; j<ndim; j++)
+	  kd->tree->tree[i].x[j] = w * kd->tree->tree[i].x[j] +
+	    (1.0-w) * kd->tree->tree[i].x[ndim+j];
+
+	/* Set the weight of the merged point to the weight of the
+	   entire node, and zero out the other point */
+	((double *) kd->tree->tree[i].dptr)[0] = kd->nodewgt[i];
+	((double *) kd->tree->tree[i].dptr)[1] = 0.0;
+
+      } else {
+
+	/* Case where node is not a leaf */
+
+	/* Don't attempt to merge nodes if we've already rejected
+	   merging their children */
 	if (((double *) kd->tree->tree[LEFT(i)].dptr)[0] != 
 	    kd->nodewgt[LEFT(i)])
 	  continue;
 	if (((double *) kd->tree->tree[RIGHT(i)].dptr)[0] != 
 	    kd->nodewgt[RIGHT(i)])
 	  continue;
-      }
 
-      /* Get relative weights of the two points */
-      w = ((double *) kd->tree->tree[i].dptr)[0] /
-	(((double *) kd->tree->tree[i].dptr)[0] +
-	 ((double *) kd->tree->tree[i].dptr)[offset]);
+	/* Get relative weights of the two points */
+	w = kd->nodewgt[LEFT(i)] / 
+	  (kd->nodewgt[LEFT(i)] + kd->nodewgt[RIGHT(i)]);
 
-      /* Get log separation of node points in units of the minimum
-	 bandwidth */ 
-      d2 = dist2(&(kd->tree->tree[i].x[0]),
-		 &(kd->tree->tree[i].x[ndim*offset]),
-		 ndim, ndim, NULL, NULL, NULL, ndim);
-      logdx = 0.5 * log10(d2) - log_hmin;
+	/* Get log separation of node points in units of the minimum
+	   bandwidth */ 
+	d2 = dist2(kd->tree->tree[LEFT(i)].x,
+		   kd->tree->tree[RIGHT(i)].x,
+		   ndim, ndim, NULL, NULL, NULL, ndim);
+	logdx = 0.5 * log10(d2) - log_hmin;
 
-      /* Compute the error associated with merging the points in this
-	 node */
-      node_err[i] = kd->nodewgt[i] * kd->norm * 
-	node_merge_error(w, logdx);
+	/* Compute the error associated with merging the points in this
+	   node */
+	node_err[i] = kd->nodewgt[i] * kd->norm * 
+	  node_merge_error(w, logdx);
 
-      /* Add in errors from children, if any */
-      if (kd->tree->tree[i].splitdim != -1) 
+	/* Add in errors from children */
 	node_err[i] += node_err[LEFT(i)] + node_err[RIGHT(i)];
 
-      /* If the error is too big, do nothing; go to next node */
-      if (node_err[i] / (kd->nodewgt[i] * kd->norm) > tol)
-	continue;
+	/* If the error is too big, do nothing; go to next node */
+	if (node_err[i] / (kd->nodewgt[i] * kd->norm) > tol)
+	  continue;
 
-      /* If we're here, this node should be merged */
+	/* Compute the location of the merged point, and store in first
+	   slot for this node */
+	for (j=0; j<ndim; j++)
+	  kd->tree->tree[i].x[j] = w * kd->tree->tree[LEFT(i)].x[j] +
+	    (1.0-w) * kd->tree->tree[RIGHT(i)].x[j];
 
-      /* Compute the location of the merged point, and store in first
-	 slot for this node */
-      for (j=0; j<ndim; j++)
-	kd->tree->tree[i].x[j] = w * kd->tree->tree[i].x[j] +
-	  (1.0-w) * kd->tree->tree[i].x[ndim*offset+j];
-
-      /* Set the weight of the merged point to the weight of the
-	 entire node, and zero out the other point */
-      ((double *) kd->tree->tree[i].dptr)[0] = kd->nodewgt[i];
-      ((double *) kd->tree->tree[i].dptr)[offset] = 0.0;
+	/* Set the weight of the merged point to the weight of the
+	   entire node, and zero out the other point */
+	((double *) kd->tree->tree[i].dptr)[0] = kd->nodewgt[i];
+	((double *) kd->tree->tree[RIGHT(i)].dptr)[0] = 0.0;
+      }
     }
   }
 
   /* Last step: compress the final arrays, resize them in memory, then
      return the new size */
   for (i=0, npt_final=0; i<npt; i++) {
-    if ((*wgts)[i] != 0) {
+    if ((*wgts)[i] != 0.0) {
       /* Keep this point */
       if (npt_final < i) {
 	for (j=0; j<ndim; j++) (*x)[npt_final*ndim+j] = (*x)[i*ndim+j];
