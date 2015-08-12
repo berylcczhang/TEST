@@ -148,7 +148,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 	/* Store point in output array */
 	dimptr = 0;
 	for (j=0; j<kd->tree->ndim; j++) {
-	  for (k=0; k<ndim; k++) if (j == dims[k]) break;
+	  for (k=0; k<ndim; k++) if (j == dims[k]) continue;
 	  if (k == ndim) {
 	    xtmp[npt*ndim_ret+dimptr] = 
 	      kd->tree->tree[curnode].x[kd->tree->ndim*i+j];
