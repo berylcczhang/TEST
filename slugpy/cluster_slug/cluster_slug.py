@@ -863,7 +863,11 @@ class cluster_slug(object):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of photometric properties that corresponds to a set of
-        physical properties.
+        physical properties. The PDF produced by summing over the
+        points returned is guaranteed to account for at least 1-reltol
+        of the marginal photometric probability, and to represent the
+        shape of the PDF in photometric space within a local accuracy
+        of reltol as well.
 
         Parameters:
            phys : arraylike, shape (nphys) or (N, nphys)

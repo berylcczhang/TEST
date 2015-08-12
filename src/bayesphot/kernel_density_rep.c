@@ -43,10 +43,12 @@ double node_merge_error(double w, double logdx);
 unsigned long kd_rep(const kernel_density *kd, const double *x,
 		     const unsigned long *dims, 
 		     const unsigned long ndim, const double reltol,
+		     const unsigned long *dim_return, 
+		     const unsigned long ndim_return,
 		     double **xpt, double **wgts) {
 
   unsigned long i, j, k, ptr, curnode, nlist, nlist_alloc, npt_alloc, npt;
-  unsigned long dimptr, npt_final, ndim_ret = kd->tree->ndim - ndim;
+  unsigned long dimptr, npt_final, ndim_ret;
   unsigned long *nodelist;
   size_t *idx;
   double wgt_in, wgt_out, maxwgt, d2;
@@ -55,6 +57,11 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 
   /* Make sure our kernel is Gaussian */
   assert(kd->ktype == gaussian);
+
+  /* Set the number of dimensions we're returning to the default if
+     dim_return is NULL */
+  if (dim_return) ndim_ret = kd->tree->ndim - ndim;
+  else ndim_ret = ndim_return;
 
   /* Initialize the outputs */
   npt = 0;
@@ -148,12 +155,19 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 	/* Store point in output array */
 	dimptr = 0;
 	for (j=0; j<kd->tree->ndim; j++) {
-	  for (k=0; k<ndim; k++) if (j == dims[k]) continue;
-	  if (k == ndim) {
-	    xtmp[npt*ndim_ret+dimptr] = 
-	      kd->tree->tree[curnode].x[kd->tree->ndim*i+j];
-	    dimptr++;
+	  /* If this dimension is in dims, skip it */
+	  for (k=0; k<ndim; k++) if (j == dims[k]) break;
+	  if (k != ndim) continue;
+	  /* If this dimension is not in dim_return, and dim_return is
+	     set, skip it */
+	  if (dim_return) {
+	    for (k=0; i<ndim_return; k++) if (j == dim_return[k]) break;
+	    if (k == ndim) continue;
 	  }
+	  /* If we're here, copy the dimension */ 
+	  xtmp[npt*ndim_ret+dimptr] = 
+	    kd->tree->tree[curnode].x[kd->tree->ndim*i+j];
+	  dimptr++;
 	}
  
         /* Add to sum and increment counter */

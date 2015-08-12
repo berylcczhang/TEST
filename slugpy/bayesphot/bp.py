@@ -383,6 +383,8 @@ class bp(object):
                 array_1d_ulong,        # dims
                 c_ulong,               # ndim
                 c_double,              # reltol
+                POINTER(c_ulong),      # dim_return
+                c_ulong,               # ndim_return
                 POINTER(POINTER(
                     c_double)),        # xpt
                 POINTER(POINTER(
@@ -1532,11 +1534,15 @@ class bp(object):
     # an approximation to the PDF for it anywhere in space, much
     # faster than could be done using the full data set
     ##################################################################
-    def make_approx_phys(self, phys, squeeze=True):
+    def make_approx_phys(self, phys, squeeze=True, filter_ignore=None):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of photometric properties that corresponds to a set of
-        physical properties.
+        physical properties. The PDF produced by summing over the
+        points returned is guaranteed to account for at least 1-reltol
+        of the marginal photometric probability, and to represent the
+        shape of the PDF in photometric space within a local accuracy
+        of reltol as well.
 
         Parameters:
            phys : arraylike, shape (nphys) or (N, nphys)
@@ -1545,12 +1551,20 @@ class bp(object):
            squeeze : bool
               if True, the representation returned will be squeezed to
               minimize the number of points included, using reltol as
-             the error tolerance
+              the error tolerance
+           filter_ignore : None or listlike of bool
+              if None, the kernel density representation returned
+              covers all filters; otherwise this must be a listlike of
+              bool, one entry per filter, with a value of False
+              indicating that filter should be excluded from the
+              values returned; suppressing filters can allow for more
+              efficient representations
 
         Returns:
            x : array, shape (M, nphot), or a list of such arrays
               an array containing the list of points to be used for
-              the approximation
+              the approximation, where nphot is the number of
+              photometric filters being returned
            wgts : array, shape (M), or a list of such arrays
               an array containing the weights of the points
         """
@@ -1561,6 +1575,16 @@ class bp(object):
             phystmp = phys
         else:
             phystmp = [phys]
+
+        # Specify dimensions to return
+        if filter_ignore is None:
+            dim_return_ptr = None
+            ndim_return = self.__nphot
+        else:
+            dim_return = np.where(np.logical_not(
+                np.array(filter_ignore)))[0] + self.__nphys
+            dim_return_ptr = dim_return.ctypes.data_as(POINTER(c_ulong))
+            ndim_return = len(dim_return)
 
         # Loop over input physical variables
         x = []
@@ -1578,18 +1602,19 @@ class bp(object):
             npts = self.__clib.kd_rep(self.__kd, np.array(ph), 
                                       np.arange(self.__nphys, dtype=c_ulong),
                                       self.__nphys, self.reltol, 
+                                      dim_return_ptr, ndim_return,
                                       ctypes.byref(xout), 
                                       ctypes.byref(wgtsout))
 
             # Call c library routine to squeeze the representation
             if squeeze:
                 npts = self.__clib.squeeze_rep(
-                    npts, self.__nphot, self.__bandwidth[self.__nphys:],
+                    npts, ndim_return, self.__bandwidth[self.__nphys:],
                     self.reltol, ctypes.byref(xout), ctypes.byref(wgtsout))
 
             # Convert the returned values into numpy arrays; copy the
             # data so that we can free the c buffers
-            xsave = np.copy(npct.as_array(xout, shape=(npts, self.__nphot)))
+            xsave = np.copy(npct.as_array(xout, shape=(npts, ndim_return)))
             wgtssave = np.copy(npct.as_array(wgtsout, shape=(npts,)))
 
             # Free the c buffers
