@@ -859,7 +859,8 @@ class cluster_slug(object):
             # Call the bestmatch method
             return bp.bestmatch(phot, photerr, nmatch, bandwidth_units)
 
-    def make_approx_phys(self, phys, squeeze=True, filters=None):
+    def make_approx_phys(self, phys, squeeze=True, filters=None,
+                         filter_ignore=None):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of photometric properties that corresponds to a set of
@@ -877,6 +878,18 @@ class cluster_slug(object):
               if True, the representation returned will be squeezed to
               minimize the number of points included, using reltol as
               the error tolerance
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+           filter_ignore : None or listlike of bool
+              if None, the kernel density representation returned
+              covers all filters; otherwise this must be a listlike of
+              bool, one entry per filter, with a value of False
+              indicating that filter should be excluded from the
+              values returned; suppressing filters can allow for more
+              efficient representations
 
         Returns:
            x : array, shape (M, nphot), or a list of such arrays
@@ -884,11 +897,6 @@ class cluster_slug(object):
               the approximation
            wgts : array, shape (M), or a list of such arrays
               an array containing the weights of the points
-           filters : listlike of strings
-              list of photometric filters to use; if left as None, and
-              only 1 set of photometric filters has been defined for
-              the cluster_slug object, that set will be used by
-              default
         """
 
         # Were we given a set of filters?
@@ -898,7 +906,8 @@ class cluster_slug(object):
             # stored, just use it
             if len(self.__filtersets) == 1:
                 return self.__filtersets[0]['bp']. \
-                    make_approx_phys(phys, squeeze=squeeze)
+                    make_approx_phys(phys, squeeze=squeeze,
+                                     filter_ignore=filter_ignore)
             else:
                 raise ValueError("must specify a filter set")
 
@@ -914,4 +923,5 @@ class cluster_slug(object):
                     break
 
             # Call the bestmatch method
-            return bp.make_approx_phys(phys, squeeze=squeeze)
+            return bp.make_approx_phys(phys, squeeze=squeeze,
+                                       filter_ignore=filter_ignore)
