@@ -586,8 +586,12 @@ class cluster_slug(object):
             f['bp'].reltol = self.__reltol
 
     ##################################################################
-    # Wrappers around the bp logL, mpdf, mcmc, and bestmatch functions
+    # The functions below just wrap around the bayesphot functions of
+    # the same name. They all have in common that they accept an
+    # additional keyword argument, filters, which specifies the filter
+    # set to use.
     ##################################################################
+
     def logL(self, physprop, photprop, photerr=None, filters=None):
         """
         This function returns the natural log of the likelihood
@@ -812,6 +816,11 @@ class cluster_slug(object):
               if False, distances are computed based on the
               logarithmic difference in luminosity; if True, they are
               measured in units of the bandwidth
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
 
         Returns:
            matches : array, shape (..., nmatch, 3 + nfilter)
@@ -849,3 +858,56 @@ class cluster_slug(object):
 
             # Call the bestmatch method
             return bp.bestmatch(phot, photerr, nmatch, bandwidth_units)
+
+    def make_approx_phys(self, phys, squeeze=True, filters=None):
+        """
+        Returns an object that can be used for a fast approximation of
+        the PDF of photometric properties that corresponds to a set of
+        physical properties.
+
+        Parameters:
+           phys : arraylike, shape (nphys) or (N, nphys)
+              the set or sets of physical properties for which the
+              approximation is to be generated
+           squeeze : bool
+              if True, the representation returned will be squeezed to
+              minimize the number of points included, using reltol as
+              the error tolerance
+
+        Returns:
+           x : array, shape (M, nphot), or a list of such arrays
+              an array containing the list of points to be used for
+              the approximation
+           wgts : array, shape (M), or a list of such arrays
+              an array containing the weights of the points
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+        """
+
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    make_approx_phys(phys, squeeze=squeeze)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the bestmatch method
+            return bp.make_approx_phys(phys, squeeze=squeeze)

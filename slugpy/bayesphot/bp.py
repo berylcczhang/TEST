@@ -386,13 +386,23 @@ class bp(object):
                 POINTER(POINTER(
                     c_double)),        # xpt
                 POINTER(POINTER(
-                    c_double)) ]        # wgts
+                    c_double)) ]       # wgts
         self.__clib.free_kd_rep.restype = None
         self.__clib.free_kd_rep.argtypes \
             = [ POINTER(POINTER(
                 c_double)),            # xpt
                POINTER(POINTER(
                    c_double)) ]        # wgts
+        self.__clib.squeeze_rep.restype = c_ulong
+        self.__clib.squeeze_rep.argtypes \
+            = [ c_ulong,               # npts
+                c_ulong,               # ndim
+                array_1d_double,       # h
+                c_double,              # tol
+                POINTER(POINTER(
+                    c_double)),        # xpt
+                POINTER(POINTER(
+                    c_double)) ]       # wgts
 
         # Record some of the input parameters
         if (ktype == 'gaussian'):
@@ -1489,7 +1499,7 @@ class bp(object):
                 else:
                     bandwidth = np.zeros(self.__bandwidth.size)
                     bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
-                    bandwidth[self.__nphys:] = err
+                    bandwidth[self.__nphys:] = photerr[i]
                 self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
 
                 # Call c neighbor-finding routine
@@ -1522,7 +1532,7 @@ class bp(object):
     # an approximation to the PDF for it anywhere in space, much
     # faster than could be done using the full data set
     ##################################################################
-    def make_approx_phys(self, phys):
+    def make_approx_phys(self, phys, squeeze=True):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of photometric properties that corresponds to a set of
@@ -1532,6 +1542,10 @@ class bp(object):
            phys : arraylike, shape (nphys) or (N, nphys)
               the set or sets of physical properties for which the
               approximation is to be generated
+           squeeze : bool
+              if True, the representation returned will be squeezed to
+              minimize the number of points included, using reltol as
+             the error tolerance
 
         Returns:
            x : array, shape (M, nphot), or a list of such arrays
@@ -1558,7 +1572,7 @@ class bp(object):
                 raise ValueError("need " + str(self.__nphys) + 
                                  " physical properties!")
 
-            # Call c library routine
+            # Call c library routine to make the representation
             xout = POINTER(c_double)()
             wgtsout = POINTER(c_double)()
             npts = self.__clib.kd_rep(self.__kd, np.array(ph), 
@@ -1566,6 +1580,12 @@ class bp(object):
                                       self.__nphys, self.reltol, 
                                       ctypes.byref(xout), 
                                       ctypes.byref(wgtsout))
+
+            # Call c library routine to squeeze the representation
+            if squeeze:
+                npts = self.__clib.squeeze_rep(
+                    npts, self.__nphot, self.__bandwidth[self.__nphys:],
+                    self.reltol, ctypes.byref(xout), ctypes.byref(wgtsout))
 
             # Convert the returned values into numpy arrays; copy the
             # data so that we can free the c buffers
