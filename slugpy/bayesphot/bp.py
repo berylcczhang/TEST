@@ -935,7 +935,7 @@ class bp(object):
         Returns the marginal probability for one or mode physical
         quantities for one or more input sets of photometric
         properties. Output quantities are computed on a grid of
-        values, in the same style as meshgrid
+        values, in the same style as meshgrid.
 
         Parameters:
            idx : int or listlike containing ints
@@ -1021,7 +1021,7 @@ class bp(object):
             qmax_tmp \
                 = np.array(
                     np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)]),
-                    dtype-np.double)
+                    dtype=np.double)
             ngrid_tmp = np.array(grid_out.shape[1:], dtype=c_ulong)
         else:
             if qmin is None:
@@ -1534,7 +1534,7 @@ class bp(object):
     # an approximation to the PDF for it anywhere in space, much
     # faster than could be done using the full data set
     ##################################################################
-    def make_approx_phys(self, phys, squeeze=True, filter_ignore=None):
+    def make_approx_phot(self, phys, squeeze=True, filter_ignore=None):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of photometric properties that corresponds to a set of
@@ -1576,15 +1576,17 @@ class bp(object):
         else:
             phystmp = [phys]
 
-        # Specify dimensions to return
+        # Specify dimensions to return, and set bandwidth for them
         if filter_ignore is None:
             dim_return_ptr = None
             ndim_return = self.__nphot
+            bw = self.__bandwidth[self.__nphys:]
         else:
             dim_return = np.where(np.logical_not(
                 np.array(filter_ignore)))[0] + self.__nphys
             dim_return_ptr = dim_return.ctypes.data_as(POINTER(c_ulong))
             ndim_return = len(dim_return)
+            bw = self.__bandwidth[dim_return]
 
         # Loop over input physical variables
         x = []
@@ -1609,8 +1611,8 @@ class bp(object):
             # Call c library routine to squeeze the representation
             if squeeze:
                 npts = self.__clib.squeeze_rep(
-                    npts, ndim_return, self.__bandwidth[self.__nphys:],
-                    self.reltol, ctypes.byref(xout), ctypes.byref(wgtsout))
+                    npts, ndim_return, bw, self.reltol,
+                    ctypes.byref(xout), ctypes.byref(wgtsout))
 
             # Convert the returned values into numpy arrays; copy the
             # data so that we can free the c buffers
@@ -1633,4 +1635,258 @@ class bp(object):
 
         # Return
         return x, wgts
+
+    def make_approx_phys(self, phot, photerr=None, squeeze=True,
+                         phys_ignore=None):
+        """
+        Returns an object that can be used for a fast approximation of
+        the PDF of physical properties that corresponds to a set of
+        photometric properties. The PDF produced by summing over the
+        points returned is guaranteed to account for at least 1-reltol
+        of the marginal photometric probability, and to represent the
+        shape of the PDF in photometric space within a local accuracy
+        of reltol as well.
+
+        Parameters:
+           phot : arraylike, shape (nfilter) or (N, nfilter)
+              the set or sets of photometric properties for which the
+              approximation is to be generated
+           photerr : arraylike, shape (nfilter) or (N, nfilter)
+              array giving photometric errors; the number of elements
+              in the output lists will be the size that results from
+              broadcasting together the leading dimensions of phot and
+              photerr
+           squeeze : bool
+              if True, the representation returned will be squeezed to
+              minimize the number of points included, using reltol as
+              the error tolerance
+           phys_ignore : None or listlike of bool
+              if None, the kernel density representation returned
+              covers all physical properties; otherwise this must be a
+              listlike of bool, one entry per physical dimension, with
+              a value of False indicating that dimension should be
+              excluded from the values returned; suppressing
+              dimensions can allow for more efficient representations
+
+        Returns:
+           x : array, shape (M, nphys), or a list of such arrays
+              an array containing the list of points to be used for
+              the approximation, where nphys is the number of
+              physical dimensions being returned
+           wgts : array, shape (M), or a list of such arrays
+              an array containing the weights of the points
+        """
+
+        # If given only one set of photometric variables, make a
+        # temporary list we can loop over; same for photometric errors
+        if hasattr(phot[0], '__iter__'):
+            phottmp = phot
+        else:
+            phottmp = [phot]
+        if photerr is not None:
+            if hasattr(photerr[0], '__iter__'):
+                photerrtmp = photerr
+            else:
+                photerrtmp = [photerr]
+        else:
+            photerrtmp = [None]
+
+        # Specify dimensions to return, and set bandwidth for them
+        if phys_ignore is None:
+            dim_return_ptr = None
+            ndim_return = self.__nphot
+            bw = self.__bandwidth[:self.__nphys]
+        else:
+            dim_return = np.where(np.logical_not(
+                np.array(phys_ignore)))[0]
+            dim_return_ptr = dim_return.ctypes.data_as(POINTER(c_ulong))
+            ndim_return = len(dim_return)
+            bw = self.__bandwidth[dim_return]
+
+        # Loop over input photometric variables
+        x = []
+        wgts = []
+        for ph in phottmp:
+
+            # Safety check
+            if len(ph) != self.__nphot:
+                raise ValueError("need " + str(self.__nphot) + 
+                                 " photometric properties!")
+
+            # Loop over photometric errors
+            for pherr in photerrtmp:
+
+                # Change the bandwidth if necessary
+                if pherr is not None:
+                    if len(pherr) != self.__nphot:
+                        raise ValueError("need " + str(self.__nphot) + 
+                                         " photometric errors!")
+                    err = np.zeros(self.__bandwidth.size)
+                    err[self.__nphys:] = pherr
+                    bandwidth = np.sqrt(self.bandwidth**2+err**2)
+                    self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+
+                # Call c library routine to make the representation
+                xout = POINTER(c_double)()
+                wgtsout = POINTER(c_double)()
+                npts = self.__clib.kd_rep(
+                    self.__kd, np.array(ph), 
+                    np.arange(self.__nphot, dtype=c_ulong)+self.__nphys,
+                    self.__nphot, self.reltol, 
+                    dim_return_ptr, ndim_return,
+                    ctypes.byref(xout), 
+                    ctypes.byref(wgtsout))
+
+                # Call c library routine to squeeze the representation
+                if squeeze:
+                    npts = self.__clib.squeeze_rep(
+                        npts, ndim_return, bw, self.reltol,
+                        ctypes.byref(xout), ctypes.byref(wgtsout))
+
+                # Convert the returned values into numpy arrays; copy the
+                # data so that we can free the c buffers
+                xsave = np.copy(npct.as_array(xout, 
+                                              shape=(npts, ndim_return)))
+                wgtssave = np.copy(npct.as_array(wgtsout, shape=(npts,)))
+
+                # Free the c buffers
+                self.__clib.free_kd_rep(ctypes.byref(xout), 
+                                        ctypes.byref(wgtsout))
+
+                # Append to the lists we'll be returning
+                x.append(xsave)
+                wgts.append(wgtssave)
+
+
+        # Reset the bandwidth
+        if photerr is not None:
+            self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                            self.__kd)
+
+        # If we were given a single object, return something in the
+        # same shape
+        if not hasattr(phot[0], '__iter__'):
+            if photerr is None:
+                x = x[0]
+                wgts = wgts[0]
+            elif not hasattr(photerr[0], '__iter__'):
+                x = x[0]
+                wgts = wgts[0]
+
+        # Return
+        return x, wgts
             
+    ##################################################################
+    # Routines to use the approximate representations returned by
+    # make_approx_phys and make_approx_phot to compute marginal
+    # posterior probabilities
+    ##################################################################
+
+    def mpdf_from_approx(self, x, wgts, dims='phys', dims_return=None,
+                         ngrid=128, qmin=None, qmax=None, grid=None,
+                         norm=True):
+        """
+        Returns the marginal posterior PDF computed from a kernel
+        density approximation returned by make_approx_phys or
+        make_approx_phot. Outputs are computed on a grid of values, in
+        the same style as meshgrid.
+
+        Parameters:
+           x : array, shape (M, ndim), or a list of such arrays
+              array of points retured by make_approx_phot or
+              make_approx_phys
+           wgts : array, shape (M) or a list of such arrays
+              array of weights returned by make_approx_phot or
+              make_approx_phys
+           dims : 'phys' | 'phot' | arraylike of ints
+              dimensions covered by x and wgts; the strings 'phys' or
+              'phot' indicate that they cover all physical or
+              photometric dimensions, and correspond to the defaults
+              returned by make_approx_phys and make_approx_phot,
+              respectively; if dims is an array of ints, these specify
+              the dimensions covered by x and wgts, where the
+              physical dimensions are numbered 0, 1, ... nphys-1, and
+              the photometric ones are nphys, nphys+1,
+              ... nphys+nphot-1
+           dims_return : None or arraylike of ints
+              if None, the output PDF has the same dimensions as
+              specified in dms; if not, then dimreturn must be a
+              subset of dim, and a marginal PDF in certain dimensions
+              will be generated
+           ngrid : int or listlike containing ints
+              number of points in each dimension of the output grid;
+              if this is an iterable, it must have the same number of
+              elements as idx
+           qmin : float or listlike
+              minimum value in the output grid in each quantity; if
+              left as None, defaults to the minimum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           qmax : float or listlike
+              maximum value in the output grid in each quantity; if
+              left as None, defaults to the maximum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           grid : listlike of arrays
+              set of values defining the grid on which the PDF is to
+              be evaluated, in the same format used by meshgrid
+           norm : bool
+              if True, returned pdf's will be normalized to integrate
+              to 1
+
+        Returns:
+           grid_out : array
+              array of values at which the PDF is evaluated; contents
+              are the same as returned by meshgrid
+           pdf : array
+              array of marginal posterior probabilities at each point
+              of the output grid, for each input cluster; the leading
+              dimensions match the leading dimensions produced by
+              broadcasting the leading dimensions of photprop and
+              photerr together, while the trailing dimensions match
+              the dimensions of the output grid
+        """
+
+        # Set up input and output dimensions
+        if dims == 'phys':
+            dim_in = np.arange(self.__nphys)
+        elif dims == 'phot':
+            dim_in = np.arange(self.__nphot) + self.__nphys
+        else:
+            dim_in = dims
+        if dims_return is None:
+            dim_out = dim_in
+        elif set(dim_out) <= set(dim_in):
+            dim_out = dims_return
+        else:
+            raise ValueError("dims_return must be a subset of dims!")
+
+        # Set up the output grid
+        if grid is not None:
+            grid_out = np.meshgrid(grid)
+        else:
+            if qmin is None:
+                qmin = np.amin(self.__dataset[:,idx], axis=0)
+            if qmax is None:
+                qmax = np.amax(self.__dataset[:,idx], axis=0)
+            griddims = []
+            if hasattr(idx, '__len__'):
+                # Case for multiple indices
+                griddims = []
+                if hasattr(ngrid, '__len__'):
+                    ngrid_tmp = np.array(ngrid, dtype=c_ulong)
+                else:
+                    ngrid_tmp = np.array([ngrid]*len(idx), dtype=c_ulong)
+                for i in range(len(idx)):
+                    griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
+                                    float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
+                grid_out = np.squeeze(np.array(np.meshgrid(*griddims,
+                                                           indexing='ij')))
+            else:
+                # Case for a single index
+                grid_out = qmin + \
+                           np.arange(ngrid) * \
+                           float(qmax-qmin)/(ngrid-1)
+ 
+        # Compute the result
+        import pdb; pdb.set_trace()
