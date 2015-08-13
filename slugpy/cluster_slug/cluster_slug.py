@@ -70,6 +70,14 @@ class cluster_slug(object):
        bestmatch() : 
           find the simulations in the library that are the closest
           matches to the input photometry
+       make_approx_phot() :
+          given a set of physical properties, return a set of points
+          that can be used for fast approximation of the corresponding
+          photometric properties
+       make_approx_phys() :
+          given a set of photometric properties, return a set of points
+          that can be used for fast approximation of the corresponding
+          physical properties
     """
 
     ##################################################################
@@ -859,8 +867,8 @@ class cluster_slug(object):
             # Call the bestmatch method
             return bp.bestmatch(phot, photerr, nmatch, bandwidth_units)
 
-    def make_approx_phys(self, phys, squeeze=True, filters=None,
-                         filter_ignore=None):
+    def make_approx_phot(self, phys, squeeze=True, filter_ignore=None,
+                         filters=None):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of photometric properties that corresponds to a set of
@@ -878,11 +886,6 @@ class cluster_slug(object):
               if True, the representation returned will be squeezed to
               minimize the number of points included, using reltol as
               the error tolerance
-           filters : listlike of strings
-              list of photometric filters to use; if left as None, and
-              only 1 set of photometric filters has been defined for
-              the cluster_slug object, that set will be used by
-              default
            filter_ignore : None or listlike of bool
               if None, the kernel density representation returned
               covers all filters; otherwise this must be a listlike of
@@ -890,6 +893,11 @@ class cluster_slug(object):
               indicating that filter should be excluded from the
               values returned; suppressing filters can allow for more
               efficient representations
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
 
         Returns:
            x : array, shape (M, nphot), or a list of such arrays
@@ -906,7 +914,7 @@ class cluster_slug(object):
             # stored, just use it
             if len(self.__filtersets) == 1:
                 return self.__filtersets[0]['bp']. \
-                    make_approx_phys(phys, squeeze=squeeze,
+                    make_approx_phot(phys, squeeze=squeeze,
                                      filter_ignore=filter_ignore)
             else:
                 raise ValueError("must specify a filter set")
@@ -922,6 +930,185 @@ class cluster_slug(object):
                     bp = f['bp']
                     break
 
-            # Call the bestmatch method
-            return bp.make_approx_phys(phys, squeeze=squeeze,
+            # Call the method
+            return bp.make_approx_phot(phys, squeeze=squeeze,
                                        filter_ignore=filter_ignore)
+
+
+    def make_approx_phys(self, phot, photerr=None, squeeze=True, 
+                         phys_ignore=None, filters=None):
+        """
+        Returns an object that can be used for a fast approximation of
+        the PDF of physical properties that corresponds to a set of
+        photometric properties. The PDF produced by summing over the
+        points returned is guaranteed to account for at least 1-reltol
+        of the marginal photometric probability, and to represent the
+        shape of the PDF in photometric space within a local accuracy
+        of reltol as well.
+
+        Parameters:
+           phot : arraylike, shape (nfilter) or (N, nfilter)
+              the set or sets of photometric properties for which the
+              approximation is to be generated
+           photerr : arraylike, shape (nfilter) or (N, nfilter)
+              array giving photometric errors; the number of elements
+              in the output lists will be the size that results from
+              broadcasting together the leading dimensions of phot and
+              photerr
+           squeeze : bool
+              if True, the representation returned will be squeezed to
+              minimize the number of points included, using reltol as
+              the error tolerance
+           phys_ignore : None or listlike of bool
+              if None, the kernel density representation returned
+              covers all physical properties; otherwise this must be a
+              listlike of bool, one entry per physical dimension, with
+              a value of False indicating that dimension should be
+              excluded from the values returned; suppressing
+              dimensions can allow for more efficient representations
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns:
+           x : array, shape (M, nphys), or a list of such arrays
+              an array containing the list of points to be used for
+              the approximation, where nphys is the number of
+              physical dimensions being returned
+           wgts : array, shape (M), or a list of such arrays
+              an array containing the weights of the points
+        """
+
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    make_approx_phys(phot, photerr=photerr,
+                                     squeeze=squeeze,
+                                     phys_ignore=phys_ignore)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the method
+            return bp.make_approx_phys(phot, photerr=photerr,
+                                       squeeze=squeeze,
+                                       phys_ignore=phys_ignore)
+
+
+    def mpdf_from_approx(self, x, wgts, dims='phys', dims_retun=None,
+                         ngrid=128, qmin=None, qmax=None, grid=None,
+                         norm=True, filters=None):
+        """
+        Returns the marginal posterior PDF computed from a kernel
+        density approximation returned by make_approx_phys or
+        make_approx_phot. Outputs are computed on a grid of values, in
+        the same style as meshgrid.
+
+        Parameters:
+           x : array, shape (M, ndim), or a list of such arrays
+              array of points retured by make_approx_phot or
+              make_approx_phys
+           wgts : array, shape (M) or a list of such arrays
+              array of weights returned by make_approx_phot or
+              make_approx_phys
+           dims : 'phys' | 'phot' | arraylike of ints
+              dimensions covered by x and wgts; the strings 'phys' or
+              'phot' indicate that they cover all physical or
+              photometric dimensions, and correspond to the defaults
+              returned by make_approx_phys and make_approx_phot,
+              respectively; if dims is an array of ints, these specify
+              the dimensions covered by x and wgts, where the
+              physical dimensions are numbered 0, 1, ... nphys-1, and
+              the photometric ones are nphys, nphys+1,
+              ... nphys+nphot-1
+           dims_return : None or arraylike of ints
+              if None, the output PDF has the same dimensions as
+              specified in dms; if not, then dimreturn must be a
+              subset of dim, and a marginal PDF in certain dimensions
+              will be generated
+           ngrid : int or listlike containing ints
+              number of points in each dimension of the output grid;
+              if this is an iterable, it must have the same number of
+              elements as idx
+           qmin : float or listlike
+              minimum value in the output grid in each quantity; if
+              left as None, defaults to the minimum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           qmax : float or listlike
+              maximum value in the output grid in each quantity; if
+              left as None, defaults to the maximum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           grid : listlike of arrays
+              set of values defining the grid on which the PDF is to
+              be evaluated, in the same format used by meshgrid
+           norm : bool
+              if True, returned pdf's will be normalized to integrate
+              to 1
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns:
+           grid_out : array
+              array of values at which the PDF is evaluated; contents
+              are the same as returned by meshgrid
+           pdf : array
+              array of marginal posterior probabilities at each point
+              of the output grid, for each input cluster; the leading
+              dimensions match the leading dimensions produced by
+              broadcasting the leading dimensions of photprop and
+              photerr together, while the trailing dimensions match
+              the dimensions of the output grid
+        """
+
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    mpdf_from_approx(x, wgts, dims=dims, 
+                                     dims_return=dims_return,
+                                     ngrid=ngrid, qmin=qmin,
+                                     qmax=qmax, grid=grid, norm=norm)
+
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the method
+            return bp.mpdf_from_approx(x, wgts, dims=dims, 
+                                       dims_return=dims_return,
+                                       ngrid=ngrid, qmin=qmin,
+                                       qmax=qmax, grid=grid, norm=norm)
