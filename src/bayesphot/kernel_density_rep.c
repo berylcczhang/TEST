@@ -100,6 +100,8 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
   wgt_in = 0.0;
   wgt_out = nodewgt[0];
 
+  printf("starting main loop\n");
+
   /* Main loop */
   while (1) {
 
@@ -113,6 +115,8 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
       }
     }
     curnode = nodelist[ptr];
+
+    printf("curnode = %ld, wgt_in = %e, wgt_out = %e\n", curnode, wgt_in, wgt_out);
 
     /* Subtract this node's contribution from the excluded weight;
        avoid roundoff error */
@@ -144,7 +148,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
       
 	/* Get distance */
 	d2 = dist2(&(kd->tree->tree[curnode].x[kd->tree->ndim*i]), x,
-		   kd->tree->ndim, ndim, NULL, NULL, kd->h, 
+		   kd->tree->ndim, ndim, NULL, dims, kd->h, 
 		   kd->tree->ndim);
       
 	/* Compute weight of point */
@@ -223,6 +227,8 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
     /* Check if we're converged */
     if (wgt_in / (wgt_in + wgt_out) > 1.0-reltol) break;
   }
+
+  printf("end main loop\n");
 
   /* Free some memory */
   free(nodelist);
