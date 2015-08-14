@@ -86,7 +86,8 @@ class cluster_slug(object):
     def __init__(self, libname=None, filters=None, photsystem=None,
                  bw_phys=0.1, bw_phot=None, ktype='gaussian', 
                  priors=None, sample_density=None, reltol=1.0e-2,
-                 abstol=1.0e-8, leafsize=16, use_nebular=True):
+                 abstol=1.0e-8, leafsize=16, use_nebular=True,
+                 use_extinction=True):
         """
         Initialize a cluster_slug object.
 
@@ -105,11 +106,13 @@ class cluster_slug(object):
               'Vega', corresponding to the options defined in the SLUG
               code. Once this is set, any subsequent photometric data
               input are assumed to be in the same photometric system.
-           bw_phys : 'auto' | float | array, shape (3)
+           bw_phys : 'auto' | float | array, shape (2) | array, shape (3)
               bandwidth for the physical quantities in the kernel
               density estimation; if set to 'auto', the bandwidth will
               be estimated automatically; if set to a scalar quantity,
-              this will be used for all physical quantities
+              this will be used for all physical quantities; if set to
+              an array, the array must have 2 elements if
+              use_extinction is False, or 3 if it is True
            bw_phot : None | 'auto' | float | array
               bandwidth for the photometric quantities; if set to
               None, defaults to 0.25 mag / 0.1 dex; if set to 'auto',
@@ -158,6 +161,10 @@ class cluster_slug(object):
               if True, photometry including nebular emission will be
               used if available; if not, nebular emission will be
               omitted
+           use_extinction : bool
+              if True, photometry including extinction will be used;
+              if not, it will be omitted, and in this case no results
+              making use of the A_V dimension will be available
 
         Returns
            Nothing
@@ -256,10 +263,16 @@ class cluster_slug(object):
                 raise IOError("still unable to open default library")
 
         # Store the physical properties
-        self.__ds_phys = np.zeros((len(prop.id), 3))
+        if use_extinction:
+            self.__nphys = 3
+            self.__ds_phys = np.zeros((len(prop.id), 3))
+        else:
+            self.__nphys = 2
+            self.__ds_phys = np.zeros((len(prop.id), 2))
         self.__ds_phys[:,0] = np.log10(prop.actual_mass)
         self.__ds_phys[:,1] = np.log10(prop.time - prop.form_time)
-        self.__ds_phys[:,2] = prop.A_V
+        if use_extinction:
+            self.__ds_phys[:,2] = prop.A_V
 
         # Record available filters
         filter_info = read_cluster_phot(self.__libname,
@@ -271,6 +284,7 @@ class cluster_slug(object):
         # Record other stuff that we'll use later
         self.__photsystem = photsystem
         self.__use_nebular = use_nebular
+        self.__use_extinction = use_extinction
         self.__ktype = ktype
         self.__priors = priors
         if (sample_density is not None) or \
@@ -338,27 +352,28 @@ class cluster_slug(object):
                                      phot_only=True)
         else:
 
-            # Load data; first try for nebular, extincted data, unless
-            # we've been told not to use nebular data
+            # Load data; first try reading the requested combination
+            # of nebular and extincted values
             phot = read_cluster_phot(self.__libname, 
                                      read_filters=filter_name,
                                      read_nebular=self.__use_nebular,
-                                     read_extinct=True,
+                                     read_extinct=self.__use_extinction,
                                      phot_only=True,
                                      photsystem=self.__photsystem)
 
-            # Make sure we got nebular data if we wanted it; if not, try
-            # looking for non-nebular data
-            if self.__use_nebular:
+            # Make sure we have the data we want; if not, lots of ugly
+            # special cases as fallbacks
+            if (self.__use_nebular and self.__use_extinction):
+                # Wanted nebular + extinction
                 if 'phot_neb_ex' in phot._fields:
-                    # We want nebular data, and we have it
-                    warn_nebular = False
-                    nebular = True
+                    # Got it
                     phdata = phot.phot_neb_ex
+                    warn_nebular = False
+                    warn_extinct = False
+                    nebular = True
+                    extinct = True
                 else:
-                    # We want nebular data, but we don't have it
-                    warn_nebular = True
-                    nebular = False
+                    # Didn't get it; try without nebular
                     phot = read_cluster_phot(
                         self.__libname, 
                         read_filters=filter_name,
@@ -366,20 +381,90 @@ class cluster_slug(object):
                         read_extinct=True,
                         phot_only=True,
                         photsystem=self.__photsystem)
+                    if 'phot_ex' in phot._fields:
+                        phdata = phot.phot_ex
+                        warn_nebular = True
+                        warn_extinct = False
+                        nebular = False
+                        extinct = True
+                    else:
+                        # Couldn't get extinction only; try nebular only
+                        phot = read_cluster_phot(
+                            self.__libname, 
+                            read_filters=filter_name,
+                            read_nebular=True,
+                            read_extinct=False,
+                            phot_only=True,
+                            photsystem=self.__photsystem)
+                        if 'phot_neb' in phot._fields:
+                            phdata = phot.phot_neb
+                            warn_nebular = False
+                            warn_extinct = True
+                            nebular = True
+                            extinct = False
+                        else:
+                            # Ultimate fallback: no nebular or extinction
+                            phot = read_cluster_phot(
+                                self.__libname, 
+                                read_filters=filter_name,
+                                read_nebular=False,
+                                read_extinct=False,
+                                phot_only=True,
+                                photsystem=self.__photsystem)
+                            phdata = phot.phot
+                            warn_nebular = True
+                            warn_extinct = True
+                            nebular = False
+                            extinct = False
+
+            elif self.__use_nebular:
+                # Want nebular, no extinction
+                if 'phot_neb' in phot._fields:
+                    # Got it
+                    phdata = phot.phot_neb
+                    warn_nebular = False
+                    warn_extinct = False
+                    nebular = True
+                    extinct = False
+                else:
+                    # Didn't get it; go to no nebular or extinction
+                    phot = read_cluster_phot(
+                        self.__libname, 
+                        read_filters=filter_name,
+                        read_nebular=False,
+                        read_extinct=False,
+                        phot_only=True,
+                        photsystem=self.__photsystem)
+                    phdata = phot.phot
+                    warn_nebular = True
+                    warn_extinct = False
+                    nebular = False
+                    extinct = False
+
+            elif self._use_extinction:
+                # Wanted extinction, no nebular
+                if 'phot_ex' in phot._fields:
+                    # Got it
                     phdata = phot.phot_ex
-            else:
-                # We don't want nebular data
-                warn_nebular = False
-                nebular = False
-                phot = read_cluster_phot(
-                    self.__libname, 
-                    read_filters=filter_name,
-                    read_nebular=False,
-                    read_extinct=True,
-                    phot_only=True,
-                    photsystem=self.__photsystem)
-                phdata = phot.phot_ex
-        
+                    warn_nebular = False
+                    warn_extinct = False
+                    nebular = False
+                    extinct = True
+                else:
+                    # Didn't get it; go to no nebular or extinction
+                    phot = read_cluster_phot(
+                        self.__libname, 
+                        read_filters=filter_name,
+                        read_nebular=False,
+                        read_extinct=False,
+                        phot_only=True,
+                        photsystem=self.__photsystem)
+                    phdata = phot.phot
+                    warn_nebular = False
+                    warn_extinct = True
+                    nebular = False
+                    extinct = False
+
             # Make sure data aren't NaN's. If they are, that means we
             # don't have extinction for this filter, so we need to use
             # non-extincted data.
@@ -485,11 +570,11 @@ class cluster_slug(object):
               list of filter names to be used for inferenence
            bandwidth : None | 'auto' | float | array
               bandwidth for the photometric quantities; if set to
-              None, defaults to 0.3 mag / 0.12 dex; if set to 'auto',
+              None, defaults to 0.25 mag / 0.1 dex; if set to 'auto',
               bandwidth is estimated automatically; if set to a float,
               this bandwidth is used for all physical photometric
               dimensions; if set to an array, the array must have the
-              same number of entries as 3+len(filters)
+              same number of entries as nphys+len(filters)
 
         Returns
            nothing
@@ -502,10 +587,10 @@ class cluster_slug(object):
                 if bandwidth is not None:
                     self.__filtersets[i]['bp'].bandwidth = bandwidth
                 else:
-                    bw = np.zeros(3+len(filters))
-                    bw[:3] = self.__bw_phys
+                    bw = np.zeros(self.__nphys+len(filters))
+                    bw[:self.__nphys] = self.__bw_phys
                     for j in range(len(filters)):
-                        bw[3+j] = self.__photbw[filters[j]]
+                        bw[self.__nphys+j] = self.__photbw[filters[j]]
                     self.__filtersets[i]['bp'].bandwidth = bw
                 return
 
@@ -515,8 +600,8 @@ class cluster_slug(object):
         # Construct data set to use with this filter combination, and
         # add the physical property data
         newfilter['dataset'] = np.zeros((self.__ds_phys.shape[0], 
-                                         3+len(filters)))
-        newfilter['dataset'][:,:3] = self.__ds_phys
+                                         self.__nphys+len(filters)))
+        newfilter['dataset'][:,:self.__nphys] = self.__ds_phys
 
         # Loop over filters
         for i, f in enumerate(filters):
@@ -526,22 +611,23 @@ class cluster_slug(object):
                 self.load_data(f)
 
             # Add data for this filter
-            newfilter['dataset'][:,3+i] = np.squeeze(self.__photdata[f])
+            newfilter['dataset'][:,self.__nphys+i] \
+                = np.squeeze(self.__photdata[f])
 
         # Set bandwidth
         if self.__bw_phys == 'auto' or bandwidth == 'auto':
             bw = 'auto'
         else:
-            bw = np.zeros(3+len(filters))
-            bw[:3] = self.__bw_phys
+            bw = np.zeros(self.__nphys+len(filters))
+            bw[:self.__nphys] = self.__bw_phys
             if bandwidth is not None:
-                bw[3:] = bandwidth
+                bw[self.__nphys:] = bandwidth
             else:
                 for i in range(len(filters)):
-                    bw[3+i] = self.__photbw[f]
+                    bw[self.__nphys+i] = self.__photbw[f]
 
         # Build the bp object
-        newfilter['bp'] = bp(newfilter['dataset'], 3,
+        newfilter['bp'] = bp(newfilter['dataset'], self.__nphys,
                              filters=filters,
                              bandwidth = bw,
                              ktype = self.__ktype,
@@ -607,10 +693,11 @@ class cluster_slug(object):
         extinction, and set of log luminosities
 
         Parameters:
-           physprop : arraylike, shape (3) or (..., 3)
+           physprop : arraylike, shape (nhpys) or (..., nphys)
               array giving values of the log M, log T, and A_V; for a
               multidimensional array, the operation is vectorized over
-              the leading dimensions
+              the leading dimensions; if created with use_extinct =
+              False, the A_V dimension should be omitted
            photprop : arraylike, shape (nfilter) or (..., nfilter)
               array giving the photometric values; for a
               multidimensional array, the operation is vectorized over
@@ -831,13 +918,14 @@ class cluster_slug(object):
               default
 
         Returns:
-           matches : array, shape (..., nmatch, 3 + nfilter)
+           matches : array, shape (..., nmatch, nphys + nfilter)
               best matches to the input photometry; shape in the
               leading dimensions will be the same as for phot, and if
               nmatch == 1 then that dimension will be omitted; in the
               final dimension, the first 3 elements give log M, log T,
               and A_V, while the last nfilter give the photometric
-              values
+              values; if created with use_extinct = False, the A_V
+              dimension is omitted
            dist : array, shape (..., nmatch)
               distances between the matches and the input photometry
         """
@@ -1012,7 +1100,7 @@ class cluster_slug(object):
 
 
     def mpdf_approx(self, x, wgts, dims='phys', dims_return=None,
-                    ngrid=128, qmin=None, qmax=None, grid=None,
+                    ngrid=64, qmin=None, qmax=None, grid=None,
                     norm=True, filters=None):
         """
         Returns the marginal posterior PDF computed from a kernel
@@ -1039,8 +1127,8 @@ class cluster_slug(object):
               ... nphys+nphot-1
            dims_return : None or arraylike of ints
               if None, the output PDF has the same dimensions as
-              specified in dms; if not, then dimreturn must be a
-              subset of dim, and a marginal PDF in certain dimensions
+              specified in dims; if not, then dimreturn must be a
+              subset of dims, and a marginal PDF in certain dimensions
               will be generated
            ngrid : int or listlike containing ints
               number of points in each dimension of the output grid;
