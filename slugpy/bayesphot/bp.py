@@ -1694,7 +1694,7 @@ class bp(object):
         # Specify dimensions to return, and set bandwidth for them
         if phys_ignore is None:
             dim_return_ptr = None
-            ndim_return = self.__nphot
+            ndim_return = self.__nphys
             bw = self.__bandwidth[:self.__nphys]
         else:
             dim_return = np.where(np.logical_not(
@@ -1782,9 +1782,9 @@ class bp(object):
     # posterior probabilities
     ##################################################################
 
-    def mpdf_from_approx(self, x, wgts, dims='phys', dims_return=None,
-                         ngrid=128, qmin=None, qmax=None, grid=None,
-                         norm=True):
+    def mpdf_approx(self, x, wgts, dims='phys', dims_return=None,
+                    ngrid=64, qmin=None, qmax=None, grid=None,
+                    norm=True):
         """
         Returns the marginal posterior PDF computed from a kernel
         density approximation returned by make_approx_phys or
@@ -1819,14 +1819,14 @@ class bp(object):
               elements as idx
            qmin : float or listlike
               minimum value in the output grid in each quantity; if
-              left as None, defaults to the minimum value in the
-              library; if this is an iterable, it must contain the
-              same number of elements as idx
+              left as None, the range is chosen automatically to zoom in
+              on the maximum of the final PDF; if this is an iterable,
+              it must contain the same number of elements as idx
            qmax : float or listlike
               maximum value in the output grid in each quantity; if
-              left as None, defaults to the maximum value in the
-              library; if this is an iterable, it must contain the
-              same number of elements as idx
+              left as None, the range is chosen automatically to zoom in
+              on the maximum of the final PDF; if this is an iterable,
+              it must contain the same number of elements as idx
            grid : listlike of arrays
               set of values defining the grid on which the PDF is to
               be evaluated, in the same format used by meshgrid
@@ -1856,30 +1856,49 @@ class bp(object):
             dim_in = dims
         if dims_return is None:
             dim_out = dim_in
-        elif set(dim_out) <= set(dim_in):
+        elif not hasattr(dims_return, '__iter__'):
+            dim_out = [dims_return]
+            if not dim_out in dim_in:
+                raise ValueError("dims_return must be a subset of dims!")
+        elif set(dims_return) <= set(dim_in):
             dim_out = dims_return
         else:
             raise ValueError("dims_return must be a subset of dims!")
+        nidx = len(dim_out)
 
         # Set up the output grid
         if grid is not None:
             grid_out = np.meshgrid(grid)
+            qmin \
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)]),
+                    dtype=np.double)
+            qmax \
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)]),
+                    dtype=np.double)
+            ngrid_tmp = np.squeeze(grid_out).shape
+            for i in range(len(dim_out)):
+                griddims.append(np.linspace(qmin[i], qmax[i], 
+                                            ngrid_tmp[i]))
         else:
             if qmin is None:
-                qmin = np.amin(self.__dataset[:,idx], axis=0)
+                qmin = np.amin(x[:,dim_out], axis=0) - \
+                       3.0*self.__bandwidth[dim_out]
             if qmax is None:
-                qmax = np.amax(self.__dataset[:,idx], axis=0)
+                qmax = np.amax(x[:,dim_out], axis=0) + \
+                       3.0*self.__bandwidth[dim_out]
             griddims = []
-            if hasattr(idx, '__len__'):
+            if nidx > 1:
                 # Case for multiple indices
                 griddims = []
                 if hasattr(ngrid, '__len__'):
-                    ngrid_tmp = np.array(ngrid, dtype=c_ulong)
+                    ngrid_tmp = np.array(ngrid)
                 else:
-                    ngrid_tmp = np.array([ngrid]*len(idx), dtype=c_ulong)
-                for i in range(len(idx)):
-                    griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
-                                    float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
+                    ngrid_tmp = np.array([ngrid]*len(dim_out))
+                for i in range(len(dim_out)):
+                    griddims.append(np.linspace(qmin[i], qmax[i], 
+                                                ngrid_tmp[i]))
                 grid_out = np.squeeze(np.array(np.meshgrid(*griddims,
                                                            indexing='ij')))
             else:
@@ -1887,6 +1906,53 @@ class bp(object):
                 grid_out = qmin + \
                            np.arange(ngrid) * \
                            float(qmax-qmin)/(ngrid-1)
- 
-        # Compute the result
-        import pdb; pdb.set_trace()
+                griddims = [grid_out]
+
+        # Compute result; in the multi-dimensional case this involves
+        # some tricky array indexing
+        if nidx == 1:
+            pdf = np.sum(wgts*np.exp(-(x[:,dim_out[0]]-grid_out)**2 / 
+                                     (2*self.__bandwidth[dim_out[0]]**2)),
+                         axis=1)
+        else:
+            compsum = np.exp(
+                -np.subtract.outer(x[:,dim_out[0]], griddims[0])**2 /
+                (2.0*self.__bandwidth[dim_out[0]]**2))
+            for d, grd in zip(dim_out[1:], griddims[1:]):
+                comp = np.exp(-np.subtract.outer(x[:,d], grd)**2 / \
+                              (2.0*self.__bandwidth[d]**2))
+                compsum = np.einsum('...j,...k->...jk', compsum, comp)
+            pdf = np.einsum('i,i...', wgts, compsum)
+
+        # Normalize if requested
+        if norm:
+
+            # Compute the sizes of the output cells
+            if nidx == 1:
+                cellsize = np.zeros(grid_out.size)
+                cellsize[1:-1] = 0.5*(grid_out[2:]-grid_out[:-2])
+                cellsize[0] = grid_out[1] - grid_out[0]
+                cellsize[-1] = grid_out[-1] - grid_out[-2]
+            else:
+                # Get the cell sizes in each dimension
+                csize = []
+                for i in range(nidx):
+                    vec = grid_out[(i,)+i*(0,)+(slice(None),) + 
+                                   (grid_out.shape[0]-i-1)*(0,)]
+                    csize.append(np.zeros(vec.size))
+                    csize[i][1:-1] = 0.5*(vec[2:]-vec[:-2])
+                    csize[i][0] = vec[1] - vec[0]
+                    csize[i][-1] = vec[-1] - vec[-2]
+                # Take outer product to get grid of sizes
+                cellsize = np.multiply.outer(csize[0], csize[1])
+                for i in range(2, nidx):
+                    cellsize = np.multiply.outer(cellsize, csize[i])
+
+            # Compute integral
+            normfac = np.sum(pdf*cellsize)
+
+            # Normalize
+            pdf = pdf/normfac
+
+        # Return
+        return grid_out, pdf

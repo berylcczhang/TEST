@@ -1011,9 +1011,9 @@ class cluster_slug(object):
                                        phys_ignore=phys_ignore)
 
 
-    def mpdf_from_approx(self, x, wgts, dims='phys', dims_retun=None,
-                         ngrid=128, qmin=None, qmax=None, grid=None,
-                         norm=True, filters=None):
+    def mpdf_approx(self, x, wgts, dims='phys', dims_return=None,
+                    ngrid=128, qmin=None, qmax=None, grid=None,
+                    norm=True, filters=None):
         """
         Returns the marginal posterior PDF computed from a kernel
         density approximation returned by make_approx_phys or
@@ -1088,10 +1088,10 @@ class cluster_slug(object):
             # stored, just use it
             if len(self.__filtersets) == 1:
                 return self.__filtersets[0]['bp']. \
-                    mpdf_from_approx(x, wgts, dims=dims, 
-                                     dims_return=dims_return,
-                                     ngrid=ngrid, qmin=qmin,
-                                     qmax=qmax, grid=grid, norm=norm)
+                    mpdf_approx(x, wgts, dims=dims, 
+                                dims_return=dims_return,
+                                ngrid=ngrid, qmin=qmin,
+                                qmax=qmax, grid=grid, norm=norm)
 
             else:
                 raise ValueError("must specify a filter set")
@@ -1108,7 +1108,7 @@ class cluster_slug(object):
                     break
 
             # Call the method
-            return bp.mpdf_from_approx(x, wgts, dims=dims, 
-                                       dims_return=dims_return,
-                                       ngrid=ngrid, qmin=qmin,
-                                       qmax=qmax, grid=grid, norm=norm)
+            return bp.mpdf_approx(x, wgts, dims=dims, 
+                                  dims_return=dims_return,
+                                  ngrid=ngrid, qmin=qmin,
+                                  qmax=qmax, grid=grid, norm=norm)
