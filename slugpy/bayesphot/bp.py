@@ -1882,12 +1882,32 @@ class bp(object):
                 griddims.append(np.linspace(qmin[i], qmax[i], 
                                             ngrid_tmp[i]))
         else:
-            if qmin is None:
-                qmin = np.amin(x[:,dim_out], axis=0) - \
-                       3.0*self.__bandwidth[dim_out]
-            if qmax is None:
-                qmax = np.amax(x[:,dim_out], axis=0) + \
-                       3.0*self.__bandwidth[dim_out]
+            if qmin is None or qmax is None:
+                if qmin is None:
+                    get_qmin = True
+                    qmin = []
+                else:
+                    get_qmin = False
+                if qmax is None:
+                    qmax = []
+                    get_qmax = True
+                else:
+                    get_qmax = False
+                for d in dim_out:
+                    xtmp = np.copy(x[:,d])
+                    wgttmp = np.copy(wgts)
+                    idx = np.argsort(xtmp)
+                    xtmp = xtmp[idx]
+                    wgttmp = wgttmp[idx]
+                    wgtsum = np.cumsum(wgttmp)
+                    if get_qmin:
+                        qmin.append(xtmp[np.argmax(wgtsum > 0.001)])
+                    if get_qmax:
+                        if wgtsum[-1] > 0.999:
+                            qmax.append(xtmp[np.argmax(wgtsum >
+                                                       0.999)])
+                        else:
+                            qmax.append(xtmp[-1])
             griddims = []
             if nidx > 1:
                 # Case for multiple indices
