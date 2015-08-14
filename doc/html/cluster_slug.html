@@ -159,6 +159,14 @@ photometric measurments</dd>
 <dt>bestmatch() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
 <dd>find the simulations in the library that are the closest
 matches to the input photometry</dd>
+<dt>make_approx_phot() :</dt>
+<dd>given a set of physical properties, return a set of points
+that can be used for fast approximation of the corresponding
+photometric properties</dd>
+<dt>make_approx_phys() :</dt>
+<dd>given a set of photometric properties, return a set of points
+that can be used for fast approximation of the corresponding
+physical properties</dd>
 </dl>
 </dd>
 </dl>
@@ -293,6 +301,11 @@ ordered by distance from the input</dd>
 <dd>if False, distances are computed based on the
 logarithmic difference in luminosity; if True, they are
 measured in units of the bandwidth</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
@@ -400,6 +413,104 @@ default</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.make_approx_phot">
+<code class="descname">make_approx_phot</code><span class="sig-paren">(</span><em>phys</em>, <em>squeeze=True</em>, <em>filter_ignore=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.make_approx_phot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an object that can be used for a fast approximation of
+the PDF of photometric properties that corresponds to a set of
+physical properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phys <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (N, nphys)</span></dt>
+<dd>the set or sets of physical properties for which the
+approximation is to be generated</dd>
+<dt>squeeze <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance</dd>
+<dt>filter_ignore <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span></dt>
+<dd>if None, the kernel density representation returned
+covers all filters; otherwise this must be a listlike of
+bool, one entry per filter, with a value of False
+indicating that filter should be excluded from the
+values returned; suppressing filters can allow for more
+efficient representations</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphot), or a list of such arrays</span></dt>
+<dd>an array containing the list of points to be used for
+the approximation</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span></dt>
+<dd>an array containing the weights of the points</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.make_approx_phys">
+<code class="descname">make_approx_phys</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>squeeze=True</em>, <em>phys_ignore=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.make_approx_phys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an object that can be used for a fast approximation of
+the PDF of physical properties that corresponds to a set of
+photometric properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span></dt>
+<dd>the set or sets of photometric properties for which the
+approximation is to be generated</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span></dt>
+<dd>array giving photometric errors; the number of elements
+in the output lists will be the size that results from
+broadcasting together the leading dimensions of phot and
+photerr</dd>
+<dt>squeeze <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance</dd>
+<dt>phys_ignore <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span></dt>
+<dd>if None, the kernel density representation returned
+covers all physical properties; otherwise this must be a
+listlike of bool, one entry per physical dimension, with
+a value of False indicating that dimension should be
+excluded from the values returned; suppressing
+dimensions can allow for more efficient representations</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphys), or a list of such arrays</span></dt>
+<dd>an array containing the list of points to be used for
+the approximation, where nphys is the number of
+physical dimensions being returned</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span></dt>
+<dd>an array containing the weights of the points</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.mcmc">
 <code class="descname">mcmc</code><span class="sig-paren">(</span><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mcmc" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns a sample of MCMC walkers for cluster
@@ -460,6 +571,81 @@ the leading dimensions</dd>
 <dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx</dd>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
+<dd>minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
+<dd>maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx</dd>
+<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
+<dd>set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, returned pdf&#8217;s will be normalized to integrate
+to 1</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
+of the output grid, for each input cluster; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.mpdf_approx">
+<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims='phys'</em>, <em>dims_return=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mpdf_approx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the marginal posterior PDF computed from a kernel
+density approximation returned by make_approx_phys or
+make_approx_phot. Outputs are computed on a grid of values, in
+the same style as meshgrid.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, ndim), or a list of such arrays</span></dt>
+<dd>array of points retured by make_approx_phot or
+make_approx_phys</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M) or a list of such arrays</span></dt>
+<dd>array of weights returned by make_approx_phot or
+make_approx_phys</dd>
+<dt>dims <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;phys&#8217; | &#8216;phot&#8217; | arraylike of ints</span></dt>
+<dd>dimensions covered by x and wgts; the strings &#8216;phys&#8217; or
+&#8216;phot&#8217; indicate that they cover all physical or
+photometric dimensions, and correspond to the defaults
+returned by make_approx_phys and make_approx_phot,
+respectively; if dims is an array of ints, these specify
+the dimensions covered by x and wgts, where the
+physical dimensions are numbered 0, 1, ... nphys-1, and
+the photometric ones are nphys, nphys+1,
+... nphys+nphot-1</dd>
+<dt>dims_return <span class="classifier-delimiter">:</span> <span class="classifier">None or arraylike of ints</span></dt>
+<dd>if None, the output PDF has the same dimensions as
+specified in dms; if not, then dimreturn must be a
+subset of dim, and a marginal PDF in certain dimensions
+will be generated</dd>
 <dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
 <dd>number of points in each dimension of the output grid;
 if this is an iterable, it must have the same number of

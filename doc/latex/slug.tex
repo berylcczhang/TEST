@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{August 03, 2015}
+\date{August 14, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -697,7 +697,7 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \code{compute\_nebular} (default: \code{1}): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.
 
 \item {} 
-\code{atomic\_dir} (default: \code{lib/atomic/}): directory where the atomic data used for nebular emission calculations is located
+\code{atomic\_data} (default: \code{lib/atomic/}): directory where the atomic data used for nebular emission calculations is located
 
 \item {} 
 \code{nebular\_no\_metals} (default: 0): if set to 1, metal lines are not used when computing nebular emission
@@ -5209,7 +5209,7 @@ with a training data set.
 \index{bp (class in slugpy.bayesphot.bp)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}}{}
 A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.
@@ -5236,18 +5236,18 @@ dimensions
 \index{\_\_init\_\_() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}}{}
 Initialize a bp object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
 \item[{dataset}] \leavevmode{[}array, shape (N, M){]}
 training data set; this is a set of N sample stellar
-populations, having M properties each; the first npys
+populations, having M properties each; the first nphys
 represent physical properties (e.g., log mass, log age),
 while the next M - nphys represent photometric
 properties
 
-\item[{npys}] \leavevmode{[}int{]}
+\item[{nphys}] \leavevmode{[}int{]}
 number of physical properties in dataset
 
 \item[{filters}] \leavevmode{[}listlike of strings{]}
@@ -5301,6 +5301,10 @@ absolute error tolerance; see above
 
 \item[{leafsize}] \leavevmode{[}int{]}
 number of data points in each leaf of the KD tree
+
+\item[{nosort}] \leavevmode{[}arraylike of bool, shape (N) \textbar{} None{]}
+if specified, this keyword causes the KD tree not to be
+sorted along the dimensions for which nosort is True
 
 \end{description}
 
@@ -5413,6 +5417,106 @@ natural log of the likelihood function
 
 \end{fulllineitems}
 
+\index{make\_approx\_phot() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.make_approx_phot}\pysiglinewithargsret{\bfcode{make\_approx\_phot}}{\emph{phys}, \emph{squeeze=True}, \emph{filter\_ignore=None}}{}
+Returns an object that can be used for a fast approximation of
+the PDF of photometric properties that corresponds to a set of
+physical properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phys}] \leavevmode{[}arraylike, shape (nphys) or (N, nphys){]}
+the set or sets of physical properties for which the
+approximation is to be generated
+
+\item[{squeeze}] \leavevmode{[}bool{]}
+if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance
+
+\item[{filter\_ignore}] \leavevmode{[}None or listlike of bool{]}
+if None, the kernel density representation returned
+covers all filters; otherwise this must be a listlike of
+bool, one entry per filter, with a value of False
+indicating that filter should be excluded from the
+values returned; suppressing filters can allow for more
+efficient representations
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (M, nphot), or a list of such arrays{]}
+an array containing the list of points to be used for
+the approximation, where nphot is the number of
+photometric filters being returned
+
+\item[{wgts}] \leavevmode{[}array, shape (M), or a list of such arrays{]}
+an array containing the weights of the points
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{make\_approx\_phys() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.make_approx_phys}\pysiglinewithargsret{\bfcode{make\_approx\_phys}}{\emph{phot}, \emph{photerr=None}, \emph{squeeze=True}, \emph{phys\_ignore=None}}{}
+Returns an object that can be used for a fast approximation of
+the PDF of physical properties that corresponds to a set of
+photometric properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phot}] \leavevmode{[}arraylike, shape (nfilter) or (N, nfilter){]}
+the set or sets of photometric properties for which the
+approximation is to be generated
+
+\item[{photerr}] \leavevmode{[}arraylike, shape (nfilter) or (N, nfilter){]}
+array giving photometric errors; the number of elements
+in the output lists will be the size that results from
+broadcasting together the leading dimensions of phot and
+photerr
+
+\item[{squeeze}] \leavevmode{[}bool{]}
+if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance
+
+\item[{phys\_ignore}] \leavevmode{[}None or listlike of bool{]}
+if None, the kernel density representation returned
+covers all physical properties; otherwise this must be a
+listlike of bool, one entry per physical dimension, with
+a value of False indicating that dimension should be
+excluded from the values returned; suppressing
+dimensions can allow for more efficient representations
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (M, nphys), or a list of such arrays{]}
+an array containing the list of points to be used for
+the approximation, where nphys is the number of
+physical dimensions being returned
+
+\item[{wgts}] \leavevmode{[}array, shape (M), or a list of such arrays{]}
+an array containing the weights of the points
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{mcmc() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
@@ -5459,7 +5563,7 @@ array of sample points returned by the MCMC
 Returns the marginal probability for one or mode physical
 quantities for one or more input sets of photometric
 properties. Output quantities are computed on a grid of
-values, in the same style as meshgrid
+values, in the same style as meshgrid.
 \begin{description}
 \item[{Parameters:}] \leavevmode\begin{description}
 \item[{idx}] \leavevmode{[}int or listlike containing ints{]}
@@ -5493,6 +5597,87 @@ maximum value in the output grid in each quantity; if
 left as None, defaults to the maximum value in the
 library; if this is an iterable, it must contain the
 same number of elements as idx
+
+\item[{grid}] \leavevmode{[}listlike of arrays{]}
+set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid
+
+\item[{norm}] \leavevmode{[}bool{]}
+if True, returned pdf's will be normalized to integrate
+to 1
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{grid\_out}] \leavevmode{[}array{]}
+array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid
+
+\item[{pdf}] \leavevmode{[}array{]}
+array of marginal posterior probabilities at each point
+of the output grid, for each input cluster; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{mpdf\_approx() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=64}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}}{}
+Returns the marginal posterior PDF computed from a kernel
+density approximation returned by make\_approx\_phys or
+make\_approx\_phot. Outputs are computed on a grid of values, in
+the same style as meshgrid.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (M, ndim), or a list of such arrays{]}
+array of points retured by make\_approx\_phot or
+make\_approx\_phys
+
+\item[{wgts}] \leavevmode{[}array, shape (M) or a list of such arrays{]}
+array of weights returned by make\_approx\_phot or
+make\_approx\_phys
+
+\item[{dims}] \leavevmode{[}`phys' \textbar{} `phot' \textbar{} arraylike of ints{]}
+dimensions covered by x and wgts; the strings `phys' or
+`phot' indicate that they cover all physical or
+photometric dimensions, and correspond to the defaults
+returned by make\_approx\_phys and make\_approx\_phot,
+respectively; if dims is an array of ints, these specify
+the dimensions covered by x and wgts, where the
+physical dimensions are numbered 0, 1, ... nphys-1, and
+the photometric ones are nphys, nphys+1,
+... nphys+nphot-1
+
+\item[{dims\_return}] \leavevmode{[}None or arraylike of ints{]}
+if None, the output PDF has the same dimensions as
+specified in dms; if not, then dimreturn must be a
+subset of dim, and a marginal PDF in certain dimensions
+will be generated
+
+\item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
+number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx
+
+\item[{qmin}] \leavevmode{[}float or listlike{]}
+minimum value in the output grid in each quantity; if
+left as None, the range is chosen automatically to zoom in
+on the maximum of the final PDF; if this is an iterable,
+it must contain the same number of elements as idx
+
+\item[{qmax}] \leavevmode{[}float or listlike{]}
+maximum value in the output grid in each quantity; if
+left as None, the range is chosen automatically to zoom in
+on the maximum of the final PDF; if this is an iterable,
+it must contain the same number of elements as idx
 
 \item[{grid}] \leavevmode{[}listlike of arrays{]}
 set of values defining the grid on which the PDF is to
@@ -5669,6 +5854,16 @@ photometric measurments
 find the simulations in the library that are the closest
 matches to the input photometry
 
+\item[{make\_approx\_phot() :}] \leavevmode
+given a set of physical properties, return a set of points
+that can be used for fast approximation of the corresponding
+photometric properties
+
+\item[{make\_approx\_phys() :}] \leavevmode
+given a set of photometric properties, return a set of points
+that can be used for fast approximation of the corresponding
+physical properties
+
 \end{description}
 
 \end{description}
@@ -5827,6 +6022,12 @@ if False, distances are computed based on the
 logarithmic difference in luminosity; if True, they are
 measured in units of the bandwidth
 
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
 \end{description}
 
 \item[{Returns:}] \leavevmode\begin{description}
@@ -5950,6 +6151,117 @@ natural log of the likelihood function
 
 \end{fulllineitems}
 
+\index{make\_approx\_phot() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.make_approx_phot}\pysiglinewithargsret{\bfcode{make\_approx\_phot}}{\emph{phys}, \emph{squeeze=True}, \emph{filter\_ignore=None}, \emph{filters=None}}{}
+Returns an object that can be used for a fast approximation of
+the PDF of photometric properties that corresponds to a set of
+physical properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phys}] \leavevmode{[}arraylike, shape (nphys) or (N, nphys){]}
+the set or sets of physical properties for which the
+approximation is to be generated
+
+\item[{squeeze}] \leavevmode{[}bool{]}
+if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance
+
+\item[{filter\_ignore}] \leavevmode{[}None or listlike of bool{]}
+if None, the kernel density representation returned
+covers all filters; otherwise this must be a listlike of
+bool, one entry per filter, with a value of False
+indicating that filter should be excluded from the
+values returned; suppressing filters can allow for more
+efficient representations
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (M, nphot), or a list of such arrays{]}
+an array containing the list of points to be used for
+the approximation
+
+\item[{wgts}] \leavevmode{[}array, shape (M), or a list of such arrays{]}
+an array containing the weights of the points
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{make\_approx\_phys() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.make_approx_phys}\pysiglinewithargsret{\bfcode{make\_approx\_phys}}{\emph{phot}, \emph{photerr=None}, \emph{squeeze=True}, \emph{phys\_ignore=None}, \emph{filters=None}}{}
+Returns an object that can be used for a fast approximation of
+the PDF of physical properties that corresponds to a set of
+photometric properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phot}] \leavevmode{[}arraylike, shape (nfilter) or (N, nfilter){]}
+the set or sets of photometric properties for which the
+approximation is to be generated
+
+\item[{photerr}] \leavevmode{[}arraylike, shape (nfilter) or (N, nfilter){]}
+array giving photometric errors; the number of elements
+in the output lists will be the size that results from
+broadcasting together the leading dimensions of phot and
+photerr
+
+\item[{squeeze}] \leavevmode{[}bool{]}
+if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance
+
+\item[{phys\_ignore}] \leavevmode{[}None or listlike of bool{]}
+if None, the kernel density representation returned
+covers all physical properties; otherwise this must be a
+listlike of bool, one entry per physical dimension, with
+a value of False indicating that dimension should be
+excluded from the values returned; suppressing
+dimensions can allow for more efficient representations
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (M, nphys), or a list of such arrays{]}
+an array containing the list of points to be used for
+the approximation, where nphys is the number of
+physical dimensions being returned
+
+\item[{wgts}] \leavevmode{[}array, shape (M), or a list of such arrays{]}
+an array containing the weights of the points
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{mcmc() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
@@ -6020,6 +6332,93 @@ the leading dimensions
 array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions
+
+\item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
+number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx
+
+\item[{qmin}] \leavevmode{[}float or listlike{]}
+minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx
+
+\item[{qmax}] \leavevmode{[}float or listlike{]}
+maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx
+
+\item[{grid}] \leavevmode{[}listlike of arrays{]}
+set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid
+
+\item[{norm}] \leavevmode{[}bool{]}
+if True, returned pdf's will be normalized to integrate
+to 1
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{grid\_out}] \leavevmode{[}array{]}
+array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid
+
+\item[{pdf}] \leavevmode{[}array{]}
+array of marginal posterior probabilities at each point
+of the output grid, for each input cluster; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{mpdf\_approx() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
+Returns the marginal posterior PDF computed from a kernel
+density approximation returned by make\_approx\_phys or
+make\_approx\_phot. Outputs are computed on a grid of values, in
+the same style as meshgrid.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (M, ndim), or a list of such arrays{]}
+array of points retured by make\_approx\_phot or
+make\_approx\_phys
+
+\item[{wgts}] \leavevmode{[}array, shape (M) or a list of such arrays{]}
+array of weights returned by make\_approx\_phot or
+make\_approx\_phys
+
+\item[{dims}] \leavevmode{[}`phys' \textbar{} `phot' \textbar{} arraylike of ints{]}
+dimensions covered by x and wgts; the strings `phys' or
+`phot' indicate that they cover all physical or
+photometric dimensions, and correspond to the defaults
+returned by make\_approx\_phys and make\_approx\_phot,
+respectively; if dims is an array of ints, these specify
+the dimensions covered by x and wgts, where the
+physical dimensions are numbered 0, 1, ... nphys-1, and
+the photometric ones are nphys, nphys+1,
+... nphys+nphot-1
+
+\item[{dims\_return}] \leavevmode{[}None or arraylike of ints{]}
+if None, the output PDF has the same dimensions as
+specified in dms; if not, then dimreturn must be a
+subset of dim, and a marginal PDF in certain dimensions
+will be generated
 
 \item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
 number of points in each dimension of the output grid;
