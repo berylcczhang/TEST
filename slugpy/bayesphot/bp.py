@@ -1030,6 +1030,10 @@ class bp(object):
                 qmax = np.amax(self.__dataset[:,idx], axis=0)
             griddims = []
             if hasattr(idx, '__len__'):
+                nidx = len(idx)
+            else:
+                nidx = 1
+            if nidx > 1:
                 # Case for multiple indices
                 griddims = []
                 if hasattr(ngrid, '__len__'):
