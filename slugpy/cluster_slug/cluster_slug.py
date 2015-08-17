@@ -590,7 +590,6 @@ class cluster_slug(object):
 
         # If we already have this filter set in our dict, just set the
         # bandwidth and return
-        import pdb; pdb.set_trace()
         for i, f in enumerate(self.__filtersets):
             if filters == f['filters']:
                 if bandwidth is not None:
