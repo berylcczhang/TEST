@@ -443,7 +443,7 @@ class cluster_slug(object):
                     nebular = False
                     extinct = False
 
-            elif self._use_extinction:
+            elif self.__use_extinction:
                 # Wanted extinction, no nebular
                 if 'phot_ex' in phot._fields:
                     # Got it
