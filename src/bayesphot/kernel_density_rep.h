@@ -31,6 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 unsigned long kd_rep(const kernel_density *kd, const double *x,
 		     const unsigned long *dims, 
 		     const unsigned long ndim, const double reltol,
+		     const unsigned long *dim_return,
+		     const unsigned long ndim_return,
 		     double **xpt, double **wgts);
 /* This routine returns a list of points that can be used to do fast
    kernel density estimation for a given input point. Performing the
@@ -60,14 +62,21 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
          0.01 then if one integrates the PDF that results from
          computing a kernel density estimate just on the returned
          points, that will recover 99% of the total probability
+      INPUT dim_return
+         array of ndim_return elements specifying the dimensions to
+         return in xpt; no element can appear in both this and dims;
+         if left as NULL, all dimensions except those in dims will be
+         returned
+      INPUT ndim_return
+         number of dimensions in dim_return; if dim_return is NULL,
+         this argument is ignored, and the number of dimensions
+         returned will automatically be kd->tree->ndim - ndim
       OUTPUT xpt
          Array of positions for the approximate representation, in the
-         dimensions that are not included in dims; there are
-         kd->tree->ndim - ndim such dimensions, and the array is
-         ordered such that xpt[i*(tree_ndim-ndim) + j] is the ith
-         coordinate of the jth point; the array has npt *
-         (tree_ndim-ndim), elements, where npt is the value returned
-         by the function
+         dimensions in ndim_return, and the array is ordered such that
+         xpt[i*ndim_return + j] is the ith coordinate of the jth
+         point; the array has npt * ndim_return, elements, where npt
+         is the value returned by the function
       OUTPUT wgts
          Array of npt elements containing the weights of the returned
          points, adjusted based on their distance to the input point;
@@ -94,7 +103,7 @@ void free_kd_rep(double **xpt, double **wgts);
 
 unsigned long squeeze_rep(const unsigned long npts, 
 			  const unsigned int ndim, double *h, 
-			  const double smoothfac, double **x, 
+			  const double tol, double **x, 
 			  double **wgts);
 
 
