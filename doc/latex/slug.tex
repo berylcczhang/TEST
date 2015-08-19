@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{August 14, 2015}
+\date{August 18, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -150,7 +150,7 @@ In addition to the core SLUG code, the Bayesian inference tools cluster\_slug an
 
 \chapter{Introduction to SLUG}
 \label{intro:introduction-to-slug}\label{intro::doc}
-This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the \href{http://www.gnu.org/licenses/gpl.html}{GNU General Public License v. 3.0}. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method papers, \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, R. L., Fumagalli, M., \& Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145} and \href{http://adsabs.harvard.edu/abs/2015arXiv150205408K}{Krumholz, M. R., Fumagalli, M., da Silva, R. L., Rendahl, T., \& Parra, J. 2015, submitted to Monthly Notices of the Royal Astronomical Society, arXiv:1502.05408}.
+This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the \href{http://www.gnu.org/licenses/gpl.html}{GNU General Public License v. 3.0}. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method papers, \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, R. L., Fumagalli, M., \& Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145} and \href{http://adsabs.harvard.edu/abs/2015MNRAS.452.1447K}{Krumholz, M. R., Fumagalli, M., da Silva, R. L., Rendahl, T., \& Parra, J. 2015, Monthly Notices of the Royal Astronomical Society, 452, 1447}.
 
 
 \section{What Does SLUG Do?}
@@ -290,7 +290,7 @@ Here \(n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_{\mat
 \(\alpha_{nn'}^{\mathrm{eff,B,(H)}}\) is the effective emission rate coefficient for the \(n\) to \(n'\) H recombination line, taken from the tabulation of \href{http://adsabs.harvard.edu/abs/1995MNRAS.272...41S}{Storey \& Hummer (1995, MNRAS, 272, 41)}
 
 \item {} 
-\(\gamma_{i,\mathrm{line}}^{(\mathrm{M})}\) is the emissivity for the brightest non-hydrogen lines, computed using a set of pre-tabulated values, following the procedure described in the \href{http://adsabs.harvard.edu/abs/2015arXiv150205408K}{SLUG 2 method paper}
+\(\gamma_{i,\mathrm{line}}^{(\mathrm{M})}\) is the emissivity for the brightest non-hydrogen lines, computed using a set of pre-tabulated values, following the procedure described in the \href{http://adsabs.harvard.edu/abs/2015MNRAS.452.1447K}{SLUG 2 method paper}
 
 \item {} 
 \(\gamma_{\mathrm{2p}}^{(\mathrm{H})}\): hydrogen two-photon emissivity, computed as
@@ -5805,7 +5805,7 @@ One subtle post-processing step you should take once you've generated your libra
 \label{cluster_slug:ssec-cluster-slug-full}\label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -5870,7 +5870,7 @@ physical properties
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -5891,11 +5891,13 @@ values are `L\_nu', `L\_lambda', `AB', `STMAG', and
 code. Once this is set, any subsequent photometric data
 input are assumed to be in the same photometric system.
 
-\item[{bw\_phys}] \leavevmode{[}`auto' \textbar{} float \textbar{} array, shape (3){]}
+\item[{bw\_phys}] \leavevmode{[}`auto' \textbar{} float \textbar{} array, shape (2) \textbar{} array, shape (3){]}
 bandwidth for the physical quantities in the kernel
 density estimation; if set to `auto', the bandwidth will
 be estimated automatically; if set to a scalar quantity,
-this will be used for all physical quantities
+this will be used for all physical quantities; if set to
+an array, the array must have 2 elements if
+use\_extinction is False, or 3 if it is True
 
 \item[{bw\_phot}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array{]}
 bandwidth for the photometric quantities; if set to
@@ -5953,6 +5955,11 @@ if True, photometry including nebular emission will be
 used if available; if not, nebular emission will be
 omitted
 
+\item[{use\_extinction}] \leavevmode{[}bool{]}
+if True, photometry including extinction will be used;
+if not, it will be omitted, and in this case no results
+making use of the A\_V dimension will be available
+
 \end{description}
 
 \item[{Returns}] \leavevmode
@@ -5985,11 +5992,11 @@ list of filter names to be used for inferenence
 
 \item[{bandwidth}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array{]}
 bandwidth for the photometric quantities; if set to
-None, defaults to 0.3 mag / 0.12 dex; if set to `auto',
+None, defaults to 0.25 mag / 0.1 dex; if set to `auto',
 bandwidth is estimated automatically; if set to a float,
 this bandwidth is used for all physical photometric
 dimensions; if set to an array, the array must have the
-same number of entries as 3+len(filters)
+same number of entries as nphys+len(filters)
 
 \end{description}
 
@@ -6031,13 +6038,14 @@ default
 \end{description}
 
 \item[{Returns:}] \leavevmode\begin{description}
-\item[{matches}] \leavevmode{[}array, shape (..., nmatch, 3 + nfilter){]}
+\item[{matches}] \leavevmode{[}array, shape (..., nmatch, nphys + nfilter){]}
 best matches to the input photometry; shape in the
 leading dimensions will be the same as for phot, and if
 nmatch == 1 then that dimension will be omitted; in the
 final dimension, the first 3 elements give log M, log T,
 and A\_V, while the last nfilter give the photometric
-values
+values; if created with use\_extinct = False, the A\_V
+dimension is omitted
 
 \item[{dist}] \leavevmode{[}array, shape (..., nmatch){]}
 distances between the matches and the input photometry
@@ -6089,12 +6097,15 @@ list of available filter names
 \index{load\_data() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.load_data}\pysiglinewithargsret{\bfcode{load\_data}}{\emph{filter\_name}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.load_data}\pysiglinewithargsret{\bfcode{load\_data}}{\emph{filter\_name}, \emph{bandwidth=None}}{}
 Loads photometric data for the specified filter into memory
 \begin{description}
 \item[{Parameters:}] \leavevmode\begin{description}
 \item[{filter\_name}] \leavevmode{[}string{]}
 name of filter to load
+
+\item[{bandwidth}] \leavevmode{[}float{]}
+default bandwidth for this filter
 
 \end{description}
 
@@ -6118,10 +6129,11 @@ function evaluated at a particular log mass, log age,
 extinction, and set of log luminosities
 \begin{description}
 \item[{Parameters:}] \leavevmode\begin{description}
-\item[{physprop}] \leavevmode{[}arraylike, shape (3) or (..., 3){]}
+\item[{physprop}] \leavevmode{[}arraylike, shape (nhpys) or (..., nphys){]}
 array giving values of the log M, log T, and A\_V; for a
 multidimensional array, the operation is vectorized over
-the leading dimensions
+the leading dimensions; if created with use\_extinct =
+False, the A\_V dimension should be omitted
 
 \item[{photprop}] \leavevmode{[}arraylike, shape (nfilter) or (..., nfilter){]}
 array giving the photometric values; for a
@@ -6388,7 +6400,7 @@ the dimensions of the output grid
 \index{mpdf\_approx() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=64}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
 Returns the marginal posterior PDF computed from a kernel
 density approximation returned by make\_approx\_phys or
 make\_approx\_phot. Outputs are computed on a grid of values, in
@@ -6416,8 +6428,8 @@ the photometric ones are nphys, nphys+1,
 
 \item[{dims\_return}] \leavevmode{[}None or arraylike of ints{]}
 if None, the output PDF has the same dimensions as
-specified in dms; if not, then dimreturn must be a
-subset of dim, and a marginal PDF in certain dimensions
+specified in dims; if not, then dimreturn must be a
+subset of dims, and a marginal PDF in certain dimensions
 will be generated
 
 \item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}

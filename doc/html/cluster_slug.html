@@ -118,7 +118,7 @@ cs.priors = prorfunc
 <span id="ssec-cluster-slug-full"></span><h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -172,7 +172,7 @@ physical properties</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -191,11 +191,13 @@ values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;, &#8216;AB&#8217;, &#8216;
 &#8216;Vega&#8217;, corresponding to the options defined in the SLUG
 code. Once this is set, any subsequent photometric data
 input are assumed to be in the same photometric system.</dd>
-<dt>bw_phys <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (3)</span></dt>
+<dt>bw_phys <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (2) | array, shape (3)</span></dt>
 <dd>bandwidth for the physical quantities in the kernel
 density estimation; if set to &#8216;auto&#8217;, the bandwidth will
 be estimated automatically; if set to a scalar quantity,
-this will be used for all physical quantities</dd>
+this will be used for all physical quantities; if set to
+an array, the array must have 2 elements if
+use_extinction is False, or 3 if it is True</dd>
 <dt>bw_phot <span class="classifier-delimiter">:</span> <span class="classifier">None | &#8216;auto&#8217; | float | array</span></dt>
 <dd>bandwidth for the photometric quantities; if set to
 None, defaults to 0.25 mag / 0.1 dex; if set to &#8216;auto&#8217;,
@@ -244,6 +246,10 @@ true value</dd>
 <dd>if True, photometry including nebular emission will be
 used if available; if not, nebular emission will be
 omitted</dd>
+<dt>use_extinction <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, photometry including extinction will be used;
+if not, it will be omitted, and in this case no results
+making use of the A_V dimension will be available</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -270,11 +276,11 @@ omitted</dd>
 <dd>list of filter names to be used for inferenence</dd>
 <dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">None | &#8216;auto&#8217; | float | array</span></dt>
 <dd>bandwidth for the photometric quantities; if set to
-None, defaults to 0.3 mag / 0.12 dex; if set to &#8216;auto&#8217;,
+None, defaults to 0.25 mag / 0.1 dex; if set to &#8216;auto&#8217;,
 bandwidth is estimated automatically; if set to a float,
 this bandwidth is used for all physical photometric
 dimensions; if set to an array, the array must have the
-same number of entries as 3+len(filters)</dd>
+same number of entries as nphys+len(filters)</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -310,13 +316,14 @@ default</dd>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, 3 + nfilter)</span></dt>
+<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span></dt>
 <dd>best matches to the input photometry; shape in the
 leading dimensions will be the same as for phot, and if
 nmatch == 1 then that dimension will be omitted; in the
 final dimension, the first 3 elements give log M, log T,
 and A_V, while the last nfilter give the photometric
-values</dd>
+values; if created with use_extinct = False, the A_V
+dimension is omitted</dd>
 <dt>dist <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span></dt>
 <dd>distances between the matches and the input photometry</dd>
 </dl>
@@ -358,13 +365,15 @@ values</dd>
 
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.load_data">
-<code class="descname">load_data</code><span class="sig-paren">(</span><em>filter_name</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.load_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_data</code><span class="sig-paren">(</span><em>filter_name</em>, <em>bandwidth=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.load_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Loads photometric data for the specified filter into memory</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
 <dt>filter_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
 <dd>name of filter to load</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>default bandwidth for this filter</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
@@ -384,10 +393,11 @@ extinction, and set of log luminosities</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (3) or (..., 3)</span></dt>
+<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nhpys) or (..., nphys)</span></dt>
 <dd>array giving values of the log M, log T, and A_V; for a
 multidimensional array, the operation is vectorized over
-the leading dimensions</dd>
+the leading dimensions; if created with use_extinct =
+False, the A_V dimension should be omitted</dd>
 <dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
 <dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
@@ -617,7 +627,7 @@ the dimensions of the output grid</dd>
 
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.mpdf_approx">
-<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims='phys'</em>, <em>dims_return=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mpdf_approx" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims='phys'</em>, <em>dims_return=None</em>, <em>ngrid=64</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mpdf_approx" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the marginal posterior PDF computed from a kernel
 density approximation returned by make_approx_phys or
 make_approx_phot. Outputs are computed on a grid of values, in
@@ -643,8 +653,8 @@ the photometric ones are nphys, nphys+1,
 ... nphys+nphot-1</dd>
 <dt>dims_return <span class="classifier-delimiter">:</span> <span class="classifier">None or arraylike of ints</span></dt>
 <dd>if None, the output PDF has the same dimensions as
-specified in dms; if not, then dimreturn must be a
-subset of dim, and a marginal PDF in certain dimensions
+specified in dims; if not, then dimreturn must be a
+subset of dims, and a marginal PDF in certain dimensions
 will be generated</dd>
 <dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
 <dd>number of points in each dimension of the output grid;
