@@ -3,7 +3,7 @@
 Introduction to SLUG
 ====================
 
-This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the `GNU General Public License v. 3.0 <http://www.gnu.org/licenses/gpl.html>`_. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method papers, `da Silva, R. L., Fumagalli, M., & Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145 <http://adsabs.harvard.edu/abs/2012ApJ...745..145D>`_ and `Krumholz, M. R., Fumagalli, M., da Silva, R. L., Rendahl, T., & Parra, J. 2015, submitted to Monthly Notices of the Royal Astronomical Society, arXiv:1502.05408 <http://adsabs.harvard.edu/abs/2015arXiv150205408K>`_.
+This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the `GNU General Public License v. 3.0 <http://www.gnu.org/licenses/gpl.html>`_. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method papers, `da Silva, R. L., Fumagalli, M., & Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145 <http://adsabs.harvard.edu/abs/2012ApJ...745..145D>`_ and `Krumholz, M. R., Fumagalli, M., da Silva, R. L., Rendahl, T., & Parra, J. 2015, Monthly Notices of the Royal Astronomical Society, 452, 1447 <http://adsabs.harvard.edu/abs/2015MNRAS.452.1447K>`_.
 
 What Does SLUG Do?
 ------------------
@@ -113,7 +113,7 @@ Here :math:`n_e n_{\mathrm{H}} V = \phi_{\mathrm{dust}} Q(\mathrm{H}^0)/ \alpha_
 
 * :math:`\alpha_{nn'}^{\mathrm{eff,B,(H)}}` is the effective emission rate coefficient for the :math:`n` to :math:`n'` H recombination line, taken from the tabulation of `Storey & Hummer (1995, MNRAS, 272, 41) <http://adsabs.harvard.edu/abs/1995MNRAS.272...41S>`_
 
-* :math:`\gamma_{i,\mathrm{line}}^{(\mathrm{M})}` is the emissivity for the brightest non-hydrogen lines, computed using a set of pre-tabulated values, following the procedure described in the `SLUG 2 method paper <http://adsabs.harvard.edu/abs/2015arXiv150205408K>`_
+* :math:`\gamma_{i,\mathrm{line}}^{(\mathrm{M})}` is the emissivity for the brightest non-hydrogen lines, computed using a set of pre-tabulated values, following the procedure described in the `SLUG 2 method paper <http://adsabs.harvard.edu/abs/2015MNRAS.452.1447K>`_
 
 * :math:`\gamma_{\mathrm{2p}}^{(\mathrm{H})}`: hydrogen two-photon emissivity, computed as
 
