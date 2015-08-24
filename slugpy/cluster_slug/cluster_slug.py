@@ -655,6 +655,42 @@ class cluster_slug(object):
 
 
     ##################################################################
+    # Method to delete a set of filters
+    ##################################################################
+    def del_filters(self, filters):
+        """
+        Remove a set of filters, freeing the memory associated with
+        them. Note that this does not delete the underlying library
+        data, just the data for the KD tree used internally.
+
+        Parameters
+           filters : iterable of stringlike
+              list of filter names
+
+        Returns
+           Nothing
+
+        Raises
+           KeyError if the input set of filters is not loaded
+        """
+
+        # Figure out which filter set to delete
+        idel = -1
+        for i, f in enumerate(self.__filtersets):
+            if filters == f['filters']:
+                idel = i
+                break
+        if idel == -1:
+            raise KeyError("filter set not found")
+
+        # Delete filter set; destroy the bayesphot object explicitly
+        # to ensure that it is remove from scope immediately, since it
+        # can be rather large
+        del self.__filtersets[i]['bp']
+        self.__filtersets.remove(idel)
+
+
+    ##################################################################
     # Define the priors property. This just wraps around the
     # corresponding property defined for bp objects.
     ##################################################################
