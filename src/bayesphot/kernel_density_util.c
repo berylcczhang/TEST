@@ -284,7 +284,7 @@ kernel_density *copy_kd(kernel_density *kd) {
   kdcopy->norm_tot = kd->norm_tot;
   kdcopy->ktype = kd->ktype;
   for (i=0; i<kd->tree->ndim; i++) kdcopy->h[i] = kd->h[i];
-  for (i=0; i<kd->tree->nodes; i++) kdcopy->nodewgt[i] = kd->nodewgt[i];
+  for (i=1; i<=kd->tree->nodes; i++) kdcopy->nodewgt[i] = kd->nodewgt[i];
 
   /* Return */
   return kdcopy;
