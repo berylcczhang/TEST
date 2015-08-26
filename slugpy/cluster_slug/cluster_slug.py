@@ -50,6 +50,10 @@ class cluster_slug(object):
           absolute error tolerance for kernel density estimation
        reltol : float
           relative error tolerance for kernel density estimation
+       thread_safe : bool
+          if True, the computation routines will run in thread-safe
+          mode, allowing use with multiprocessing; this incurs a small
+          performance penalty
 
     Methods
        filters() : 
@@ -87,7 +91,7 @@ class cluster_slug(object):
                  bw_phys=0.1, bw_phot=None, ktype='gaussian', 
                  priors=None, sample_density=None, reltol=1.0e-2,
                  abstol=1.0e-8, leafsize=16, use_nebular=True,
-                 use_extinction=True):
+                 use_extinction=True, thread_safe=True):
         """
         Initialize a cluster_slug object.
 
@@ -165,6 +169,14 @@ class cluster_slug(object):
               if True, photometry including extinction will be used;
               if not, it will be omitted, and in this case no results
               making use of the A_V dimension will be available
+           thread_safe : bool
+              if True, cluster_slug will make extra copies of internals
+              as needed to ensure thread safety when the computation
+              routines (logL, mpdf, mcmc, bestmatch, make_approx_phot,
+              make_approx_phys, mpdf_approx) are used with
+              multiprocessing; this incurs a minor performance
+              penalty, and can be disabled by setting to False if the
+              code will not be run with the multiprocessing module
 
         Returns
            Nothing
@@ -294,6 +306,7 @@ class cluster_slug(object):
             self.__sample_density = _default_sample_density
         self.__reltol = reltol
         self.__abstol = abstol
+        self.__thread_safe = thread_safe
 
         # Set the physical bandwidth
         self.__bw_phys = copy.deepcopy(bw_phys)
@@ -648,7 +661,8 @@ class cluster_slug(object):
                              priors = self.__priors,
                              sample_density = self.__sample_density,
                              reltol = self.__reltol,
-                             abstol = self.__abstol)
+                             abstol = self.__abstol,
+                             thread_safe = self.__thread_safe)
 
         # Save to the master filter list
         self.__filtersets.append(newfilter)
@@ -686,8 +700,8 @@ class cluster_slug(object):
         # Delete filter set; destroy the bayesphot object explicitly
         # to ensure that it is remove from scope immediately, since it
         # can be rather large
-        del self.__filtersets[i]['bp']
-        self.__filtersets.remove(idel)
+        del self.__filtersets[idel]['bp']
+        self.__filtersets.pop(idel)
 
 
     ##################################################################
@@ -705,9 +719,8 @@ class cluster_slug(object):
             f['bp'].priors = self.__priors
 
     ##################################################################
-    # Define the abstol and reltol properties. These update the
-    # current values of thes, and reset them for all child bp
-    # objects.
+    # Define properties that update the current values for the
+    # cluster_slug object, and also update all the child bp objects.
     ##################################################################
     @property
     def abstol(self):
@@ -728,6 +741,16 @@ class cluster_slug(object):
         self.__reltol = newtol
         for f in self.__filtersets:
             f['bp'].reltol = self.__reltol
+
+    @property
+    def thread_safe(self):
+        return self.__thread_safe
+
+    @thread_safe.setter
+    def thread_safe(self, new_thread_safe):
+        self.__thread_safe = new_thread_safe
+        for f in self.__filtersets:
+            f['bp'].thread_safe = self.__thread_safe
 
     ##################################################################
     # The functions below just wrap around the bayesphot functions of

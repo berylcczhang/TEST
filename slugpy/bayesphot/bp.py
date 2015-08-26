@@ -132,7 +132,9 @@ class bp(object):
               sorted along the dimensions for which nosort is True
            thread_safe : bool
               if True, bayesphot will make extra copies of internals
-              as needed to ensure thread safety when used with
+              as needed to ensure thread safety when the computation
+              routines (logL, mpdf, mcmc, bestmatch, make_approx_phot,
+              make_approx_phys, mpdf_approx) are used with
               multiprocessing; this incurs a minor performance
               penalty, and can be disabled by setting to False if the
               code will not be run with the multiprocessing module
@@ -178,8 +180,14 @@ class bp(object):
                 c_int,             # ktype
                 array_1d_int ]     # nosort
 
+        self.__clib.copy_kd.restype = c_void_p
+        self.__clib.copy_kd.argtypes = [ c_void_p ] # kd
+
         self.__clib.free_kd.restype = None
         self.__clib.free_kd.argtypes = [ c_void_p ]
+
+        self.__clib.free_kd_copy.restype = None
+        self.__clib.free_kd_copy.argtypes = [ c_void_p ]
 
         self.__clib.kd_change_wgt.restype = None
         self.__clib.kd_change_wgt.argtypes \
@@ -424,7 +432,7 @@ class bp(object):
         self.reltol = reltol
         self.__sden = sample_density
         self.__sample_density = None
-        self.__thread_safe = thread_safe
+        self.thread_safe = thread_safe
 
         # Store data set
         self.__dataset = np.ascontiguousarray(dataset)
@@ -855,24 +863,31 @@ class bp(object):
                 err = np.zeros(self.__bandwidth.size)
                 err[self.__nphys:] = photerr
                 bandwidth = np.sqrt(self.__bandwidth**2+err**2)
-                self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+                if not self.thread_safe: 
+                    kd_tmp = self.__kd
+                else: 
+                    kd_tmp = self.__clib.copy_kd(self.__kd)
+                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
 
             # Call the PDF computation routine
             if not self.__diag_mode:
                 self.__clib.kd_pdf_vec(
-                    self.__kd, np.ravel(cdata), pdf.size, 
+                    kd_tmp, np.ravel(cdata), pdf.size, 
                     self.reltol, self.abstol, np.ravel(pdf))
             else:
                 self.__clib.kd_pdf_vec(
-                    self.__kd, np.ravel(cdata), pdf.size, 
+                    kd_tmp, np.ravel(cdata), pdf.size, 
                     self.reltol, self.abstol, np.ravel(pdf),
                     np.ravel(nodecheck), np.ravel(leafcheck),
                     np.ravel(termcheck))
 
             # Set the bandwidth back to its default if necessary
             if photerr is not None:
-                self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                self.__kd)
+                if not self.thread_safe:
+                    self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                                    self.__kd)
+                else:
+                    self.__clib.free_kd_copy(kd_tmp)
 
             # Return
             if not self.__diag_mode:
@@ -892,7 +907,11 @@ class bp(object):
                 err = np.zeros(self.__bandwidth.size)
                 err[self.__nphys:] = photerr[i]
                 bandwidth = np.sqrt(self.bandwidth**2+err**2)
-                self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+                if not self.thread_safe: 
+                    kd_tmp = self.__kd
+                else: 
+                    kd_tmp = self.__clib.copy_kd(self.__kd)
+                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
 
                 # Grab the corresponding portions of the arrays going
                 # to and from the c code
@@ -906,11 +925,11 @@ class bp(object):
                 # Call kernel density estimate with this bandwidth
                 if not self.__diag_mode:
                     self.__clib.kd_pdf_vec(
-                        self.__kd, np.ravel(cdata_sub), pdf_sub.size, 
+                        kd_tmp, np.ravel(cdata_sub), pdf_sub.size, 
                         self.reltol, self.abstol, np.ravel(pdf_sub))
                 else:
                     self.__clib.kd_pdf_vec(
-                        self.__kd, np.ravel(cdata_sub), pdf_sub.size, 
+                        kd_tmp, np.ravel(cdata_sub), pdf_sub.size, 
                         self.reltol, self.abstol, np.ravel(pdf_sub),
                         np.ravel(nodecheck_sub), np.ravel(leafcheck_sub),
                         np.ravel(termcheck_sub))
@@ -921,8 +940,11 @@ class bp(object):
                     termcheck[i] = termcheck_sub
 
             # Restore the bandwidth
-            self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                            self.__kd)
+            if not self.thread_safe:
+                self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                                self.__kd)
+            else:
+                self.__clib.free_kd_copy(kd_tmp)
 
             # Return
             if not self.__diag_mode:
@@ -1105,7 +1127,11 @@ class bp(object):
                 err = np.zeros(self.__bandwidth.size)
                 err[self.__nphys:] = photerr
                 bandwidth = np.sqrt(self.__bandwidth**2+err**2)
-                self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+                if not self.thread_safe: 
+                    kd_tmp = self.__kd
+                else: 
+                    kd_tmp = self.__clib.copy_kd(self.__kd)
+                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
 
             # Call the PDF computation routine; note that we call
             # kd_pdf_int_vec if we're actually marginalizing over any
@@ -1115,13 +1141,13 @@ class bp(object):
             # need to do any integration
             if nidx < self.__nphys:
                 self.__clib.kd_pdf_int_reggrid(
-                    self.__kd, np.ravel(phottmp),
+                    kd_tmp, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
                     qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
                     self.reltol, self.abstol, np.ravel(pdf))
             else:
                 self.__clib.kd_pdf_reggrid(
-                    self.__kd, np.ravel(phottmp),
+                    kd_tmp, np.ravel(phottmp),
                     dims[nidx:], self.__nphot, nphot,
                     qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
                     self.reltol, self.abstol, np.ravel(pdf))
@@ -1138,7 +1164,11 @@ class bp(object):
                 err = np.zeros(self.__bandwidth.size)
                 err[self.__nphys:] = photerr[i]
                 bandwidth = np.sqrt(self.bandwidth**2+err**2)
-                self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+                if not self.thread_safe:
+                    kd_tmp = self.__kd
+                else: 
+                    kd_tmp = self.__clib.copy_kd(self.__kd)
+                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
 
                 # Grab the corresponding portions of the arrays going
                 # to and from the c code
@@ -1151,7 +1181,7 @@ class bp(object):
                 # Call kernel density estimate with this bandwidth
                 if nidx < self.__nphys:
                     self.__clib.kd_pdf_int_reggrid(
-                        self.__kd, phot_sub,
+                        kd_tmp, phot_sub,
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
                         qmin_tmp, qmax_tmp, ngrid_tmp, 
@@ -1159,7 +1189,7 @@ class bp(object):
                         self.reltol, self.abstol, np.ravel(pdf_sub))
                 else:
                     self.__clib.kd_pdf_reggrid(
-                        self.__kd, phot_sub,
+                        kd_tmp, phot_sub,
                         dims[nidx:], self.__nphot, 
                         phot_sub.size/self.__nphot,
                         qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
@@ -1169,8 +1199,11 @@ class bp(object):
 
         # Set the bandwidth back to its default if necessary
         if photerr is not None:
-            self.__clib.kd_change_bandwidth(self.__bandwidth, 
+            if not self.thread_safe:
+                self.__clib.kd_change_bandwidth(self.__bandwidth, 
                                                 self.__kd)
+            else:
+                self.__clib.free_kd_copy(kd_tmp)
 
         # Normalize if requested
         if norm:
@@ -1216,15 +1249,16 @@ class bp(object):
     def __logL(self, *args):
         x = np.zeros(self.__nphys+self.__nphot)
         x[:self.__nphys] = args[0]
-        x[self.__nphys:] = args[1:]
+        x[self.__nphys:] = args[1:-1]
+        kd_tmp = args[-1]
         if not self.__diag_mode:
-            return np.log(self.__clib.kd_pdf(self.__kd, x, self.reltol,
+            return np.log(self.__clib.kd_pdf(kd_tmp, x, self.reltol,
                                              self.abstol))
         else:
             nodecheck = c_ulong(0)
             leafcheck = c_ulong(0)
             termcheck = c_ulong(0)
-            return np.log(self.__clib.kd_pdf(self.__kd, x, self.reltol,
+            return np.log(self.__clib.kd_pdf(kd_tmp, x, self.reltol,
                                              self.abstol, nodecheck,
                                              leafcheck, termcheck))
 
@@ -1299,8 +1333,12 @@ class bp(object):
             err = np.zeros(self.__bandwidth.size)
             err[self.__nphys:] = photerr[i]
             bandwidth = np.sqrt(self.bandwidth**2+err**2)
-            self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
-
+            if not self.thread_safe: 
+                kd_tmp = self.__kd
+            else:
+                kd_tmp = self.__clib.copy_kd(self.__kd)
+            self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+ 
             # Grab the clusters that go with this photometric error
             if photprop.ndim < photerr.ndim:
                 ph = photprop
@@ -1323,7 +1361,7 @@ class bp(object):
                 wgt = np.zeros(1)
                 dist2 = np.zeros(1)
                 self.__clib. \
-                    kd_neighbors(self.__kd, ph_tmp,
+                    kd_neighbors(kd_tmp, ph_tmp,
                                  dims.ctypes.data_as(POINTER(c_ulong)),
                                  self.__nphot, 1, True, nearpt, 
                                  wgt.ctypes.data_as(POINTER(c_double)),
@@ -1339,7 +1377,7 @@ class bp(object):
                 # Run the MCMC
                 sampler=emcee.EnsembleSampler(mc_walkers, self.__nphys, 
                                               self.__logL, 
-                                              args=ph_tmp)
+                                              args=[ph_tmp, kd_tmp])
                 sampler.run_mcmc(pos, mc_steps)
 
                 # Store the result
@@ -1349,8 +1387,11 @@ class bp(object):
 
         # Set bandwidth back to default if necessary
         if photerr is not None:
-            self.__clib.kd_change_bandwidth(self.__bandwidth, 
+            if not self.thread_safe:
+                self.__clib.kd_change_bandwidth(self.__bandwidth, 
                                                 self.__kd)
+            else:
+                self.__clib.free_kd_copy(kd_tmp)
 
         # Reshape the samples
         samples = np.squeeze(
@@ -1480,13 +1521,17 @@ class bp(object):
                 bandwidth = np.zeros(self.__bandwidth.size)
                 bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
                 bandwidth[self.__nphys:] = photerr
-            self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+            if not self.thread_safe: 
+                kd_tmp = self.__kd
+            else: 
+                kd_tmp = self.__clib.copy_kd(self.__kd)
+            self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
 
             # Now call c neighbor-finding routine
             dims = np.arange(self.__nphys, self.__nphot+self.__nphys,
                              dtype=c_ulong)
             self.__clib.kd_neighbors_vec(
-                self.__kd, np.ravel(phot), 
+                kd_tmp, np.ravel(phot), 
                 dims.ctypes.data_as(POINTER(c_ulong)),
                 self.__nphot, np.array(phot).size/self.__nphot,
                 nmatch, True, np.ravel(matches),
@@ -1494,8 +1539,11 @@ class bp(object):
                 np.ravel(d2))
 
             # Restore bandwidth to previous value
-            self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                            self.__kd)
+            if not self.thread_safe:
+                self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                                self.__kd)
+            else:
+                self.__clib.free_kd_copy(kd_tmp)
 
         else:
 
@@ -1513,7 +1561,11 @@ class bp(object):
                     bandwidth = np.zeros(self.__bandwidth.size)
                     bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
                     bandwidth[self.__nphys:] = photerr[i]
-                self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+                if not self.thread_safe: 
+                    kd_tmp = self.__kd
+                else: 
+                    kd_tmp = self.__clib.copy_kd(self.__kd)
+                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
 
                 # Call c neighbor-finding routine
                 offset1 = ptr*nmatch
@@ -1530,8 +1582,11 @@ class bp(object):
                 ptr = ptr+1
 
             # Restore bandwidth to previous value
-            self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                            self.__kd)
+            if not self.thread_safe:
+                self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                                self.__kd)
+            else:
+                self.__clib.free_kd_copy(kd_tmp)
 
 
         # Return
@@ -1735,13 +1790,17 @@ class bp(object):
                     err = np.zeros(self.__bandwidth.size)
                     err[self.__nphys:] = pherr
                     bandwidth = np.sqrt(self.bandwidth**2+err**2)
-                    self.__clib.kd_change_bandwidth(bandwidth, self.__kd)
+                    if not self.thread_safe: 
+                        kd_tmp = self.__kd
+                    else: 
+                        kd_tmp = self.__clib.copy_kd(self.__kd)
+                    self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
 
                 # Call c library routine to make the representation
                 xout = POINTER(c_double)()
                 wgtsout = POINTER(c_double)()
                 npts = self.__clib.kd_rep(
-                    self.__kd, np.array(ph), 
+                    kd_tmp, np.array(ph), 
                     np.arange(self.__nphot, dtype=c_ulong)+self.__nphys,
                     self.__nphot, self.reltol, 
                     dim_return_ptr, ndim_return,
@@ -1771,8 +1830,11 @@ class bp(object):
 
         # Reset the bandwidth
         if photerr is not None:
-            self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                            self.__kd)
+            if not self.thread_safe:
+                self.__clib.kd_change_bandwidth(self.__bandwidth, 
+                                                self.__kd)
+            else:
+                self.__clib.free_kd_copy(kd_tmp)
 
         # If we were given a single object, return something in the
         # same shape

@@ -852,14 +852,6 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
   double hprod, ds_n, fac;
   double maxerr, relerr, pdfmax, leftpdf, rightpdf;
 
-  printf("phot / err on entry =");
-  for (i=0; i<ndimfixed; i++) 
-    printf(" -- %f %f", xfixed[i], 
-	   sqrt(kd->h[dimfixed[i]]*kd->h[dimfixed[i]]-0.1*0.1));
-  printf("\n");
-  printf("kdtree bw loc = %p\n", kd->h);
-  printf("kdtree data loc = %p\n", &(kd->tree->tree[ROOT].x[0]));
-
   /* Pre-compute constant factor in the integrals we're evaluating;
      this is the part that depends only on h and the number of
      dimensions. */

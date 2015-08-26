@@ -111,8 +111,8 @@ kernel_density* build_kd_sortdims(double *x, unsigned long ndim,
 kernel_density *copy_kd(kernel_density *kd);
 /* Makes a copy of a kernel density object, without copying the
    underlying KD tree. This method is useful for generating multiple
-   kernel_density objects with different bandwidths, but that index
-   the same data.
+   kernel_density objects with different bandwidths and/or weights,
+   but that index the same data.
 
    Parameters
       INPUT kd
