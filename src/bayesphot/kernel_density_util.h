@@ -108,10 +108,42 @@ kernel_density* build_kd_sortdims(double *x, unsigned long ndim,
          a kernel_density object
 */
 
+kernel_density *copy_kd(kernel_density *kd);
+/* Makes a copy of a kernel density object, without copying the
+   underlying KD tree. This method is useful for generating multiple
+   kernel_density objects with different bandwidths, but that index
+   the same data.
+
+   Parameters
+      INPUT kd
+         The kernel_density object to be copied
+
+   Returns
+      OUTPUT kd_copy
+         a kernel_density object that is a copy of the input kd, but
+         with the bandwidth, node weights, and normalizations stored
+         in different memory locations
+*/
+
 void free_kd(kernel_density *kd);
 /* Frees the memory associated with a kernel_density object. Note that
    this does not free any of the memory associated with the data
    indexed by the KD tree, just the metadata specific to the tree.
+
+   Parameters
+      INPUT/OUTPUT kd
+         The kernel_density object to be de-allocated
+
+   Returns
+      Nothing
+*/
+
+void free_kd_copy(kernel_density *kd);
+/* Frees the memory associated with a kernel_density object, but not
+   the underlying data or the underlying KD tree. This differs from
+   free_kd in that the KD tree is left unaffected by this routine,
+   while it is deleted by free_kd. This routine is most useful in
+   conjunction with copy_kd.
 
    Parameters
       INPUT/OUTPUT kd

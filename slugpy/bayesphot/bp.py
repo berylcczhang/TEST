@@ -70,7 +70,7 @@ class bp(object):
     def __init__(self, dataset, nphys, filters=None, bandwidth='auto',
                  ktype='gaussian', priors=None, sample_density=None,
                  reltol=1.0e-2, abstol=1.0e-6, leafsize=16,
-                 nosort=None):
+                 nosort=None, thread_safe=True):
         """
         Initialize a bp object.
 
@@ -130,6 +130,12 @@ class bp(object):
            nosort : arraylike of bool, shape (N) | None
               if specified, this keyword causes the KD tree not to be
               sorted along the dimensions for which nosort is True
+           thread_safe : bool
+              if True, bayesphot will make extra copies of internals
+              as needed to ensure thread safety when used with
+              multiprocessing; this incurs a minor performance
+              penalty, and can be disabled by setting to False if the
+              code will not be run with the multiprocessing module
 
         Returns
            Nothing
@@ -418,6 +424,7 @@ class bp(object):
         self.reltol = reltol
         self.__sden = sample_density
         self.__sample_density = None
+        self.__thread_safe = thread_safe
 
         # Store data set
         self.__dataset = np.ascontiguousarray(dataset)
