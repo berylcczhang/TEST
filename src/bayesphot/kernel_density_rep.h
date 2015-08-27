@@ -105,7 +105,33 @@ unsigned long squeeze_rep(const unsigned long npts,
 			  const unsigned int ndim, double *h, 
 			  const double tol, double **x, 
 			  double **wgts);
+/* This routine shrinks the size of a kernel density representation by
+   approximating Gaussians that are close to one another with a single
+   Gaussian.
 
+   Parameters:
+      INPUT npt
+         Number of points in the representation to be squeezed
+      INPUT ndim
+         Number of dimensions in the representation
+      INPUT h
+         Array of ndim elements giving the bandwidth in each dimension
+      INPUT tol
+         Error tolerance of the squeezing procedure; the fractional
+         difference between the original and squeezed representations
+         is guaranteed to be < tol
+      INPUT/OUTPUT x
+         Array of npt * ndim elements giving the positions of the
+         points to be squeezed; on exit, the array will have been
+         resized to contain npt_out * ndim elements
+      INPUT/OUTPUT wgts
+         Array of npt elements giving the weights of the points to be
+         squeezed; on exit, the array will have been resized to
+         contain npt_out elements
+
+   Returns:
+      npt_out, the number of points in the squeezed representation
+*/
 
 #endif
 /* _KERNEL_DENSITY_REP_H_ */
