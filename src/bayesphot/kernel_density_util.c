@@ -272,19 +272,14 @@ kernel_density *copy_kd(kernel_density *kd) {
     fprintf(stderr, "bayesphot: error: unable to allocate memory in build_kernel_density\n");
     exit(1);
   }
-  if (!(kdcopy->nodewgt = calloc(kd->tree->nodes, sizeof(double)))) {
-    fprintf(stderr, "bayesphot: error: unable to allocate memory in build_kernel_density\n");
-    exit(1);
-  }
-  kdcopy->nodewgt--; /* Change to 1 offset instead of 0 offset */
 
   /* Copy data */
   kdcopy->tree = kd->tree;
   kdcopy->norm = kd->norm;
   kdcopy->norm_tot = kd->norm_tot;
   kdcopy->ktype = kd->ktype;
+  kdcopy->nodewgt = kd->nodewgt;
   for (i=0; i<kd->tree->ndim; i++) kdcopy->h[i] = kd->h[i];
-  for (i=1; i<=kd->tree->nodes; i++) kdcopy->nodewgt[i] = kd->nodewgt[i];
 
   /* Return */
   return kdcopy;
@@ -306,8 +301,6 @@ void free_kd(kernel_density *kd) {
 /*********************************************************************/
 void free_kd_copy(kernel_density *kd) {
   free(kd->h);
-  kd->nodewgt++;
-  free(kd->nodewgt);
   free(kd);
 }
 
