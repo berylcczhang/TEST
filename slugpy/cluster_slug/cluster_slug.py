@@ -306,6 +306,7 @@ class cluster_slug(object):
             self.__sample_density = _default_sample_density
         self.__reltol = reltol
         self.__abstol = abstol
+        self.__bw_phot_default = bw_phot
         self.__thread_safe = thread_safe
 
         # Set the physical bandwidth
@@ -526,12 +527,18 @@ class cluster_slug(object):
             phdata[phdata <= 0] = 1.0e-99
             phdata = np.log10(phdata)
             if bandwidth is None:
-                self.__photbw[filter_name] = 0.1
+                if self.__bw_phot_default is None:
+                    self.__photbw[filter_name] = 0.1
+                else:
+                    self.__photbw[filter_name] = self.__bw_phot_default
             else:
                 self.__photbw[filter_name] = bandwidth
         else:
             if bandwidth is None:
-                self.__photbw[filter_name] = 0.25
+                if self.__bw_phot_default is None:
+                    self.__photbw[filter_name] = 0.25
+                else:
+                    self.__photbw[filter_name] = self.__bw_phot_default
             else:
                 self.__photbw[filter_name] = bandwidth
 
@@ -1172,6 +1179,63 @@ class cluster_slug(object):
             return bp.make_approx_phys(phot, photerr=photerr,
                                        squeeze=squeeze,
                                        phys_ignore=phys_ignore)
+
+
+    def squeeze_rep(self, x, wgts, dims=None, filters=None):
+        """
+        Takes an input array of positions and weights that form a
+        kernel density representation and approximates them using
+        fewer points, using an error tolerance of reltol
+
+        Parameters:
+           x : array, shape (N, ndim)
+              an array of points forming a kernel density
+              representation; on exit, x will be resized to (M, ndim)
+              with M <= N
+           wgts : array, shape (N)
+              an array of weights for the kernel density
+              representation; on exit, wgts will be resized to (M),
+              with M <= N
+           dims : array, shape (ndim)
+              array specifying which dimensions in the kernel density
+              representation the coordinates in x correspond to; if
+              left as None, they are assumed to correspond to the
+              first ndim dimensions in the data set
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns:
+           Nothing
+        """
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it, then return
+            if len(self.__filtersets) == 1:
+                self.__filtersets[0]['bp']. \
+                    squeeze_rep(x, wgts, dims=dims)
+                return
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the method and return
+            bp.squeeze_rep(x, wgts, dims=dims)
+            return
 
 
     def mpdf_approx(self, x, wgts, dims='phys', dims_return=None,
