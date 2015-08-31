@@ -1655,7 +1655,7 @@ class bp(object):
             # None in place of xpt and wgts
             if npts == 0:
                 warn("bp.make_approx_phot: requested precision cannot be reached")
-                return None, None
+                return None
 
             # Call c library routine to squeeze the representation
             if squeeze:
@@ -1797,7 +1797,7 @@ class bp(object):
                     warn("bp.make_approx_phot: requested precision cannot be reached")
                     if kd_tmp is not None:
                         self.__restore_bw_err(kd_tmp)
-                    return None, None
+                    return None
 
                 # Call c library routine to squeeze the representation
                 if squeeze:
