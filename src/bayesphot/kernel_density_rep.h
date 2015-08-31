@@ -84,6 +84,13 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 
    Returns:
       npt, the number of points in xpt and wgts
+
+   Notes:
+      A return value of 0 indicates that the routine terminated
+      prematurely due to inadequate numerical precision to achieve the
+      desired tolerance. This usually indicates that the input point
+      was too far from the library for the exp(-dist) kernel functions
+      to be evaluated with adequate precision.
 */
 
 void free_kd_rep(double **xpt, double **wgts);

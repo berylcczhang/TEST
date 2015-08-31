@@ -51,7 +51,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
   unsigned long dimptr, npt_final, ndim_ret;
   unsigned long *nodelist;
   size_t *idx;
-  double wgt_in, wgt_out, maxwgt, d2;
+  double wgt_in, wgt_out, maxwgt, d2, wgt_save;
   double *nodewgt;
   double *xtmp, *wgttmp;
 
@@ -116,8 +116,23 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 
     /* Subtract this node's contribution from the excluded weight;
        avoid roundoff error */
+    wgt_save = wgt_out;
     wgt_out -= maxwgt;
     if (wgt_out < 0) wgt_out = 0.0;
+
+    /* Safety check: make sure that the weight of the excluded points
+       has diminished. If not, we lack the numerical precision to
+       proceed, and we will bail out now and return nothing */
+    if (wgt_out == wgt_save) {
+      /* Clean up before terminating */
+      free(nodelist);
+      free(nodewgt);
+      free(xtmp);
+      free(wgttmp);
+      /* Set the output pointers to NULL and return error code */
+      *xpt = *wgts = NULL;
+      return 0;
+    }
 
     /* If this node is a leaf, add its points to the return list, and
        add its tally to the weight we've accounted for */

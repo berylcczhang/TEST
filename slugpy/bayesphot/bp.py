@@ -19,6 +19,7 @@ from ctypes import c_bool
 import numpy.ctypeslib as npct
 import random
 from copy import deepcopy
+from warnings import warn
 try:
     import emcee
     mc_avail = True
@@ -758,6 +759,48 @@ class bp(object):
             self.priors = None
             self.priors = pr
 
+    ##################################################################
+    # Utility methods to set a new bandwidth to account for
+    # photometric errors, to reset to the original bandwidth, and to
+    # free a temporary kd_tree holder, all in a thread-safe way. These
+    # are intended for internal use.
+    ##################################################################
+
+    # Broaden the bandwidth by the photometric error, and return a KD
+    # object with the new bandwidth; if we are thread-safe, this is a
+    # newly-created KD object, which will need to be freed later; if a
+    # value for kd_cur is passed in, the bandwidth will be changed for
+    # it, and no allocation will be done regardless of thread safety
+    def __change_bw_err(self, photerr, kd_cur=None, err_only=False):
+        if err_only:
+            bandwidth = np.copy(self.__bandwidth)
+            bandwidth[self.__nphys:] = photerr
+        else:
+            err = np.zeros(self.__bandwidth.size)
+            err[self.__nphys:] = photerr
+            bandwidth = np.sqrt(self.__bandwidth**2+err**2)
+        if kd_cur is not None:
+            kd_tmp = kd_cur
+        elif not self.thread_safe: 
+            kd_tmp = self.__kd
+        else: 
+            kd_tmp = self.__clib.copy_kd(self.__kd)
+        self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+        return kd_tmp
+
+    # Free a temporary KD object
+    def __free_bw_err(self, kd_tmp):
+        if self.thread_safe:
+            self.__clib.free_kd_copy(kd_tmp)
+
+    # Restore bandwidth to the default, de-allocating the temporary KD
+    # object if needed
+    def __restore_bw_err(self, kd_tmp):
+        if not self.thread_safe:
+            self.__clib.kd_change_bandwidth(
+                self.__bandwidth, self.__kd)
+        else:
+            self.__clib.free_kd_copy(kd_tmp)
 
     ##################################################################
     # Method to compute the log likelihood function for a particular
@@ -859,15 +902,10 @@ class bp(object):
 
             # Set the bandwidth based on the photometric errors if we
             # were given some
-            if photerr is not None:
-                err = np.zeros(self.__bandwidth.size)
-                err[self.__nphys:] = photerr
-                bandwidth = np.sqrt(self.__bandwidth**2+err**2)
-                if not self.thread_safe: 
-                    kd_tmp = self.__kd
-                else: 
-                    kd_tmp = self.__clib.copy_kd(self.__kd)
-                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+            if photerr is None:
+                kd_tmp = self.__kd
+            else:
+                kd_tmp = self.__change_bw_err(photerr)
 
             # Call the PDF computation routine
             if not self.__diag_mode:
@@ -883,11 +921,7 @@ class bp(object):
 
             # Set the bandwidth back to its default if necessary
             if photerr is not None:
-                if not self.thread_safe:
-                    self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                    self.__kd)
-                else:
-                    self.__clib.free_kd_copy(kd_tmp)
+                self.__restore_bw_err(kd_tmp)
 
             # Return
             if not self.__diag_mode:
@@ -900,18 +934,12 @@ class bp(object):
             # Case with multiple sets of photometric errors
 
             # Loop over photometric errors
+            kd_tmp = None
             for i in np.ndindex(*photerr.shape[:-1]):
 
                 # Set bandwidth based on photometric error for this
                 # iteration
-                err = np.zeros(self.__bandwidth.size)
-                err[self.__nphys:] = photerr[i]
-                bandwidth = np.sqrt(self.bandwidth**2+err**2)
-                if not self.thread_safe: 
-                    kd_tmp = self.__kd
-                else: 
-                    kd_tmp = self.__clib.copy_kd(self.__kd)
-                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+                kd_tmp = self.__change_bw_err(photerr[i], kd_cur=kd_tmp)
 
                 # Grab the corresponding portions of the arrays going
                 # to and from the c code
@@ -939,12 +967,9 @@ class bp(object):
                     leafcheck[i] = leafcheck_sub
                     termcheck[i] = termcheck_sub
 
-            # Restore the bandwidth
-            if not self.thread_safe:
-                self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                self.__kd)
-            else:
-                self.__clib.free_kd_copy(kd_tmp)
+            # Restore the bandwidth if we changed it
+            if photerr is not None:
+                self.__restore_bw_err(kd_tmp)
 
             # Return
             if not self.__diag_mode:
@@ -1123,15 +1148,10 @@ class bp(object):
 
             # Set the bandwidth based on the photometric errors if we
             # were given some
-            if photerr is not None:
-                err = np.zeros(self.__bandwidth.size)
-                err[self.__nphys:] = photerr
-                bandwidth = np.sqrt(self.__bandwidth**2+err**2)
-                if not self.thread_safe: 
-                    kd_tmp = self.__kd
-                else: 
-                    kd_tmp = self.__clib.copy_kd(self.__kd)
-                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+            if photerr is None:
+                kd_tmp = self.__kd
+            else:
+                kd_tmp = self.__change_bw_err(photerr)
 
             # Call the PDF computation routine; note that we call
             # kd_pdf_int_vec if we're actually marginalizing over any
@@ -1157,18 +1177,12 @@ class bp(object):
             # Case with multiple sets of photometric errors
 
             # Loop over photometric errors
+            kd_tmp = None
             for i in np.ndindex(*photerr.shape[:-1]):
 
                 # Set bandwidth based on photometric error for this
                 # iteration
-                err = np.zeros(self.__bandwidth.size)
-                err[self.__nphys:] = photerr[i]
-                bandwidth = np.sqrt(self.bandwidth**2+err**2)
-                if not self.thread_safe:
-                    kd_tmp = self.__kd
-                else: 
-                    kd_tmp = self.__clib.copy_kd(self.__kd)
-                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+                kd_tmp = self.__change_bw_err(photerr[i], kd_cur=kd_tmp)
 
                 # Grab the corresponding portions of the arrays going
                 # to and from the c code
@@ -1196,14 +1210,9 @@ class bp(object):
                         self.reltol, self.abstol, np.ravel(pdf_sub))
                 pdf[i] = pdf_sub
 
-
         # Set the bandwidth back to its default if necessary
         if photerr is not None:
-            if not self.thread_safe:
-                self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                self.__kd)
-            else:
-                self.__clib.free_kd_copy(kd_tmp)
+            self.__restore_bw_err(kd_tmp)
 
         # Normalize if requested
         if norm:
@@ -1326,18 +1335,12 @@ class bp(object):
             photerr = np.zeros(self.__nphot)
 
         # Loop over photometric errors
+        kd_tmp = None
         for i in np.ndindex(*np.array(photerr).shape[:-1]):
 
             # Set bandwidth based on photometric error for this
             # iteration
-            err = np.zeros(self.__bandwidth.size)
-            err[self.__nphys:] = photerr[i]
-            bandwidth = np.sqrt(self.bandwidth**2+err**2)
-            if not self.thread_safe: 
-                kd_tmp = self.__kd
-            else:
-                kd_tmp = self.__clib.copy_kd(self.__kd)
-            self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+            kd_tmp = self.__change_bw_err(photerr[i], kd_cur=kd_tmp)
  
             # Grab the clusters that go with this photometric error
             if photprop.ndim < photerr.ndim:
@@ -1387,11 +1390,7 @@ class bp(object):
 
         # Set bandwidth back to default if necessary
         if photerr is not None:
-            if not self.thread_safe:
-                self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                self.__kd)
-            else:
-                self.__clib.free_kd_copy(kd_tmp)
+            self.__restore_bw_err(kd_tmp)
 
         # Reshape the samples
         samples = np.squeeze(
@@ -1513,19 +1512,8 @@ class bp(object):
             # loop
 
             # Change the bandwidth to match the input errors
-            if bandwidth_units:
-                err = np.zeros(self.__bandwidth.size)
-                err[self.__nphys:] = photerr
-                bandwidth = np.sqrt(self.__bandwidth**2+err**2)
-            else:
-                bandwidth = np.zeros(self.__bandwidth.size)
-                bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
-                bandwidth[self.__nphys:] = photerr
-            if not self.thread_safe: 
-                kd_tmp = self.__kd
-            else: 
-                kd_tmp = self.__clib.copy_kd(self.__kd)
-            self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+            kd_tmp = self.__change_bw_err(
+                photerr, err_only = not bandwidth_units)
 
             # Now call c neighbor-finding routine
             dims = np.arange(self.__nphys, self.__nphot+self.__nphys,
@@ -1539,33 +1527,20 @@ class bp(object):
                 np.ravel(d2))
 
             # Restore bandwidth to previous value
-            if not self.thread_safe:
-                self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                self.__kd)
-            else:
-                self.__clib.free_kd_copy(kd_tmp)
+            self.__restore_bw_err(kd_tmp)
 
         else:
 
             # We have multiple sets of errors, so loop
             ptr = 0
+            kd_tmp = None
             for i in np.ndindex(*photerr.shape[:-1]):
 
                 # Set bandwidth based on photometric error for this
                 # iteration
-                if bandwidth_units:
-                    err = np.zeros(self.__bandwidth.size)
-                    err[self.__nphys:] = photerr[i]
-                    bandwidth = np.sqrt(self.__bandwidth**2+err**2)
-                else:
-                    bandwidth = np.zeros(self.__bandwidth.size)
-                    bandwidth[:self.__nphys] = self.__bandwidth[:self.__nphys]
-                    bandwidth[self.__nphys:] = photerr[i]
-                if not self.thread_safe: 
-                    kd_tmp = self.__kd
-                else: 
-                    kd_tmp = self.__clib.copy_kd(self.__kd)
-                self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+                kd_tmp = self.__change_bw_err(
+                    photerr[i], kd_cur = kd_tmp,
+                    err_only = not bandwidth_units)
 
                 # Call c neighbor-finding routine
                 offset1 = ptr*nmatch
@@ -1582,12 +1557,7 @@ class bp(object):
                 ptr = ptr+1
 
             # Restore bandwidth to previous value
-            if not self.thread_safe:
-                self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                self.__kd)
-            else:
-                self.__clib.free_kd_copy(kd_tmp)
-
+            self.__restore_bw_err(kd_tmp)
 
         # Return
         return matches, np.sqrt(d2)
@@ -1633,6 +1603,12 @@ class bp(object):
               photometric filters being returned
            wgts : array, shape (M), or a list of such arrays
               an array containing the weights of the points
+
+        Notes:
+           if the requested relative tolerance cannot be reached for
+           numerical reasons (usually because the input point is too
+           far from the library to allow accurate computation), x and
+           wgts will be return as None, and a warning will be issued
         """
 
         # If given only one set of physical variables, make a
@@ -1673,6 +1649,13 @@ class bp(object):
                                       dim_return_ptr, ndim_return,
                                       ctypes.byref(xout), 
                                       ctypes.byref(wgtsout))
+
+            # Check if the c routine encountered an error due to
+            # insufficient precision; if so, issue warning and return
+            # None in place of xpt and wgts
+            if npts == 0:
+                warn("bp.make_approx_phot: requested precision cannot be reached")
+                return None, None
 
             # Call c library routine to squeeze the representation
             if squeeze:
@@ -1741,6 +1724,12 @@ class bp(object):
               physical dimensions being returned
            wgts : array, shape (M), or a list of such arrays
               an array containing the weights of the points
+
+        Notes:
+           if the requested relative tolerance cannot be reached for
+           numerical reasons (usually because the input point is too
+           far from the library to allow accurate computation), x and
+           wgts will be return as None, and a warning will be issued
         """
 
         # If given only one set of photometric variables, make a
@@ -1780,6 +1769,7 @@ class bp(object):
                                  " photometric properties!")
 
             # Loop over photometric errors
+            kd_tmp = None
             for pherr in photerrtmp:
 
                 # Change the bandwidth if necessary
@@ -1787,14 +1777,7 @@ class bp(object):
                     if len(pherr) != self.__nphot:
                         raise ValueError("need " + str(self.__nphot) + 
                                          " photometric errors!")
-                    err = np.zeros(self.__bandwidth.size)
-                    err[self.__nphys:] = pherr
-                    bandwidth = np.sqrt(self.bandwidth**2+err**2)
-                    if not self.thread_safe: 
-                        kd_tmp = self.__kd
-                    else: 
-                        kd_tmp = self.__clib.copy_kd(self.__kd)
-                    self.__clib.kd_change_bandwidth(bandwidth, kd_tmp)
+                    kd_tmp = self.__change_bw_err(pherr, kd_cur=kd_tmp)
 
                 # Call c library routine to make the representation
                 xout = POINTER(c_double)()
@@ -1806,6 +1789,15 @@ class bp(object):
                     dim_return_ptr, ndim_return,
                     ctypes.byref(xout), 
                     ctypes.byref(wgtsout))
+
+                # Check if the c routine encountered an error due to
+                # insufficient precision; if so, issue warning and
+                # return None in place of xpt and wgts
+                if npts == 0:
+                    warn("bp.make_approx_phot: requested precision cannot be reached")
+                    if kd_tmp is not None:
+                        self.__restore_bw_err(kd_tmp)
+                    return None, None
 
                 # Call c library routine to squeeze the representation
                 if squeeze:
@@ -1827,14 +1819,9 @@ class bp(object):
                 x.append(xsave)
                 wgts.append(wgtssave)
 
-
         # Reset the bandwidth
         if photerr is not None:
-            if not self.thread_safe:
-                self.__clib.kd_change_bandwidth(self.__bandwidth, 
-                                                self.__kd)
-            else:
-                self.__clib.free_kd_copy(kd_tmp)
+            self.__restore_bw_err(kd_tmp)
 
         # If we were given a single object, return something in the
         # same shape
@@ -1849,6 +1836,57 @@ class bp(object):
         # Return
         return x, wgts
             
+    ##################################################################
+    # Method to squeeze a representation that has already been created
+    ##################################################################
+    def squeeze_rep(self, x, wgts, dims=None):
+        """
+        Takes an input array of positions and weights that form a
+        kernel density representation and approximates them using
+        fewer points, using an error tolerance of reltol
+
+        Parameters:
+           x : array, shape (N, ndim)
+              an array of points forming a kernel density
+              representation; on exit, x will be resized to (M, ndim)
+              with M <= N
+           wgts : array, shape (N)
+              an array of weights for the kernel density
+              representation; on exit, wgts will be resized to (M),
+              with M <= N
+           dims : array, shape (ndim)
+              array specifying which dimensions in the kernel density
+              representation the coordinates in x correspond to; if
+              left as None, they are assumed to correspond to the
+              first ndim dimensions in the data set
+
+        Returns:
+           Nothing
+        """
+
+        # Get the bandwidth
+        if dims is None:
+            bw = self.__bandwidth[:x.shape[1]]
+        else:
+            bw = self.__bandwidth[dims]
+
+        # Prepare data to pass to the c routine
+        npt = x.shape[0]
+        ndim = x.shape[1]
+        xtmp = POINTER(c_double)(x.ctypes.data_as(POINTER(c_double)))
+        wgtstmp = POINTER(wgts.ctypes.data_as(POINTER(c_double)))
+
+        # Call the c squeeze routine
+        npt_out = self.__clib.squeeze_rep(
+            npt, ndim, bw, self.reltol,
+            ctypes.byref(xtmp), ctypes.byref(wgtstmp))
+
+        # Discard the old metadata for x and wgts, and rebuild them
+        # using the new metadata
+        x = npct.as_array(xtmp, shape=(npt_out, ndim))
+        wgts = npct.as_array(wgtstmp, shape=(ndim,))
+
+
     ##################################################################
     # Routines to use the approximate representations returned by
     # make_approx_phys and make_approx_phot to compute marginal

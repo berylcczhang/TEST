@@ -1075,6 +1075,12 @@ class cluster_slug(object):
               the approximation
            wgts : array, shape (M), or a list of such arrays
               an array containing the weights of the points
+
+        Notes:
+           if the requested relative tolerance cannot be reached for
+           numerical reasons (usually because the input point is too
+           far from the library to allow accurate computation), x and
+           wgts will be return as None, and a warning will be issued
         """
 
         # Were we given a set of filters?
@@ -1149,6 +1155,12 @@ class cluster_slug(object):
               physical dimensions being returned
            wgts : array, shape (M), or a list of such arrays
               an array containing the weights of the points
+
+        Notes:
+           if the requested relative tolerance cannot be reached for
+           numerical reasons (usually because the input point is too
+           far from the library to allow accurate computation), x and
+           wgts will be return as None, and a warning will be issued
         """
 
         # Were we given a set of filters?
