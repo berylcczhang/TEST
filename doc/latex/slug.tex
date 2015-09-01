@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{August 18, 2015}
+\date{September 01, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -5128,7 +5128,7 @@ from slugpy.bayesphot import *
 or:
 
 \begin{Verbatim}[commandchars=\\\{\}]
-from slugpy.bayesphot import bp\PYG{l+s}{{}`{}`}
+from slugpy.bayesphot import bp
 \end{Verbatim}
 
 Once imported, a \code{bp} object can be instantiated. The call signature for the \code{bp} constructor class is:
@@ -5201,6 +5201,104 @@ def bestmatch(self, phot, nmatch=1, bandwidth\PYGZus{}units=False):
 Here \code{phot} is the set of photometric properties, which is identical to the \code{photprop} parameter used by \code{logL}, \code{mpdf}, and \code{mcmc}. The argument \code{nmatch} specifies how many matches to return, and the argument \code{bandwidth\_units} specifies whether distances are to be measured using an ordinary Euclidean metric, or in units of the kernel bandwidth in a given direction. The function returns, for each input set of photometry, the physical and photometric properties of the \code{nmatch} models in the library that are closest to the input photometric values. This can be used to judge if a good match to the input photometry is present in the library.
 
 
+\section{Support for Parallelism in bayesphot}
+\label{bayesphot:ssec-bayesphot-threading}\label{bayesphot:support-for-parallelism-in-bayesphot}
+The \code{bp} class supports parallel calculations of posterior PDFs and
+related quantities, through the python \href{https://docs.python.org/2.7/library/multiprocessing.html}{multiprocessing module}. This
+allows efficient use of multiple cores on a shared memory machine,
+circumventing the python global interpreter lock, without the need for every project to read a large simulation library or store it in memory. The recommended method for writing threaded code using \code{bp} objects is to use have a master process create the \code{bp} object, and then use a \href{https://docs.python.org/2.7/library/multiprocessing.html\#multiprocessing.Process}{Process} or \href{https://docs.python.org/2.7/library/multiprocessing.html\#module-multiprocessing.pool}{Pool} objects to create child processes the perform computations using \code{bp} methods such as \code{bp.logL} or \code{bp.mpdf}. It is often most efficient to combine this with shared memory objects such as \href{https://docs.python.org/2.7/library/multiprocessing.html\#module-multiprocessing.sharedctypes}{RawArray} to hold the outputs.
+
+An example use case for computing 1D marginal PDFs on a large set of photometric values is:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZsh{} Import what we need
+from slugpy.bayesphot import bp
+from multiprocessing import Pool, RawArray
+from ctypes import c\PYGZus{}double
+import numpy as np
+
+\PYGZsh{} Some code here to create / read the data set to be used by
+\PYGZsh{} bayesphot and store it in a variable called dataset
+
+\PYGZsh{} Create the bayesphot object
+my\PYGZus{}bp = bp(dataset, nphys)
+
+\PYGZsh{} Some code here to create / read the photometric data we want to
+\PYGZsh{} process using bayesphot and store it in an array called phot,
+\PYGZsh{} which is of shape (nphot, nfilter). There is also an array of
+\PYGZsh{} photometric errors, called photerr, of the same shape.
+
+\PYGZsh{} Create a holder for the output
+pdf\PYGZus{}base = RawArray(c\PYGZus{}double, 128*nphot)
+pdf = np.frombuffer(pdf\PYGZus{}base, dtype=c\PYGZus{}double). \PYGZbs{}
+      reshape((nphot,128))
+grd\PYGZus{}base = RawArray(c\PYGZus{}double, 128)
+grd = np.frombuffer(grd\PYGZus{}base, dtype=c\PYGZus{}double)
+
+\PYGZsh{} Define the function that will be responsible for computing the
+\PYGZsh{} marginal PDF
+def mpdf\PYGZus{}apply(i):
+    grd[:], pdf[i] = my\PYGZus{}bp.mpdf(0, phot[i], photerr[i])
+
+\PYGZsh{} Main thread starts up a process pool and starts the computation
+if \PYGZus{}\PYGZus{}name\PYGZus{}\PYGZus{} == \PYGZsq{}\PYGZus{}\PYGZus{}main\PYGZus{}\PYGZus{}\PYGZsq{}:
+    pool = Pool()
+    pool.map(mpdf\PYGZus{}apply, range(nphot))
+
+    \PYGZsh{} At this point the grd and PDF contain the same as they would
+    \PYGZsh{} if we had done
+    \PYGZsh{}     grd, pdf = my\PYGZus{}bp.mpdf(0, phot, photerr)
+    \PYGZsh{} but the results will be computed much faster this way
+\end{Verbatim}
+
+For an example of a more complex use case, see the \href{https://bitbucket.org/krumholz/legus-cluster-pipeline/overview}{LEGUS cluster pipeline}.
+
+The full list of \code{bp} methods that are thread-safe is:
+\begin{itemize}
+\item {} 
+\code{bp.logL}
+
+\item {} 
+\code{bp.mpdf}
+
+\item {} 
+\code{bp.mcmc}
+
+\item {} 
+\code{bp.bestmatch}
+
+\item {} 
+\code{bp.make\_approx\_phot}
+
+\item {} 
+\code{bp.make\_approx\_phys}
+
+\item {} 
+\code{bp.squeeze\_rep}
+
+\item {} 
+\code{bp.mpdf\_approx}
+
+\end{itemize}
+
+Thread safety involves a very modest overhead in terms of memory and speed, but for non-threaded computations this can be avoided by specifying:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+bp.thread\PYGZus{}safe = False
+\end{Verbatim}
+
+or by setting the \code{thread\_safe} keyword to \code{False} when the \code{bp}
+object is constructed.
+
+Finally, note that this parallel paradigm avoids duplicating the large
+library only on unix-like operating systems that support copy-on-write
+semantics for \href{https://en.wikipedia.org/wiki/Fork\_(system\_call)}{fork}. Code such as the
+above example should still work on windows (though this has not been
+tested), but each worker process will duplicate the library in
+physical memory, thereby removing one of the main advantages of
+working in parallel.
+
+
 \section{Full Documentation of slugpy.bayesphot}
 \label{bayesphot:module-slugpy.bayesphot.bp}\label{bayesphot:ssec-slugpy-bayesphot}\label{bayesphot:full-documentation-of-slugpy-bayesphot}\index{slugpy.bayesphot.bp (module)}
 This defines a class that can be used to estimate the PDF of physical
@@ -5209,7 +5307,7 @@ with a training data set.
 \index{bp (class in slugpy.bayesphot.bp)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}, \emph{thread\_safe=True}}{}
 A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.
@@ -5236,7 +5334,7 @@ dimensions
 \index{\_\_init\_\_() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}, \emph{thread\_safe=True}}{}
 Initialize a bp object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -5305,6 +5403,15 @@ number of data points in each leaf of the KD tree
 \item[{nosort}] \leavevmode{[}arraylike of bool, shape (N) \textbar{} None{]}
 if specified, this keyword causes the KD tree not to be
 sorted along the dimensions for which nosort is True
+
+\item[{thread\_safe}] \leavevmode{[}bool{]}
+if True, bayesphot will make extra copies of internals
+as needed to ensure thread safety when the computation
+routines (logL, mpdf, mcmc, bestmatch, make\_approx\_phot,
+make\_approx\_phys, mpdf\_approx) are used with
+multiprocessing; this incurs a minor performance
+penalty, and can be disabled by setting to False if the
+code will not be run with the multiprocessing module
 
 \end{description}
 
@@ -5460,6 +5567,12 @@ an array containing the weights of the points
 
 \end{description}
 
+\item[{Notes:}] \leavevmode
+if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued
+
 \end{description}
 
 \end{fulllineitems}
@@ -5512,6 +5625,12 @@ physical dimensions being returned
 an array containing the weights of the points
 
 \end{description}
+
+\item[{Notes:}] \leavevmode
+if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued
 
 \end{description}
 
@@ -5717,6 +5836,40 @@ simulation in the library
 
 \end{fulllineitems}
 
+\index{squeeze\_rep() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.squeeze_rep}\pysiglinewithargsret{\bfcode{squeeze\_rep}}{\emph{x}, \emph{wgts}, \emph{dims=None}}{}
+Takes an input array of positions and weights that form a
+kernel density representation and approximates them using
+fewer points, using an error tolerance of reltol
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (N, ndim){]}
+an array of points forming a kernel density
+representation; on exit, x will be resized to (M, ndim)
+with M \textless{}= N
+
+\item[{wgts}] \leavevmode{[}array, shape (N){]}
+an array of weights for the kernel density
+representation; on exit, wgts will be resized to (M),
+with M \textless{}= N
+
+\item[{dims}] \leavevmode{[}array, shape (ndim){]}
+array specifying which dimensions in the kernel density
+representation the coordinates in x correspond to; if
+left as None, they are assumed to correspond to the
+first ndim dimensions in the data set
+
+\end{description}
+
+\item[{Returns:}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
 
 \end{fulllineitems}
 
@@ -5794,6 +5947,37 @@ The first argument \code{idx} is an index for which posterior distribution shoul
 The \code{cluster\_slug.mpdf} method returns a tuple of two quantities. The first is a grid of values for log M, log T, or A\_V, depending on the value of \code{idx}. The second is the posterior probability distribution at each value of of the grid. Posteriors are normalized to have unit integral. If the input consisted of multiple sets of photometric values, the output will contains marginal posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see {\hyperref[cluster_slug:ssec-cluster-slug-full]{\emph{\DUspan{}{Full Documentation of slugpy.cluster\_slug}}}}.
 
 
+\section{Using cluster\_slug in Parallel}
+\label{cluster_slug:using-cluster-slug-in-parallel}
+The \code{cluster\_slug} module has full support for threaded computation using the python \href{https://docs.python.org/2.7/library/multiprocessing.html}{multiprocessing module}. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See {\hyperref[bayesphot:ssec-bayesphot-threading]{\emph{\DUspan{}{Support for Parallelism in bayesphot}}}} for full details on the recommended paradigm for parallel computing. The full list of thread-safe \code{cluster\_slug} methods is:
+\begin{itemize}
+\item {} 
+\code{cluster\_slug.logL}
+
+\item {} 
+\code{cluster\_slug.mpdf}
+
+\item {} 
+\code{cluster\_slug.mcmc}
+
+\item {} 
+\code{cluster\_slug.bestmatch}
+
+\item {} 
+\code{cluster\_slug.make\_approx\_phot}
+
+\item {} 
+\code{cluster\_slug.make\_approx\_phys}
+
+\item {} 
+\code{cluster\_slug.squeeze\_rep}
+
+\item {} 
+\code{cluster\_slug.mpdf\_approx}
+
+\end{itemize}
+
+
 \section{Making Your Own Library}
 \label{cluster_slug:making-your-own-library}
 You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug\_mw library) is included in the \code{cluster\_slug} directory. This file uses slug's capability to pick the output time and the cluster mass from specified PDFs.
@@ -5805,7 +5989,7 @@ One subtle post-processing step you should take once you've generated your libra
 \label{cluster_slug:ssec-cluster-slug-full}\label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -5826,11 +6010,19 @@ absolute error tolerance for kernel density estimation
 \item[{reltol}] \leavevmode{[}float{]}
 relative error tolerance for kernel density estimation
 
+\item[{thread\_safe}] \leavevmode{[}bool{]}
+if True, the computation routines will run in thread-safe
+mode, allowing use with multiprocessing; this incurs a small
+performance penalty
+
 \end{description}
 
 \item[{Methods}] \leavevmode\begin{description}
 \item[{filters()}] \leavevmode{[}{]}
 returns list of filters available in the library
+
+\item[{filtersets() :}] \leavevmode
+return a list of the currently-loaded filter sets
 
 \item[{filter\_units() :}] \leavevmode
 returns units for available filters
@@ -5870,7 +6062,7 @@ physical properties
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -5960,6 +6152,15 @@ if True, photometry including extinction will be used;
 if not, it will be omitted, and in this case no results
 making use of the A\_V dimension will be available
 
+\item[{thread\_safe}] \leavevmode{[}bool{]}
+if True, cluster\_slug will make extra copies of internals
+as needed to ensure thread safety when the computation
+routines (logL, mpdf, mcmc, bestmatch, make\_approx\_phot,
+make\_approx\_phys, mpdf\_approx) are used with
+multiprocessing; this incurs a minor performance
+penalty, and can be disabled by setting to False if the
+code will not be run with the multiprocessing module
+
 \end{description}
 
 \item[{Returns}] \leavevmode
@@ -5992,7 +6193,9 @@ list of filter names to be used for inferenence
 
 \item[{bandwidth}] \leavevmode{[}None \textbar{} `auto' \textbar{} float \textbar{} array{]}
 bandwidth for the photometric quantities; if set to
-None, defaults to 0.25 mag / 0.1 dex; if set to `auto',
+None, the bandwidth is unchanged for an existing filter
+set, and for a newly-created one the default physical
+and photometric bandwidths are used; if set to `auto',
 bandwidth is estimated automatically; if set to a float,
 this bandwidth is used for all physical photometric
 dimensions; if set to an array, the array must have the
@@ -6056,6 +6259,30 @@ distances between the matches and the input photometry
 
 \end{fulllineitems}
 
+\index{del\_filters() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.del_filters}\pysiglinewithargsret{\bfcode{del\_filters}}{\emph{filters}}{}
+Remove a set of filters, freeing the memory associated with
+them. Note that this does not delete the underlying library
+data, just the data for the KD tree used internally.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{filters}] \leavevmode{[}iterable of stringlike{]}
+list of filter names
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\item[{Raises}] \leavevmode
+KeyError if the input set of filters is not loaded
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{filter\_units() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
@@ -6094,10 +6321,29 @@ list of available filter names
 
 \end{fulllineitems}
 
+\index{filtersets() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.filtersets}\pysiglinewithargsret{\bfcode{filtersets}}{}{}
+Returns list of all currently-loaded filter sets
+\begin{description}
+\item[{Parameters:}] \leavevmode
+None
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{filtersets}] \leavevmode{[}list of list of strings{]}
+list of currently-loaded filter sets
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{load\_data() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.load_data}\pysiglinewithargsret{\bfcode{load\_data}}{\emph{filter\_name}, \emph{bandwidth=None}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.load_data}\pysiglinewithargsret{\bfcode{load\_data}}{\emph{filter\_name}, \emph{bandwidth=None}, \emph{force\_reload=False}}{}
 Loads photometric data for the specified filter into memory
 \begin{description}
 \item[{Parameters:}] \leavevmode\begin{description}
@@ -6106,6 +6352,10 @@ name of filter to load
 
 \item[{bandwidth}] \leavevmode{[}float{]}
 default bandwidth for this filter
+
+\item[{force\_reload}] \leavevmode{[}bool{]}
+if True, re-read the filter data off disk even if it has
+already been read
 
 \end{description}
 
@@ -6211,6 +6461,12 @@ an array containing the weights of the points
 
 \end{description}
 
+\item[{Notes:}] \leavevmode
+if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued
+
 \end{description}
 
 \end{fulllineitems}
@@ -6269,6 +6525,12 @@ physical dimensions being returned
 an array containing the weights of the points
 
 \end{description}
+
+\item[{Notes:}] \leavevmode
+if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued
 
 \end{description}
 
@@ -6479,6 +6741,46 @@ photerr together, while the trailing dimensions match
 the dimensions of the output grid
 
 \end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{squeeze\_rep() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.squeeze_rep}\pysiglinewithargsret{\bfcode{squeeze\_rep}}{\emph{x}, \emph{wgts}, \emph{dims=None}, \emph{filters=None}}{}
+Takes an input array of positions and weights that form a
+kernel density representation and approximates them using
+fewer points, using an error tolerance of reltol
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}array, shape (N, ndim){]}
+an array of points forming a kernel density
+representation; on exit, x will be resized to (M, ndim)
+with M \textless{}= N
+
+\item[{wgts}] \leavevmode{[}array, shape (N){]}
+an array of weights for the kernel density
+representation; on exit, wgts will be resized to (M),
+with M \textless{}= N
+
+\item[{dims}] \leavevmode{[}array, shape (ndim){]}
+array specifying which dimensions in the kernel density
+representation the coordinates in x correspond to; if
+left as None, they are assumed to correspond to the
+first ndim dimensions in the data set
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode
+Nothing
 
 \end{description}
 

@@ -21,7 +21,7 @@ The ``bp`` class can be imported via::
 
 or::
 
-  from slugpy.bayesphot import bp``
+  from slugpy.bayesphot import bp
 
 Once imported, a ``bp`` object can be instantiated. The call signature for the ``bp`` constructor class is::
 
@@ -83,6 +83,87 @@ The ``bp.bestmatch`` method searches through the model library and finds the N l
   def bestmatch(self, phot, nmatch=1, bandwidth_units=False):
 
 Here ``phot`` is the set of photometric properties, which is identical to the ``photprop`` parameter used by ``logL``, ``mpdf``, and ``mcmc``. The argument ``nmatch`` specifies how many matches to return, and the argument ``bandwidth_units`` specifies whether distances are to be measured using an ordinary Euclidean metric, or in units of the kernel bandwidth in a given direction. The function returns, for each input set of photometry, the physical and photometric properties of the ``nmatch`` models in the library that are closest to the input photometric values. This can be used to judge if a good match to the input photometry is present in the library.
+
+.. _ssec-bayesphot-threading:
+
+Support for Parallelism in bayesphot
+------------------------------------
+
+The ``bp`` class supports parallel calculations of posterior PDFs and
+related quantities, through the python `multiprocessing module
+<https://docs.python.org/2.7/library/multiprocessing.html>`_. This
+allows efficient use of multiple cores on a shared memory machine,
+circumventing the python global interpreter lock, without the need for every project to read a large simulation library or store it in memory. The recommended method for writing threaded code using ``bp`` objects is to use have a master process create the ``bp`` object, and then use a `Process <https://docs.python.org/2.7/library/multiprocessing.html#multiprocessing.Process>`_ or `Pool <https://docs.python.org/2.7/library/multiprocessing.html#module-multiprocessing.pool>`_ objects to create child processes the perform computations using ``bp`` methods such as ``bp.logL`` or ``bp.mpdf``. It is often most efficient to combine this with shared memory objects such as `RawArray <https://docs.python.org/2.7/library/multiprocessing.html#module-multiprocessing.sharedctypes>`_ to hold the outputs.
+
+An example use case for computing 1D marginal PDFs on a large set of photometric values is::
+
+  # Import what we need
+  from slugpy.bayesphot import bp
+  from multiprocessing import Pool, RawArray
+  from ctypes import c_double
+  import numpy as np
+
+  # Some code here to create / read the data set to be used by
+  # bayesphot and store it in a variable called dataset
+
+  # Create the bayesphot object
+  my_bp = bp(dataset, nphys)
+
+  # Some code here to create / read the photometric data we want to
+  # process using bayesphot and store it in an array called phot,
+  # which is of shape (nphot, nfilter). There is also an array of
+  # photometric errors, called photerr, of the same shape.
+
+  # Create a holder for the output
+  pdf_base = RawArray(c_double, 128*nphot)
+  pdf = np.frombuffer(pdf_base, dtype=c_double). \
+        reshape((nphot,128))
+  grd_base = RawArray(c_double, 128)
+  grd = np.frombuffer(grd_base, dtype=c_double)
+
+  # Define the function that will be responsible for computing the
+  # marginal PDF
+  def mpdf_apply(i):
+      grd[:], pdf[i] = my_bp.mpdf(0, phot[i], photerr[i])
+
+  # Main thread starts up a process pool and starts the computation
+  if __name__ == '__main__':
+      pool = Pool()
+      pool.map(mpdf_apply, range(nphot))
+
+      # At this point the grd and PDF contain the same as they would
+      # if we had done
+      #     grd, pdf = my_bp.mpdf(0, phot, photerr)
+      # but the results will be computed much faster this way
+
+For an example of a more complex use case, see the `LEGUS cluster pipeline <https://bitbucket.org/krumholz/legus-cluster-pipeline/overview>`_.
+
+The full list of ``bp`` methods that are thread-safe is:
+
+* ``bp.logL``
+* ``bp.mpdf``
+* ``bp.mcmc``
+* ``bp.bestmatch``
+* ``bp.make_approx_phot``
+* ``bp.make_approx_phys``
+* ``bp.squeeze_rep``
+* ``bp.mpdf_approx``
+
+Thread safety involves a very modest overhead in terms of memory and speed, but for non-threaded computations this can be avoided by specifying::
+
+  bp.thread_safe = False
+
+or by setting the ``thread_safe`` keyword to ``False`` when the ``bp``
+object is constructed.
+
+Finally, note that this parallel paradigm avoids duplicating the large
+library only on unix-like operating systems that support copy-on-write
+semantics for `fork
+<https://en.wikipedia.org/wiki/Fork_(system_call)>`_. Code such as the
+above example should still work on windows (though this has not been
+tested), but each worker process will duplicate the library in
+physical memory, thereby removing one of the main advantages of
+working in parallel.
 
 
 .. _ssec-slugpy-bayesphot:

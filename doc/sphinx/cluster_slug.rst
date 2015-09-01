@@ -53,6 +53,21 @@ The first argument ``idx`` is an index for which posterior distribution should b
 The ``cluster_slug.mpdf`` method returns a tuple of two quantities. The first is a grid of values for log M, log T, or A_V, depending on the value of ``idx``. The second is the posterior probability distribution at each value of of the grid. Posteriors are normalized to have unit integral. If the input consisted of multiple sets of photometric values, the output will contains marginal posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see :ref:`ssec-cluster-slug-full`.
 
 
+Using cluster_slug in Parallel
+------------------------------
+
+The ``cluster_slug`` module has full support for threaded computation using the python `multiprocessing module <https://docs.python.org/2.7/library/multiprocessing.html>`_. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See :ref:`ssec-bayesphot-threading` for full details on the recommended paradigm for parallel computing. The full list of thread-safe ``cluster_slug`` methods is:
+
+* ``cluster_slug.logL``
+* ``cluster_slug.mpdf``
+* ``cluster_slug.mcmc``
+* ``cluster_slug.bestmatch``
+* ``cluster_slug.make_approx_phot``
+* ``cluster_slug.make_approx_phys``
+* ``cluster_slug.squeeze_rep``
+* ``cluster_slug.mpdf_approx``
+
+
 Making Your Own Library
 -----------------------
 

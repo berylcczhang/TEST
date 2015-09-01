@@ -109,6 +109,20 @@ cs.priors = prorfunc
 <p>The first argument <code class="docutils literal"><span class="pre">idx</span></code> is an index for which posterior distribution should be computed &#8211; a value of 0 generates the posterior in log mass, a value of 1 generates the posterion on log age, and a value of generates the posterior in A_V. The second argument <code class="docutils literal"><span class="pre">phot</span></code> is an array giving the photometric values in the filters specified in step 2; make sure you&#8217;re using the same photometric system you used in step 1. For the array <code class="docutils literal"><span class="pre">phot</span></code>, the trailing dimension must match the number of filters, and the marginal posterior-finding exercise is repeated over every value in the leading dimensions. If you have added two or more filter sets, you need to specify which one you want to use via the <code class="docutils literal"><span class="pre">filters</span></code> keyword. The optional argument <code class="docutils literal"><span class="pre">photerr</span></code> can be used to provide errors on the photometric values. The shape rules on it are the same as on <code class="docutils literal"><span class="pre">phot</span></code>, and the two leading dimensions of the two arrays will be broadcast together using normal broadcasting rules.</p>
 <p>The <code class="docutils literal"><span class="pre">cluster_slug.mpdf</span></code> method returns a tuple of two quantities. The first is a grid of values for log M, log T, or A_V, depending on the value of <code class="docutils literal"><span class="pre">idx</span></code>. The second is the posterior probability distribution at each value of of the grid. Posteriors are normalized to have unit integral. If the input consisted of multiple sets of photometric values, the output will contains marginal posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#ssec-cluster-slug-full"><span>Full Documentation of slugpy.cluster_slug</span></a>.</p>
 </div>
+<div class="section" id="using-cluster-slug-in-parallel">
+<h2>Using cluster_slug in Parallel<a class="headerlink" href="#using-cluster-slug-in-parallel" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">cluster_slug</span></code> module has full support for threaded computation using the python <a class="reference external" href="https://docs.python.org/2.7/library/multiprocessing.html">multiprocessing module</a>. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See <a class="reference internal" href="bayesphot.html#ssec-bayesphot-threading"><span>Support for Parallelism in bayesphot</span></a> for full details on the recommended paradigm for parallel computing. The full list of thread-safe <code class="docutils literal"><span class="pre">cluster_slug</span></code> methods is:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">cluster_slug.logL</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.mpdf</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.mcmc</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.bestmatch</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.make_approx_phot</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.make_approx_phys</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.squeeze_rep</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.mpdf_approx</span></code></li>
+</ul>
+</div>
 <div class="section" id="making-your-own-library">
 <h2>Making Your Own Library<a class="headerlink" href="#making-your-own-library" title="Permalink to this headline">¶</a></h2>
 <p>You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug_mw library) is included in the <code class="docutils literal"><span class="pre">cluster_slug</span></code> directory. This file uses slug&#8217;s capability to pick the output time and the cluster mass from specified PDFs.</p>
@@ -118,7 +132,7 @@ cs.priors = prorfunc
 <span id="ssec-cluster-slug-full"></span><h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -137,12 +151,18 @@ all data points have equal prior probability</dd>
 <dd>absolute error tolerance for kernel density estimation</dd>
 <dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>relative error tolerance for kernel density estimation</dd>
+<dt>thread_safe <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the computation routines will run in thread-safe
+mode, allowing use with multiprocessing; this incurs a small
+performance penalty</dd>
 </dl>
 </dd>
 <dt>Methods</dt>
 <dd><dl class="first last docutils">
 <dt>filters() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
 <dd>returns list of filters available in the library</dd>
+<dt>filtersets() :</dt>
+<dd>return a list of the currently-loaded filter sets</dd>
 <dt>filter_units() :</dt>
 <dd>returns units for available filters</dd>
 <dt>add_filters() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
@@ -172,7 +192,7 @@ physical properties</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -250,6 +270,14 @@ omitted</dd>
 <dd>if True, photometry including extinction will be used;
 if not, it will be omitted, and in this case no results
 making use of the A_V dimension will be available</dd>
+<dt>thread_safe <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, cluster_slug will make extra copies of internals
+as needed to ensure thread safety when the computation
+routines (logL, mpdf, mcmc, bestmatch, make_approx_phot,
+make_approx_phys, mpdf_approx) are used with
+multiprocessing; this incurs a minor performance
+penalty, and can be disabled by setting to False if the
+code will not be run with the multiprocessing module</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -276,7 +304,9 @@ making use of the A_V dimension will be available</dd>
 <dd>list of filter names to be used for inferenence</dd>
 <dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">None | &#8216;auto&#8217; | float | array</span></dt>
 <dd>bandwidth for the photometric quantities; if set to
-None, defaults to 0.25 mag / 0.1 dex; if set to &#8216;auto&#8217;,
+None, the bandwidth is unchanged for an existing filter
+set, and for a newly-created one the default physical
+and photometric bandwidths are used; if set to &#8216;auto&#8217;,
 bandwidth is estimated automatically; if set to a float,
 this bandwidth is used for all physical photometric
 dimensions; if set to an array, the array must have the
@@ -332,6 +362,26 @@ dimension is omitted</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.del_filters">
+<code class="descname">del_filters</code><span class="sig-paren">(</span><em>filters</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.del_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a set of filters, freeing the memory associated with
+them. Note that this does not delete the underlying library
+data, just the data for the KD tree used internally.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
+<dt>Raises</dt>
+<dd>KeyError if the input set of filters is not loaded</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.filter_units">
 <code class="descname">filter_units</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.filter_units" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns list of all available filter units</p>
@@ -364,8 +414,24 @@ dimension is omitted</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.filtersets">
+<code class="descname">filtersets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.filtersets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of all currently-loaded filter sets</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>None</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>filtersets <span class="classifier-delimiter">:</span> <span class="classifier">list of list of strings</span></dt>
+<dd>list of currently-loaded filter sets</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.load_data">
-<code class="descname">load_data</code><span class="sig-paren">(</span><em>filter_name</em>, <em>bandwidth=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.load_data" title="Permalink to this definition">¶</a></dt>
+<code class="descname">load_data</code><span class="sig-paren">(</span><em>filter_name</em>, <em>bandwidth=None</em>, <em>force_reload=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.load_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Loads photometric data for the specified filter into memory</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
@@ -374,6 +440,9 @@ dimension is omitted</dd>
 <dd>name of filter to load</dd>
 <dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>default bandwidth for this filter</dd>
+<dt>force_reload <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, re-read the filter data off disk even if it has
+already been read</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
@@ -465,6 +534,11 @@ the approximation</dd>
 <dd>an array containing the weights of the points</dd>
 </dl>
 </dd>
+<dt>Notes:</dt>
+<dd>if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued</dd>
 </dl>
 </dd></dl>
 
@@ -517,6 +591,11 @@ physical dimensions being returned</dd>
 <dd>an array containing the weights of the points</dd>
 </dl>
 </dd>
+<dt>Notes:</dt>
+<dd>if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued</dd>
 </dl>
 </dd></dl>
 
@@ -700,6 +779,40 @@ the dimensions of the output grid</dd>
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.squeeze_rep">
+<code class="descname">squeeze_rep</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.squeeze_rep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes an input array of positions and weights that form a
+kernel density representation and approximates them using
+fewer points, using an error tolerance of reltol</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N, ndim)</span></dt>
+<dd>an array of points forming a kernel density
+representation; on exit, x will be resized to (M, ndim)
+with M &lt;= N</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N)</span></dt>
+<dd>an array of weights for the kernel density
+representation; on exit, wgts will be resized to (M),
+with M &lt;= N</dd>
+<dt>dims <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (ndim)</span></dt>
+<dd>array specifying which dimensions in the kernel density
+representation the coordinates in x correspond to; if
+left as None, they are assumed to correspond to the
+first ndim dimensions in the data set</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -716,6 +829,7 @@ the dimensions of the output grid</dd>
 <li><a class="reference internal" href="#">cluster_slug: Bayesian Inference of Star Cluster Properties</a><ul>
 <li><a class="reference internal" href="#getting-the-default-library">Getting the Default Library</a></li>
 <li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#using-cluster-slug-in-parallel">Using cluster_slug in Parallel</a></li>
 <li><a class="reference internal" href="#making-your-own-library">Making Your Own Library</a></li>
 <li><a class="reference internal" href="#full-documentation-of-slugpy-cluster-slug">Full Documentation of slugpy.cluster_slug</a></li>
 </ul>
