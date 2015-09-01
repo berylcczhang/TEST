@@ -58,6 +58,8 @@ class cluster_slug(object):
     Methods
        filters() : 
           returns list of filters available in the library
+       filtersets() :
+          return a list of the currently-loaded filter sets
        filter_units() :
           returns units for available filters
        add_filters() : 
@@ -277,10 +279,9 @@ class cluster_slug(object):
         # Store the physical properties
         if use_extinction:
             self.__nphys = 3
-            self.__ds_phys = np.zeros((len(prop.id), 3))
         else:
             self.__nphys = 2
-            self.__ds_phys = np.zeros((len(prop.id), 2))
+        self.__ds_phys = np.zeros((len(prop.id), self.__nphys))
         self.__ds_phys[:,0] = np.log10(prop.actual_mass)
         self.__ds_phys[:,1] = np.log10(prop.time - prop.form_time)
         if use_extinction:
@@ -328,7 +329,8 @@ class cluster_slug(object):
     ##################################################################
     # Method to load the data off disk for a particular filter
     ##################################################################
-    def load_data(self, filter_name, bandwidth=None):
+    def load_data(self, filter_name, bandwidth=None, 
+                  force_reload=False):
         """
         Loads photometric data for the specified filter into memory
 
@@ -337,6 +339,9 @@ class cluster_slug(object):
               name of filter to load
            bandwidth : float
               default bandwidth for this filter
+           force_reload : bool
+              if True, re-read the filter data off disk even if it has
+              already been read
 
         Returns:
            None
@@ -345,6 +350,11 @@ class cluster_slug(object):
            ValueError, if filter_name is not one of the available
            filters
         """
+
+        # Do nothing if data has already been read, unless we've been
+        # told to force a re-read
+        if filter_name in self.__photdata.keys() and not force_reload:
+            return
 
         # Make sure we have this filter; if not, raise error
         if filter_name not in self.__allfilters:
@@ -383,7 +393,7 @@ class cluster_slug(object):
                 # Wanted nebular + extinction
                 if 'phot_neb_ex' in phot._fields:
                     # Got it
-                    phdata = phot.phot_neb_ex
+                    phdata = np.squeeze(phot.phot_neb_ex)
                     warn_nebular = False
                     warn_extinct = False
                     nebular = True
@@ -398,7 +408,7 @@ class cluster_slug(object):
                         phot_only=True,
                         photsystem=self.__photsystem)
                     if 'phot_ex' in phot._fields:
-                        phdata = phot.phot_ex
+                        phdata = np.squeeze(phot.phot_ex)
                         warn_nebular = True
                         warn_extinct = False
                         nebular = False
@@ -413,7 +423,7 @@ class cluster_slug(object):
                             phot_only=True,
                             photsystem=self.__photsystem)
                         if 'phot_neb' in phot._fields:
-                            phdata = phot.phot_neb
+                            phdata = np.squeeze(phot.phot_neb)
                             warn_nebular = False
                             warn_extinct = True
                             nebular = True
@@ -427,7 +437,7 @@ class cluster_slug(object):
                                 read_extinct=False,
                                 phot_only=True,
                                 photsystem=self.__photsystem)
-                            phdata = phot.phot
+                            phdata = np.squeeze(phot.phot)
                             warn_nebular = True
                             warn_extinct = True
                             nebular = False
@@ -437,7 +447,7 @@ class cluster_slug(object):
                 # Want nebular, no extinction
                 if 'phot_neb' in phot._fields:
                     # Got it
-                    phdata = phot.phot_neb
+                    phdata = np.squeeze(phot.phot_neb)
                     warn_nebular = False
                     warn_extinct = False
                     nebular = True
@@ -451,7 +461,7 @@ class cluster_slug(object):
                         read_extinct=False,
                         phot_only=True,
                         photsystem=self.__photsystem)
-                    phdata = phot.phot
+                    phdata = np.squeeze(phot.phot)
                     warn_nebular = True
                     warn_extinct = False
                     nebular = False
@@ -461,7 +471,7 @@ class cluster_slug(object):
                 # Wanted extinction, no nebular
                 if 'phot_ex' in phot._fields:
                     # Got it
-                    phdata = phot.phot_ex
+                    phdata = np.squeeze(phot.phot_ex)
                     warn_nebular = False
                     warn_extinct = False
                     nebular = False
@@ -475,7 +485,7 @@ class cluster_slug(object):
                         read_extinct=False,
                         phot_only=True,
                         photsystem=self.__photsystem)
-                    phdata = phot.phot
+                    phdata = np.squeeze(phot.phot)
                     warn_nebular = False
                     warn_extinct = True
                     nebular = False
@@ -494,7 +504,7 @@ class cluster_slug(object):
                         read_extinct=False,
                         phot_only=True,
                         photsystem=self.__photsystem)
-                    phdata = phot.phot_neb
+                    phdata = np.squeeze(phot.phot_neb)
                 else:
                     phot = read_cluster_phot(
                         self.__libname, 
@@ -503,7 +513,7 @@ class cluster_slug(object):
                         read_extinct=False,
                         phot_only=True,
                         photsystem=self.__photsystem)
-                    phdata = phot.phot
+                    phdata = np.squeeze(phot.phot)
             else:
                 warn_extinct = False
 
@@ -555,7 +565,7 @@ class cluster_slug(object):
 
 
     ##################################################################
-    # Method to return list of available filters and filter units
+    # Method to return information on available filters
     ##################################################################
     def filters(self):
         """
@@ -568,7 +578,6 @@ class cluster_slug(object):
            filters : list of strings
               list of available filter names
         """
-
         return copy.deepcopy(self.__allfilters)
 
     def filter_units(self):
@@ -582,8 +591,21 @@ class cluster_slug(object):
            units : list of strings
               list of available filter units
         """
-
         return copy.deepcopy(self.__allunits)
+
+    def filtersets(self):
+        """
+        Returns list of all currently-loaded filter sets
+
+        Parameters:
+           None
+
+        Returns:
+           filtersets : list of list of strings
+              list of currently-loaded filter sets
+        """
+        return copy.deepcopy([f['filters'] for 
+                              f in self.__filtersets])
 
 
     ##################################################################
@@ -598,7 +620,9 @@ class cluster_slug(object):
               list of filter names to be used for inferenence
            bandwidth : None | 'auto' | float | array
               bandwidth for the photometric quantities; if set to
-              None, defaults to 0.25 mag / 0.1 dex; if set to 'auto',
+              None, the bandwidth is unchanged for an existing filter
+              set, and for a newly-created one the default physical
+              and photometric bandwidths are used; if set to 'auto',
               bandwidth is estimated automatically; if set to a float,
               this bandwidth is used for all physical photometric
               dimensions; if set to an array, the array must have the
@@ -614,12 +638,6 @@ class cluster_slug(object):
             if filters == f['filters']:
                 if bandwidth is not None:
                     self.__filtersets[i]['bp'].bandwidth = bandwidth
-                else:
-                    bw = np.zeros(self.__nphys+len(filters))
-                    bw[:self.__nphys] = self.__bw_phys
-                    for j in range(len(filters)):
-                        bw[self.__nphys+j] = self.__photbw[filters[j]]
-                    self.__filtersets[i]['bp'].bandwidth = bw
                 return
 
         # We're adding a new filter set, so save its name
@@ -646,7 +664,7 @@ class cluster_slug(object):
 
             # Add data for this filter
             newfilter['dataset'][:,self.__nphys+i] \
-                = np.squeeze(self.__photdata[f])
+                = self.__photdata[f]
 
         # Set bandwidth
         if self.__bw_phys == 'auto' or bandwidth == 'auto':
