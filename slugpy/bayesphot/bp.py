@@ -26,8 +26,6 @@ try:
 except:
     mc_avail = False
     pass
-import multiprocessing as mp
-
 
 ##################################################################
 # Define some types for use later                                #
@@ -1548,7 +1546,7 @@ class bp(object):
                 dims = np.arange(self.__nphys, self.__nphot+self.__nphys,
                                  dtype=c_ulong)                
                 self.__clib.kd_neighbors_vec(
-                    self.__kd, np.ravel(phot[i]), 
+                    kd_tmp, np.ravel(phot[i]), 
                     dims.ctypes.data_as(POINTER(c_ulong)),
                     self.__nphot, np.array(phot[i]).size/self.__nphot,
                     nmatch, True, np.ravel(matches)[offset2:],
