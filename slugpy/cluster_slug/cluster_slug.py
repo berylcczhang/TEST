@@ -1055,6 +1055,66 @@ class cluster_slug(object):
             # Call the bestmatch method
             return bp.bestmatch(phot, photerr, nmatch, bandwidth_units)
 
+
+    def bestmatch_phys(self, phys, nmatch=1, bandwidth_units=False,
+                       filters=None):
+        """
+        Searches through the simulation library and returns the closest
+        matches to an input set of photometry.
+
+        Parameters:
+           phot : arraylike, shape (nphys) or (..., nphys)
+              array giving the physical values; for a
+              multidimensional array, the operation is vectorized over
+              the leading dimensions
+           nmatch : int
+              number of matches to return; returned matches will be
+              ordered by distance from the input
+           bandwidth_units : bool
+              if False, distances are computed based on the
+              logarithmic difference in physical properties; if True,
+              they are measured in units of the bandwidth
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns:
+           matches : array, shape (..., nmatch, nphys + nfilter)
+              best matches to the input properties; shape in the
+              leading dimensions will be the same as for phot, and if
+              nmatch == 1 then that dimension will be omitted
+           dist : array, shape (..., nmatch)
+              distances between the matches and the input physical
+              properties
+        """
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    bestmatch_phys(phys, nmatch, bandwidth_units)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the bestmatch method
+            return bp.bestmatch_phys(phys, nmatch, bandwidth_units)
+
+
     def make_approx_phot(self, phys, squeeze=True, filter_ignore=None,
                          filters=None):
         """
@@ -1269,7 +1329,7 @@ class cluster_slug(object):
 
 
     def mpdf_approx(self, x, wgts, dims='phys', dims_return=None,
-                    ngrid=64, qmin=None, qmax=None, grid=None,
+                    ngrid=64, qmin='all', qmax='all', grid=None,
                     norm=True, filters=None):
         """
         Returns the marginal posterior PDF computed from a kernel
@@ -1296,23 +1356,24 @@ class cluster_slug(object):
               ... nphys+nphot-1
            dims_return : None or arraylike of ints
               if None, the output PDF has the same dimensions as
-              specified in dims; if not, then dimreturn must be a
+              specified in dims; if not, then dims_return must be a
               subset of dims, and a marginal PDF in certain dimensions
               will be generated
            ngrid : int or listlike containing ints
               number of points in each dimension of the output grid;
               if this is an iterable, it must have the same number of
               elements as idx
-           qmin : float or listlike
+           qmin : float | listlike | 'zoom' | 'all' 
               minimum value in the output grid in each quantity; if
-              left as None, defaults to the minimum value in the
-              library; if this is an iterable, it must contain the
-              same number of elements as idx
-           qmax : float or listlike
-              maximum value in the output grid in each quantity; if
-              left as None, defaults to the maximum value in the
-              library; if this is an iterable, it must contain the
-              same number of elements as idx
+              this a float, it is applied to each dimension; if it is
+              an iterable, it must contain the same number of elements
+              as the number of dimensions being returned, as gives the
+              minimum in each dimension; if it is 'zoom' or 'all', the
+              minimum is chosen automatically, with 'zoom' focusing on
+              a region encompassing the probability maximum, and 'all'
+              encompassing all the points in the representation
+           qmax : float | listlike | 'zoom' | 'all'
+              same as qmin, but for the maximum of the output grid
            grid : listlike of arrays
               set of values defining the grid on which the PDF is to
               be evaluated, in the same format used by meshgrid

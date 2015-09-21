@@ -1561,6 +1561,78 @@ class bp(object):
         return matches, np.sqrt(d2)
 
     ##################################################################
+    # Function to return the N best matches in the library to an input
+    # set of physical properties
+    ##################################################################
+    def bestmatch_phys(self, phys, nmatch=1, bandwidth_units=False):
+        """
+        Searches through the simulation library and returns the closest
+        matches to an input set of photometry.
+
+        Parameters:
+           phot : arraylike, shape (nphys) or (..., nphys)
+              array giving the physical values; for a
+              multidimensional array, the operation is vectorized over
+              the leading dimensions
+           nmatch : int
+              number of matches to return; returned matches will be
+              ordered by distance from the input
+           bandwidth_units : bool
+              if False, distances are computed based on the
+              logarithmic difference in physical properties; if True,
+              they are measured in units of the bandwidth
+
+        Returns:
+           matches : array, shape (..., nmatch, nphys + nfilter)
+              best matches to the input properties; shape in the
+              leading dimensions will be the same as for phot, and if
+              nmatch == 1 then that dimension will be omitted
+           dist : array, shape (..., nmatch)
+              distances between the matches and the input physical
+              properties
+        """
+
+        # Safety check
+        if (np.array(phys).shape[-1] != self.__nphys) and \
+           (self.__nphot > 1):
+            raise ValueError("need " + str(self.__nphys) +
+                             " physical properties!")
+
+
+        # Figure out how many points we were given
+        phys_tmp = np.array(phys)
+        npt = phys_tmp.size / self.__nphys
+
+        # Prepare the output arrays
+        outshape = list(phys_tmp.shape[:-1]) + \
+                   [self.__nphys + self.__nphot]
+        if nmatch > 1:
+            outshape.insert(-1, nmatch)
+
+        # Create array to hold output
+        matches = np.zeros(outshape)
+        if len(outshape) > 1:
+            wgts = np.zeros(outshape[:-1])
+            d2 = np.zeros(outshape[:-1])
+        else:
+            wgts = np.zeros([1])
+            d2 = np.zeros([1])
+
+        # Call c routine
+        dims = np.arange(self.__nphys, dtype=c_ulong)
+        self.__clib.kd_neighbors_vec(
+            self.__kd, np.ravel(phys_tmp), 
+            dims.ctypes.data_as(POINTER(c_ulong)),
+            self.__nphys, npt, nmatch, bandwidth_units, 
+            np.ravel(matches),
+            wgts.ctypes.data_as(POINTER(c_double)), 
+            d2)
+
+        # Return
+        return matches, np.sqrt(d2)
+
+
+    ##################################################################
     # Functions to return an approximate kernel density representation
     # of a given point; that is, for an input physical point or
     # photometric point (there are two versions below), this routine
@@ -1892,7 +1964,7 @@ class bp(object):
     ##################################################################
 
     def mpdf_approx(self, x, wgts, dims='phys', dims_return=None,
-                    ngrid=64, qmin=None, qmax=None, grid=None,
+                    ngrid=64, qmin='all', qmax='all', grid=None,
                     norm=True):
         """
         Returns the marginal posterior PDF computed from a kernel
@@ -1926,16 +1998,17 @@ class bp(object):
               number of points in each dimension of the output grid;
               if this is an iterable, it must have the same number of
               elements as idx
-           qmin : float or listlike
+           qmin : float | listlike | 'zoom' | 'all' 
               minimum value in the output grid in each quantity; if
-              left as None, the range is chosen automatically to zoom in
-              on the maximum of the final PDF; if this is an iterable,
-              it must contain the same number of elements as idx
-           qmax : float or listlike
-              maximum value in the output grid in each quantity; if
-              left as None, the range is chosen automatically to zoom in
-              on the maximum of the final PDF; if this is an iterable,
-              it must contain the same number of elements as idx
+              this a float, it is applied to each dimension; if it is
+              an iterable, it must contain the same number of elements
+              as the number of dimensions being returned, as gives the
+              minimum in each dimension; if it is 'zoom' or 'all', the
+              minimum is chosen automatically, with 'zoom' focusing on
+              a region encompassing the probability maximum, and 'all'
+              encompassing all the points in the representation
+           qmax : float | listlike | 'zoom' | 'all'
+              same as qmin, but for the maximum of the output grid
            grid : listlike of arrays
               set of values defining the grid on which the PDF is to
               be evaluated, in the same format used by meshgrid
@@ -1991,13 +2064,14 @@ class bp(object):
                 griddims.append(np.linspace(qmin[i], qmax[i], 
                                             ngrid_tmp[i]))
         else:
-            if qmin is None or qmax is None:
-                if qmin is None:
+            if qmin == 'zoom' or qmin == 'all' or \
+               qmax == 'zoom' or qmax == 'all':
+                if qmin is 'zoom' or qmin == 'all':
                     get_qmin = True
                     qmin = []
                 else:
                     get_qmin = False
-                if qmax is None:
+                if qmax == 'zoom' or qmax == 'all':
                     qmax = []
                     get_qmax = True
                 else:
@@ -2010,13 +2084,20 @@ class bp(object):
                     wgttmp = wgttmp[idx]
                     wgtsum = np.cumsum(wgttmp)
                     if get_qmin:
-                        qmin.append(xtmp[np.argmax(wgtsum > 0.001)])
+                        if qmin == 'all':
+                            qmin.append(xtmp[0])
+                        else:
+                            qmin.append(xtmp[np.argmax(wgtsum > 0.001)])
                     if get_qmax:
-                        if wgtsum[-1] > 0.999:
+                        if wgtsum[-1] > 0.999 and qmax != 'all':
                             qmax.append(xtmp[np.argmax(wgtsum >
                                                        0.999)])
                         else:
                             qmax.append(xtmp[-1])
+                if get_qmin:
+                    qmin = np.array(qmin)
+                if get_qmax:
+                    qmax = np.array(qmax)
             griddims = []
             if nidx > 1:
                 # Case for multiple indices
@@ -2040,9 +2121,11 @@ class bp(object):
         # Compute result; in the multi-dimensional case this involves
         # some tricky array indexing
         if nidx == 1:
-            pdf = np.sum(wgts*np.exp(-(x[:,dim_out[0]]-grid_out)**2 / 
-                                     (2*self.__bandwidth[dim_out[0]]**2)),
-                         axis=1)
+            pdf = np.einsum('i,ij', wgts, 
+                           np.exp(-np.subtract.outer(
+                               x[:,dim_out[0]], grid_out)**2 / 
+                                  (2*self.__bandwidth[dim_out[0]]**2)))
+                         
         else:
             compsum = np.exp(
                 -np.subtract.outer(x[:,dim_out[0]], griddims[0])**2 /
