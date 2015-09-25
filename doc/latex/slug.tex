@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{September 01, 2015}
+\date{September 25, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -1714,9 +1714,55 @@ The \code{allfilters.dat} file contains the filter responses. The file contains 
 \chapter{slugpy -- The Python Helper Library}
 \label{slugpy:slugpy-the-python-helper-library}\label{slugpy:sec-slugpy}\label{slugpy::doc}
 
+\section{Installing slugpy}
+\label{slugpy:installing-slugpy}
+SLUG comes with the python module slugpy, which contains an extensive set of routines for reading, writing, and manipulating SLUG outputs. You can install slugpy one of two ways.
+\begin{enumerate}
+\item {} 
+Using \code{Make}. If you compile the main slug code by doing \code{Make} in the main slug directory, the c slugpy extensions will be build automatically. Once that is done, you will be able to use slugpy just by importing it, provided that the slugpy directory is in your python import path.
+
+\item {} 
+Using \code{setup.py}. The slug distribution comes with a \code{setup.py} script that follows the standard python package convensions. Just do:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+python setup.py build
+\end{Verbatim}
+
+\end{enumerate}
+
+to build the c extensions in place, which will let you import slugpy from the directory where it is located. Alternately, do:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+python setup.py install
+\end{Verbatim}
+
+to install as a site package. Installing as a site package often requires root permissions, in which case you should do:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+sudo python setup.py install
+\end{Verbatim}
+
+or:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+python setup.py install \PYGZhy{}\PYGZhy{}user
+\end{Verbatim}
+
+instead.
+
+A note on compiling slugpy with setup.py: the slugpy c extensions require the \href{http://www.gnu.org/software/gsl/}{GNU Scientific Library}; to build or install slugpy, the appropriate headers must be in your default include path. If they are not, you can tell setup where they are located by creating a file named \code{setup.cfg} in the slug2 directory, which contains the lines:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+[build\PYGZus{}ext]
+include\PYGZus{}dirs=/PATH/TO/GSL/HEADER
+\end{Verbatim}
+
+Then you should be able to build and install slugpy with \code{setup.py}.
+
+
 \section{Basic Usage}
 \label{slugpy:basic-usage}
-SLUG comes with the python module slugpy, which contains an extensive set of routines for reading, writing, and manipulating SLUG outputs. The most common task is to read a set of SLUG outputs into memory so that they can be processed. To read the data from a SLUG run using slugpy, one can simply do the following:
+The most common task is to read a set of SLUG outputs into memory so that they can be processed. To read the data from a SLUG run using slugpy, one can simply do the following:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 from slugpy import *
@@ -2089,7 +2135,7 @@ requires going between wavelength- and frequency-based systems
 \index{read\_cluster() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_cluster}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_filters=None}, \emph{read\_nebular=None}, \emph{read\_extinct=None}, \emph{read\_info=None}}{}
+\phantomsection\label{slugpy:slugpy.read_cluster}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_filters=None}, \emph{read\_nebular=None}, \emph{read\_extinct=None}, \emph{read\_info=None}, \emph{no\_stellar\_mass=False}}{}
 Function to read all cluster data for a SLUG2 run.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -2150,6 +2196,13 @@ and `format', giving the names of the files read and the format
 they were in; `format' will be one of `ascii', `binary', or
 `fits'. If one of the files is not present, the corresponding
 \_name key will be omitted from the dict.
+
+\item[{no\_stellar\_mass}] \leavevmode{[}bool{]}
+Prior to 7/15, output files did not contain the stellar\_mass
+field; this can be detected automatically for ASCII and FITS
+formats, but not for binary format; if True, this specifies
+that the binary file being read does not contain a
+stellar\_mass field; it has no effect for ASCII or FITS files
 
 \end{description}
 
@@ -2509,7 +2562,7 @@ ValueError, if photsystem is set to an unknown value
 \index{read\_cluster\_prop() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_cluster_prop}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster\_prop}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+\phantomsection\label{slugpy:slugpy.read_cluster_prop}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster\_prop}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}, \emph{no\_stellar\_mass=False}}{}
 Function to read a SLUG2 cluster\_prop file.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -2537,6 +2590,13 @@ If True, verbose output is printed as code runs
 On return, this dict will contain the keys `fname' and
 `format', giving the name of the file read and the format it
 was in; `format' will be one of `ascii', `binary', or `fits'
+
+\item[{no\_stellar\_mass}] \leavevmode{[}bool{]}
+Prior to 7/15, output files did not contain the stellar\_mass
+field; this can be detected automatically for ASCII and FITS
+formats, but not for binary format; if True, this specifies
+that the binary file being read does not contain a
+stellar\_mass field; it has no effect for ASCII or FITS files
 
 \end{description}
 
@@ -2731,7 +2791,7 @@ requested filter cannot be found
 \index{read\_integrated() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_integrated}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_integrated}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+\phantomsection\label{slugpy:slugpy.read_integrated}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_integrated}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{nofilterdata=False}, \emph{photsystem=None}, \emph{verbose=False}, \emph{read\_info=None}, \emph{no\_stellar\_mass=False}}{}
 Function to read all integrated light data for a SLUG2 run.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -2777,6 +2837,13 @@ and `format', giving the names of the files read and the format
 they were in; `format' will be one of `ascii', `binary', or
 `fits'. If one of the files is not present, the corresponding
 \_name key will be omitted from the dict.
+
+\item[{no\_stellar\_mass}] \leavevmode{[}bool{]}
+Prior to 7/15, output files did not contain the stellar\_mass
+field; this can be detected automatically for ASCII and FITS
+formats, but not for binary format; if True, this specifies
+that the binary file being read does not contain a
+stellar\_mass field; it has no effect for ASCII or FITS files
 
 \end{description}
 
@@ -3124,7 +3191,7 @@ ValueError, if photsystem is set to an unknown value
 \index{read\_integrated\_prop() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_integrated_prop}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_integrated\_prop}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+\phantomsection\label{slugpy:slugpy.read_integrated_prop}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_integrated\_prop}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}, \emph{no\_stellar\_mass=False}}{}
 Function to read a SLUG2 integrated\_prop file.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -3152,6 +3219,13 @@ If True, verbose output is printed as code runs
 On return, this dict will contain the keys `fname' and
 `format', giving the name of the file read and the format it
 was in; `format' will be one of `ascii', `binary', or `fits'
+
+\item[{no\_stellar\_mass}] \leavevmode{[}bool{]}
+Prior to 7/15, output files did not contain the stellar\_mass
+field; this can be detected automatically for ASCII and FITS
+formats, but not for binary format; if True, this specifies
+that the binary file being read does not contain a
+stellar\_mass field; it has no effect for ASCII or FITS files
 
 \end{description}
 
@@ -5488,6 +5562,46 @@ distances between the matches and the input photometry
 
 \end{fulllineitems}
 
+\index{bestmatch\_phys() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.bestmatch_phys}\pysiglinewithargsret{\bfcode{bestmatch\_phys}}{\emph{phys}, \emph{nmatch=1}, \emph{bandwidth\_units=False}}{}
+Searches through the simulation library and returns the closest
+matches to an input set of photometry.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phot}] \leavevmode{[}arraylike, shape (nphys) or (..., nphys){]}
+array giving the physical values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions
+
+\item[{nmatch}] \leavevmode{[}int{]}
+number of matches to return; returned matches will be
+ordered by distance from the input
+
+\item[{bandwidth\_units}] \leavevmode{[}bool{]}
+if False, distances are computed based on the
+logarithmic difference in physical properties; if True,
+they are measured in units of the bandwidth
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{matches}] \leavevmode{[}array, shape (..., nmatch, nphys + nfilter){]}
+best matches to the input properties; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted
+
+\item[{dist}] \leavevmode{[}array, shape (..., nmatch){]}
+distances between the matches and the input physical
+properties
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{logL() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
@@ -5749,7 +5863,7 @@ the dimensions of the output grid
 \index{mpdf\_approx() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=64}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=64}, \emph{qmin='all'}, \emph{qmax='all'}, \emph{grid=None}, \emph{norm=True}}{}
 Returns the marginal posterior PDF computed from a kernel
 density approximation returned by make\_approx\_phys or
 make\_approx\_phot. Outputs are computed on a grid of values, in
@@ -5786,17 +5900,18 @@ number of points in each dimension of the output grid;
 if this is an iterable, it must have the same number of
 elements as idx
 
-\item[{qmin}] \leavevmode{[}float or listlike{]}
+\item[{qmin}] \leavevmode{[}float \textbar{} listlike \textbar{} `zoom' \textbar{} `all' {]}
 minimum value in the output grid in each quantity; if
-left as None, the range is chosen automatically to zoom in
-on the maximum of the final PDF; if this is an iterable,
-it must contain the same number of elements as idx
+this a float, it is applied to each dimension; if it is
+an iterable, it must contain the same number of elements
+as the number of dimensions being returned, as gives the
+minimum in each dimension; if it is `zoom' or `all', the
+minimum is chosen automatically, with `zoom' focusing on
+a region encompassing the probability maximum, and `all'
+encompassing all the points in the representation
 
-\item[{qmax}] \leavevmode{[}float or listlike{]}
-maximum value in the output grid in each quantity; if
-left as None, the range is chosen automatically to zoom in
-on the maximum of the final PDF; if this is an iterable,
-it must contain the same number of elements as idx
+\item[{qmax}] \leavevmode{[}float \textbar{} listlike \textbar{} `zoom' \textbar{} `all'{]}
+same as qmin, but for the maximum of the output grid
 
 \item[{grid}] \leavevmode{[}listlike of arrays{]}
 set of values defining the grid on which the PDF is to
@@ -6259,6 +6374,52 @@ distances between the matches and the input photometry
 
 \end{fulllineitems}
 
+\index{bestmatch\_phys() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.bestmatch_phys}\pysiglinewithargsret{\bfcode{bestmatch\_phys}}{\emph{phys}, \emph{nmatch=1}, \emph{bandwidth\_units=False}, \emph{filters=None}}{}
+Searches through the simulation library and returns the closest
+matches to an input set of photometry.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{phot}] \leavevmode{[}arraylike, shape (nphys) or (..., nphys){]}
+array giving the physical values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions
+
+\item[{nmatch}] \leavevmode{[}int{]}
+number of matches to return; returned matches will be
+ordered by distance from the input
+
+\item[{bandwidth\_units}] \leavevmode{[}bool{]}
+if False, distances are computed based on the
+logarithmic difference in physical properties; if True,
+they are measured in units of the bandwidth
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{matches}] \leavevmode{[}array, shape (..., nmatch, nphys + nfilter){]}
+best matches to the input properties; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted
+
+\item[{dist}] \leavevmode{[}array, shape (..., nmatch){]}
+distances between the matches and the input physical
+properties
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{del\_filters() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
@@ -6662,7 +6823,7 @@ the dimensions of the output grid
 \index{mpdf\_approx() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=64}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_approx}\pysiglinewithargsret{\bfcode{mpdf\_approx}}{\emph{x}, \emph{wgts}, \emph{dims='phys'}, \emph{dims\_return=None}, \emph{ngrid=64}, \emph{qmin='all'}, \emph{qmax='all'}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
 Returns the marginal posterior PDF computed from a kernel
 density approximation returned by make\_approx\_phys or
 make\_approx\_phot. Outputs are computed on a grid of values, in
@@ -6690,7 +6851,7 @@ the photometric ones are nphys, nphys+1,
 
 \item[{dims\_return}] \leavevmode{[}None or arraylike of ints{]}
 if None, the output PDF has the same dimensions as
-specified in dims; if not, then dimreturn must be a
+specified in dims; if not, then dims\_return must be a
 subset of dims, and a marginal PDF in certain dimensions
 will be generated
 
@@ -6699,17 +6860,18 @@ number of points in each dimension of the output grid;
 if this is an iterable, it must have the same number of
 elements as idx
 
-\item[{qmin}] \leavevmode{[}float or listlike{]}
+\item[{qmin}] \leavevmode{[}float \textbar{} listlike \textbar{} `zoom' \textbar{} `all' {]}
 minimum value in the output grid in each quantity; if
-left as None, defaults to the minimum value in the
-library; if this is an iterable, it must contain the
-same number of elements as idx
+this a float, it is applied to each dimension; if it is
+an iterable, it must contain the same number of elements
+as the number of dimensions being returned, as gives the
+minimum in each dimension; if it is `zoom' or `all', the
+minimum is chosen automatically, with `zoom' focusing on
+a region encompassing the probability maximum, and `all'
+encompassing all the points in the representation
 
-\item[{qmax}] \leavevmode{[}float or listlike{]}
-maximum value in the output grid in each quantity; if
-left as None, defaults to the maximum value in the
-library; if this is an iterable, it must contain the
-same number of elements as idx
+\item[{qmax}] \leavevmode{[}float \textbar{} listlike \textbar{} `zoom' \textbar{} `all'{]}
+same as qmin, but for the maximum of the output grid
 
 \item[{grid}] \leavevmode{[}listlike of arrays{]}
 set of values defining the grid on which the PDF is to

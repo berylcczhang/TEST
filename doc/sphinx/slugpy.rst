@@ -5,10 +5,42 @@
 slugpy -- The Python Helper Library
 ===================================
 
+Installing slugpy
+-----------------
+
+SLUG comes with the python module slugpy, which contains an extensive set of routines for reading, writing, and manipulating SLUG outputs. You can install slugpy one of two ways.
+
+1. Using ``Make``. If you compile the main slug code by doing ``Make`` in the main slug directory, the c slugpy extensions will be build automatically. Once that is done, you will be able to use slugpy just by importing it, provided that the slugpy directory is in your python import path.
+
+2. Using ``setup.py``. The slug distribution comes with a ``setup.py`` script that follows the standard python package convensions. Just do::
+
+     python setup.py build
+
+to build the c extensions in place, which will let you import slugpy from the directory where it is located. Alternately, do::
+
+  python setup.py install
+
+to install as a site package. Installing as a site package often requires root permissions, in which case you should do::
+
+  sudo python setup.py install
+
+or::
+
+  python setup.py install --user
+
+instead.
+
+A note on compiling slugpy with setup.py: the slugpy c extensions require the `GNU Scientific Library <http://www.gnu.org/software/gsl/>`_; to build or install slugpy, the appropriate headers must be in your default include path. If they are not, you can tell setup where they are located by creating a file named ``setup.cfg`` in the slug2 directory, which contains the lines::
+
+  [build_ext]
+  include_dirs=/PATH/TO/GSL/HEADER
+
+Then you should be able to build and install slugpy with ``setup.py``.
+
 Basic Usage
 -----------
 
-SLUG comes with the python module slugpy, which contains an extensive set of routines for reading, writing, and manipulating SLUG outputs. The most common task is to read a set of SLUG outputs into memory so that they can be processed. To read the data from a SLUG run using slugpy, one can simply do the following::
+The most common task is to read a set of SLUG outputs into memory so that they can be processed. To read the data from a SLUG run using slugpy, one can simply do the following::
 
    from slugpy import *
    idata = read_integrated('SLUG_MODEL_NAME')

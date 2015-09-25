@@ -357,6 +357,41 @@ nmatch == 1 then that dimension will be omitted</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="slugpy.bayesphot.bp.bp.bestmatch_phys">
+<code class="descname">bestmatch_phys</code><span class="sig-paren">(</span><em>phys</em>, <em>nmatch=1</em>, <em>bandwidth_units=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.bestmatch_phys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches through the simulation library and returns the closest
+matches to an input set of photometry.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span></dt>
+<dd>array giving the physical values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of matches to return; returned matches will be
+ordered by distance from the input</dd>
+<dt>bandwidth_units <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if False, distances are computed based on the
+logarithmic difference in physical properties; if True,
+they are measured in units of the bandwidth</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span></dt>
+<dd>best matches to the input properties; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted</dd>
+<dt>dist <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span></dt>
+<dd>distances between the matches and the input physical
+properties</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.logL">
 <code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.logL" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns the natural log of the likelihood
@@ -583,7 +618,7 @@ the dimensions of the output grid</dd>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.mpdf_approx">
-<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims='phys'</em>, <em>dims_return=None</em>, <em>ngrid=64</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mpdf_approx" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims='phys'</em>, <em>dims_return=None</em>, <em>ngrid=64</em>, <em>qmin='all'</em>, <em>qmax='all'</em>, <em>grid=None</em>, <em>norm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mpdf_approx" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the marginal posterior PDF computed from a kernel
 density approximation returned by make_approx_phys or
 make_approx_phot. Outputs are computed on a grid of values, in
@@ -616,16 +651,17 @@ will be generated</dd>
 <dd>number of points in each dimension of the output grid;
 if this is an iterable, it must have the same number of
 elements as idx</dd>
-<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217; </span></dt>
 <dd>minimum value in the output grid in each quantity; if
-left as None, the range is chosen automatically to zoom in
-on the maximum of the final PDF; if this is an iterable,
-it must contain the same number of elements as idx</dd>
-<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
-<dd>maximum value in the output grid in each quantity; if
-left as None, the range is chosen automatically to zoom in
-on the maximum of the final PDF; if this is an iterable,
-it must contain the same number of elements as idx</dd>
+this a float, it is applied to each dimension; if it is
+an iterable, it must contain the same number of elements
+as the number of dimensions being returned, as gives the
+minimum in each dimension; if it is &#8216;zoom&#8217; or &#8216;all&#8217;, the
+minimum is chosen automatically, with &#8216;zoom&#8217; focusing on
+a region encompassing the probability maximum, and &#8216;all&#8217;
+encompassing all the points in the representation</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217;</span></dt>
+<dd>same as qmin, but for the maximum of the output grid</dd>
 <dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
 <dd>set of values defining the grid on which the PDF is to
 be evaluated, in the same format used by meshgrid</dd>
