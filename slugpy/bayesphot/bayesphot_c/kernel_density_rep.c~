@@ -1,0 +1,35 @@
+/*********************************************************************
+Copyright (C) 2015 Mark Krumholz
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*********************************************************************/
+
+#include "kernel_density_rep.h"
+
+/*********************************************************************/
+/* Functions                                                         */
+/*********************************************************************/
+
+void kd_rep_nodes(const kernel_density *kd, const double *x,
+		  const unsigned int *dims, const unsigned int ndim,
+		  const double reltol, unsigned int *nnode,
+		  unsigned int **nodes) {
+
+  unsigned int ptr;
+
+  /* Initialize the list of output nodes */
+  *nnode = 0;
+  if (!(*nodes = malloc(sizeof(unsigned int)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_rep_nodes\n");
+    exit(1);
+  }

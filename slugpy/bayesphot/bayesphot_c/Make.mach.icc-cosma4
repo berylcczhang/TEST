@@ -1,0 +1,40 @@
+# Machine-specific settings for COSMA icc
+
+#load the following modules *before* running make 
+#module purge
+#module load gnu_comp/c4/4.8.1
+#Remember to include libraries at runtime
+
+
+# Default is gcc
+MACH_CC = gcc
+
+# Flag needed to specify c++11 standard
+MACH_C11FLAG      = -std=c++11
+
+# Optimization flags
+MACH_CXXOPTFLAGS  = -O3 -ffast-math -fPIC
+MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
+#MACH_LDOPTFLAGS  = 
+
+# Debug flags
+MACH_CXXDEBFLAGS  = -g -fPIC
+MACH_CDEBFLAGS	  = $(MACH_CXXDEBFLAGS)
+MACH_LDDEBFLAGS   = -g
+
+# Flags to compile shared libaries
+LIB_EXTENSION	   = .so
+CLIBFLAGS	   = -fPIC
+DYNLIBFLAG	   = -shared
+
+#Locations of library files
+BOOST_HDR_PATH	= /cosma/home/miki/library/boost/1.57/c4/gnu_4.8.1/include/
+BOOST_LIB_PATH	= /cosma/home/miki/library/boost/1.57/c4/gnu_4.8.1/lib/
+GSL_HDR_PATH = /cosma/home/miki/library/gsl/1.16/c4/gnu_4.8.1/include/
+GSL_LIB_PATH = /cosma/home/miki/library/gsl/1.16/c4/gnu_4.8.1/lib/
+CXX_INCLUDE_PATH = /cosma/home/miki/library/cfitsio/c4/gnu_4.8.1/include/
+LD_LIBRARY_PATH = /cosma/home/miki/library/cfitsio/c4/gnu_4.8.1/lib/
+
+
+
+

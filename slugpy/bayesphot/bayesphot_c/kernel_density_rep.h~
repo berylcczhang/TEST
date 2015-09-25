@@ -1,0 +1,60 @@
+/*********************************************************************
+Copyright (C) 2015 Mark Krumholz
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*********************************************************************/
+
+/*********************************************************************/
+/* This module contains routines that are used in construct          */
+/* approximate representations of KD tree objects.                   */
+/*********************************************************************/
+
+#ifndef _KERNEL_DENSITY_REP_H_
+#define _KERNEL_DENSITY_REP_H_
+
+#include "kernel_density.h"
+
+/*********************************************************************/
+/* Function definitions                                              */
+/*********************************************************************/
+
+void kd_rep_nodes(const kernel_density *kd, const double *x,
+		  const unsigned int *dims, const unsigned int ndim,
+		  const double reltol, const double abstol, 
+		  unsigned int *nnode, unsigned int *nodes);
+
+/* This routine returns the list of nodes to be used in constructing
+   an approximate representation of the PDF for a given point.
+
+   Parameters
+      INPUT kd
+         the kernel_density object to be used to evaluate the PDF
+      INPUT x
+         an ndim element array giving the position for which the
+         approximate representation is to be constructed
+      INPUT dims
+         an ndim element array specifying which dimension the elements
+      of x correspond to
+      INPUT ndims
+         the number of dimensions in x and dims
+      INPUT reltol
+         Relative error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | / pdf_true < reltol.
+      INPUT abstol
+         Absolute error tolerance in the computation. An approximate
+         value pdf_approx will be returned once the estimated error
+	 | pdf_approx - pdf_true | < abstol.
+
+#endif
+/* _KERNEL_DENSITY_REP_H_ */

@@ -9,8 +9,8 @@ all: slug bayesphot
 debug: slug-debug bayesphot-debug
 
 bayesphot:
-	cd src/bayesphot && $(MAKE) MACHINE=$(MACHINE)
-	@(cp src/bayesphot/bayesphot.* slugpy/bayesphot)
+	cd slugpy/bayesphot/bayesphot_c && $(MAKE) MACHINE=$(MACHINE)
+	@(cp slugpy/bayesphot/bayesphot_c/bayesphot.* slugpy/bayesphot)
 
 slug:
 	cd src && $(MAKE) all MACHINE=$(MACHINE) FITS=$(FITS)
@@ -25,8 +25,8 @@ slug:
 	@(cp src/slug bin)
 
 bayesphot-debug:
-	cd src/bayesphot && $(MAKE) debug MACHINE=$(MACHINE)
-	@(cp src/bayesphot/bayesphot.* slugpy/bayesphot)
+	cd slugpy/bayesphot/bayesphot_c && $(MAKE) debug MACHINE=$(MACHINE)
+	@(cp slugpy/bayesphot/bayesphot_c bayesphot.* slugpy/bayesphot)
 
 slug-debug:
 	cd src && $(MAKE) debug MACHINE=$(MACHINE) FITS=$(FITS)

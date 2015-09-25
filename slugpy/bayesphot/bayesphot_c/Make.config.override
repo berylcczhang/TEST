@@ -1,0 +1,28 @@
+# Users can override default options here. Just uncomment and fill in
+# the appropriate line.
+
+# c++ and c compilers
+#CXX           =
+#CC	       = /opt/local/bin/gcc-mp-4.8
+
+# Optimization flags for compile and link stages
+#CXXOPTFLAGS    = -Ofast -fopenmp
+#COPTFLAGS      = -Ofast -fopenmp
+#LDOPTFLAGS     = -Ofast -fopenmp
+
+# Debug flags for compile and link stages
+#CXXDEBFLAGS    = -Og
+#CDEBFLAGS      = -Og
+#LDDEBFLAGS     = -Og
+
+# Flags to compile shared libaries
+#LIB_EXTENSION	   = .dylib
+#CLIBFLAGS	   = -fPIC
+#DYNLIBFLAG	   = -shared
+
+# Location of GSL
+#GSL_HDR_PATH	=
+#GSL_LIB_PATH	=
+#INCFLAGS       += -I$(GSL_HDR_PATH)
+#LDLIBFLAGS     += -L$(GSL_LIB_PATH)
+
