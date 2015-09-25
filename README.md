@@ -53,11 +53,11 @@ The SLUG repository contains several subdirectories.
 * *sfr_slug*: contains example code and data for sfr_slug
 * *slugpy*: this contains the python module slugpy, which includes routines for parsing and manipulating simulation outputs
     - *slugpy/bayesphot*: contains python routines to do Bayesian estimation of physical properties from photometry
+      - *slugpy/bayesphot/bayesphot_c*: contains source code for c extensions to slugpy/bayesphot
     - *slugpy/cloudy*: contains parsing routines related to the [cloudy](http://nublado.org) interface
     - *slugpy/cluster_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star cluster properties
     - *slugpy/sfr_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star formation rates
 * *src*: this contains the main source code for SLUG
-    - *src/bayesphot*: contains source code for the SLUG Bayesian photometry library
 * *test*: this contains test scripts
 
 ### Installing and configuring ###
