@@ -46,7 +46,7 @@ clean:
 	then \
 		rm -f bin/slug; \
 	fi)
-	cd src/bayesphot && $(MAKE) clean
+	cd slugpy/bayesphot/bayesphot_c && $(MAKE) clean
 	@(rm -f slugpy/bayesphot/bayesphot.so)
 	@(rm -f slugpy/bayesphot/bayesphot.dylib)
 	@(rm -f slugpy/bayesphot/bayesphot.dll)
