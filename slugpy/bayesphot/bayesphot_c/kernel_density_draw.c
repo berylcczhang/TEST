@@ -517,9 +517,7 @@ int assign_idx(const kernel_density *kd,
 	       const double *pointwgt,
 	       unsigned long *idxmap) {
   unsigned long i, j, jsave, k, ksave;
-  unsigned long ndim_tree = kd->tree->ndim, ptr;
-  double d2, wgt;
-  double cumwgt = 0, cumwgt1;
+  double wgt, cumwgt = 0, cumwgt1;
 
   /* Loop over the random numbers, in sorted order */
   for (i=0, jsave=-1, j=0; i<nsample; i++) {
