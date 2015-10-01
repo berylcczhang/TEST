@@ -1,0 +1,17 @@
+###############################################################
+# This is an CLF (cluster lifetime function) definition file 
+# for SLUG v2.
+# This file defines the default slug CLF, which is powerlaw
+# from 1 Myr to 1 Gyr with a slope of -1.9, correspoinding to
+# a cluster age distribution with a slope of -0.9
+###############################################################
+
+# Breakpoints: time values where the functional form changes
+# The first and last breakpoint will define the minimum and
+# maximum possible lifetime
+breakpoints 1.0e6 1.0e9
+
+# Definitions of segments between the breakpoints
+segment
+type powerlaw
+slope -1.9

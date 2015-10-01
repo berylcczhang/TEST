@@ -1,0 +1,32 @@
+# Users can override default options here. Just uncomment and fill in
+# the appropriate line.
+
+# c++ and c compilers
+#CXX           =
+#CC	       =
+
+# Optimization flags for compile and link stages
+#CXXOPTFLAGS   =
+#COPTFLAGS     =
+#LDOPTFLAGS    =
+
+# Debug flags for compile and link stages
+#CXXDEBFLAGS   =
+#CDEBFLAGS     =
+#LDDEBFLAGS    =
+
+# Flags to compile shared libaries
+#LIB_EXTENSION	   = 
+#CLIBFLAGS	   = 
+#DYNLIBFLAG	   = 
+
+# Locations of boost, GSL, and cfitsio libraries. Can be left blank if
+# these are in the default link/include paths.
+#BOOST_HDR_PATH	= 
+#BOOST_LIB_PATH	=
+#GSL_HDR_PATH	=
+#GSL_LIB_PATH	=
+#FITS_HDR_PATH  =
+#FITS_LIB_PATH  =
+#INCFLAGS       += -I$(BOOST_HDR_PATH) -I$(GSL_HDR_PATH) -I$(FITS_HDR_PATH)
+#LDLIBFLAGS     += -L$(BOOST_LIB_PATH) -L$(GSL_LIB_PATH) -L$(FITS_LIB_PATH)

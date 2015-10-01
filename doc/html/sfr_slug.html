@@ -1,0 +1,442 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>sfr_slug: Bayesian Inference of Star Formation Rates &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="Test Problems" href="tests.html" />
+    <link rel="prev" title="cluster_slug: Bayesian Inference of Star Cluster Properties" href="cluster_slug.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tests.html" title="Test Problems"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="cluster_slug.html" title="cluster_slug: Bayesian Inference of Star Cluster Properties"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="sfr-slug-bayesian-inference-of-star-formation-rates">
+<span id="sec-sfr-slug"></span><h1>sfr_slug: Bayesian Inference of Star Formation Rates<a class="headerlink" href="#sfr-slug-bayesian-inference-of-star-formation-rates" title="Permalink to this headline">¶</a></h1>
+<p>The slugy.sfr_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the &#8220;point mass estimate&#8221; (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around <a class="reference internal" href="bayesphot.html#sec-bayesphot"><span>bayesphot: Bayesian Inference for Stochastic Stellar Populations</span></a>, so for details on how the calculation is performed see the bayesphot documentation.</p>
+<div class="section" id="getting-the-default-library">
+<h2>Getting the Default Library<a class="headerlink" href="#getting-the-default-library" title="Permalink to this headline">¶</a></h2>
+<p>The sfr_slug module requires a pre-computed library of slug simulations to use as a &#8220;training set&#8221; for its calculations. Due to its size, the default library <em>is not</em> included in the slug git repository. Instead, it is provided for download from the <a class="reference external" href="http://www.slugsps.com/data">SLUG data products website</a>. Download the two files <code class="docutils literal"><span class="pre">SFR_SLUG_integrated_phot.fits</span></code> and <code class="docutils literal"><span class="pre">SFR_SLUG_integrated_prop.fits</span></code> and save them in the <code class="docutils literal"><span class="pre">sfr_slug</span></code> directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use sfr_slug, you will be prompted to download the default library.</p>
+</div>
+<div class="section" id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">sfr_slug/sfr_slug_example.py</span></code> file in the repository provides an example of how to use sfr_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr_slug. The required steps are as follows:</p>
+<ol class="arabic">
+<li><p class="first">Import the library and instantiate an <code class="docutils literal"><span class="pre">sfr_slug</span></code> object (see <a class="reference internal" href="#sec-sfr-slug-full"><span>Full Documentation of slugpy.sfr_slug</span></a> for full details):</p>
+<div class="highlight-rest"><div class="highlight"><pre>from slugpy.sfr_slug import sfr_slug
+sfr_estimator = sfr_slug()
+</pre></div>
+</div>
+</li>
+</ol>
+<p>This creates an sfr_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/SFR_SLUG. If you have another library of simulations you&#8217;d rather use, you can use the <code class="docutils literal"><span class="pre">libname</span></code> keyword to the <code class="docutils literal"><span class="pre">sfr_slug</span></code> constructor to select it.</p>
+<ol class="arabic" start="2">
+<li><p class="first">Specify your filter(s), for example:</p>
+<div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.add_filters(&#39;QH0&#39;)
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The <code class="docutils literal"><span class="pre">add_filter</span></code> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <code class="docutils literal"><span class="pre">add_filters</span></code> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
+<ol class="arabic" start="3">
+<li><p class="first">Specify your priors, for example:</p>
+<div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.priors = &#39;schechter&#39;
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The <code class="docutils literal"><span class="pre">priors</span></code> property specifies the assumed prior probability distribution on the star formation rate. It can be either <code class="docutils literal"><span class="pre">None</span></code> (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, a callable that takes a star formation rate as input and returns the prior for it, or a string whose value is either &#8220;flat&#8221; or &#8220;prior&#8221;. The two strings specify, respectively, a prior distribution that is either flat in log SFR or follows the Schechter function SFR distribution from <a class="reference external" href="http://adsabs.harvard.edu/abs/2011MNRAS.415.1815B">Bothwell et al. (2011)</a>:</p>
+<div class="math">
+\[p(\log\mathrm{SFR}) \propto \mathrm{SFR}^{\alpha} \exp(-\mathrm{SFR}/\mathrm{SFR}_*)\]</div>
+<p>with <span class="math">\(\alpha = -0.51\)</span> and <span class="math">\(\mathrm{SFR}_* = 9.2\,M_\odot\,\mathrm{yr}^{-1}\)</span>.</p>
+<ol class="arabic" start="4">
+<li><p class="first">Generate the posterior probability distribuiton of SFR via:</p>
+<div class="highlight-rest"><div class="highlight"><pre>logSFR, pdf = sfr_estimator.mpdf(logSFR_in, logSFRphoterr = logSFR_err)
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The argument <code class="docutils literal"><span class="pre">logSFR_in</span></code> can be a float or an array specifying one or more point mass estimates of the SFR in your chosen filter. For a case with two or more filters, then <code class="docutils literal"><span class="pre">logSFR_in</span></code> must be an array whose trailing dimension matches the number of filters. If you have added two or more filter sets, you need to specify which one you want to use via the <code class="docutils literal"><span class="pre">filters</span></code> keyword. The optional argument <code class="docutils literal"><span class="pre">logSFRphoterr</span></code> can be used to provide errors on the photometric SFRs. Like <code class="docutils literal"><span class="pre">logSFR_in</span></code>, it can be a float or an array.</p>
+<p>The <code class="docutils literal"><span class="pre">sfr_slug.mpdf</span></code> method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#sec-sfr-slug-full"><span>Full Documentation of slugpy.sfr_slug</span></a>.</p>
+</div>
+<div class="section" id="full-documentation-of-slugpy-sfr-slug">
+<span id="sec-sfr-slug-full"></span><h2>Full Documentation of slugpy.sfr_slug<a class="headerlink" href="#full-documentation-of-slugpy-sfr-slug" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="slugpy.sfr_slug.sfr_slug">
+<em class="property">class </em><code class="descclassname">slugpy.sfr_slug.</code><code class="descname">sfr_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that can be used to estimate the PDF of true star
+formation rate from a set of input point mass estimates of the
+star formation rate.</p>
+<dl class="docutils">
+<dt>Properties</dt>
+<dd><dl class="first last docutils">
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;flat&#8217; | &#8216;schechter&#8217; | None</span></dt>
+<dd>prior probability on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability; the values
+&#8216;flat&#8217; and &#8216;schechter&#8217; use priors p(log SFR) ~ constant and
+p(log SFR) ~ SFR^alpha exp(-SFR/SFR_*), respectively, where
+alpha = -0.51 and SFR_* = 9.2 Msun/yr are the values
+measured by Bothwell et al. (2011)</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
+<dd>bandwidth for kernel density estimation; if set to
+&#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>detname=None</em>, <em>filters=None</em>, <em>bandwidth=0.1</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density='read'</em>, <em>reltol=0.001</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Initialize an sfr_slug object.</div></blockquote>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of the SLUG model to load; if left as None, the default
+is $SLUG_DIR/sfr_slug/SFR_SLUG</dd>
+<dt>detname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of a SLUG model run with the same parameters but no
+stochasticity; used to establish the non-stochastic
+photometry to SFR conversions; if left as None, the default
+is libname_DET</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span></dt>
+<dd>bandwidth for kernel density estimation; if set to
+&#8216;auto&#8217;, the bandwidth will be estimated automatically;
+if set to a float, the same bandwidth is used in all
+dimensions</dd>
+<dt>ktype <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>type of kernel to be used in densty estimation; allowed
+values are &#8216;gaussian&#8217; (default), &#8216;epanechnikov&#8217;, and
+&#8216;tophat&#8217;; only Gaussian can be used with error bars</dd>
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dd>prior probability on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability</dd>
+<dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | &#8216;read&#8217; | None</span></dt>
+<dd>the density of the data samples at each data point; this
+need not match the prior density; interpretation depends
+on the type passed; array, shape (N): values are
+interpreted as the density of data sampling at each
+sample point; callable: the callable must take as an
+argument an array of shape (N, nphys), and return an
+array of shape (N) giving the sampling density at each
+point; &#8216;auto&#8217;: the sample density will be computed
+directly from the data set; note that this can be quite
+slow for large data sets, so it is preferable to specify
+this analytically if it is known; &#8216;read&#8217;: the sample
+density is to be read from a numpy save file whose name
+matches that of the library, with the extension _density.npy
+added; None: data are assumed to be uniformly sampled</dd>
+<dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>relative error tolerance; errors on all returned
+probabilities p will satisfy either
+abs(p_est - p_true) &lt;= reltol * p_est   OR
+abs(p_est - p_true) &lt;= abstol,
+where p_est is the returned estimate and p_true is the
+true value</dd>
+<dt>abstol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>absolute error tolerance; see above</dd>
+<dt>leafsize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of data points in each leaf of the KD tree</dd>
+</dl>
+</div></blockquote>
+<dl class="last docutils">
+<dt>Returns</dt>
+<dd>Nothing</dd>
+<dt>Raises</dt>
+<dd>IOError, if the library cannot be found</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="slugpy.sfr_slug.sfr_slug.__weakref__">
+<code class="descname">__weakref__</code><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.add_filters">
+<code class="descname">add_filters</code><span class="sig-paren">(</span><em>filters</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.add_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a set of filters to use for cluster property estimation</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>nothing</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.filters">
+<code class="descname">filters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of all available filters</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>None</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">list of strings</span></dt>
+<dd>list of available filter names</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.logL">
+<code class="descname">logL</code><span class="sig-paren">(</span><em>logSFR</em>, <em>logSFRphot</em>, <em>logSFRphoterr=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.logL" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns the natural log of the likelihood
+function evaluated at a particular log SFR and set of log
+luminosities</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>logSFR <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>float or array giving values of the log SFR; for an
+array, the operation is vectorized</dd>
+<dt>logSFRphot <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>float or array giving the SFR inferred from photometry using a
+deterministic conversion; for an array, the operation is
+vectorized over the leading dimensions</dd>
+<dt>logSFRphoterr <span class="classifier-delimiter">:</span> <span class="classifier">float arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>float or array giving photometric SFR errors; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters used for the SFR estimation;
+if left as None, and only 1 set of photometric filters
+has been defined for the sfr_slug object, that set will
+be used by default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>logL <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>natural log of the likelihood function</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.mcmc">
+<code class="descname">mcmc</code><span class="sig-paren">(</span><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mcmc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns a sample of MCMC walkers for log SFR</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>mc_walkers <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of walkers to use in the MCMC</dd>
+<dt>mc_steps <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps in the MCMC</dd>
+<dt>mc_burn_in <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps to consider &#8220;burn-in&#8221; and discard</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd><dl class="first last docutils">
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of sample points returned by the MCMC</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.sfr_slug.sfr_slug.mpdf">
+<code class="descname">mpdf</code><span class="sig-paren">(</span><em>logSFRphot</em>, <em>logSFRphoterr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.sfr_slug.sfr_slug.mpdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the marginal probability of log SFR for one or more
+input sets of photometric properties. Output quantities are
+computed on a grid of values, in the same style as meshgrid</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>logSFRphot <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>float or array giving the log SFR inferred from
+photometry using a deterministic conversion; if the
+argument is an array, the operation is vectorized over
+it</dd>
+<dt>logSFRphoterr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of points in the output log SFR grid</dd>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>minimum value in the output log SFR grid</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>maximum value in the output log SFR grid</dd>
+<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>set of values defining the grid of SFR values at which
+to evaluate; if set, overrides ngrid, qmin, and qmax</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, returned pdf&#8217;s will be normalized to integrate
+to 1</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of log SFR values at which the PDF is evaluated</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
+of the output grid, for each input photometric value;
+the leading dimensions match the leading dimensions
+produced by broadcasting the leading dimensions of
+photprop and photerr together, while the trailing
+dimensions match the dimensions of the output grid</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">sfr_slug: Bayesian Inference of Star Formation Rates</a><ul>
+<li><a class="reference internal" href="#getting-the-default-library">Getting the Default Library</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#full-documentation-of-slugpy-sfr-slug">Full Documentation of slugpy.sfr_slug</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="cluster_slug.html"
+                        title="previous chapter">cluster_slug: Bayesian Inference of Star Cluster Properties</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tests.html"
+                        title="next chapter">Test Problems</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/sfr_slug.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/sfr_slug.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

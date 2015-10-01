@@ -1,0 +1,135 @@
+####################################################
+# An example parameter file for spectra problem #
+####################################################
+
+# This parameter file provides an example setup for simulating a
+# galaxy with a constant SFR and outputting a full spectrum
+#
+
+##############
+# Basic data #
+##############
+
+# Name of the model; this will become the base name for all output
+# files
+# Default: SLUG_DEF
+model_name        SLUG_SPECTRA_3
+
+##################################################################
+# Parameters controlling simulation execution and physical model #
+##################################################################
+
+# Number of model galaxies to run
+# Default: 1
+n_trials          500
+
+# Length of time step (in yr for linear time step, in dex for
+# logarithmic)
+time_step    	  2.0e6
+
+# Maximum evolution time, in yr.
+end_time	  2.0e6
+
+# Star formation rate in case where sim_type = galaxy, in Msun/yr; can
+# be omitted, and will be ignored, if sim_type = cluster. If, instead
+# of a numerical value, the string "sfh" appears, this indicates that
+# the star formation history should be read from a star formation
+# history file.
+sfr    		  0.001
+
+
+#############################################
+# Parameters controlling simulation outputs #
+#############################################
+
+# Write out cluster physical properties? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster       1
+
+# Write out cluster photometry? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_phot  0
+
+# Write out cluster spectra? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_spec  1
+
+# Write out integrated physical properties of galaxy? Can be omitted,
+# and will be ignored, if sim_type = cluster.  Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated     1
+
+# Write out integrated photometry? Can be omitted, and will be ignored,
+# if sim_type = cluster. Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_phot  0
+
+# Write out integrated spectra? Can be omitted, and will be ignored,
+# if sim_type = cluster. Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_spec  1
+
+# Write output as binary, ASCII, or FITS; allowed values:
+# -- binary
+# -- ascii
+# -- fits
+# Default: ascii
+output_mode      FITS
+
+
+#####################################################################
+# Parameters controlling the physical models used for star and star #
+# cluster formation, stellar properties, and extinction             #
+#####################################################################
+
+# IMF (initial mass function) file name
+# Default: lib/imf/chabrier.imf (Chabrier 2005 IMF)
+imf   	          lib/imf/chabrier.imf
+
+# CMF (cluster mass function) file name; ignored if sim_type = cluster
+# and cluster_mass is not "cmf"
+# Default: lib/cmf/slug_default.cmf (dN/dM ~ M^-2)
+cmf               lib/cmf/slug_default.cmf
+
+# CLF (cluster lifetime function) file name
+# Default: lib/clf/slug_default.clf (dN/dt ~ t^-1.9)
+clf               lib/clf/nodisrupt.clf 
+
+# Fraction of stars born in clusters (must be 0 - 1); can be omitted
+# if sim_type = cluster
+# Default: 1.0
+clust_frac        1.0
+
+# Extinction; to turn on extintion, set the parameter A_V. If set to a
+# number, this extinction will be applied to all spectra and
+# photometry. Default behavior, if the A_V parameter is omitted
+# entirely, is not to apply any extinction. If the parameter A_V is
+# set to a real number, this will be interpreted as a uniform
+# extinction that is applied to all light output. Finally, if this
+# parameter is set to any string that cannot be converted to a real
+# number, it will be interpreted as a file name giving the name of a
+# PDF file specifying the distribution of extinctions.
+A_V                  0.5
+
+# File specifying the shape fof the extinction curve
+# Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti+ 2000 starburst
+# attenuation curve)
+extinction_curve     lib/extinct/SB_ATT_SLUG.dat
+
+# Redshift; if set to a non-zero value, this causes all spectra to be
+# redshifted by the specified amount. In this case photometry and
+# spectra are computed in the observed frame.
+# Default: 0
+redshift             0

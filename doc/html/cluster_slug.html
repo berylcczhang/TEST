@@ -1,0 +1,926 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>cluster_slug: Bayesian Inference of Star Cluster Properties &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="sfr_slug: Bayesian Inference of Star Formation Rates" href="sfr_slug.html" />
+    <link rel="prev" title="bayesphot: Bayesian Inference for Stochastic Stellar Populations" href="bayesphot.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sfr_slug.html" title="sfr_slug: Bayesian Inference of Star Formation Rates"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="bayesphot.html" title="bayesphot: Bayesian Inference for Stochastic Stellar Populations"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="cluster-slug-bayesian-inference-of-star-cluster-properties">
+<span id="sec-cluster-slug"></span><h1>cluster_slug: Bayesian Inference of Star Cluster Properties<a class="headerlink" href="#cluster-slug-bayesian-inference-of-star-cluster-properties" title="Permalink to this headline">¶</a></h1>
+<p>The slugpy.cluster_slug module computes posterior probabilities for the mass, age, and extinction of star clusters from a set of input photometry.  It is implemented as a wrapper around <a class="reference internal" href="bayesphot.html#sec-bayesphot"><span>bayesphot: Bayesian Inference for Stochastic Stellar Populations</span></a>, so for details on how the calculation is performed see the bayesphot documentation.</p>
+<div class="section" id="getting-the-default-library">
+<h2>Getting the Default Library<a class="headerlink" href="#getting-the-default-library" title="Permalink to this headline">¶</a></h2>
+<p>The cluster_slug module requires a pre-computed library of slug simulations to use as a &#8220;training set&#8221; for its calculations. Due to its size, the default library <em>is not</em> included in the slug git repository. Instead, it is provided for download from the <a class="reference external" href="http://www.slugsps.com/data">SLUG data products website</a>. Download the two files <code class="docutils literal"><span class="pre">clusterslug_mw_cluster_phot.fits</span></code> and <code class="docutils literal"><span class="pre">clusterslug_mw_cluster_prop.fits</span></code> and save them in the <code class="docutils literal"><span class="pre">cluster_slug</span></code> directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use cluster_slug, you will be prompted to download the default library.</p>
+</div>
+<div class="section" id="basic-usage">
+<h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>For an example of how to use cluster_slug, see the file <code class="docutils literal"><span class="pre">cluster_slug/cluster_slug_example.py</span></code> in the repository. All funtionality is provided through the cluster_slug class. The basic steps are as follows:</p>
+<ol class="arabic">
+<li><p class="first">Import the library and instantiate an <code class="docutils literal"><span class="pre">sfr_slug</span></code> object (see <a class="reference internal" href="#ssec-cluster-slug-full"><span>Full Documentation of slugpy.cluster_slug</span></a> for full details):</p>
+<div class="highlight-rest"><div class="highlight"><pre>from slugpy.cluster_slug import cluster_slug
+cs = cluster_slug(photsystem=photsystem)
+</pre></div>
+</div>
+</li>
+</ol>
+<p>This creates a cluster_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/clusterslug_mw. If you have another library of simulations you&#8217;d rather use, you can use the <code class="docutils literal"><span class="pre">libname</span></code> keyword to the <code class="docutils literal"><span class="pre">cluster_slug</span></code> constructor to select it. The optional argument <code class="docutils literal"><span class="pre">photsystem</span></code> specifies the photometric system you will be using for your data. Possible values are <code class="docutils literal"><span class="pre">L_nu</span></code> (flux per unit frequency, in erg/s/Hz), <code class="docutils literal"><span class="pre">L_lambda</span></code> (flux per unit wavelength, in erg/s/Angstrom), <code class="docutils literal"><span class="pre">AB</span></code> (AB magnitudes), <code class="docutils literal"><span class="pre">STMAG</span></code> (ST magnitudes), and <code class="docutils literal"><span class="pre">Vega</span></code> (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the <code class="docutils literal"><span class="pre">L_nu</span></code> system.</p>
+<ol class="arabic" start="2">
+<li><p class="first">Specify your filter(s), for example:</p>
+<div class="highlight-rest"><div class="highlight"><pre>cs.add_filters([&#39;WFC3_UVIS_F336W&#39;, &#39;WFC3_UVIS_F438W&#39;, &#39;WFC3_UVIS_F555W&#39;,
+                &#39;WFC3_UVIS_F814W&#39;, &#39;WFC3_UVIS_F657N&#39;])
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The <code class="docutils literal"><span class="pre">add_filter</span></code> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <code class="docutils literal"><span class="pre">add_filters</span></code> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
+<ol class="arabic" start="3">
+<li><p class="first">Specify your priors, for example:</p>
+<div class="highlight-rest"><div class="highlight"><pre># Set priors to be flat in log T and A_V, but vary with log M as
+# p(log M) ~ 1/M
+def priorfunc(physprop):
+   # Note: physprop is an array of shape (N, 3) where physprop[:,0] =
+   # log M, physprop[:,1] = log T, physprop[:,2] = A_V
+   return 1.0/exp(physprop[:,0])
+cs.priors = prorfunc
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The <code class="docutils literal"><span class="pre">priors</span></code> property specifies the assumed prior probability distribution on the physical properties of star clusters. It can be either <code class="docutils literal"><span class="pre">None</span></code> (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, or a callable that takes a vector of physical properties as input and returns the prior for it.</p>
+<ol class="arabic" start="4">
+<li><p class="first">Generate a marginal posterior probability distribuiton via:</p>
+<div class="highlight-rest"><div class="highlight"><pre>logm, pdf = cs.mpdf(idx, phot, photerr = photerr)
+</pre></div>
+</div>
+</li>
+</ol>
+<p>The first argument <code class="docutils literal"><span class="pre">idx</span></code> is an index for which posterior distribution should be computed &#8211; a value of 0 generates the posterior in log mass, a value of 1 generates the posterion on log age, and a value of generates the posterior in A_V. The second argument <code class="docutils literal"><span class="pre">phot</span></code> is an array giving the photometric values in the filters specified in step 2; make sure you&#8217;re using the same photometric system you used in step 1. For the array <code class="docutils literal"><span class="pre">phot</span></code>, the trailing dimension must match the number of filters, and the marginal posterior-finding exercise is repeated over every value in the leading dimensions. If you have added two or more filter sets, you need to specify which one you want to use via the <code class="docutils literal"><span class="pre">filters</span></code> keyword. The optional argument <code class="docutils literal"><span class="pre">photerr</span></code> can be used to provide errors on the photometric values. The shape rules on it are the same as on <code class="docutils literal"><span class="pre">phot</span></code>, and the two leading dimensions of the two arrays will be broadcast together using normal broadcasting rules.</p>
+<p>The <code class="docutils literal"><span class="pre">cluster_slug.mpdf</span></code> method returns a tuple of two quantities. The first is a grid of values for log M, log T, or A_V, depending on the value of <code class="docutils literal"><span class="pre">idx</span></code>. The second is the posterior probability distribution at each value of of the grid. Posteriors are normalized to have unit integral. If the input consisted of multiple sets of photometric values, the output will contains marginal posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#ssec-cluster-slug-full"><span>Full Documentation of slugpy.cluster_slug</span></a>.</p>
+</div>
+<div class="section" id="using-cluster-slug-in-parallel">
+<h2>Using cluster_slug in Parallel<a class="headerlink" href="#using-cluster-slug-in-parallel" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">cluster_slug</span></code> module has full support for threaded computation using the python <a class="reference external" href="https://docs.python.org/2.7/library/multiprocessing.html">multiprocessing module</a>. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See <a class="reference internal" href="bayesphot.html#ssec-bayesphot-threading"><span>Support for Parallelism in bayesphot</span></a> for full details on the recommended paradigm for parallel computing. The full list of thread-safe <code class="docutils literal"><span class="pre">cluster_slug</span></code> methods is:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">cluster_slug.logL</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.mpdf</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.mcmc</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.bestmatch</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.make_approx_phot</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.make_approx_phys</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.squeeze_rep</span></code></li>
+<li><code class="docutils literal"><span class="pre">cluster_slug.mpdf_approx</span></code></li>
+</ul>
+</div>
+<div class="section" id="making-your-own-library">
+<h2>Making Your Own Library<a class="headerlink" href="#making-your-own-library" title="Permalink to this headline">¶</a></h2>
+<p>You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug_mw library) is included in the <code class="docutils literal"><span class="pre">cluster_slug</span></code> directory. This file uses slug&#8217;s capability to pick the output time and the cluster mass from specified PDFs.</p>
+<p>One subtle post-processing step you should take once you&#8217;ve generated your library is to read it in using <a class="reference internal" href="slugpy.html#sec-slugpy"><span>slugpy &#8211; The Python Helper Library</span></a> and then write the photometry back out using the <code class="docutils literal"><span class="pre">slugpy.write_cluster_phot</span></code> routine with the format set to <code class="docutils literal"><span class="pre">fits2</span></code>. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the <code class="docutils literal"><span class="pre">fits2</span></code> format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)</p>
+</div>
+<div class="section" id="full-documentation-of-slugpy-cluster-slug">
+<span id="ssec-cluster-slug-full"></span><h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="slugpy.cluster_slug.cluster_slug">
+<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that can be used to estimate the PDF of star cluster
+properties (mass, age, extinction) from a set of input photometry
+in various bands.</p>
+<dl class="docutils">
+<dt>Properties</dt>
+<dd><dl class="first last docutils">
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dd>prior probability on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability</dd>
+<dt>abstol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>absolute error tolerance for kernel density estimation</dd>
+<dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>relative error tolerance for kernel density estimation</dd>
+<dt>thread_safe <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the computation routines will run in thread-safe
+mode, allowing use with multiprocessing; this incurs a small
+performance penalty</dd>
+</dl>
+</dd>
+<dt>Methods</dt>
+<dd><dl class="first last docutils">
+<dt>filters() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>returns list of filters available in the library</dd>
+<dt>filtersets() :</dt>
+<dd>return a list of the currently-loaded filter sets</dd>
+<dt>filter_units() :</dt>
+<dd>returns units for available filters</dd>
+<dt>add_filters() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>adds a set of filters for use in parameter estimation</dd>
+<dt>logL() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>compute log likelihood at a particular set of physical and
+photometric parameters</dd>
+<dt>mpdf() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>computer marginal posterior probability distribution for a
+set of photometric measurements</dd>
+<dt>mcmc() :</dt>
+<dd>due MCMC estimation of the posterior PDF on a set of
+photometric measurments</dd>
+<dt>bestmatch() <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>find the simulations in the library that are the closest
+matches to the input photometry</dd>
+<dt>make_approx_phot() :</dt>
+<dd>given a set of physical properties, return a set of points
+that can be used for fast approximation of the corresponding
+photometric properties</dd>
+<dt>make_approx_phys() :</dt>
+<dd>given a set of photometric properties, return a set of points
+that can be used for fast approximation of the corresponding
+physical properties</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a cluster_slug object.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of the SLUG model to load; if left as None, the default
+is $SLUG_DIR/cluster_slug/modp020_chabrier_MW</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span></dt>
+<dd>If photsystem is None, the library will be left in
+whatever photometric system was used to write
+it. Alternately, if it is a string, the data will be
+converted to the specified photometric system. Allowable
+values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;, &#8216;AB&#8217;, &#8216;STMAG&#8217;, and
+&#8216;Vega&#8217;, corresponding to the options defined in the SLUG
+code. Once this is set, any subsequent photometric data
+input are assumed to be in the same photometric system.</dd>
+<dt>bw_phys <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (2) | array, shape (3)</span></dt>
+<dd>bandwidth for the physical quantities in the kernel
+density estimation; if set to &#8216;auto&#8217;, the bandwidth will
+be estimated automatically; if set to a scalar quantity,
+this will be used for all physical quantities; if set to
+an array, the array must have 2 elements if
+use_extinction is False, or 3 if it is True</dd>
+<dt>bw_phot <span class="classifier-delimiter">:</span> <span class="classifier">None | &#8216;auto&#8217; | float | array</span></dt>
+<dd>bandwidth for the photometric quantities; if set to
+None, defaults to 0.25 mag / 0.1 dex; if set to &#8216;auto&#8217;,
+bandwidth is estimated automatically; if set to a float,
+this bandwidth is used for all photometric dimensions;
+if set to an array, the array must have the same number
+of dimensions as len(filters)</dd>
+<dt>ktype <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>type of kernel to be used in densty estimation; allowed
+values are &#8216;gaussian&#8217; (default), &#8216;epanechnikov&#8217;, and
+&#8216;tophat&#8217;; only Gaussian can be used with error bars</dd>
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dd>prior probability on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability</dd>
+<dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | None</span></dt>
+<dd>the density of the data samples at each data point; this
+need not match the prior density; interpretation depends
+on the type passed; array, shape (N): values are
+interpreted as the density of data sampling at each
+sample point; callable: the callable must take as an
+argument an array of shape (N, nphys), and return an
+array of shape (N) giving the sampling density at each
+point; &#8216;auto&#8217;: the sample density will be computed
+directly from the data set; note that this can be quite
+slow for large data sets, so it is preferable to specify
+this analytically if it is known; None: data are assumed
+to be uniformly sampled, or to be sampled as the default
+library is if libname is also None</dd>
+<dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>relative error tolerance; errors on all returned
+probabilities p will satisfy either
+abs(p_est - p_true) &lt;= reltol * p_est   OR
+abs(p_est - p_true) &lt;= abstol,
+where p_est is the returned estimate and p_true is the
+true value</dd>
+<dt>abstol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>absolute error tolerance; see above</dd>
+<dt>leafsize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of data points in each leaf of the KD tree</dd>
+<dt>use_nebular <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, photometry including nebular emission will be
+used if available; if not, nebular emission will be
+omitted</dd>
+<dt>use_extinction <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, photometry including extinction will be used;
+if not, it will be omitted, and in this case no results
+making use of the A_V dimension will be available</dd>
+<dt>thread_safe <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, cluster_slug will make extra copies of internals
+as needed to ensure thread safety when the computation
+routines (logL, mpdf, mcmc, bestmatch, make_approx_phot,
+make_approx_phys, mpdf_approx) are used with
+multiprocessing; this incurs a minor performance
+penalty, and can be disabled by setting to False if the
+code will not be run with the multiprocessing module</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
+<dt>Raises</dt>
+<dd>IOError, if the library cannot be found</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="slugpy.cluster_slug.cluster_slug.__weakref__">
+<code class="descname">__weakref__</code><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.add_filters">
+<code class="descname">add_filters</code><span class="sig-paren">(</span><em>filters</em>, <em>bandwidth=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.add_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a set of filters to use for cluster property estimation</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">None | &#8216;auto&#8217; | float | array</span></dt>
+<dd>bandwidth for the photometric quantities; if set to
+None, the bandwidth is unchanged for an existing filter
+set, and for a newly-created one the default physical
+and photometric bandwidths are used; if set to &#8216;auto&#8217;,
+bandwidth is estimated automatically; if set to a float,
+this bandwidth is used for all physical photometric
+dimensions; if set to an array, the array must have the
+same number of entries as nphys+len(filters)</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>nothing</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.bestmatch">
+<code class="descname">bestmatch</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>nmatch=1</em>, <em>bandwidth_units=False</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.bestmatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches through the simulation library and returns the closest
+matches to an input set of photometry.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of matches to return; returned matches will be
+ordered by distance from the input</dd>
+<dt>bandwidth_units <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if False, distances are computed based on the
+logarithmic difference in luminosity; if True, they are
+measured in units of the bandwidth</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span></dt>
+<dd>best matches to the input photometry; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted; in the
+final dimension, the first 3 elements give log M, log T,
+and A_V, while the last nfilter give the photometric
+values; if created with use_extinct = False, the A_V
+dimension is omitted</dd>
+<dt>dist <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span></dt>
+<dd>distances between the matches and the input photometry</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.bestmatch_phys">
+<code class="descname">bestmatch_phys</code><span class="sig-paren">(</span><em>phys</em>, <em>nmatch=1</em>, <em>bandwidth_units=False</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.bestmatch_phys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches through the simulation library and returns the closest
+matches to an input set of photometry.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span></dt>
+<dd>array giving the physical values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of matches to return; returned matches will be
+ordered by distance from the input</dd>
+<dt>bandwidth_units <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if False, distances are computed based on the
+logarithmic difference in physical properties; if True,
+they are measured in units of the bandwidth</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span></dt>
+<dd>best matches to the input properties; shape in the
+leading dimensions will be the same as for phot, and if
+nmatch == 1 then that dimension will be omitted</dd>
+<dt>dist <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span></dt>
+<dd>distances between the matches and the input physical
+properties</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.del_filters">
+<code class="descname">del_filters</code><span class="sig-paren">(</span><em>filters</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.del_filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a set of filters, freeing the memory associated with
+them. Note that this does not delete the underlying library
+data, just the data for the KD tree used internally.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
+<dt>Raises</dt>
+<dd>KeyError if the input set of filters is not loaded</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.filter_units">
+<code class="descname">filter_units</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.filter_units" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of all available filter units</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>None</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>units <span class="classifier-delimiter">:</span> <span class="classifier">list of strings</span></dt>
+<dd>list of available filter units</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.filters">
+<code class="descname">filters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.filters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of all available filters</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>None</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">list of strings</span></dt>
+<dd>list of available filter names</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.filtersets">
+<code class="descname">filtersets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.filtersets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of all currently-loaded filter sets</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>None</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>filtersets <span class="classifier-delimiter">:</span> <span class="classifier">list of list of strings</span></dt>
+<dd>list of currently-loaded filter sets</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.load_data">
+<code class="descname">load_data</code><span class="sig-paren">(</span><em>filter_name</em>, <em>bandwidth=None</em>, <em>force_reload=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads photometric data for the specified filter into memory</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>filter_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of filter to load</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>default bandwidth for this filter</dd>
+<dt>force_reload <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, re-read the filter data off disk even if it has
+already been read</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>None</dd>
+<dt>Raises:</dt>
+<dd>ValueError, if filter_name is not one of the available
+filters</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.logL">
+<code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.logL" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns the natural log of the likelihood
+function evaluated at a particular log mass, log age,
+extinction, and set of log luminosities</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nhpys) or (..., nphys)</span></dt>
+<dd>array giving values of the log M, log T, and A_V; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions; if created with use_extinct =
+False, the A_V dimension should be omitted</dd>
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>logL <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>natural log of the likelihood function</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.make_approx_phot">
+<code class="descname">make_approx_phot</code><span class="sig-paren">(</span><em>phys</em>, <em>squeeze=True</em>, <em>filter_ignore=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.make_approx_phot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an object that can be used for a fast approximation of
+the PDF of photometric properties that corresponds to a set of
+physical properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phys <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (N, nphys)</span></dt>
+<dd>the set or sets of physical properties for which the
+approximation is to be generated</dd>
+<dt>squeeze <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance</dd>
+<dt>filter_ignore <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span></dt>
+<dd>if None, the kernel density representation returned
+covers all filters; otherwise this must be a listlike of
+bool, one entry per filter, with a value of False
+indicating that filter should be excluded from the
+values returned; suppressing filters can allow for more
+efficient representations</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphot), or a list of such arrays</span></dt>
+<dd>an array containing the list of points to be used for
+the approximation</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span></dt>
+<dd>an array containing the weights of the points</dd>
+</dl>
+</dd>
+<dt>Notes:</dt>
+<dd>if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.make_approx_phys">
+<code class="descname">make_approx_phys</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>squeeze=True</em>, <em>phys_ignore=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.make_approx_phys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an object that can be used for a fast approximation of
+the PDF of physical properties that corresponds to a set of
+photometric properties. The PDF produced by summing over the
+points returned is guaranteed to account for at least 1-reltol
+of the marginal photometric probability, and to represent the
+shape of the PDF in photometric space within a local accuracy
+of reltol as well.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span></dt>
+<dd>the set or sets of photometric properties for which the
+approximation is to be generated</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span></dt>
+<dd>array giving photometric errors; the number of elements
+in the output lists will be the size that results from
+broadcasting together the leading dimensions of phot and
+photerr</dd>
+<dt>squeeze <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the representation returned will be squeezed to
+minimize the number of points included, using reltol as
+the error tolerance</dd>
+<dt>phys_ignore <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span></dt>
+<dd>if None, the kernel density representation returned
+covers all physical properties; otherwise this must be a
+listlike of bool, one entry per physical dimension, with
+a value of False indicating that dimension should be
+excluded from the values returned; suppressing
+dimensions can allow for more efficient representations</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphys), or a list of such arrays</span></dt>
+<dd>an array containing the list of points to be used for
+the approximation, where nphys is the number of
+physical dimensions being returned</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span></dt>
+<dd>an array containing the weights of the points</dd>
+</dl>
+</dd>
+<dt>Notes:</dt>
+<dd>if the requested relative tolerance cannot be reached for
+numerical reasons (usually because the input point is too
+far from the library to allow accurate computation), x and
+wgts will be return as None, and a warning will be issued</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.mcmc">
+<code class="descname">mcmc</code><span class="sig-paren">(</span><em>photprop</em>, <em>photerr=None</em>, <em>mc_walkers=100</em>, <em>mc_steps=500</em>, <em>mc_burn_in=50</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mcmc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function returns a sample of MCMC walkers for cluster
+mass, age, and extinction</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>mc_walkers <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of walkers to use in the MCMC</dd>
+<dt>mc_steps <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps in the MCMC</dd>
+<dt>mc_burn_in <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps to consider &#8220;burn-in&#8221; and discard</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd><dl class="first last docutils">
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of sample points returned by the MCMC</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.mpdf">
+<code class="descname">mpdf</code><span class="sig-paren">(</span><em>idx</em>, <em>photprop</em>, <em>photerr=None</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mpdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the marginal probability for one or mode physical
+quantities for one or more input sets of photometric
+properties. Output quantities are computed on a grid of
+values, in the same style as meshgrid</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>idx <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>index of the physical quantity whose PDF is to be
+computed; 0 = log M, 1 = log T, 2 = A_V; if this is an
+iterable, the joint distribution of the indicated
+quantities is returned</dd>
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
+multidimensional array, the operation is vectorized over
+the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
+array, the operation is vectorized over the leading
+dimensions</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx</dd>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
+<dd>minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
+<dd>maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx</dd>
+<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
+<dd>set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, returned pdf&#8217;s will be normalized to integrate
+to 1</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
+of the output grid, for each input cluster; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.mpdf_approx">
+<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims='phys'</em>, <em>dims_return=None</em>, <em>ngrid=64</em>, <em>qmin='all'</em>, <em>qmax='all'</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mpdf_approx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the marginal posterior PDF computed from a kernel
+density approximation returned by make_approx_phys or
+make_approx_phot. Outputs are computed on a grid of values, in
+the same style as meshgrid.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, ndim), or a list of such arrays</span></dt>
+<dd>array of points retured by make_approx_phot or
+make_approx_phys</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M) or a list of such arrays</span></dt>
+<dd>array of weights returned by make_approx_phot or
+make_approx_phys</dd>
+<dt>dims <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;phys&#8217; | &#8216;phot&#8217; | arraylike of ints</span></dt>
+<dd>dimensions covered by x and wgts; the strings &#8216;phys&#8217; or
+&#8216;phot&#8217; indicate that they cover all physical or
+photometric dimensions, and correspond to the defaults
+returned by make_approx_phys and make_approx_phot,
+respectively; if dims is an array of ints, these specify
+the dimensions covered by x and wgts, where the
+physical dimensions are numbered 0, 1, ... nphys-1, and
+the photometric ones are nphys, nphys+1,
+... nphys+nphot-1</dd>
+<dt>dims_return <span class="classifier-delimiter">:</span> <span class="classifier">None or arraylike of ints</span></dt>
+<dd>if None, the output PDF has the same dimensions as
+specified in dims; if not, then dims_return must be a
+subset of dims, and a marginal PDF in certain dimensions
+will be generated</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx</dd>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217; </span></dt>
+<dd>minimum value in the output grid in each quantity; if
+this a float, it is applied to each dimension; if it is
+an iterable, it must contain the same number of elements
+as the number of dimensions being returned, as gives the
+minimum in each dimension; if it is &#8216;zoom&#8217; or &#8216;all&#8217;, the
+minimum is chosen automatically, with &#8216;zoom&#8217; focusing on
+a region encompassing the probability maximum, and &#8216;all&#8217;
+encompassing all the points in the representation</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217;</span></dt>
+<dd>same as qmin, but for the maximum of the output grid</dd>
+<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
+<dd>set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid</dd>
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, returned pdf&#8217;s will be normalized to integrate
+to 1</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
+of the output grid, for each input cluster; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.squeeze_rep">
+<code class="descname">squeeze_rep</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.squeeze_rep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes an input array of positions and weights that form a
+kernel density representation and approximates them using
+fewer points, using an error tolerance of reltol</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N, ndim)</span></dt>
+<dd>an array of points forming a kernel density
+representation; on exit, x will be resized to (M, ndim)
+with M &lt;= N</dd>
+<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N)</span></dt>
+<dd>an array of weights for the kernel density
+representation; on exit, wgts will be resized to (M),
+with M &lt;= N</dd>
+<dt>dims <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (ndim)</span></dt>
+<dd>array specifying which dimensions in the kernel density
+representation the coordinates in x correspond to; if
+left as None, they are assumed to correspond to the
+first ndim dimensions in the data set</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>Nothing</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">cluster_slug: Bayesian Inference of Star Cluster Properties</a><ul>
+<li><a class="reference internal" href="#getting-the-default-library">Getting the Default Library</a></li>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#using-cluster-slug-in-parallel">Using cluster_slug in Parallel</a></li>
+<li><a class="reference internal" href="#making-your-own-library">Making Your Own Library</a></li>
+<li><a class="reference internal" href="#full-documentation-of-slugpy-cluster-slug">Full Documentation of slugpy.cluster_slug</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="bayesphot.html"
+                        title="previous chapter">bayesphot: Bayesian Inference for Stochastic Stellar Populations</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="sfr_slug.html"
+                        title="next chapter">sfr_slug: Bayesian Inference of Star Formation Rates</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/cluster_slug.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      
+      |
+      <a href="_sources/cluster_slug.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

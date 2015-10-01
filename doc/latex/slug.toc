@@ -1,0 +1,66 @@
+\select@language {english}
+\contentsline {chapter}{\numberline {1}License}{3}{chapter.1}
+\contentsline {chapter}{\numberline {2}Introduction to SLUG}{5}{chapter.2}
+\contentsline {section}{\numberline {2.1}What Does SLUG Do?}{5}{section.2.1}
+\contentsline {section}{\numberline {2.2}Cluster Simulations and Galaxy Simulations}{5}{section.2.2}
+\contentsline {section}{\numberline {2.3}Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}{5}{section.2.3}
+\contentsline {section}{\numberline {2.4}Spectra, Photometry, and Extinction}{6}{section.2.4}
+\contentsline {section}{\numberline {2.5}Monte Carlo Simulation}{7}{section.2.5}
+\contentsline {chapter}{\numberline {3}Compiling and Installing SLUG}{9}{chapter.3}
+\contentsline {section}{\numberline {3.1}Dependencies}{9}{section.3.1}
+\contentsline {section}{\numberline {3.2}Compiling}{9}{section.3.2}
+\contentsline {chapter}{\numberline {4}Running a SLUG simulation}{11}{chapter.4}
+\contentsline {chapter}{\numberline {5}Parameter Specification}{13}{chapter.5}
+\contentsline {section}{\numberline {5.1}File Format}{13}{section.5.1}
+\contentsline {section}{\numberline {5.2}Basic Keywords}{13}{section.5.2}
+\contentsline {section}{\numberline {5.3}Simulation Control Keywords}{13}{section.5.3}
+\contentsline {section}{\numberline {5.4}Output Control Keywords}{14}{section.5.4}
+\contentsline {section}{\numberline {5.5}Physical Model Keywords}{15}{section.5.5}
+\contentsline {section}{\numberline {5.6}Photometric Filter Keywords}{16}{section.5.6}
+\contentsline {chapter}{\numberline {6}Probability Distribution Functions}{19}{chapter.6}
+\contentsline {section}{\numberline {6.1}Basic Mode}{19}{section.6.1}
+\contentsline {section}{\numberline {6.2}Advanced Mode}{21}{section.6.2}
+\contentsline {section}{\numberline {6.3}Sampling Methods}{22}{section.6.3}
+\contentsline {chapter}{\numberline {7}Output Files and Format}{25}{chapter.7}
+\contentsline {section}{\numberline {7.1}The \texttt {integrated\_prop} File}{25}{section.7.1}
+\contentsline {section}{\numberline {7.2}The \texttt {integrated\_spec} File}{26}{section.7.2}
+\contentsline {section}{\numberline {7.3}The \texttt {integrated\_phot} File}{27}{section.7.3}
+\contentsline {section}{\numberline {7.4}The \texttt {cluster\_prop} File}{28}{section.7.4}
+\contentsline {section}{\numberline {7.5}The \texttt {cluster\_spec} File}{29}{section.7.5}
+\contentsline {section}{\numberline {7.6}The \texttt {cluster\_phot} File}{30}{section.7.6}
+\contentsline {chapter}{\numberline {8}Filters and Filter Data}{33}{chapter.8}
+\contentsline {chapter}{\numberline {9}cloudy\_slug: An Automated Interface to cloudy}{35}{chapter.9}
+\contentsline {section}{\numberline {9.1}cloudy\_slug Basics}{35}{section.9.1}
+\contentsline {section}{\numberline {9.2}The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}{36}{section.9.2}
+\contentsline {subsection}{\numberline {9.2.1}Integrated Mode}{36}{subsection.9.2.1}
+\contentsline {subsection}{\numberline {9.2.2}Cluster Mode}{36}{subsection.9.2.2}
+\contentsline {section}{\numberline {9.3}The cloudy\_slug Input Template}{37}{section.9.3}
+\contentsline {section}{\numberline {9.4}The cloudy\_slug Interface Script}{38}{section.9.4}
+\contentsline {section}{\numberline {9.5}Full Description of cloudy\_slug Output}{39}{section.9.5}
+\contentsline {subsection}{\numberline {9.5.1}The \texttt {integrated\_cloudylines} File}{39}{subsection.9.5.1}
+\contentsline {subsection}{\numberline {9.5.2}The \texttt {integrated\_cloudyspec} File}{40}{subsection.9.5.2}
+\contentsline {subsection}{\numberline {9.5.3}The \texttt {integrated\_cloudyphot} File}{41}{subsection.9.5.3}
+\contentsline {subsection}{\numberline {9.5.4}The \texttt {cluster\_cloudylines} File}{42}{subsection.9.5.4}
+\contentsline {subsection}{\numberline {9.5.5}The \texttt {cluster\_cloudyspec} File}{42}{subsection.9.5.5}
+\contentsline {subsection}{\numberline {9.5.6}The \texttt {cluster\_cloudyphot} File}{43}{subsection.9.5.6}
+\contentsline {chapter}{\numberline {10}slugpy -- The Python Helper Library}{45}{chapter.10}
+\contentsline {section}{\numberline {10.1}Basic Usage}{45}{section.10.1}
+\contentsline {section}{\numberline {10.2}Full Documentation of slugpy}{47}{section.10.2}
+\contentsline {section}{\numberline {10.3}Full Documentation of slugpy.cloudy}{59}{section.10.3}
+\contentsline {section}{\numberline {10.4}Full Documentation of slugpy.sfr\_slug}{65}{section.10.4}
+\contentsline {chapter}{\numberline {11}Test Problems}{69}{chapter.11}
+\contentsline {section}{\numberline {11.1}Problem \texttt {example}: basic galaxy simulation}{69}{section.11.1}
+\contentsline {section}{\numberline {11.2}Problem \texttt {example\_cluster}: basic cluster simulation}{69}{section.11.2}
+\contentsline {section}{\numberline {11.3}Problem \texttt {constsampl}: importance of constrained sampling}{70}{section.11.3}
+\contentsline {section}{\numberline {11.4}Problem \texttt {sampling}: different sampling techniques}{70}{section.11.4}
+\contentsline {section}{\numberline {11.5}Problem \texttt {imfchoice}: different IMF implementations}{70}{section.11.5}
+\contentsline {section}{\numberline {11.6}Problem \texttt {cmfchoice}: different CMF implementations}{71}{section.11.6}
+\contentsline {section}{\numberline {11.7}Problem \texttt {sfhsampling}: realizations of SFH}{71}{section.11.7}
+\contentsline {section}{\numberline {11.8}Problem \texttt {cldisrupt}: cluster disruption at work}{71}{section.11.8}
+\contentsline {section}{\numberline {11.9}Problem \texttt {clfraction}: cluster fraction at work}{71}{section.11.9}
+\contentsline {section}{\numberline {11.10}Problem \texttt {spectra}: full spectra}{71}{section.11.10}
+\contentsline {section}{\numberline {11.11}Problem \texttt {redshift}: trivial redshift example}{71}{section.11.11}
+\contentsline {chapter}{\numberline {12}Acknowledgements}{73}{chapter.12}
+\contentsline {chapter}{\numberline {13}Indices and tables}{75}{chapter.13}
+\contentsline {chapter}{Python Module Index}{77}{section*.43}
+\contentsline {chapter}{Index}{79}{section*.44}
