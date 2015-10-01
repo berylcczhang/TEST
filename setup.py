@@ -53,6 +53,8 @@ setup(name='SLUGPY',
                                 osp.join(bpc, 'kernel_density.c'),
                                 osp.join(bpc, 'kernel_density_neighbors.c'),
                                 osp.join(bpc, 'kernel_density_rep.c'),
-                                osp.join(bpc, 'kernel_density_util.c')
-                            ])]
+                                osp.join(bpc, 'kernel_density_util.c'),
+                                osp.join(bpc, 'kernel_density_draw.c')
+                            ],
+                               libraries=['gsl', 'gslcblas'])]
   )
