@@ -209,7 +209,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if not read_filters in filters:
                     raise IOError(
                         "requested filter {:s} not available!".
-                        format(f))
+                        format(read_filters))
 
         # If only reading filter data, don't read any further
         if not filters_only:
@@ -339,7 +339,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if not read_filters in filters:
                     raise IOError(
                         "requested filter {:s} not available!".
-                        format(f))
+                        format(read_filters))
 
         # Read the bits that tells us if we're using nebular emission
         # and extinction
@@ -540,7 +540,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                     if not read_filters in filters:
                         raise IOError(
                             "requested filter {:s} not available!".
-                            format(f))
+                            format(read_filters))
 
             # Search for filters with names that end in _neb, _ex, or
             # _neb_ex, indicating that they include the effects of the
@@ -668,7 +668,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                     if not read_filters in filters:
                         raise IOError(
                             "requested filter {:s} not available!".
-                            format(f))
+                            format(read_filters))
 
             # Search for filters with names that end in _neb, _ex, or
             # _neb_ex, indicating that they include the effects of the
