@@ -30,10 +30,11 @@ or::
 
 instead.
 
-A note on compiling slugpy with setup.py: the slugpy c extensions require the `GNU Scientific Library <http://www.gnu.org/software/gsl/>`_; to build or install slugpy, the appropriate headers must be in your default include path. If they are not, you can tell setup where they are located by creating a file named ``setup.cfg`` in the slug2 directory, which contains the lines::
+A note on compiling slugpy with setup.py: the slugpy c extensions require the `GNU Scientific Library <http://www.gnu.org/software/gsl/>`_; to build or install slugpy, the appropriate headers must be in your default include path, and the appropriate libraries in your default link path. If they are not, you can tell setup where they are located by creating a file named ``setup.cfg`` in the slug2 directory, which contains the lines::
 
   [build_ext]
   include_dirs=/PATH/TO/GSL/HEADER
+  library_dirs=/PATH/TO/GSL/LIBRARIES
 
 Then you should be able to build and install slugpy with ``setup.py``.
 

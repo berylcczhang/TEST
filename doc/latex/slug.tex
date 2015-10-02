@@ -19,7 +19,7 @@
 
 
 \title{slug Documentation}
-\date{September 25, 2015}
+\date{October 01, 2015}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -1750,11 +1750,12 @@ python setup.py install \PYGZhy{}\PYGZhy{}user
 
 instead.
 
-A note on compiling slugpy with setup.py: the slugpy c extensions require the \href{http://www.gnu.org/software/gsl/}{GNU Scientific Library}; to build or install slugpy, the appropriate headers must be in your default include path. If they are not, you can tell setup where they are located by creating a file named \code{setup.cfg} in the slug2 directory, which contains the lines:
+A note on compiling slugpy with setup.py: the slugpy c extensions require the \href{http://www.gnu.org/software/gsl/}{GNU Scientific Library}; to build or install slugpy, the appropriate headers must be in your default include path, and the appropriate libraries in your default link path. If they are not, you can tell setup where they are located by creating a file named \code{setup.cfg} in the slug2 directory, which contains the lines:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 [build\PYGZus{}ext]
 include\PYGZus{}dirs=/PATH/TO/GSL/HEADER
+library\PYGZus{}dirs=/PATH/TO/GSL/LIBRARIES
 \end{Verbatim}
 
 Then you should be able to build and install slugpy with \code{setup.py}.
