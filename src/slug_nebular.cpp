@@ -49,7 +49,7 @@ slug_nebular::
 slug_nebular(const char *atomic_dir,
 	     const std::vector<double>& lambda_in,
 	     const char *trackname,
-	     const double n_in, const double T_in,
+	     double n_in, double T_in,
 	     const double logU,
 	     const double phi_in,
 	     const double z,
@@ -62,18 +62,25 @@ slug_nebular(const char *atomic_dir,
   lambda_tmp.push_back(constants::lambdaHI);
   ion_filter = new slug_filter(lambda_tmp, response, 0.0, 0.0, true);
 
-  // Check and the density and temperature are in the allowed range
+  // Check and the density and temperature are in the allowed range;
+  // issue warning if not
   if (T_in > 0) {
     if ((T_in < Tmin) || (T_in > Tmax)) {
-      cerr << "slug: error: nebular temperature set to " << T_in
-	   << "; allowed range is " << Tmin << " - " << Tmax << endl;
-      exit (1);
+      double Tnew;
+      if (T_in < Tmin) Tnew = Tmin; else Tnew = Tmax;
+      cerr << "slug: warning: nebular temperature set to " << T_in
+	   << "; allowed range is " << Tmin << " - " << Tmax
+	   << "; setting temperature to " << Tnew << endl;
+      T_in = Tnew;
     }
   }
   if ((den < nMin) || (den >= nMax)) {
-    cerr << "slug: error: nebular density set to " << den
-	 << "; allowed range is " << nMin << " - " << nMax << endl;
-    exit (1);
+    double nNew;
+    if (den < nMin) nNew = nMin; else nNew = nMax;
+    cerr << "slug: warning: nebular density set to " << den
+	 << "; allowed range is " << nMin << " - " << nMax
+	 << "; setting density to " << nNew << endl;
+    den = nNew;
   }
 
   //////////////////////////////////////////////////////////////////////
