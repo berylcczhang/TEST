@@ -4,6 +4,8 @@ import os
 import os.path as osp
 import copy
 from subprocess import call
+from scipy import stats
+from scipy.special import erfinv
 try:
     from slugpy import *    # If slugpy is already in our path
 except ImportError:
@@ -43,7 +45,7 @@ for imf in imfs:
         if len(linesplit) == 0:
             fpout.write(line)
         elif linesplit[0] == 'output_mode':
-            fpout.write('output_mode    binary')
+            fpout.write('output_mode    fits')
         elif linesplit[0] == 'model_name':
             fnames.append('IMF_COMPARE_'+imf)
             fpout.write('model_name     '+fnames[-1]+'\n')
@@ -67,8 +69,24 @@ data = []
 for f in fnames:
     data.append(read_cluster('output/'+f))
 
-# Get mean and percentiles for spectra
+# Get density map at each wavelength at each time
 wl = data[0].wl
+specden = np.zeros((len(fnames), len(tcomp), 1000, 1221))
+for i, d in enumerate(data):
+    for j, t in enumerate(tcomp):
+        spec = d.spec[np.where(d.time == t)[0],:]
+        for k in range(1221):
+            idx = np.where(spec[:,k]>0.0)[0]
+            if len(idx) == 0:
+                continue
+            spec1 = np.log10(spec[idx,k])
+            xvec = np.linspace(np.amin(spec1), np.amax(spec1), 20)
+            tmp = stats.gaussian_kde(spec1)(xvec)
+            specden[i,j,idx,k] = np.interp(spec1, xvec, tmp)
+            specden[i,j,idx,k] \
+                = specden[i,j,idx,k]/np.amax(specden[i,j,idx,k])
+
+# Get mean and percentiles for spectra
 meanspec = np.zeros((len(fnames), len(tcomp), 1221))
 percspec = np.zeros((len(fnames), len(tcomp), 3, 1221))
 for i, d in enumerate(data):
@@ -77,21 +95,38 @@ for i, d in enumerate(data):
         meanspec[i,j,:] = np.mean(spec, axis=0)
         percspec[i,j,:,:] = np.percentile(spec, (10, 50, 90), axis=0)
 
-# Get mean and percentiles for photometry
+# Get mean and percentiles for photometry; also get errors on percentiles
 filter_wl_eff = data[0].filter_wl_eff
 filter_wl = data[0].filter_wl
 filter_response = data[0].filter_response
 QH0idx = data[0].filter_names.index('QH0')
 meanphot = np.zeros((len(fnames), len(tcomp), len(data[0].filter_names)))
 percphot = np.zeros((len(fnames), len(tcomp), 3, len(data[0].filter_names)))
+names=['$Q(\mathrm{H}^0)$', '$L_{\mathrm{bol}}$', 'FUV', 'F225',
+       'F336', 'F555', 'F814']
 for i, d in enumerate(data):
     for j, t in enumerate(tcomp):
         phot = d.phot[np.where(d.time == t),:]. \
                reshape(1000, len(data[0].filter_names))
         meanphot[i,j,:] = np.mean(phot, axis=0)
         percphot[i,j,:,:] = np.percentile(phot, (10, 50, 90), axis=0)
-names=['$Q(\mathrm{H}^0)$', '$L_{\mathrm{bol}}$', 'FUV', 'F225',
-       'F336', 'F555', 'F814']
+        phot.sort(axis=0)
+        ndat = phot.shape[0]
+        rankerr = np.sqrt(2*0.9*0.1*ndat)*erfinv(0.68)
+        rankerrmed = np.sqrt(2*0.5**2*ndat)*erfinv(0.68)
+        print "Time {:f} Myr,".format(t/1e6) + " IMF " + imfs[i] + \
+            ": 10th percentile     50th percentile    90th percentile"
+        for k in range(phot.shape[1]):
+            print "{:10s}: {:f} -{:f} +{:f} dex    {:f} -{:f} +{:f} dex  {:f} -{:f} +{:f} dex".\
+                format(names[k], np.log10(phot[0.1*ndat,k]), 
+                       np.log10(phot[0.1*ndat,k]/phot[0.1*ndat-np.ceil(rankerr),k]),
+                       np.log10(phot[0.1*ndat+np.ceil(rankerr),k]/phot[0.1*ndat,k]),
+                       np.log10(phot[0.5*ndat,k]), 
+                       np.log10(phot[0.5*ndat,k]/phot[0.5*ndat-np.ceil(rankerrmed),k]),
+                       np.log10(phot[0.5*ndat+np.ceil(rankerrmed),k]/phot[0.5*ndat,k]),
+                       np.log10(phot[0.9*ndat,k]), 
+                       np.log10(phot[0.9*ndat,k]/phot[0.9*ndat-np.ceil(rankerr),k]),
+                       np.log10(phot[0.9*ndat+np.ceil(rankerr),k]/phot[0.9*ndat,k]))
 
 # Get cumulative and differential distributions for photometry
 nbin = 20
@@ -112,19 +147,20 @@ for i, d in enumerate(data):
 
 
 # Plot spectra
-plt.figure(1, figsize=(10,8))
-
+fig = plt.figure(1, figsize=(10,8))
+ptskip = 10
 for i, t in enumerate(tcomp):
 
     # Create panel
     ax=plt.subplot(4,3,3*i+1)
 
     # Chabrier
-    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'g', lw=2)
-    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'k', lw=1)
-    #chabrier_med,=plt.loglog(wl, percspec[0,i,1,:], 'g', lw=1)
-    plt.fill_between(wl, percspec[0,i,0,:]+1.0, percspec[0,i,2,:]+1.0, 
-                     color='g', alpha=0.25)
+    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'k', lw=2)
+    spec = data[0].spec[np.where(data[0].time == t)[0],:]
+    plt.scatter(np.tile(wl,(1000,))[::ptskip], np.ravel(spec)[::ptskip],
+                marker='.', linewidths=0, 
+                c=np.ravel(specden[0,i,:,:])[::ptskip],
+                vmin=0, vmax=1, rasterized=True)
 
     # Axis labels
     if i != len(tcomp)-1:
@@ -145,11 +181,12 @@ for i, t in enumerate(tcomp):
     ax=plt.subplot(4,3,3*i+2)
 
     #  Kroupa
-    kroupa_mean,=plt.loglog(wl, meanspec[1,i,:], 'b', lw=2)
-    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'k', lw=1)
-    #kroupa_med,=plt.loglog(wl, percspec[1,i,1,:], 'b', lw=1)
-    plt.fill_between(wl, percspec[1,i,0,:]+1.0, percspec[1,i,2,:]+1.0, 
-                     color='b', alpha=0.25)
+    kroupa_mean,=plt.loglog(wl, meanspec[1,i,:], 'k', lw=2)
+    spec = data[1].spec[np.where(data[1].time == t)[0],:]
+    plt.scatter(np.tile(wl,(1000,))[::ptskip], np.ravel(spec)[::ptskip],
+                marker='.', linewidths=0, 
+                c=np.ravel(specden[1,i,:,:])[::ptskip],
+                vmin=0, vmax=1, rasterized=True)
 
     # Axis labels
     if i != len(tcomp)-1:
@@ -170,11 +207,12 @@ for i, t in enumerate(tcomp):
     ax=plt.subplot(4,3,3*i+3)
 
     #  WK06
-    wk06_mean,=plt.loglog(wl, meanspec[2,i,:], 'r', lw=2)
-    chabrier_mean,=plt.loglog(wl, meanspec[0,i,:], 'k', lw=1)
-    #wk06_med,=plt.loglog(wl, percspec[2,i,1,:], 'r', lw=1)
-    plt.fill_between(wl, percspec[2,i,0,:]+1.0, percspec[2,i,2,:]+1.0, 
-                     color='r', alpha=0.25)
+    wk06_mean,=plt.loglog(wl, meanspec[2,i,:], 'k', lw=2)
+    spec = data[2].spec[np.where(data[2].time == t)[0],:]
+    plt.scatter(np.tile(wl,(1000,))[::ptskip], np.ravel(spec)[::ptskip],
+                marker='.', linewidths=0, 
+                c=np.ravel(specden[2,i,:,:])[::ptskip],
+                vmin=0, vmax=1, rasterized=True)
 
     # Axis labels
     if i != len(tcomp)-1:
@@ -192,11 +230,16 @@ for i, t in enumerate(tcomp):
         plt.title('Weidner-Kroupa')
 
     # Labels
-    plt.text(4e3, 4e36, 't = {:d} Myr'.format(int(tcomp[i]/1e6)))
+    plt.text(2.5e3, 4e36, 't = {:d} Myr'.format(int(tcomp[i]/1e6)))
 
 # Adjust subplot spacing
 plt.subplots_adjust(hspace=0, wspace=0, bottom=0.1, top=0.95, 
-                    left=0.12, right=0.95)
+                    left=0.12, right=0.88)
+
+# Add colorbar
+axcbar = fig.add_axes((0.88, 0.1, 0.03, 0.85))
+cbar = plt.colorbar(cax=axcbar)
+cbar.set_label('Probability density')
 
 # Save
 plt.savefig('imfvary1.pdf')
@@ -217,7 +260,7 @@ for i, t in enumerate(tcomp):
     chabrier_spec,=plt.loglog(wl, meanspec[0,i,:], 'g', lw=1)
     plt.errorbar(filter_wl_eff[2:], percphot[0,i,1,2:],
                  yerr=np.abs(percphot[0,i,::2,2:]-percphot[0,i,1,2:]),
-                 fmt=None, ecolor='g', elinewidth=2)
+                 fmt='none', ecolor='g', elinewidth=2)
 
     # Kroupa, GALEX and HST filters
     kroupa_mean,=plt.loglog(np.array(filter_wl_eff[2:])*offset, 
@@ -228,7 +271,7 @@ for i, t in enumerate(tcomp):
     kroupa_spec,=plt.loglog(wl, meanspec[1,i,:], 'b', lw=1)
     plt.errorbar(np.array(filter_wl_eff[2:])*offset, percphot[1,i,1,2:],
                  yerr=np.abs(percphot[1,i,::2,2:]-percphot[1,i,1,2:]),
-                 fmt=None, ecolor='b', elinewidth=2)
+                 fmt='none', ecolor='b', elinewidth=2)
 
     # WK06, GALEX and HST filters
     wk06_mean,=plt.loglog(np.array(filter_wl_eff[2:])/offset, 
@@ -239,7 +282,7 @@ for i, t in enumerate(tcomp):
     wk06_spec,=plt.loglog(wl, meanspec[2,i,:], 'r', lw=1)
     plt.errorbar(np.array(filter_wl_eff[2:])/offset, percphot[2,i,1,2:],
                  yerr=np.abs(percphot[2,i,::2,2:]-percphot[2,i,1,2:]),
-                 fmt=None, ecolor='r', elinewidth=2)
+                 fmt='none', ecolor='r', elinewidth=2)
 
     # Legend
     if i==len(tcomp)-1:
@@ -250,7 +293,7 @@ for i, t in enumerate(tcomp):
     # Filter responses
     if i==0:
         for j in range(len(filter_wl)):
-            if filter_wl[j] == None:
+            if filter_wl[j] is None:
                 continue
             plt.plot(filter_wl[j], 
                      filter_response[j]*1.0e35
@@ -283,21 +326,21 @@ for i, t in enumerate(tcomp):
     plt.errorbar([700], [percphot[0,i,1,QH0idx]],
                  yerr=np.abs(percphot[0,i,::2,QH0idx].reshape(2,1)
                              -[percphot[0,i,1,QH0idx]]),
-                 fmt=None, ecolor='g', elinewidth=2)
+                 fmt='none', ecolor='g', elinewidth=2)
     plt.loglog([700*offset], [meanphot[1,i,QH0idx]], 'bs')
     plt.plot([700*offset], [percphot[1,i,1,QH0idx]], 's',
              mfc='w', mec='b', mew=2)
     plt.errorbar([700*offset], [percphot[1,i,1,QH0idx]],
                  yerr=np.abs(percphot[1,i,::2,QH0idx].reshape(2,1)
                              -[percphot[1,i,1,QH0idx]]),
-                 fmt=None, ecolor='b', elinewidth=2)
+                 fmt='none', ecolor='b', elinewidth=2)
     plt.loglog([700/offset], [meanphot[2,i,QH0idx]], 'rs')
     plt.plot([700/offset], [percphot[2,i,1,QH0idx]], 's',
              mfc='w', mec='r', mew=2)
     plt.errorbar([700/offset], [percphot[2,i,1,QH0idx]],
                  yerr=np.abs(percphot[2,i,::2,QH0idx].reshape(2,1)
                              -[percphot[2,i,1,QH0idx]]),
-                 fmt=None, ecolor='r', elinewidth=2)
+                 fmt='none', ecolor='r', elinewidth=2)
     plt.ylim([1e48,2e50])
     plt.xlim([5e2, 1e4])
     plt.ylabel(r'$Q(\mathrm{H}^0)$ [phot s$^{-1}$]')
