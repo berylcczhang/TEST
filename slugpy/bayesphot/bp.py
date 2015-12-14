@@ -682,7 +682,7 @@ class bp(object):
             # If new bandwidth equals old bandwidth, do nothing
             return
 
-        elif bw != 'auto':
+        elif bw is not 'auto':
             # If we've been given a specified bandwidth, set to that
             if hasattr(bw, '__iter__'):
                 self.__bandwidth = np.copy(bw)
@@ -2089,7 +2089,7 @@ class bp(object):
                         else:
                             qmin.append(xtmp[np.argmax(wgtsum > 0.001)])
                     if get_qmax:
-                        if wgtsum[-1] > 0.999 and qmax != 'all':
+                        if wgtsum[-1] > 0.999 and qmax is not 'all':
                             qmax.append(xtmp[np.argmax(wgtsum >
                                                        0.999)])
                         else:
