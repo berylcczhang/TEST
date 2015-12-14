@@ -55,6 +55,9 @@ LDLIBFLAGS      = -lgsl -lgslcblas -lboost_system$(MACH_BOOST_TAG) \
 ifdef LD_LIBRARY_PATH
      LDLIBFLAGS += -L$(LD_LIBRARY_PATH)
 endif
+ifdef LIBRARY_PATH
+     LDLIBFLAGS += -L$(LIBRARY_PATH)
+endif
 ifdef BOOST_LIB_PATH
      LDLIBFLAGS += -L$(BOOST_LIB_PATH)
 endif

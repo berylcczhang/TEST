@@ -53,6 +53,9 @@ LDLIBFLAGS      = -lgsl -lgslcblas
 ifdef LD_LIBRARY_PATH
      LDLIBFLAGS += -L$(LD_LIBRARY_PATH)
 endif
+ifdef LIBRARY_PATH
+     LDLIBFLAGS += -L$(LIBRARY_PATH)
+endif
 ifdef GSL_LIB_PATH
      LDLIBFLAGS += -L$(GSL_LIB_PATH)
 endif
