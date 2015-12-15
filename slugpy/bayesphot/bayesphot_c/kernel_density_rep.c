@@ -156,7 +156,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
       /* Add the contributions of points in this leaf, and store its
 	 points in the output arrays */
       for (i=0; i<kd->tree->tree[curnode].npt; i++) {
-      
+
 	/* Get distance */
 	d2 = dist2(&(kd->tree->tree[curnode].x[kd->tree->ndim*i]), x,
 		   kd->tree->ndim, ndim, NULL, dims, kd->h, 
@@ -164,7 +164,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
       
 	/* Compute weight of point */
 	wgttmp[npt] = exp(-d2/2.0);
-	if (kd->tree->tree[ptr].dptr != NULL) 
+	if (kd->tree->tree[curnode].dptr != NULL) 
 	  wgttmp[npt] *= ((double *) kd->tree->tree[curnode].dptr)[i];
 
 	/* Store point in output array */
@@ -184,7 +184,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 	    kd->tree->tree[curnode].x[kd->tree->ndim*i+j];
 	  dimptr++;
 	}
- 
+
         /* Add to sum and increment counter */
 	wgt_in += wgttmp[npt];
 	npt++;
@@ -202,7 +202,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
       /* This node is not a leaf */
 
       /* Allocate more memory in the node list if needed */
-      if (nlist+1 == nlist_alloc) {
+      if (nlist+1 >= nlist_alloc) {
 	nlist_alloc *= 2;
 	if (!(nodelist = (unsigned long *) 
 	      realloc(nodelist, nlist_alloc*sizeof(unsigned long)))) {
