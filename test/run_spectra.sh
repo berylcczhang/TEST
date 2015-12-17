@@ -6,4 +6,5 @@
 $SLUG_DIR/bin/slug $SLUG_DIR/param/spectra_1.param 
 $SLUG_DIR/bin/slug $SLUG_DIR/param/spectra_2.param 
 $SLUG_DIR/bin/slug $SLUG_DIR/param/spectra_3.param 
-$SLUG_DIR/bin/slug $SLUG_DIR/param/spectra_4.param
+$SLUG_DIR/bin/slug $SLUG_DIR/param/spectra_4.param 
+
