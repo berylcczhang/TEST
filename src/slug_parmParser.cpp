@@ -61,7 +61,7 @@ slug_parmParser::slug_parmParser(int argc, char **argv) {
 
   // Try to open parameter file, and exit with error message if we
   // can't
-  ifstream paramFile;
+  std::ifstream paramFile;
   paramFile.open(paramFileName.c_str(), ios::in);
   if (!paramFile.is_open()) {
     cerr << "slug: error: unable to open file " 
@@ -176,7 +176,7 @@ slug_parmParser::setDefaults() {
 ////////////////////////////////////////////////////////////////////////
 
 void
-slug_parmParser::parseFile(ifstream &paramFile) {
+slug_parmParser::parseFile(std::ifstream &paramFile) {
   string line;
   while (!(paramFile.eof())) {
 
@@ -607,7 +607,7 @@ slug_parmParser::writeParams() const {
   full_path /= fname;
 
   // Open file for output
-  ofstream paramFile;
+  std::ofstream paramFile;
   paramFile.open(full_path.c_str(), ios::out);
   if (!paramFile.is_open()) {
     cerr << "slug error: unable to open parameter summmary file " 
