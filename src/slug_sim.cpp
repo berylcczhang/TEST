@@ -52,7 +52,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.read_rng_seed()) {
 
     // Read seed from file
-    ifstream seed_file;
+    std::ifstream seed_file;
     string seed_file_name = pp.rng_seed_file();
     if (pp.get_rng_offset() != 0) {
       stringstream ss;
@@ -83,7 +83,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 
     // Save the rng seed if requested
     if (pp.save_rng_seed()) {
-      ofstream seed_file;
+      std::ofstream seed_file;
       string seed_file_name = pp.rng_seed_file();
       if (pp.get_rng_offset() != 0) {
 	stringstream ss;
@@ -1701,7 +1701,7 @@ void slug_sim::open_cluster_phot() {
 ////////////////////////////////////////////////////////////////////////
 // Write out a separator
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::write_separator(ofstream& file, 
+void slug_sim::write_separator(std::ofstream& file, 
 			       const unsigned int width) {
   string sep;
   for (unsigned int i=0; i<width; i++) sep += "-";
