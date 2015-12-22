@@ -50,3 +50,6 @@ clean:
 	@(rm -f slugpy/bayesphot/bayesphot.so)
 	@(rm -f slugpy/bayesphot/bayesphot.dylib)
 	@(rm -f slugpy/bayesphot/bayesphot.dll)
+	@(rm -f src/libslug.so)
+	@(rm -f src/libslug.dylib)
+	@(rm -f src/libslug.dll)
