@@ -77,6 +77,8 @@ ifdef FITS_LIB_PATH
      LDLIBFLAGS += -L$(FITS_LIB_PATH)
 endif
 
+CXXFLAGS +=  $(INCFLAGS) $(DEFINES) $(CLIBFLAGS)
+LDFLAGS  +=  $(LDLIBFLAGS)
 
 # Name for executable
 EXENAME		= slug
@@ -90,26 +92,36 @@ OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
-.PHONY: all debug
-all: CXXFLAGS += $(CXXOPTFLAGS) $(INCFLAGS) $(DEFINES) $(CLIBFLAGS)
-all: LDFLAGS += $(LDOPTFLAGS) $(LDLIBFLAGS)
-all: $(EXENAME)
-all: $(LIBNAME)
+.PHONY: all exe debug lib debuglib compile clean
 
+
+exe: CXXFLAGS += $(CXXOPTFLAGS)
+exe: LDFLAGS  += $( LDOPTFLAGS)
+exe: $(EXENAME) 
+
+debug: CXXFLAGS += $(CXXDEBFLAGS)
+debug: LDFLAGS  += $( LDDEBFLAGS)
+debug: $(EXENAME)
+
+lib: CXXFLAGS += $(CXXOPTFLAGS)
+lib: LDFLAGS  += $( LDOPTFLAGS)
+lib: $(LIBNAME)
+
+debuglib: CXXFLAGS += $(CXXDEBFLAGS)
+debuglib: LDFLAGS  += $( LDDEBFLAGS)
+debuglib: $(LIBNAME)
+
+all: exe
+all: lib
 
 # Include dependencies
 -include $(DEPS)
 
-debug: CXXFLAGS += $(CXXDEBFLAGS) $(INCFLAGS) $(DEFINES) $(CLIBFLAGS)
-debug: LDFLAGS += $(LDDEBFLAGS) $(LDLIBFLAGS)
-debug: $(EXENAME)
-debug: $(LIBNAME)
+$(EXENAME): $(OBJECTS)
+	$(CXX) -o $(EXENAME) $^ $(LDFLAGS) $(LDLIBFLAGS)
 
-$(EXENAME):	$(OBJECTS)
-	$(CXX) -o $(EXENAME) $^ $(LDFLAGS)
-
-$(LIBNAME):	$(OBJECTS)
-	$(CC) -o $(LIBNAME) $^ $(LDFLAGS) $(DYNLIBFLAG)
+$(LIBNAME): $(OBJECTS)
+	$(CC) -o $(LIBNAME) $^ $(LDFLAGS) $(LDLIBFLAGS) $(DYNLIBFLAG)
 
 compile:	$(OBJECTS)
 

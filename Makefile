@@ -13,7 +13,7 @@ bayesphot:
 	@(cp slugpy/bayesphot/bayesphot_c/bayesphot.* slugpy/bayesphot)
 
 slug:
-	cd src && $(MAKE) all MACHINE=$(MACHINE) FITS=$(FITS)
+	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
