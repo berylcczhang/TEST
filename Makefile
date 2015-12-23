@@ -13,7 +13,7 @@ bayesphot:
 	@(cp slugpy/bayesphot/bayesphot_c/bayesphot.* slugpy/bayesphot)
 
 slug:
-	cd src && $(MAKE) all MACHINE=$(MACHINE) FITS=$(FITS)
+	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
@@ -50,3 +50,6 @@ clean:
 	@(rm -f slugpy/bayesphot/bayesphot.so)
 	@(rm -f slugpy/bayesphot/bayesphot.dylib)
 	@(rm -f slugpy/bayesphot/bayesphot.dll)
+	@(rm -f src/libslug.so)
+	@(rm -f src/libslug.dylib)
+	@(rm -f src/libslug.dll)

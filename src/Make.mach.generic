@@ -9,6 +9,9 @@ MACH_CC		  = cc
 # Flag needed to specify c++11 standard
 MACH_C11FLAG      = -std=c++11
 
+# Flag needed to link off the correct std c++ library
+MACH_CXXLIB       = -lstdc++
+
 # Optimization flags
 MACH_CXXOPTFLAGS  = -O2
 MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
