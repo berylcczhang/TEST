@@ -744,6 +744,39 @@ class cluster_slug(object):
             f['bp'].priors = self.__priors
 
     ##################################################################
+    # Define the pobs property. This wraps around the corresponding
+    # property for bp objects, with the complication that if there's
+    # more than one filter set is has to accept or return a list
+    ##################################################################
+    @property
+    def pobs(self):
+        po = []
+        for f in self.__filtersets:
+            po.append(f['bp'].pobs)
+        return po
+
+    @pobs.setter
+    def pobs(self, po):
+        if not hasattr(po, '__iter__'):
+            # Is po an iterable? If not, assign it to every filter set
+            for f in self.__filtersets:
+                f['bp'].pobs = po
+        elif len(self.__filtersets) == 1:
+            # po is an iterable, but we have only one filter set; this
+            # probably means we've been given an array, and we should
+            # just assign it to our 1 filter set; if that doesn't
+            # work, try assigning just that one element
+            try:
+                self.__filtersets[0]['bp'].pobs = po
+            except:
+                self.__filtersets[0]['bp'].pobs = po[0]
+        else:
+            # Multiple filter sets, iterable, so iterate
+            for f, p in zip(self.__filtersets, po):
+                f['bp'].pobs = p
+                
+    
+    ##################################################################
     # Define properties that update the current values for the
     # cluster_slug object, and also update all the child bp objects.
     ##################################################################
@@ -933,6 +966,177 @@ class cluster_slug(object):
                            grid=grid, norm=norm)
 
 
+    def mpdf_phot(self, idx, physprop, ngrid=128,
+                  qmin=None, qmax=None, grid=None, norm=True,
+                  filters=None):
+        """
+        Returns the marginal probability for one or mode photometric
+        quantities corresponding to an input set or distribution of
+        physical properties. Output quantities are computed on a grid of
+        values, in the same style as meshgrid.
+
+        Parameters:
+           idx : int or listlike containing ints
+              index of the photometric quantity whose PDF is to be
+              computed, starting at 0; indices correspond to the order
+              of elements in the filters argument; if this is an
+              iterable, the joint distribution of the indicated
+              quantities is returned
+           physprop : arraylike, shape (nphys) or (..., nphys)
+              physical properties to be used; if this is an array of
+              nphys elements, these give the physical properties; if
+              it is a multidimensional array, the operation is
+              vectoried over the leading dimensions
+              physical properties -- the function must take an array
+              of (nphys) elements as an input, and return a floating
+              point value representing the PDF evaluated at that set
+              of physical properties as an output
+           ngrid : int or listlike containing ints
+              number of points in each dimension of the output grid;
+              if this is an iterable, it must have the same number of
+              elements as idx
+           qmin : float or listlike
+              minimum value in the output grid in each quantity; if
+              left as None, defaults to the minimum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           qmax : float or listlike
+              maximum value in the output grid in each quantity; if
+              left as None, defaults to the maximum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           grid : listlike of arrays
+              set of values defining the grid on which the PDF is to
+              be evaluated, in the same format used by meshgrid
+           norm : bool
+              if True, returned pdf's will be normalized to integrate
+              to 1
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns:
+           grid_out : array
+              array of values at which the PDF is evaluated; contents
+              are the same as returned by meshgrid
+           pdf : array
+              array of marginal posterior probabilities at each point
+              of the output grid, for each input set of properties; the leading
+              dimensions match the leading dimensions produced by
+              broadcasting the leading dimensions of photprop and
+              photerr together, while the trailing dimensions match
+              the dimensions of the output grid
+        """
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    mpdf_phot(idx, physprop,
+                              ngrid=ngrid, qmin=qmin, qmax=qmax, 
+                              grid=grid, norm=norm)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the logL method
+            return bp.mpdf_phot(idx, physprop,
+                                ngrid=ngrid, qmin=qmin, qmax=qmax,
+                                grid=grid, norm=norm)
+
+    def mpdf_gen(self, fixeddim, fixedprop, margindim, ngrid=128,
+                 qmin=None, qmax=None, grid=None, norm=True,
+                 filters=None):
+        """
+        Returns the marginal probability for one or more physical or
+        photometric properties, keeping other properties fixed and
+        marginalizing over other quantities. This is the most general
+        marginal PDF routine provided.
+
+        Parameters:
+           fixeddim : int | arraylike of ints | None
+              The index or indices of the physical or photometric
+              properties to be held fixed; physical properties are
+              numbered 0 ... nphys-1, and phtometric ones are numbered
+              nphys ... nphys + nphot - 1. This can also be set to
+              None, in which case no properties are held fixed.
+           fixedprop : array | None
+              The values of the properties being held fixed; the size
+              of the final dimension must be equal to the number of
+              elements in fixeddim, and if fixeddim is None, this must
+              be too
+           margindim : int | arraylike of ints | None
+              The index or indices of the physical or photometric
+              properties to be maginalized over, numbered in the same
+              way as with fixeddim; if set to None, no marginalization
+              is performed
+           qmin : float | arraylike
+              minimum value in the output grid in each quantity; if
+              left as None, defaults to the minimum value in the
+              library; if this is an iterable, it must contain a
+              number of elements equal to nphys + nphot -
+              len(fixeddim) - len(margindim)
+           qmax : float | arraylike
+              maximum value in the output grid in each quantity; if
+              left as None, defaults to the maximum value in the
+              library; if this is an iterable, it must have the same
+              number of elements as qmin
+           grid : listlike of arrays
+              set of values defining the grid on which the PDF is to
+              be evaluated, in the same format used by meshgrid
+           norm : bool
+              if True, returned pdf's will be normalized to integrate
+              to 1
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+        """
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    mpdf_gen(fixeddim, fixedprop, margindim,
+                             ngrid=ngrid, qmin=qmin, qmax=qmax,
+                             grid=grid, norm=norm)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the logL method
+            return bp.mpdf_gen(fixeddim, fixedprop, margindim,
+                               ngrid=ngrid, qmin=qmin, qmax=qmax,
+                               grid=grid, norm=norm)
+        
+        
     def mcmc(self, photprop, photerr=None, mc_walkers=100,
              mc_steps=500, mc_burn_in=50, filters=None):
         """
