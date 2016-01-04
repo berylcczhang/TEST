@@ -14,6 +14,9 @@ MACH_CXX     = g++
 # Flag needed to specify c++11 standard
 MACH_C11FLAG      = -std=c++11
 
+# Flag needed to link off the correct std c++ library
+MACH_CXXLIB       = -lstdc++
+
 # Optimization flags [fast-math is not well behaving from tests on Aug 2015]
 MACH_CXXOPTFLAGS  = -O3  
 MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)

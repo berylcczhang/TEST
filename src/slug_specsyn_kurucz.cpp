@@ -90,7 +90,7 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
 
   // Construct the file name and try to open the file
   string fname = "lcb97_"+extensions[idx]+".flu";
-  ifstream atmos_file;
+  std::ifstream atmos_file;
   path dirname_path(dirname);
   path atmos_path = dirname_path / path(fname.c_str());
   atmos_file.open(atmos_path.c_str());

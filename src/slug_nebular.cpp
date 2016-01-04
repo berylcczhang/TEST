@@ -88,7 +88,7 @@ slug_nebular(const char *atomic_dir,
   //////////////////////////////////////////////////////////////////////
 
   string fname = "HIbf.txt";
-  ifstream HIbf_file;
+  std::ifstream HIbf_file;
   path dirname(atomic_dir);
   path HIbf_path = dirname / path(fname.c_str());
   HIbf_file.open(HIbf_path.c_str());
@@ -137,7 +137,7 @@ slug_nebular(const char *atomic_dir,
   //////////////////////////////////////////////////////////////////////
 
   fname = "HeIbf.txt";
-  ifstream HeIbf_file;
+  std::ifstream HeIbf_file;
   path HeIbf_path = dirname / path(fname.c_str());
   HeIbf_file.open(HeIbf_path.c_str());
   if (!HeIbf_file.is_open()) {
@@ -186,7 +186,7 @@ slug_nebular(const char *atomic_dir,
   // Read the file containing alpha2s, the effective recombination
   // rate to the 2s state
   fname = "Halpha2s.txt";
-  ifstream Halpha2s_file;
+  std::ifstream Halpha2s_file;
   path Halpha2s_path = dirname / path(fname.c_str());
   Halpha2s_file.open(Halpha2s_path.c_str());
   if (!Halpha2s_file.is_open()) {
@@ -239,7 +239,7 @@ slug_nebular(const char *atomic_dir,
 
   // Open file
   fname = "Hlines.txt";
-  ifstream Hlines_file;
+  std::ifstream Hlines_file;
   path Hlines_path = dirname / path(fname.c_str());
   Hlines_file.open(Hlines_path.c_str());
   if (!Hlines_file.is_open()) {
@@ -317,7 +317,7 @@ slug_nebular(const char *atomic_dir,
 
     // Open file
     fname = "cloudy_tab.txt";
-    ifstream cloudytab_file;
+    std::ifstream cloudytab_file;
     path cloudytab_path = dirname / path(fname.c_str());
     cloudytab_file.open(cloudytab_path.c_str());
     if (!cloudytab_file.is_open()) {

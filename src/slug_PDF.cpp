@@ -99,7 +99,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   normalized = is_normalized;
 
   // Try to open the PDF file
-  ifstream PDFFile;
+  std::ifstream PDFFile;
   PDFFile.open(PDF);
   if (!PDFFile.is_open()) {
     // Couldn't open file, so bail out
@@ -711,7 +711,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
 // Basic parser
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
+slug_PDF::parseBasic(std::ifstream& PDFFile, vector<string> firstline,
 		     int& lineCount) {
 
   // First token of first line is breakpoints; make sure that we have
@@ -934,7 +934,7 @@ slug_PDF::parseBasic(ifstream& PDFFile, vector<string> firstline,
 // Advanced parser
 ////////////////////////////////////////////////////////////////////////
 void
-slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
+slug_PDF::parseAdvanced(std::ifstream& PDFFile, int& lineCount) {
 
   // Advanced files are formatted as a series of segments, each of
   // which follows the format
