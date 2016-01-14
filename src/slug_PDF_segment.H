@@ -91,6 +91,14 @@ public:
   virtual parseStatus parse(std::ifstream& file, int& lineCount,
 			    std::string &errMsg, double *weight = NULL);
 
+	//Function to test if this segment has any variable parameters
+	double is_seg_var() {return variable_seg;}
+	//Functions to return vector of variable parameters and the
+	//associated pdf names.
+	std::vector<std::string> v_tok() {return variable_tok;}
+	std::vector<std::string> v_names() {return variable_names;}
+
+
 protected:
 
   // Function to take as input the token values read by the parse
@@ -115,6 +123,12 @@ protected:
   // Data
   double segMin, segMax;  // Lower and upper limits of segment
   rng_type *rng;          // Pointer to random number generator
+  
+  //Data for variable parameter segment
+  bool variable_seg;						// Is segment variable?
+  std::vector<std::string> variable_tok;	// The parameters to be varied
+  std::vector<std::string> variable_names;	// The pdfs to use for these parameters
+  
 
 };
 

@@ -42,7 +42,10 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
   const vector<string> tokList = tokenList();
   vector<double> tok_vals(tokList.size());
   vector<bool> have_tok(tokList.size(), false);
-
+  
+  //Set this segment's initial variability to false
+  variable_seg = false;
+		
   // Flags for min, max, and weight. Note that, if weight == NULL,
   // we've been called in basic mode, so we shouldn't expect to read a
   // min, max, or weight; in this case we set them to true to start.
@@ -76,11 +79,32 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
     to_lower(tokens[0]);
 
     // Make sure there's no extraneous junk; if there is, bail out
-    if (tokens.size() > 2) {
-      if (tokens[2].compare(0, 1, "#") != 0) {
-	errMsg = errStr;
-	return PARSE_ERROR;
-      }
+    if (tokens.size() > 2) 
+    {
+    
+    	//Check if there is a variable parameter on this line first
+    	if (tokens[1].compare(0, 1, "V") == 0 || tokens[1].compare(0,1,"v") == 0)
+    	{
+    	
+    		//Check if there is extraneous junk on a variable line
+    		if (tokens[3].compare(0, 1, "#") != 0)
+    		{
+    			errMsg = "Expected TYPE V PDFFilename.vpar";
+    			return PARSE_ERROR;
+    		}
+    		
+    		//Set variable_seg to true
+    		//Note that this segment has a variable parameter
+	    	variable_seg = true;
+	    	
+    	}
+    
+      	else if (tokens[2].compare(0, 1, "#") != 0) 
+      	{
+			errMsg = errStr;
+			return PARSE_ERROR;
+      	}
+    
     }
 
     // Make sure we got two tokens
@@ -101,14 +125,36 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
 	segMax = lexical_cast<double>(tokens[1]);
 	have_max = true;
       } else {
+      
+      
 	// Did we get one of the other tokens expected by this class?
 	unsigned int i;
 	for (i=0; i<tokList.size(); i++) {
 	  if (tokens[0].compare(tokList[i]) == 0) {
-	    // Match found
-	    tok_vals[i] = lexical_cast<double>(tokens[1]);
-	    have_tok[i] = true;
-	    break;
+	    
+	    if (tokens[1].compare(0,1,"V") == 0 || tokens[1].compare(0,1,"v") == 0)
+	    {
+	    
+	    	//Initialise the parameter to a placeholder value
+	    	tok_vals[i] = double(0.0);
+	    	have_tok[i] = true;
+	    	
+    	
+	    	//Store the name of the parameter and the pdf to use
+	    	variable_tok.push_back(tokens[0]);
+	    	variable_names.push_back(tokens[2]);
+	    	
+	    	//Break
+	    	break;
+	    	
+	    }
+	    else
+	    {
+			// Match found
+			tok_vals[i] = lexical_cast<double>(tokens[1]);
+			have_tok[i] = true;
+			break;
+	  	}
 	  }
 	}
 
