@@ -161,6 +161,26 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
 
+
+  /**** MFCODEPLAN: Here we should code the check for variable segments in IMF
+  bool isvar; 
+  isvar = imf->initvarpdf()
+  
+  initvarpdf{
+
+  loop and check segments to raise flag
+
+  if(variable == True):
+
+    alpha = new slug_PDF()
+    var_pdf.pushback(alpha)
+
+  }
+
+  next we need to enter loops for galaxy and clusters... 
+
+  *****/
+
   // Set the cluster lifetime function
   clf = new slug_PDF(pp.get_CLF(), rng);
 
@@ -491,6 +511,21 @@ void slug_sim::galaxy_sim() {
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::cluster_sim() {
 
+  /**** MFCODEPLAN
+
+       for i=0; 100000, i++{
+
+       imf.draw new paramer
+       print to screenn..
+
+       }
+
+
+
+  ******/
+  
+
+
   // Loop over number of trials
   for (unsigned long i=0; i<pp.get_nTrials(); i++) {
 
@@ -505,6 +540,16 @@ void slug_sim::cluster_sim() {
       outTimes.resize(0);
       outTimes.push_back(out_time_pdf->draw());
     }
+
+
+    /******* MFCODEPLAN
+
+      Draw from the img_param distribution...
+
+
+     *****/
+
+
 
     // Reset the cluster if the mass is constant, destroy it and build
     // a new one if not
