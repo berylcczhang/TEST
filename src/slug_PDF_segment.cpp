@@ -87,12 +87,14 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
     	{
     	
     		//Check if there is extraneous junk on a variable line
-    		if (tokens[3].compare(0, 1, "#") != 0)
+    		if (tokens.size() > 3)
     		{
-    			errMsg = "Expected TYPE V PDFFilename.vpar";
-    			return PARSE_ERROR;
+				if (tokens[3].compare(0, 1, "#") != 0)
+				{
+					errMsg = "Expected TYPE V PDFFilename.vpar";
+					return PARSE_ERROR;
+				}
     		}
-    		
     		//Set variable_seg to true
     		//Note that this segment has a variable parameter
 	    	variable_seg = true;
@@ -136,11 +138,10 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
 	    {
 	    
 	    	//Initialise the parameter to a placeholder value
-	    	tok_vals[i] = double(0.0);
-	    	have_tok[i] = true;
-	    	
+	    	tok_vals[i] = double(-2.35);
+	    	have_tok[i] = true;	    	
     	
-	    	//Store the name of the parameter and the pdf to use
+	    	//Store the name of the parameter and the pdf to use    	    	
 	    	variable_tok.push_back(tokens[0]);
 	    	variable_names.push_back(tokens[2]);
 	    	
