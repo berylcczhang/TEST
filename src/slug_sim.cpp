@@ -162,24 +162,13 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   }
 
 
-  /**** MFCODEPLAN: Here we should code the check for variable segments in IMF
-  bool isvar; 
-  isvar = imf->initvarpdf()
-  
-  initvarpdf{
+	//Here we check for variable segments in the IMF and initialise the PDFs
+	//from which the values of these segments are drawn.
 
-  loop and check segments to raise flag
-
-  if(variable == True):
-
-    alpha = new slug_PDF()
-    var_pdf.pushback(alpha)
-
-  }
-
-  next we need to enter loops for galaxy and clusters... 
-
-  *****/
+	bool is_imf_var = false;			//Does the IMF contain variable segments?
+	
+	is_imf_var = imf->init_vsegs();		//Check for variable segments & initialise them		
+	
 
   // Set the cluster lifetime function
   clf = new slug_PDF(pp.get_CLF(), rng);
@@ -511,19 +500,24 @@ void slug_sim::galaxy_sim() {
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::cluster_sim() {
 
-  /**** MFCODEPLAN
 
-       for i=0; 100000, i++{
-
-       imf.draw new paramer
-       print to screenn..
-
-       }
-
-
-
-  ******/
   
+//TEST THE PDFs																	*****
+	std::cout << "Begin PDF draw test" << endl;	
+	bool is_imf_var = false;				//Does the IMF contain variable segments?	
+	is_imf_var = imf->check_for_vsegs();	//Check for variable segments	
+	if (is_imf_var == true)
+	{
+		for (int i=0; i<100000; i++)
+		{	
+			//Draw new parameter for slope and print to terminal
+			vector<double>	pdf_draw_value = imf->vseg_draw();	
+			int element = 0;
+			std::cout  << pdf_draw_value[element] << endl;
+		}
+	}
+	std::cout << "End PDF draw test" << endl;	
+//END OF PDF TEST																*****  
 
 
   // Loop over number of trials

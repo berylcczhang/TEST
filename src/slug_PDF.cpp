@@ -36,6 +36,8 @@ namespace std
 #include <boost/lexical_cast.hpp>
 #include <boost/random/poisson_distribution.hpp>
 
+
+
 using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
@@ -1135,3 +1137,93 @@ slug_PDF::eofError(string message) {
     cerr << message << endl;
   exit(1);
 }
+
+
+////////////////////////////////////////////////////////////////////////
+// Check for variable segments & initialise
+////////////////////////////////////////////////////////////////////////
+bool slug_PDF::init_vsegs()
+{
+
+	vsegcheck = false;						//Are any segments variable?
+	
+	//Loop over vector of segments and check for variable segments. 
+	//If segment is variable - initialise the PDFs for any variable parameters it has.
+
+	for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+	{
+
+		//Test if segment is variable and note if it is
+		if ((*s)->is_seg_var() == true)
+		{
+		
+			vsegcheck = true;				//This segment has atleast 1 variable parameter
+			
+			//Here we initialise the pdfs for the variable parameters
+			//in that segment
+
+			vector<string> pathnames = (*s)->v_names();	//Vector of paths to pdfs
+			
+			for (vector<string>::const_iterator pdfpath=pathnames.begin(); pdfpath!=pathnames.end(); ++pdfpath)
+			{
+				
+				//Path to the PDF
+				string pdfpath_str = *pdfpath;
+				const char *pdfpath_cstr = pdfpath_str.c_str();
+			
+				//Initialise the pdf for this parameter to draw values from
+				slug_PDF *param_pdf = NULL;		
+				slug_PDF *new_param_pdf = new slug_PDF(pdfpath_cstr,rng);				
+				param_pdf = (slug_PDF *)new_param_pdf;
+				
+				//Add this pdf to the vector for this segment
+				(*s)->add_param_pdf(param_pdf);
+					
+			}	
+			
+		}
+		
+	}
+	
+	return vsegcheck;
+	
+}
+////////////////////////////////////////////////////////////////////////
+// Draw values from variable segment pdfs
+////////////////////////////////////////////////////////////////////////
+vector<double> slug_PDF::vseg_draw()
+{
+	
+	vector<double> newvals;			//Vector to store the drawn values
+
+	for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+	{
+
+		//Test if segment is variable, go in and draw new parameters if it is
+		if ((*s)->is_seg_var() == true)
+		{
+			//Get the vector of pdfs
+			vector<slug_PDF *> vpdfs = (*s)->v_pdfs();
+			
+			//Here we loop over the parameters that vary, drawing new values for each
+			for (vector<slug_PDF *>::const_iterator pdf=vpdfs.begin(); pdf!=vpdfs.end(); ++pdf)
+			{
+				
+				//Draw the new value and store it for testing purposes
+				double newvalue	=	0.0;		//Value drawn from pdf				
+				newvalue = (*pdf)->draw();		//Draw new value				
+				newvals.push_back(newvalue);	//Store the new value
+				
+				//Here we will assign the new value to the correct parameter
+				//in the segment.
+					
+			}	
+			
+		}
+		
+	}
+	
+	return newvals;					//Return the drawn values for testing
+	
+}
+
