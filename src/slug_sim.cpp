@@ -540,6 +540,11 @@ void slug_sim::cluster_sim() {
 
       Draw from the img_param distribution...
 
+      ... star writing actual code that:
+      1. draws form the right distribution
+      2. assignes the drawn value to whatever param we are changing
+      3. dummy call to update_wnewparam
+      4. store the drawn param to something that is freindly with output 
 
      *****/
 
