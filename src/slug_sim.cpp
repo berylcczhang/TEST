@@ -60,8 +60,19 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       seed_file_name = ss.str();
     }
     seed_file.open(seed_file_name.c_str(), ios::in);
+    
+    
+    //Check if the file exists
+    if (!seed_file) 
+    {
+      cerr << "Can't open RNG seed file " << seed_file_name << endl;
+      exit(1);
+    }
+    
+        
     seed_file >> seed;
     seed_file.close();
+
 
   } else {
 
