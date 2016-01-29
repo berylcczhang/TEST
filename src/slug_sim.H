@@ -106,6 +106,9 @@ private:
   slug_galaxy *galaxy;        // A single galaxy
   outputMode out_mode;        // Output mode
 
+
+  bool is_imf_var = false;    //Does the IMF contain variable segments?
+
 };
 
 #endif

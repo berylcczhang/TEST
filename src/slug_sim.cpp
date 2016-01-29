@@ -69,11 +69,11 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       exit(1);
     }
     
-        
+    
     seed_file >> seed;
     seed_file.close();
 
-
+	
   } else {
 
     // Get a random see from /dev/urandom if possible
@@ -171,14 +171,11 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 	 << tracks->max_mass() << " Msun to " << imf->get_xMax()
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
-
-
-	//Here we check for variable segments in the IMF and initialise the PDFs
-	//from which the values of these segments are drawn.
-
-	bool is_imf_var = false;			//Does the IMF contain variable segments?
-	
-	is_imf_var = imf->init_vsegs();		//Check for variable segments & initialise them		
+  
+  
+  //Here we check for variable segments in the IMF and initialise the PDFs
+  //from which the values of these segments are drawn.
+  is_imf_var = imf->init_vsegs();		//Check for variable segments & initialise them		
 	
 
   // Set the cluster lifetime function
@@ -512,24 +509,6 @@ void slug_sim::galaxy_sim() {
 void slug_sim::cluster_sim() {
 
 
-  
-//TEST THE PDFs																	*****
-	std::cout << "Begin PDF draw test" << endl;	
-	bool is_imf_var = false;				//Does the IMF contain variable segments?	
-	is_imf_var = imf->check_for_vsegs();	//Check for variable segments	
-	if (is_imf_var == true)
-	{
-		for (int i=0; i<100000; i++)
-		{	
-			//Draw new parameter for slope and print to terminal
-			vector<double>	pdf_draw_value = imf->vseg_draw();	
-			int element = 0;
-			std::cout  << pdf_draw_value[element] << endl;
-		}
-	}
-	std::cout << "End PDF draw test" << endl;	
-//END OF PDF TEST																*****  
-
 
   // Loop over number of trials
   for (unsigned long i=0; i<pp.get_nTrials(); i++) {
@@ -546,21 +525,16 @@ void slug_sim::cluster_sim() {
       outTimes.push_back(out_time_pdf->draw());
     }
 
-
-    /******* MFCODEPLAN
-
-      Draw from the img_param distribution...
-
-      ... star writing actual code that:
-      1. draws form the right distribution
-      2. assignes the drawn value to whatever param we are changing
-      3. dummy call to update_wnewparam
-      4. store the drawn param to something that is freindly with output 
-
-     *****/
-
-
-
+    //Check for variable segments
+    if (is_imf_var == true)
+    {
+      //Draw new values for variable parameters
+      //Update IMF segments and recompute weights 
+      vector<double>	pdf_draw_value = imf->vseg_draw();
+      //Reset range restrictions
+      imf->set_stoch_lim(pp.get_min_stoch_mass());
+    }
+											
     // Reset the cluster if the mass is constant, destroy it and build
     // a new one if not
     if (pp.get_random_cluster_mass()) {

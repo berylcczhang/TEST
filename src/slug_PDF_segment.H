@@ -91,16 +91,21 @@ public:
   virtual parseStatus parse(std::ifstream& file, int& lineCount,
 			    std::string &errMsg, double *weight = NULL);
 
-	//Function to test if this segment has any variable parameters
-	double is_seg_var() {return variable_seg;}
-	
-	//Functions to return vector of variable parameters, the
-	//associated pdf paths and the pdfs themselves.
-	std::vector<std::string> v_tok() {return variable_tok;}
-	std::vector<std::string> v_names() {return variable_names;}
-	std::vector<slug_PDF *> v_pdfs() {return variable_param_pdfs;}
-	//Function to add a pdf to the vector
-	void add_param_pdf(slug_PDF *newpdf) {variable_param_pdfs.push_back(newpdf);}
+  //Function to test if this segment has any variable parameters
+  double is_seg_var() {return variable_seg;}
+
+  //Functions to return vector of variable parameter indices, the
+  //associated pdf paths and the pdfs themselves.
+  std::vector<int> v_tok() {return variable_tok;}
+  std::vector<std::string> v_names() {return variable_names;}
+  std::vector<slug_PDF *> v_pdfs() {return variable_param_pdfs;}
+
+  //Function to add a pdf to the vector
+  void add_param_pdf(slug_PDF *newpdf) {variable_param_pdfs.push_back(newpdf);}
+
+  //Function which handles updating the values of variable segments
+  void update(const std::vector<double>& drawn_vals);
+
 
 protected:
 
@@ -128,10 +133,12 @@ protected:
   rng_type *rng;          // Pointer to random number generator
   
   //Data for variable parameter segment
-  bool variable_seg;							// Is segment variable?
-  std::vector<std::string> variable_tok;		// The parameters to be varied
-  std::vector<std::string> variable_names;		// The pdfs to use for these parameters
-  std::vector<slug_PDF *> variable_param_pdfs;	// Vector of pdfs for the variable parameters
+  bool variable_seg;                              // Is segment variable?
+  std::vector<int> variable_tok;                  // The indices of variable parameters in alltoks
+  std::vector<std::string> variable_names;        // The paths to the pdfs for these parameters
+  std::vector<slug_PDF *> variable_param_pdfs;    // Vector of pdfs for the variable parameters
+
+  std::vector<double> alltoks;                    // Store all token values
 
 };
 

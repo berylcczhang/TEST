@@ -37,7 +37,6 @@ namespace std
 #include <boost/random/poisson_distribution.hpp>
 
 
-
 using namespace std;
 using namespace boost;
 using namespace boost::algorithm;
@@ -1092,6 +1091,22 @@ slug_PDF::parseAdvanced(ifstream& PDFFile, int& lineCount) {
   if (segments.size()==0)
     eofError("Expected to find at least 1 segment.");
 
+
+  //If one of the segments is variable, give an error and exit.
+  //Variable segments are not currently supported in advanced mode.
+
+  //Loop over the segments of the pdf
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  {
+    //Test if segment is variable. Give an error and exit if it is.
+    if ((*s)->is_seg_var() == true)
+    {
+      cerr << "slug: error: variable segments unsupported for advanced mode pdfs at this time" << endl;
+      exit(1);
+    }
+  }  
+  
+
   // Normalize segment weights if this is a normalized PDF; store
   // integrated value if not
   double cumWeight = weights[0];
@@ -1145,85 +1160,145 @@ slug_PDF::eofError(string message) {
 bool slug_PDF::init_vsegs()
 {
 
-	vsegcheck = false;						//Are any segments variable?
-	
-	//Loop over vector of segments and check for variable segments. 
-	//If segment is variable - initialise the PDFs for any variable parameters it has.
+  //Loop over vector of segments and check for variable segments. 
+  //If segment is variable - initialise the PDFs for any variable parameters it has.
 
-	for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
-	{
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  {
 
-		//Test if segment is variable and note if it is
-		if ((*s)->is_seg_var() == true)
-		{
-		
-			vsegcheck = true;				//This segment has atleast 1 variable parameter
-			
-			//Here we initialise the pdfs for the variable parameters
-			//in that segment
+    //Test if segment is variable and note if it is
+    if ((*s)->is_seg_var() == true)
+    {
 
-			vector<string> pathnames = (*s)->v_names();	//Vector of paths to pdfs
-			
-			for (vector<string>::const_iterator pdfpath=pathnames.begin(); pdfpath!=pathnames.end(); ++pdfpath)
-			{
-				
-				//Path to the PDF
-				string pdfpath_str = *pdfpath;
-				const char *pdfpath_cstr = pdfpath_str.c_str();
-			
-				//Initialise the pdf for this parameter to draw values from
-				slug_PDF *param_pdf = NULL;		
-				slug_PDF *new_param_pdf = new slug_PDF(pdfpath_cstr,rng);				
-				param_pdf = (slug_PDF *)new_param_pdf;
-				
-				//Add this pdf to the vector for this segment
-				(*s)->add_param_pdf(param_pdf);
-					
-			}	
-			
-		}
-		
-	}
+      vsegcheck = true;  //This segment has atleast 1 variable parameter
+
+      //Here we initialise the pdfs for the variable parameters
+      //in that segment
+
+      vector<string> pathnames = (*s)->v_names(); //Vector of paths to pdfs
+
+      //Loop over vector of paths for the various variable parameters in
+      //this segment
+      for (vector<string>::const_iterator pdfpath=pathnames.begin(); pdfpath!=pathnames.end(); ++pdfpath)
+      {
+
+        //Path to the PDF
+        string pdfpath_str = *pdfpath;
+        const char *pdfpath_cstr = pdfpath_str.c_str();
+
+        //Initialise the pdf for this parameter to draw values from
+        slug_PDF *param_pdf = NULL;		
+        slug_PDF *new_param_pdf = new slug_PDF(pdfpath_cstr,rng);				
+        param_pdf = (slug_PDF *)new_param_pdf;
+
+        //Add this pdf to the vector for this segment
+        (*s)->add_param_pdf(param_pdf);
 	
-	return vsegcheck;
-	
+      }	
+
+    }
+
+  }
+
+  return vsegcheck;
+
 }
 ////////////////////////////////////////////////////////////////////////
 // Draw values from variable segment pdfs
 ////////////////////////////////////////////////////////////////////////
 vector<double> slug_PDF::vseg_draw()
 {
-	
-	vector<double> newvals;			//Vector to store the drawn values
 
-	for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
-	{
+  //Vector to store the drawn values (TESTING)
+  vector<double> all_newvals;			
 
-		//Test if segment is variable, go in and draw new parameters if it is
-		if ((*s)->is_seg_var() == true)
-		{
-			//Get the vector of pdfs
-			vector<slug_PDF *> vpdfs = (*s)->v_pdfs();
-			
-			//Here we loop over the parameters that vary, drawing new values for each
-			for (vector<slug_PDF *>::const_iterator pdf=vpdfs.begin(); pdf!=vpdfs.end(); ++pdf)
-			{
-				
-				//Draw the new value and store it for testing purposes
-				double newvalue	=	0.0;		//Value drawn from pdf				
-				newvalue = (*pdf)->draw();		//Draw new value				
-				newvals.push_back(newvalue);	//Store the new value
-				
-				//Here we will assign the new value to the correct parameter
-				//in the segment.
-					
-			}	
-			
-		}
-		
-	}
-	
-	return newvals;					//Return the drawn values for testing
-	
+  //Loop over the segments of the pdf
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  {
+    //Test if segment is variable, go in and draw new parameters if it is
+    if ((*s)->is_seg_var() == true)
+    {
+    		
+      vector<double> newvals;             //Vector to store the drawn values
+
+      //Get the vector of pdfs
+      vector<slug_PDF *> vpdfs = (*s)->v_pdfs();
+
+      //Here we loop over the parameters that vary, drawing new values for each
+      for (vector<slug_PDF *>::const_iterator pdf=vpdfs.begin(); pdf!=vpdfs.end(); ++pdf)
+      {
+
+        //Draw the new value and store it
+        double newvalue = 0.0;            //Value drawn from pdf
+        newvalue = (*pdf)->draw();        //Draw new value
+        newvals.push_back(newvalue);      //Store the new value
+        all_newvals.push_back(newvalue);  //Store the new value for testing
+
+      }
+      
+      //Update the segment with new parameters, and recompute the PDFs
+      (*s)->update(newvals);	
+    }
+
+  }
+
+  //Update the weights
+  
+  //  cout << "slug: Recalculating weights" << endl;
+  //  cout << "Previous weights[0]: " << weights[0] << "  Old pdfintegral: " << PDFintegral << endl;
+
+  //Reset all the weights for each segment to 1.0
+  std::fill(weights.begin(), weights.end(), 1.0);
+
+  double cumWeight = weights[0];
+
+  for (unsigned int i=1; i<segments.size(); i++) 
+  {
+    weights[i] = weights[i-1] * segments[i-1]->sMaxVal() / segments[i]->sMinVal();
+    cumWeight += weights[i];
+  }
+
+  // If normalizing to unity, normalize; if not, store integral under
+  // function
+  if (normalized)
+  {
+    for (unsigned int i=0; i<segments.size(); i++)
+    {
+      weights[i] /= cumWeight;
+    }
+    PDFintegral = 1.0;
+  } 
+  else 
+  {
+    PDFintegral = cumWeight;
+  }
+
+  //  cout << "New weights[0]: " << weights[0] << "  New pdfintegral: " << PDFintegral << endl;
+
+
+  //With the weights for each segment updated, now 
+  //update the expectation values for the whole pdf
+
+  //  cout << "Old expectval: " << expectVal << endl;
+
+  expectVal = 0.0;
+  for (unsigned int i=0; i<segments.size(); i++)
+  {
+    expectVal += weights[i]*segments[i]->expectationVal();
+  }
+  expectVal = expectVal / PDFintegral;
+
+  //  cout << "New expectval: " << expectVal << endl;
+
+  //Initialize range restriction parameters, which 
+  //we will update in slug_sim after this returns
+  range_restrict = false;
+  expectVal_restrict = expectVal;
+  PDFintegral_restrict = PDFintegral;
+
+  //The PDF is now ready to have its range restricted if required.
+
+  return all_newvals;         //Return the drawn values for testing
+
 }
 
