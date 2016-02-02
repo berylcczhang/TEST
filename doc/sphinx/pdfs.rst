@@ -95,6 +95,60 @@ The total number of segments must be equal to one less than the number of breakp
    | ``schechter``   | :math:`x^p \exp(-x/x_*)`                               | ``slope`` | Slope, :math:`p`          | ``xstar`` | Cutoff, :math:`x_*`                             |
    +-----------------+--------------------------------------------------------+-----------+---------------------------+-----------+-------------------------------------------------+
 
+
+Variable Mode
+-------------
+
+Variable Mode works as an extension to Basic Mode. Instead of assigning a value to a parameter, you can define a PDF and then draw values for the parameter from it.
+ 
+Formally, the format of a Variable Mode PDF file follows that of a Basic Mode PDF file, but with one addition. To specify a parameter as variable, the entry must be of the form::
+
+	key1 V path/to/pdf.vpar
+
+with the ``V`` instructing the code that the parameter is variable. The ``.vpar`` files are formatted as if they are standard Basic Mode PDF files. Variable Mode is an extension of Basic Mode, and it is not supported in Advanced Mode PDF files.
+
+Any number of parameters belonging to a PDF can be made to vary, and the distributions from which their values are drawn can be constructed from any combination of the PDF segment types specified for Basic Mode. 
+
+An example of a Variable Mode PDF file for the IMF is as follows::
+
+   ###############################################################
+   # This is an IMF definition file for SLUG v2.
+   # This file defines a power law PDF with variable slope
+   ###############################################################
+
+   # Breakpoints: mass values where the functional form changes
+   # The first and last breakpoint will define the minimum and
+   # maximum mass
+   breakpoints 0.08 120
+
+   # Definitions of segments between the breakpoints
+
+   # This segment is a powerlaw with slopes drawn from slope_pdf 
+   segment
+   type powerlaw
+   slope V lib/imf/slope_pdf.vpar
+
+An example of a parameter's PDF file is as follows::
+
+   ###############################################################
+   # This is a parameter definition file for SLUG v2.
+   # lib/imf/slope_pdf.vpar
+   ###############################################################
+
+   # Breakpoints
+   breakpoints -3.0 -1.0
+
+   # Draw parameters from a normal distribution
+   segment
+   type normal
+   mean -2.35
+   disp 0.1
+  
+The above examples correspond to a powerlaw IMF with a slope varying between -3.0 and -1.0, with the value drawn from a normal distribution.
+
+While the Variable Mode implementation is very general, it is currently only enabled for the IMF. The new parameter values are drawn at the start of each galaxy or cluster realisation.
+
+
 Advanced Mode
 -------------
 
