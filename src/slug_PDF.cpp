@@ -377,8 +377,13 @@ slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
 
   // Step 2: does the stochastic limit cover the full limit of the
   // PDF? If so, that's no limit at all, so just return.
-  if ((x_stoch_min <= xMin) && (x_stoch_max >= xMax)) return;
-
+  if ((x_stoch_min <= xMin) && (x_stoch_max >= xMax)){ 
+    //MF I think this is needed to have consisentcy with flags
+    //once we re-call again set_stoch_limit from variabel PDF
+    range_restrict = false;
+    return;
+  }
+  
   // Step 3: set flags and store data for new range restriction
   xStochMin = min(x_stoch_min, xMax);
   xStochMax = max(x_stoch_max, xMin);
@@ -1290,9 +1295,8 @@ vector<double> slug_PDF::vseg_draw()
 
   //  cout << "New expectval: " << expectVal << endl;
 
-  //Initialize range restriction parameters, which 
-  //we will update in slug_sim after this returns
-  range_restrict = false;
+  //Initialize range restriction parameters with total, but 
+  //we will update in slug_sim after this returns if needed
   expectVal_restrict = expectVal;
   PDFintegral_restrict = PDFintegral;
 

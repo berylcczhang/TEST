@@ -11,6 +11,7 @@ The following people contributed to slug2:
    * Jonathan Parra: contributed code that become part of the slug_PDF module
    * Teddy Rendahl: wrote the first version of cloudy_slug
    * Michelle Myers: contributed to the development of cluster_slug
+   * Greg Ashworth: contributed to the development of the variable PDF module 
 
 In addition to these direct contributors, we gratefully acknowledge the following people who provided some of the data on which slug relies:
 
