@@ -24,6 +24,7 @@ namespace std
 #include "slug_PDF_segment.H"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include "slug_PDF.H"
 
 using namespace std;
 using namespace boost;
@@ -187,6 +188,7 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
       have_all_tok = have_all_tok && have_tok[i];
     if (have_all_tok) {
       initialize(tok_vals);
+      initialised = true;
       return OK;
     }
   }
@@ -199,6 +201,7 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
     have_all_tok = have_all_tok && have_tok[i];
   if (have_all_tok) {
     initialize(tok_vals);
+    initialised=true;
     return OK;
   }
 
@@ -227,19 +230,33 @@ void slug_PDF_segment::update(const std::vector<double>& drawn_vals)
   for (int i=0; i<variable_tok.size(); i++) 
   {		
 
-    //		//Test draw
-    //		cout << "Previous value of token " << variable_tok.at(i) << " was " << alltoks.at(variable_tok.at(i)) << endl;
+//		//Test draw
+//    cout << "Previous value of token " << variable_tok.at(i) << " was " << alltoks.at(variable_tok.at(i)) << endl;
 
     //Assign the newly drawn value to the correct parameter.
     alltoks.at(variable_tok.at(i)) = drawn_vals.at(i);
 
-    //		//Test draw
-    //		cout << "New value of token " << variable_tok.at(i) << " is " << alltoks.at(variable_tok.at(i)) << endl;
+    //Test draw
+//  cout << "New value of token " << variable_tok.at(i) << " is " << alltoks.at(variable_tok.at(i)) << endl;
 
   }
 
   //Initialize the segment again, now with new parameters
-  initialize(alltoks);
+   initialize(alltoks);
+   
+}
+////////////////////////////////////////////////////////////////////////
+// Clean up variable segments
+////////////////////////////////////////////////////////////////////////
+void slug_PDF_segment::delete_v_pdfs()
+{
+
+  for (int i = 0; i < variable_param_pdfs.size(); ++i) 
+  {
+    delete variable_param_pdfs[i];
+  }
+
+  variable_param_pdfs.clear();
 
 }
 

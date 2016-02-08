@@ -370,6 +370,19 @@ void slug_sim::galaxy_sim() {
       std::cout << "slug: starting trial " << i+1 << " of "
 		<< pp.get_nTrials() << std::endl;
 
+
+    //Check for variable segments
+    if (is_imf_var == true)
+    {
+      //Draw new values for variable parameters
+      //Update IMF segments and recompute weights 
+      vector<double>  pdf_draw_value = imf->vseg_draw();
+      //Reset range restrictions
+      imf->set_stoch_lim(pp.get_min_stoch_mass());
+    }
+
+
+
     // Reset the galaxy
     galaxy->reset();
 
@@ -500,6 +513,17 @@ void slug_sim::galaxy_sim() {
       }
     }
   }
+  
+  
+  //Clean up vector of variable pdfs
+  if (is_imf_var == true)
+  {
+    imf->cleanup();
+  }
+  
+  
+  
+  
 }
 
 
@@ -620,6 +644,14 @@ void slug_sim::cluster_sim() {
       }
     }
   }
+  
+  
+  //Clean up vector of variable pdfs
+  if (is_imf_var == true)
+  {
+    imf->cleanup();
+  }
+  
 }
 
 

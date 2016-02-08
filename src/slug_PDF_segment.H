@@ -56,6 +56,7 @@ public:
   // Destructor
   virtual ~slug_PDF_segment() { }
 
+
   // Functions that return various quantities about the segment. Some
   // are pure virtual, and must be implemented in the derived
   // class. Note that the expectation value function has two forms,
@@ -105,6 +106,9 @@ public:
 
   //Function which handles updating the values of variable segments
   void update(const std::vector<double>& drawn_vals);
+  
+  //Cleans up variable pdfs
+  void delete_v_pdfs();
 
 
 protected:
@@ -133,11 +137,11 @@ protected:
   rng_type *rng;          // Pointer to random number generator
   
   //Data for variable parameter segment
-  bool variable_seg;                              // Is segment variable?
+  bool variable_seg = false;                      // Is segment variable?
   std::vector<int> variable_tok;                  // The indices of variable parameters in alltoks
   std::vector<std::string> variable_names;        // The paths to the pdfs for these parameters
   std::vector<slug_PDF *> variable_param_pdfs;    // Vector of pdfs for the variable parameters
-
+  bool initialised = false;                       // Has the segment been initialised?
   std::vector<double> alltoks;                    // Store all token values
 
 };

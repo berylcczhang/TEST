@@ -124,6 +124,9 @@ public:
   
   //Function to draw a value from each variable segment
   std::vector<double> vseg_draw();
+  
+  //Clean up variable segments
+  void cleanup();   
 	
 	
 private:

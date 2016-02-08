@@ -1306,3 +1306,24 @@ vector<double> slug_PDF::vseg_draw()
 
 }
 
+////////////////////////////////////////////////////////////////////////
+//Clean up variable parameter pdfs
+////////////////////////////////////////////////////////////////////////
+void slug_PDF::cleanup()
+{
+
+  //Loop over the segments of the pdf
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  {
+    //Test if segment is variable, go in and clean up the pdf vectors
+    if ((*s)->is_seg_var() == true)
+    {
+
+      (*s)->delete_v_pdfs();
+
+    }
+
+  }
+  
+}
+

@@ -48,6 +48,12 @@ slug_PDF_powerlaw::~slug_PDF_powerlaw() {
 void
 slug_PDF_powerlaw::initialize(const std::vector<double> &tokenVals) {
 
+  //Clean up the distribution object if we already have one
+  if (initialised==true && variable_seg==true)
+  {
+    delete unidist; 
+  }
+
   // Save the slope
   segSlope = tokenVals[0];
 
