@@ -1295,10 +1295,32 @@ vector<double> slug_PDF::vseg_draw()
 
   //  cout << "New expectval: " << expectVal << endl;
 
+
+  // Set up the discrete distribution picker
+  
+  if (disc!=NULL)
+  {
+    delete disc; //Delete previous picker
+  }
+  if (segments.size() > 1) {
+    boost::random::discrete_distribution<> 
+      dist(weights.begin(), weights.end());
+    disc = new variate_generator<rng_type&,
+      boost::random::discrete_distribution <> >(*rng, dist);
+  } else {
+    disc = NULL;
+  }
+
+
+
   //Initialize range restriction parameters with total, but 
   //we will update in slug_sim after this returns if needed
   expectVal_restrict = expectVal;
   PDFintegral_restrict = PDFintegral;
+
+
+
+
 
   //The PDF is now ready to have its range restricted if required.
 
