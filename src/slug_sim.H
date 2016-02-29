@@ -107,8 +107,9 @@ private:
   outputMode out_mode;        // Output mode
 
 
-  bool is_imf_var = false;    //Does the IMF contain variable segments?
-
+  bool is_imf_var = false;          //Does the IMF contain variable segments?
+  std::vector<double> imf_vpdraws;  //Variable parameter draws from the IMF
+  
 };
 
 #endif
