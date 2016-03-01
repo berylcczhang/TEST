@@ -56,20 +56,36 @@ class bp(object):
           of shape (N, nphys), and return an array of shape (N)
           giving the prior probability at each data point; None:
           all data points have equal prior probability
+       pobs : array, shape (N) | callable | None
+          the probability that a particular object would be observed,
+          which is used, like prior, to weight the library;
+          interpretation depends on type. None means all objects are
+          equally likely to be observed, array is an array giving the
+          observation probability of each object in the library, and
+          callable means must be a function that takes an array
+          containing the photometry, of shape (N, nhpot), as an
+          argument, and returns an array of shape (N) giving the
+          probability of observation for that object
        bandwidth : 'auto' | float | array, shape (M)
           bandwidth for kernel density estimation; if set to
           'auto', the bandwidth will be estimated automatically; if
           set to a scalar quantity, the same bandwidth is used for all
           dimensions
+       nphys : int
+          number of physical properties in the library
+       nphot : int
+          number of photometric properties in the library
+       ndim : int
+          nphys + nphot
     """
 
     ##################################################################
     # Initializer method
     ##################################################################
     def __init__(self, dataset, nphys, filters=None, bandwidth='auto',
-                 ktype='gaussian', priors=None, sample_density=None,
-                 reltol=1.0e-2, abstol=1.0e-6, leafsize=16,
-                 nosort=None, thread_safe=True):
+                 ktype='gaussian', priors=None, pobs=None,
+                 sample_density=None, reltol=1.0e-2, abstol=1.0e-10,
+                 leafsize=16, nosort=None, thread_safe=True):
         """
         Initialize a bp object.
 
@@ -102,6 +118,16 @@ class bp(object):
               of shape (N, nphys), and return an array of shape (N)
               giving the prior probability at each data point; None:
               all data points have equal prior probability
+           pobs : array, shape (N) | callable | None
+              the probability that a particular object would be observed,
+              which is used, like prior, to weight the library;
+              interpretation depends on type. None means all objects are
+              equally likely to be observed, array is an array giving the
+              observation probability of each object in the library, and
+              callable means must be a function that takes an array
+              containing the photometry, of shape (N, nhpot), as an
+              argument, and returns an array of shape (N) giving the
+              probability of observation for that object
            sample_density : array, shape (N) | callable | 'auto' | None
               the density of the data samples at each data point; this
               need not match the prior density; interpretation depends
@@ -446,6 +472,9 @@ class bp(object):
         self.__auto_bw = None
         self.__auto_bw_set = False
         self.__priors = None
+        self.__pobs = None
+        self.__prior_data = None
+        self.__pobs_data = None
         self.__kd_phys = None
 
         # Build the initial kernel density estimation object, using a
@@ -468,18 +497,21 @@ class bp(object):
         # Initialize the bandwidth
         self.bandwidth = bandwidth
 
-        # Set priors
+        # Set priors and observation probability
         self.priors = priors
+        self.pobs = pobs
 
 
     ##################################################################
     # De-allocation method
     ##################################################################
     def __del__(self):
-        if self.__kd is not None:
-            self.__clib.free_kd(self.__kd)
-        if self.__kd_phys is not None:
-            self.__clib.free_kd(self.__kd_phys)
+        if hasattr(self, '__kd'):
+            if self.__kd is not None:
+                self.__clib.free_kd(self.__kd)
+        if hasattr(self, '__kd_phys'):
+            if self.__kd_phys is not None:
+                self.__clib.free_kd(self.__kd_phys)
 
 
     ##################################################################
@@ -490,7 +522,134 @@ class bp(object):
 
 
     ##################################################################
-    # Define the priors property
+    # Property to get the sampling density
+    ##################################################################
+
+    @property
+    def sample_density(self):
+        """
+        The density with which the library was sampled, evaluated for
+        each simulation in the library
+        """
+        if self.__sample_density is None:
+
+            # Choose computation method
+            if self.__sden is None:
+
+                # None means uniform sampling
+                self.__sample_density = np.ones(self.__ndata)
+
+            elif hasattr(self.__sden, '__call__'):
+
+                # Callable, so pass the physical data to the
+                # callable and store the result
+                self.__sample_density \
+                    = self.__sden(self.__dataset[:,:self.__nphys])
+
+            elif type(self.__sden) is np.ndarray:
+
+                # Array, so treat treat this as the data
+                self.__sample_density = self.__sden
+
+            elif self.__sden == 'auto':
+
+                # We've been asked to calculate the sample density
+                # ourselves, so do so
+
+                # Create unweighted kernel density object for just
+                # the physical parameters if we have not done so
+                # already
+                if self.__kd_phys is None:
+                    self.__dataset_phys \
+                        = np.copy(self.__dataset[:,:self.__nphys])
+                    self.__kd_phys \
+                        = self.__clib.build_kd(
+                            np.ravel(self.__dataset_phys), 
+                            self.__nphys, self.__ndata,
+                            None, self.leafsize, self.__bandwidth,
+                            self.__ktype, self.__nphys)
+
+                    # Use the unweighted kernel density object to
+                    # evaluate the raw sample density near each data
+                    # point, or near a sub-sample which we can
+                    # interpolate from
+                    self.__sample_density = np.zeros(self.__ndata)
+                    nsamp = 500
+                    if self.__ndata < nsamp:
+                        # Few data points, just use them all; note
+                        # that we cannot pass self.__dataset_phys,
+                        # because it is not in the same order as
+                        # the full data set anymore
+                        pts = np.ravel(self.__dataset[:,:self.__nphys])
+                        if not self.__diag_mode:
+                            self.__clib.kd_pdf_vec(
+                                self.__kd_phys, pts,
+                                self.__ndata, self.reltol, self.abstol,
+                                self.__sample_density)
+                        else:
+                            nodecheck = np.zeros(self.__ndata, dtype=c_ulong)
+                            leafcheck = np.zeros(self.__ndata, dtype=c_ulong)
+                            termcheck = np.zeros(self.__ndata, dtype=c_ulong)
+                            self.__clib.kd_pdf_vec(
+                                self.__kd_phys, pts,
+                                self.__ndata, self.reltol, self.abstol,
+                                self.__sample_density, nodecheck, 
+                                leafcheck, termcheck)
+                    else:
+                        # Many data points, so choose a sample at random
+                        idxpt = np.array(
+                            random.sample(np.arange(self.__ndata), 
+                                          nsamp), dtype=c_ulong)
+                        pos = np.copy(self.__dataset_phys[idxpt,:])
+                        # Add points at the edges of the dataset
+                        # to ensure we enclose all the points
+                        lowlim = np.amin(self.__dataset_phys,
+                                         axis=0)
+                        pos = np.append(pos, lowlim)
+                        hilim = np.amax(self.__dataset_phys,
+                                        axis=0)
+                        pos = np.append(pos, hilim)
+                        # Compute density at selected points
+                        sample_density = np.zeros(nsamp+2)
+                        if not self.__diag_mode:
+                            self.__clib.kd_pdf_vec(
+                                self.__kd_phys, np.ravel(pos), 
+                                nsamp+2, self.reltol, self.abstol,
+                                sample_density)
+                        else:
+                            nodecheck = np.zeros(nsamp+2, dtype=c_ulong)
+                            leafcheck = np.zeros(nsamp+2, dtype=c_ulong)
+                            termcheck = np.zeros(nsamp+2, dtype=c_ulong)
+                            self.__clib.kd_pdf_vec(
+                                self.__kd_phys, np.ravel(pos), 
+                                nsamp+2, self.reltol, self.abstol,
+                                sample_density, nodecheck, 
+                                leafcheck, termcheck)
+                        # Now interpolate the sample points to all
+                        # points in the data set
+                        pts = np.ravel(self.__dataset[:,:self.__nphys])
+                        self.__sample_density \
+                            = np.exp(
+                                interp.griddata(pos, 
+                                                np.log(sample_density),
+                                                pts,
+                                                method='linear')).flatten()
+                        
+        # Return result
+        return self.__sample_density
+    
+
+    @sample_density.setter
+    def sample_density(self, sden):
+        # Erase current sample density information, then force
+        # recomputation
+        self.__sample_density = None
+        self.__sden = sden
+        dummy = self.sample_density
+            
+
+    ##################################################################
+    # Define the priors and pobs properties
     ##################################################################
 
     @property
@@ -499,7 +658,7 @@ class bp(object):
         The current set of prior probabilities for every
         simulation in the library
         """
-        return self.__priors
+        return self.__prior_data
 
     @priors.setter
     def priors(self, pr):
@@ -532,136 +691,106 @@ class bp(object):
         elif pr == self.__priors:
             return
 
-        # If priors is None, just remove all weighting
-        if pr is None:
+        # If priors and pobs are both None, just remove all weighting
+        if pr is None and self.pobs is None:
             self.__clib.kd_change_wgt(None, self.__kd)
             self.__priors = None
+            self.__prior_data = None
             return
 
         else:
-            # If we're here, we have a non-trival prior
-
-            # Evaluate the raw sample density at each point if we have
-            # not previously done so
-            if self.__sample_density is None:
-
-                # Choose computation method
-                if self.__sden is None:
-
-                    # None means uniform sampling
-                    self.__sample_density = np.ones(self.__ndata)
-
-                elif hasattr(self.__sden, '__call__'):
-
-                    # Callable, so pass the physical data to the
-                    # callable and store the result
-                    self.__sample_density \
-                        = self.__sden(self.__dataset[:,:self.__nphys])
-
-                elif type(self.__sden) is np.ndarray:
-
-                    # Array, so treat treat this as the data
-                    self.__sample_density = self.__sden
-
-                elif self.__sden == 'auto':
-
-                    # We've been asked to calculate the sample density
-                    # ourselves, so do so
-
-                    # Create unweighted kernel density object for just
-                    # the physical parameters if we have not done so
-                    # already
-                    if self.__kd_phys is None:
-                        self.__dataset_phys \
-                            = np.copy(self.__dataset[:,:self.__nphys])
-                        self.__kd_phys \
-                            = self.__clib.build_kd(
-                                np.ravel(self.__dataset_phys), 
-                                self.__nphys, self.__ndata,
-                                None, self.leafsize, self.__bandwidth,
-                                self.__ktype, self.__nphys)
-
-                        # Use the unweighted kernel density object to
-                        # evaluate the raw sample density near each data
-                        # point, or near a sub-sample which we can
-                        # interpolate from
-                        self.__sample_density = np.zeros(self.__ndata)
-                        nsamp = 500
-                        if self.__ndata < nsamp:
-                            # Few data points, just use them all; note
-                            # that we cannot pass self.__dataset_phys,
-                            # because it is not in the same order as
-                            # the full data set anymore
-                            pts = np.ravel(self.__dataset[:,:self.__nphys])
-                            if not self.__diag_mode:
-                                self.__clib.kd_pdf_vec(
-                                    self.__kd_phys, pts,
-                                    self.__ndata, self.reltol, self.abstol,
-                                    self.__sample_density)
-                            else:
-                                nodecheck = np.zeros(self.__ndata, dtype=c_ulong)
-                                leafcheck = np.zeros(self.__ndata, dtype=c_ulong)
-                                termcheck = np.zeros(self.__ndata, dtype=c_ulong)
-                                self.__clib.kd_pdf_vec(
-                                    self.__kd_phys, pts,
-                                    self.__ndata, self.reltol, self.abstol,
-                                    self.__sample_density, nodecheck, 
-                                    leafcheck, termcheck)
-                        else:
-                            # Many data points, so choose a sample at random
-                            idxpt = np.array(
-                                random.sample(np.arange(self.__ndata), 
-                                              nsamp), dtype=c_ulong)
-                            pos = np.copy(self.__dataset_phys[idxpt,:])
-                            # Add points at the edges of the dataset
-                            # to ensure we enclose all the points
-                            lowlim = np.amin(self.__dataset_phys,
-                                             axis=0)
-                            pos = np.append(pos, lowlim)
-                            hilim = np.amax(self.__dataset_phys,
-                                            axis=0)
-                            pos = np.append(pos, hilim)
-                            # Compute density at selected points
-                            sample_density = np.zeros(nsamp+2)
-                            if not self.__diag_mode:
-                                self.__clib.kd_pdf_vec(
-                                    self.__kd_phys, np.ravel(pos), 
-                                    nsamp+2, self.reltol, self.abstol,
-                                    sample_density)
-                            else:
-                                nodecheck = np.zeros(nsamp+2, dtype=c_ulong)
-                                leafcheck = np.zeros(nsamp+2, dtype=c_ulong)
-                                termcheck = np.zeros(nsamp+2, dtype=c_ulong)
-                                self.__clib.kd_pdf_vec(
-                                    self.__kd_phys, np.ravel(pos), 
-                                    nsamp+2, self.reltol, self.abstol,
-                                    sample_density, nodecheck, 
-                                    leafcheck, termcheck)
-                            # Now interpolate the sample points to all
-                            # points in the data set
-                            pts = np.ravel(self.__dataset[:,:self.__nphys])
-                            self.__sample_density \
-                                = np.exp(
-                                    interp.griddata(pos, 
-                                                    np.log(sample_density),
-                                                    pts,
-                                                    method='linear')).flatten()
-
-            # We now have the sample density. Record the new prior,
-            # and, if our prior is a callable, call it; otherwise
-            # just record the input data
+            # If we're here, we have a non-trival prior or pobs;
+            # record the new prior, and, if it is a callable, call it
             self.__priors = pr
             if hasattr(self.__priors, '__call__'):
-                prior_data \
+                self.__prior_data \
                     = self.__priors(self.__dataset[:,:self.__nphys]).flatten()
             else:
-                prior_data = self.__priors
+                self.__prior_data = self.__priors
 
-            # Compute the weights from the ratio of the prior to
-            # the sample density, then adjust the weights in the kd
-            self.__wgt = prior_data / self.__sample_density
-            self.__clib.kd_change_wgt(self.__wgt.ctypes.data_as(POINTER(c_double)),
-                                      self.__kd)
+            # Compute the weights from the ratio of the prior times
+            # the observation probability to the sample density, then
+            # adjust the weights in the kd
+            wgt = 1.0 / self.sample_density
+            if self.__prior_data is not None:
+                wgt *= self.__prior_data
+            if self.pobs is not None:
+                wgt *= self.__pobs_data
+            self.__wgt = wgt
+            self.__clib.kd_change_wgt(self.__wgt.ctypes.data_as(
+                POINTER(c_double)), self.__kd)
+
+
+    @property
+    def pobs(self):
+        """
+        The current set of observation probabilities for every
+        simulation in the library
+        """
+        return self.__pobs_data
+
+    @pobs.setter
+    def pobs(self, po):
+        """
+        This function sets the observation probabilities to use
+
+        Parameters
+           pobs : array, shape (N) | callable | None
+              probability of observation for each data point;
+              interpretation depends on the type passed:
+                 array, shape (N) : 
+                    values are interpreted as the probability of
+                    observation each data point
+                 callable : 
+                    the callable must take as an argument an array of
+                    shape (N, nphot), and return an array of shape (N)
+                    giving the probability of observation for each
+                    data point
+                 None :
+                    all data points have equal probability of
+                    observation
+
+        Returns
+           Nothing
+        """
+
+        # If the observation probability is unchanged, do nothing
+        if (type(po) == np.ndarray) and \
+           (type(self.__pobs) == np.ndarray):
+            if np.array_equal(po, self.__pobs):
+                return
+            elif po == self.__pobs:
+                return
+
+        # If pobs and prior are both None, just remove all weighting
+        if po is None and self.priors is None:
+            self.__clib.kd_change_wgt(None, self.__kd)
+            self.__pobs = None
+            self.__pobs_data = None
+            return
+
+        else:
+
+            # If we're here, we have a non-trivial pobs or prior; if
+            # the new pobs is a callable, call it and save the result
+            self.__pobs = po
+            if hasattr(self.__pobs, '__call__'):
+                self.__pobs_data \
+                    = self.__pobs(self.__dataset[:,self.__nphys:]).\
+                    flatten()
+            else:
+                self.__pobs_data = self.__pobs
+
+            # Compute the weights on the points, and change the kd
+            # object appropriately
+            wgt = 1.0 / self.sample_density
+            if self.priors is not None:
+                wgt *= self.__prior_data
+            if self.__pobs_data is not None:
+                wgt *= self.__pobs_data
+            self.__wgt = wgt
+            self.__clib.kd_change_wgt(self.__wgt.ctypes.data_as(
+                POINTER(c_double)), self.__kd)
 
 
     ##################################################################
@@ -756,6 +885,48 @@ class bp(object):
             pr = self.priors
             self.priors = None
             self.priors = pr
+
+    ##################################################################
+    # Utitlity methods to return the number of physical and
+    # photometric quantities, and the total number of dimensions,
+    # without allowing them to be changed
+    ##################################################################
+
+    @property
+    def nphys(self):
+        """
+        This is the number of physical properties for the bayesphot
+        object.
+        """
+        return self.__nphys
+
+    @nphys.setter
+    def nphys(self, val):
+        raise ValueError, "can't set bayesphot.nphys!"
+    
+    @property
+    def nphot(self):
+        """
+        This is the number of photometric properties for the bayesphot
+        object.
+        """
+        return self.__nphot
+
+    @nphys.setter
+    def nphot(self, val):
+        raise ValueError, "can't set bayesphot.nphot!"
+
+    @property
+    def ndim(self):
+        """
+        This is the number of physical plus photometric properties for
+        the bayesphot object.
+        """
+        return self.__nphys + self.__nphot
+
+    @nphys.setter
+    def ndim(self, val):
+        raise ValueError, "can't set bayesphot.ndim!"
 
     ##################################################################
     # Utility methods to set a new bandwidth to account for
@@ -1029,7 +1200,7 @@ class bp(object):
               are the same as returned by meshgrid
            pdf : array
               array of marginal posterior probabilities at each point
-              of the output grid, for each input cluster; the leading
+              of the output grid, for each input set of photometry; the leading
               dimensions match the leading dimensions produced by
               broadcasting the leading dimensions of photprop and
               photerr together, while the trailing dimensions match
@@ -1247,6 +1418,500 @@ class bp(object):
         return grid_out, pdf
 
 
+    ##################################################################
+    # Function to return the marginal distribution of one or more of
+    # the photometric properties for a specified set of physical
+    # properties; this is just like mpdf, but in reverse
+    ##################################################################
+    def mpdf_phot(self, idx, physprop, ngrid=128,
+                  qmin=None, qmax=None, grid=None, norm=True):
+        """
+        Returns the marginal probability for one or mode photometric
+        quantities corresponding to an input set of physical
+        properties. Output quantities are computed on a grid of
+        values, in the same style as meshgrid.
+
+        Parameters:
+           idx : int or listlike containing ints
+              index of the photometric quantity whose PDF is to be
+              computed, starting at 0; if this is an iterable, the
+              joint distribution of the indicated quantities is returned
+           physprop : arraylike, shape (nphys) or (..., nphys)
+              physical properties to be used; if this is an array of
+              nphys elements, these give the physical properties; if
+              it is a multidimensional array, the operation is
+              vectoried over the leading dimensions
+              physical properties -- the function must take an array
+              of (nphys) elements as an input, and return a floating
+              point value representing the PDF evaluated at that set
+              of physical properties as an output
+           ngrid : int or listlike containing ints
+              number of points in each dimension of the output grid;
+              if this is an iterable, it must have the same number of
+              elements as idx
+           qmin : float or listlike
+              minimum value in the output grid in each quantity; if
+              left as None, defaults to the minimum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           qmax : float or listlike
+              maximum value in the output grid in each quantity; if
+              left as None, defaults to the maximum value in the
+              library; if this is an iterable, it must contain the
+              same number of elements as idx
+           grid : listlike of arrays
+              set of values defining the grid on which the PDF is to
+              be evaluated, in the same format used by meshgrid
+           norm : bool
+              if True, returned pdf's will be normalized to integrate
+              to 1
+
+        Returns:
+           grid_out : array
+              array of values at which the PDF is evaluated; contents
+              are the same as returned by meshgrid
+           pdf : array
+              array of marginal posterior probabilities at each point
+              of the output grid, for each input set of properties; the leading
+              dimensions match the leading dimensions produced by
+              broadcasting the leading dimensions of photprop and
+              photerr together, while the trailing dimensions match
+              the dimensions of the output grid
+        """
+
+        # Safety check
+        if (np.array(physprop).shape[-1] != self.__nphys) and \
+           (self.__nphot > 1):
+            raise ValueError("need " + str(self.__nphys) +
+                             " physical properties!")
+        if (np.amax(idx) > self.__nphot) or (np.amin(idx) < 0) or \
+           (not np.array_equal(np.squeeze(np.unique(np.array(idx))), 
+                               np.squeeze(np.array([idx])))):
+            raise ValueError("need non-repeating indices in " +
+                             "the range 0 - {:d}!".
+                             format(self.__nphot-1))
+
+        # Reshape arrays if necessary
+        if (np.array(physprop).shape[-1] != self.__nphys) and \
+           (self.__nphys == 1):
+            physprop = physprop.reshape(physprop.shape+(1,))
+
+        # Set up the grid of outputs, and the versions of it that we
+        # will be passing to the c code
+        if grid is not None:
+            grid_out = np.array(grid)
+            qmin_tmp \
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)]),
+                    dtype=np.double)
+            qmax_tmp \
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)]),
+                    dtype=np.double)
+            ngrid_tmp = np.array(grid_out.shape[1:], dtype=c_ulong)
+        else:
+            if qmin is None:
+                qmin = np.amin(self.__dataset[:,idx+self.__nphys], axis=0)
+            if qmax is None:
+                qmax = np.amax(self.__dataset[:,idx+self.__nphys], axis=0)
+            griddims = []
+            if hasattr(idx, '__len__'):
+                nidx = len(idx)
+            else:
+                nidx = 1
+            if nidx > 1:
+                # Case for multiple indices
+                griddims = []
+                if hasattr(ngrid, '__len__'):
+                    ngrid_tmp = np.array(ngrid, dtype=c_ulong)
+                else:
+                    ngrid_tmp = np.array([ngrid]*len(idx), dtype=c_ulong)
+                for i in range(len(idx)):
+                    griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
+                                    float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
+                grid_out = np.squeeze(np.array(np.meshgrid(*griddims,
+                                                           indexing='ij')))
+                out_shape = grid_out[0, ...].shape
+                qmin_tmp \
+                    = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
+                qmax_tmp \
+                    = np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)])
+            else:
+                # Case for a single index
+                ngrid_tmp = np.array([ngrid], dtype=c_ulong)
+                qmin_tmp = np.array([qmin], dtype=np.double).reshape(1)
+                qmax_tmp = np.array([qmax], dtype=np.double).reshape(1)
+                grid_out = qmin + \
+                           np.arange(ngrid) * \
+                           float(qmax-qmin)/(ngrid-1)
+                out_shape = grid_out.shape
+        
+
+        # Prepare things we'll be passing to the c library
+        # Prepare data for c library
+        if hasattr(idx, '__len__'):
+            nidx = len(idx)
+        else:
+            nidx = 1
+        dims = np.zeros(nidx+self.__nphys, dtype=c_ulong)
+        dims[:nidx] = idx
+        dims[nidx:] = np.arange(self.__nphys, dtype=c_ulong)
+        ndim = c_ulong(nidx + self.__nphys)
+
+        # Prepare output holder
+        pdf = np.zeros(np.array(phyprop)[..., 0].shape +
+                       out_shape)
+
+        # Prepare inputs for passing to c
+        nphys = np.array(physprop).size/self.__nphys
+        phystmp = np.array(physprop, dtype=c_double)
+
+        # Call c library; note that we call kd_pdf_int_reggrid if
+        # we're actually marginalizing over any photometric
+        # properties (which is the case if len(idx) <
+        # self.__nphot), but we invoke kd_pdf_reggrid if we're not
+        # actually marginalizing (len(idx)==self.__nphot) because
+        # then we don't need to do any integration
+        if nidx < self.__nphot:
+            self.__clib.kd_pdf_int_reggrid(
+                self.__kd, np.ravel(phystmp), dims[nidx:],
+                self.__nphys, nphys, qmin_tmp, qmax_ntmp,
+                ngrid_tmp, dims[:nidx], nidx, self.reltol,
+                self.abstol, np.ravel(pdf))
+        else:
+            self.__clib.kd_pdf_reggrid(
+                self.__kd, np.ravel(phystmp), dims[nidx:],
+                self.__nphys, nphys, qmin_tmp, qmax_tmp,
+                ngrid_tmp, dims[:nidx], nidx,
+                self.reltol, self.abstol, np.ravel(pdf))
+
+        # Normalize if requested
+        if norm:
+
+            # Compute the sizes of the output cells
+            if nidx == 1:
+                cellsize = np.zeros(grid_out.size)
+                cellsize[1:-1] = 0.5*(grid_out[2:]-grid_out[:-2])
+                cellsize[0] = grid_out[1] - grid_out[0]
+                cellsize[-1] = grid_out[-1] - grid_out[-2]
+            else:
+                # Get the cell sizes in each dimension
+                csize = []
+                for i in range(nidx):
+                    vec = grid_out[(i,)+i*(0,)+(slice(None),) + 
+                                   (grid_out.shape[0]-i-1)*(0,)]
+                    csize.append(np.zeros(vec.size))
+                    csize[i][1:-1] = 0.5*(vec[2:]-vec[:-2])
+                    csize[i][0] = vec[1] - vec[0]
+                    csize[i][-1] = vec[-1] - vec[-2]
+                # Take outer product to get grid of sizes
+                cellsize = np.multiply.outer(csize[0], csize[1])
+                for i in range(2, nidx):
+                    cellsize = np.multiply.outer(cellsize, csize[i])
+
+            # Compute integral
+            normfac = np.sum(pdf*cellsize, axis = 
+                             tuple(range(np.array(photprop).ndim-1, pdf.ndim)))
+
+            # Normalize
+            pdf = np.transpose(np.transpose(pdf)/normfac)
+
+        # Return
+        return grid_out, pdf
+                
+
+    ##################################################################
+    # This is the most general verison of mpdf. It allows the user to
+    # fix or marginalize any number of physical or photometric
+    # properties, returning the distribution in the remaining
+    # properties
+    ##################################################################
+    def mpdf_gen(self, fixeddim, fixedprop, margindim, ngrid=128,
+                 qmin=None, qmax=None, grid=None, norm=True):
+        """
+        Returns the marginal probability for one or more physical or
+        photometric properties, keeping other properties fixed and
+        marginalizing over other quantities. This is the most general
+        marginal PDF routine provided.
+
+        Parameters:
+           fixeddim : int | arraylike of ints | None
+              The index or indices of the physical or photometric
+              properties to be held fixed; physical properties are
+              numbered 0 ... nphys-1, and phtometric ones are numbered
+              nphys ... nphys + nphot - 1. This can also be set to
+              None, in which case no properties are held fixed.
+           fixedprop : array | None
+              The values of the properties being held fixed; the size
+              of the final dimension must be equal to the number of
+              elements in fixeddim, and if fixeddim is None, this must
+              be too
+           margindim : int | arraylike of ints | None
+              The index or indices of the physical or photometric
+              properties to be maginalized over, numbered in the same
+              way as with fixeddim; if set to None, no marginalization
+              is performed
+           qmin : float | arraylike
+              minimum value in the output grid in each quantity; if
+              left as None, defaults to the minimum value in the
+              library; if this is an iterable, it must contain a
+              number of elements equal to nphys + nphot -
+              len(fixeddim) - len(margindim)
+           qmax : float | arraylike
+              maximum value in the output grid in each quantity; if
+              left as None, defaults to the maximum value in the
+              library; if this is an iterable, it must have the same
+              number of elements as qmin
+           grid : listlike of arrays
+              set of values defining the grid on which the PDF is to
+              be evaluated, in the same format used by meshgrid
+           norm : bool
+              if True, returned pdf's will be normalized to integrate
+              to 1
+        """
+
+        # Safety check: make sure the dimensions all match up
+        if fixeddim is None:
+            nfixed = 0
+        else:
+            nfixed = np.atleast_1d(np.array(fixeddim)).shape[0]
+            if len(set(fixeddim)) != nfixed:
+                raise ValueError("fixeddim must not have any "
+                                 "repeated elements!")
+            if np.array(fixedprop).shape[-1] != nfixed:
+                raise ValueError("final dimension of fixedprop must" +
+                                 " have {:d} dimensions".format(nfixed) +
+                                 " to match fixeddim!")
+        if margindim is None:
+            nmargin = 0
+        else:
+            nmargin = np.atleast_1d(np.array(margindim)).shape[0]
+            if len(set(margindim)) != nmargin:
+                raise ValueError("margindim must not have any "
+                                 "repeated elements!")
+        if qmin is not None:
+            nq = np.atleast_1d(np.array(qmin)).shape[0]
+            if nq + nmargin + nfixed != \
+               self.__nphys + self.__nphot:
+                raise ValueError("qmin must have {:d}".
+                                 format(self.__nphys + self.__nphot -
+                                        nfixed - nmargin) +
+                                 " dimensions!")        
+        else:
+            nq = self.__nphys + self.__nphot - nfixed - nmargin
+        if qmax is not None:
+            if nq != np.atleast_1d(np.array(qmax)).shape[0]:
+                raise ValueError("qmin and qmax must have matching" +
+                                 " number of dimensions")
+        if grid is not None:
+            nq = len(grid)
+            if nq + nmargin + nfixed != \
+               self.__nphys + self.__nphot:
+                raise ValueError("grid must have {:d}".
+                                 format(self.__nphys + self.__nphot -
+                                        nfixed - nmargin) +
+                                 " elements!")
+        if fixeddim is not None and margindim is not None:
+            if len(set(margindim) & set(fixeddim)) > 0:
+                raise ValueError("margindim and fixeddim must not "
+                                 "have any elements in common!")
+
+        # Make versions of all inputs arrays suitable for passing to c
+        if margindim is not None:
+            margindim_tmp = np.atleast_1d(
+                np.array(margindim, dtype=c_ulong))
+        if fixeddim is not None:
+            fixeddim_tmp = np.atleast_1d(
+                np.array(fixeddim, dtype=c_ulong))
+            xfixed = np.atleast_1d(np.array(fixedprop, dtype=c_double))
+            
+        # Figure out the indices we're returning
+        idx = set(range(self.__nphys+self.__nphot))
+        if margindim is not None:
+            idx = idx - set(margindim)
+        if fixeddim is not None:
+            idx = idx - set(fixeddim)
+        idx = np.array(list(idx), dtype=c_ulong)
+            
+        # Set up output grid
+        nidx, qmin_tmp, qmax_tmp, grid_out, out_shape \
+            = self.__make_outgrid(idx, ngrid, qmin, qmax, grid)
+
+        # Set up array to hold the final pdf
+        if fixedprop is not None:
+            pdf = np.zeros(np.array(fixedprop)[..., 0] + out_shape,
+                           dtype=c_double)
+        else:
+            pdf = np.zeros(out_shape, dtype=c_double)
+
+        # Call the correct c library routine, depending on whether we
+        # have fixed points, marginalized dimensions, both, or neither
+        if fixeddim is None:
+
+            if margindim is None:
+
+                # No fixed points, no marginalized dimensions, so just
+                # call kd_pdf_vec
+                self.__clib.kd_pdf_vec(
+                    self.__kd, np.ravel(grid_out),
+                    grid_out.size/self.ndim,
+                    self.reltol, self.abstol,
+                    np.ravel(pdf))
+
+            else:
+
+                # Marginalizing over some dimensions, but no fixed
+                # points, so call kd_pdf_int_vec
+                self.__clib.kd_pdf_int_vec(
+                    self.__kd, np.ravel(grid_out),
+                    idx, len(idx), grid_out.size/len(idx),
+                    self.reltol, self.abstol, np.ravel(pdf))
+
+        else:
+
+            if margindim is None:
+
+                # We have fixed points, but no marginalized
+                # dimensions, so call kd_pdf_reggrid
+                self.__clib.kd_pdf_reggrid(
+                    self.__kd, np.ravel(xfixed), fixeddim_tmp,
+                    nfixed, xfixed.size/nfixed,
+                    qmin_tmp, qmax_tmp, ngrid_tmp, idx,
+                    idx.size, self.reltol, self.abstol,
+                    np.ravel(pdf))
+
+            else:
+
+                # We have both fixed points and marginalized
+                # dimensions, so call kd_pdf_int_reggrid
+                self.__clib.kd_pdf_int_reggrid(
+                    self.__kd, np.ravel(xfixed), fixeddim_tmp,
+                    nfixed, xfixed.size/nfixed, qmin_tmp,
+                    qmax_tmp, idx, idx.size, self.reltol,
+                    self.abstol, np.ravel(pdf))
+
+        # Normalize if requested
+        if norm:
+            self.__mpdf_normalize(nidx, grid_out, pdf)
+
+        # Return
+        return grid_out, pdf
+    
+    
+    ##################################################################
+    # Utility method to set up grids for outputs of marginal PDF
+    # routines that are appropriate for passing to the c library. Used
+    # by all the mpdf routines.
+    ##################################################################
+    def __make_outgrid(self, idx, ngrid, qmin, qmax, grid):
+
+        # Were we given a grid?
+        if grid is not None:
+            # Yes, so just make it an array, and extract the limits
+            # from it
+            grid_out = np.array(grid, dtype=c_double)
+            out_shape = grid_out.shape
+            qmin_tmp \
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)]),
+                    dtype=np.double)
+            qmax_tmp \
+                = np.array(
+                    np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)]),
+                    dtype=np.double)
+            ngrid_tmp = np.array(grid_out.shape[1:], dtype=c_ulong)
+        else:
+            # No input grid was given
+
+            # Were we given upper or lower limits? If not, read them
+            # from the library. For photometric dimensions, exclude
+            # values of 99, which indicate bad data.
+            if qmin is None:
+                qmin = np.amin(self.__dataset[:,idx], axis=0)
+            if qmax is None:
+                qmax = np.zeros(len(idx))
+                for i in range(len(idx)):
+                    if i < self.__nphys:
+                        qmax[i] = np.amax(self.__dataset[:,i])
+                    else:
+                        qmax[i] = np.amax(self.__dataset[:,i][
+                            self.__dataset[:,i] < 99.0])
+            griddims = []
+
+            # Figure out how many dimensions the output has
+            if hasattr(idx, '__len__'):
+                nidx = len(idx)
+            else:
+                nidx = 1
+            if nidx > 1:
+                # Case for multiple indices
+                griddims = []
+                if hasattr(ngrid, '__len__'):
+                    ngrid_tmp = np.array(ngrid, dtype=c_ulong)
+                else:
+                    ngrid_tmp = np.array([ngrid]*len(idx), dtype=c_ulong)
+                for i in range(len(idx)):
+                    griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
+                                    float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
+                grid_out = np.squeeze(
+                    np.array(np.meshgrid(*griddims,
+                                         indexing='ij'), dtype=c_double))
+                out_shape = grid_out[0, ...].shape
+                qmin_tmp \
+                    = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
+                qmax_tmp \
+                    = np.copy(grid_out[(Ellipsis,)+(-1,)*(grid_out.ndim-1)])
+            else:
+                # Case for a single index
+                ngrid_tmp = np.array([ngrid], dtype=c_ulong)
+                qmin_tmp = np.array([qmin], dtype=np.double).reshape(1)
+                qmax_tmp = np.array([qmax], dtype=np.double).reshape(1)
+                grid_out = np.array(
+                    qmin + np.arange(ngrid) *
+                    float(qmax-qmin)/(ngrid-1),
+                    dtype=c_double)
+                out_shape = grid_out.shape
+
+        # Return what we've built
+        return nidx, qmin_tmp, qmax_tmp, grid_out, out_shape
+    
+
+    ##################################################################
+    # Utility method to normalize marginal PDFs
+    ##################################################################
+    def __mpdf_normalize(self, nidx, grid_out, pdf):
+        # Compute the sizes of the output cells
+        if nidx == 1:
+            cellsize = np.zeros(grid_out.size)
+            cellsize[1:-1] = 0.5*(grid_out[2:]-grid_out[:-2])
+            cellsize[0] = grid_out[1] - grid_out[0]
+            cellsize[-1] = grid_out[-1] - grid_out[-2]
+        else:
+            # Get the cell sizes in each dimension
+            csize = []
+            for i in range(nidx):
+                vec = grid_out[(i,)+i*(0,)+(slice(None),) + 
+                               (grid_out.shape[0]-i-1)*(0,)]
+                csize.append(np.zeros(vec.size))
+                csize[i][1:-1] = 0.5*(vec[2:]-vec[:-2])
+                csize[i][0] = vec[1] - vec[0]
+                csize[i][-1] = vec[-1] - vec[-2]
+            # Take outer product to get grid of sizes
+            cellsize = np.multiply.outer(csize[0], csize[1])
+            for i in range(2, nidx):
+                cellsize = np.multiply.outer(cellsize, csize[i])
+
+        # Compute integral
+        normfac = np.sum(pdf*cellsize, axis = 
+                         tuple(range(pdf.ndim-nidx, pdf.ndim)))
+
+        # Normalize
+        pdf = np.transpose(np.transpose(pdf)/normfac)
+
+        # Return
+        return pdf
+
+    
     ##################################################################
     # Method to return log likelihood function at a specified set of
     # physical properties for a particular set of photometric

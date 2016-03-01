@@ -89,7 +89,7 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
 
   // Construct the file name and try to open the file
   string fname = "WMbasic_OB_Z"+extensions[idx]+".dat";
-  ifstream atmos_file;
+  std::ifstream atmos_file;
   path dirname_path(dirname);
   path atmos_path = dirname_path / path(fname.c_str());
   atmos_file.open(atmos_path.c_str());

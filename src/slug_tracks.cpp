@@ -74,7 +74,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
   metallicity(my_metallicity), WR_mass(my_WR_mass) {
 
   // Try to open file
-  ifstream trackfile;
+  std::ifstream trackfile;
   trackfile.open(fname);
   if (!trackfile.is_open()) {
     // Couldn't open file, so bail out
@@ -87,8 +87,8 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
   trackfileName = fname;
 
   // Catch exceptions
-  trackfile.exceptions(ifstream::failbit | ifstream::badbit | 
-		       ifstream::eofbit);
+  trackfile.exceptions(std::ifstream::failbit | std::ifstream::badbit | 
+		       std::ifstream::eofbit);
   try {
 
     // Read the track descriptor string
@@ -264,7 +264,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	}
       }
     }
-  } catch(ifstream::failure e) {
+  } catch(std::ifstream::failure e) {
     (void) e;  // No-op to suppress compiler warning
     cerr << "slug: error: badly formatted track file " 
 	 << trackfileName << endl;

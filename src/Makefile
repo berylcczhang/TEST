@@ -31,11 +31,14 @@ CXX		= $(MACH_CXX)
 CXXOPTFLAGS	= $(MACH_CXXOPTFLAGS) $(MACH_C11FLAG) -DNDEBUG \
 	-DBOOST_DISABLE_ASSERTS -DHAVE_INLINE \
 	-MMD -MP
-LDOPTFLAGS	= $(MACH_LDOPTFLAGS)
+LDOPTFLAGS	= $(MACH_LDOPTFLAGS) $(MACH_CXXFLAG)
 
 # Set debug mode flags
 CXXDEBFLAGS     = $(MACH_CXXDEBFLAGS) $(MACH_C11FLAG) -MMD -MP
-LDDEBFLAGS	= $(MACH_LDDEBFLAGS)
+LDDEBFLAGS	= $(MACH_LDDEBFLAGS) $(MACH_CXXFLAG)
+
+# Read any user overrides
+-include Make.config.override
 
 # Include flags
 ifdef CXX_INCLUDE_PATH
@@ -74,11 +77,14 @@ ifdef FITS_LIB_PATH
      LDLIBFLAGS += -L$(FITS_LIB_PATH)
 endif
 
-# Read any user overrides
--include Make.config.override
+CXXFLAGS +=  $(INCFLAGS) $(DEFINES) $(CLIBFLAGS)
+LDFLAGS  +=  $(LDLIBFLAGS)
 
 # Name for executable
 EXENAME		= slug
+
+# Name for compiled library
+LIBNAME		= lib$(EXENAME)$(LIB_EXTENSION)
 
 # Pointers to sources
 SOURCES		= $(wildcard *.cpp)
@@ -86,22 +92,38 @@ OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
-.PHONY: all debug
-all: CXXFLAGS += $(CXXOPTFLAGS) $(INCFLAGS) $(DEFINES)
-all: LDFLAGS += $(LDOPTFLAGS) $(LDLIBFLAGS)
-all: $(EXENAME)
+.PHONY: all exe debug lib debuglib compile clean
+
+
+exe: CXXFLAGS += $(CXXOPTFLAGS)
+exe: LDFLAGS  += $( LDOPTFLAGS)
+exe: $(EXENAME) 
+
+debug: CXXFLAGS += $(CXXDEBFLAGS)
+debug: LDFLAGS  += $( LDDEBFLAGS)
+debug: $(EXENAME)
+
+lib: CXXFLAGS += $(CXXOPTFLAGS)
+lib: LDFLAGS  += $( LDOPTFLAGS)
+lib: $(LIBNAME)
+
+debuglib: CXXFLAGS += $(CXXDEBFLAGS)
+debuglib: LDFLAGS  += $( LDDEBFLAGS)
+debuglib: $(LIBNAME)
+
+all: exe
+all: lib
 
 # Include dependencies
 -include $(DEPS)
 
-debug: CXXFLAGS += $(CXXDEBFLAGS) $(INCFLAGS) $(DEFINES)
-debug: LDFLAGS += $(LDDEBFLAGS) $(LDLIBFLAGS)
-debug: $(EXENAME)
+$(EXENAME): $(OBJECTS)
+	$(CXX) -o $(EXENAME) $^ $(LDFLAGS) $(LDLIBFLAGS)
 
-$(EXENAME):	$(OBJECTS)
-	$(CXX) -o $(EXENAME) $^ $(LDFLAGS)
+$(LIBNAME): $(OBJECTS)
+	$(CC) -o $(LIBNAME) $^ $(LDFLAGS) $(LDLIBFLAGS) $(DYNLIBFLAG)
 
 compile:	$(OBJECTS)
 
 clean:
-	rm -f $(EXENAME) $(OBJECTS) $(DEPS)
+	rm -f $(EXENAME) $(OBJECTS) $(DEPS) $(LIBNAME)

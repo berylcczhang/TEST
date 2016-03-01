@@ -48,7 +48,7 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
 
   // Try to open the FILTER_LIST file
   string fname = "FILTER_LIST";
-  ifstream filter_file;
+  std::ifstream filter_file;
   path dirname(filter_dir);
   path filter_path = dirname / path(fname.c_str());
   filter_file.open(filter_path.c_str());
@@ -255,7 +255,7 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
 
     // Open file
     assert(atmos_dir != NULL);
-    ifstream vegafile;
+    std::ifstream vegafile;
     path atmos_path(atmos_dir);
     path vega_path = atmos_path / path("A0V_KURUCZ_92.SED");
     vegafile.open(vega_path.c_str());
