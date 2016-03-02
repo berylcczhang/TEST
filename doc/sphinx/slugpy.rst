@@ -86,6 +86,9 @@ The following fields are present only if SLUG was run with both nebular processi
 * spec_neb_ex: same as spec_neb, but with extinction applied
 * phot_neb_ex: same as phot_neb, but wtih extinction applied. Note that some values may be ``NaN``. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
 
+
+
+
 The following fields are present only for runs that have been processed through the cloudy_slug interface (see :ref:`sec-cloudy-slug`):
 
 * cloudy_wl: wavelengths of the output nebular spectra (in Angstrom)
@@ -117,6 +120,10 @@ The ``read_cluster`` function is analogous, except that instead of reading the w
 * All the remaining fields are identical to those listed above for integrated quantities, starting with wl
 
 For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).
+
+The following field is present only if SLUG was run with a Variable Mode IMF in a cluster-only simulation:
+
+* VPx: The value drawn for variable parameter x (0,1,2...) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.
 
 
 Full Documentation of slugpy

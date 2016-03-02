@@ -145,7 +145,8 @@ public:
   // cluster. This only makes a difference if out_mode == BINARY.
   void write_prop(std::ofstream& outfile, const outputMode out_mode, 
 		  const unsigned long trial,
-		  const bool cluster_only = false) const;
+		  const bool cluster_only = false,
+		  const std::vector<double>& imfvp = {}) const;
   void write_spectrum(std::ofstream& outfile, const outputMode out_mode,
 		      const unsigned long trial,
 		      const bool cluster_only = false);
@@ -156,10 +157,12 @@ public:
 #ifdef ENABLE_FITS
   // These are identical to the previous three routines, but they
   // write to a FITS file instead of an ofstream
-  void write_prop(fitsfile *out_fits, unsigned long trial);
+  void write_prop(fitsfile *out_fits, unsigned long trial, 
+      const std::vector<double>& imfvp = {});
   void write_spectrum(fitsfile *out_fits, unsigned long trial);
   void write_photometry(fitsfile *out_fits, unsigned long trial);
 #endif
+
 
 private:
 
@@ -213,6 +216,9 @@ private:
   std::vector<double> phot_neb_ext;   // Integ star+nebular phot w/extinction
   bool is_disrupted;                  // Is this cluster disrupted?
   bool data_set, Lbol_set, spec_set, phot_set;  // Status indicators
+  
+
+  
 };
 
 #endif

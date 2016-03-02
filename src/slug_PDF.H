@@ -117,10 +117,21 @@ public:
   // Operator to return the PDF evaluated at a particular x or set of x's
   double operator()(const double x) const;
   std::vector<double> operator()(const std::vector<double> x) const;
-
+  
+  //Functions to check for (and initialise) variable segments 
+  bool init_vsegs();                          //Check & initialise
+  bool check_for_vsegs(){return vsegcheck;}   //Check only
+  
+  //Function to draw a value from each variable segment
+  std::vector<double> vseg_draw();
+  
+  //Clean up variable segments
+  void cleanup();   
+	
+	
 private:
   // Functions to parse basic and advanced mode PDF files
-  void parseBasic(std::ifstream& PDFFile, 
+  void parseBasic(std::ifstream& PDFFile,
 		  std::vector<std::string> firstline,
 		  int& lineCount);
   void parseAdvanced(std::ifstream& PDFFile, int& lineCount);
@@ -130,6 +141,9 @@ private:
   std::vector<slug_PDF_segment *> segments;  // Segments in the PDF
   std::vector<slug_PDF_segment *> seg_restricted; // Segments for
 	  				          // restricted draws
+
+  // Are any segments variable?
+  bool vsegcheck = false;	
 
   // Pointer to the rng
   rng_type *rng;
