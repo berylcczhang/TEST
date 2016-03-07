@@ -1145,7 +1145,6 @@ slug_galaxy::write_integrated_yield(std::ofstream& outfile,
     const vector<isotope_data>& isodata = yields->get_isotopes();
     for (vector<double>::size_type i=0; i<all_yields.size(); i++) {
       outfile << setprecision(5) << scientific
-	      << setw(11) << right << trial << "   "
 	      << setw(11) << right << curTime << "   "
 	      << setw(11) << right << isodata[i].symbol() << "   "
 	      << setw(11) << right << isodata[i].num() << "   "

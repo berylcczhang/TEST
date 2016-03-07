@@ -440,7 +440,7 @@ void slug_sim::galaxy_sim() {
     // mode
     if ((out_mode == ASCII) && (i != 0)) {
       if (pp.get_writeIntegratedProp()) 
-	write_separator(int_prop_file, 8*14-3);
+	write_separator(int_prop_file, 9*14-3);
       unsigned int nfield = 1;
       if (nebular != nullptr) nfield++;
       if (extinct != nullptr) {
@@ -454,7 +454,7 @@ void slug_sim::galaxy_sim() {
       if (pp.get_writeIntegratedYield())
 	write_separator(int_yield_file, 14*5-3);
       if (pp.get_writeClusterProp())
-	write_separator(cluster_prop_file, (9+nfield)*14-3);
+	write_separator(cluster_prop_file, (10+nfield)*14-3);
       if (pp.get_writeClusterSpec())
 	write_separator(cluster_spec_file, (4+nfield)*14-3);
       if (pp.get_writeClusterPhot())
@@ -649,7 +649,7 @@ void slug_sim::cluster_sim() {
     // mode
     if ((out_mode == ASCII) && (i != 0)) {
       if (pp.get_writeClusterProp()) {
-	int ncol = 9*14-3;
+	int ncol = 10*14-3;
 	if (pp.get_use_extinct()) ncol += 14;
 	if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
 	write_separator(cluster_prop_file, ncol);
@@ -1968,22 +1968,19 @@ void slug_sim::open_integrated_yield() {
 
   // Write header
   if (out_mode == ASCII) {
-    int_yield_file << setw(14) << left << "Trial"
-          << setw(14) << left << "Time"
+    int_yield_file << setw(14) << left << "Time"
           << setw(14) << left << "Symbol"
           << setw(14) << left << "Z"
           << setw(14) << left << "A"
           << setw(14) << left << "Yield";
     int_yield_file << endl;
-    int_yield_file << setw(14) << left << ""
-          << setw(14) << left << "(yr)"
+    int_yield_file << setw(14) << left << "(yr)"
           << setw(14) << left << ""
           << setw(14) << left << ""
           << setw(14) << left << ""
           << setw(14) << left << "(Msun)";
     int_yield_file << endl;
     int_yield_file << setw(14) << left << "-----------"
-          << setw(14) << left << "-----------"
           << setw(14) << left << "-----------"
           << setw(14) << left << "-----------"
           << setw(14) << left << "-----------"
