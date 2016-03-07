@@ -68,6 +68,7 @@ public:
   const char *get_atmos_dir() const;      // Directory w/atmospehre library
   const char *get_filter_dir() const;     // Directory w/filter library
   const char *get_atomic_dir() const;     // Directory w/atomic data
+  const char *get_yield_dir() const;      // Directory w/yield data
   const char *get_modelName() const;      // Name of this model
   const char *get_outDir() const;         // Dir into which to dump output
   const char *get_outtime_dist() const;   // Distribution of output times
@@ -82,9 +83,11 @@ public:
   bool get_writeClusterProp() const;      // Write cluster phys properties?
   bool get_writeClusterPhot() const;      // Write cluster photometry?
   bool get_writeClusterSpec() const;      // Write cluster spectra?
+  bool get_writeClusterYield() const;     // Write cluster yields?
   bool get_writeIntegratedProp() const;   // Write integrated phys properties?
   bool get_writeIntegratedPhot() const;   // Write integrated photometry?
   bool get_writeIntegratedSpec() const;   // Write integrated spectra?
+  bool get_writeIntegratedYield() const;  // Write integrated yields?
   bool get_use_extinct() const;           // Apply extinction?
   outputMode get_outputMode() const;      // Output mode
   specsynMode get_specsynMode() const;    // Spectral synthesis mode
@@ -132,9 +135,11 @@ private:
   bool writeClusterProp;                  // Write out cluster properties?
   bool writeClusterPhot;                  // Write out cluster photometry?
   bool writeClusterSpec;                  // Write out cluster spectra?
+  bool writeClusterYield;                 // Write out cluster yields?
   bool writeIntegratedProp;               // Write out integrated properties?
   bool writeIntegratedPhot;               // Write out integrated photometry?
   bool writeIntegratedSpec;               // Write out integrated spectra?
+  bool writeIntegratedYield;              // Write out integrated yields?
   bool use_extinct;                       // Apply extinction?
   bool run_galaxy_sim;                    // Galaxy sim or cluster sim?
   bool save_seed;                         // Save the rng seed?
@@ -151,6 +156,7 @@ private:
   std::string atomic_dir;                 // Directory w/atomic data
   std::string extinct_curve;              // Extinction curve file name
   std::string AV_dist;                    // A_V distribution file name
+  std::string yield_dir;                  // Directory w/yield data
   std::string model;                      // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   std::vector<std::string> photBand;      // Names of photometric bands

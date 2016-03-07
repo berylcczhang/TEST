@@ -48,7 +48,7 @@ class slug_specsyn_pauldrach;
 class slug_specsyn_planck;
 class slug_specsyn_sb99;
 class slug_tracks;
-
+class slug_yields;
 
 // Enum for WR star types
 enum WRtype { NONE, WC, WN };

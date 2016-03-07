@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_nebular.H"
 #include "slug_specsyn.H"
 #include "slug_tracks.H"
+#include "slug_yields.H"
 #include <iostream>
 #include <fstream>
 #ifdef ENABLE_FITS
@@ -46,14 +47,15 @@ class slug_cluster {
 
 public:
   // Construct a cluster with specified target mass, birth time, IMF
-  slug_cluster(const unsigned long my_id, const double my_mass, 
-	       const double time, const slug_PDF *my_imf, 
-	       const slug_tracks *my_tracks, 
-	       const slug_specsyn *my_specsyn,
-	       const slug_filter_set *my_filters,
-	       const slug_extinction *my_extinct,
-	       const slug_nebular *my_nebular,
-	       const slug_PDF *my_clf=NULL);
+  slug_cluster(const unsigned long id_, const double mass_, 
+	       const double time, const slug_PDF *imf_, 
+	       const slug_tracks *tracks_, 
+	       const slug_specsyn *specsyn_,
+	       const slug_filter_set *filters_,
+	       const slug_extinction *extinct_,
+	       const slug_nebular *nebular_,
+	       const slug_yields *yields_,
+	       const slug_PDF *clf_=NULL);
 
   // Destructor
   ~slug_cluster() { }
@@ -83,6 +85,16 @@ public:
   double get_stellar_mass() const { return stellarMass; }
   double get_age() const { return curTime - formationTime; }
   double get_stellar_death_mass() const { return stellarDeathMass; }
+
+  // Routines to report the number of type II SN events
+  double get_sn() const { return tot_sn; }
+  int get_stoch_sn() const { return stoch_sn; }
+  double get_non_stoch_sn() const
+  { if (nonStochBirthMass > 0) return tot_sn - stoch_sn; else return 0.0; }
+
+  // Routine to return the element yield
+  const std::vector<double>& get_yields() 
+  { set_yield(); return all_yields; }
 
   // Routine to report if this cluster is disrupted
   bool disrupted() const { return is_disrupted; }
@@ -135,6 +147,9 @@ public:
   const std::vector<double> &get_photometry_extinct();
   const std::vector<double> &get_photometry_neb_extinct();
 
+  // Method to get the yields
+  const std::vector<double> &get_yield();
+
   // Method to clear the spectrum and photometry
   void clear_spectrum();
 
@@ -152,6 +167,10 @@ public:
   void write_photometry(std::ofstream& outfile, const outputMode out_mode,
 			const unsigned long trial,
 			const bool cluster_only = false);
+  void write_yield(std::ofstream& outfile, const outputMode out_mode,
+		   const unsigned long trial,
+		   const bool cluster_only = false);
+  
 
 #ifdef ENABLE_FITS
   // These are identical to the previous three routines, but they
@@ -159,6 +178,7 @@ public:
   void write_prop(fitsfile *out_fits, unsigned long trial);
   void write_spectrum(fitsfile *out_fits, unsigned long trial);
   void write_photometry(fitsfile *out_fits, unsigned long trial);
+  void write_yield(fitsfile *out_fits, unsigned long trial);
 #endif
 
 private:
@@ -168,6 +188,7 @@ private:
   void set_Lbol();
   void set_spectrum();
   void set_photometry();
+  void set_yield();
 
   // Invariant data
   const double targetMass;            // Target mass
@@ -178,10 +199,12 @@ private:
   const slug_filter_set *filters;     // Photometric filters
   const slug_extinction *extinct;     // Extinction
   const slug_nebular *nebular;        // Nebular
+  const slug_yields *yields;          // Yields
   const slug_imf_integrator<double> integ; // Integration helper class
 
   // Malleable data
   unsigned long id;                   // Unique ID
+  unsigned long stoch_sn;             // Number of stochastic SN
   double birthMass;                   // Actual mass at birth
   double aliveMass;                   // Mass of still-living stars
   double stochBirthMass;              // Birth mass of stochastic stars
@@ -195,13 +218,16 @@ private:
   double nonStochStellarMass;         // Non-stochastic part of stellarMass
   double formationTime;               // Cluster birth time
   double curTime;                     // Current time
+  double clusterAge;                  // Current age of cluster
   double lifetime;                    // Time at which this cluster disrupts
   double stellarDeathMass;            // Mass of star dying at current age
   double A_V;                         // A_V value
   double Lbol;                        // Bolometric luminosity
   double Lbol_ext;                    // Extincted bolometric luminosity
-  std::vector<double> deathMasses;    // Death masses for non-monotonic tracks
+  double tot_sn;                      // Total number of SNe, stochastic and not
+  double last_yield_time;             // Last time yields were updated
   std::vector<double> stars;          // List of stellar masses
+  std::vector<double> dead_stars;     // Stars that died this time step
   std::vector<slug_stardata> stardata; // Data on stellar properties
   std::vector<double> L_lambda;       // Spectrum
   std::vector<double> phot;           // Photometry
@@ -211,8 +237,11 @@ private:
   std::vector<double> phot_neb;       // Integrated star+nebular photometry
   std::vector<double> L_lambda_neb_ext; // Spec star+nebular lum w/extinction
   std::vector<double> phot_neb_ext;   // Integ star+nebular phot w/extinction
+  std::vector<double> all_yields;     // Yield of all elements up to this point
+  std::vector<double> stoch_yields;   // Yields from stochastic stars
+  std::vector<double> non_stoch_yields; // Yields from non-stochastic stars
   bool is_disrupted;                  // Is this cluster disrupted?
-  bool data_set, Lbol_set, spec_set, phot_set;  // Status indicators
+  bool data_set, Lbol_set, spec_set, phot_set, yield_set;  // Status indicators
 };
 
 #endif

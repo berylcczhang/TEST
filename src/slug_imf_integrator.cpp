@@ -113,7 +113,111 @@ integrate(const double m_tot, const double age,
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Main integration driver for functions that don't use the tracks
+// Main integration driver for case using the tracks, with mass limits
+////////////////////////////////////////////////////////////////////////
+
+template <typename T> 
+T slug_imf_integrator<T>::
+integrate_lim(const double m_tot, const double age,
+	      const double m_min, const double m_max,
+	      boost::function<T(const slug_stardata &)> func_) const {
+
+  // Store the input function
+  if (!func_.empty()) {
+    func = &func_;
+    func_mass = nullptr;
+    func_mass_age = nullptr;
+  }
+
+  // Are we working on a function that operates on star data filtered
+  // through tracks, or directly on mass and age?
+  if (func == nullptr) {
+
+    // Directly on mass and age; in this case, we don't need to worry
+    // about figuring out which stellar masses are within the tracks,
+    // and we can just integrate over the full IMF
+
+    // Get min mass
+    double m_min_int = max(m_min, imf->get_xMin());
+
+    // Get max mass
+    double m_max_int = tracks->max_mass();
+    if (!include_stoch) m_max_int = min(m_max_int, imf->get_xStochMin());
+    m_max_int = min(m_max_int, m_max);
+
+    // Call integration over range
+    return integrate_range(m_tot, age, m_min_int, m_max_int);
+
+  } else {
+
+    // We're working on a function that requires data interpolated
+    // from the tracks, so we need to filter out the mass range where
+    // stars are dead, or that are above or below the masses contained
+    // in the tracks
+
+    // Do we have monotonic tracks?
+    if (tracks->check_monotonic()) {
+
+      // Yes, tracks are monotonic, so a single death mass exists
+
+      // Get the range of integration from the IMF and the stellar tracks:
+      // minimum mass is the larger of the smallest mass in the IMF and
+      // the lowest mass track; maximum mass is the smallest of the edge of
+      // the non-stochastic range (unless stated otherwise), the largest
+      // mass track, and the death mass at this age
+      double m_min_int = max(imf->get_xMin(), tracks->min_mass());
+      m_min_int = max(m_min_int, m_min);
+      double m_max_int = min(tracks->max_mass(), tracks->death_mass(age));
+      if (!include_stoch) m_max_int = min(m_max_int, imf->get_xStochMin());
+      m_max_int = min(m_max_int, m_max);
+
+      // Ensure m_min <= m_max; if not, just return 0
+      if (m_min_int > m_max_int) return help.init(nvec);
+
+      // Now call the helper function, and that's it
+      return integrate_range(m_tot, age, m_min_int, m_max_int);
+
+    } else {
+
+      // More complicated case: tracks are not monotonic, so we may have
+      // multiple disjoint "alive mass" intervals
+
+      // Initialize variable to hold the sum
+      T sum = help.init(nvec);
+
+      // Grab the alive mass intervals at this time
+      vector<double> mass_cut = tracks->live_mass_range(age);
+      
+      // Loop over mass intervals
+      for (unsigned int i=0; i<mass_cut.size()/2; i++) {
+
+	// Figure out the mass limits for this interval
+	double m_min_int = max(imf->get_xMin(), max(mass_cut[2*i],
+						    tracks->min_mass()));
+	double m_max_int = min(min(imf->get_xStochMin(), tracks->max_mass()),
+			       mass_cut[2*i+1]);
+	m_min_int = max(m_min_int, m_min);
+	m_max_int = min(m_max_int, m_max);
+
+	// If m_min >= m_max, no living stars in this interval being
+	// treated non-stochastically, so move on
+	if (m_min_int >= m_max_int) continue;
+
+	// Add integral for this interval
+	help.plusequal(sum,
+		       integrate_range(m_tot, age, m_min_int, m_max_int));
+      }
+
+      // Return
+      return sum;
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Main integration driver for functions that don't use the tracks,
+// with or without integration limits
 ////////////////////////////////////////////////////////////////////////
 
 template <typename T> 
@@ -127,6 +231,20 @@ integrate_nt(const double m_tot,
   }
   boost::function<T(const double &, const double &)> dummy = 0;
   return integrate_nt(m_tot, 0.0, dummy);
+}
+
+template <typename T> 
+T slug_imf_integrator<T>::
+integrate_nt_lim(const double m_tot,
+		 const double m_min, const double m_max,
+		 boost::function<T(const double &)> func_) const {
+  if (!func_.empty()) {
+    func_mass = &func_;
+    func = nullptr;
+    func_mass_age = nullptr;
+  }
+  boost::function<T(const double &, const double &)> dummy = 0;
+  return integrate_nt_lim(m_tot, 0.0, m_min, m_max, dummy);
 }
 
 template <typename T> 
@@ -148,6 +266,32 @@ integrate_nt(const double m_tot, const double age,
 
   // Call integration over range
   return integrate_range(m_tot, age, imf->get_xMin(), m_max);
+}
+
+template <typename T> 
+T slug_imf_integrator<T>::
+integrate_nt_lim(const double m_tot, const double age,
+		 const double m_min, const double m_max,
+		 boost::function<T(const double &, const double &)> func_)
+  const {
+
+  // Store inputs
+  if (!func_.empty()) {
+    func_mass_age = &func_;
+    func = nullptr;
+    func_mass = nullptr;
+  }
+
+  // Get max mass
+  double m_max_int = tracks->max_mass();
+  if (!include_stoch) m_max_int = min(m_max_int, imf->get_xStochMin());
+  m_max_int = min(m_max_int, m_max);
+
+  // Get min mass
+  double m_min_int = max(m_min, imf->get_xMin());
+
+  // Call integration over range
+  return integrate_range(m_tot, age, m_min_int, m_max_int);
 }
 
 ////////////////////////////////////////////////////////////////////////

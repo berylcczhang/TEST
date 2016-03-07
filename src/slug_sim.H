@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_parmParser.H"
 #include "slug_PDF.H"
 #include "slug_tracks.H"
+#include "slug_yields.H"
 #include <vector>
 #ifdef ENABLE_FITS
 extern "C" {
@@ -65,19 +66,23 @@ private:
   void open_cluster_spec();
   void open_integrated_phot();
   void open_cluster_phot();
+  void open_integrated_yield();
+  void open_cluster_yield();
 
   // Function to write separators between trials to files
   void write_separator(std::ofstream& file, 
 		       const unsigned int width = 80);
 
   // Output information
-  std::vector<double> outTimes;    // Output times
-  std::ofstream int_prop_file;     // Integrated properties file
-  std::ofstream cluster_prop_file; // Cluster properties file
-  std::ofstream int_spec_file;     // Integrated spectra file
-  std::ofstream cluster_spec_file; // Cluster spectra file
-  std::ofstream int_phot_file;     // Integrated photometry file
-  std::ofstream cluster_phot_file; // Cluster photometry file
+  std::vector<double> outTimes;     // Output times
+  std::ofstream int_prop_file;      // Integrated properties file
+  std::ofstream cluster_prop_file;  // Cluster properties file
+  std::ofstream int_spec_file;      // Integrated spectra file
+  std::ofstream cluster_spec_file;  // Cluster spectra file
+  std::ofstream int_phot_file;      // Integrated photometry file
+  std::ofstream cluster_phot_file;  // Cluster photometry file
+  std::ofstream int_yield_file;     // Integrated yield file
+  std::ofstream cluster_yield_file; // Cluster yield file
 #ifdef ENABLE_FITS
   // FITS file versions of the above
   fitsfile *int_prop_fits;
@@ -86,6 +91,8 @@ private:
   fitsfile *cluster_spec_fits;
   fitsfile *int_phot_fits;
   fitsfile *cluster_phot_fits;
+  fitsfile *int_yield_fits;
+  fitsfile *cluster_yield_fits;
 #endif
 
   // Private data to be used in the simulations
@@ -102,6 +109,7 @@ private:
   slug_filter_set *filters;   // Photometric filters
   slug_extinction *extinct;   // Extinction class
   slug_nebular *nebular;      // Nebular emission class
+  slug_yields *yields;        // Class for calculating stellar yields
   slug_cluster *cluster;      // A single star cluster
   slug_galaxy *galaxy;        // A single galaxy
   outputMode out_mode;        // Output mode

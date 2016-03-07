@@ -49,31 +49,47 @@ namespace galaxy {
   double curMass(const slug_stardata &data) {
     return exp(data.logM/constants::loge);
   }
+
+  // This function returns the yield of a star of mass specified mass
+  // if it is old enough to have died, or a vector of 0's otherwise
+  vector<double> yield(const double &m, const double &t,
+		       const slug_tracks *tracks,
+		       const slug_yields *yields) {
+    if (tracks->star_lifetime(m) > t) {
+      vector<double> yld(yields->get_niso(), 0.0);
+      return yld;
+    } else {
+      return yields->yield(m);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 slug_galaxy::slug_galaxy(const slug_parmParser& pp, 
-			 const slug_PDF* my_imf,
-			 const slug_PDF* my_cmf, 
-			 const slug_PDF* my_clf, 
-			 const slug_PDF* my_sfh, 
-			 const slug_tracks* my_tracks, 
-			 const slug_specsyn* my_specsyn,
-			 const slug_filter_set* my_filters,
-			 const slug_extinction* my_extinct,
-			 const slug_nebular* my_nebular) :
-  imf(my_imf), 
-  cmf(my_cmf), 
-  clf(my_clf),
-  sfh(my_sfh),
-  tracks(my_tracks),
-  specsyn(my_specsyn),
-  filters(my_filters),
-  extinct(my_extinct),
-  nebular(my_nebular),
-  integ(my_tracks, my_imf, my_sfh)
+			 const slug_PDF* imf_,
+			 const slug_PDF* cmf_, 
+			 const slug_PDF* clf_, 
+			 const slug_PDF* sfh_, 
+			 const slug_tracks* tracks_, 
+			 const slug_specsyn* specsyn_,
+			 const slug_filter_set* filters_,
+			 const slug_extinction* extinct_,
+			 const slug_nebular* nebular_,
+			 const slug_yields* yields_) :
+  imf(imf_), 
+  cmf(cmf_), 
+  clf(clf_),
+  sfh(sfh_),
+  tracks(tracks_),
+  specsyn(specsyn_),
+  filters(filters_),
+  extinct(extinct_),
+  nebular(nebular_),
+  yields(yields_),
+  integ(tracks_, imf_, sfh_),
+  v_integ(tracks_, imf_, sfh_)
  {
 
   // Initialize mass and time
@@ -85,6 +101,12 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   clusterMass = 0.0;
   nonStochFieldMass = 0.0;
 
+  // Initialize yields
+  if (yields) {
+    stoch_field_yields.assign(yields->get_niso(), 0.0);
+    all_yields.assign(yields->get_niso(), 0.0);
+  }
+
   // Get fc
   fc = pp.get_fClust();
 
@@ -92,7 +114,7 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   cluster_id = 0;
 
   // Initialize status flags
-  Lbol_set = spec_set = field_data_set = phot_set = false;
+  Lbol_set = spec_set = field_data_set = phot_set = yield_set = false;
 }
 
 
@@ -127,7 +149,7 @@ slug_galaxy::reset(bool reset_cluster_id) {
     = fieldAliveMass = clusterMass = clusterAliveMass 
     = nonStochFieldMass = stellarMass = clusterStellarMass 
     = fieldRemnantMass = 0.0;
-  Lbol_set = spec_set = field_data_set = phot_set = false;
+  Lbol_set = spec_set = field_data_set = phot_set = yield_set = false;
   field_stars.resize(0);
   while (disrupted_clusters.size() > 0) {
     if (disrupted_clusters.back() != nullptr)
@@ -140,6 +162,10 @@ slug_galaxy::reset(bool reset_cluster_id) {
     clusters.pop_back();
   }
   L_lambda.resize(0);
+  if (yields) {
+    stoch_field_yields.assign(yields->get_niso(), 0.0);
+    all_yields.assign(yields->get_niso(), 0.0);
+  }
   if (reset_cluster_id) cluster_id = 0;
 }
 
@@ -184,7 +210,7 @@ slug_galaxy::advance(double time) {
 	slug_cluster *new_cluster = 
 	  new slug_cluster(cluster_id++, new_cluster_masses[i],
 			   birth_times[i], imf, tracks, specsyn, filters,
-			   extinct, nebular, clf);
+			   extinct, nebular, yields, clf);
 	clusters.push_back(new_cluster);
 	mass += new_cluster->get_birth_mass();
 	clusterMass += new_cluster->get_birth_mass();
@@ -268,10 +294,12 @@ slug_galaxy::advance(double time) {
   }
 
   // Go through the field star list and remove any field stars that
-  // have died
+  // have died; save them so that we can compute their yields
+  dead_field_stars.resize(0);
   while (field_stars.size() > 0) {
     if (field_stars.back().death_time < time) {
       fieldRemnantMass += tracks->remnant_mass(field_stars.back().mass);
+      dead_field_stars.push_back(field_stars.back());
       field_stars.pop_back();
       if (extinct != NULL) field_star_AV.pop_back();
     } else {
@@ -280,7 +308,7 @@ slug_galaxy::advance(double time) {
   }
 
   // Flag that computed quantities are now out of date
-  Lbol_set = spec_set = field_data_set = phot_set = false;
+  Lbol_set = spec_set = field_data_set = phot_set = yield_set = false;
 
   // Store new time
   curTime = time;
@@ -627,6 +655,97 @@ slug_galaxy::set_photometry(const bool del_cluster) {
   // Flag that the photometry is set
   phot_set = true;
 }  
+
+
+////////////////////////////////////////////////////////////////////////
+// Compute yields
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::set_yield(const bool del_cluster) {
+
+  // If yield is already set, do nothing
+  if (yield_set) return;
+
+  // Get yields from all clusters, disrupted and non-disrupted
+  vector<double> cluster_yields(all_yields.size(), 0.0);
+  list<slug_cluster *>::iterator it;
+  for (it = clusters.begin(); it != clusters.end(); it++) {
+    const vector<double>& ylds = (*it)->get_yield();
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++)
+      cluster_yields[i] += ylds[i];
+  }
+  for (it = disrupted_clusters.begin();
+       it != disrupted_clusters.end(); it++) {
+    const vector<double>& ylds = (*it)->get_yield();
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++)
+      cluster_yields[i] += ylds[i];
+  }
+
+  // If we don't have field stars, we're done; just copy the cluster
+  // yields to the list of all yields
+  if (fc == 1.0) {
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++)
+      all_yields[i] = cluster_yields[i];
+    yield_set = true;
+    return;
+  }
+
+  // If we're here, we have field stars
+  
+  // Make unstable isotopes produced by field stars decay; the cluster
+  // update will have already taken care of this for the clusters
+  const vector<isotope_data>& isotopes = yields->get_isotopes();
+  for (vector<double>::size_type i=0; i<stoch_field_yields.size(); i++) {
+    if (!isotopes[i].stable()) {
+      stoch_field_yields[i] *=
+	exp(-(curTime-last_yield_time)/isotopes[i].ltime());
+    }
+  }
+  last_yield_time = curTime;
+  
+  // Add yields from stochastic field stars that died this time step
+  if (dead_field_stars.size() > 0) {
+    vector<double> yld_masses(dead_field_stars.size());
+    vector<double> decay_time(dead_field_stars.size());
+    for (vector<double>::size_type i=0; i<dead_field_stars.size(); i++) {
+      yld_masses[i] = dead_field_stars[i].mass;
+      decay_time[i] = curTime - dead_field_stars[i].death_time;
+    }
+    vector<double> star_yields = yields->yield(yld_masses, decay_time);
+    for (vector<double>::size_type i=0; i<star_yields.size(); i++)
+      stoch_field_yields[i] += star_yields[i];
+  }
+
+  // Do we have non-stochastic field stars? If not, we're done; just
+  // add the cluster yields and the stochastic field star yields, and
+  // then return
+  if (!imf->has_stoch_lim()) {
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++)
+      all_yields[i] = cluster_yields[i] + stoch_field_yields[i];
+    yield_set = true;
+    return;
+  }
+
+  // If we're here, we have a contribution from non-stochastic field
+  // stars, which we must compute as a double-integral over the SFH
+  // and IMF. This doesn't quite treat radioactive decay correctly,
+  // because we should apply decay to the radioactive isotopes
+  // produced during the time step, which we're not doing now. To be
+  // fixed later! For now, the problem can be minimized by either not
+  // using the radioactive isotopes in non-stochastic mode, or by
+  // setting the time step to something much smaller than the lifetime
+  // of the isotopes in question.
+  vector<double> non_stoch_field_yields =
+    v_integ.integrate_sfh_nt(curTime,
+			     boost::bind(galaxy::yield, _1, _2,
+					 tracks, yields));
+  
+  // Sum all yields
+  for (vector<double>::size_type i=0; i<all_yields.size(); i++)
+      all_yields[i] = cluster_yields[i] + stoch_field_yields[i]
+	+ non_stoch_field_yields[i];
+  yield_set = true;  
+}
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -1008,6 +1127,67 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
 }
 #endif
 
+
+////////////////////////////////////////////////////////////////////////
+// Output integrated yield
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_integrated_yield(std::ofstream& outfile,
+				    const outputMode out_mode,
+				    const unsigned long trial,
+				    const bool del_cluster) {
+  
+  // Make sure yield information is current. If not, compute it.
+  if (!yield_set) set_yield(del_cluster);
+
+  // Write
+  if (out_mode == ASCII) {
+    const vector<isotope_data>& isodata = yields->get_isotopes();
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++) {
+      outfile << setprecision(5) << scientific
+	      << setw(11) << right << trial << "   "
+	      << setw(11) << right << curTime << "   "
+	      << setw(11) << right << isodata[i].symbol() << "   "
+	      << setw(11) << right << isodata[i].num() << "   "
+	      << setw(11) << right << isodata[i].wgt() << "   "
+	      << setw(11) << right << all_yields[i] << endl;
+    }
+  } else if (out_mode == BINARY) {
+    outfile.write((char *) &trial, sizeof trial);
+    outfile.write((char *) &curTime, sizeof curTime);
+    outfile.write((char *) all_yields.data(),
+		  all_yields.size()*sizeof(double));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Output integrated yield in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_integrated_yield(fitsfile* int_yield_fits, 
+				    unsigned long trial,
+				    const bool del_cluster) {
+
+  // Make sure photometric information is current. If not, compute it.
+  if (!yield_set) set_yield(del_cluster);
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(int_yield_fits, &nrows, &fits_status);
+
+  // Write data
+  fits_write_col(int_yield_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(int_yield_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  fits_write_col(int_yield_fits, TDOUBLE, 3, nrows+1, 1, all_yields.size(), 
+		 all_yields.data(), &fits_status);
+}
+#endif
+
 ////////////////////////////////////////////////////////////////////////
 // Output cluster photometry
 ////////////////////////////////////////////////////////////////////////
@@ -1041,6 +1221,42 @@ slug_galaxy::write_cluster_phot(fitsfile* cluster_phot_fits,
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_photometry(cluster_phot_fits, trial);
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster yields
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_cluster_yield(ofstream& outfile, 
+				const outputMode out_mode,
+				const unsigned long trial) {
+
+  // In binary mode, write out the time and the number of clusters
+  // first, because individual clusters won't write this data
+  if (out_mode == BINARY) {
+    outfile.write((char *) &trial, sizeof trial);
+    outfile.write((char *) &curTime, sizeof curTime);
+    vector<double>::size_type n = clusters.size();
+    outfile.write((char *) &n, sizeof n);
+  }
+
+  // Now have each cluster write
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_yield(outfile, out_mode, trial);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster yields in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_cluster_yield(fitsfile* cluster_yield_fits, 
+				unsigned long trial) {
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_yield(cluster_yield_fits, trial);
 }
 #endif
 

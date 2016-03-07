@@ -138,6 +138,15 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   tracks = new slug_tracks(pp.get_trackFile(), pp.get_metallicity(),
 			   pp.get_WR_mass(), pp.get_endTime());
 
+  // If we're computing yields, set up yield tables
+  if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield()) {
+    if (pp.get_verbosity() > 1)
+      std::cout << "slug: reading yield tables" << std::endl;
+    yields = new slug_yields(pp.get_yield_dir());
+  } else {
+    yields = NULL;
+  }
+
   // Set up the IMF, including the limts on its stochasticity
   imf = new slug_PDF(pp.get_IMF(), rng);
   imf->set_stoch_lim(pp.get_min_stoch_mass());
@@ -159,6 +168,16 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     cerr << "slug: warning: Calculation will proceed, but stars with mass "
 	 << tracks->max_mass() << " Msun to " << imf->get_xMax()
 	 << " Msun will be treated as having zero luminosity." << endl;
+  }
+
+  // Ditto for IMF and yield table
+  if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10)) {
+    cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
+	 << " Msun > maximum yield table mass " << yields->max_mass()
+	 << " Msun." << endl;
+    cerr << "slug: warning: Calculation will proceed, but stars with mass "
+	 << yields->max_mass() << " Msun to " << imf->get_xMax()
+	 << " Msun will be treated as having zero yield." << endl;
   }
 
   // Set the cluster lifetime function
@@ -252,7 +271,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // which type of simulation we're running
   if (pp.galaxy_sim()) {
     galaxy = new slug_galaxy(pp, imf, cmf, clf, sfh, tracks, 
-			     specsyn, filters, extinct, nebular);
+			     specsyn, filters, extinct, nebular, 
+			     yields);
     cluster = NULL;
   } else {
     double cluster_mass;
@@ -262,7 +282,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       cluster_mass = pp.get_cluster_mass();
     cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
 			       tracks, specsyn, filters,
-			       extinct, nebular, clf);
+			       extinct, nebular, yields, clf);
     galaxy = NULL;
   }
 
@@ -272,7 +292,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 #ifdef ENABLE_FITS
   // Set FITS file pointers to NULL to indicate they are closed
   int_prop_fits = cluster_prop_fits = int_spec_fits = 
-    cluster_spec_fits = int_phot_fits = cluster_phot_fits = NULL;
+    cluster_spec_fits = int_phot_fits = cluster_phot_fits =
+    int_yield_fits = cluster_yield_fits = NULL;
 #endif
 
   // Open the output files we'll need and write their headers
@@ -287,6 +308,9 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.galaxy_sim() && pp.get_writeIntegratedPhot()) 
     open_integrated_phot();
   if (pp.get_writeClusterPhot()) open_cluster_phot();
+  if (pp.galaxy_sim() && pp.get_writeIntegratedYield())
+    open_integrated_yield();
+  if (pp.get_writeClusterYield()) open_cluster_yield();
 }
 
 
@@ -318,6 +342,8 @@ slug_sim::~slug_sim() {
   if (cluster_spec_file.is_open()) cluster_spec_file.close();
   if (int_phot_file.is_open()) int_phot_file.close();
   if (cluster_phot_file.is_open()) cluster_phot_file.close();
+  if (int_yield_file.is_open()) int_yield_file.close();
+  if (cluster_yield_file.is_open()) cluster_yield_file.close();
 
 #ifdef ENABLE_FITS
   // Close FITS files
@@ -335,6 +361,10 @@ slug_sim::~slug_sim() {
       fits_close_file(int_phot_fits, &fits_status);
     if (cluster_phot_fits != NULL)
       fits_close_file(cluster_phot_fits, &fits_status);
+    if (int_yield_fits != NULL)
+      fits_close_file(int_yield_fits, &fits_status);
+    if (cluster_yield_fits != NULL)
+      fits_close_file(cluster_yield_fits, &fits_status);
   }
 #endif
 }
@@ -371,12 +401,16 @@ void slug_sim::galaxy_sim() {
 	write_separator(int_spec_file, (2+nfield)*14-3);
       if (pp.get_writeIntegratedPhot())
 	write_separator(int_phot_file, (1+nfield*pp.get_nPhot())*21-3);
+      if (pp.get_writeIntegratedYield())
+	write_separator(int_yield_file, 14*5-3);
       if (pp.get_writeClusterProp())
 	write_separator(cluster_prop_file, (9+nfield)*14-3);
       if (pp.get_writeClusterSpec())
 	write_separator(cluster_spec_file, (4+nfield)*14-3);
       if (pp.get_writeClusterPhot())
 	write_separator(cluster_phot_file, (2+nfield*pp.get_nPhot())*21-3);
+      if (pp.get_writeClusterYield())
+	write_separator(cluster_yield_file, 14*6-3);
     }
 
     // If the output time is randomly changing, draw a new output time
@@ -397,7 +431,8 @@ void slug_sim::galaxy_sim() {
 
       // Flag if we should delete clusters on this pass
       bool del_cluster = (j==outTimes.size()-1) &&
-	(!pp.get_writeClusterSpec()) && (!pp.get_writeClusterPhot());
+	(!pp.get_writeClusterSpec()) && (!pp.get_writeClusterPhot()) &&
+	(!pp.get_writeClusterYield());
 
       // If sufficiently verbose, print status
       if (pp.get_verbosity() > 1)
@@ -481,6 +516,32 @@ void slug_sim::galaxy_sim() {
 	}
 #endif
       }
+
+      // Write yield if requested
+      if (pp.get_writeIntegratedYield()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_integrated_yield(int_yield_file, out_mode, i,
+					del_cluster);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_integrated_yield(int_yield_fits, i,
+					 del_cluster);
+	}
+#endif
+      }
+      if (pp.get_writeClusterYield()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_cluster_yield(cluster_yield_file, out_mode, i);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_cluster_yield(cluster_yield_fits, i);
+	}
+#endif
+      }	
     }
   }
 }
@@ -513,7 +574,7 @@ void slug_sim::cluster_sim() {
       delete cluster;
       cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
 				 tracks, specsyn, filters,
-				 extinct, nebular, clf);
+				 extinct, nebular, yields, clf);
     } else {
       cluster->reset();
     }
@@ -530,6 +591,8 @@ void slug_sim::cluster_sim() {
 	write_separator(cluster_spec_file, 4*14-3);
       if (pp.get_writeClusterPhot())
 	write_separator(cluster_phot_file, (2+pp.get_nPhot())*18-3);
+      if (pp.get_writeClusterYield())
+	write_separator(cluster_yield_file, 5*14-3);
     }
 
     // Loop over time steps
@@ -589,6 +652,19 @@ void slug_sim::cluster_sim() {
 	}
 #endif
       }
+
+      // Write yields if requested
+      if (pp.get_writeClusterYield()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  cluster->write_yield(cluster_yield_file, out_mode, i, true);
+#ifdef ENABLE_FITS
+	} else {
+	  cluster->write_yield(cluster_yield_fits, i);
+	}
+#endif
+      }      
     }
   }
 }
@@ -1693,6 +1769,354 @@ void slug_sim::open_cluster_phot() {
     fits_create_tbl(cluster_phot_fits, BINARY_TBL, 0, ncol,
 		    ttype.data(), tform.data(), tunit.data(), NULL, 
 		    &fits_status);
+  }
+#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open integrated yield file and write its header
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_integrated_yield() {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_integrated_yield";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    int_yield_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+    full_path /= fname;
+    int_yield_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&int_yield_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open integrated yield file "
+     << full_path.string()
+     << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
+
+    // Make sure file is open
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!int_yield_file.is_open()) {
+      cerr << "slug error: unable to open integrated yield file " 
+     << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
+  }
+#endif
+
+  // Write header
+  if (out_mode == ASCII) {
+    int_yield_file << setw(14) << left << "Trial"
+          << setw(14) << left << "Time"
+          << setw(14) << left << "Symbol"
+          << setw(14) << left << "Z"
+          << setw(14) << left << "A"
+          << setw(14) << left << "Yield";
+    int_yield_file << endl;
+    int_yield_file << setw(14) << left << ""
+          << setw(14) << left << "(yr)"
+          << setw(14) << left << ""
+          << setw(14) << left << ""
+          << setw(14) << left << ""
+          << setw(14) << left << "(Msun)";
+    int_yield_file << endl;
+    int_yield_file << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------";
+    int_yield_file << endl;
+  } else if (out_mode == BINARY) {
+
+    // In binary mode, we begin the file by writing out the number of
+    // isotopes, then for each isotope writing out its symbol as 4
+    // characters (to maintain alignment), then writing out its atomic
+    // number and weight as unsigned integers
+    const vector<isotope_data>& isotopes = yields->get_isotopes();
+    vector<isotope_data>::size_type niso = isotopes.size();
+    int_yield_file.write((char *) &niso, sizeof niso);
+    for (vector<isotope_data>::size_type i=0; i<niso; i++) {
+      char symbol[4];
+      size_t len = isotopes[i].symbol().copy(symbol, 4);
+      for (size_t j = len; j<4; j++) symbol[j] = ' ';
+      int_yield_file.write(symbol, 4);
+      unsigned int Z = isotopes[i].num();
+      int_yield_file.write((char *) &Z, sizeof Z);
+      unsigned int A = isotopes[i].num();
+      int_yield_file.write((char *) &A, sizeof A);
+    }
+  }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    
+    // In FITS mode, write the isotope data to the first HDU
+
+    // Grab data
+    const vector<isotope_data>& isotopes = yields->get_isotopes();
+    char **isotope_names = new char*[isotopes.size()];
+    vector<long> isotope_Z(isotopes.size());
+    vector<long> isotope_A(isotopes.size());
+    for (vector<long>::size_type i=0; i<isotopes.size(); i++) {
+      isotope_names[i] = new char[3];
+      sprintf(isotope_names[i], "%3s", isotopes[i].symbol().c_str());
+      isotope_Z[i] = isotopes[i].num();
+      isotope_A[i] = isotopes[i].wgt();
+    }
+
+    // Set up binary table
+    vector<string> ttype_str = { "Name", "Z", "A" };
+    vector<string> tform_str = { "3A", "1K", "1K" };
+    vector<string> tunit_str = { "", "", "" };
+    int ncol = 3;
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
+    int fits_status = 0;
+    char table_name[] = "Isotope List";
+
+    // Create the table
+    fits_create_tbl(int_yield_fits, BINARY_TBL, 0, ncol,
+        ttype, tform, tunit, table_name, &fits_status);
+    delete ttype;
+    delete tform;
+    delete tunit;
+
+    // Write isotope data to table
+    fits_write_col(int_yield_fits, TSTRING, 1, 1, 1, isotopes.size(),
+       isotope_names, &fits_status);
+    fits_write_col(int_yield_fits, TLONG, 2, 1, 1, isotopes.size(),
+       isotope_Z.data(), &fits_status);
+    fits_write_col(int_yield_fits, TLONG, 3, 1, 1, isotopes.size(),
+       isotope_A.data(), &fits_status);
+    for (vector<long>::size_type i=0; i<isotopes.size(); i++)
+      delete isotope_names[i];
+    delete[] isotope_names;
+    
+    // Creat a new table to hold the computed yields
+    vector<string> ttype2_str = 
+      { "Trial", "Time", "Yield" };
+    vector<string> tform2_str = 
+      { "1K", "1D" };
+    tform2_str.push_back(lexical_cast<string>(isotopes.size()) + "D");
+    vector<string> tunit2_str = 
+      { "", "yr", "Msun" };
+
+    ncol=3;
+    char **ttype2 = new char *[ncol];
+    char **tform2 = new char *[ncol];
+    char **tunit2 = new char *[ncol];
+    for (vector<double>::size_type i=0; i<ncol; i++) {
+      ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
+      tform2[i] = const_cast<char*>(tform2_str[i].c_str());
+      tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());
+    }
+    char yield_table_name[] = "Yield";
+
+    // Create the table
+    fits_create_tbl(int_yield_fits, BINARY_TBL, 0, ncol,
+        ttype2, tform2, tunit2, yield_table_name, &fits_status);
+    delete ttype2;
+    delete tform2;
+    delete tunit2;
+  }
+#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open cluster yield file and write its header
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_cluster_yield() {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+  fname += "_cluster_yield";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    cluster_yield_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+    full_path /= fname;
+    cluster_yield_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&cluster_yield_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      cerr << "slug error: unable to open integrated yield file "
+     << full_path.string()
+     << "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
+
+    // Make sure file is open
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!cluster_yield_file.is_open()) {
+      cerr << "slug error: unable to open cluster yield file " 
+     << full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
+  }
+#endif
+
+  // Write header
+  if (out_mode == ASCII) {
+    cluster_yield_file << setw(14) << left << "UniqueID"
+          << setw(14) << left << "Time"
+          << setw(14) << left << "Symbol"
+          << setw(14) << left << "Z"
+          << setw(14) << left << "A"
+          << setw(14) << left << "Yield";
+    cluster_yield_file << endl;
+    cluster_yield_file << setw(14) << left << ""
+          << setw(14) << left << "(yr)"
+          << setw(14) << left << ""
+          << setw(14) << left << ""
+          << setw(14) << left << ""
+          << setw(14) << left << "(Msun)";
+    cluster_yield_file << endl;
+    cluster_yield_file << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------"
+          << setw(14) << left << "-----------";
+    cluster_yield_file << endl;
+  } else if (out_mode == BINARY) {
+
+    // In binary mode, we begin the file by writing out the number of
+    // isotopes, then for each isotope writing out its symbol as 4
+    // characters (to maintain alignment), then writing out its atomic
+    // number and weight as unsigned integers
+    const vector<isotope_data>& isotopes = yields->get_isotopes();
+    vector<isotope_data>::size_type niso = isotopes.size();
+    cluster_yield_file.write((char *) &niso, sizeof niso);
+    for (vector<isotope_data>::size_type i=0; i<niso; i++) {
+      char symbol[4];
+      size_t len = isotopes[i].symbol().copy(symbol, 4);
+      for (size_t j = len; j<4; j++) symbol[j] = ' ';
+      cluster_yield_file.write(symbol, 4);
+      unsigned int Z = isotopes[i].num();
+      cluster_yield_file.write((char *) &Z, sizeof Z);
+      unsigned int A = isotopes[i].num();
+      cluster_yield_file.write((char *) &A, sizeof A);
+    }
+  }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    
+    // In FITS mode, write the isotope data to the first HDU
+
+    // Grab data
+    const vector<isotope_data>& isotopes = yields->get_isotopes();
+    char **isotope_names = new char*[isotopes.size()];
+    vector<long> isotope_Z(isotopes.size());
+    vector<long> isotope_A(isotopes.size());
+    for (vector<long>::size_type i=0; i<isotopes.size(); i++) {
+      isotope_names[i] = new char[3];
+      sprintf(isotope_names[i], "%3s", isotopes[i].symbol().c_str());
+      isotope_Z[i] = isotopes[i].num();
+      isotope_A[i] = isotopes[i].wgt();
+    }
+
+    // Set up binary table
+    vector<string> ttype_str = { "Name", "Z", "A" };
+    vector<string> tform_str = { "3A", "1K", "1K" };
+    vector<string> tunit_str = { "", "", "" };
+    int ncol = 3;
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
+    int fits_status = 0;
+    char table_name[] = "Isotope List";
+
+    // Create the table
+    fits_create_tbl(cluster_yield_fits, BINARY_TBL, 0, ncol,
+        ttype, tform, tunit, table_name, &fits_status);
+    delete ttype;
+    delete tform;
+    delete tunit;
+
+    // Write isotope data to table
+    fits_write_col(cluster_yield_fits, TSTRING, 1, 1, 1, isotopes.size(),
+       isotope_names, &fits_status);
+    fits_write_col(cluster_yield_fits, TLONG, 2, 1, 1, isotopes.size(),
+       isotope_Z.data(), &fits_status);
+    fits_write_col(cluster_yield_fits, TLONG, 3, 1, 1, isotopes.size(),
+       isotope_A.data(), &fits_status);
+    for (vector<long>::size_type i=0; i<isotopes.size(); i++)
+      delete isotope_names[i];
+    delete[] isotope_names;
+    
+    // Creat a new table to hold the computed yields
+    vector<string> ttype2_str = 
+      { "Trial", "UniqueID", "Time", "Yield" };
+    vector<string> tform2_str = 
+      { "1K", "1K", "1D" };
+    tform2_str.push_back(lexical_cast<string>(isotopes.size()) + "D");
+    vector<string> tunit2_str = 
+      { "", "", "yr", "Msun" };
+
+    ncol=4;
+    char **ttype2 = new char *[ncol];
+    char **tform2 = new char *[ncol];
+    char **tunit2 = new char *[ncol];
+    for (vector<double>::size_type i=0; i<ncol; i++) {
+      ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
+      tform2[i] = const_cast<char*>(tform2_str[i].c_str());
+      tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());
+    }
+    char yield_table_name[] = "Yield";
+
+    // Create the table
+    fits_create_tbl(cluster_yield_fits, BINARY_TBL, 0, ncol,
+        ttype2, tform2, tunit2, yield_table_name, &fits_status);
+    delete ttype2;
+    delete tform2;
+    delete tunit2;
   }
 #endif
 }

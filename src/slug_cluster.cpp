@@ -33,31 +33,35 @@ namespace std
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
-// Trivial little helper function that just takes stardata and returns
-// the current stellar mass. Used below.
+// Trivial little helper functions
 ////////////////////////////////////////////////////////////////////////
 namespace cluster {
   double curMass(const slug_stardata &data) {
     return exp(data.logM/constants::loge);
+  }
+  double yield(const double m, const slug_yields *yields,
+	       const vector<double>::size_type i) {
+    return yields->yield(m, i);
   }
 }
 
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
-slug_cluster::slug_cluster(const unsigned long my_id, 
-			   const double my_mass, 
-			   const double time, const slug_PDF *my_imf, 
-			   const slug_tracks *my_tracks, 
-			   const slug_specsyn *my_specsyn, 
-			   const slug_filter_set *my_filters,
-			   const slug_extinction *my_extinct,
-			   const slug_nebular *my_nebular,
-			   const slug_PDF *my_clf) :
-  targetMass(my_mass), imf(my_imf), clf(my_clf), tracks(my_tracks), 
-  specsyn(my_specsyn), filters(my_filters), extinct(my_extinct),
-  nebular(my_nebular), integ(my_tracks, my_imf, nullptr), id(my_id),
-  formationTime(time), curTime(time)
+slug_cluster::slug_cluster(const unsigned long id_, 
+			   const double mass_, 
+			   const double time, const slug_PDF *imf_, 
+			   const slug_tracks *tracks_, 
+			   const slug_specsyn *specsyn_, 
+			   const slug_filter_set *filters_,
+			   const slug_extinction *extinct_,
+			   const slug_nebular *nebular_,
+			   const slug_yields *yields_,
+			   const slug_PDF *clf_) :
+  targetMass(mass_), imf(imf_), clf(clf_), tracks(tracks_), 
+  specsyn(specsyn_), filters(filters_), extinct(extinct_),
+  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr),
+  id(id_), formationTime(time), curTime(time), last_yield_time(time)
 {
 
   // Initialize to non-disrupted
@@ -94,8 +98,19 @@ slug_cluster::slug_cluster(const unsigned long my_id,
     A_V = extinct->draw_AV();
   }
 
+  // Initialize supernova counts
+  tot_sn = 0.0;
+  stoch_sn = 0;
+
+  // Initialize yields
+  if (yields) {
+    all_yields.resize(yields->get_niso());
+    stoch_yields.resize(yields->get_niso());
+    if (nonStochBirthMass > 0) non_stoch_yields.resize(yields->get_niso());
+  }
+
   // Initialize status flags for what data has been stored
-  spec_set = Lbol_set = data_set = phot_set = false;
+  spec_set = Lbol_set = data_set = phot_set = yield_set = false;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -108,16 +123,18 @@ slug_cluster::reset(bool keep_id) {
   if (!keep_id) id++;
 
   // Reset the time, the disruption state, and all flags
-  curTime = 0.0;
+  curTime = last_yield_time = 0.0;
   is_disrupted = false;
-  data_set = Lbol_set = spec_set = phot_set = false;
+  data_set = Lbol_set = spec_set = phot_set = yield_set = false;
 
   // Delete current stellar masses and data
   stars.resize(0);
+  dead_stars.resize(0);
   stardata.resize(0);
 #ifndef __INTEL_COMPILER
   // At this time, intel does not support this c++ function
   stars.shrink_to_fit();
+  dead_stars.shrink_to_fit();
   stardata.shrink_to_fit();
 #endif
 
@@ -151,6 +168,16 @@ slug_cluster::reset(bool keep_id) {
   if (extinct != NULL) {
     A_V = extinct->draw_AV();
   }
+
+  // Reset supernova counts
+  tot_sn = 0.0;
+  stoch_sn = 0;
+
+  // Reset yields
+  all_yields.assign(all_yields.size(), 0.0);
+  stoch_yields.assign(stoch_yields.size(), 0.0);
+  if (nonStochBirthMass > 0.0) 
+    non_stoch_yields.assign(non_stoch_yields.size(), 0.0);
 }
 
 
@@ -169,7 +196,10 @@ slug_cluster::advance(double time) {
   if (time == curTime) return;
 
   // Get current age
-  double clusterAge = time - formationTime;
+  clusterAge = time - formationTime;
+
+  // Reset the list of stars that died this time step
+  dead_stars.resize(0);
 
   // Handle cases of monotonic and non-monotonic tracks differently
   if (tracks->check_monotonic()) {
@@ -181,10 +211,12 @@ slug_cluster::advance(double time) {
     stellarDeathMass = tracks->death_mass(clusterAge);
 
     // Traverse the list, popping off stars that have died, and adding
-    // to the remannt mass tally as we go
+    // to the remnant mass tally as we go; also increment the SN count
     while (stars.size() > 0) {
       if (stars.back() > stellarDeathMass) {
 	stochRemnantMass += tracks->remnant_mass(stars.back());
+	if (yields->produces_sn(stars.back())) stoch_sn++;
+	dead_stars.push_back(stars.back());
 	stars.pop_back();
       }
       else break;
@@ -201,6 +233,8 @@ slug_cluster::advance(double time) {
     while (stars.size() > 0) {
       if (stars.back() > mass_cuts.back()) {
 	stochRemnantMass += tracks->remnant_mass(stars.back());
+	if (yields->produces_sn(stars.back())) stoch_sn++;
+	dead_stars.push_back(stars.back());
 	stars.pop_back();
       }
       else break;
@@ -242,8 +276,11 @@ slug_cluster::advance(double time) {
       // contribution to the remnant mass, then remove them from the
       // list of stars. Note that we need to add 1 to starptr because
       // the c++ vector erase method excludes the last element.
-      for (vector<double>::size_type i=starptr2; i<=starptr; i++)
+      for (vector<double>::size_type i=starptr2; i<=starptr; i++) {
 	stochRemnantMass += tracks->remnant_mass(stars[i]);
+	if (yields->produces_sn(stars[i])) stoch_sn++;
+	dead_stars.push_back(stars[i]);
+      }
       stars.erase(stars.begin()+starptr2, stars.begin()+starptr+1);
 
       // Move the death mass point and star pointer
@@ -261,8 +298,10 @@ slug_cluster::advance(double time) {
 	if (stars[starptr] > mass_cuts[0]) break;
 
       // Kill those stars, adding to the remnant mass
-      for (unsigned int i=0; i<starptr; i++) 
+      for (unsigned int i=0; i<starptr; i++) {
 	stochRemnantMass += tracks->remnant_mass(stars[i]);
+	if (yields->produces_sn(stars[i])) stoch_sn++;
+      }
       stars.erase(stars.begin(), stars.begin()+starptr);
 
     }
@@ -275,7 +314,7 @@ slug_cluster::advance(double time) {
   curTime = time;
 
   // Mark that data are not current
-  data_set = spec_set = Lbol_set = phot_set = false;
+  data_set = spec_set = Lbol_set = phot_set = yield_set = false;
 
   // Update all the stellar data to the new isochrone
   set_isochrone();
@@ -315,6 +354,70 @@ slug_cluster::advance(double time) {
 				   (const double, const double) const> 
 				   (&slug_tracks::remnant_mass), 
 				   tracks, _1, _2));
+
+  // Recompute the number of non-stochastic supernovae and thus total
+  // supernovae
+  tot_sn = stoch_sn;
+  if (imf->has_stoch_lim()) {
+
+    // Some stuff we'll need
+    const vector<double>& sn_mass_range = yields->sn_mass_range();
+    double mbar = imf->expectationVal();
+    double m_stop = min(imf->get_xStochMax(), sn_mass_range.back());
+
+    if (tracks->check_monotonic()) {
+
+      // Monotonic tracks, so just integrate the non-stochastic part
+      // of the IMF over the range of masses that has supernovae and
+      // is above the larger of the stellar death mass and below the
+      // maximum non-stochastic mass
+      double m = stellarDeathMass;
+      bool has_sn = yields->produces_sn(m);
+      double m_next = min(imf->get_xStochMax(), sn_mass_range.front());
+      vector<double>::size_type ptr = 0;
+      while (m < m_stop) {
+	if (has_sn) tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	has_sn = !has_sn;
+	m = m_next;
+	m_next = min(m_stop, sn_mass_range[ptr+1]);
+	ptr++;
+      }
+
+    } else {
+
+      // Death masses are non-monotonic, so we need to figure out the
+      // total number of stars in the mass ranges where (1) stars have
+      // died, (2) stars in that mass range produce SNe, and (3) stars
+      // in that mass range are being treated non-stochastically.
+      vector<double> mass_cuts = tracks->live_mass_range(clusterAge);
+      double m = mass_cuts[0];
+      double m_next;
+      bool has_sn = yields->produces_sn(m);
+      bool is_alive = true;
+      vector<double>::size_type cut_ptr = 1, sn_ptr = 0;
+      while (m < m_stop) {
+	if ((imf->get_xStochMax() < mass_cuts[cut_ptr]) &&
+	    (imf->get_xStochMax() < sn_mass_range[sn_ptr])) {
+	  m_next = imf->get_xStochMax();
+	  if (has_sn && !is_alive) 
+	    tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	} else if (mass_cuts[cut_ptr] < sn_mass_range[sn_ptr]) {
+	  m_next = mass_cuts[cut_ptr];
+	  cut_ptr++;
+	  if (has_sn && !is_alive) 
+	    tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	  is_alive = !is_alive;
+	} else {
+	  m_next = sn_mass_range[sn_ptr];
+	  sn_ptr++;
+	  if (has_sn && !is_alive) 
+	    tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	  has_sn = !has_sn;
+	}
+	m = m_next;
+      }
+    }
+  }	
 
   // Compute the new alive and total stellar masses
   aliveMass = nonStochAliveMass + stochAliveMass;
@@ -520,6 +623,97 @@ slug_cluster::set_photometry() {
   phot_set = true;
 }  
 
+////////////////////////////////////////////////////////////////////////
+// Routine to compute yields at this time
+////////////////////////////////////////////////////////////////////////
+void slug_cluster::set_yield() {
+
+  // Do nothing if already set
+  if (yield_set) return;
+
+  // Make unstable isotopes decay
+  const vector<isotope_data>& isotopes = yields->get_isotopes();
+  for (vector<double>::size_type i=0; i<stoch_yields.size(); i++) {
+    if (!isotopes[i].stable()) {
+      stoch_yields[i] *= exp(-(curTime-last_yield_time)/isotopes[i].ltime());
+    }
+  }
+  last_yield_time = curTime;
+  
+  // Add yield from stars that died; for unstable isotopes, be sure to
+  // apply the correct amount of radioactive decay between the star's
+  // death time and the current time
+  if (dead_stars.size() > 0) {
+    vector<double> decay_time(dead_stars.size());
+    for (vector<double>::size_type i=0; i<dead_stars.size(); i++)
+      decay_time[i] = curTime - formationTime -
+	tracks->star_lifetime(dead_stars[i]);
+    vector<double> star_yields = yields->yield(dead_stars, decay_time);
+    for (vector<double>::size_type i=0; i<star_yields.size(); i++)
+      stoch_yields[i] += star_yields[i];
+  }
+
+  // Do we have non-stochastic stars?
+  if (!imf->has_stoch_lim()) {
+
+    // No, so just copy stochastic yields to total yields
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++)
+      all_yields[i] = stoch_yields[i];
+    
+  } else {
+
+    // We do have stochastic stars
+    
+    // Reset the non-stochastic yield
+    non_stoch_yields.assign(non_stoch_yields.size(), 0.0);
+
+    // Grab the vector the defines the range of stellar masses that
+    // are dead now and that are being treated stochastically
+    vector<double> dead_mass_range;
+    if (tracks->check_monotonic()) {
+      // Case for monotonic tracks
+      dead_mass_range.push_back(stellarDeathMass);
+      dead_mass_range.push_back(imf->get_xStochMax());;
+    } else {
+      // Case for non-monotonic tracks
+      vector<double> mass_cuts =
+	tracks->live_mass_range(curTime-formationTime);
+      if (mass_cuts[0] > imf->get_xMin())
+	dead_mass_range.push_back(imf->get_xMin());
+      for (vector<double>::size_type i=1; i<mass_cuts.size(); i++) {
+	if (mass_cuts[i] > imf->get_xStochMax()) break;
+	dead_mass_range.push_back(mass_cuts[i]);
+      }
+      if (dead_mass_range.size() % 2)
+	dead_mass_range.push_back(imf->get_xStochMax());
+    }
+
+    // Now integrate the IMF-weighted yield over the non-stochastic
+    // dead star mass range. Note that this doesn't quite treat decay
+    // of unstable isotopes correctly. To be fixed later!
+    if (dead_mass_range[0] < dead_mass_range[1]) {
+      for (vector<double>::size_type i=0;
+	   i<dead_mass_range.size(); i+=2) {
+	for (vector<double>::size_type j=0;
+	     j<non_stoch_yields.size(); j++) {
+	  non_stoch_yields[j] +=
+	    integ.integrate_nt_lim(targetMass,
+				   dead_mass_range[i],
+				   dead_mass_range[i+1],
+				   boost::bind(cluster::yield, _1,
+					       yields, j));
+	}
+      }
+    }
+
+    // Sum stochastic and non-stochastic yields
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++)
+      all_yields[i] = stoch_yields[i] + non_stoch_yields[i];
+  }
+
+  // Record that yields are now current
+  yield_set = true;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Routines to return the spectrum, without or without nebular
@@ -603,6 +797,13 @@ const vector<double> &slug_cluster::get_photometry_neb_extinct() {
   return phot_neb_ext;
 }
 
+////////////////////////////////////////////////////////////////////////
+// Routine to get the yield
+////////////////////////////////////////////////////////////////////////
+const vector<double> &slug_cluster::get_yield() {
+  set_yield();
+  return all_yields;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Routines to clear data
@@ -954,5 +1155,68 @@ write_photometry(fitsfile *out_fits, unsigned long trial) {
       }
     }
   }
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
+// Output yields
+////////////////////////////////////////////////////////////////////////
+void
+slug_cluster::
+write_yield(ofstream& outfile, const outputMode out_mode,
+	    const unsigned long trial, const bool cluster_only) {
+
+  // Make sure information is current
+  if (!yield_set) set_yield();
+
+  // Write
+  if (out_mode == ASCII) {
+    const vector<isotope_data>& isodata = yields->get_isotopes();
+    for (vector<double>::size_type i=0; i<all_yields.size(); i++) {
+      outfile << setprecision(5) << scientific
+	      << setw(11) << right << id << "   "
+	      << setw(11) << right << curTime << "   "
+	      << setw(11) << right << isodata[i].symbol() << "   "
+	      << setw(11) << right << isodata[i].num() << "   "
+	      << setw(11) << right << isodata[i].wgt() << "   "
+	      << setw(11) << right << all_yields[i] << endl;
+    }
+  } else if (out_mode == BINARY) {
+    if (cluster_only) {
+      outfile.write((char *) &trial, sizeof trial);
+      outfile.write((char *) &curTime, sizeof curTime);
+      vector<double>::size_type n = 1;
+      outfile.write((char *) &n, sizeof n);
+    }
+    outfile.write((char *) &id, sizeof id);
+    outfile.write((char *) all_yields.data(),
+		  all_yields.size()*sizeof(double));
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Output yields in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void 
+slug_cluster::write_yield(fitsfile *out_fits, unsigned long trial){
+
+  // Make sure information is current
+  if (!yield_set) set_yield();
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(out_fits, &nrows, &fits_status);
+
+  // Write a new set of entries
+  fits_write_col(out_fits, TULONG, 1, nrows+1, 1, 1, &trial,
+     &fits_status);
+  fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id, 
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 3, nrows+1, 1, 1, &curTime,
+     &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 4, nrows+1, 1, all_yields.size(), 
+    all_yields.data(), &fits_status);
 }
 #endif

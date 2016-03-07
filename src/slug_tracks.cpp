@@ -301,7 +301,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       // message
       double logt_max = logtimes[i][0];
 	  streamsize prec = cerr.precision();
-      cerr << "Warning: tracks have non-monotonic time at mass "
+      cerr << "slug: warning: tracks have non-monotonic time at mass "
 	   << exp(logmass[i]) << " Msun, entries:";
       bool flag_tmp = false;
       for (unsigned int j=1; j<ntime; j++) {

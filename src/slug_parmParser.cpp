@@ -148,6 +148,8 @@ slug_parmParser::setDefaults() {
   extinct_curve = (lib_path / extinct_path / extinct_file).string();
   path atomic_path("atomic");
   atomic_dir = (lib_path / atomic_path).string();
+  path yield_path("yields");
+  yield_dir = (lib_path / yield_path).string();
   specsyn_mode = SB99;
   fClust = 1.0;
   min_stoch_mass = 0.0;
@@ -167,7 +169,8 @@ slug_parmParser::setDefaults() {
   z = 0.0;
   writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
-    writeClusterSpec = writeIntegratedSpec = true;
+    writeClusterSpec = writeIntegratedSpec = writeClusterYield =
+    writeIntegratedYield = true;
   out_mode = ASCII;
 }
 
@@ -213,7 +216,7 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	if (tokens[1].compare("cluster") == 0) {
 	  run_galaxy_sim = false;
 	  writeIntegratedProp = writeIntegratedSpec =
-	    writeIntegratedPhot = false;
+	    writeIntegratedPhot = writeIntegratedYield = false;
 	}
 	else if (tokens[1].compare("galaxy") == 0)
 	  run_galaxy_sim = true;
@@ -277,6 +280,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	atmos_dir = tokens[1];
       } else if (!(tokens[0].compare("filters"))) {
 	filter_dir = tokens[1];
+      } else if (!(tokens[0].compare("yields"))) {
+	yield_dir = tokens[1];
       } else if (!(tokens[0].compare("a_v"))) {
 	use_extinct = true;
 	try {
@@ -328,12 +333,16 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	writeClusterPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_spec"))) {
 	writeClusterSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_cluster_yield"))) {
+	writeClusterYield = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated"))) {
 	writeIntegratedProp = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_phot"))) {
 	writeIntegratedPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_spec"))) {
 	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_integrated_yield"))) {
+	writeIntegratedYield = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("save_rng_seed"))) {
 	save_seed = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("read_rng_seed"))) {
@@ -569,6 +578,7 @@ slug_parmParser::checkParams() {
   path extinct_path(extinct_curve);
   path AV_path(AV_dist);
   path out_time_path(out_time_dist);
+  path yield_path(yield_dir);
   if (!out_path.is_absolute())
     outDir = (slug_path / out_path).string();
   if (!imf_path.is_absolute()) 
@@ -587,6 +597,8 @@ slug_parmParser::checkParams() {
     extinct_curve = (slug_path / extinct_path).string();
   if (!atomic_path.is_absolute())
     atomic_dir = (slug_path / atomic_path).string();
+  if (!yield_path.is_absolute())
+    yield_dir = (slug_path / yield_path).string();
   if (!AV_path.is_absolute())
     AV_dist = (slug_path / AV_path).string();
   if (!out_time_path.is_absolute())
@@ -751,6 +763,8 @@ const char *slug_parmParser::get_trackFile() const { return track.c_str(); }
 const char *slug_parmParser::get_atmos_dir() const { return atmos_dir.c_str(); }
 const char *slug_parmParser::get_atomic_dir() const 
 { return atomic_dir.c_str(); }
+const char *slug_parmParser::get_yield_dir() const 
+{ return yield_dir.c_str(); }
 const char *slug_parmParser::get_extinct_curve() const 
 { return extinct_curve.c_str(); }
 const char *slug_parmParser::get_AV_dist() const 
@@ -773,12 +787,16 @@ bool slug_parmParser::get_writeClusterPhot()
 const { return writeClusterPhot; }
 bool slug_parmParser::get_writeClusterSpec()
 const { return writeClusterSpec; }
+bool slug_parmParser::get_writeClusterYield()
+const { return writeClusterYield; }
 bool slug_parmParser::get_writeIntegratedProp()
 const { return writeIntegratedProp; }
 bool slug_parmParser::get_writeIntegratedPhot()
 const { return writeIntegratedPhot; }
 bool slug_parmParser::get_writeIntegratedSpec()
 const { return writeIntegratedSpec; }
+bool slug_parmParser::get_writeIntegratedYield()
+const { return writeIntegratedYield; }
 outputMode slug_parmParser::get_outputMode() const { return out_mode; }
 specsynMode slug_parmParser::get_specsynMode() const { return specsyn_mode; }
 photMode slug_parmParser::get_photMode() const { return phot_mode; }

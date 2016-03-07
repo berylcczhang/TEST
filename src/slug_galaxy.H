@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_filter_set.H"
 #include "slug_nebular.H"
 #include "slug_specsyn.H"
+#include "slug_yields.H"
 #include <list>
 #include <iostream>
 #include <fstream>
@@ -46,13 +47,14 @@ class slug_galaxy {
 
 public:
   // Creation, destruction
-  slug_galaxy(const slug_parmParser& pp, const slug_PDF* my_imf, 
-	      const slug_PDF* my_cmf, const slug_PDF* my_clf, 
-	      const slug_PDF* my_sfh, const slug_tracks* tracks, 
-	      const slug_specsyn* my_specsyn,
-	      const slug_filter_set* my_filters,
-	      const slug_extinction* my_extinct,
-	      const slug_nebular *my_nebular);
+  slug_galaxy(const slug_parmParser& pp, const slug_PDF* imf_, 
+	      const slug_PDF* cmf_, const slug_PDF* clf_, 
+	      const slug_PDF* sfh_, const slug_tracks* tracks_, 
+	      const slug_specsyn* specsyn_,
+	      const slug_filter_set* filters_,
+	      const slug_extinction* extinct_,
+	      const slug_nebular *nebular_,
+	      const slug_yields *yields_);
   ~slug_galaxy();
 
   // Set galaxy back to its initial state
@@ -81,6 +83,10 @@ public:
   get_photometry(const bool del_cluster = false)
   { set_photometry(del_cluster); return phot; }
 
+  const std::vector<double>&
+  get_yield(const bool del_cluster = false)
+  { set_yield(del_cluster); return all_yields; }
+  
   // Output functions
   void write_integrated_prop(std::ofstream& int_prop_file, 
 			     const outputMode out_mode, 
@@ -102,6 +108,13 @@ public:
   void write_cluster_phot(std::ofstream& outfile,
 			  const outputMode out_mode,
 			  const unsigned long trial);
+  void write_integrated_yield(std::ofstream& outfile,
+			      const outputMode out_mode,
+			      const unsigned long trial,
+			      const bool del_cluster = false);
+  void write_cluster_yield(std::ofstream& outfile,
+			   const outputMode out_mode,
+			   const unsigned long trial);
 
 #ifdef ENABLE_FITS
   // FITS output functions
@@ -113,6 +126,9 @@ public:
   void write_integrated_phot(fitsfile* int_phot_fits, unsigned long trial,
 			     const bool del_cluster = false);
   void write_cluster_phot(fitsfile* cluster_phot_fits, unsigned long trial);
+  void write_integrated_yield(fitsfile* int_yield_fits, unsigned long trial,
+			      const bool del_cluster = false);
+  void write_cluster_yield(fitsfile* cluster_yield_fits, unsigned long trial);
 #endif
 
 private:
@@ -123,6 +139,7 @@ private:
   void set_Lbol();
   void set_spectrum(const bool del_cluster = false);
   void set_photometry(const bool del_cluster = false);
+  void set_yield(const bool del_cluster = false);
 
   // Distributions and physical models used in simulation
   const slug_PDF *imf;                // IMF
@@ -134,7 +151,10 @@ private:
   const slug_filter_set *filters;     // Filter set
   const slug_extinction *extinct;     // Extinction object
   const slug_nebular *nebular;        // Nebular object
+  const slug_yields *yields;          // Stellar yields
   const slug_imf_integrator<double> integ; // Integration helper class
+  const slug_imf_integrator
+  <std::vector<double>> v_integ;      // Integration helper class for vectors
 
   // Simulation data
   double curTime;                     // Current time
@@ -153,8 +173,10 @@ private:
   double nonStochFieldMass;           // Birth mass of field stars w/out stochasticity
   double Lbol;                        // Bolometric luminosity of galaxy
   double Lbol_ext;                    // Bolometric luminsoity w/extinction
+  double last_yield_time;             // Last time yields were computed
   unsigned long cluster_id;           // Cluster ID counter
   std::vector<slug_star> field_stars; // Field stars
+  std::vector<slug_star> dead_field_stars; // Field stars that died this time step
   std::vector<slug_stardata> field_data; // Field star data
   std::vector<double> field_star_AV;  // Field star extinctions
   std::list<slug_cluster *> disrupted_clusters; // Disrupted clusters
@@ -167,12 +189,15 @@ private:
   std::vector<double> phot_neb;       // Integrated star+nebular photometry
   std::vector<double> L_lambda_neb_ext; // Spec star+nebular lum w/extinction
   std::vector<double> phot_neb_ext;   // Integ star+nebular phot w/extinction
+  std::vector<double> stoch_field_yields; // Yields from stochastic field stars
+  std::vector<double> all_yields;     // Yields from all stars
 
   // Status indicators
   bool Lbol_set;                      // Is bolometric luminosity current?
   bool spec_set;                      // Is the spectrum current?
   bool field_data_set;                // Is the field star data current?
   bool phot_set;                      // Is photometry current
+  bool yield_set;                     // Are the yields current?
 };
 
 #endif

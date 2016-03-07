@@ -16,7 +16,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ////////////////////////////////////////////////////////////////////////
 // class slug_imf_integrator
-// class slug_imf_integrator_vec
 //
 // This is a helper class that can integrate various stellar
 // quantities over an IMF. It is used for non-stochastic stellar
@@ -34,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // account for stochastically), but it can optionally be over the full
 // IMF.
 
-// Similarly, the integrate_sfh, which integrates over both the IMF
+// Similarly, integrate_sfh, which integrates over both the IMF
 // and the SFH, computes the quantity
 //
 // <Q> = 1/<m> int_0^t SFR(t') int (dn/dm) Q(m, t-t') dm dt'
@@ -303,6 +302,13 @@ public:
   T integrate(const double m_tot, const double age,
 	      boost::function<T(const slug_stardata &)> func_in = 0) const;
 
+  // Version of the integrate function that works over a limited mass range
+  T integrate_lim(const double m_tot, const double age,
+		  const double m_min, const double m_max,
+		  boost::function<T(const slug_stardata &)>
+		  func_in = 0) const;
+  
+  
   // These two functions are simlar to the integrate function, but
   // they take as arguments functions that just take the mass, or take
   // just the mass and age (or just mass), as inputs, rather than
@@ -316,7 +322,17 @@ public:
   T integrate_nt(const double m_tot,
 		 boost::function<T(const double &)> func_ = 0) const;
 
-  // Routines to integrate a specified quantity over bot the IMF and
+  // Versions of the previous two functions that accept a limited mass range
+  T integrate_nt_lim(const double m_tot, const double age,
+		     const double m_min, const double m_max,
+		     boost::function<T(const double &, const double &)> 
+		     func_ = 0) const;
+  T integrate_nt_lim(const double m_tot,
+		     const double m_min, const double m_max,
+		     boost::function<T(const double &)> func_ = 0) const;
+  
+
+  // Routines to integrate a specified quantity over both the IMF and
   // the star formation history. This has two of the three forms that
   // appear for the integrate routines. It is missing the form for a
   // function that only takes mass (as opposed to mass and age) as an
