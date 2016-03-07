@@ -1006,6 +1006,11 @@ void slug_sim::open_cluster_prop() {
       int nvps = imf_vpdraws.size();
       cluster_prop_file.write((char *) &nvps, sizeof nvps);
     }
+    else
+    {    
+      int nvps = 0;
+      cluster_prop_file.write((char *) &nvps, sizeof nvps);    
+    }
     
   }
 #ifdef ENABLE_FITS
