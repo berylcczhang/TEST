@@ -99,7 +99,7 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
             data = entry.split()
             cl_id = long(data[0])
             t = float(data[1])
-            iso_name = data[2]
+            iso_name = data[2].title()
             iso_Z = int(data[3])
             iso_A = int(data[4])
             iso_yld = float(data[5])
@@ -174,6 +174,25 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
         cluster_id = np.array(cluster_id)
         yld = np.array(yld)
         trial = np.array(trial, dtype=int)
+
+    elif fname.endswith('.bin'):
+
+        pass
+
+    elif fname.endswith('.fits'):
+
+        # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
+
+        # Read data
+        isotope_name = fp[1].data['Name']
+        isotope_Z = fp[1].data['Z']
+        isotope_A = fp[1].data['A']
+        cluster_id = fp[2].data['UniqueID']
+        trial = fp[2].data['Trial']
+        time = fp[2].data['Time']
+        yld = fp[2].data['Yield']
 
     # Close file
     fp.close()

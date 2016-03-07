@@ -132,6 +132,32 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
         yld = yld.reshape((yld.shape[0], time.size,
                            isotope_name.size))
 
+    elif fname.endswith('.bin'):
+
+        pass
+
+    elif fname.endswith('.fits'):
+
+        # FITS mode
+        if read_info is not None:
+            read_info['format'] = 'fits'
+
+        # Read data
+        isotope_name = fp[1].data['Name']
+        isotope_Z = fp[1].data['Z']
+        isotope_A = fp[1].data['A']
+        trial = fp[2].data['trial']
+        time = fp[2].data['time']
+        yld = fp[2].data['yield']
+
+        # Re-arrange data into desired shape
+        ntrial = len(np.unique(trial))
+        ntime = len(time)/ntrial
+        if ntime != len(time):
+            if np.amin(time[:ntime] == time[ntime:2*ntime]):
+                time = time[:ntime]
+        yld = yld.reshape((ntrial, ntime, isotope_name.size))
+
     # Close file
     fp.close()
 
