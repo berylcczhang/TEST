@@ -77,6 +77,9 @@ ifdef FITS_LIB_PATH
      LDLIBFLAGS += -L$(FITS_LIB_PATH)
 endif
 
+# Specify which version of the GSL we're using
+DEFINES += -DGSLVERSION=$(GSLVERSION)
+
 CXXFLAGS +=  $(INCFLAGS) $(DEFINES) $(CLIBFLAGS)
 LDFLAGS  +=  $(LDLIBFLAGS)
 

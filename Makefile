@@ -3,6 +3,7 @@
 
 MACHINE	=
 FITS ?= ENABLE_FITS
+GSLVERSION ?= 2
 
 all: slug bayesphot
 
@@ -13,7 +14,7 @@ bayesphot:
 	@(cp slugpy/bayesphot/bayesphot_c/bayesphot.* slugpy/bayesphot)
 
 slug:
-	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS)
+	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
@@ -29,7 +30,7 @@ bayesphot-debug:
 	@(cp slugpy/bayesphot/bayesphot_c bayesphot.* slugpy/bayesphot)
 
 slug-debug:
-	cd src && $(MAKE) debug MACHINE=$(MACHINE) FITS=$(FITS)
+	cd src && $(MAKE) debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \

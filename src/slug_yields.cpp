@@ -316,8 +316,13 @@ slug_yields::slug_yields(const char *yield_dir) {
   for (vector<double>::size_type i=0; i<niso; i++) {
 
     // Allocate memory
+#if GSLVERSION == 2
     sn_yield[i] = gsl_spline_alloc(gsl_interp_steffen, nmass);
     wind_yield[i] = gsl_spline_alloc(gsl_interp_steffen, nmass);
+#else
+    sn_yield[i] = gsl_spline_alloc(gsl_interp_akima, nmass);
+    wind_yield[i] = gsl_spline_alloc(gsl_interp_akima, nmass);
+#endif
     sn_yield_accel[i] = gsl_interp_accel_alloc();
     wind_yield_accel[i] = gsl_interp_accel_alloc();
 
