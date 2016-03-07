@@ -215,7 +215,8 @@ slug_cluster::advance(double time) {
     while (stars.size() > 0) {
       if (stars.back() > stellarDeathMass) {
 	stochRemnantMass += tracks->remnant_mass(stars.back());
-	if (yields->produces_sn(stars.back())) stoch_sn++;
+	if (yields)
+	  if (yields->produces_sn(stars.back())) stoch_sn++;
 	dead_stars.push_back(stars.back());
 	stars.pop_back();
       }
@@ -233,7 +234,8 @@ slug_cluster::advance(double time) {
     while (stars.size() > 0) {
       if (stars.back() > mass_cuts.back()) {
 	stochRemnantMass += tracks->remnant_mass(stars.back());
-	if (yields->produces_sn(stars.back())) stoch_sn++;
+	if (yields)
+	  if (yields->produces_sn(stars.back())) stoch_sn++;
 	dead_stars.push_back(stars.back());
 	stars.pop_back();
       }
@@ -278,7 +280,8 @@ slug_cluster::advance(double time) {
       // the c++ vector erase method excludes the last element.
       for (vector<double>::size_type i=starptr2; i<=starptr; i++) {
 	stochRemnantMass += tracks->remnant_mass(stars[i]);
-	if (yields->produces_sn(stars[i])) stoch_sn++;
+	if (yields)
+	  if (yields->produces_sn(stars[i])) stoch_sn++;
 	dead_stars.push_back(stars[i]);
       }
       stars.erase(stars.begin()+starptr2, stars.begin()+starptr+1);
@@ -300,7 +303,8 @@ slug_cluster::advance(double time) {
       // Kill those stars, adding to the remnant mass
       for (unsigned int i=0; i<starptr; i++) {
 	stochRemnantMass += tracks->remnant_mass(stars[i]);
-	if (yields->produces_sn(stars[i])) stoch_sn++;
+	if (yields)
+	  if (yields->produces_sn(stars[i])) stoch_sn++;
       }
       stars.erase(stars.begin(), stars.begin()+starptr);
 
@@ -356,68 +360,71 @@ slug_cluster::advance(double time) {
 				   tracks, _1, _2));
 
   // Recompute the number of non-stochastic supernovae and thus total
-  // supernovae
-  tot_sn = stoch_sn;
-  if (imf->has_stoch_lim()) {
+  // supernovae; only do this if we have yields, because this is where
+  // the information on SN production is stored
+  if (yields) {
+    tot_sn = stoch_sn;
+    if (imf->has_stoch_lim()) {
 
-    // Some stuff we'll need
-    const vector<double>& sn_mass_range = yields->sn_mass_range();
-    double mbar = imf->expectationVal();
-    double m_stop = min(imf->get_xStochMax(), sn_mass_range.back());
+      // Some stuff we'll need
+      const vector<double>& sn_mass_range = yields->sn_mass_range();
+      double mbar = imf->expectationVal();
+      double m_stop = min(imf->get_xStochMax(), sn_mass_range.back());
 
-    if (tracks->check_monotonic()) {
+      if (tracks->check_monotonic()) {
 
-      // Monotonic tracks, so just integrate the non-stochastic part
-      // of the IMF over the range of masses that has supernovae and
-      // is above the larger of the stellar death mass and below the
-      // maximum non-stochastic mass
-      double m = stellarDeathMass;
-      bool has_sn = yields->produces_sn(m);
-      double m_next = min(imf->get_xStochMax(), sn_mass_range.front());
-      vector<double>::size_type ptr = 0;
-      while (m < m_stop) {
-	if (has_sn) tot_sn += targetMass * imf->integral(m, m_next) / mbar;
-	has_sn = !has_sn;
-	m = m_next;
-	m_next = min(m_stop, sn_mass_range[ptr+1]);
-	ptr++;
-      }
-
-    } else {
-
-      // Death masses are non-monotonic, so we need to figure out the
-      // total number of stars in the mass ranges where (1) stars have
-      // died, (2) stars in that mass range produce SNe, and (3) stars
-      // in that mass range are being treated non-stochastically.
-      vector<double> mass_cuts = tracks->live_mass_range(clusterAge);
-      double m = mass_cuts[0];
-      double m_next;
-      bool has_sn = yields->produces_sn(m);
-      bool is_alive = true;
-      vector<double>::size_type cut_ptr = 1, sn_ptr = 0;
-      while (m < m_stop) {
-	if ((imf->get_xStochMax() < mass_cuts[cut_ptr]) &&
-	    (imf->get_xStochMax() < sn_mass_range[sn_ptr])) {
-	  m_next = imf->get_xStochMax();
-	  if (has_sn && !is_alive) 
-	    tot_sn += targetMass * imf->integral(m, m_next) / mbar;
-	} else if (mass_cuts[cut_ptr] < sn_mass_range[sn_ptr]) {
-	  m_next = mass_cuts[cut_ptr];
-	  cut_ptr++;
-	  if (has_sn && !is_alive) 
-	    tot_sn += targetMass * imf->integral(m, m_next) / mbar;
-	  is_alive = !is_alive;
-	} else {
-	  m_next = sn_mass_range[sn_ptr];
-	  sn_ptr++;
-	  if (has_sn && !is_alive) 
-	    tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	// Monotonic tracks, so just integrate the non-stochastic part
+	// of the IMF over the range of masses that has supernovae and
+	// is above the larger of the stellar death mass and below the
+	// maximum non-stochastic mass
+	double m = stellarDeathMass;
+	bool has_sn = yields->produces_sn(m);
+	double m_next = min(imf->get_xStochMax(), sn_mass_range.front());
+	vector<double>::size_type ptr = 0;
+	while (m < m_stop) {
+	  if (has_sn) tot_sn += targetMass * imf->integral(m, m_next) / mbar;
 	  has_sn = !has_sn;
+	  m = m_next;
+	  m_next = min(m_stop, sn_mass_range[ptr+1]);
+	  ptr++;
 	}
-	m = m_next;
+
+      } else {
+
+	// Death masses are non-monotonic, so we need to figure out the
+	// total number of stars in the mass ranges where (1) stars have
+	// died, (2) stars in that mass range produce SNe, and (3) stars
+	// in that mass range are being treated non-stochastically.
+	vector<double> mass_cuts = tracks->live_mass_range(clusterAge);
+	double m = mass_cuts[0];
+	double m_next;
+	bool has_sn = yields->produces_sn(m);
+	bool is_alive = true;
+	vector<double>::size_type cut_ptr = 1, sn_ptr = 0;
+	while (m < m_stop) {
+	  if ((imf->get_xStochMax() < mass_cuts[cut_ptr]) &&
+	      (imf->get_xStochMax() < sn_mass_range[sn_ptr])) {
+	    m_next = imf->get_xStochMax();
+	    if (has_sn && !is_alive) 
+	      tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	  } else if (mass_cuts[cut_ptr] < sn_mass_range[sn_ptr]) {
+	    m_next = mass_cuts[cut_ptr];
+	    cut_ptr++;
+	    if (has_sn && !is_alive) 
+	      tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	    is_alive = !is_alive;
+	  } else {
+	    m_next = sn_mass_range[sn_ptr];
+	    sn_ptr++;
+	    if (has_sn && !is_alive) 
+	      tot_sn += targetMass * imf->integral(m, m_next) / mbar;
+	    has_sn = !has_sn;
+	  }
+	  m = m_next;
+	}
       }
     }
-  }	
+  }
 
   // Compute the new alive and total stellar masses
   aliveMass = nonStochAliveMass + stochAliveMass;
