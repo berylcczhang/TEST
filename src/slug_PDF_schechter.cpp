@@ -61,6 +61,13 @@ slug_PDF_schechter::~slug_PDF_schechter() {
 void
 slug_PDF_schechter::initialize(const std::vector<double>& tokenVal) {
 
+
+  //Clean up the distribution object if we already have one
+  if (initialised==true && variable_seg==true)
+  {
+    delete unidist; 
+  }
+
   // Save the slope and M* value
   segSlope = tokenVal[0];
   segStar = tokenVal[1];

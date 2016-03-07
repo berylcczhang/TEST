@@ -826,7 +826,9 @@ void slug_cluster::clear_spectrum() {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
-			 const unsigned long trial, bool cluster_only) const {
+			 const unsigned long trial,
+			 bool cluster_only, const std::vector<double>& imfvp) const {
+			 
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific
 	    << setw(11) << right << id << "   "
@@ -844,7 +846,20 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
       outfile << setw(11) << right << 0.0;
     if (extinct != NULL)
       outfile << "   " << setw(11) << right << A_V;
+
+    
+    if (imfvp.size()>0)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imfvp.size();p++)
+      {
+        outfile << "   " << setw(11) << right << imfvp[p];
+      }
+    
+    }
+    
     outfile << endl;
+  
   } else if (out_mode == BINARY) {
     if (cluster_only) {
       outfile.write((char *) &trial, sizeof trial);
@@ -870,6 +885,19 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
     }
     if (extinct != NULL)
       outfile.write((char *) &A_V, sizeof A_V);
+      
+    //Write out variable parameter values
+    if (imfvp.size()>0)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imfvp.size();p++)
+      {
+        outfile.write((char *) &imfvp[p], sizeof imfvp[p]);
+      }
+    
+    }
+   
+    
   }
 }
 
@@ -879,7 +907,8 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
 ////////////////////////////////////////////////////////////////////////
 #ifdef ENABLE_FITS
 void
-slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial) {
+slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial,
+                          const std::vector<double>& imfvp) {
 
   // Get current number of entries
   int fits_status = 0;
@@ -917,6 +946,19 @@ slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial) {
   if (extinct != NULL)
     fits_write_col(out_fits, TDOUBLE, 12, nrows+1, 1, 1, &A_V,
 		   &fits_status);
+	if (imfvp.size()>0)
+  {
+    //Loop over the variable parameters
+    int colnum=12;  //Current column number
+    for (int p = 0; p<imfvp.size();p++)
+    {
+      colnum++;
+      double vp_p=imfvp[p];
+      fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1, &vp_p,
+		  &fits_status);
+    }
+  
+  }
 }
 #endif
 

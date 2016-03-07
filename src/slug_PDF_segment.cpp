@@ -24,6 +24,7 @@ namespace std
 #include "slug_PDF_segment.H"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include "slug_PDF.H"
 
 using namespace std;
 using namespace boost;
@@ -42,7 +43,10 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
   const vector<string> tokList = tokenList();
   vector<double> tok_vals(tokList.size());
   vector<bool> have_tok(tokList.size(), false);
-
+  
+  //Set this segment's initial variability to false
+  variable_seg = false;
+		
   // Flags for min, max, and weight. Note that, if weight == NULL,
   // we've been called in basic mode, so we shouldn't expect to read a
   // min, max, or weight; in this case we set them to true to start.
@@ -76,11 +80,34 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
     to_lower(tokens[0]);
 
     // Make sure there's no extraneous junk; if there is, bail out
-    if (tokens.size() > 2) {
-      if (tokens[2].compare(0, 1, "#") != 0) {
-	errMsg = errStr;
-	return PARSE_ERROR;
+    if (tokens.size() > 2) 
+    {
+
+      //Check if there is a variable parameter on this line first
+      if (tokens[1].compare(0, 1, "V") == 0 || tokens[1].compare(0,1,"v") == 0)
+      {
+
+        //Check if there is extraneous junk on a variable line
+        if (tokens.size() > 3)
+        {
+          if (tokens[3].compare(0, 1, "#") != 0)
+          {
+            errMsg = "Expected TYPE V PDFFilename.vpar";
+            return PARSE_ERROR;
+          }
+        }
+        //Set variable_seg to true
+        //Note that this segment has a variable parameter
+        variable_seg = true;
+
       }
+
+      else if (tokens[2].compare(0, 1, "#") != 0) 
+      {
+        errMsg = errStr;
+        return PARSE_ERROR;
+      }
+
     }
 
     // Make sure we got two tokens
@@ -101,16 +128,42 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
 	segMax = lexical_cast<double>(tokens[1]);
 	have_max = true;
       } else {
+      
+      
 	// Did we get one of the other tokens expected by this class?
 	unsigned int i;
 	for (i=0; i<tokList.size(); i++) {
 	  if (tokens[0].compare(tokList[i]) == 0) {
-	    // Match found
-	    tok_vals[i] = lexical_cast<double>(tokens[1]);
-	    have_tok[i] = true;
-	    break;
-	  }
-	}
+	    
+      if (tokens[1].compare(0,1,"V") == 0 || tokens[1].compare(0,1,"v") == 0)
+      {
+
+        //Initialise the parameter to a placeholder value
+        tok_vals[i] = double(0.5);
+        have_tok[i] = true;	    	
+
+        //Store the index of the parameter and the path to the pdf     	    	
+        variable_tok.push_back(i);
+        variable_names.push_back(tokens[2]);
+
+        alltoks.push_back(tok_vals[i]);	
+
+        //Break
+        break;
+
+      }
+      else
+      {
+        // Match found
+        tok_vals[i] = lexical_cast<double>(tokens[1]);
+        have_tok[i] = true;
+
+        alltoks.push_back(tok_vals[i]);
+
+        break;
+      }
+    }
+  }
 
 	// If we're here and i == tokList.size(), then we've compared
 	// this token to min, max, weight, and all the tokens defined by
@@ -135,6 +188,7 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
       have_all_tok = have_all_tok && have_tok[i];
     if (have_all_tok) {
       initialize(tok_vals);
+      initialised = true;
       return OK;
     }
   }
@@ -147,6 +201,7 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
     have_all_tok = have_all_tok && have_tok[i];
   if (have_all_tok) {
     initialize(tok_vals);
+    initialised=true;
     return OK;
   }
 
@@ -156,4 +211,52 @@ slug_PDF_segment::parse(ifstream& file, int& lineCount, string &errMsg,
   return EOF_ERROR;
 }
 
+////////////////////////////////////////////////////////////////////////
+// Update variable segments
+////////////////////////////////////////////////////////////////////////
+void slug_PDF_segment::update(const std::vector<double>& drawn_vals)
+{
+
+  //Make sure everything is the correct size
+  if (variable_tok.size() != drawn_vals.size())
+  {
+    cerr << "slug: Different number of variable tokens to drawn values" << endl;
+    cerr << "slug: VT.size: " << variable_tok.size() << "  DV.size: " << drawn_vals.size() << endl;
+    exit(1);
+  }
+
+  //Loop over list of indices and modify the appropriate values
+  //in the token list.	
+  for (int i=0; i<variable_tok.size(); i++) 
+  {		
+
+//		//Test draw
+//    cout << "Previous value of token " << variable_tok.at(i) << " was " << alltoks.at(variable_tok.at(i)) << endl;
+
+    //Assign the newly drawn value to the correct parameter.
+    alltoks.at(variable_tok.at(i)) = drawn_vals.at(i);
+
+    //Test draw
+//  cout << "New value of token " << variable_tok.at(i) << " is " << alltoks.at(variable_tok.at(i)) << endl;
+
+  }
+
+  //Initialize the segment again, now with new parameters
+   initialize(alltoks);
+   
+}
+////////////////////////////////////////////////////////////////////////
+// Clean up variable segments
+////////////////////////////////////////////////////////////////////////
+void slug_PDF_segment::delete_v_pdfs()
+{
+
+  for (int i = 0; i < variable_param_pdfs.size(); ++i) 
+  {
+    delete variable_param_pdfs[i];
+  }
+
+  variable_param_pdfs.clear();
+
+}
 

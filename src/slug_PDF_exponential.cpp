@@ -47,6 +47,13 @@ slug_PDF_exponential::~slug_PDF_exponential() {
 void
 slug_PDF_exponential::initialize(const std::vector<double>& tokenVal) {
 
+  //Clean up the distribution object if we already have one
+  if (initialised==true && variable_seg==true)
+  {
+    delete unidist; 
+  }
+
+
   // Save data read from tokens
   segScale = tokenVal[0];
 

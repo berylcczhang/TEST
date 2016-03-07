@@ -60,9 +60,20 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       seed_file_name = ss.str();
     }
     seed_file.open(seed_file_name.c_str(), ios::in);
+    
+    
+    //Check if the file exists
+    if (!seed_file) 
+    {
+      cerr << "Can't open RNG seed file " << seed_file_name << endl;
+      exit(1);
+    }
+    
+    
     seed_file >> seed;
     seed_file.close();
 
+	
   } else {
 
     // Get a random see from /dev/urandom if possible
@@ -169,6 +180,22 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 	 << tracks->max_mass() << " Msun to " << imf->get_xMax()
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
+  
+  
+  //Here we check for variable segments in the IMF and initialise the PDFs
+  //from which the values of these segments are drawn.
+  is_imf_var = imf->init_vsegs();		//Check for variable segments & initialise them		
+	
+  //Check for variable segments & have a first draw
+  if (is_imf_var == true)
+  {
+    //Draw new values for variable parameters
+    //Update IMF segments and recompute weights 
+    imf_vpdraws = imf->vseg_draw();
+    //Reset range restrictions
+    imf->set_stoch_lim(pp.get_min_stoch_mass());
+  }
+	
 
   // Ditto for IMF and yield table
   if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10)) {
@@ -319,6 +346,11 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 ////////////////////////////////////////////////////////////////////////
 slug_sim::~slug_sim() {
 
+
+  // Clean up variable parameter storage
+  imf_vpdraws.clear();
+
+
   // Delete the various objects we created
   if (galaxy != NULL) delete galaxy;
   if (cluster != NULL) delete cluster;
@@ -382,6 +414,25 @@ void slug_sim::galaxy_sim() {
     if (pp.get_verbosity() > 0)
       std::cout << "slug: starting trial " << i+1 << " of "
 		<< pp.get_nTrials() << std::endl;
+
+
+    //Check for variable segments
+    if (is_imf_var == true)
+    {
+
+      cerr << "slug: Variable mode is not currently ready for use in galaxy simulations." << endl;
+      exit(1);
+/*
+      //Draw new values for variable parameters
+      //Update IMF segments and recompute weights 
+      vector<double>  pdf_draw_value = imf->vseg_draw();
+      //Reset range restrictions
+      imf->set_stoch_lim(pp.get_min_stoch_mass());
+ 
+*/ 
+    }
+
+
 
     // Reset the galaxy
     galaxy->reset();
@@ -544,6 +595,17 @@ void slug_sim::galaxy_sim() {
       }	
     }
   }
+  
+  
+  //Clean up vector of variable pdfs
+  if (is_imf_var == true)
+  {
+    imf->cleanup();
+  }
+  
+  
+  
+  
 }
 
 
@@ -551,6 +613,8 @@ void slug_sim::galaxy_sim() {
 // Method to run a cluster simulation
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::cluster_sim() {
+
+
 
   // Loop over number of trials
   for (unsigned long i=0; i<pp.get_nTrials(); i++) {
@@ -567,6 +631,16 @@ void slug_sim::cluster_sim() {
       outTimes.push_back(out_time_pdf->draw());
     }
 
+    //Check for variable segments
+    if (is_imf_var == true)
+    {
+      //Draw new values for variable parameters
+      //Update IMF segments and recompute weights 
+      imf_vpdraws = imf->vseg_draw();
+      //Reset range restrictions
+      imf->set_stoch_lim(pp.get_min_stoch_mass());
+    }
+											
     // Reset the cluster if the mass is constant, destroy it and build
     // a new one if not
     if (pp.get_random_cluster_mass()) {
@@ -585,6 +659,7 @@ void slug_sim::cluster_sim() {
       if (pp.get_writeClusterProp()) {
 	int ncol = 9*14-3;
 	if (pp.get_use_extinct()) ncol += 14;
+	if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
 	write_separator(cluster_prop_file, ncol);
       }
       if (pp.get_writeClusterSpec())
@@ -619,10 +694,10 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_prop(cluster_prop_file, out_mode, i, true);
+	  cluster->write_prop(cluster_prop_file, out_mode, i, true, imf_vpdraws);
 #ifdef ENABLE_FITS
 	} else {
-	  cluster->write_prop(cluster_prop_fits, i);
+	  cluster->write_prop(cluster_prop_fits, i, imf_vpdraws);
 	}
 #endif
       }
@@ -667,6 +742,14 @@ void slug_sim::cluster_sim() {
       }      
     }
   }
+  
+  
+  //Clean up vector of variable pdfs
+  if (is_imf_var == true)
+  {
+    imf->cleanup();
+  }
+  
 }
 
 
@@ -849,7 +932,21 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "MaxStarMass";
     if (extinct != NULL)
       cluster_prop_file << setw(14) << left << "A_V";
+      
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        cluster_prop_file << setw(14) << left << "VP"+ std::to_string(p);
+      }
+    
+    }
+      
+      
     cluster_prop_file << endl;
+    
     cluster_prop_file << setw(14) << left << ""
 		      << setw(14) << left << "(yr)"
 		      << setw(14) << left << "(yr)"
@@ -860,8 +957,25 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "(Msun)"
 		      << setw(14) << left << ""
 		      << setw(14) << left << "(Msun)";
+		      
+		      
+
+		      
     if (extinct != NULL)
       cluster_prop_file << setw(14) << left << "(mag)";
+      
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        cluster_prop_file << setw(14) << left << "";
+      }
+    
+    }      
+      
+      
     cluster_prop_file << endl;
     cluster_prop_file << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
@@ -875,11 +989,32 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "-----------";
     if (extinct != NULL)
       cluster_prop_file << setw(14) << left << "-----------";
+      
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        cluster_prop_file << setw(14) << left << "-----------";
+      }
+    
+    }
+      
+      
     cluster_prop_file << endl;
   } else if (out_mode == BINARY) {
     // File starts with a bit indicating whether we're using extinction
     bool use_extinct = (extinct != NULL);
     cluster_prop_file.write((char *) &use_extinct, sizeof use_extinct);
+
+    // File then contains an integer number of variable parameters
+    if (is_imf_var == true)
+    {
+      int nvps = imf_vpdraws.size();
+      cluster_prop_file.write((char *) &nvps, sizeof nvps);
+    }
+    
   }
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -904,6 +1039,22 @@ void slug_sim::open_cluster_prop() {
       tunit_str.push_back("mag");
       ncol++;
     }
+    
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        ttype_str.push_back("VP"+std::to_string(p));
+        tform_str.push_back("1D");
+        tunit_str.push_back("");
+        ncol++; 
+      }
+    
+    } 
+    
+    
     char **ttype = new char *[ncol];
     char **tform = new char *[ncol];
     char **tunit = new char *[ncol];

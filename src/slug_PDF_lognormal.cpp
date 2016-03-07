@@ -48,6 +48,13 @@ slug_PDF_lognormal::~slug_PDF_lognormal() {
 void
 slug_PDF_lognormal::initialize(const std::vector<double>& tokenVal) {
 
+  //Clean up the distribution object if we already have one
+  if (initialised==true && variable_seg==true) 
+  {
+    delete lndist; 
+  } 
+
+
   // Save values
   segMean = tokenVal[0];
   segDisp = tokenVal[1];
