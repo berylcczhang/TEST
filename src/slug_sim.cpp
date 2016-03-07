@@ -183,10 +183,20 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
   
+  // Ditto for IMF and yield table
+  if (yields) {
+    if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10)) {
+      cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
+	   << " Msun > maximum yield table mass " << yields->max_mass()
+	   << " Msun." << endl;
+      cerr << "slug: warning: Calculation will proceed, but stars with mass "
+	   << yields->max_mass() << " Msun to " << imf->get_xMax()
+	   << " Msun will be treated as having zero yield." << endl;
+    }
+  }
   
-  //Here we check for variable segments in the IMF and initialise the PDFs
-  //from which the values of these segments are drawn.
-  is_imf_var = imf->init_vsegs();		//Check for variable segments & initialise them		
+  //Check for variable segments & initialise them
+  is_imf_var = imf->init_vsegs();	
 	
   //Check for variable segments & have a first draw
   if (is_imf_var == true)
@@ -196,17 +206,6 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     imf_vpdraws = imf->vseg_draw();
     //Reset range restrictions
     imf->set_stoch_lim(pp.get_min_stoch_mass());
-  }
-	
-
-  // Ditto for IMF and yield table
-  if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10)) {
-    cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
-	 << " Msun > maximum yield table mass " << yields->max_mass()
-	 << " Msun." << endl;
-    cerr << "slug: warning: Calculation will proceed, but stars with mass "
-	 << yields->max_mass() << " Msun to " << imf->get_xMax()
-	 << " Msun will be treated as having zero yield." << endl;
   }
 
   // Set the cluster lifetime function
