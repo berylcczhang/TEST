@@ -115,6 +115,7 @@ slug_parmParser::setDefaults() {
   nTrials = 1;
   rng_offset = 0;
   logTime = false;
+  outTimesList = false;
   startTime = timeStep = endTime = -constants::big;
   sfr = cluster_mass = -constants::big;
   constantSFR = false;
@@ -396,6 +397,35 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	       << line << endl;
 	  exit(1);
 	}
+      } else if (!(tokens[0].compare("output_times"))) {
+
+	// Flag that we have an output time list
+	outTimesList = true;
+	
+	// Count tokens
+	nTokExpected = 1;
+
+	// For this key, we don't know in advance how many bands to
+	// expect, so parse them one at a time
+	for (unsigned int tokPtr = 1; tokPtr < tokens.size(); tokPtr++) {
+
+	  // Check if this is a comment; if so, stop iterating; if
+	  // not, increment the number of tokens expected
+	  if ((tokens[tokPtr]).compare(0, 1, "#") == 0) break;
+	  nTokExpected++;
+
+	  // This is not a comment; break up by commas
+	  vector<string> outTimesTmp;
+	  split(outTimesTmp, tokens[tokPtr], is_any_of(", "),
+		token_compress_on);
+
+	  // Push onto output times list
+	  for (unsigned int i = 0; i < outTimesTmp.size(); i++) {
+	    if (outTimesTmp[i].length() == 0) continue;
+	    outTimes.push_back(lexical_cast<double>(outTimesTmp[i]));
+	  }
+	}
+
       } else if (!(tokens[0].compare("phot_bands"))) {
 
 	// Count tokens
@@ -472,38 +502,52 @@ slug_parmParser::checkParams() {
     exit(1);
   }
   if (nTrials < 0) {
-    cerr << "slug: error: nTrials must be >= 1" << endl;
+    cerr << "slug: error: n_trials must be >= 1" << endl;
     exit(1);
   }
   if (startTime == -constants::big) {
     if (!logTime)
       startTime = timeStep;   // Default start time = time step if
 			      // time is not logarithmic
-    else {
-      cerr << "slug: error: startTime must be set" << endl;
+    else if (!outTimesList) {
+      cerr << "slug: error: start_time must be set" << endl;
       exit(1);
     }
   } else if (startTime <= 0.0) {
-    cerr << "slug: error: startTime must be > 0" << endl;
+    cerr << "slug: error: start_time must be > 0" << endl;
     exit(1);
   }
-  if ((timeStep <= 0) && !randomOutputTime) {
+  if ((timeStep <= 0) && !randomOutputTime && !outTimesList) {
     if (timeStep == -constants::big) {
-      cerr << "slug: error: parameter timeStep must be set" 
+      cerr << "slug: error: parameter time_step or output_times must be set" 
 		<< endl;
     } else {
-      cerr << "slug: error: timeStep must be > 0" << endl;
+      cerr << "slug: error: time_step must a PDF file name or be > 0" << endl;
     }
     exit(1);
   }
-  if (endTime <= 0) {
+  if (endTime <= 0 && !outTimesList) {
     if (endTime == -constants::big) {
-      cerr << "slug: error: parameter endTime must be set" 
+      cerr << "slug: error: parameter end_time or output_times must be set" 
 		<< endl;
     } else {
-      cerr << "slug: error: endTime must be > 0" << endl;
+      cerr << "slug: error: end_time must be > 0" << endl;
     }
     exit(1);
+  }
+  if (outTimesList && outTimes.size() == 0) {
+    cerr << " slug: error: must set at least one time in output_times"
+	 << endl;
+    exit(1);
+  }
+  if (outTimesList) {
+    for (vector<double>::size_type i=0; i<outTimes.size()-1; i++) {
+      if ((outTimes[i] >= outTimes[i+1]) || (outTimes[i] <= 0.0)) {
+	cerr << "slug: error: output_times must be > 0 and strictly increasing"
+	     << endl;
+	exit(1);
+      }
+    }
   }
   if (!constantSFR && !randomSFR && run_galaxy_sim) {
     if (sfh.length() == 0) {
@@ -820,3 +864,5 @@ double slug_parmParser::get_nebular_den() const { return nebular_den; }
 double slug_parmParser::get_nebular_temp() const { return nebular_temp; }
 double slug_parmParser::get_nebular_phi() const { return nebular_phi; }
 double slug_parmParser::get_nebular_logU() const { return nebular_logU; }
+bool slug_parmParser::get_outTimesList() const { return outTimesList; }
+const vector<double>& slug_parmParser::get_outTimes() const { return outTimes; }

@@ -32,25 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="cloudy.html" title="cloudy_slug: An Automated Interface to cloudy"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="filters.html" title="Filters and Filter Data"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -169,12 +151,16 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>All the remaining fields are identical to those listed above for integrated quantities, starting with wl</li>
 </ul>
 <p>For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).</p>
+<p>The following field is present only if SLUG was run with a Variable Mode IMF in a cluster-only simulation:</p>
+<ul class="simple">
+<li>VPx: The value drawn for variable parameter x (0,1,2...) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.</li>
+</ul>
 </div>
 <div class="section" id="module-slugpy">
 <span id="full-documentation-of-slugpy"></span><h2>Full Documentation of slugpy<a class="headerlink" href="#module-slugpy" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="slugpy.combine_cluster">
-<code class="descclassname">slugpy.</code><code class="descname">combine_cluster</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.combine_cluster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">combine_cluster</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/combine_cluster.html#combine_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.combine_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to combine cluster data from multiple SLUG2 runs,
 treating each input run as a separate set of trials. Trial and
 cluster unique ID numbers are altered as necessary to avoid
@@ -198,7 +184,7 @@ returned by read_cluster</dd>
 
 <dl class="function">
 <dt id="slugpy.combine_integrated">
-<code class="descclassname">slugpy.</code><code class="descname">combine_integrated</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.combine_integrated" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">combine_integrated</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/combine_integrated.html#combine_integrated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.combine_integrated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to combine integrated data from multiple SLUG2 runs,
 treating each input run as a separate set of trials.</p>
 <dl class="docutils">
@@ -220,7 +206,7 @@ returned by read_integrated</dd>
 
 <dl class="function">
 <dt id="slugpy.compute_photometry">
-<code class="descclassname">slugpy.</code><code class="descname">compute_photometry</code><span class="sig-paren">(</span><em>wl</em>, <em>spec</em>, <em>filtername</em>, <em>photsystem='L_nu'</em>, <em>filter_wl=None</em>, <em>filter_response=None</em>, <em>filter_beta=None</em>, <em>filter_wl_c=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.compute_photometry" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">compute_photometry</code><span class="sig-paren">(</span><em>wl</em>, <em>spec</em>, <em>filtername</em>, <em>photsystem='L_nu'</em>, <em>filter_wl=None</em>, <em>filter_response=None</em>, <em>filter_beta=None</em>, <em>filter_wl_c=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/compute_photometry.html#compute_photometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.compute_photometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function takes an input spectrum and a set of response
 functions for photometric filters, and returns the photometry
 through those filters.</p>
@@ -283,7 +269,7 @@ Vega &#8211;&gt; absolute Vega magnitude;</dd>
 
 <dl class="function">
 <dt id="slugpy.photometry_convert">
-<code class="descclassname">slugpy.</code><code class="descname">photometry_convert</code><span class="sig-paren">(</span><em>photsystem</em>, <em>phot</em>, <em>units</em>, <em>wl_cen=None</em>, <em>filter_last=False</em>, <em>filter_names=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.photometry_convert" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">photometry_convert</code><span class="sig-paren">(</span><em>photsystem</em>, <em>phot</em>, <em>units</em>, <em>wl_cen=None</em>, <em>filter_last=False</em>, <em>filter_names=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/photometry_convert.html#photometry_convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.photometry_convert" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to convert photometric data between photometric systems.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -335,7 +321,7 @@ requires going between wavelength- and frequency-based systems</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster">
-<code class="descclassname">slugpy.</code><code class="descname">read_cluster</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster.html#read_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read all cluster data for a SLUG2 run.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -559,7 +545,7 @@ ValueError, if photsystem is set to an unknown values</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_phot">
-<code class="descclassname">slugpy.</code><code class="descname">read_cluster_phot</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>phot_only=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster_phot" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster_phot</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>phot_only=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster_phot.html#read_cluster_phot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster_phot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_phot file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -670,7 +656,7 @@ ValueError, if photsystem is set to an unknown value</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_prop">
-<code class="descclassname">slugpy.</code><code class="descname">read_cluster_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster_prop" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster_prop.html#read_cluster_prop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster_prop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_prop file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -731,6 +717,8 @@ stellar_mass field; it has no effect for ASCII or FITS files</dd>
 <dt>A_V <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>A_V value for each cluster, in mag (present only if SLUG was
 run with extinction enabled)</dd>
+<dt>vpn_tuple <span class="classifier-delimiter">:</span> <span class="classifier">contains arrays for any variable parameters we have (eg: VP0,</span></dt>
+<dd>VP1,VP2...) in the IMF.</dd>
 </dl>
 </dd>
 </dl>
@@ -738,7 +726,7 @@ run with extinction enabled)</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_spec">
-<code class="descclassname">slugpy.</code><code class="descname">read_cluster_spec</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_cluster_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster_spec</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster_spec.html#read_cluster_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_spec file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -813,7 +801,7 @@ extinction both enabled)</dd>
 
 <dl class="function">
 <dt id="slugpy.read_filter">
-<code class="descclassname">slugpy.</code><code class="descname">read_filter</code><span class="sig-paren">(</span><em>filtername</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_filter</code><span class="sig-paren">(</span><em>filtername</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_filter.html#read_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a filter or set of filters for SLUG2. By default
 this function searches the SLUG_DIR/lib/filter directory, followed
 by the current working directory. This can be overridden by the
@@ -853,7 +841,7 @@ requested filter cannot be found</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated">
-<code class="descclassname">slugpy.</code><code class="descname">read_integrated</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_integrated.html#read_integrated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_integrated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read all integrated light data for a SLUG2 run.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1064,7 +1052,7 @@ indicated in the units field</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated_phot">
-<code class="descclassname">slugpy.</code><code class="descname">read_integrated_phot</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated_phot" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated_phot</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>filters_only=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_integrated_phot.html#read_integrated_phot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_integrated_phot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 integrated_phot file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1170,7 +1158,7 @@ ValueError, if photsystem is set to an unknown value</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated_prop">
-<code class="descclassname">slugpy.</code><code class="descname">read_integrated_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated_prop" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_integrated_prop.html#read_integrated_prop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_integrated_prop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 integrated_prop file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1237,7 +1225,7 @@ each time in each trial</dd>
 
 <dl class="function">
 <dt id="slugpy.read_integrated_spec">
-<code class="descclassname">slugpy.</code><code class="descname">read_integrated_spec</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_integrated_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_integrated_spec</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_integrated_spec.html#read_integrated_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_integrated_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 integrated_spec file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1309,7 +1297,7 @@ extinction both enabled)</dd>
 
 <dl class="function">
 <dt id="slugpy.read_summary">
-<code class="descclassname">slugpy.</code><code class="descname">read_summary</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.read_summary" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_summary</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_summary.html#read_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_summary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to open a SLUG output summary file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1335,7 +1323,7 @@ directory if that environment variable is set</dd>
 
 <dl class="function">
 <dt id="slugpy.slug_open">
-<code class="descclassname">slugpy.</code><code class="descname">slug_open</code><span class="sig-paren">(</span><em>filename</em>, <em>output_dir=None</em>, <em>fmt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.slug_open" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">slug_open</code><span class="sig-paren">(</span><em>filename</em>, <em>output_dir=None</em>, <em>fmt=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/slug_open.html#slug_open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.slug_open" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to open a SLUG2 output file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -1373,7 +1361,7 @@ it fails again try FITS files.</dd>
 
 <dl class="function">
 <dt id="slugpy.write_cluster">
-<code class="descclassname">slugpy.</code><code class="descname">write_cluster</code><span class="sig-paren">(</span><em>data</em>, <em>model_name</em>, <em>fmt</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.write_cluster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">write_cluster</code><span class="sig-paren">(</span><em>data</em>, <em>model_name</em>, <em>fmt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/write_cluster.html#write_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.write_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to write a set of output cluster files in SLUG2 format,
 starting from a cluster data set as returned by read_cluster.</p>
 <dl class="docutils">
@@ -1400,7 +1388,7 @@ too large to fit in memory</dd>
 
 <dl class="function">
 <dt id="slugpy.write_integrated">
-<code class="descclassname">slugpy.</code><code class="descname">write_integrated</code><span class="sig-paren">(</span><em>data</em>, <em>model_name</em>, <em>fmt</em><span class="sig-paren">)</span><a class="headerlink" href="#slugpy.write_integrated" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">write_integrated</code><span class="sig-paren">(</span><em>data</em>, <em>model_name</em>, <em>fmt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/write_integrated.html#write_integrated"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.write_integrated" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to write a set of output integrated files in SLUG2 format,
 starting from an integrated data set as returned by
 read_integrated.</p>
@@ -1441,13 +1429,15 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
 </ul>
 </li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="filters.html"
-                        title="previous chapter">Filters and Filter Data</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="cloudy.html"
-                        title="next chapter">cloudy_slug: An Automated Interface to cloudy</a></p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="filters.html" title="previous chapter">Filters and Filter Data</a></li>
+      <li>Next: <a href="cloudy.html" title="next chapter">cloudy_slug: An Automated Interface to cloudy</a></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -1476,12 +1466,12 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/slugpy.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

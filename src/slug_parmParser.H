@@ -40,6 +40,8 @@ public:
   double get_startTime() const;           // Starting time
   double get_endTime() const;             // Final time
   bool get_logTime() const;               // Logarithmic time stepping?
+  bool get_outTimesList() const;          // Are output times explicitly listed?
+  const std::vector<double>& get_outTimes() const; // List out output times
   bool get_constantSFR() const;           // Is SFR constant?
   bool get_randomSFR() const;             // Is SFR drawn randomly?
   bool get_constantAV() const;            // Is the A_V constant?
@@ -73,7 +75,7 @@ public:
   const char *get_outDir() const;         // Dir into which to dump output
   const char *get_outtime_dist() const;   // Distribution of output times
   double get_fClust() const;              // Frac stars formed in clusters
-  std::vector<std::string>::size_type get_nPhot() const;  
+  std::vector<std::string>::size_type get_nPhot() const;
   // Number of photometric bands
   const char *get_photBand(unsigned int n) const;  
   // Name of nth photometric band
@@ -113,6 +115,7 @@ private:
   double timeStep;                        // Size of timestep
   double endTime;                         // Final time
   bool logTime;                           // Logarithmic time stepping?
+  bool outTimesList;                      // Did user give output time list
   double sfr;                             // SFR value for constant SFR
   double A_V;                             // A_V value for constant A_V
   double z;                               // Redshift
@@ -160,6 +163,7 @@ private:
   std::string model;                      // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   std::vector<std::string> photBand;      // Names of photometric bands
+  std::vector<double> outTimes;           // Exact output times
   std::string seed_file;                  // rng seed file name
 
   // Internal functions

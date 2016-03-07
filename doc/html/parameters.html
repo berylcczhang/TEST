@@ -32,25 +32,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="pdfs.html" title="Probability Distribution Functions"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="running.html" title="Running a SLUG simulation"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">slug 2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -102,6 +84,7 @@
 <li><code class="docutils literal"><span class="pre">time_step</span></code>: size of the time step. If <code class="docutils literal"><span class="pre">log_time</span></code> is set to 0, this is in yr. If <code class="docutils literal"><span class="pre">log_time</span></code> is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time). Alternately, if <code class="docutils literal"><span class="pre">time_step</span></code> is set to any value that cannot be converted to a real number, then this is interpreted as giving the name of a PDF file, which must be formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span>Probability Distribution Functions</span></a>. In this case one output time will be selected randomly for each trial from the specified PDF. This option is useful, for example, for generating a library of simulations that are randomly sampled in stellar population age. For the PDF option, the options <code class="docutils literal"><span class="pre">log_time</span></code>, <code class="docutils literal"><span class="pre">start_time</span></code> and <code class="docutils literal"><span class="pre">end_time</span></code> will all be ignored, as the relevant parameters will be taken from the specified PDF file.</li>
 <li><code class="docutils literal"><span class="pre">start_time</span></code>: first output time. This may be omitted if <code class="docutils literal"><span class="pre">log_time</span></code> is set to 0, in which case it defaults to a value equal to <code class="docutils literal"><span class="pre">time_step</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">end_time</span></code>: last output time, in yr. Note that not all the tracks include entries going out to times &gt;1 Gyr, and the results will become inaccurate if the final time is larger than the tracks allow.</li>
+<li><code class="docutils literal"><span class="pre">output_times</span></code>: an optional parameter giving an exact list of times in yr at which to write output. This must be specified as a comma-separated list, i.e., time0, time1, time2, ..., where all times are positive and are in strictly increasing order. There is no limit on the number of output times that may be included. This parameter may be omitted if <code class="docutils literal"><span class="pre">end_time</span></code> and <code class="docutils literal"><span class="pre">time_step</span></code> are set. If this parameter is set, it overrides <code class="docutils literal"><span class="pre">start_time</span></code>, <code class="docutils literal"><span class="pre">end_time</span></code>, and <code class="docutils literal"><span class="pre">time_step</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">sfr</span></code>: star formation rate. Only used if <code class="docutils literal"><span class="pre">sim_type</span></code> is <code class="docutils literal"><span class="pre">galaxy</span></code>; for <code class="docutils literal"><span class="pre">cluster</span></code>, it will be ignored, and can be omitted. If, instead of specifying a numerical value for this parameter, you specify the string <code class="docutils literal"><span class="pre">sfh</span></code>, the code will interpret this as a flag that a star formation history should be read from the file specified by the <code class="docutils literal"><span class="pre">sfh</span></code> keyword.</li>
 <li><code class="docutils literal"><span class="pre">sfh</span></code>: name of star formation history file. This file is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span>Probability Distribution Functions</span></a>. This is ignored, and can be omitted, if <code class="docutils literal"><span class="pre">sim_type</span></code> is <code class="docutils literal"><span class="pre">cluster</span></code>, or if <code class="docutils literal"><span class="pre">sfr</span></code> is not set to <code class="docutils literal"><span class="pre">sfh</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">cluster_mass</span></code>: mass of the star cluster for simulations with <code class="docutils literal"><span class="pre">sim_type</span></code> set to <code class="docutils literal"><span class="pre">cluster</span></code>. This can be omitted, and will be ignored, if <code class="docutils literal"><span class="pre">sim_type</span></code> is <code class="docutils literal"><span class="pre">galaxy</span></code>. This parameter can be set to either a positive number or to the string <code class="docutils literal"><span class="pre">cmf</span></code>. If it is set to a numerical value, that value will be used as the cluster mass, in <span class="math">\(M_\odot\)</span> for each trial. If it is set to <code class="docutils literal"><span class="pre">cmf</span></code>, then a new cluster mass will be drawn from the CMF for each trial.</li>
@@ -262,13 +245,15 @@
 </ul>
 </li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="running.html"
-                        title="previous chapter">Running a SLUG simulation</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="pdfs.html"
-                        title="next chapter">Probability Distribution Functions</a></p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="running.html" title="previous chapter">Running a SLUG simulation</a></li>
+      <li>Next: <a href="pdfs.html" title="next chapter">Probability Distribution Functions</a></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -297,12 +282,12 @@
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/parameters.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

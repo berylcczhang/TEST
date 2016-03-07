@@ -117,8 +117,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   for (int i=0; i<1000; i++) six_sided_die(*rng);
 
   // Set up the time stepping
-  if (!pp.get_random_output_time()) {
-    out_time_pdf = NULL;
+  out_time_pdf = nullptr;
+  if (!pp.get_random_output_time() && !pp.get_outTimesList()) {
     double t = pp.get_startTime();
     while (t <= pp.get_endTime()) {
       outTimes.push_back(t);
@@ -127,8 +127,10 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       else
 	t *= pow(10.0, pp.get_timeStep());
     }
-  } else {
+  } else if (pp.get_random_output_time()) {
     out_time_pdf = new slug_PDF(pp.get_outtime_dist(), rng);
+  } else {
+    outTimes = pp.get_outTimes();
   }
 
   // Set up the photometric filters
@@ -140,7 +142,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 				  pp.get_photMode(),
 				  pp.get_atmos_dir());
   } else {
-    filters = NULL;
+    filters = nullptr;
   }
 
   // Read the tracks
@@ -155,7 +157,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       std::cout << "slug: reading yield tables" << std::endl;
     yields = new slug_yields(pp.get_yield_dir());
   } else {
-    yields = NULL;
+    yields = nullptr;
   }
 
   // Set up the IMF, including the limts on its stochasticity
@@ -214,12 +216,12 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.galaxy_sim() || pp.get_random_cluster_mass())
     cmf = new slug_PDF(pp.get_CMF(), rng);
   else
-    cmf = NULL;
+    cmf = nullptr;
 
   // Set the star formation history
   if (!pp.galaxy_sim()) {
-    sfh = NULL;
-    sfr_pdf = NULL;
+    sfh = nullptr;
+    sfr_pdf = nullptr;
   } else {
     if (pp.get_constantSFR()) {
       // SFR is constant, so create a powerlaw segment of slope 0 with
@@ -228,7 +230,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng);
       sfh = new slug_PDF(sfh_segment, rng, 
 			 outTimes.back()*pp.get_SFR());
-      sfr_pdf = NULL;
+      sfr_pdf = nullptr;
     } else if (pp.get_randomSFR()) {
       // SFR is to be drawn from a PDF, so read the PDF, and
       // initialize the SFH from it
@@ -240,7 +242,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     } else {
       // SFR is not constant, so read SFH from file
       sfh = new slug_PDF(pp.get_SFH(), rng, false);
-      sfr_pdf = NULL;
+      sfr_pdf = nullptr;
     }
   }
 
@@ -280,18 +282,18 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 			       pp.get_z(),
 			       pp.nebular_no_metals());
   } else {
-    nebular = NULL;
+    nebular = nullptr;
   }
 
   // If using extinction, initialize the extinction curve
   if (pp.get_use_extinct()) {
-    if (nebular != NULL)
+    if (nebular != nullptr)
       extinct = new slug_extinction(pp, specsyn->lambda(true),
 				    nebular->lambda(), rng);
     else
       extinct = new slug_extinction(pp, specsyn->lambda(true), rng);
   } else {
-    extinct = NULL;
+    extinct = nullptr;
   }
 
   // Initialize either a galaxy or a single cluster, depending on
@@ -300,7 +302,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     galaxy = new slug_galaxy(pp, imf, cmf, clf, sfh, tracks, 
 			     specsyn, filters, extinct, nebular, 
 			     yields);
-    cluster = NULL;
+    cluster = nullptr;
   } else {
     double cluster_mass;
     if (pp.get_random_cluster_mass())
@@ -310,17 +312,17 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
 			       tracks, specsyn, filters,
 			       extinct, nebular, yields, clf);
-    galaxy = NULL;
+    galaxy = nullptr;
   }
 
   // Record the output mode
   out_mode = pp.get_outputMode();
 
 #ifdef ENABLE_FITS
-  // Set FITS file pointers to NULL to indicate they are closed
+  // Set FITS file pointers to nullptr to indicate they are closed
   int_prop_fits = cluster_prop_fits = int_spec_fits = 
     cluster_spec_fits = int_phot_fits = cluster_phot_fits =
-    int_yield_fits = cluster_yield_fits = NULL;
+    int_yield_fits = cluster_yield_fits = nullptr;
 #endif
 
   // Open the output files we'll need and write their headers
@@ -352,20 +354,20 @@ slug_sim::~slug_sim() {
 
 
   // Delete the various objects we created
-  if (galaxy != NULL) delete galaxy;
-  if (cluster != NULL) delete cluster;
-  if (specsyn != NULL) delete specsyn;
-  if (sfh != NULL) delete sfh;
-  if (clf != NULL) delete clf;
-  if (cmf != NULL) delete cmf;
-  if (imf != NULL) delete imf;
-  if (tracks != NULL) delete tracks;
-  if (rng != NULL) delete rng;
-  if (filters != NULL) delete filters;
-  if (out_time_pdf != NULL) delete out_time_pdf;
-  if (sfr_pdf != NULL) delete sfr_pdf;
-  if (extinct != NULL) delete extinct;
-  if (nebular != NULL) delete nebular;
+  if (galaxy != nullptr) delete galaxy;
+  if (cluster != nullptr) delete cluster;
+  if (specsyn != nullptr) delete specsyn;
+  if (sfh != nullptr) delete sfh;
+  if (clf != nullptr) delete clf;
+  if (cmf != nullptr) delete cmf;
+  if (imf != nullptr) delete imf;
+  if (tracks != nullptr) delete tracks;
+  if (rng != nullptr) delete rng;
+  if (filters != nullptr) delete filters;
+  if (out_time_pdf != nullptr) delete out_time_pdf;
+  if (sfr_pdf != nullptr) delete sfr_pdf;
+  if (extinct != nullptr) delete extinct;
+  if (nebular != nullptr) delete nebular;
 
   // Close open files
   if (int_prop_file.is_open()) int_prop_file.close();
@@ -381,21 +383,21 @@ slug_sim::~slug_sim() {
   // Close FITS files
   int fits_status = 0;
   if (out_mode == FITS) {
-    if (int_prop_fits != NULL)
+    if (int_prop_fits != nullptr)
       fits_close_file(int_prop_fits, &fits_status);
-    if (cluster_prop_fits != NULL)
+    if (cluster_prop_fits != nullptr)
       fits_close_file(cluster_prop_fits, &fits_status);
-    if (int_spec_fits != NULL)
+    if (int_spec_fits != nullptr)
       fits_close_file(int_spec_fits, &fits_status);
-    if (cluster_spec_fits != NULL)
+    if (cluster_spec_fits != nullptr)
       fits_close_file(cluster_spec_fits, &fits_status);
-    if (int_phot_fits != NULL)
+    if (int_phot_fits != nullptr)
       fits_close_file(int_phot_fits, &fits_status);
-    if (cluster_phot_fits != NULL)
+    if (cluster_phot_fits != nullptr)
       fits_close_file(cluster_phot_fits, &fits_status);
-    if (int_yield_fits != NULL)
+    if (int_yield_fits != nullptr)
       fits_close_file(int_yield_fits, &fits_status);
-    if (cluster_yield_fits != NULL)
+    if (cluster_yield_fits != nullptr)
       fits_close_file(cluster_yield_fits, &fits_status);
   }
 #endif
@@ -432,8 +434,6 @@ void slug_sim::galaxy_sim() {
 */ 
     }
 
-
-
     // Reset the galaxy
     galaxy->reset();
 
@@ -443,10 +443,10 @@ void slug_sim::galaxy_sim() {
       if (pp.get_writeIntegratedProp()) 
 	write_separator(int_prop_file, 8*14-3);
       unsigned int nfield = 1;
-      if (nebular != NULL) nfield++;
-      if (extinct != NULL) {
+      if (nebular != nullptr) nfield++;
+      if (extinct != nullptr) {
 	nfield++;
-	if (nebular != NULL) nfield++;
+	if (nebular != nullptr) nfield++;
       } 
       if (pp.get_writeIntegratedSpec()) 
 	write_separator(int_spec_file, (2+nfield)*14-3);
@@ -595,17 +595,12 @@ void slug_sim::galaxy_sim() {
       }	
     }
   }
-  
-  
+    
   //Clean up vector of variable pdfs
   if (is_imf_var == true)
   {
     imf->cleanup();
   }
-  
-  
-  
-  
 }
 
 
@@ -613,8 +608,6 @@ void slug_sim::galaxy_sim() {
 // Method to run a cluster simulation
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::cluster_sim() {
-
-
 
   // Loop over number of trials
   for (unsigned long i=0; i<pp.get_nTrials(); i++) {
@@ -640,7 +633,7 @@ void slug_sim::cluster_sim() {
       //Reset range restrictions
       imf->set_stoch_lim(pp.get_min_stoch_mass());
     }
-											
+    
     // Reset the cluster if the mass is constant, destroy it and build
     // a new one if not
     if (pp.get_random_cluster_mass()) {
@@ -860,7 +853,7 @@ void slug_sim::open_integrated_prop() {
 
     int fits_status = 0;
     fits_create_tbl(int_prop_fits, BINARY_TBL, 0, 10,
-		    ttype, tform, tunit, NULL, &fits_status);
+		    ttype, tform, tunit, nullptr, &fits_status);
     
   }
 #endif
@@ -930,7 +923,7 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "StellarMass"
 		      << setw(14) << left << "NumStar"
 		      << setw(14) << left << "MaxStarMass";
-    if (extinct != NULL)
+    if (extinct != nullptr)
       cluster_prop_file << setw(14) << left << "A_V";
       
     //If we have a variable IMF, write headers for the variable parameters
@@ -961,7 +954,7 @@ void slug_sim::open_cluster_prop() {
 		      
 
 		      
-    if (extinct != NULL)
+    if (extinct != nullptr)
       cluster_prop_file << setw(14) << left << "(mag)";
       
     //If we have a variable IMF, write headers for the variable parameters
@@ -987,7 +980,7 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------";
-    if (extinct != NULL)
+    if (extinct != nullptr)
       cluster_prop_file << setw(14) << left << "-----------";
       
     //If we have a variable IMF, write headers for the variable parameters
@@ -1005,7 +998,7 @@ void slug_sim::open_cluster_prop() {
     cluster_prop_file << endl;
   } else if (out_mode == BINARY) {
     // File starts with a bit indicating whether we're using extinction
-    bool use_extinct = (extinct != NULL);
+    bool use_extinct = (extinct != nullptr);
     cluster_prop_file.write((char *) &use_extinct, sizeof use_extinct);
 
     // File then contains an integer number of variable parameters
@@ -1033,7 +1026,7 @@ void slug_sim::open_cluster_prop() {
     vector<string> tunit_str = 
       { "", "", "yr", "yr", "yr", "Msun", "Msun", "Msun", "Msun", 
 	"", "Msun" };
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       ttype_str.push_back("A_V");
       tform_str.push_back("1D");
       tunit_str.push_back("mag");
@@ -1067,7 +1060,7 @@ void slug_sim::open_cluster_prop() {
     // Create the table
     int fits_status = 0;
     fits_create_tbl(cluster_prop_fits, BINARY_TBL, 0, ncol,
-		    ttype, tform, tunit, NULL, &fits_status);
+		    ttype, tform, tunit, nullptr, &fits_status);
     delete ttype;
     delete tform;
     delete tunit;
@@ -1130,42 +1123,42 @@ void slug_sim::open_integrated_spec() {
     int_spec_file << setw(14) << left << "Time"
 		  << setw(14) << left << "Wavelength"
 		  << setw(14) << left << "L_lambda";
-    if (nebular != NULL)
+    if (nebular != nullptr)
       int_spec_file << setw(14) << left << "L_l_neb";
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       int_spec_file << setw(14) << left << "L_lambda_ex";
-      if (nebular != NULL)
+      if (nebular != nullptr)
 	int_spec_file << setw(14) << left << "L_l_neb_ex";
     }
     int_spec_file << endl;
     int_spec_file << setw(14) << left << "(yr)"
 		  << setw(14) << left << "(Angstrom)"
 		  << setw(14) << left << "(erg/s/A)";
-    if (nebular != NULL)
+    if (nebular != nullptr)
       int_spec_file << setw(14) << left << "(erg/s/A)";
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       int_spec_file << setw(14) << left << "(erg/s/A)";
-      if (nebular != NULL)
+      if (nebular != nullptr)
 	int_spec_file << setw(14) << left << "(erg/s/A)";
     }
     int_spec_file << endl;
     int_spec_file << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------";
-    if (nebular != NULL)
+    if (nebular != nullptr)
       int_spec_file << setw(14) << left << "-----------";
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       int_spec_file << setw(14) << left << "-----------";
-      if (nebular != NULL)
+      if (nebular != nullptr)
 	int_spec_file << setw(14) << left << "-----------";
     }
     int_spec_file << endl;
   } else if (out_mode == BINARY) {
     // File starts with two bits indicating whether we're using
     // nebular emission and extinction
-    bool use_nebular = (nebular != NULL);
+    bool use_nebular = (nebular != nullptr);
     int_spec_file.write((char *) &use_nebular, sizeof use_nebular);
-    bool use_extinct = (extinct != NULL);
+    bool use_extinct = (extinct != nullptr);
     int_spec_file.write((char *) &use_extinct, sizeof use_extinct);
     // Write list of wavelengths
     vector<double> lambda = specsyn->lambda();
@@ -1211,7 +1204,7 @@ void slug_sim::open_integrated_spec() {
     tform_str.push_back(lexical_cast<string>(nl) + "D");
     vector<string> tunit_str = { "Angstrom" };
     int ncol=1;
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       lambda_neb = nebular->lambda();
       nl_neb = lambda_neb.size();
       ttype_str.push_back("Wavelength_neb");
@@ -1219,7 +1212,7 @@ void slug_sim::open_integrated_spec() {
       tunit_str.push_back("Angstrom");
       ncol++;
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       lambda_ext = extinct->lambda();
       nl_ext = lambda_ext.size();
       ttype_str.push_back("Wavelength_ex");
@@ -1227,7 +1220,7 @@ void slug_sim::open_integrated_spec() {
       tunit_str.push_back("Angstrom");
       ncol++;
     }
-    if (extinct != NULL && nebular != NULL) {
+    if (extinct != nullptr && nebular != nullptr) {
       lambda_neb_ext = extinct->lambda_neb();
       nl_neb_ext = lambda_neb_ext.size();
       ttype_str.push_back("Wavelength_neb_ex");
@@ -1257,17 +1250,17 @@ void slug_sim::open_integrated_spec() {
     fits_write_col(int_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
     int col=2;
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       fits_write_col(int_spec_fits, TDOUBLE, col, 1, 1, nl_neb,
 		     lambda_neb.data(), &fits_status);
       col++;
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       fits_write_col(int_spec_fits, TDOUBLE, col, 1, 1, nl_ext,
 		     lambda_ext.data(), &fits_status);
       col++;
     }
-    if (nebular != NULL && extinct != NULL) {
+    if (nebular != nullptr && extinct != nullptr) {
       fits_write_col(int_spec_fits, TDOUBLE, col, 1, 1, nl_neb_ext,
 		     lambda_neb_ext.data(), &fits_status);
       col++;
@@ -1280,19 +1273,19 @@ void slug_sim::open_integrated_spec() {
     tform2_str[2] = lexical_cast<string>(nl) + "D";
     vector<string> tunit2_str = { "", "yr", "erg/s/A" };
     ncol = 3;
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       ttype2_str.push_back("L_lambda_neb");
       tform2_str.push_back(lexical_cast<string>(nl_neb) + "D");
       tunit2_str.push_back("erg/s/A");
       ncol++;
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       ttype2_str.push_back("L_lambda_ex");
       tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
       tunit2_str.push_back("erg/s/A");
       ncol++;
     }
-    if (nebular != NULL && extinct != NULL) {
+    if (nebular != nullptr && extinct != nullptr) {
       ttype2_str.push_back("L_lambda_neb_ex");
       tform2_str.push_back(lexical_cast<string>(nl_neb_ext) + "D");
       tunit2_str.push_back("erg/s/A");
@@ -1371,11 +1364,11 @@ void slug_sim::open_cluster_spec() {
 		      << setw(14) << left << "Time"
 		      << setw(14) << left << "Wavelength"
 		      << setw(14) << left << "L_lambda";
-    if (nebular != NULL)
+    if (nebular != nullptr)
       cluster_spec_file << setw(14) << left << "L_l_neb";
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       cluster_spec_file << setw(14) << left << "L_lambda_ex";
-      if (nebular != NULL)
+      if (nebular != nullptr)
 	cluster_spec_file << setw(14) << left << "L_l_neb_ex";
     }
     cluster_spec_file << endl;
@@ -1383,11 +1376,11 @@ void slug_sim::open_cluster_spec() {
 		      << setw(14) << left << "(yr)"
 		      << setw(14) << left << "(Angstrom)"
 		      << setw(14) << left << "(erg/s/A)";
-    if (nebular != NULL)
+    if (nebular != nullptr)
       cluster_spec_file << setw(14) << left << "(erg/s/A)";
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       cluster_spec_file << setw(14) << left << "(erg/s/A)";
-      if (nebular != NULL)
+      if (nebular != nullptr)
 	cluster_spec_file << setw(14) << left << "(erg/s/A)";
     }
     cluster_spec_file << endl;
@@ -1395,20 +1388,20 @@ void slug_sim::open_cluster_spec() {
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------";
-    if (nebular != NULL)
+    if (nebular != nullptr)
       cluster_spec_file << setw(14) << left << "-----------";
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       cluster_spec_file << setw(14) << left << "-----------";
-      if (nebular != NULL)
+      if (nebular != nullptr)
 	cluster_spec_file << setw(14) << left << "-----------";
     }
     cluster_spec_file << endl;
   } else if (out_mode == BINARY) {
     // File starts with two bits indicating whether we're using
     // nebular emission and extinction
-    bool use_nebular = (nebular != NULL);
+    bool use_nebular = (nebular != nullptr);
     cluster_spec_file.write((char *) &use_nebular, sizeof use_nebular);
-    bool use_extinct = (extinct != NULL);
+    bool use_extinct = (extinct != nullptr);
     cluster_spec_file.write((char *) &use_extinct, sizeof use_extinct);
     // List of wavelengths
     vector<double> lambda = specsyn->lambda();
@@ -1453,7 +1446,7 @@ void slug_sim::open_cluster_spec() {
     tform_str.push_back(lexical_cast<string>(nl) + "D");
     vector<string> tunit_str = { "Angstrom" };
     int ncol=1;
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       lambda_neb = nebular->lambda();
       nl_neb = lambda_neb.size();
       ttype_str.push_back("Wavelength_neb");
@@ -1461,7 +1454,7 @@ void slug_sim::open_cluster_spec() {
       tunit_str.push_back("Angstrom");
       ncol++;
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       lambda_ext = extinct->lambda();
       nl_ext = lambda_ext.size();
       ttype_str.push_back("Wavelength_ex");
@@ -1469,7 +1462,7 @@ void slug_sim::open_cluster_spec() {
       tunit_str.push_back("Angstrom");
       ncol++;
     }
-    if (extinct != NULL && nebular != NULL) {
+    if (extinct != nullptr && nebular != nullptr) {
       lambda_neb_ext = extinct->lambda_neb();
       nl_neb_ext = lambda_neb_ext.size();
       ttype_str.push_back("Wavelength_neb_ex");
@@ -1499,17 +1492,17 @@ void slug_sim::open_cluster_spec() {
     fits_write_col(cluster_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
     int col=2;
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       fits_write_col(cluster_spec_fits, TDOUBLE, col, 1, 1, nl_neb,
 		     lambda_neb.data(), &fits_status);
       col++;
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       fits_write_col(cluster_spec_fits, TDOUBLE, col, 1, 1, nl_ext,
 		     lambda_ext.data(), &fits_status);
       col++;
     }
-    if (nebular != NULL && extinct != NULL) {
+    if (nebular != nullptr && extinct != nullptr) {
       fits_write_col(cluster_spec_fits, TDOUBLE, col, 1, 1, nl_neb_ext,
 		     lambda_neb_ext.data(), &fits_status);
       col++;
@@ -1523,18 +1516,18 @@ void slug_sim::open_cluster_spec() {
     tform2_str[3] = lexical_cast<string>(nl) + "D";
     vector<string> tunit2_str = { "", "", "yr", "erg/s/A" };
     ncol = 4;
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       ttype2_str.push_back("L_lambda_neb");
       tform2_str.push_back(lexical_cast<string>(nl_neb) + "D");
       tunit2_str.push_back("erg/s/A");
       ncol++;
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       ttype2_str.push_back("L_lambda_ex");
       tform2_str.push_back(lexical_cast<string>(nl_ext) + "D");
       tunit2_str.push_back("erg/s/A");
       ncol++;
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	ttype2_str.push_back("L_lambda_neb_ex");
 	tform2_str.push_back(lexical_cast<string>(nl_neb_ext) + "D");
 	tunit2_str.push_back("erg/s/A");
@@ -1617,14 +1610,14 @@ void slug_sim::open_integrated_phot() {
     int_phot_file << setw(21) << left << "Time";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       int_phot_file << setw(21) << left << filter_names[i];
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	int_phot_file << setw(21) << left << filter_names[i]+"_n";
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	int_phot_file << setw(21) << left << filter_names[i]+"_ex";
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	  int_phot_file << setw(21) << left << filter_names[i]+"_nex";
       }
@@ -1634,16 +1627,16 @@ void slug_sim::open_integrated_phot() {
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       int_phot_file << setw(21) << left 
 		    << "(" + filter_units[i] + ")";
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	int_phot_file << setw(21) << left 
 		      << "(" + filter_units[i] + ")";
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	int_phot_file << setw(21) << left 
 		      << "(" + filter_units[i] + ")";
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	  int_phot_file << setw(21) << left 
 			<< "(" + filter_units[i] + ")";
@@ -1653,13 +1646,13 @@ void slug_sim::open_integrated_phot() {
     int_phot_file << setw(21) << left << "------------------";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       int_phot_file << setw(21) << left << "------------------";
-    if (nebular != NULL)
+    if (nebular != nullptr)
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	int_phot_file << setw(21) << left << "------------------";
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	int_phot_file << setw(21) << left << "------------------";
-      if (nebular != NULL)
+      if (nebular != nullptr)
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	  int_phot_file << setw(21) << left << "------------------";
     }
@@ -1673,9 +1666,9 @@ void slug_sim::open_integrated_phot() {
 		    << filter_units[i] << endl;
     // First piece of binary information: two bits saying whether we're
     // using nebular emission and extinction
-    bool use_nebular = (nebular != NULL);
+    bool use_nebular = (nebular != nullptr);
     int_phot_file.write((char *) &use_nebular, sizeof use_nebular);
-    bool use_extinct = (extinct != NULL);
+    bool use_extinct = (extinct != nullptr);
     int_phot_file.write((char *) &use_extinct, sizeof use_extinct);
   }
 #ifdef ENABLE_FITS
@@ -1702,7 +1695,7 @@ void slug_sim::open_integrated_phot() {
     vector<string> filter_names_neb(filter_names.size());
     vector<string> filter_names_ex(filter_names.size());
     vector<string> filter_names_neb_ex(filter_names.size());
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names_neb.size(); i++) {
 	filter_names_neb[i] = filter_names[i] + "_neb";
 	ttype.push_back(const_cast<char*>(filter_names_neb[i].c_str()));
@@ -1711,7 +1704,7 @@ void slug_sim::open_integrated_phot() {
       }
       ncol += filter_names_neb.size();
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
 	filter_names_ex[i] = filter_names[i] + "_ex";
 	ttype.push_back(const_cast<char*>(filter_names_ex[i].c_str()));
@@ -1719,7 +1712,7 @@ void slug_sim::open_integrated_phot() {
 	tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
       }
       ncol += filter_names_ex.size();
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	for (vector<string>::size_type i=0; i<filter_names_neb_ex.size(); 
 	     i++) {
 	  filter_names_neb_ex[i] = filter_names[i] + "_neb_ex";
@@ -1733,7 +1726,7 @@ void slug_sim::open_integrated_phot() {
     // Create table
     int fits_status = 0;
     fits_create_tbl(int_phot_fits, BINARY_TBL, 0, ncol,
-		    ttype.data(), tform.data(), tunit.data(), NULL, 
+		    ttype.data(), tform.data(), tunit.data(), nullptr, 
 		    &fits_status);
   }
 #endif
@@ -1799,14 +1792,14 @@ void slug_sim::open_cluster_phot() {
 		      << setw(21) << left << "Time";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       cluster_phot_file << setw(21) << left << filter_names[i];
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	cluster_phot_file << setw(21) << left << filter_names[i]+"_n";
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	cluster_phot_file << setw(21) << left << filter_names[i]+"_ex";
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	  cluster_phot_file << setw(21) << left << filter_names[i]+"_nex";
       }
@@ -1817,16 +1810,16 @@ void slug_sim::open_cluster_phot() {
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       cluster_phot_file << setw(21) << left 
 		    << "(" + filter_units[i] + ")";
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	cluster_phot_file << setw(21) << left 
 			  << "(" + filter_units[i] + ")";
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	cluster_phot_file << setw(21) << left 
 			  << "(" + filter_units[i] + ")";
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	  cluster_phot_file << setw(21) << left 
 			    << "(" + filter_units[i] + ")";
@@ -1837,14 +1830,14 @@ void slug_sim::open_cluster_phot() {
 		      << setw(21) << left << "------------------";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       cluster_phot_file << setw(21) << left << "------------------";
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	cluster_phot_file << setw(21) << left << "------------------";
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	cluster_phot_file << setw(21) << left << "------------------";
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++)
 	  cluster_phot_file << setw(21) << left << "------------------";
       }
@@ -1859,9 +1852,9 @@ void slug_sim::open_cluster_phot() {
 		    << filter_units[i] << endl;
     // First pieces of binary information: two bits saying whether we're
     // using nebular emission and extinction
-    bool use_nebular = (nebular != NULL);
+    bool use_nebular = (nebular != nullptr);
     cluster_phot_file.write((char *) &use_nebular, sizeof use_nebular);
-    bool use_extinct = (extinct != NULL);
+    bool use_extinct = (extinct != nullptr);
     cluster_phot_file.write((char *) &use_extinct, sizeof use_extinct);
   }
 #ifdef ENABLE_FITS
@@ -1888,7 +1881,7 @@ void slug_sim::open_cluster_phot() {
     vector<string> filter_names_neb(filter_names.size());
     vector<string> filter_names_ex(filter_names.size());
     vector<string> filter_names_neb_ex(filter_names.size());
-    if (nebular != NULL) {
+    if (nebular != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
 	filter_names_neb[i] = filter_names[i] + "_neb";
 	ttype.push_back(const_cast<char*>(filter_names_neb[i].c_str()));
@@ -1897,7 +1890,7 @@ void slug_sim::open_cluster_phot() {
       }
       ncol += filter_names.size();
     }
-    if (extinct != NULL) {
+    if (extinct != nullptr) {
       for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
 	filter_names_ex[i] = filter_names[i] + "_ex";
 	ttype.push_back(const_cast<char*>(filter_names_ex[i].c_str()));
@@ -1905,7 +1898,7 @@ void slug_sim::open_cluster_phot() {
 	tunit.push_back(const_cast<char*>(filter_units[i].c_str()));
       }
       ncol += filter_names.size();
-      if (nebular != NULL) {
+      if (nebular != nullptr) {
 	for (vector<string>::size_type i=0; i<filter_names.size(); i++) {
 	  filter_names_neb_ex[i] = filter_names[i] + "_neb_ex";
 	  ttype.push_back(const_cast<char*>(filter_names_neb_ex[i].c_str()));
@@ -1918,7 +1911,7 @@ void slug_sim::open_cluster_phot() {
     // Create table
     int fits_status = 0;
     fits_create_tbl(cluster_phot_fits, BINARY_TBL, 0, ncol,
-		    ttype.data(), tform.data(), tunit.data(), NULL, 
+		    ttype.data(), tform.data(), tunit.data(), nullptr, 
 		    &fits_status);
   }
 #endif

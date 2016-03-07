@@ -12,6 +12,7 @@
 \usepackage{sphinx}
 \usepackage{multirow}
 
+
 \addto\captionsenglish{\renewcommand{\figurename}{Fig. }}
 \addto\captionsenglish{\renewcommand{\tablename}{Table }}
 \floatname{literal-block}{Listing }
@@ -19,7 +20,7 @@
 
 
 \title{slug Documentation}
-\date{October 01, 2015}
+\date{March 07, 2016}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -165,7 +166,7 @@ SLUG can simulate either a simple stellar population (i.e., a group of stars all
 
 \section{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}
 \label{intro:probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution}\label{intro:ssec-slugpdfs}
-As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A\_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}} for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}. SLUG will also, upon user request, randomly draw a visual extinction A\_V to be applied to the light.
+As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A\_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}} for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. SLUG will also, upon user request, randomly draw a visual extinction A\_V to be applied to the light.
 
 For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction \(f_c\) of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction \(1-f_c\) of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars \(M_*\) that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses \((1-f_c)M_*\) and \(f_c M_*\). For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case, and each star is given its own randomly-generated extinction. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. Again, each cluster gets its own extinction. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.
 
@@ -174,7 +175,7 @@ Finally, star clusters can be disrupted independent of the fate of their parent 
 
 \section{Spectra and Photometry}
 \label{intro:ssec-spec-phot}\label{intro:spectra-and-photometry}
-Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength \(L_\lambda\). Third, if nebular emission is enabled, the code calculates the spectrum \(L_{\lambda,\mathrm{neb}}\) that emerges after the starlight passes through the HII region aruond the star -- see {\hyperref[intro:ssec-nebula]{\emph{\DUspan{}{Nebular Processing}}}}. Fourth, if extinction is enabled, SLUG computes the extincted stellar and nebula-processed spectra \(L_{\lambda,\mathrm{ex}}\) and \(L_{\lambda,\mathrm{neb,ex}}\) -- see {\hyperref[intro:ssec-extinction]{\emph{\DUspan{}{Extinction}}}}. Fifth and finally, SLUG computes photometry for the stellar population by integrating all computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:
+Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength \(L_\lambda\). Third, if nebular emission is enabled, the code calculates the spectrum \(L_{\lambda,\mathrm{neb}}\) that emerges after the starlight passes through the HII region aruond the star -- see {\hyperref[intro:ssec-nebula]{\emph{Nebular Processing}}}. Fourth, if extinction is enabled, SLUG computes the extincted stellar and nebula-processed spectra \(L_{\lambda,\mathrm{ex}}\) and \(L_{\lambda,\mathrm{neb,ex}}\) -- see {\hyperref[intro:ssec-extinction]{\emph{Extinction}}}. Fifth and finally, SLUG computes photometry for the stellar population by integrating all computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:
 \begin{itemize}
 \item {} 
 The frequency-averaged luminosity across the filter, defined as
@@ -321,7 +322,7 @@ Here
 
 \section{Extinction}
 \label{intro:extinction}\label{intro:ssec-extinction}
-If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor \(\phi_{\mathrm{dust}}\) used in the nebular emission calculation (see {\hyperref[intro:ssec-nebula]{\emph{\DUspan{}{Nebular Processing}}}}) is not affected by the value of \(A_V\) used in the calculation.
+If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor \(\phi_{\mathrm{dust}}\) used in the nebular emission calculation (see {\hyperref[intro:ssec-nebula]{\emph{Nebular Processing}}}) is not affected by the value of \(A_V\) used in the calculation.
 
 SLUG computes the extincted spectrum as
 \begin{gather}
@@ -331,7 +332,7 @@ where the optical depth \(\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1.086)
 \begin{gather}
 \begin{split}\kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}\end{split}\notag
 \end{gather}
-where \(R_\nu(V)\) is the filter response function as frequency \(\nu\) for the Johnson V filter. The extinction curve \(\kappa_\lambda\) can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see {\hyperref[parameters:ssec-ism-keywords]{\emph{\DUspan{}{Interstellar Medium Model Keywords}}}} for details.
+where \(R_\nu(V)\) is the filter response function as frequency \(\nu\) for the Johnson V filter. The extinction curve \(\kappa_\lambda\) can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see {\hyperref[parameters:ssec-ism-keywords]{\emph{Interstellar Medium Model Keywords}}} for details.
 
 The computation for \(L_{\lambda,\mathrm{neb,ex}}\) is analogous.
 
@@ -432,7 +433,7 @@ Next, to run on a single processor, just do:
 ./bin/slug param/filename.param
 \end{Verbatim}
 
-where \code{filename.param} is the name of a parameter file, formatted as specified in {\hyperref[parameters:sec-parameters]{\emph{\DUspan{}{Parameter Specification}}}}. The code will write a series of output files as described in {\hyperref[output:sec-output]{\emph{\DUspan{}{Output Files and Format}}}}.
+where \code{filename.param} is the name of a parameter file, formatted as specified in {\hyperref[parameters:sec-parameters]{\emph{Parameter Specification}}}. The code will write a series of output files as described in {\hyperref[output:sec-output]{\emph{Output Files and Format}}}.
 
 If you have more than one core at your disposal, you can also run SLUG in parallel, using the command line:
 
@@ -528,7 +529,7 @@ These control the operation of the simulation.
 \code{log\_time} (default: \code{0}): set to 1 for logarithmic time step, 0 for linear time steps
 
 \item {} 
-\code{time\_step}: size of the time step. If \code{log\_time} is set to 0, this is in yr. If \code{log\_time} is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time). Alternately, if \code{time\_step} is set to any value that cannot be converted to a real number, then this is interpreted as giving the name of a PDF file, which must be formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}. In this case one output time will be selected randomly for each trial from the specified PDF. This option is useful, for example, for generating a library of simulations that are randomly sampled in stellar population age. For the PDF option, the options \code{log\_time}, \code{start\_time} and \code{end\_time} will all be ignored, as the relevant parameters will be taken from the specified PDF file.
+\code{time\_step}: size of the time step. If \code{log\_time} is set to 0, this is in yr. If \code{log\_time} is set to 1, this is in dex (i.e., a value of 0.2 indicates that every 5 time steps correspond to a factor of 10 increase in time). Alternately, if \code{time\_step} is set to any value that cannot be converted to a real number, then this is interpreted as giving the name of a PDF file, which must be formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. In this case one output time will be selected randomly for each trial from the specified PDF. This option is useful, for example, for generating a library of simulations that are randomly sampled in stellar population age. For the PDF option, the options \code{log\_time}, \code{start\_time} and \code{end\_time} will all be ignored, as the relevant parameters will be taken from the specified PDF file.
 
 \item {} 
 \code{start\_time}: first output time. This may be omitted if \code{log\_time} is set to 0, in which case it defaults to a value equal to \code{time\_step}.
@@ -537,10 +538,13 @@ These control the operation of the simulation.
 \code{end\_time}: last output time, in yr. Note that not all the tracks include entries going out to times \textgreater{}1 Gyr, and the results will become inaccurate if the final time is larger than the tracks allow.
 
 \item {} 
+\code{output\_times}: an optional parameter giving an exact list of times in yr at which to write output. This must be specified as a comma-separated list, i.e., time0, time1, time2, ..., where all times are positive and are in strictly increasing order. There is no limit on the number of output times that may be included. This parameter may be omitted if \code{end\_time} and \code{time\_step} are set. If this parameter is set, it overrides \code{start\_time}, \code{end\_time}, and \code{time\_step}.
+
+\item {} 
 \code{sfr}: star formation rate. Only used if \code{sim\_type} is \code{galaxy}; for \code{cluster}, it will be ignored, and can be omitted. If, instead of specifying a numerical value for this parameter, you specify the string \code{sfh}, the code will interpret this as a flag that a star formation history should be read from the file specified by the \code{sfh} keyword.
 
 \item {} 
-\code{sfh}: name of star formation history file. This file is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}. This is ignored, and can be omitted, if \code{sim\_type} is \code{cluster}, or if \code{sfr} is not set to \code{sfh}.
+\code{sfh}: name of star formation history file. This file is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. This is ignored, and can be omitted, if \code{sim\_type} is \code{cluster}, or if \code{sfr} is not set to \code{sfh}.
 
 \item {} 
 \code{cluster\_mass}: mass of the star cluster for simulations with \code{sim\_type} set to \code{cluster}. This can be omitted, and will be ignored, if \code{sim\_type} is \code{galaxy}. This parameter can be set to either a positive number or to the string \code{cmf}. If it is set to a numerical value, that value will be used as the cluster mass, in \(M_\odot\) for each trial. If it is set to \code{cmf}, then a new cluster mass will be drawn from the CMF for each trial.
@@ -553,7 +557,7 @@ These control the operation of the simulation.
 
 \section{Output Control Keywords}
 \label{parameters:output-control-keywords}
-These control what quantities are computed and written to disk. Full a full description of the output files and how they are formatted, see {\hyperref[output:sec-output]{\emph{\DUspan{}{Output Files and Format}}}}.
+These control what quantities are computed and written to disk. Full a full description of the output files and how they are formatted, see {\hyperref[output:sec-output]{\emph{Output Files and Format}}}.
 \begin{itemize}
 \item {} 
 \code{out\_cluster} (default: \code{1}): write out the physical properties of star clusters? Set to 1 for yes, 0 for no.
@@ -584,7 +588,7 @@ These control what quantities are computed and written to disk. Full a full desc
 These specify the physical models to be used for stellar evolution, atmospheres, the IMF, extinction, etc.
 \begin{itemize}
 \item {} \begin{description}
-\item[{\code{imf} (default: \code{lib/imf/chabrier.imf}): name of the IMF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}. Note that SLUG ships with the following IMF files pre-defined (in the directory \code{lib/imf})}] \leavevmode\begin{itemize}
+\item[{\code{imf} (default: \code{lib/imf/chabrier.imf}): name of the IMF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. Note that SLUG ships with the following IMF files pre-defined (in the directory \code{lib/imf})}] \leavevmode\begin{itemize}
 \item {} 
 \code{chabrier.imf} (single-star IMF from \href{http://adsabs.harvard.edu/abs/2005ASSL..327...41C}{Chabrier, 2005, in ``The Initial Mass Function 50 Years Later'', eds. E. Corbelli, F. Palla, \& H. Zinnecker, Springer: Dordrecht, p. 41})
 
@@ -605,10 +609,10 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \end{description}
 
 \item {} 
-\code{cmf} (default: \code{lib/cmf/slug\_default.cmf}): name of the CMF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}. The default selection is a power law \(dN/dM \propto M^{-2}\) from \(M = 10^2 - 10^7\;M_\odot\). This is ignored, and may be omitted, if \code{sim\_type} is set to \code{cluster} and \code{cluster\_mass} is set to a numerical value.
+\code{cmf} (default: \code{lib/cmf/slug\_default.cmf}): name of the CMF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. The default selection is a power law \(dN/dM \propto M^{-2}\) from \(M = 10^2 - 10^7\;M_\odot\). This is ignored, and may be omitted, if \code{sim\_type} is set to \code{cluster} and \code{cluster\_mass} is set to a numerical value.
 
 \item {} 
-\code{clf} (default: \code{lib/clf/slug\_default.clf}): name of the CLF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}. The default gives a power law distribution of lifetimes \(t\) with \(dN/dt\propto t^{-1.9}\) from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The SLUG source also ships with an alternative CLF file, \code{lib/clf/nodisrupt.clf}, which disables cluster disruption entirely (by setting the lifetime distribution to a \(\delta\) function at \(10^{300}\) yr).
+\code{clf} (default: \code{lib/clf/slug\_default.clf}): name of the CLF descriptor file; this is a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}. The default gives a power law distribution of lifetimes \(t\) with \(dN/dt\propto t^{-1.9}\) from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The SLUG source also ships with an alternative CLF file, \code{lib/clf/nodisrupt.clf}, which disables cluster disruption entirely (by setting the lifetime distribution to a \(\delta\) function at \(10^{300}\) yr).
 
 \item {} \begin{description}
 \item[{\code{tracks} (default: \code{lib/tracks/Z0140v00.txt}): stellar evolution tracks to use. The following tracks ship with SLUG (all in the directory \code{lib/tracks}):}] \leavevmode\begin{itemize}
@@ -673,10 +677,10 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \section{Interstellar Medium Model Keywords}
 \label{parameters:ssec-ism-keywords}\label{parameters:interstellar-medium-model-keywords}\begin{itemize}
 \item {} 
-\code{A\_V} (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter \code{A\_V} is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value \(A_V\), in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{\DUspan{}{Probability Distribution Functions}}}}, specifying the probability distribution of \(A_V\) values, in mag.
+\code{A\_V} (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter \code{A\_V} is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value \(A_V\), in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in {\hyperref[pdfs:sec-pdfs]{\emph{Probability Distribution Functions}}}, specifying the probability distribution of \(A_V\) values, in mag.
 
 \item {} \begin{description}
-\item[{\code{extinction\_curve} (default: \code{lib/extinct/SB\_ATT\_SLUG.dat}) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction \(\kappa_\nu\) at that wavelength / frequency in \(\mathrm{cm}^2\). Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see {\hyperref[intro:ssec-spec-phot]{\emph{\DUspan{}{Spectra and Photometry}}}}). SLUG ships with the following extinction curves (all in \code{lib/extinct}):}] \leavevmode\begin{itemize}
+\item[{\code{extinction\_curve} (default: \code{lib/extinct/SB\_ATT\_SLUG.dat}) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction \(\kappa_\nu\) at that wavelength / frequency in \(\mathrm{cm}^2\). Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra and Photometry}}}). SLUG ships with the following extinction curves (all in \code{lib/extinct}):}] \leavevmode\begin{itemize}
 \item {} 
 \code{LMC\_EXT\_SLUG.dat} : LMC extinction curve; optical-UV from \href{http://adsabs.harvard.edu/abs/1999PASP..111...63F}{Fitzpatrick, E. L., 1999, PASP, 111, 63}, IR from \href{http://adsabs.harvard.edu/abs/1984A\%26A...134..284L}{Landini, M., et al., 1984, A\&A, 134, 284}; parts combined by D. Calzetti
 
@@ -743,7 +747,7 @@ These describe the photometry to be computed. Note that none of these keywords h
 \code{filters} (default: \code{lib/filters}): directory containing photometric filter data
 
 \item {} \begin{description}
-\item[{\code{phot\_mode} (default: \code{L\_nu}): photometric system to be used when writing photometric outputs. Full definitions of the quantities computed for each of the choices listed below are given in {\hyperref[intro:ssec-spec-phot]{\emph{\DUspan{}{Spectra and Photometry}}}}. Note that these values are ignored for the four special bands \code{QH0}, \code{QHe0}, \code{QHe1}, and \code{Lbol}. These four bands are always written out in the units specified above. Allowed values are:}] \leavevmode\begin{itemize}
+\item[{\code{phot\_mode} (default: \code{L\_nu}): photometric system to be used when writing photometric outputs. Full definitions of the quantities computed for each of the choices listed below are given in {\hyperref[intro:ssec-spec-phot]{\emph{Spectra and Photometry}}}. Note that these values are ignored for the four special bands \code{QH0}, \code{QHe0}, \code{QHe1}, and \code{Lbol}. These four bands are always written out in the units specified above. Allowed values are:}] \leavevmode\begin{itemize}
 \item {} 
 \code{L\_nu}: report frequency-averaged luminosity in the band, in units of erg/s/Hz
 
@@ -768,7 +772,7 @@ These describe the photometry to be computed. Note that none of these keywords h
 
 \chapter{Probability Distribution Functions}
 \label{pdfs:probability-distribution-functions}\label{pdfs::doc}\label{pdfs:sec-pdfs}
-The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction \(A_V\) as probability distribution functions -- see {\hyperref[intro:ssec-slugpdfs]{\emph{\DUspan{}{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}}}}. The code provides a generic file format through which PDFs can be specified. Examples can be found in the \code{lib/imf}, \code{lib/cmf}, \code{lib/clf}, and \code{lib/sfh} directories of the SLUG distribution.
+The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction \(A_V\) as probability distribution functions -- see {\hyperref[intro:ssec-slugpdfs]{\emph{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}}}. The code provides a generic file format through which PDFs can be specified. Examples can be found in the \code{lib/imf}, \code{lib/cmf}, \code{lib/clf}, and \code{lib/sfh} directories of the SLUG distribution.
 
 PDFs in SLUG are generically written as functions
 \begin{gather}
@@ -847,14 +851,13 @@ key1 VAL1
 \PYG{g+gh}{...}
 \end{Verbatim}
 
-where \code{TYPE} specifies what functional form describes the segment, and \code{key1 VAL1}, \code{key2 VAL2}, etc. are a series of (key, value) pairs the define the free parameters for that segment. In the example above, the first segment is described as having a \code{lognormal} functional form, and the keywords \code{mean} and \code{disp} specify that the lognormal has a mean of 0.2 \(M_\odot\) and a dispersion of 0.55 in \(\log_{10}\). The second segment is of type \code{powerlaw}, and it has a slope of \(-2.35\). The full list of allowed segment types and the keywords that must be specified with them are listed in the {\hyperref[pdfs:tab-segtypes]{\emph{\DUspan{}{Segment Types}}}} Table. Keywords and segment types are case-insensitive. Where more than one keyword is required, the order is arbitrary.
+where \code{TYPE} specifies what functional form describes the segment, and \code{key1 VAL1}, \code{key2 VAL2}, etc. are a series of (key, value) pairs the define the free parameters for that segment. In the example above, the first segment is described as having a \code{lognormal} functional form, and the keywords \code{mean} and \code{disp} specify that the lognormal has a mean of 0.2 \(M_\odot\) and a dispersion of 0.55 in \(\log_{10}\). The second segment is of type \code{powerlaw}, and it has a slope of \(-2.35\). The full list of allowed segment types and the keywords that must be specified with them are listed in the {\hyperref[pdfs:tab-segtypes]{\emph{Segment Types}}} Table. Keywords and segment types are case-insensitive. Where more than one keyword is required, the order is arbitrary.
 
 The total number of segments must be equal to one less than the number of breakpoints, so that each segment is described. Note that it is not necessary to specify a normalization for each segment, as the segments will be normalized relative to one another automatically so as to guarantee that the overall function is continuous.
 
 
 \begin{threeparttable}
-\capstart\caption{Segment Types}
-\label{pdfs:tab-segtypes}\label{pdfs:id1}
+\capstart\caption{Segment Types}\label{pdfs:tab-segtypes}\label{pdfs:id1}
 \begin{tabulary}{\linewidth}{|L|L|L|L|L|L|}
 \hline
 \textsf{\relax 
@@ -938,6 +941,64 @@ Cutoff, \(x_*\)
 
 
 
+\section{Variable Mode}
+\label{pdfs:variable-mode}
+Variable Mode works as an extension to Basic Mode. Instead of assigning a value to a parameter, you can define a PDF and then draw values for the parameter from it.
+
+Formally, the format of a Variable Mode PDF file follows that of a Basic Mode PDF file, but with one addition. To specify a parameter as variable, the entry must be of the form:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+key1 V path/to/pdf.vpar
+\end{Verbatim}
+
+with the \code{V} instructing the code that the parameter is variable. The \code{.vpar} files are formatted as if they are standard Basic Mode PDF files. Variable Mode is an extension of Basic Mode, and it is not supported in Advanced Mode PDF files.
+
+Any number of parameters belonging to a PDF can be made to vary, and the distributions from which their values are drawn can be constructed from any combination of the PDF segment types specified for Basic Mode.
+
+An example of a Variable Mode PDF file for the IMF is as follows:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}
+\PYGZsh{} This is an IMF definition file for SLUG v2.
+\PYG{g+gh}{\PYGZsh{} This file defines a power law PDF with variable slope}
+\PYG{g+gh}{\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}}
+
+\PYGZsh{} Breakpoints: mass values where the functional form changes
+\PYGZsh{} The first and last breakpoint will define the minimum and
+\PYGZsh{} maximum mass
+breakpoints 0.08 120
+
+\PYGZsh{} Definitions of segments between the breakpoints
+
+\PYGZsh{} This segment is a powerlaw with slopes drawn from slope\PYGZus{}pdf
+segment
+type powerlaw
+slope V lib/imf/slope\PYGZus{}pdf.vpar
+\end{Verbatim}
+
+An example of a parameter's PDF file is as follows:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}
+\PYGZsh{} This is a parameter definition file for SLUG v2.
+\PYG{g+gh}{\PYGZsh{} lib/imf/slope\PYGZus{}pdf.vpar}
+\PYG{g+gh}{\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}\PYGZsh{}}
+
+\PYGZsh{} Breakpoints
+breakpoints \PYGZhy{}3.0 \PYGZhy{}1.0
+
+\PYGZsh{} Draw parameters from a normal distribution
+segment
+type normal
+mean \PYGZhy{}2.35
+disp 0.1
+\end{Verbatim}
+
+The above examples correspond to a powerlaw IMF with a slope varying between -3.0 and -1.0, with the value drawn from a normal distribution.
+
+While the Variable Mode implementation is very general, it is currently only enabled for the IMF. The new parameter values are drawn at the start of each galaxy or cluster realisation.
+
+
 \section{Advanced Mode}
 \label{pdfs:advanced-mode}
 In advanced mode, one has complete freedom to set all the parameters describing the PDF: the endpoints of each segment \(x_{i,a}\) and \(x_{i,b}\), the normalization of each segment \(n_i\), and the functional forms of each segment \(f_i\). This can be used to defined PDFs that are non-continuous, or that are overlapping; the latter option can be used to construct segments with nearly arbitrary functional forms, by constructing a Taylor series approximation to the desired functional form and then using a series of overlapping \code{powerlaw} segments to implement that series.
@@ -1019,7 +1080,7 @@ key1 VAL1
 \PYG{g+gh}{...}
 \end{Verbatim}
 
-The \code{type} keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords \code{key1}, \code{key2}, \(\ldots\). The same functional forms, listed in the {\hyperref[pdfs:tab-segtypes]{\emph{\DUspan{}{Segment Types}}}} Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are \code{min}, \code{max}, and \code{weight}. The \code{min} and \code{max} keywords give the upper and lower limits \(x_{i,a}\) and \(x_{i,b}\) for the segment; the probability is zero outside these limits. The keyword \code{weight} specifies the integral under the segment, i.e., the weight \(w_i\) given for segment \(i\) is used to set the normalization \(n_i\) via the equation
+The \code{type} keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords \code{key1}, \code{key2}, \(\ldots\). The same functional forms, listed in the {\hyperref[pdfs:tab-segtypes]{\emph{Segment Types}}} Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are \code{min}, \code{max}, and \code{weight}. The \code{min} and \code{max} keywords give the upper and lower limits \(x_{i,a}\) and \(x_{i,b}\) for the segment; the probability is zero outside these limits. The keyword \code{weight} specifies the integral under the segment, i.e., the weight \(w_i\) given for segment \(i\) is used to set the normalization \(n_i\) via the equation
 \begin{gather}
 \begin{split}w_i = n_i \int_{x_{i,a}}^{x_{i,b}} f_i(x) \, dx.\end{split}\notag
 \end{gather}
@@ -1066,13 +1127,13 @@ See the file \code{lib/imf/wk06.imf} for an example of a PDF file with a \code{m
 
 \chapter{Output Files and Format}
 \label{output:output-files-and-format}\label{output::doc}\label{output:sec-output}
-SLUG can produce 7 output files, though the actual number produced depends on the setting for the \code{out\_*} keywords in the parameter file. (Additional output files can be produced by {\hyperref[cloudy:sec-cloudy-slug]{\emph{\DUspan{}{cloudy\_slug: An Automated Interface to cloudy}}}}, and are documented in that section rather than here.)
+SLUG can produce 7 output files, though the actual number produced depends on the setting for the \code{out\_*} keywords in the parameter file. (Additional output files can be produced by {\hyperref[cloudy:sec-cloudy-slug]{\emph{cloudy\_slug: An Automated Interface to cloudy}}}, and are documented in that section rather than here.)
 
 The only file that is always produced is the summary file, which is named \code{MODEL\_NAME\_summary.txt}, where \code{MODEL\_NAME} is the value given by the \code{model\_name} keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.
 
 The other six output files all have names of the form \code{MODEL\_NAME\_xxx.ext}, where the extension \code{.ext} is one of \code{.txt}, \code{.bin}, or \code{.fits} depending on the \code{output\_mode} specified in the parameter file, and \code{xxx} is \code{integrated\_prop}, \code{integrated\_spec}, \code{integrated\_phot}, \code{cluster\_prop}, \code{cluster\_spec}, or \code{cluster\_phot}. The production of these output files is controlled by the parameters \code{out\_integrated}, \code{out\_integrated\_spec}, \code{out\_integrated\_phot}, \code{out\_cluster}, \code{out\_cluster\_spec}, and \code{out\_cluster\_phot} in the parameter file.
 
-The easiest way to read these output files is with {\hyperref[slugpy:sec-slugpy]{\emph{\DUspan{}{slugpy -- The Python Helper Library}}}}, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:
+The easiest way to read these output files is with {\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}}, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:
 \begin{itemize}
 \item {} 
 Masses are in \(M_\odot\)
@@ -1121,7 +1182,7 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 \code{NumDisClust}: number of disrupted clusters present in the galaxy at this time
 
 \item {} 
-\code{NumFldStars}: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{\DUspan{}{Stellar Model Keywords}}}})
+\code{NumFldStars}: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{Stellar Model Keywords}}})
 
 \end{itemize}
 
@@ -1262,7 +1323,7 @@ This file contains data on the photometric properties of the entire galaxy, and 
 \code{Time}: evolution time at which the output is produced
 
 \item {} 
-\code{PhotFilter1}: photometric value through filter 1, where filters follow the order in which they are specified by the \code{phot\_bands} keyword; units depend on the value of \code{phot\_mode} (see {\hyperref[parameters:ssec-phot-keywords]{\emph{\DUspan{}{Photometric Filter Keywords}}}})
+\code{PhotFilter1}: photometric value through filter 1, where filters follow the order in which they are specified by the \code{phot\_bands} keyword; units depend on the value of \code{phot\_mode} (see {\hyperref[parameters:ssec-phot-keywords]{\emph{Photometric Filter Keywords}}})
 
 \item {} 
 \code{PhotFilter2}
@@ -1410,10 +1471,10 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 \code{StellarMass}: same as \code{LiveMass}, but including the mass of stellar remnants; at present, remnant mass calculation is hard-coded to use the initial-final mass relation of \href{http://adsabs.harvard.edu/abs/2009A\%26A...507.1409K}{Kruijssen (2009, A\&A, 507, 1409)}
 
 \item {} 
-\code{NumStar}: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{\DUspan{}{Stellar Model Keywords}}}})
+\code{NumStar}: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{Stellar Model Keywords}}})
 
 \item {} 
-\code{MaxStarMass}: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{\DUspan{}{Stellar Model Keywords}}}})
+\code{MaxStarMass}: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec-stellar-keywords]{\emph{Stellar Model Keywords}}})
 
 \item {} 
 \code{A\_V}: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled
@@ -1510,9 +1571,9 @@ This file contains the spectra of the individual clusters, and each entry contai
 
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. The columns \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} are present only if SLUG was run with the appropriate options enabled. Some entries in these fields may be empty; see {\hyperref[output:ssec-int-spec-file]{\emph{\DUspan{}{The integrated\_spec File}}}}.
+If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. The columns \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} are present only if SLUG was run with the appropriate options enabled. Some entries in these fields may be empty; see {\hyperref[output:ssec-int-spec-file]{\emph{The integrated\_spec File}}}.
 
-If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given, in the same format as for {\hyperref[output:ssec-int-spec-file]{\emph{\DUspan{}{The integrated\_spec File}}}}. The second table has always contains the fields \code{UniqueId}, \code{Time}, \code{Trial}, and \code{L\_lambda} giving the cluster unique ID, time, trial number, and stellar spectrum. Depending on whether nebular processing and/or extinction were enabled when SLUG was run, it may also contain the fields \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} giving the nebular-processed, extincted, and nebular-processed plus extincted spectra. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
+If \code{output\_mode} is \code{fits}, the output FITS file has two binary table extensions. The first table contains a field listing the wavelengths at which the spectra are given, in the same format as for {\hyperref[output:ssec-int-spec-file]{\emph{The integrated\_spec File}}}. The second table has always contains the fields \code{UniqueId}, \code{Time}, \code{Trial}, and \code{L\_lambda} giving the cluster unique ID, time, trial number, and stellar spectrum. Depending on whether nebular processing and/or extinction were enabled when SLUG was run, it may also contain the fields \code{L\_lambda\_neb}, \code{L\_lambda\_ex}, and \code{L\_lambda\_neb\_ex} giving the nebular-processed, extincted, and nebular-processed plus extincted spectra. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 Output in \code{binary} mode is formatted as follows.  The file starts with
 \begin{itemize}
@@ -1589,7 +1650,7 @@ This file contains the photometric values for the individual clusters. Each entr
 \code{Time}: evolution time at which the output is produced
 
 \item {} 
-\code{PhotFilter1}: photometric value through filter 1, where filters follow the order in which they are specified by the \code{phot\_bands} keyword; units depend on the value of \code{phot\_mode} (see {\hyperref[parameters:ssec-phot-keywords]{\emph{\DUspan{}{Photometric Filter Keywords}}}})
+\code{PhotFilter1}: photometric value through filter 1, where filters follow the order in which they are specified by the \code{phot\_bands} keyword; units depend on the value of \code{phot\_mode} (see {\hyperref[parameters:ssec-phot-keywords]{\emph{Photometric Filter Keywords}}})
 
 \item {} 
 \code{PhotFilter2}
@@ -1638,7 +1699,7 @@ This file contains the photometric values for the individual clusters. Each entr
 
 \end{itemize}
 
-If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. Some of the extincted photometry columns may be blank; see {\hyperref[output:ssec-int-phot-file]{\emph{\DUspan{}{The integrated\_phot File}}}}.
+If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. Some of the extincted photometry columns may be blank; see {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}.
 
 If \code{output\_mode} is \code{fits}, the data are stored as a series of
 columns in a binary table extension to the FITS file; the filter names
@@ -1706,7 +1767,7 @@ This is followed by \code{NCluster} entries of the following form:
 \label{filters:sec-filters}\label{filters::doc}\label{filters:filters-and-filter-data}
 SLUG comes with a fairly extensive list of filters, adapted from the list maintained by Charlie Conroy as part of \href{https://code.google.com/p/fsps/}{fsps}. However, users may wish to add additional filters, and so the format of the filter list is documented here for convenience.
 
-Filter data is stored in two ASCII text files, \code{FILTER\_LIST} and \code{allfilters.dat}, which are stored in the \code{lib/filters} directory. The \code{FILTER\_LIST} file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the \code{phot\_bands} keyword (see {\hyperref[parameters:ssec-phot-keywords]{\emph{\DUspan{}{Photometric Filter Keywords}}}}) to request photometry in that filter. The third and fourth columns the value of \(\beta\) and \(\lambda_c\) (the central wavelength) for that filter -- see {\hyperref[intro:ssec-spec-phot]{\emph{\DUspan{}{Spectra and Photometry}}}} for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.
+Filter data is stored in two ASCII text files, \code{FILTER\_LIST} and \code{allfilters.dat}, which are stored in the \code{lib/filters} directory. The \code{FILTER\_LIST} file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the \code{phot\_bands} keyword (see {\hyperref[parameters:ssec-phot-keywords]{\emph{Photometric Filter Keywords}}}) to request photometry in that filter. The third and fourth columns the value of \(\beta\) and \(\lambda_c\) (the central wavelength) for that filter -- see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra and Photometry}}} for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.
 
 The \code{allfilters.dat} file contains the filter responses. The file contains a series of entires for different filters, each delineated by a header line that begins with \code{\#}. The order in which filters appear in this file matches that in which they appear in the \code{FILTER\_LIST}. After the header line, are a series of lines each containing two numbers. The first is the wavelength in Angstrom, and the second is the filter response function at that wavelength.
 
@@ -1771,7 +1832,7 @@ idata = read\PYGZus{}integrated(\PYGZsq{}SLUG\PYGZus{}MODEL\PYGZus{}NAME\PYGZsq{
 cdata = read\PYGZus{}cluster(\PYGZsq{}SLUG\PYGZus{}MODEL\PYGZus{}NAME\PYGZsq{})
 \end{Verbatim}
 
-The \code{read\_integrated} function reads all the integrated-light data (i.e., the data stored in the \code{\_integrated\_*} files -- see {\hyperref[output:sec-output]{\emph{\DUspan{}{Output Files and Format}}}}) for a SLUG output whose name is given as the argument. This is the base name specified by the \code{model\_name} keyword (see {\hyperref[parameters:ssec-basic-keywords]{\emph{\DUspan{}{Basic Keywords}}}}), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a \code{namedtuple} containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see {\hyperref[cloudy:sec-cloudy-slug]{\emph{\DUspan{}{cloudy\_slug: An Automated Interface to cloudy}}}}) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:
+The \code{read\_integrated} function reads all the integrated-light data (i.e., the data stored in the \code{\_integrated\_*} files -- see {\hyperref[output:sec-output]{\emph{Output Files and Format}}}) for a SLUG output whose name is given as the argument. This is the base name specified by the \code{model\_name} keyword (see {\hyperref[parameters:ssec-basic-keywords]{\emph{Basic Keywords}}}), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a \code{namedtuple} containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see {\hyperref[cloudy:sec-cloudy-slug]{\emph{cloudy\_slug: An Automated Interface to cloudy}}}) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:
 \begin{itemize}
 \item {} 
 time: output times
@@ -1819,10 +1880,10 @@ filter\_wl: list of wavelengths for each filter at which the response function i
 filter\_response: photon response function for each filter at each wavelength (dimensionless)
 
 \item {} 
-filter\_beta: index \(\beta\) used to set the normalization for each filter -- see {\hyperref[intro:ssec-spec-phot]{\emph{\DUspan{}{Spectra and Photometry}}}}
+filter\_beta: index \(\beta\) used to set the normalization for each filter -- see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra and Photometry}}}
 
 \item {} 
-filter\_wl\_c: pivot wavelength used to set the normalization for each filter for which \(\beta \neq 0\) -- see {\hyperref[intro:ssec-spec-phot]{\emph{\DUspan{}{Spectra and Photometry}}}}
+filter\_wl\_c: pivot wavelength used to set the normalization for each filter for which \(\beta \neq 0\) -- see {\hyperref[intro:ssec-spec-phot]{\emph{Spectra and Photometry}}}
 
 \item {} 
 phot: photometry of the stars in each filter
@@ -1868,7 +1929,7 @@ phot\_neb\_ex: same as phot\_neb, but wtih extinction applied. Note that some va
 
 \end{itemize}
 
-The following fields are present only for runs that have been processed through the cloudy\_slug interface (see {\hyperref[cloudy:sec-cloudy-slug]{\emph{\DUspan{}{cloudy\_slug: An Automated Interface to cloudy}}}}):
+The following fields are present only for runs that have been processed through the cloudy\_slug interface (see {\hyperref[cloudy:sec-cloudy-slug]{\emph{cloudy\_slug: An Automated Interface to cloudy}}}):
 \begin{itemize}
 \item {} 
 cloudy\_wl: wavelengths of the output nebular spectra (in Angstrom)
@@ -1945,6 +2006,13 @@ All the remaining fields are identical to those listed above for integrated quan
 \end{itemize}
 
 For all these fields, scalar quantities that are different for each cluster (e.g., actual\_mass) will be stored as arrays of shape (N\_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N\_cluster, N).
+
+The following field is present only if SLUG was run with a Variable Mode IMF in a cluster-only simulation:
+\begin{itemize}
+\item {} 
+VPx: The value drawn for variable parameter x (0,1,2...) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.
+
+\end{itemize}
 
 
 \section{Full Documentation of slugpy}
@@ -2640,6 +2708,9 @@ mass of most massive living star in cluster
 \item[{A\_V}] \leavevmode{[}array{]}
 A\_V value for each cluster, in mag (present only if SLUG was
 run with extinction enabled)
+
+\item[{vpn\_tuple}] \leavevmode{[}contains arrays for any variable parameters we have (eg: VP0,{]}
+VP1,VP2...) in the IMF.
 
 \end{description}
 
@@ -3537,15 +3608,15 @@ If you desire, edit the cloudy input template
 \code{cloudy\_slug/LineList\_HII.dat}. There are the template input files
 that will be used for all the cloudy runs, and their syntax follows
 the standard cloudy syntax. They control things like the density and
-element abundances in the nebula -- see {\hyperref[cloudy:ssec-cloudy-template]{\emph{\DUspan{}{The cloudy\_slug Input Template}}}}
+element abundances in the nebula -- see {\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}}
 for more details.
 
 \item {} 
 Perform the desired SLUG simulation. The SLUG simulation outputs
 must include spectra and photometry, and one of the photometric
-bands output must be \code{QH0} (see {\hyperref[parameters:ssec-phot-keywords]{\emph{\DUspan{}{Photometric Filter Keywords}}}}). If
+bands output must be \code{QH0} (see {\hyperref[parameters:ssec-phot-keywords]{\emph{Photometric Filter Keywords}}}). If
 running in integrated mode (the default -- see
-{\hyperref[cloudy:ssec-cloudy-cluster]{\emph{\DUspan{}{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}}}), integrated specta and photometry are
+{\hyperref[cloudy:ssec-cloudy-cluster]{\emph{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}}), integrated specta and photometry are
 required, and if running in cluster mode, cluster spectra and
 photometry are required.
 
@@ -3557,9 +3628,9 @@ python cloudy\PYGZus{}slug/cloudy\PYGZus{}slug.py SLUG\PYGZus{}MODEL\PYGZus{}NAM
 \end{Verbatim}
 
 where \code{SLUG\_MODEL\_NAME} is the name of the SLUG run to be
-processed. See {\hyperref[cloudy:ssec-cloudy-cluster]{\emph{\DUspan{}{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}}} for more information on
+processed. See {\hyperref[cloudy:ssec-cloudy-cluster]{\emph{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}} for more information on
 the underlying physical model assumed in the calculation, and
-{\hyperref[cloudy:ssec-cloudy-slug-options]{\emph{\DUspan{}{The cloudy\_slug Interface Script}}}} for more details on the python
+{\hyperref[cloudy:ssec-cloudy-slug-options]{\emph{The cloudy\_slug Interface Script}}} for more details on the python
 script and its options.
 
 \item {} 
@@ -3568,7 +3639,7 @@ with names of the form SLUG\_MODEL\_NAME\_*cloudy*.ext, where the
 extension is .txt, .bin, or .fits, depending on the format in which
 the orignal SLUG output was stored. These files can be processed
 automatically by the slugpy helper routines (see
-{\hyperref[slugpy:sec-slugpy]{\emph{\DUspan{}{slugpy -- The Python Helper Library}}}}). See {\hyperref[cloudy:ssec-cloudy-output]{\emph{\DUspan{}{Full Description of cloudy\_slug Output}}}} for a description
+{\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}}). See {\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}} for a description
 of the outputs.
 
 \end{enumerate}
@@ -3607,7 +3678,7 @@ will perform a cloudy run to produce a calculation of the nebular
 emission produced by that stellar spectrum interacting with a
 surrounding HII region. The density in the first zone of the HII
 region will be as specified by the standard \code{hden} keyword in the
-cloudy input template (see {\hyperref[cloudy:ssec-cloudy-template]{\emph{\DUspan{}{The cloudy\_slug Input Template}}}}). The inner
+cloudy input template (see {\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}}). The inner
 radius of the HII region will be computed automatically, and will be
 set to \(10^{-3}\) of the Stromgren radius for that density, where
 \begin{gather}
@@ -3633,7 +3704,7 @@ density.
 
 Default behavior in cluster mode is as follows:
 the hydrogen number density \(n_{\mathrm{H}}\)
-stored in the cloudy input template (see {\hyperref[cloudy:ssec-cloudy-template]{\emph{\DUspan{}{The cloudy\_slug Input Template}}}})
+stored in the cloudy input template (see {\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}})
 is taken to specify the density of the \emph{neutral} gas around the HII
 region, not the density of the gas inside the HII region. The outer
 radius of the HII region is then computed using the approximate
@@ -3709,7 +3780,7 @@ be computed automatically by the cloudy\_slug script.
 The input file \emph{must} contain an entry \code{hden N} where \code{N} is
 the log base 10 of the hydrogen density. This will be interpreted
 differently depending on whether cloudy\_slug is being run in
-cluster mode or integrated mode -- see {\hyperref[cloudy:ssec-cloudy-cluster]{\emph{\DUspan{}{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}}}.
+cluster mode or integrated mode -- see {\hyperref[cloudy:ssec-cloudy-cluster]{\emph{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}}}.
 
 \item {} 
 Any outputs to be written (specified using the \code{save} or
@@ -3721,12 +3792,12 @@ run, and to read back these outputs for post-processing.
 \item {} 
 The cloudy\_slug output will contain output spectra only if the
 cloudy input file contains a \code{save last continuum} command. See
-{\hyperref[cloudy:ssec-cloudy-output]{\emph{\DUspan{}{Full Description of cloudy\_slug Output}}}}.
+{\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}}.
 
 \item {} 
 The cloudy\_slug output will contain output line luminosities only
 if the cloudy input file contains a \code{save last line list emergent
-absolute column} command. See {\hyperref[cloudy:ssec-cloudy-output]{\emph{\DUspan{}{Full Description of cloudy\_slug Output}}}}.
+absolute column} command. See {\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}}.
 
 \item {} 
 If any other outputs are produced by the input file, they will
@@ -3775,20 +3846,20 @@ optional addition of a path specification in front.
 
 \item {} 
 \code{start\_spec}: default behavior is to run cloudy on all the
-integrated spectra (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}}) or
-cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}). If this
+integrated spectra (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}) or
+cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}). If this
 argument is set, cloudy will only be run in spectra starting with
-the specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}})
-or cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}); numbers are
+the specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}})
+or cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}); numbers are
 0-offset, so the first trial/cluster is 0, the next is 1, etc.
 
 \item {} 
 \code{end\_spec}: default behavior is to run cloudy on all the
-integrated spectra (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}}) or
-cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}). If this
+integrated spectra (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}) or
+cluster spectra (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}). If this
 argument is set, cloudy will only be run on spectra up to the
-specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}}) or
-cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}); numbers are
+specified trial number (in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}) or
+cluster number (in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}); numbers are
 0-offset, so the first trial/cluster is 0, the next is 1, etc.
 
 \end{itemize}
@@ -3803,7 +3874,7 @@ The optional arguments are as follows:
 cloudy computation. Cloudy will not be run on clusters older than
 this value, and the predicted nebular emission for such clusters
 will be recorded as zero. Default value is 10 Myr. This argument only
-has an effect if running in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}};
+has an effect if running in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}};
 otherwise it is ignored.
 
 \item {} 
@@ -3812,13 +3883,13 @@ is \code{\$CLOUDY\_DIR/cloudy.exe}
 
 \item {} 
 \code{-{-}cloudytemplate CLOUDYTEMPLATE}: cloudy input file template (see
-{\hyperref[cloudy:ssec-cloudy-template]{\emph{\DUspan{}{The cloudy\_slug Input Template}}}}); default is
+{\hyperref[cloudy:ssec-cloudy-template]{\emph{The cloudy\_slug Input Template}}}); default is
 \code{\$SLUG\_DIR/cloudy\_slug/cloudy.in\_template}
 
 \item {} 
 \code{-cm, -{-}clustermode}: if this argument is set, then cloudy\_slug
-will run in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}; default behavior is to
-run in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}}
+will run in {\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}; default behavior is to
+run in {\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}
 
 \item {} 
 \code{-cf COVERINGFRAC, -{-}coveringfrac COVERINGFRAC}: this sets the
@@ -3847,9 +3918,9 @@ Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}\end{split}\notag
 \item {} 
 \code{-nd, -{-}nodynamic}: this disables the dynamical calculation of the
 HII region radius and density for calculations in
-{\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}, and instead treats the density as
+{\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}, and instead treats the density as
 the starting density for the cloudy calculation, exactly as in
-{\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}}
+{\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}
 
 \item {} 
 \code{-nl NICELEVEL, -{-}nicelevel NICELEVEL}: if this is set, then the
@@ -3864,7 +3935,7 @@ to run; default is the number of cores available on the system
 \item {} 
 \code{-s, -{-}save}: by default, cloudy\_slug will extract line and
 spectral data from the cloudy outputs and store them as described in
-{\hyperref[cloudy:ssec-cloudy-output]{\emph{\DUspan{}{Full Description of cloudy\_slug Output}}}}, then delete the cloudy output files. If
+{\hyperref[cloudy:ssec-cloudy-output]{\emph{Full Description of cloudy\_slug Output}}}, then delete the cloudy output files. If
 this option is set, the cloudy output files will NOT be deleted, and
 will be left in place. WARNING: cloudy's outputs are written in
 ASCII and are quite voluminous, so only choose this option if you
@@ -3890,19 +3961,19 @@ The cloudy\_slug script will automatically process the cloudy output
 and produce a series of new output files, which will be written to the
 same directory where the input SLUG files are located, and using the
 same output mode (ASCII text, raw binary, or FITS -- see
-{\hyperref[output:sec-output]{\emph{\DUspan{}{Output Files and Format}}}}). If cloudy\_slug is run in
-{\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{\DUspan{}{Integrated Mode}}}}, the three output files will be
+{\hyperref[output:sec-output]{\emph{Output Files and Format}}}). If cloudy\_slug is run in
+{\hyperref[cloudy:sssec-cloudy-integrated-mode]{\emph{Integrated Mode}}}, the three output files will be
 \code{MODEL\_NAME\_integrated\_cloudylines.ext},
 \code{MODEL\_NAME\_integrated\_cloudyphot.ext}, and
 \code{MODEL\_NAME\_integrated\_cloudyspec.ext}, where the extension \code{.ext}
 is one of \code{.txt}, \code{.bin}, or \code{.fits}, depending on the
 \code{output\_mode}. If cloudy\_slug is run in
-{\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{\DUspan{}{Cluster Mode}}}}, the three output files will be
+{\hyperref[cloudy:sssec-cloudy-cluster-mode]{\emph{Cluster Mode}}}, the three output files will be
 \code{MODEL\_NAME\_cluster\_cloudylines.ext},
 \code{MODEL\_NAME\_cluster\_cloudyphot.ext}, and
 \code{MODEL\_NAME\_cluster\_cloudyspec.ext}. All of these output files will
 be read and processed automatically if the outputs are read using
-\code{read\_integrated} or \code{read\_cluster} in the {\hyperref[slugpy:sec-slugpy]{\emph{\DUspan{}{slugpy -- The Python Helper Library}}}}
+\code{read\_integrated} or \code{read\_cluster} in the {\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}}
 library.
 
 The format of those files is described below.
@@ -4079,7 +4150,7 @@ following fields:
 \item {} 
 \code{PhotFilter1\_trans}: photometric value for the \emph{Transmitted}
 radiation field through filter 1, where filter 1 here is the same as
-filter 1 in {\hyperref[output:ssec-int-phot-file]{\emph{\DUspan{}{The integrated\_phot File}}}}; units are also the same as
+filter 1 in {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}; units are also the same as
 in that file.
 
 \item {} 
@@ -4106,10 +4177,10 @@ radiation field through filter 1
 
 For distinctions between the \emph{Transmitted}, \emph{Emitted}, and
 \emph{Transmitted\_plus\_emitted} radiation fields, see
-{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{\DUspan{}{The integrated\_cloudyspec File}}}}, or the \href{http://nublado.org}{cloudy documentaiton}. Note that we do not record photometry for the
+{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{The integrated\_cloudyspec File}}}, or the \href{http://nublado.org}{cloudy documentaiton}. Note that we do not record photometry for the
 incident spectrum, since that would be, up to the accuracy of the
 numerical integration, identical to the photometry already recorded in
-the {\hyperref[output:ssec-int-phot-file]{\emph{\DUspan{}{The integrated\_phot File}}}}.
+the {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}.
 
 If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
 these data are output as a text file containing a series of columns,
@@ -4272,7 +4343,7 @@ radiation field
 
 For explanations of the distinction between the incident, transmitted,
 emitted, and transmitted plus emitted radiation fields, see
-{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{\DUspan{}{The integrated\_cloudyspec File}}}}.
+{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{The integrated\_cloudyspec File}}}.
 
 If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
 these data are output as a text file containing a series of columns,
@@ -4352,7 +4423,7 @@ preserved across times and output files
 \item {} 
 \code{PhotFilter1\_trans}: photometric value for the \emph{Transmitted}
 radiation field through filter 1, where filter 1 here is the same as
-filter 1 in {\hyperref[output:ssec-int-phot-file]{\emph{\DUspan{}{The integrated\_phot File}}}}; units are also the same as
+filter 1 in {\hyperref[output:ssec-int-phot-file]{\emph{The integrated\_phot File}}}; units are also the same as
 in that file.
 
 \item {} 
@@ -4379,10 +4450,10 @@ radiation field through filter 1
 
 For distinctions between the \emph{Transmitted}, \emph{Emitted}, and
 \emph{Transmitted\_plus\_emitted} radiation fields, see
-{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{\DUspan{}{The integrated\_cloudyspec File}}}}, or the \href{http://nublado.org}{cloudy documentaiton}. Note that we do not record photometry for the
+{\hyperref[cloudy:sssec-int-cloudyspec-file]{\emph{The integrated\_cloudyspec File}}}, or the \href{http://nublado.org}{cloudy documentaiton}. Note that we do not record photometry for the
 incident spectrum, since that would be, up to the accuracy of the
 numerical integration, identical to the photometry already recorded in
-the {\hyperref[output:ssec-cluster-phot-file]{\emph{\DUspan{}{The cluster\_phot File}}}}.
+the {\hyperref[output:ssec-cluster-phot-file]{\emph{The cluster\_phot File}}}.
 
 If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
 these data are output as a text file containing a series of columns,
@@ -5214,7 +5285,7 @@ def \PYGZus{}\PYGZus{}init\PYGZus{}\PYGZus{}(self, dataset, nphys, filters=None,
              reltol=1.0e\PYGZhy{}3, abstol=1.0e\PYGZhy{}10, leafsize=16):
 \end{Verbatim}
 
-A full description of all options is included in the {\hyperref[bayesphot:ssec-slugpy-bayesphot]{\emph{\DUspan{}{Full Documentation of slugpy.bayesphot}}}}, but the essential features are summarized here.
+A full description of all options is included in the {\hyperref[bayesphot:ssec-slugpy-bayesphot]{\emph{Full Documentation of slugpy.bayesphot}}}, but the essential features are summarized here.
 
 The argument \code{dataset} is an array of shape (N, M) that contains the library of N models that represents the training set for the Bayesian analysis. Each model consists of M properties; the first \code{nphys} of these are physical properties that are the quantities to be inferred from the observations, while the remaining ones are photometric properties. An important point is that the \code{dataset} object is NOT copied, so altering it after the \code{bp} object is created will result in erroneous results.
 
@@ -5281,7 +5352,16 @@ Here \code{phot} is the set of photometric properties, which is identical to the
 The \code{bp} class supports parallel calculations of posterior PDFs and
 related quantities, through the python \href{https://docs.python.org/2.7/library/multiprocessing.html}{multiprocessing module}. This
 allows efficient use of multiple cores on a shared memory machine,
-circumventing the python global interpreter lock, without the need for every project to read a large simulation library or store it in memory. The recommended method for writing threaded code using \code{bp} objects is to use have a master process create the \code{bp} object, and then use a \href{https://docs.python.org/2.7/library/multiprocessing.html\#multiprocessing.Process}{Process} or \href{https://docs.python.org/2.7/library/multiprocessing.html\#module-multiprocessing.pool}{Pool} objects to create child processes the perform computations using \code{bp} methods such as \code{bp.logL} or \code{bp.mpdf}. It is often most efficient to combine this with shared memory objects such as \href{https://docs.python.org/2.7/library/multiprocessing.html\#module-multiprocessing.sharedctypes}{RawArray} to hold the outputs.
+circumventing the python global interpreter lock, without the need for
+every process to read a large simulation library or store it in
+memory. The recommended method for writing threaded code using \code{bp}
+objects is to use have a master process create the \code{bp} object, and
+then use a \href{https://docs.python.org/2.7/library/multiprocessing.html\#multiprocessing.Process}{Process}
+or \href{https://docs.python.org/2.7/library/multiprocessing.html\#module-multiprocessing.pool}{Pool}
+object to create child processes the perform computations using \code{bp}
+methods such as \code{bp.logL} or \code{bp.mpdf}. It is often most efficient
+to combine this with shared memory objects such as \href{https://docs.python.org/2.7/library/multiprocessing.html\#module-multiprocessing.sharedctypes}{RawArray}
+to hold the outputs.
 
 An example use case for computing 1D marginal PDFs on a large set of photometric values is:
 
@@ -5382,7 +5462,7 @@ with a training data set.
 \index{bp (class in slugpy.bayesphot.bp)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}, \emph{thread\_safe=True}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp}\pysiglinewithargsret{\strong{class }\code{slugpy.bayesphot.bp.}\bfcode{bp}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{pobs=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-10}, \emph{leafsize=16}, \emph{nosort=None}, \emph{thread\_safe=True}}{}
 A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.
@@ -5397,11 +5477,31 @@ of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
 
+\item[{pobs}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} None{]}
+the probability that a particular object would be observed,
+which is used, like prior, to weight the library;
+interpretation depends on type. None means all objects are
+equally likely to be observed, array is an array giving the
+observation probability of each object in the library, and
+callable means must be a function that takes an array
+containing the photometry, of shape (N, nhpot), as an
+argument, and returns an array of shape (N) giving the
+probability of observation for that object
+
 \item[{bandwidth}] \leavevmode{[}`auto' \textbar{} float \textbar{} array, shape (M){]}
 bandwidth for kernel density estimation; if set to
 `auto', the bandwidth will be estimated automatically; if
 set to a scalar quantity, the same bandwidth is used for all
 dimensions
+
+\item[{nphys}] \leavevmode{[}int{]}
+number of physical properties in the library
+
+\item[{nphot}] \leavevmode{[}int{]}
+number of photometric properties in the library
+
+\item[{ndim}] \leavevmode{[}int{]}
+nphys + nphot
 
 \end{description}
 
@@ -5409,7 +5509,7 @@ dimensions
 \index{\_\_init\_\_() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
-\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-06}, \emph{leafsize=16}, \emph{nosort=None}, \emph{thread\_safe=True}}{}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{dataset}, \emph{nphys}, \emph{filters=None}, \emph{bandwidth='auto'}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{pobs=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-10}, \emph{leafsize=16}, \emph{nosort=None}, \emph{thread\_safe=True}}{}
 Initialize a bp object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -5446,6 +5546,17 @@ callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
+
+\item[{pobs}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} None{]}
+the probability that a particular object would be observed,
+which is used, like prior, to weight the library;
+interpretation depends on type. None means all objects are
+equally likely to be observed, array is an array giving the
+observation probability of each object in the library, and
+callable means must be a function that takes an array
+containing the photometry, of shape (N, nhpot), as an
+argument, and returns an array of shape (N) giving the
+probability of observation for that object
 
 \item[{sample\_density}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} `auto' \textbar{} None{]}
 the density of the data samples at each data point; this
@@ -5849,7 +5960,7 @@ are the same as returned by meshgrid
 
 \item[{pdf}] \leavevmode{[}array{]}
 array of marginal posterior probabilities at each point
-of the output grid, for each input cluster; the leading
+of the output grid, for each input set of photometry; the leading
 dimensions match the leading dimensions produced by
 broadcasting the leading dimensions of photprop and
 photerr together, while the trailing dimensions match
@@ -5943,12 +6054,184 @@ the dimensions of the output grid
 
 \end{fulllineitems}
 
+\index{mpdf\_gen() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.mpdf_gen}\pysiglinewithargsret{\bfcode{mpdf\_gen}}{\emph{fixeddim}, \emph{fixedprop}, \emph{margindim}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}}{}
+Returns the marginal probability for one or more physical or
+photometric properties, keeping other properties fixed and
+marginalizing over other quantities. This is the most general
+marginal PDF routine provided.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{fixeddim}] \leavevmode{[}int \textbar{} arraylike of ints \textbar{} None{]}
+The index or indices of the physical or photometric
+properties to be held fixed; physical properties are
+numbered 0 ... nphys-1, and phtometric ones are numbered
+nphys ... nphys + nphot - 1. This can also be set to
+None, in which case no properties are held fixed.
+
+\item[{fixedprop}] \leavevmode{[}array \textbar{} None{]}
+The values of the properties being held fixed; the size
+of the final dimension must be equal to the number of
+elements in fixeddim, and if fixeddim is None, this must
+be too
+
+\item[{margindim}] \leavevmode{[}int \textbar{} arraylike of ints \textbar{} None{]}
+The index or indices of the physical or photometric
+properties to be maginalized over, numbered in the same
+way as with fixeddim; if set to None, no marginalization
+is performed
+
+\item[{qmin}] \leavevmode{[}float \textbar{} arraylike{]}
+minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain a
+number of elements equal to nphys + nphot -
+len(fixeddim) - len(margindim)
+
+\item[{qmax}] \leavevmode{[}float \textbar{} arraylike{]}
+maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must have the same
+number of elements as qmin
+
+\item[{grid}] \leavevmode{[}listlike of arrays{]}
+set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid
+
+\item[{norm}] \leavevmode{[}bool{]}
+if True, returned pdf's will be normalized to integrate
+to 1
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{mpdf\_phot() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.mpdf_phot}\pysiglinewithargsret{\bfcode{mpdf\_phot}}{\emph{idx}, \emph{physprop}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}}{}
+Returns the marginal probability for one or mode photometric
+quantities corresponding to an input set of physical
+properties. Output quantities are computed on a grid of
+values, in the same style as meshgrid.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{idx}] \leavevmode{[}int or listlike containing ints{]}
+index of the photometric quantity whose PDF is to be
+computed, starting at 0; if this is an iterable, the
+joint distribution of the indicated quantities is returned
+
+\item[{physprop}] \leavevmode{[}arraylike, shape (nphys) or (..., nphys){]}
+physical properties to be used; if this is an array of
+nphys elements, these give the physical properties; if
+it is a multidimensional array, the operation is
+vectoried over the leading dimensions
+physical properties -- the function must take an array
+of (nphys) elements as an input, and return a floating
+point value representing the PDF evaluated at that set
+of physical properties as an output
+
+\item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
+number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx
+
+\item[{qmin}] \leavevmode{[}float or listlike{]}
+minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx
+
+\item[{qmax}] \leavevmode{[}float or listlike{]}
+maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx
+
+\item[{grid}] \leavevmode{[}listlike of arrays{]}
+set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid
+
+\item[{norm}] \leavevmode{[}bool{]}
+if True, returned pdf's will be normalized to integrate
+to 1
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{grid\_out}] \leavevmode{[}array{]}
+array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid
+
+\item[{pdf}] \leavevmode{[}array{]}
+array of marginal posterior probabilities at each point
+of the output grid, for each input set of properties; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{ndim (slugpy.bayesphot.bp.bp attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.ndim}\pysigline{\bfcode{ndim}}
+This is the number of physical properties for the bayesphot
+object.
+
+\end{fulllineitems}
+
+\index{nphot (slugpy.bayesphot.bp.bp attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.nphot}\pysigline{\bfcode{nphot}}
+This is the number of physical properties for the bayesphot
+object.
+
+\end{fulllineitems}
+
+\index{nphys (slugpy.bayesphot.bp.bp attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.nphys}\pysigline{\bfcode{nphys}}
+This is the number of physical properties for the bayesphot
+object.
+
+\end{fulllineitems}
+
+\index{pobs (slugpy.bayesphot.bp.bp attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.pobs}\pysigline{\bfcode{pobs}}
+The current set of observation probabilities for every
+simulation in the library
+
+\end{fulllineitems}
+
 \index{priors (slugpy.bayesphot.bp.bp attribute)}
 
 \begin{fulllineitems}
 \phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.priors}\pysigline{\bfcode{priors}}
 The current set of prior probabilities for every
 simulation in the library
+
+\end{fulllineitems}
+
+\index{sample\_density (slugpy.bayesphot.bp.bp attribute)}
+
+\begin{fulllineitems}
+\phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.sample_density}\pysigline{\bfcode{sample\_density}}
+The density with which the library was sampled, evaluated for
+each simulation in the library
 
 \end{fulllineitems}
 
@@ -5993,7 +6276,7 @@ Nothing
 
 \chapter{cluster\_slug: Bayesian Inference of Star Cluster Properties}
 \label{cluster_slug:sec-cluster-slug}\label{cluster_slug::doc}\label{cluster_slug:cluster-slug-bayesian-inference-of-star-cluster-properties}
-The slugpy.cluster\_slug module computes posterior probabilities for the mass, age, and extinction of star clusters from a set of input photometry.  It is implemented as a wrapper around {\hyperref[bayesphot:sec-bayesphot]{\emph{\DUspan{}{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}}, so for details on how the calculation is performed see the bayesphot documentation.
+The slugpy.cluster\_slug module computes posterior probabilities for the mass, age, and extinction of star clusters from a set of input photometry.  It is implemented as a wrapper around {\hyperref[bayesphot:sec-bayesphot]{\emph{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}, so for details on how the calculation is performed see the bayesphot documentation.
 
 
 \section{Getting the Default Library}
@@ -6006,7 +6289,7 @@ The cluster\_slug module requires a pre-computed library of slug simulations to 
 For an example of how to use cluster\_slug, see the file \code{cluster\_slug/cluster\_slug\_example.py} in the repository. All funtionality is provided through the cluster\_slug class. The basic steps are as follows:
 \begin{enumerate}
 \item {} 
-Import the library and instantiate an \code{sfr\_slug} object (see {\hyperref[cluster_slug:ssec-cluster-slug-full]{\emph{\DUspan{}{Full Documentation of slugpy.cluster\_slug}}}} for full details):
+Import the library and instantiate an \code{sfr\_slug} object (see {\hyperref[cluster_slug:ssec-cluster-slug-full]{\emph{Full Documentation of slugpy.cluster\_slug}}} for full details):
 
 \begin{Verbatim}[commandchars=\\\{\}]
 from slugpy.cluster\PYGZus{}slug import cluster\PYGZus{}slug
@@ -6060,12 +6343,12 @@ logm, pdf = cs.mpdf(idx, phot, photerr = photerr)
 
 The first argument \code{idx} is an index for which posterior distribution should be computed -- a value of 0 generates the posterior in log mass, a value of 1 generates the posterion on log age, and a value of generates the posterior in A\_V. The second argument \code{phot} is an array giving the photometric values in the filters specified in step 2; make sure you're using the same photometric system you used in step 1. For the array \code{phot}, the trailing dimension must match the number of filters, and the marginal posterior-finding exercise is repeated over every value in the leading dimensions. If you have added two or more filter sets, you need to specify which one you want to use via the \code{filters} keyword. The optional argument \code{photerr} can be used to provide errors on the photometric values. The shape rules on it are the same as on \code{phot}, and the two leading dimensions of the two arrays will be broadcast together using normal broadcasting rules.
 
-The \code{cluster\_slug.mpdf} method returns a tuple of two quantities. The first is a grid of values for log M, log T, or A\_V, depending on the value of \code{idx}. The second is the posterior probability distribution at each value of of the grid. Posteriors are normalized to have unit integral. If the input consisted of multiple sets of photometric values, the output will contains marginal posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see {\hyperref[cluster_slug:ssec-cluster-slug-full]{\emph{\DUspan{}{Full Documentation of slugpy.cluster\_slug}}}}.
+The \code{cluster\_slug.mpdf} method returns a tuple of two quantities. The first is a grid of values for log M, log T, or A\_V, depending on the value of \code{idx}. The second is the posterior probability distribution at each value of of the grid. Posteriors are normalized to have unit integral. If the input consisted of multiple sets of photometric values, the output will contains marginal posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see {\hyperref[cluster_slug:ssec-cluster-slug-full]{\emph{Full Documentation of slugpy.cluster\_slug}}}.
 
 
 \section{Using cluster\_slug in Parallel}
 \label{cluster_slug:using-cluster-slug-in-parallel}
-The \code{cluster\_slug} module has full support for threaded computation using the python \href{https://docs.python.org/2.7/library/multiprocessing.html}{multiprocessing module}. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See {\hyperref[bayesphot:ssec-bayesphot-threading]{\emph{\DUspan{}{Support for Parallelism in bayesphot}}}} for full details on the recommended paradigm for parallel computing. The full list of thread-safe \code{cluster\_slug} methods is:
+The \code{cluster\_slug} module has full support for threaded computation using the python \href{https://docs.python.org/2.7/library/multiprocessing.html}{multiprocessing module}. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See {\hyperref[bayesphot:ssec-bayesphot-threading]{\emph{Support for Parallelism in bayesphot}}} for full details on the recommended paradigm for parallel computing. The full list of thread-safe \code{cluster\_slug} methods is:
 \begin{itemize}
 \item {} 
 \code{cluster\_slug.logL}
@@ -6098,7 +6381,7 @@ The \code{cluster\_slug} module has full support for threaded computation using 
 \label{cluster_slug:making-your-own-library}
 You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug\_mw library) is included in the \code{cluster\_slug} directory. This file uses slug's capability to pick the output time and the cluster mass from specified PDFs.
 
-One subtle post-processing step you should take once you've generated your library is to read it in using {\hyperref[slugpy:sec-slugpy]{\emph{\DUspan{}{slugpy -- The Python Helper Library}}}} and then write the photometry back out using the \code{slugpy.write\_cluster\_phot} routine with the format set to \code{fits2}. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster\_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the \code{fits2} format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
+One subtle post-processing step you should take once you've generated your library is to read it in using {\hyperref[slugpy:sec-slugpy]{\emph{slugpy -- The Python Helper Library}}} and then write the photometry back out using the \code{slugpy.write\_cluster\_phot} routine with the format set to \code{fits2}. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster\_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the \code{fits2} format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
 
 
 \section{Full Documentation of slugpy.cluster\_slug}
@@ -6909,6 +7192,147 @@ the dimensions of the output grid
 
 \end{fulllineitems}
 
+\index{mpdf\_gen() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_gen}\pysiglinewithargsret{\bfcode{mpdf\_gen}}{\emph{fixeddim}, \emph{fixedprop}, \emph{margindim}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
+Returns the marginal probability for one or more physical or
+photometric properties, keeping other properties fixed and
+marginalizing over other quantities. This is the most general
+marginal PDF routine provided.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{fixeddim}] \leavevmode{[}int \textbar{} arraylike of ints \textbar{} None{]}
+The index or indices of the physical or photometric
+properties to be held fixed; physical properties are
+numbered 0 ... nphys-1, and phtometric ones are numbered
+nphys ... nphys + nphot - 1. This can also be set to
+None, in which case no properties are held fixed.
+
+\item[{fixedprop}] \leavevmode{[}array \textbar{} None{]}
+The values of the properties being held fixed; the size
+of the final dimension must be equal to the number of
+elements in fixeddim, and if fixeddim is None, this must
+be too
+
+\item[{margindim}] \leavevmode{[}int \textbar{} arraylike of ints \textbar{} None{]}
+The index or indices of the physical or photometric
+properties to be maginalized over, numbered in the same
+way as with fixeddim; if set to None, no marginalization
+is performed
+
+\item[{qmin}] \leavevmode{[}float \textbar{} arraylike{]}
+minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain a
+number of elements equal to nphys + nphot -
+len(fixeddim) - len(margindim)
+
+\item[{qmax}] \leavevmode{[}float \textbar{} arraylike{]}
+maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must have the same
+number of elements as qmin
+
+\item[{grid}] \leavevmode{[}listlike of arrays{]}
+set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid
+
+\item[{norm}] \leavevmode{[}bool{]}
+if True, returned pdf's will be normalized to integrate
+to 1
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{mpdf\_phot() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_phot}\pysiglinewithargsret{\bfcode{mpdf\_phot}}{\emph{idx}, \emph{physprop}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
+Returns the marginal probability for one or mode photometric
+quantities corresponding to an input set or distribution of
+physical properties. Output quantities are computed on a grid of
+values, in the same style as meshgrid.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{idx}] \leavevmode{[}int or listlike containing ints{]}
+index of the photometric quantity whose PDF is to be
+computed, starting at 0; indices correspond to the order
+of elements in the filters argument; if this is an
+iterable, the joint distribution of the indicated
+quantities is returned
+
+\item[{physprop}] \leavevmode{[}arraylike, shape (nphys) or (..., nphys){]}
+physical properties to be used; if this is an array of
+nphys elements, these give the physical properties; if
+it is a multidimensional array, the operation is
+vectoried over the leading dimensions
+physical properties -- the function must take an array
+of (nphys) elements as an input, and return a floating
+point value representing the PDF evaluated at that set
+of physical properties as an output
+
+\item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
+number of points in each dimension of the output grid;
+if this is an iterable, it must have the same number of
+elements as idx
+
+\item[{qmin}] \leavevmode{[}float or listlike{]}
+minimum value in the output grid in each quantity; if
+left as None, defaults to the minimum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx
+
+\item[{qmax}] \leavevmode{[}float or listlike{]}
+maximum value in the output grid in each quantity; if
+left as None, defaults to the maximum value in the
+library; if this is an iterable, it must contain the
+same number of elements as idx
+
+\item[{grid}] \leavevmode{[}listlike of arrays{]}
+set of values defining the grid on which the PDF is to
+be evaluated, in the same format used by meshgrid
+
+\item[{norm}] \leavevmode{[}bool{]}
+if True, returned pdf's will be normalized to integrate
+to 1
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{grid\_out}] \leavevmode{[}array{]}
+array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid
+
+\item[{pdf}] \leavevmode{[}array{]}
+array of marginal posterior probabilities at each point
+of the output grid, for each input set of properties; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{squeeze\_rep() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
@@ -6956,7 +7380,7 @@ Nothing
 
 \chapter{sfr\_slug: Bayesian Inference of Star Formation Rates}
 \label{sfr_slug:sfr-slug-bayesian-inference-of-star-formation-rates}\label{sfr_slug::doc}\label{sfr_slug:sec-sfr-slug}
-The slugy.sfr\_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the ``point mass estimate'' (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around {\hyperref[bayesphot:sec-bayesphot]{\emph{\DUspan{}{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}}, so for details on how the calculation is performed see the bayesphot documentation.
+The slugy.sfr\_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the ``point mass estimate'' (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around {\hyperref[bayesphot:sec-bayesphot]{\emph{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}, so for details on how the calculation is performed see the bayesphot documentation.
 
 
 \section{Getting the Default Library}
@@ -6969,7 +7393,7 @@ The sfr\_slug module requires a pre-computed library of slug simulations to use 
 The \code{sfr\_slug/sfr\_slug\_example.py} file in the repository provides an example of how to use sfr\_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr\_slug. The required steps are as follows:
 \begin{enumerate}
 \item {} 
-Import the library and instantiate an \code{sfr\_slug} object (see {\hyperref[sfr_slug:sec-sfr-slug-full]{\emph{\DUspan{}{Full Documentation of slugpy.sfr\_slug}}}} for full details):
+Import the library and instantiate an \code{sfr\_slug} object (see {\hyperref[sfr_slug:sec-sfr-slug-full]{\emph{Full Documentation of slugpy.sfr\_slug}}} for full details):
 
 \begin{Verbatim}[commandchars=\\\{\}]
 from slugpy.sfr\PYGZus{}slug import sfr\PYGZus{}slug
@@ -7020,7 +7444,7 @@ logSFR, pdf = sfr\PYGZus{}estimator.mpdf(logSFR\PYGZus{}in, logSFRphoterr = logS
 
 The argument \code{logSFR\_in} can be a float or an array specifying one or more point mass estimates of the SFR in your chosen filter. For a case with two or more filters, then \code{logSFR\_in} must be an array whose trailing dimension matches the number of filters. If you have added two or more filter sets, you need to specify which one you want to use via the \code{filters} keyword. The optional argument \code{logSFRphoterr} can be used to provide errors on the photometric SFRs. Like \code{logSFR\_in}, it can be a float or an array.
 
-The \code{sfr\_slug.mpdf} method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see {\hyperref[sfr_slug:sec-sfr-slug-full]{\emph{\DUspan{}{Full Documentation of slugpy.sfr\_slug}}}}.
+The \code{sfr\_slug.mpdf} method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords -- see {\hyperref[sfr_slug:sec-sfr-slug-full]{\emph{Full Documentation of slugpy.sfr\_slug}}}.
 
 
 \section{Full Documentation of slugpy.sfr\_slug}
@@ -7449,7 +7873,7 @@ The command  \code{test/run\_sampling.sh} runs four \code{cluster} simulations, 
 of masses of \(50\;M_\odot\), and a Kroupa (2002) IMF.
 The following four sampling methods are chosen for each simulation: 1) \code{stop\_nearest},
 which is the default in SLUG; 2) \code{stop\_before}; 3) \code{stop\_after}; 4) \code{sorted\_sampling}.
-A description of each method is provided in Section {\hyperref[pdfs:sampling-metod-label]{\emph{\DUspan{}{Sampling Methods}}}}.
+A description of each method is provided in Section {\hyperref[pdfs:sampling-metod-label]{\emph{Sampling Methods}}}.
 The analysis script \code{python test/plot\_sampling.py} produces a multi-panel
 figure \code{test/SLUG\_SAMPLING\_f1.pdf}.
 
@@ -7495,7 +7919,7 @@ the fraction of stars that are formed in clusters, \(f_c\), is a very important 
 the stochastic behavior of SLUG. This can be understood by considering two limiting cases.
 In the limit \(f_c \rightarrow 0\), SLUG fills a galaxy by drawing stars from the
 IMF. Thus, because the mass of a galaxy is typically much larger than the mass of the upper
-end of the IMF, the effects of mass-constrained sampling highlighted in {\hyperref[tests:probsampl-label]{\emph{\DUspan{}{Problem constsampl: importance of constrained sampling}}}} are simply
+end of the IMF, the effects of mass-constrained sampling highlighted in {\hyperref[tests:probsampl-label]{\emph{Problem constsampl: importance of constrained sampling}}} are simply
 not relevant anymore. In this case, stochasticity is minimal.
 Conversely, in the limit \(f_c \rightarrow 1\), not only the IMF sampling contributes to the
 stochastic behavior of SLUG, but also clusters themselves contribute to additional stochasticity,
@@ -7540,7 +7964,7 @@ is typically much greater than the mass of the most massive stars, one recovers 
 \section{Problem \texttt{cmfchoice}: different CMF implementations}
 \label{tests:problem-cmfchoice-different-cmf-implementations}
 Given the ability of SLUG v2 to handle generic PDFs, the user can specify arbitrary CMF,
-similarly to what shown in  {\hyperref[tests:probimf-label]{\emph{\DUspan{}{Problem imfchoice: different IMF implementations}}}}.
+similarly to what shown in  {\hyperref[tests:probimf-label]{\emph{Problem imfchoice: different IMF implementations}}}.
 The command  \code{test/run\_cmfchoice.sh} runs three \code{galaxy} simulations, each with 500 trials
 of continuous  SFR \(=0.001\rm\;M_\odot\;yr^{-1}\) which are evolved for a
 single timestep of  \(2\times 10^6\rm\;yr\). A Chabrier IMF and \(f_c=1\)
@@ -7701,6 +8125,9 @@ Teddy Rendahl: wrote the first version of cloudy\_slug
 
 \item {} 
 Michelle Myers: contributed to the development of cluster\_slug
+
+\item {} 
+Greg Ashworth: contributed to the development of the variable PDF module
 
 \end{itemize}
 
