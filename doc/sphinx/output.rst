@@ -186,12 +186,15 @@ This file contains data on the bulk physical properties of the non-disrupted sta
 * ``NumStar``: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 * ``MaxStarMass``: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
 * ``A_V``: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled
+* ``VPx``: values drawn for variable parameter ``x`` (0,1,2 etc...); present only if SLUG was run with a variable mode IMF
 
 If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
 For ``binary`` output, the first entry in the file is a header containing
 
 * ``Extinct`` (``byte``): a single byte, with a value of 0 indicating that extinction was not enabled for this run, and a value of 1 indicating that it was enabled
+* ``nvps`` (``integer``): the number of variable parameters for the IMF.
+
 
 Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
 
@@ -210,7 +213,7 @@ This is followed by ``NCluster`` entries of the following form:
 * ``NumStar`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
 * ``MaxStarMass`` (``double``)
 * ``A_V`` (``double``); present only if ``Extinct`` is 1
-
+* ``VPx`` (``double``); present only if ``nvps`` is greater than 0, with one entry present for each variable parameter ``x``
 
 The ``cluster_spec`` File
 -------------------------
