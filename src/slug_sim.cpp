@@ -950,9 +950,6 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << ""
 		      << setw(14) << left << "(Msun)";
 		      
-		      
-
-		      
     if (extinct != nullptr)
       cluster_prop_file << setw(14) << left << "(mag)";
       
@@ -966,7 +963,6 @@ void slug_sim::open_cluster_prop() {
       }
     
     }      
-      
       
     cluster_prop_file << endl;
     cluster_prop_file << setw(14) << left << "-----------"
@@ -992,7 +988,6 @@ void slug_sim::open_cluster_prop() {
       }
     
     }
-      
       
     cluster_prop_file << endl;
   } else if (out_mode == BINARY) {
@@ -2181,7 +2176,7 @@ void slug_sim::open_cluster_yield() {
       cluster_yield_file.write(symbol, 4);
       unsigned int Z = isotopes[i].num();
       cluster_yield_file.write((char *) &Z, sizeof Z);
-      unsigned int A = isotopes[i].num();
+      unsigned int A = isotopes[i].wgt();
       cluster_yield_file.write((char *) &A, sizeof A);
     }
   }
