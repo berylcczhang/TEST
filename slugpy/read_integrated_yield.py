@@ -183,9 +183,9 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
         isotope_name = np.array([iso.strip().title() for iso in isotope_name])
         isotope_Z = fp[1].data['Z']
         isotope_A = fp[1].data['A']
-        trial = fp[2].data['trial']
-        time = fp[2].data['time']
-        yld = fp[2].data['yield']
+        trial = fp[2].data['Trial']
+        time = fp[2].data['Time']
+        yld = fp[2].data['Yield']
 
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))

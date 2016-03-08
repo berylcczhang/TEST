@@ -444,7 +444,7 @@ def write_integrated(data, model_name, fmt):
                                 unit="Angstrom", 
                                 array=data.wl_neb_ex.reshape(1,nl_neb_ex)))
             wlfits = fits.ColDefs(wlcols)
-            wlhdu = fits.BinTableHDU.from_columns(wlcols)
+            wlhdu = fits.BinTableHDU.from_columns(wlfits)
 
             # Figure out number of trials, and tile arrays
             ntrial = data.spec.shape[-1]
@@ -806,6 +806,55 @@ def write_integrated(data, model_name, fmt):
             # Close file
             fp.close()
 
+        elif fmt == 'fits':
+
+            ########################################################
+            # FITS mode
+            ########################################################
+
+            # Store isotope information in the first HDU
+            niso = data.isotope_name.size
+            isocols = []
+            isocols.append(fits.Column(name="Name", format="3A", unit="",
+                                       array=data.isotope_name))
+            isocols.append(fits.Column(name="Z", format="1K", unit="",
+                                       array=data.isotope_Z))
+            isocols.append(fits.Column(name="A", format="1K", unit="",
+                                       array=data.isotope_A))
+            isofits = fits.ColDefs(isocols)
+            isohdu = fits.BinTableHDU.from_columns(isofits)
+
+            # Figure out number of times and trials, and tile the
+            # arrays
+            ntimes = data.yld.shape[1]
+            ntrial = data.yld.shape[0]
+            trial = np.transpose(np.tile(
+                np.arange(ntrial, dtype='int64'), (ntimes,1))).\
+                flatten()
+            if len(data.time) > ntimes:
+                times = data.time
+            else:
+                times = np.tile(data.time, ntrial)
+
+            # Convert yield data to FITS columns
+            cols = []
+            cols.append(fits.Column(name="Trial", format="1K",
+                                    unit="", array=trial))
+            cols.append(fits.Column(name="Time", format="1D",
+                                    unit="yr", array=times))
+            cols.append(fits.Column(name="Yield",
+                                    format="{:d}D".format(niso),
+                                    unit="Msun", 
+                                    array=data.yld.reshape((ntrial*ntimes,
+                                                            niso))))
+            yldfits = fits.ColDefs(cols)
+            yldhdu = fits.BinTableHDU.from_columns(yldfits)
+
+            # Create HDU list and write file
+            prihdu = fits.PrimaryHDU()
+            hdulist = fits.HDUList([prihdu, isohdu, yldhdu])
+            hdulist.writeto(model_name+'_integrated_yield.fits',
+                            clobber=True)
 
     ################################################################
     # Write cloudy files if we have the data for them
