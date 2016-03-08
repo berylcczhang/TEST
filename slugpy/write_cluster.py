@@ -776,11 +776,11 @@ def write_cluster(data, model_name, fmt):
 
             # Write out bytes indicating nebular or no nebular, and
             # extinction or no extinction
-            if 'spec_neb' in data._fields:
+            if 'phot_neb' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
-            if 'spec_ex' in data._fields:
+            if 'phot_ex' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
