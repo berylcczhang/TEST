@@ -2002,7 +2002,7 @@ void slug_sim::open_integrated_yield() {
       int_yield_file.write(symbol, 4);
       unsigned int Z = isotopes[i].num();
       int_yield_file.write((char *) &Z, sizeof Z);
-      unsigned int A = isotopes[i].num();
+      unsigned int A = isotopes[i].wgt();
       int_yield_file.write((char *) &A, sizeof A);
     }
   }
