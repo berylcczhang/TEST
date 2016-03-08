@@ -35,13 +35,13 @@ Once SLUG has drawn a population of stars, its final step is to compute the ligh
 
 * The frequency-averaged luminosity across the filter, defined as
 
-.. math:: \langle L_\nu\rangle_R = \frac{\int L_\nu \, d\ln\nu}{\int R_\nu (\nu/\nu_c)^\beta \, d\ln\nu},
+.. math:: \langle L_\nu\rangle_R = \frac{\int L_\nu R_\nu \, d\ln\nu}{\int R_\nu (\nu/\nu_c)^\beta \, d\ln\nu},
 
 where :math:`L_\nu` is the specific luminosity per unit frequency, :math:`R_\nu` is the filter response function per photon at frequency :math:`\nu`, :math:`\nu_c` is the central wavelength of the filter, and :math:`\beta` is a constant that is defined by convention for each filter, and is either 0, 1, or 2; usually it is 0 for optical and UV filters.
 
 * The wavelength-averaged luminosity across the filter, defined as
 
-.. math:: \langle L_\lambda\rangle_R = \frac{\int L_\lambda \, d\ln\lambda}{\int R_\lambda (\lambda/\lambda_c)^{-\beta} \, d\ln\lambda},
+.. math:: \langle L_\lambda\rangle_R = \frac{\int L_\lambda R_\lambda \, d\ln\lambda}{\int R_\lambda (\lambda/\lambda_c)^{-\beta} \, d\ln\lambda},
 
 where :math:`L_\lambda` is the specific luminosity per unit wavelength, :math:`R_\lambda` is the filter response function per photon at wavelength :math:`\lambda`, and :math:`\lambda_c` is the central wavelength of the filter.
 

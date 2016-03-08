@@ -93,7 +93,19 @@ The ``bp`` class supports parallel calculations of posterior PDFs and
 related quantities, through the python `multiprocessing module
 <https://docs.python.org/2.7/library/multiprocessing.html>`_. This
 allows efficient use of multiple cores on a shared memory machine,
-circumventing the python global interpreter lock, without the need for every project to read a large simulation library or store it in memory. The recommended method for writing threaded code using ``bp`` objects is to use have a master process create the ``bp`` object, and then use a `Process <https://docs.python.org/2.7/library/multiprocessing.html#multiprocessing.Process>`_ or `Pool <https://docs.python.org/2.7/library/multiprocessing.html#module-multiprocessing.pool>`_ objects to create child processes the perform computations using ``bp`` methods such as ``bp.logL`` or ``bp.mpdf``. It is often most efficient to combine this with shared memory objects such as `RawArray <https://docs.python.org/2.7/library/multiprocessing.html#module-multiprocessing.sharedctypes>`_ to hold the outputs.
+circumventing the python global interpreter lock, without the need for
+every process to read a large simulation library or store it in
+memory. The recommended method for writing threaded code using ``bp``
+objects is to use have a master process create the ``bp`` object, and
+then use a `Process
+<https://docs.python.org/2.7/library/multiprocessing.html#multiprocessing.Process>`_
+or `Pool
+<https://docs.python.org/2.7/library/multiprocessing.html#module-multiprocessing.pool>`_
+object to create child processes the perform computations using ``bp``
+methods such as ``bp.logL`` or ``bp.mpdf``. It is often most efficient
+to combine this with shared memory objects such as `RawArray
+<https://docs.python.org/2.7/library/multiprocessing.html#module-multiprocessing.sharedctypes>`_
+to hold the outputs.
 
 An example use case for computing 1D marginal PDFs on a large set of photometric values is::
 
