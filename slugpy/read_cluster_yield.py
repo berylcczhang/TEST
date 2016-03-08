@@ -261,7 +261,7 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
     fp.close()
 
     # Build output holder
-    fieldnames = ['cluster_id', 'time', 'trial', 
+    fieldnames = ['id', 'time', 'trial', 
                   'isotope_name', 'isotope_Z', 'isotope_A', 
                   'yld']
     fields = [ cluster_id, time, trial, isotope_name, isotope_Z, 
