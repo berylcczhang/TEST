@@ -48,7 +48,7 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
           Atomic numbers of the isotopes included in the yield table
        isotope_A : array of int, shape (N_iso)
           Atomic mass number of the isotopes included in the yield table
-       yld : array, shape (N_times, N_iso) or (N_trials, N_iso)
+       yld : array, shape (N_iso, N_times) or (N_iso, N_trials)
           Yield of each isotope, defined as the instantaneous amount
           produced up to that time; for unstable isotopes, this
           includes the effects of decay since production
@@ -200,7 +200,7 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
 
     # Build output holder
     fieldnames = ['time', 'isotope_name', 'isotope_Z', 'isotope_A', 'yld']
-    fields = [ time, isotope_name, isotope_Z, isotope_A, yld]
+    fields = [ time, isotope_name, isotope_Z, isotope_A, np.transpose(yld)]
     out_type = namedtuple('integrated_yield', fieldnames)
     out = out_type(*fields)
 

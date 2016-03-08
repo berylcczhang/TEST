@@ -387,6 +387,9 @@ else:
         fname = f+'_integrated_phot'+extension
         if osp.isfile(fname):
             os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_integrated_yield'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
         fname = f+'_cluster_prop'+extension
         if osp.isfile(fname):
             os.rename(fname, osp.join(out_dir, osp.basename(fname)))
@@ -394,6 +397,9 @@ else:
         if osp.isfile(fname):
             os.rename(fname, osp.join(out_dir, osp.basename(fname)))
         fname = f+'_cluster_phot'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
+        fname = f+'_cluster_yield'+extension
         if osp.isfile(fname):
             os.rename(fname, osp.join(out_dir, osp.basename(fname)))
 
@@ -427,6 +433,9 @@ for f in out_names:
         fname = f+'_integrated_phot'+extension
         if osp.isfile(fname):
             os.remove(fname)
+        fname = f+'_integrated_yield'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
         fname = f+'_cluster_prop'+extension
         if osp.isfile(fname):
             os.remove(fname)
@@ -434,6 +443,9 @@ for f in out_names:
         if osp.isfile(fname):
             os.remove(fname)
         fname = f+'_cluster_phot'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_cluster_yield'+extension
         if osp.isfile(fname):
             os.remove(fname)
     except OSError:

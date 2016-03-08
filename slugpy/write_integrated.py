@@ -737,8 +737,8 @@ def write_integrated(data, model_name, fmt):
            
             # Write data
             ntime = data.yld.shape[1]
-            ntrial = data.yld.shape[0]
-            niso = data.yld.shape[2]
+            ntrial = data.yld.shape[2]
+            niso = data.yld.shape[0]
             if len(data.time) > ntime:
                 random_time = True
             else:
@@ -758,7 +758,7 @@ def write_integrated(data, model_name, fmt):
                             t_out, data.isotope_name[k],
                             data.isotope_Z[k],
                             data.isotope_A[k],
-                            data.yld[i,j,k]))
+                            data.yld[k,j,i]))
 
             # Close file
             fp.close()
@@ -787,7 +787,7 @@ def write_integrated(data, model_name, fmt):
 
             # Write remainder of data
             ntime = data.yld.shape[1]
-            ntrial = data.yld.shape[0]
+            ntrial = data.yld.shape[2]
             if len(data.time) > ntime:
                 random_time = True
             else:
@@ -801,7 +801,8 @@ def write_integrated(data, model_name, fmt):
                     else:
                         fp.write(data.time[j])
                     # Write yields
-                    fp.write(data.yld[i,j,:])
+                    tmp = np.copy(data.yld[:,j,i])
+                    fp.write(tmp)
 
             # Close file
             fp.close()
@@ -827,7 +828,7 @@ def write_integrated(data, model_name, fmt):
             # Figure out number of times and trials, and tile the
             # arrays
             ntimes = data.yld.shape[1]
-            ntrial = data.yld.shape[0]
+            ntrial = data.yld.shape[2]
             trial = np.transpose(np.tile(
                 np.arange(ntrial, dtype='int64'), (ntimes,1))).\
                 flatten()
@@ -842,11 +843,12 @@ def write_integrated(data, model_name, fmt):
                                     unit="", array=trial))
             cols.append(fits.Column(name="Time", format="1D",
                                     unit="yr", array=times))
+            yldtmp = np.transpose(data.yld)
             cols.append(fits.Column(name="Yield",
                                     format="{:d}D".format(niso),
                                     unit="Msun", 
-                                    array=data.yld.reshape((ntrial*ntimes,
-                                                            niso))))
+                                    array=yldtmp.reshape((ntrial*ntimes,
+                                                          niso))))
             yldfits = fits.ColDefs(cols)
             yldhdu = fits.BinTableHDU.from_columns(yldfits)
 
