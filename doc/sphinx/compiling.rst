@@ -9,10 +9,10 @@ Dependencies
 The core SLUG program requires
 
 * The `Boost C++ libraries <http://www.boost.org/>`_
-* The `GNU scientific library <http://www.gnu.org/software/gsl/>`_
+* The `GNU scientific library <http://www.gnu.org/software/gsl/>`_ (version 2.x preferred, code can be compiled with version 1.x -- see below)
 * The `cfitsio library <http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html>`_ (optional, only required for FITS capabilities)
 
-Compilation will be easiest if you install these libraries such that the header files are included in your ``CXX_INCLUDE_PATH`` and the compiled object files are in your ``LD_LIBRARY_PATH``. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag ``FITS=DISABLE_FITS`` when calling ``make`` (see below). Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
+Compilation will be easiest if you install these libraries such that the header files are included in your ``CXX_INCLUDE_PATH`` and the compiled object files are in your ``LIBRARY_PATH``. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag ``FITS=DISABLE_FITS`` when calling ``make`` (see below). Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
 
 In addition to the core dependencies, slugpy, the python helper library requires:
 
@@ -29,15 +29,23 @@ This is only required performing cloudy runs, and is not required for any other 
 Compiling
 ---------
 
-If you have boost, GSL, and (if you're using it) cfitsio included in your ``CXX_INCLUDE_PATH`` and ``LD_LIBRARY_PATH`` environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing::
+If you have boost, GSL, and (if you're using it) cfitsio included in your ``CXX_INCLUDE_PATH`` and ``LIBRARY_PATH`` environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing::
 
    make
 
-from the main ``slug`` directory. To compile in debug mode, do::
+from the main ``slug`` directory.
+
+To compile in debug mode, do::
 
    make debug
 
-instead. To compile without cfitsio, do::
+instead. 
+
+If you are compiling using GSL version 1.x or without cfitsio, you must specify these options when compiling. If you are using version 1.x of the GSL, do::
+
+  make GSLVERSION=1
+
+To compile without cfitsio, do::
 
    make FITS=DISABLE_FITS
 

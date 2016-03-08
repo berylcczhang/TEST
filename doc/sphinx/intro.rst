@@ -8,7 +8,7 @@ This is a guide for users of the SLUG software package. SLUG is distributed unde
 What Does SLUG Do?
 ------------------
 
-SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), cluster lifetime function (CLF), and (optionally) distribution of extinctions (A_V), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. In this regard, SLUG operates much like any other SPS code. The main difference is that SLUG regards the functions describing the stellar population as probability distributions, and the resulting stellar population as being the result of a draw from them. SLUG performs a Monte Carlo simulation to determine the PDF of the light produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a SLUG simulation. For a more detailed description, readers are referred to `da Silva, Fumagalli, & Krumholz (2012) <http://adsabs.harvard.edu/abs/2012ApJ...745..145D>`_.
+SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), cluster lifetime function (CLF), and (optionally) distribution of extinctions (A_V), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. It also predicts the yields of various isotopes. In this regard, SLUG operates much like any other SPS code. The main difference is that SLUG regards the functions describing the stellar population as probability distributions, and the resulting stellar population as being the result of a draw from them. SLUG performs a Monte Carlo simulation to determine the PDF of the light and yields produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a SLUG simulation. For a more detailed description, readers are referred to `da Silva, Fumagalli, & Krumholz (2012) <http://adsabs.harvard.edu/abs/2012ApJ...745..145D>`_.
 
 Cluster Simulations and Galaxy Simulations
 ------------------------------------------
@@ -145,3 +145,14 @@ where the optical depth :math:`\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1
 where :math:`R_\nu(V)` is the filter response function as frequency :math:`\nu` for the Johnson V filter. The extinction curve :math:`\kappa_\lambda` can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see :ref:`ssec-ism-keywords` for details.
 
 The computation for :math:`L_{\lambda,\mathrm{neb,ex}}` is analogous.
+
+.. _ssec-yields:
+
+Chemical Yields
+---------------
+
+In addition to computing the light output by a stellar population, SLUG can also predict the yield of isotopes. At present SLUG includes yields for core collapse supernovae only. These are based on the yield tables provided by `Sukhbold et al. (2016, ApJ, in press) <http://adsabs.harvard.edu/abs/2015arXiv151004643S/abstract>`_, which provide a finely-spaced set of yields for progenitors of mass 9 - 120 :math:`M_\odot`. Yields from other stellar types will be added in later work.
+
+SLUG operates by separately tracking the isotopes produced by stars winds and by their end-of-life explosions, as a function of progenitor mass. To obtain the yield of any star, SLUG interpolates on the wind and explosive yields using `Steffen interpolation <http://adsabs.harvard.edu/abs/1990A%26A...239..443S>`_ to guarantee that no artifical extrema are produced. The code reports production of 302 distinct isotopes, including many stable species and select unstable ones; for unstable species, radioactive decay over the course of the simulation is properly handled.
+
+At present there is a slight inconsistency in that the evolutionary tracks used by Sukhbold et al. do not precisely match those available for the purposes of omputing spectra and photometr. The death times of stars are computed using the tracks used output the photometric quantities, and thus are slightly inconsistent with the tracks used for the yields. This inconsistency also means that it is not possible to accurately place the wind yields in time; SLUG simply assumes that all yields due to winds are released when the stars end their lives, just as for the explosive yields.

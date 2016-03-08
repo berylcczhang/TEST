@@ -67,6 +67,10 @@ The ``read_integrated`` function reads all the integrated-light data (i.e., the 
 * filter_beta: index :math:`\beta` used to set the normalization for each filter -- see :ref:`ssec-spec-phot`
 * filter_wl_c: pivot wavelength used to set the normalization for each filter for which :math:`\beta \neq 0` -- see :ref:`ssec-spec-phot`
 * phot: photometry of the stars in each filter
+* isotope_name: element symbols for the isotopes whose yields are reported
+* isotope_Z: atomic numbers for the isotopes whose yields are reported
+* isotope_A: atomic numbers for the isotopes whose yields are reported
+* yld: yield of each isotope at each time
 
 The following fields are present only if SLUG was run with nebular processing enabled:
 
@@ -85,9 +89,6 @@ The following fields are present only if SLUG was run with both nebular processi
 * wl_neb_ex: same as wl_neb, but for the extincted, nebular-processed spectrum. Will be limited to the same wavelength range as wl_ex.
 * spec_neb_ex: same as spec_neb, but with extinction applied
 * phot_neb_ex: same as phot_neb, but wtih extinction applied. Note that some values may be ``NaN``. This indicates that photometry of the extincted spectrum could not be computed for that filter, because the filter response curve extends to wavelengths outside the range covered by the extinction curve.
-
-
-
 
 The following fields are present only for runs that have been processed through the cloudy_slug interface (see :ref:`sec-cloudy-slug`):
 

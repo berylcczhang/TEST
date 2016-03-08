@@ -69,9 +69,11 @@ These control what quantities are computed and written to disk. Full a full desc
 * ``out_cluster`` (default: ``1``): write out the physical properties of star clusters? Set to 1 for yes, 0 for no.
 * ``out_cluster_phot`` (default: ``1``): write out the photometry of star clusters? Set to 1 for yes, 0 for no.
 * ``out_cluster_spec`` (default: ``1``): write out the spectra of star clusters? Set to 1 for yes, 0 for no.
+* ``out_cluster_yield`` (default: ``1``): write out the yield of star clusters? Set to 1 for yes, 0 for no.
 * ``out_integrated`` (default: ``1``): write out the integrated physical properties of the whole galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if ``sim_type`` is ``cluster``.
 * ``out_integrated_phot`` (default: ``1``): write out the integrated photometry of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if ``sim_type`` is ``cluster``.
 * ``out_integrated_spec`` (default: ``1``): write out the integrated spectra of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if ``sim_type`` is ``cluster``.
+* ``out_integrated_yield`` (default: ``1``): write out the integrated yield of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if ``sim_type`` is ``cluster``.
 * ``output_mode`` (default: ``ascii``): set to ``ascii``, ``binary``, or ``fits``. Selecting ``ascii`` causes the output to be written in ASCII text, which is human-readable, but produces much larger files. Selecting ``binary`` causes the output to be written in raw binary. Selecting ``fits`` causes the output to be written FITS format. This will be somewhat larger than raw binary output, but the resulting files will be portable between machines, which the raw binary files are not guaranteed to be. All three output modes can be read by the python library, though with varying speed -- ASCII output is slowest, FITS is intermediate, and binary is fastest.
 
 .. _ssec-stellar-keywords:
@@ -96,6 +98,7 @@ These specify the physical models to be used for stellar evolution, atmospheres,
    * ``modpXXX.dat``: Padova tracks with thermally pulsing AGB stars; metallicities use the same scale as ``modcXXX.dat`` files (i.e., ``020`` is Solar).
    * ``modsXXX.dat``: same as ``modpXXX.dat``, but without thermally pulsing AGB stars
 * ``atmospheres`` (default: ``lib/atmospheres``): directory where the stellar atmosphere library is located. Note that file names are hard-coded, so if you want to use different atmosphere models with a different format, you will have to write new source code to do so.
+* ``yields`` (default: ``lib/yields``): directory where the stellar yield tables are located. Note that the file name and format is hardcoded, so if you want to use a different format, you will have to write source code to do so.
 * ``specsyn_mode`` (default: ``sb99``): spectral synthesis mode. Allowed values are:
    * ``planck``: treat all stars as black bodies
    * ``Kurucz``: use Kurucz atmospheres, as compiled by `Lejeune et al. (1997, A&AS, 125, 229) <http://adsabs.harvard.edu/abs/1997A%26AS..125..229L>`_, for all stars

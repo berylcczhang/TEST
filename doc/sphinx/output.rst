@@ -9,7 +9,7 @@ SLUG can produce 7 output files, though the actual number produced depends on th
 
 The only file that is always produced is the summary file, which is named ``MODEL_NAME_summary.txt``, where ``MODEL_NAME`` is the value given by the ``model_name`` keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.
 
-The other six output files all have names of the form ``MODEL_NAME_xxx.ext``, where the extension ``.ext`` is one of ``.txt``, ``.bin``, or ``.fits`` depending on the ``output_mode`` specified in the parameter file, and ``xxx`` is ``integrated_prop``, ``integrated_spec``, ``integrated_phot``, ``cluster_prop``, ``cluster_spec``, or ``cluster_phot``. The production of these output files is controlled by the parameters ``out_integrated``, ``out_integrated_spec``, ``out_integrated_phot``, ``out_cluster``, ``out_cluster_spec``, and ``out_cluster_phot`` in the parameter file. 
+The other eight output files all have names of the form ``MODEL_NAME_xxx.ext``, where the extension ``.ext`` is one of ``.txt``, ``.bin``, or ``.fits`` depending on the ``output_mode`` specified in the parameter file, and ``xxx`` is ``integrated_prop``, ``integrated_spec``, ``integrated_phot``, ``integrated_yield``, ``cluster_prop``, ``cluster_spec``, ``cluster_phot``, or ``cluster_yield``. The production of these output files is controlled by the parameters ``out_integrated``, ``out_integrated_spec``, ``out_integrated_phot``, ``out_integrated_yield``, ``out_cluster``, ``out_cluster_spec``, ``out_cluster_phot``, and ``out_cluster_yield`` in the parameter file. 
 
 The easiest way to read these output files is with :ref:`sec-slugpy`, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:
 
@@ -170,6 +170,52 @@ This is followed by a series of entries of the form
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
+.. _ssec-int-yield-file:
+
+The ``integrated_yield`` File
+-----------------------------
+
+This file contains data on the integrated chemical yield of the entire
+galaxy, and consists of a series of entries containing the following
+fields:
+
+* ``Time``: evolution time at which the output is produced
+* ``Name``: name (i.e., atomic symbol) of an isotope being produced
+* ``Z``: atomic number of an isotope being produced
+* ``A``: mass number of an isotope being produced
+* ``Yield``: mass of a particular isotope produced up to the specified time; for unstable isotopes, this includes the effects of radioactive decay, so yield can decrease with time under some circumstances
+
+If ``output_mode`` is ``ascii``, these data are output in a series of
+columns, with different trials separated by lines of dashes. If
+``output_mode`` is ``fits``, the data are stored as a series of
+columns in a binary table extension to the FITS file; the ``Name``,
+``Z``, and ``A`` fields are placed in the first binary table
+extension, and are the same for every output. The ``Time`` and
+``Yields`` fields are in the second binary table extension. In
+addition to these two fields, the second binary table contains a
+column specifying the trial number for each entry.
+
+For binary output, the file is formatted as follows. It starts with
+
+* ``NIso`` (``std::vector<double>::size_type``, usually ``unsigned
+  long long``): number of isotopes in the output
+
+This is followed by ``NIso`` entries of the form
+
+* ``Name`` (``char[4]``): isotope name (i.e., element symbol)
+* ``Z`` (``unsigned int``)
+* ``A`` (``unsigned int``)
+
+The remainder of the file contains records of the from
+
+* ``Time`` (``double``)
+* ``Yield`` (``double[NIso]``)
+
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
+
+
 The ``cluster_prop`` File
 -------------------------
 
@@ -326,5 +372,59 @@ This is followed by ``NCluster`` entries of the following form:
 * ``PhotFilter_ex`` (``NFilter`` entries of type ``double``); only present if ``Extinct`` is 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
 * ``PhotFilter_neb_ex`` (``NFilter`` entries of type ``double``); only present if ``Nebular`` and ``Extinct`` are both 1. Note that some values may be ``NaN`` if photometry could not be computed for that filter (see above).
 
+.. _ssec-cluster-yield-file:
+
+The ``cluster_yield`` File
+--------------------------
+
+This file contains data on the chemical yield of individual star
+clusters, and consists of a series of entries containing the following
+fields:
+
+* ``UniqueID``: a unique identifier number for each cluster that is
+  preserved across times and output files
+* ``Time``: evolution time at which the output is produced
+* ``Name``: name (i.e., atomic symbol) of an isotope being produced
+* ``Z``: atomic number of an isotope being produced
+* ``A``: mass number of an isotope being produced
+* ``Yield``: mass of a particular isotope produced up to the specified
+  time; for unstable isotopes, this includes the effects of
+  radioactive decay, so yield can decrease with time under some
+  circumstances
+
+If ``output_mode`` is ``ascii``, these data are output in a series of
+columns, with different trials separated by lines of dashes. If
+``output_mode`` is ``fits``, the data are stored as a series of
+columns in a binary table extension to the FITS file; the ``Name``,
+``Z``, and ``A`` fields are placed in the first binary table
+extension, and are the same for every output. The ``Time`` and
+``Yields`` fields are in the second binary table extension. In
+addition to these two fields, the second binary table contains a
+column specifying the trial number for each entry.
+
+For binary output, the file is formatted as follows. It starts with
+
+* ``NIso`` (``std::vector<double>::size_type``, usually ``unsigned
+  long long``): number of isotopes in the output
+
+This is followed by ``NIso`` entries of the form
+
+* ``Name`` (``char[4]``): isotope name (i.e., element symbol)
+* ``Z`` (``unsigned int``)
+* ``A`` (``unsigned int``)
+
+Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+
+* ``Time`` (``double``)
+* ``NCluster`` (``std::vector<double>::size_type``, usually ``unsigned long long``): number of non-disrupted clusters present at this time
+
+This is followed by ``NCluster`` entries of the following form:
+
+* ``UniqueID`` (``unsigned long``)
+* ``Yield`` (``double[NIso]``)
+
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
 
 

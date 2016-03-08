@@ -102,6 +102,10 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>filter_beta: index <span class="math">\(\beta\)</span> used to set the normalization for each filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span>Spectra and Photometry</span></a></li>
 <li>filter_wl_c: pivot wavelength used to set the normalization for each filter for which <span class="math">\(\beta \neq 0\)</span> &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span>Spectra and Photometry</span></a></li>
 <li>phot: photometry of the stars in each filter</li>
+<li>isotope_name: element symbols for the isotopes whose yields are reported</li>
+<li>isotope_Z: atomic numbers for the isotopes whose yields are reported</li>
+<li>isotope_A: atomic numbers for the isotopes whose yields are reported</li>
+<li>yld: yield of each isotope at each time</li>
 </ul>
 <p>The following fields are present only if SLUG was run with nebular processing enabled:</p>
 <ul class="simple">
@@ -469,6 +473,19 @@ indicated in the units field</dd>
 </dl>
 <p>If extinction is enabled, phot_ex will contain photometry  
 after extinction has been applied.</p>
+<p>(Present if the run being read contains a cluster_yield file)</p>
+<dl class="docutils">
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings</span></dt>
+<dd>Atomic symbols of the isotopes included in the yield table</dd>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic numbers of the isotopes included in the yield table</dd>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic mass number of the isotopes included in the yield table</dd>
+<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yield of each isotope, defined as the instantaneous amount
+produced up to that time; for unstable isotopes, this
+includes the effects of decay since production</dd>
+</dl>
 <p>(Present if the run being read contains a cluster_cloudyspec file)</p>
 <dl class="docutils">
 <dt>cloudy_wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
@@ -831,11 +848,11 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span></dt>
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span></dt>
 <dd>Atomic symbols of the isotopes included in the yield table</dd>
-<dt>Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
 <dd>Atomic numbers of the isotopes included in the yield table</dd>
-<dt>A <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
 <dd>Atomic mass number of the isotopes included in the yield table</dd>
 <dt>id <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span></dt>
 <dd>unique ID of cluster</dd>
@@ -1031,6 +1048,19 @@ units are as indicated in the units field</dd>
 </dl>
 <p>If extinction is enabled, phot_ex will contain photometry  
 after extinction has been applied.</p>
+<p>(Only present if an integrate_yield file is found)</p>
+<dl class="docutils">
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings</span></dt>
+<dd>Atomic symbols of the isotopes included in the yield table</dd>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic numbers of the isotopes included in the yield table</dd>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic mass number of the isotopes included in the yield table</dd>
+<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yield of each isotope, defined as the instantaneous amount
+produced up to that time; for unstable isotopes, this
+includes the effects of decay since production</dd>
+</dl>
 <p>(Only present if an integrated_cloudyspec file is found)</p>
 <dl class="docutils">
 <dt>cloudy_wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
@@ -1380,17 +1410,17 @@ was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span></dt>
-<dd>Atomic symbols of the isotopes included in the yield table</dd>
-<dt>Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
-<dd>Atomic numbers of the isotopes included in the yield table</dd>
-<dt>A <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
-<dd>Atomic mass number of the isotopes included in the yield table</dd>
 <dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
 <dd>Times at which data are output; shape is either N_times (if
 the run was done with fixed output times) or N_trials (if
 the run was done with random output times)</dd>
-<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_iso) or (N_trials, N_iso)</span></dt>
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span></dt>
+<dd>Atomic symbols of the isotopes included in the yield table</dd>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dd>Atomic numbers of the isotopes included in the yield table</dd>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dd>Atomic mass number of the isotopes included in the yield table</dd>
+<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_iso, N_times) or (N_iso, N_trials)</span></dt>
 <dd>Yield of each isotope, defined as the instantaneous amount
 produced up to that time; for unstable isotopes, this
 includes the effects of decay since production</dd>

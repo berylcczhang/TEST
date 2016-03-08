@@ -98,9 +98,11 @@
 <li><code class="docutils literal"><span class="pre">out_cluster</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the physical properties of star clusters? Set to 1 for yes, 0 for no.</li>
 <li><code class="docutils literal"><span class="pre">out_cluster_phot</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the photometry of star clusters? Set to 1 for yes, 0 for no.</li>
 <li><code class="docutils literal"><span class="pre">out_cluster_spec</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the spectra of star clusters? Set to 1 for yes, 0 for no.</li>
+<li><code class="docutils literal"><span class="pre">out_cluster_yield</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the yield of star clusters? Set to 1 for yes, 0 for no.</li>
 <li><code class="docutils literal"><span class="pre">out_integrated</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the integrated physical properties of the whole galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if <code class="docutils literal"><span class="pre">sim_type</span></code> is <code class="docutils literal"><span class="pre">cluster</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">out_integrated_phot</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the integrated photometry of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if <code class="docutils literal"><span class="pre">sim_type</span></code> is <code class="docutils literal"><span class="pre">cluster</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">out_integrated_spec</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the integrated spectra of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if <code class="docutils literal"><span class="pre">sim_type</span></code> is <code class="docutils literal"><span class="pre">cluster</span></code>.</li>
+<li><code class="docutils literal"><span class="pre">out_integrated_yield</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): write out the integrated yield of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if <code class="docutils literal"><span class="pre">sim_type</span></code> is <code class="docutils literal"><span class="pre">cluster</span></code>.</li>
 <li><code class="docutils literal"><span class="pre">output_mode</span></code> (default: <code class="docutils literal"><span class="pre">ascii</span></code>): set to <code class="docutils literal"><span class="pre">ascii</span></code>, <code class="docutils literal"><span class="pre">binary</span></code>, or <code class="docutils literal"><span class="pre">fits</span></code>. Selecting <code class="docutils literal"><span class="pre">ascii</span></code> causes the output to be written in ASCII text, which is human-readable, but produces much larger files. Selecting <code class="docutils literal"><span class="pre">binary</span></code> causes the output to be written in raw binary. Selecting <code class="docutils literal"><span class="pre">fits</span></code> causes the output to be written FITS format. This will be somewhat larger than raw binary output, but the resulting files will be portable between machines, which the raw binary files are not guaranteed to be. All three output modes can be read by the python library, though with varying speed &#8211; ASCII output is slowest, FITS is intermediate, and binary is fastest.</li>
 </ul>
 </div>
@@ -137,6 +139,8 @@
 </dl>
 </li>
 <li><p class="first"><code class="docutils literal"><span class="pre">atmospheres</span></code> (default: <code class="docutils literal"><span class="pre">lib/atmospheres</span></code>): directory where the stellar atmosphere library is located. Note that file names are hard-coded, so if you want to use different atmosphere models with a different format, you will have to write new source code to do so.</p>
+</li>
+<li><p class="first"><code class="docutils literal"><span class="pre">yields</span></code> (default: <code class="docutils literal"><span class="pre">lib/yields</span></code>): directory where the stellar yield tables are located. Note that the file name and format is hardcoded, so if you want to use a different format, you will have to write source code to do so.</p>
 </li>
 <li><dl class="first docutils">
 <dt><code class="docutils literal"><span class="pre">specsyn_mode</span></code> (default: <code class="docutils literal"><span class="pre">sb99</span></code>): spectral synthesis mode. Allowed values are:</dt>
@@ -282,7 +286,7 @@
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

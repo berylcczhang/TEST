@@ -155,7 +155,7 @@ This is a guide for users of the SLUG software package. SLUG is distributed unde
 
 \section{What Does SLUG Do?}
 \label{intro:what-does-slug-do}
-SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), cluster lifetime function (CLF), and (optionally) distribution of extinctions (A\_V), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. In this regard, SLUG operates much like any other SPS code. The main difference is that SLUG regards the functions describing the stellar population as probability distributions, and the resulting stellar population as being the result of a draw from them. SLUG performs a Monte Carlo simulation to determine the PDF of the light produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a SLUG simulation. For a more detailed description, readers are referred to \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, Fumagalli, \& Krumholz (2012)}.
+SLUG is a stellar population synthesis (SPS) code, meaning that, for a specified stellar initial mass function (IMF), star formation history (SFH), cluster mass function (CMF), cluster lifetime function (CLF), and (optionally) distribution of extinctions (A\_V), it predicts the spectra and photometry of both individual star clusters and the galaxies (or sub-regions of galaxies) that contain them. It also predicts the yields of various isotopes. In this regard, SLUG operates much like any other SPS code. The main difference is that SLUG regards the functions describing the stellar population as probability distributions, and the resulting stellar population as being the result of a draw from them. SLUG performs a Monte Carlo simulation to determine the PDF of the light and yields produced by the stellar populations that are drawn from these distributions. The remainder of this section briefly describes the major conceptual pieces of a SLUG simulation. For a more detailed description, readers are referred to \href{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, Fumagalli, \& Krumholz (2012)}.
 
 
 \section{Cluster Simulations and Galaxy Simulations}
@@ -336,6 +336,15 @@ where \(R_\nu(V)\) is the filter response function as frequency \(\nu\) for the 
 The computation for \(L_{\lambda,\mathrm{neb,ex}}\) is analogous.
 
 
+\section{Chemical Yields}
+\label{intro:chemical-yields}\label{intro:ssec-yields}
+In addition to computing the light output by a stellar population, SLUG can also predict the yield of isotopes. At present SLUG includes yields for core collapse supernovae only. These are based on the yield tables provided by \href{http://adsabs.harvard.edu/abs/2015arXiv151004643S/abstract}{Sukhbold et al. (2016, ApJ, in press)}, which provide a finely-spaced set of yields for progenitors of mass 9 - 120 \(M_\odot\). Yields from other stellar types will be added in later work.
+
+SLUG operates by separately tracking the isotopes produced by stars winds and by their end-of-life explosions, as a function of progenitor mass. To obtain the yield of any star, SLUG interpolates on the wind and explosive yields using \href{http://adsabs.harvard.edu/abs/1990A\%26A...239..443S}{Steffen interpolation} to guarantee that no artifical extrema are produced. The code reports production of 302 distinct isotopes, including many stable species and select unstable ones; for unstable species, radioactive decay over the course of the simulation is properly handled.
+
+At present there is a slight inconsistency in that the evolutionary tracks used by Sukhbold et al. do not precisely match those available for the purposes of omputing spectra and photometr. The death times of stars are computed using the tracks used output the photometric quantities, and thus are slightly inconsistent with the tracks used for the yields. This inconsistency also means that it is not possible to accurately place the wind yields in time; SLUG simply assumes that all yields due to winds are released when the stars end their lives, just as for the explosive yields.
+
+
 \chapter{Compiling and Installing SLUG}
 \label{compiling::doc}\label{compiling:compiling-and-installing-slug}
 
@@ -347,14 +356,14 @@ The core SLUG program requires
 The \href{http://www.boost.org/}{Boost C++ libraries}
 
 \item {} 
-The \href{http://www.gnu.org/software/gsl/}{GNU scientific library}
+The \href{http://www.gnu.org/software/gsl/}{GNU scientific library} (version 2.x preferred, code can be compiled with version 1.x -- see below)
 
 \item {} 
 The \href{http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html}{cfitsio library} (optional, only required for FITS capabilities)
 
 \end{itemize}
 
-Compilation will be easiest if you install these libraries such that the header files are included in your \code{CXX\_INCLUDE\_PATH} and the compiled object files are in your \code{LD\_LIBRARY\_PATH}. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag \code{FITS=DISABLE\_FITS} when calling \code{make} (see below). Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
+Compilation will be easiest if you install these libraries such that the header files are included in your \code{CXX\_INCLUDE\_PATH} and the compiled object files are in your \code{LIBRARY\_PATH}. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag \code{FITS=DISABLE\_FITS} when calling \code{make} (see below). Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
 
 In addition to the core dependencies, slugpy, the python helper library requires:
 \begin{itemize}
@@ -381,19 +390,29 @@ This is only required performing cloudy runs, and is not required for any other 
 
 \section{Compiling}
 \label{compiling:compiling}
-If you have boost, GSL, and (if you're using it) cfitsio included in your \code{CXX\_INCLUDE\_PATH} and \code{LD\_LIBRARY\_PATH} environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:
+If you have boost, GSL, and (if you're using it) cfitsio included in your \code{CXX\_INCLUDE\_PATH} and \code{LIBRARY\_PATH} environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 make
 \end{Verbatim}
 
-from the main \code{slug} directory. To compile in debug mode, do:
+from the main \code{slug} directory.
+
+To compile in debug mode, do:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 make debug
 \end{Verbatim}
 
-instead. To compile without cfitsio, do:
+instead.
+
+If you are compiling using GSL version 1.x or without cfitsio, you must specify these options when compiling. If you are using version 1.x of the GSL, do:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+make GSLVERSION=1
+\end{Verbatim}
+
+To compile without cfitsio, do:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 make FITS=DISABLE\PYGZus{}FITS
@@ -568,6 +587,9 @@ These control what quantities are computed and written to disk. Full a full desc
 \code{out\_cluster\_spec} (default: \code{1}): write out the spectra of star clusters? Set to 1 for yes, 0 for no.
 
 \item {} 
+\code{out\_cluster\_yield} (default: \code{1}): write out the yield of star clusters? Set to 1 for yes, 0 for no.
+
+\item {} 
 \code{out\_integrated} (default: \code{1}): write out the integrated physical properties of the whole galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if \code{sim\_type} is \code{cluster}.
 
 \item {} 
@@ -575,6 +597,9 @@ These control what quantities are computed and written to disk. Full a full desc
 
 \item {} 
 \code{out\_integrated\_spec} (default: \code{1}): write out the integrated spectra of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if \code{sim\_type} is \code{cluster}.
+
+\item {} 
+\code{out\_integrated\_yield} (default: \code{1}): write out the integrated yield of the entire galaxy? Set to 1 for yes, 0 for no. This keyword is ignored if \code{sim\_type} is \code{cluster}.
 
 \item {} 
 \code{output\_mode} (default: \code{ascii}): set to \code{ascii}, \code{binary}, or \code{fits}. Selecting \code{ascii} causes the output to be written in ASCII text, which is human-readable, but produces much larger files. Selecting \code{binary} causes the output to be written in raw binary. Selecting \code{fits} causes the output to be written FITS format. This will be somewhat larger than raw binary output, but the resulting files will be portable between machines, which the raw binary files are not guaranteed to be. All three output modes can be read by the python library, though with varying speed -- ASCII output is slowest, FITS is intermediate, and binary is fastest.
@@ -636,6 +661,9 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 
 \item {} 
 \code{atmospheres} (default: \code{lib/atmospheres}): directory where the stellar atmosphere library is located. Note that file names are hard-coded, so if you want to use different atmosphere models with a different format, you will have to write new source code to do so.
+
+\item {} 
+\code{yields} (default: \code{lib/yields}): directory where the stellar yield tables are located. Note that the file name and format is hardcoded, so if you want to use a different format, you will have to write source code to do so.
 
 \item {} \begin{description}
 \item[{\code{specsyn\_mode} (default: \code{sb99}): spectral synthesis mode. Allowed values are:}] \leavevmode\begin{itemize}
@@ -1131,7 +1159,7 @@ SLUG can produce 7 output files, though the actual number produced depends on th
 
 The only file that is always produced is the summary file, which is named \code{MODEL\_NAME\_summary.txt}, where \code{MODEL\_NAME} is the value given by the \code{model\_name} keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.
 
-The other six output files all have names of the form \code{MODEL\_NAME\_xxx.ext}, where the extension \code{.ext} is one of \code{.txt}, \code{.bin}, or \code{.fits} depending on the \code{output\_mode} specified in the parameter file, and \code{xxx} is \code{integrated\_prop}, \code{integrated\_spec}, \code{integrated\_phot}, \code{cluster\_prop}, \code{cluster\_spec}, or \code{cluster\_phot}. The production of these output files is controlled by the parameters \code{out\_integrated}, \code{out\_integrated\_spec}, \code{out\_integrated\_phot}, \code{out\_cluster}, \code{out\_cluster\_spec}, and \code{out\_cluster\_phot} in the parameter file.
+The other eight output files all have names of the form \code{MODEL\_NAME\_xxx.ext}, where the extension \code{.ext} is one of \code{.txt}, \code{.bin}, or \code{.fits} depending on the \code{output\_mode} specified in the parameter file, and \code{xxx} is \code{integrated\_prop}, \code{integrated\_spec}, \code{integrated\_phot}, \code{integrated\_yield}, \code{cluster\_prop}, \code{cluster\_spec}, \code{cluster\_phot}, or \code{cluster\_yield}. The production of these output files is controlled by the parameters \code{out\_integrated}, \code{out\_integrated\_spec}, \code{out\_integrated\_phot}, \code{out\_integrated\_yield}, \code{out\_cluster}, \code{out\_cluster\_spec}, \code{out\_cluster\_phot}, and \code{out\_cluster\_yield} in the parameter file.
 
 The easiest way to read these output files is with {\hyperref[slugpy:sec-slugpy]{\emph{\DUspan{}{slugpy -- The Python Helper Library}}}}, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:
 \begin{itemize}
@@ -1440,6 +1468,75 @@ This is followed by a series of entries of the form
 \end{itemize}
 
 There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
+
+
+\section{The \texttt{integrated\_yield} File}
+\label{output:the-integrated-yield-file}\label{output:ssec-int-yield-file}
+This file contains data on the integrated chemical yield of the entire
+galaxy, and consists of a series of entries containing the following
+fields:
+\begin{itemize}
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{Name}: name (i.e., atomic symbol) of an isotope being produced
+
+\item {} 
+\code{Z}: atomic number of an isotope being produced
+
+\item {} 
+\code{A}: mass number of an isotope being produced
+
+\item {} 
+\code{Yield}: mass of a particular isotope produced up to the specified time; for unstable isotopes, this includes the effects of radioactive decay, so yield can decrease with time under some circumstances
+
+\end{itemize}
+
+If \code{output\_mode} is \code{ascii}, these data are output in a series of
+columns, with different trials separated by lines of dashes. If
+\code{output\_mode} is \code{fits}, the data are stored as a series of
+columns in a binary table extension to the FITS file; the \code{Name},
+\code{Z}, and \code{A} fields are placed in the first binary table
+extension, and are the same for every output. The \code{Time} and
+\code{Yields} fields are in the second binary table extension. In
+addition to these two fields, the second binary table contains a
+column specifying the trial number for each entry.
+
+For binary output, the file is formatted as follows. It starts with
+\begin{itemize}
+\item {} 
+\code{NIso} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned
+long long}): number of isotopes in the output
+
+\end{itemize}
+
+This is followed by \code{NIso} entries of the form
+\begin{itemize}
+\item {} 
+\code{Name} (\code{char{[}4{]}}): isotope name (i.e., element symbol)
+
+\item {} 
+\code{Z} (\code{unsigned int})
+
+\item {} 
+\code{A} (\code{unsigned int})
+
+\end{itemize}
+
+The remainder of the file contains records of the from
+\begin{itemize}
+\item {} 
+\code{Time} (\code{double})
+
+\item {} 
+\code{Yield} (\code{double{[}NIso{]}})
+
+\end{itemize}
+
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
 
 
 \section{The \texttt{cluster\_prop} File}
@@ -1772,6 +1869,92 @@ This is followed by \code{NCluster} entries of the following form:
 \end{itemize}
 
 
+\section{The \texttt{cluster\_yield} File}
+\label{output:ssec-cluster-yield-file}\label{output:the-cluster-yield-file}
+This file contains data on the chemical yield of individual star
+clusters, and consists of a series of entries containing the following
+fields:
+\begin{itemize}
+\item {} 
+\code{UniqueID}: a unique identifier number for each cluster that is
+preserved across times and output files
+
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{Name}: name (i.e., atomic symbol) of an isotope being produced
+
+\item {} 
+\code{Z}: atomic number of an isotope being produced
+
+\item {} 
+\code{A}: mass number of an isotope being produced
+
+\item {} 
+\code{Yield}: mass of a particular isotope produced up to the specified
+time; for unstable isotopes, this includes the effects of
+radioactive decay, so yield can decrease with time under some
+circumstances
+
+\end{itemize}
+
+If \code{output\_mode} is \code{ascii}, these data are output in a series of
+columns, with different trials separated by lines of dashes. If
+\code{output\_mode} is \code{fits}, the data are stored as a series of
+columns in a binary table extension to the FITS file; the \code{Name},
+\code{Z}, and \code{A} fields are placed in the first binary table
+extension, and are the same for every output. The \code{Time} and
+\code{Yields} fields are in the second binary table extension. In
+addition to these two fields, the second binary table contains a
+column specifying the trial number for each entry.
+
+For binary output, the file is formatted as follows. It starts with
+\begin{itemize}
+\item {} 
+\code{NIso} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned
+long long}): number of isotopes in the output
+
+\end{itemize}
+
+This is followed by \code{NIso} entries of the form
+\begin{itemize}
+\item {} 
+\code{Name} (\code{char{[}4{]}}): isotope name (i.e., element symbol)
+
+\item {} 
+\code{Z} (\code{unsigned int})
+
+\item {} 
+\code{A} (\code{unsigned int})
+
+\end{itemize}
+
+Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+\begin{itemize}
+\item {} 
+\code{Time} (\code{double})
+
+\item {} 
+\code{NCluster} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): number of non-disrupted clusters present at this time
+
+\end{itemize}
+
+This is followed by \code{NCluster} entries of the following form:
+\begin{itemize}
+\item {} 
+\code{UniqueID} (\code{unsigned long})
+
+\item {} 
+\code{Yield} (\code{double{[}NIso{]}})
+
+\end{itemize}
+
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
+
+
 \chapter{Filters and Filter Data}
 \label{filters:sec-filters}\label{filters::doc}\label{filters:filters-and-filter-data}
 SLUG comes with a fairly extensive list of filters, adapted from the list maintained by Charlie Conroy as part of \href{https://code.google.com/p/fsps/}{fsps}. However, users may wish to add additional filters, and so the format of the filter list is documented here for convenience.
@@ -1896,6 +2079,18 @@ filter\_wl\_c: pivot wavelength used to set the normalization for each filter fo
 
 \item {} 
 phot: photometry of the stars in each filter
+
+\item {} 
+isotope\_name: element symbols for the isotopes whose yields are reported
+
+\item {} 
+isotope\_Z: atomic numbers for the isotopes whose yields are reported
+
+\item {} 
+isotope\_A: atomic numbers for the isotopes whose yields are reported
+
+\item {} 
+yld: yield of each isotope at each time
 
 \end{itemize}
 
@@ -2402,6 +2597,24 @@ indicated in the units field
 If extinction is enabled, phot\_ex will contain photometry  
 after extinction has been applied.
 
+(Present if the run being read contains a cluster\_yield file)
+\begin{description}
+\item[{isotope\_name}] \leavevmode{[}array of strings{]}
+Atomic symbols of the isotopes included in the yield table
+
+\item[{isotope\_Z}] \leavevmode{[}array of int{]}
+Atomic numbers of the isotopes included in the yield table
+
+\item[{isotope\_A}] \leavevmode{[}array of int{]}
+Atomic mass number of the isotopes included in the yield table
+
+\item[{yld}] \leavevmode{[}array{]}
+Yield of each isotope, defined as the instantaneous amount
+produced up to that time; for unstable isotopes, this
+includes the effects of decay since production
+
+\end{description}
+
 (Present if the run being read contains a cluster\_cloudyspec file)
 \begin{description}
 \item[{cloudy\_wl}] \leavevmode{[}array{]}
@@ -2857,13 +3070,13 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{name}] \leavevmode{[}array of strings, shape (N\_iso){]}
+\item[{isotope\_name}] \leavevmode{[}array of strings, shape (N\_iso){]}
 Atomic symbols of the isotopes included in the yield table
 
-\item[{Z}] \leavevmode{[}array of int, shape (N\_iso){]}
+\item[{isotope\_Z}] \leavevmode{[}array of int, shape (N\_iso){]}
 Atomic numbers of the isotopes included in the yield table
 
-\item[{A}] \leavevmode{[}array of int, shape (N\_iso){]}
+\item[{isotope\_A}] \leavevmode{[}array of int, shape (N\_iso){]}
 Atomic mass number of the isotopes included in the yield table
 
 \item[{id}] \leavevmode{[}array, dtype uint{]}
@@ -3110,6 +3323,24 @@ units are as indicated in the units field
 
 If extinction is enabled, phot\_ex will contain photometry  
 after extinction has been applied.
+
+(Only present if an integrate\_yield file is found)
+\begin{description}
+\item[{isotope\_name}] \leavevmode{[}array of strings{]}
+Atomic symbols of the isotopes included in the yield table
+
+\item[{isotope\_Z}] \leavevmode{[}array of int{]}
+Atomic numbers of the isotopes included in the yield table
+
+\item[{isotope\_A}] \leavevmode{[}array of int{]}
+Atomic mass number of the isotopes included in the yield table
+
+\item[{yld}] \leavevmode{[}array{]}
+Yield of each isotope, defined as the instantaneous amount
+produced up to that time; for unstable isotopes, this
+includes the effects of decay since production
+
+\end{description}
 
 (Only present if an integrated\_cloudyspec file is found)
 \begin{description}
@@ -3542,21 +3773,21 @@ was in; `format' will be one of `ascii', `binary', or `fits'
 \item[{Returns}] \leavevmode
 A namedtuple containing the following fields:
 \begin{description}
-\item[{name}] \leavevmode{[}array of strings, shape (N\_iso){]}
-Atomic symbols of the isotopes included in the yield table
-
-\item[{Z}] \leavevmode{[}array of int, shape (N\_iso){]}
-Atomic numbers of the isotopes included in the yield table
-
-\item[{A}] \leavevmode{[}array of int, shape (N\_iso){]}
-Atomic mass number of the isotopes included in the yield table
-
 \item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
 Times at which data are output; shape is either N\_times (if
 the run was done with fixed output times) or N\_trials (if
 the run was done with random output times)
 
-\item[{yld}] \leavevmode{[}array, shape (N\_times, N\_iso) or (N\_trials, N\_iso){]}
+\item[{isotope\_name}] \leavevmode{[}array of strings, shape (N\_iso){]}
+Atomic symbols of the isotopes included in the yield table
+
+\item[{isotope\_Z}] \leavevmode{[}array of int, shape (N\_iso){]}
+Atomic numbers of the isotopes included in the yield table
+
+\item[{isotope\_A}] \leavevmode{[}array of int, shape (N\_iso){]}
+Atomic mass number of the isotopes included in the yield table
+
+\item[{yld}] \leavevmode{[}array, shape (N\_iso, N\_times) or (N\_iso, N\_trials){]}
 Yield of each isotope, defined as the instantaneous amount
 produced up to that time; for unstable isotopes, this
 includes the effects of decay since production

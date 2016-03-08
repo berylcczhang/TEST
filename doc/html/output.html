@@ -43,7 +43,7 @@
 <span id="sec-output"></span><h1>Output Files and Format<a class="headerlink" href="#output-files-and-format" title="Permalink to this headline">¶</a></h1>
 <p>SLUG can produce 7 output files, though the actual number produced depends on the setting for the <code class="docutils literal"><span class="pre">out_*</span></code> keywords in the parameter file. (Additional output files can be produced by <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><span>cloudy_slug: An Automated Interface to cloudy</span></a>, and are documented in that section rather than here.)</p>
 <p>The only file that is always produced is the summary file, which is named <code class="docutils literal"><span class="pre">MODEL_NAME_summary.txt</span></code>, where <code class="docutils literal"><span class="pre">MODEL_NAME</span></code> is the value given by the <code class="docutils literal"><span class="pre">model_name</span></code> keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.</p>
-<p>The other six output files all have names of the form <code class="docutils literal"><span class="pre">MODEL_NAME_xxx.ext</span></code>, where the extension <code class="docutils literal"><span class="pre">.ext</span></code> is one of <code class="docutils literal"><span class="pre">.txt</span></code>, <code class="docutils literal"><span class="pre">.bin</span></code>, or <code class="docutils literal"><span class="pre">.fits</span></code> depending on the <code class="docutils literal"><span class="pre">output_mode</span></code> specified in the parameter file, and <code class="docutils literal"><span class="pre">xxx</span></code> is <code class="docutils literal"><span class="pre">integrated_prop</span></code>, <code class="docutils literal"><span class="pre">integrated_spec</span></code>, <code class="docutils literal"><span class="pre">integrated_phot</span></code>, <code class="docutils literal"><span class="pre">cluster_prop</span></code>, <code class="docutils literal"><span class="pre">cluster_spec</span></code>, or <code class="docutils literal"><span class="pre">cluster_phot</span></code>. The production of these output files is controlled by the parameters <code class="docutils literal"><span class="pre">out_integrated</span></code>, <code class="docutils literal"><span class="pre">out_integrated_spec</span></code>, <code class="docutils literal"><span class="pre">out_integrated_phot</span></code>, <code class="docutils literal"><span class="pre">out_cluster</span></code>, <code class="docutils literal"><span class="pre">out_cluster_spec</span></code>, and <code class="docutils literal"><span class="pre">out_cluster_phot</span></code> in the parameter file.</p>
+<p>The other eight output files all have names of the form <code class="docutils literal"><span class="pre">MODEL_NAME_xxx.ext</span></code>, where the extension <code class="docutils literal"><span class="pre">.ext</span></code> is one of <code class="docutils literal"><span class="pre">.txt</span></code>, <code class="docutils literal"><span class="pre">.bin</span></code>, or <code class="docutils literal"><span class="pre">.fits</span></code> depending on the <code class="docutils literal"><span class="pre">output_mode</span></code> specified in the parameter file, and <code class="docutils literal"><span class="pre">xxx</span></code> is <code class="docutils literal"><span class="pre">integrated_prop</span></code>, <code class="docutils literal"><span class="pre">integrated_spec</span></code>, <code class="docutils literal"><span class="pre">integrated_phot</span></code>, <code class="docutils literal"><span class="pre">integrated_yield</span></code>, <code class="docutils literal"><span class="pre">cluster_prop</span></code>, <code class="docutils literal"><span class="pre">cluster_spec</span></code>, <code class="docutils literal"><span class="pre">cluster_phot</span></code>, or <code class="docutils literal"><span class="pre">cluster_yield</span></code>. The production of these output files is controlled by the parameters <code class="docutils literal"><span class="pre">out_integrated</span></code>, <code class="docutils literal"><span class="pre">out_integrated_spec</span></code>, <code class="docutils literal"><span class="pre">out_integrated_phot</span></code>, <code class="docutils literal"><span class="pre">out_integrated_yield</span></code>, <code class="docutils literal"><span class="pre">out_cluster</span></code>, <code class="docutils literal"><span class="pre">out_cluster_spec</span></code>, <code class="docutils literal"><span class="pre">out_cluster_phot</span></code>, and <code class="docutils literal"><span class="pre">out_cluster_yield</span></code> in the parameter file.</p>
 <p>The easiest way to read these output files is with <a class="reference internal" href="slugpy.html#sec-slugpy"><span>slugpy &#8211; The Python Helper Library</span></a>, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:</p>
 <ul class="simple">
 <li>Masses are in <span class="math">\(M_\odot\)</span></li>
@@ -188,6 +188,47 @@ indicating that it was enabled</li>
 <li><code class="docutils literal"><span class="pre">PhotFilter_neb_ex</span></code> (<code class="docutils literal"><span class="pre">NFilter</span></code> entries of type <code class="docutils literal"><span class="pre">double</span></code>); only present if <code class="docutils literal"><span class="pre">Nebular</span></code> and <code class="docutils literal"><span class="pre">Extinct</span></code> are both 1. Note that some values may be <code class="docutils literal"><span class="pre">NaN</span></code> if photometry could not be computed for that filter (see above).</li>
 </ul>
 <p>There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
+</div>
+<div class="section" id="the-integrated-yield-file">
+<span id="ssec-int-yield-file"></span><h2>The <code class="docutils literal"><span class="pre">integrated_yield</span></code> File<a class="headerlink" href="#the-integrated-yield-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains data on the integrated chemical yield of the entire
+galaxy, and consists of a series of entries containing the following
+fields:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">Time</span></code>: evolution time at which the output is produced</li>
+<li><code class="docutils literal"><span class="pre">Name</span></code>: name (i.e., atomic symbol) of an isotope being produced</li>
+<li><code class="docutils literal"><span class="pre">Z</span></code>: atomic number of an isotope being produced</li>
+<li><code class="docutils literal"><span class="pre">A</span></code>: mass number of an isotope being produced</li>
+<li><code class="docutils literal"><span class="pre">Yield</span></code>: mass of a particular isotope produced up to the specified time; for unstable isotopes, this includes the effects of radioactive decay, so yield can decrease with time under some circumstances</li>
+</ul>
+<p>If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">ascii</span></code>, these data are output in a series of
+columns, with different trials separated by lines of dashes. If
+<code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">fits</span></code>, the data are stored as a series of
+columns in a binary table extension to the FITS file; the <code class="docutils literal"><span class="pre">Name</span></code>,
+<code class="docutils literal"><span class="pre">Z</span></code>, and <code class="docutils literal"><span class="pre">A</span></code> fields are placed in the first binary table
+extension, and are the same for every output. The <code class="docutils literal"><span class="pre">Time</span></code> and
+<code class="docutils literal"><span class="pre">Yields</span></code> fields are in the second binary table extension. In
+addition to these two fields, the second binary table contains a
+column specifying the trial number for each entry.</p>
+<p>For binary output, the file is formatted as follows. It starts with</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">NIso</span></code> (<code class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></code>, usually <code class="docutils literal"><span class="pre">unsigned</span>
+<span class="pre">long</span> <span class="pre">long</span></code>): number of isotopes in the output</li>
+</ul>
+<p>This is followed by <code class="docutils literal"><span class="pre">NIso</span></code> entries of the form</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">Name</span></code> (<code class="docutils literal"><span class="pre">char[4]</span></code>): isotope name (i.e., element symbol)</li>
+<li><code class="docutils literal"><span class="pre">Z</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">A</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
+</ul>
+<p>The remainder of the file contains records of the from</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">Time</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">Yield</span></code> (<code class="docutils literal"><span class="pre">double[NIso]</span></code>)</li>
+</ul>
+<p>There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.</p>
 </div>
 <div class="section" id="the-cluster-prop-file">
 <h2>The <code class="docutils literal"><span class="pre">cluster_prop</span></code> File<a class="headerlink" href="#the-cluster-prop-file" title="Permalink to this headline">¶</a></h2>
@@ -336,6 +377,57 @@ self-documenting.</p>
 <li><code class="docutils literal"><span class="pre">PhotFilter_neb_ex</span></code> (<code class="docutils literal"><span class="pre">NFilter</span></code> entries of type <code class="docutils literal"><span class="pre">double</span></code>); only present if <code class="docutils literal"><span class="pre">Nebular</span></code> and <code class="docutils literal"><span class="pre">Extinct</span></code> are both 1. Note that some values may be <code class="docutils literal"><span class="pre">NaN</span></code> if photometry could not be computed for that filter (see above).</li>
 </ul>
 </div>
+<div class="section" id="the-cluster-yield-file">
+<span id="ssec-cluster-yield-file"></span><h2>The <code class="docutils literal"><span class="pre">cluster_yield</span></code> File<a class="headerlink" href="#the-cluster-yield-file" title="Permalink to this headline">¶</a></h2>
+<p>This file contains data on the chemical yield of individual star
+clusters, and consists of a series of entries containing the following
+fields:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">UniqueID</span></code>: a unique identifier number for each cluster that is
+preserved across times and output files</li>
+<li><code class="docutils literal"><span class="pre">Time</span></code>: evolution time at which the output is produced</li>
+<li><code class="docutils literal"><span class="pre">Name</span></code>: name (i.e., atomic symbol) of an isotope being produced</li>
+<li><code class="docutils literal"><span class="pre">Z</span></code>: atomic number of an isotope being produced</li>
+<li><code class="docutils literal"><span class="pre">A</span></code>: mass number of an isotope being produced</li>
+<li><code class="docutils literal"><span class="pre">Yield</span></code>: mass of a particular isotope produced up to the specified
+time; for unstable isotopes, this includes the effects of
+radioactive decay, so yield can decrease with time under some
+circumstances</li>
+</ul>
+<p>If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">ascii</span></code>, these data are output in a series of
+columns, with different trials separated by lines of dashes. If
+<code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">fits</span></code>, the data are stored as a series of
+columns in a binary table extension to the FITS file; the <code class="docutils literal"><span class="pre">Name</span></code>,
+<code class="docutils literal"><span class="pre">Z</span></code>, and <code class="docutils literal"><span class="pre">A</span></code> fields are placed in the first binary table
+extension, and are the same for every output. The <code class="docutils literal"><span class="pre">Time</span></code> and
+<code class="docutils literal"><span class="pre">Yields</span></code> fields are in the second binary table extension. In
+addition to these two fields, the second binary table contains a
+column specifying the trial number for each entry.</p>
+<p>For binary output, the file is formatted as follows. It starts with</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">NIso</span></code> (<code class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></code>, usually <code class="docutils literal"><span class="pre">unsigned</span>
+<span class="pre">long</span> <span class="pre">long</span></code>): number of isotopes in the output</li>
+</ul>
+<p>This is followed by <code class="docutils literal"><span class="pre">NIso</span></code> entries of the form</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">Name</span></code> (<code class="docutils literal"><span class="pre">char[4]</span></code>): isotope name (i.e., element symbol)</li>
+<li><code class="docutils literal"><span class="pre">Z</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">A</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
+</ul>
+<p>Thereafter, the file consists of a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">Time</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">NCluster</span></code> (<code class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></code>, usually <code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></code>): number of non-disrupted clusters present at this time</li>
+</ul>
+<p>This is followed by <code class="docutils literal"><span class="pre">NCluster</span></code> entries of the following form:</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">UniqueID</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">Yield</span></code> (<code class="docutils literal"><span class="pre">double[NIso]</span></code>)</li>
+</ul>
+<p>There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.</p>
+</div>
 </div>
 
 
@@ -350,9 +442,11 @@ self-documenting.</p>
 <li><a class="reference internal" href="#the-integrated-prop-file">The <code class="docutils literal"><span class="pre">integrated_prop</span></code> File</a></li>
 <li><a class="reference internal" href="#the-integrated-spec-file">The <code class="docutils literal"><span class="pre">integrated_spec</span></code> File</a></li>
 <li><a class="reference internal" href="#the-integrated-phot-file">The <code class="docutils literal"><span class="pre">integrated_phot</span></code> File</a></li>
+<li><a class="reference internal" href="#the-integrated-yield-file">The <code class="docutils literal"><span class="pre">integrated_yield</span></code> File</a></li>
 <li><a class="reference internal" href="#the-cluster-prop-file">The <code class="docutils literal"><span class="pre">cluster_prop</span></code> File</a></li>
 <li><a class="reference internal" href="#the-cluster-spec-file">The <code class="docutils literal"><span class="pre">cluster_spec</span></code> File</a></li>
 <li><a class="reference internal" href="#the-cluster-phot-file">The <code class="docutils literal"><span class="pre">cluster_phot</span></code> File</a></li>
+<li><a class="reference internal" href="#the-cluster-yield-file">The <code class="docutils literal"><span class="pre">cluster_yield</span></code> File</a></li>
 </ul>
 </li>
 </ul>
