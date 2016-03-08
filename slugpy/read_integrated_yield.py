@@ -169,7 +169,6 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
         if idx > 1:
             if np.amin(time[:idx] == time[idx:2*idx]):
                 time = time[:idx]
-            import pdb; pdb.set_trace()
             yld = yld.reshape((len(trial)/idx, time.size,
                                isotope_name.size))
 

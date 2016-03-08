@@ -7,6 +7,7 @@ single output file.
 """
 
 import numpy as np
+import struct
 from scipy.interpolate import interp1d
 from cloudy import write_integrated_cloudyphot
 from cloudy import write_integrated_cloudylines
@@ -603,11 +604,11 @@ def write_integrated(data, model_name, fmt):
 
             # Write out bytes indicating nebular or no nebular, and
             # extinction or no extinction
-            if 'spec_neb' in data._fields:
+            if 'phot_neb' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
-            if 'spec_ex' in data._fields:
+            if 'phot_ex' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
@@ -710,6 +711,101 @@ def write_integrated(data, model_name, fmt):
             hdulist = fits.HDUList([prihdu, tbhdu])
             hdulist.writeto(model_name+'_integrated_phot.fits',
                             clobber=True)
+
+    ################################################################
+    # Write yield file if we have the data for it
+    ################################################################
+    if 'yld' in data._fields:
+
+        if fmt == 'ascii':
+
+            ########################################################
+            # ASCII mode
+            ########################################################
+
+            fp = open(model_name+'_integrated_yield.txt', 'w')
+
+            # Write header
+            fp.write(("{:<14s}"*5+"\n").format('Time', 'Symbol',
+                                               'Z', 'A', 'Yield'))
+            fp.write(("{:<14s}"*5+"\n").format('(yr)', '', '', '', '(Msun)'))
+            fp.write(("{:<14s}"*5+"\n").format('-----------', '-----------', 
+                                               '-----------', '-----------', 
+                                               '-----------'))
+            sep_length = 5*14-3
+            out_line = "{:11.5e}   {:>11s}   {:>11d}   {:>11d}   {:11.5e}\n"
+           
+            # Write data
+            ntime = data.yld.shape[1]
+            ntrial = data.yld.shape[0]
+            niso = data.yld.shape[2]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
+            for i in range(ntrial):
+                # Write separator between trials
+                if i != 0:
+                    fp.write('-'*sep_length+'\n')
+                # Write data for this time
+                for j in range(ntime):
+                    if random_time:
+                        t_out = data.time[i]
+                    else:
+                        t_out = data.time[j]
+                    for k in range(niso):
+                        fp.write(out_line.format(
+                            t_out, data.isotope_name[k],
+                            data.isotope_Z[k],
+                            data.isotope_A[k],
+                            data.yld[i,j,k]))
+
+            # Close file
+            fp.close()
+
+        elif fmt == 'bin' or fmt == 'binary':
+
+            ########################################################
+            # Binary mode
+            ########################################################
+
+            fp = open(model_name+'_integrated_yield.bin', 'wb')
+
+            # Write isotope data; note that we need to use struct to
+            # force things to match up byte by byte, so that alignment
+            # doesn't screw things
+            fp.write(np.uint64(data.isotope_name.size))
+            for i in range(data.isotope_name.size):
+                tempstr = "{:<4s}".format(data.isotope_name[i])
+                fp.write(struct.pack('ccccII',
+                                     tempstr[0],
+                                     tempstr[1],
+                                     tempstr[2],
+                                     tempstr[3],
+                                     data.isotope_Z[i],
+                                     data.isotope_A[i]))
+
+            # Write remainder of data
+            ntime = data.yld.shape[1]
+            ntrial = data.yld.shape[0]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
+            for i in range(ntrial):
+                for j in range(ntime):
+                    # Write trial number and time
+                    fp.write(np.uint(i))
+                    if random_time:
+                        fp.write(data.time[i])
+                    else:
+                        fp.write(data.time[j])
+                    # Write yields
+                    fp.write(data.yld[i,j,:])
+
+            # Close file
+            fp.close()
+
 
     ################################################################
     # Write cloudy files if we have the data for them
