@@ -1,6 +1,6 @@
 ### What is SLUG ###
 
-SLUG is the Stochastically Lighting Up Galaxies Code. SLUG is a stellar population synthesis code, and in many respects is similar to other commonly-used SPS codes such as [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm) and [FSPS](https://code.google.com/p/fsps/). Given an input star formation history, stellar initial mass function, and a set of evolutionary tracks and stellar atmospheres, all of these codes can predict the spectra and photometric properties of a stellar population. The main difference between SLUG and conventional SPS codes is that, instead of the usual approach of assuming that all stellar masses and ages are fully populated, SLUG is capable of stochastically sampling from the stellar initial mass function and age distribution, and thereby predicting not just the mean spectrum and photometry, but also the full distribution of spectra and photometry that results from stochastic sampling. This capability is critical in the regime of low star formation rates and total stellar masses, where finite sampling can lead to a distribution of properties that is extremely broad, and the mean values produced by other SPS codes are therefore of limited predictive power.
+SLUG is the Stochastically Lighting Up Galaxies Code. SLUG is a stellar population synthesis code, and in many respects is similar to other commonly-used SPS codes such as [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm) and [FSPS](https://code.google.com/p/fsps/). Given an input star formation history, stellar initial mass function, and a set of evolutionary tracks and stellar atmospheres, all of these codes can predict the spectra and photometric properties of a stellar population, and some can also predict chemical yields. The main difference between SLUG and conventional SPS codes is that, instead of the usual approach of assuming that all stellar masses and ages are fully populated, SLUG is capable of stochastically sampling from the stellar initial mass function and age distribution, and thereby predicting not just the mean spectrum, photometry, and yields, but also the full distribution of these quantities that results from stochastic sampling. This capability is critical in the regime of low star formation rates and total stellar masses, where finite sampling can lead to a distribution of properties that is extremely broad, and the mean values produced by other SPS codes are therefore of limited predictive power.
 
 ### Full documenation ###
 
@@ -13,6 +13,7 @@ This repository contains SLUG v2. SLUG v1 is available at <http://www.slugsps.co
 * The ability to predict full spectra as well as photometry
 * A vastly larger array of photometric filters, with the ability to add more without needing to alter the source code; there is also wide range of choices for photometric system
 * Fully automated parallelism for computations in multi-processor environments
+* Predictions of element yields as well as light output
 * The ability to handle a very wide range of functional forms for the initial mass function, cluster mass function, cluster lifetime function, and star formation history
 * Many sampling methods available for mass-limited sampling
 * The ability to simulate simple stellar populations with finite masses, as well as full star formation histories
@@ -48,6 +49,7 @@ The SLUG repository contains several subdirectories.
     - *lib/filters*: contains predefined photometric filters
     - *lib/imf*: contains predefined initial mass functions
     - *lib/tracks*: contains stellar evolution tracks
+    - *lib/yields*: contains chemical yield tables
 * *output*: this is the default location for writing output
 * *param*: this is the default location for parameter files that control slug simulations
 * *sfr_slug*: contains example code and data for sfr_slug
@@ -74,7 +76,7 @@ You can also download the entire repository from the [SLUG downloads page](https
 
 The core SLUG c++ code requires:
 
-* The [GNU scientific library](http://www.gnu.org/software/gsl/)
+* The [GNU scientific library](http://www.gnu.org/software/gsl/) (version 2.x preferred, 1.x can be used with compiler flag)
 * The [BOOST c++ libraries](http://www.boost.org/)
 * The [cfitsio libary](http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html) (optional, only required for FITS output capability)
 
@@ -109,11 +111,11 @@ Once the code is compiled, running a SLUG simulation is fairly straightforward. 
 
 ### Questions, bugs, and getting involved ###
 
-If you have questions about SLUG, have discovered any bugs, or want to contribute to ongoing development, please contact [Mark Krumholz](https://sites.google.com/a/ucsc.edu/krumholz/), mkrumhol@ucsc.edu.
+If you have questions about SLUG, have discovered any bugs, or want to contribute to ongoing development, please contact [Mark Krumholz](http://www.mso.anu.edu.au/~krumholz/), mark.krumholz@anu.edu.au.
 
 ### Acknowledgements ###
 
-SLUG was the product of many people's work. The core code was originally written by Robert da Silva and Michele Fumagalli, with contributions from Jonathan Parra. The reimplementation and python parsing routines were written by Mark Krumholz. SLUG benefitted enormously from the methods and library of track and atmosphere models curated by Claus Leitherer as part of [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm). The extensive set of filters available started with the compilation provided by Charlie Conroy, who maintains a filter list as part of [FSPS](https://code.google.com/p/fsps/). The predefined extinction curves are courtesy of Daniela Calzetti.
+SLUG was the product of many people's work. Version 1 was written by Robert da Silva and Michele Fumagalli, with contributions and improvements from Jonathan Parra. Version 2 of SLUG, as well as slugpy, were written by primarily by Mark Krumholz, with contributions from Michele Fumagalli, Teddy Rendahl, Evan Demers, and Greg Ashworth. SLUG benefitted enormously from the methods and library of track and atmosphere models curated by Claus Leitherer as part of [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm). The extensive set of filters available started with the compilation provided by Charlie Conroy, who maintains a filter list as part of [FSPS](https://code.google.com/p/fsps/), though it has grown considerably since then. The predefined extinction curves are courtesy of Daniela Calzetti.
 
 ### License ###
 
