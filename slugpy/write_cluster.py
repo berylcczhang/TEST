@@ -821,12 +821,8 @@ def write_cluster(data, model_name, fmt):
 
                     # Write out time and number of clusters
                     ncluster = block_end - ptr
-                    
-
-                    
                     fp.write(np.uint(i))
                     fp.write(times[j])
-
                     fp.write(ncluster)
 
                     # Loop over clusters and write them
@@ -975,6 +971,156 @@ def write_cluster(data, model_name, fmt):
             hdulist = fits.HDUList(hdulist)
             hdulist.writeto(model_name+'_cluster_phot.fits',
                             clobber=True)
+
+    ################################################################
+    # Write the yield file if we have the data for it
+    ################################################################
+    if 'yld' in data._fields:
+
+        if fmt == 'ascii' or fmt == 'txt':
+
+            ########################################################
+            # ASCII mode
+            ########################################################
+
+            fp = open(model_name+'_cluster_yield.txt', 'w')
+
+            # Write header
+            fp.write(("{:<14s}"*6+"\n").\
+                     format('UniqueID', 'Time', 'Symbol',
+                            'Z', 'A', 'Yield'))
+            fp.write(("{:<14s}"*6+"\n").\
+                     format('', '(yr)', '', '', '', '(Msun)'))
+            fp.write(("{:<14s}"*6+"\n").\
+                     format('-----------', '-----------', 
+                            '-----------', '-----------', 
+                            '-----------', '-----------'))
+            sep_length = 6*14-3
+            out_line = "{:>11d}   {:11.5e}   {:>11s}   " + \
+                       "{:>11d}   {:>11d}   {:11.5e}\n"
+
+            # Write data
+            for i in range(len(data.id)):
+                for j in range(len(data.isotope_name)):
+                    fp.write(out_line.
+                             format(data.id[i], data.time[i],
+                                    data.isotope_name[j],
+                                    data.isotope_Z[j],
+                                    data.isotope_A[j],
+                                    data.yld[i,j]))
+
+            # Close file
+            fp.close()
+
+        elif fmt == 'bin' or fmt == 'binary':
+
+            ########################################################
+            # Binary mode
+            ########################################################
+
+            fp = open(model_name+'_cluster_yield.bin', 'wb')
+
+            # Write isotope data; note that we need to use struct to
+            # force things to match up byte by byte, so that alignment
+            # doesn't screw things
+            fp.write(np.uint64(data.isotope_name.size))
+            for i in range(data.isotope_name.size):
+                tempstr = "{:<4s}".format(data.isotope_name[i])
+                fp.write(struct.pack('ccccII',
+                                     tempstr[0],
+                                     tempstr[1],
+                                     tempstr[2],
+                                     tempstr[3],
+                                     data.isotope_Z[i],
+                                     data.isotope_A[i]))
+            # Break data into blocks of clusters with the same time
+            # and trial number
+            ptr = 0
+            for i in range(len(trials)):
+                for j in range(len(times)):
+
+                    # Find block of clusters with this time and trial
+                    block_match \
+                        = np.logical_and(data.trial[ptr:] == trials[i],
+                                         data.time[ptr:] == times[j])
+                    block_end = ptr + np.argmin(block_match)
+
+                    # Special case: if we found no clusters in this
+                    # block, make sure that's not because all the
+                    # remaining clusters belong in it, and the search
+                    # ran off the end of the data. If that is the
+                    # case, adjust block_end appropriately.
+                    if block_end == ptr:
+                        if np.sum(block_match) > 0:
+                            block_end = len(data.trial)
+
+                    # Special case: if block_end is the last entry in
+                    # the data, check if the last entry is the same as
+                    # the previous one. If so, move block_end one
+                    # space, to off the edge of the data.
+                    if block_end == len(data.trial)-1 and \
+                       data.trial[-1] == trials[i] and \
+                       data.time[-1] == times[j]:
+                        block_end = block_end+1
+
+                    # Write out time and number of clusters
+                    ncluster = block_end - ptr
+                    fp.write(np.uint(i))
+                    fp.write(times[j])
+                    fp.write(ncluster)
+
+                    # Loop over clusters and write them
+                    for k in range(ptr, block_end):
+                        fp.write(data.id[k])
+                        fp.write(data.yld[k,:])
+
+                    # Move pointer
+                    ptr = block_end
+
+            # Close file
+            fp.close()
+
+        elif fmt == 'fits':
+
+            ########################################################
+            # FITS mode
+            ########################################################
+
+            # Store isotope information in the first HDU
+            niso = data.isotope_name.size
+            isocols = []
+            isocols.append(fits.Column(name="Name", format="3A", unit="",
+                                       array=data.isotope_name))
+            isocols.append(fits.Column(name="Z", format="1K", unit="",
+                                       array=data.isotope_Z))
+            isocols.append(fits.Column(name="A", format="1K", unit="",
+                                       array=data.isotope_A))
+            isofits = fits.ColDefs(isocols)
+            isohdu = fits.BinTableHDU.from_columns(isofits)
+
+            # Create a second HDU containing yield information
+            yldcols = []
+            yldcols.append(fits.Column(name="Trial", format="1K",
+                                       unit="", array=data.trial))
+            yldcols.append(fits.Column(name="UniqueID", format="1K",
+                                       unit="", array=data.id))
+            yldcols.append(fits.Column(name="Time", format="1D",
+                                       unit="yr", array=data.time))
+            yldcols.append(fits.Column(name="Yield",
+                                       format="{:d}D".format(niso),
+                                       unit="Msun",
+                                       array=data.yld))
+            yldfits = fits.ColDefs(yldcols)
+            yldhdu = fits.BinTableHDU.from_columns(yldfits)
+
+            # Create dummy primary HDU
+            prihdu = fits.PrimaryHDU()
+
+            # Create HDU list and write to file
+            hdulist = fits.HDUList([prihdu, isohdu, yldhdu])
+            hdulist.writeto(model_name+'_cluster_yield.fits', 
+                            clobber=True)
+
 
     ################################################################
     # Write cloudy files if we have the data for them
