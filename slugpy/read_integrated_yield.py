@@ -134,7 +134,44 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
 
     elif fname.endswith('.bin'):
 
-        pass
+        # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
+
+        # Read number of isotopes
+        niso = struct.unpack('L', fp.read(struct.calcsize('L')))[0]
+
+        # Read isotope data
+        data = fp.read(struct.calcsize(('c'*4+'II')*niso))
+        data_list = struct.unpack(('c'*4+'II')*niso, data)
+        isotope_name = np.array(
+            [ (data_list[6*i]+data_list[6*i+1]+
+               data_list[6*i+2]+data_list[6*i+3]).strip().
+              title() for i in range(niso) ])
+        isotope_Z = np.array(data_list[4::6], dtype=int)
+        isotope_A = np.array(data_list[5::6], dtype=int)
+
+        # Now read remainder of file
+        buf = fp.read()
+
+        # Parse
+        blockstr = 'Ld'+niso*'d'
+        nout = len(buf) / struct.calcsize(blockstr)
+        data_list = struct.unpack(blockstr*nout, buf)
+        trial = np.array(data_list[::2+niso], dtype=int)
+        time = np.array(data_list[1::2+niso], dtype=float)
+        yld = np.array([np.array(data_list[2+(2+niso)*i:
+                                           (2+niso)*(i+1)]) for
+                        i in range(nout)])
+
+        # Reformat
+        idx = np.argmax(trial != trial[0])
+        if idx > 1:
+            if np.amin(time[:idx] == time[idx:2*idx]):
+                time = time[:idx]
+            import pdb; pdb.set_trace()
+            yld = yld.reshape((len(trial)/idx, time.size,
+                               isotope_name.size))
 
     elif fname.endswith('.fits'):
 

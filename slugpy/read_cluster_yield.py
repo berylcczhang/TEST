@@ -177,7 +177,69 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
 
     elif fname.endswith('.bin'):
 
-        pass
+        # Binary mode
+        if read_info is not None:
+            read_info['format'] = 'binary'
+
+        # Read number of isotopes
+        niso = struct.unpack('L', fp.read(struct.calcsize('L')))[0]
+
+        # Read isotope data
+        data = fp.read(struct.calcsize(('c'*4+'II')*niso))
+        data_list = struct.unpack(('c'*4+'II')*niso, data)
+        isotope_name = np.array(
+            [ (data_list[6*i]+data_list[6*i+1]+
+               data_list[6*i+2]+data_list[6*i+3]).strip().
+              title() for i in range(niso) ])
+        isotope_Z = np.array(data_list[4::6], dtype=int)
+        isotope_A = np.array(data_list[5::6], dtype=int)
+
+        # Now read remainder of file
+        buf = fp.read()
+
+        # Prepare storage
+        time = []
+        trial = []
+        cluster_id = np.zeros(0, dtype=int)
+        yld = np.zeros((0,niso))
+
+        # Parse the buffer
+        ptr = 0
+        hdrstr = 'LdL'
+        hdrsize = struct.calcsize('LdL')
+        while ptr < len(buf):
+
+            # Read number of clusters in this block
+            trialptr, t, ncluster \
+                = struct.unpack(hdrstr, buf[ptr:ptr+hdrsize])
+
+            # Skip if no clusters
+            if ncluster == 0:
+                continue
+
+            # Add to time and trial arrays
+            time = time + [t]*ncluster
+            trial = trial + [trialptr]*ncluster
+
+            # Read ID's and yields for these clusters
+            blockstr = ('L'+'d'*niso)*ncluster
+            blocksize = struct.calcsize(blockstr)
+            block_data = struct.unpack(
+                blockstr, buf[ptr+hdrsize:ptr+hdrsize+blocksize])
+            cl_id = np.array(block_data[::niso+1], dtype=int)
+            yldtmp = np.array([block_data[(niso+1)*i+1:(niso+1)*(i+1)]
+                               for i in range(ncluster)])
+
+            # Add to arrays
+            cluster_id = np.append(cluster_id, cl_id)
+            yld = np.append(yld, yldtmp, axis=0)
+
+            # Move pointer
+            ptr = ptr + hdrsize + blocksize
+
+        # Convert to arrays
+        time = np.array(time)
+        trial = np.array(trial)
 
     elif fname.endswith('.fits'):
 
