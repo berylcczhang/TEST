@@ -215,6 +215,7 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
 
             # Skip if no clusters
             if ncluster == 0:
+                ptr = ptr + hdrsize
                 continue
 
             # Add to time and trial arrays
