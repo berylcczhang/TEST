@@ -6,6 +6,7 @@ from collections import namedtuple
 from read_cluster_prop import read_cluster_prop
 from read_cluster_phot import read_cluster_phot
 from read_cluster_spec import read_cluster_spec
+from read_cluster_yield import read_cluster_yield
 from cloudy.read_cluster_cloudyphot import read_cluster_cloudyphot
 from cloudy.read_cluster_cloudylines import read_cluster_cloudylines
 from cloudy.read_cluster_cloudyspec import read_cluster_cloudyspec
@@ -163,6 +164,19 @@ def read_cluster(model_name, output_dir=None, fmt=None,
        If extinction is enabled, phot_ex will contain photometry  
        after extinction has been applied.     
 
+       (Present if the run being read contains a cluster_yield file)
+
+       isotope_name : array of strings
+          Atomic symbols of the isotopes included in the yield table
+       isotope_Z : array of int
+          Atomic numbers of the isotopes included in the yield table
+       isotope_A : array of int
+          Atomic mass number of the isotopes included in the yield table
+       yld : array
+          Yield of each isotope, defined as the instantaneous amount
+          produced up to that time; for unstable isotopes, this
+          includes the effects of decay since production
+
        (Present if the run being read contains a cluster_cloudyspec file)
 
        cloudy_wl : array
@@ -279,6 +293,17 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         else:
             phot = None
 
+    # Read yields
+    try:
+        yld = read_cluster_yield(model_name, output_dir=output_dir,
+                                 fmt=fmt, verbose=verbose,
+                                 read_info=read_info)
+        if read_info is not None:
+            read_info['yield_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        yld = None
+
     # Read cloudy spectra
     try:
         cloudyspec = read_cluster_cloudyspec(model_name, output_dir,
@@ -323,6 +348,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         out_data = [spec.id, spec.trial, spec.time]
     elif phot is not None:
         out_data = [phot.id, phot.trial, phot.time]
+    elif yld is not None:
+        out_data = [yld.id, yld.trial, yld.time]
     elif cloudyspec is not None:
         out_data = [cloudyspec.id, cloudyspec.trial, cloudyspec.time]
     elif cloudylines is not None:
@@ -341,6 +368,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     if phot is not None:
         out_fields = out_fields + list(phot._fields[3:])
         out_data = out_data + list(phot[3:])
+    if yld is not None:
+        out_fields = out_fields + list(yld._fields[3:])
+        out_data = out_data + list(yld[3:])
     if cloudyspec is not None:
         out_fields = out_fields + list(cloudyspec._fields[3:])
         out_data = out_data + list(cloudyspec[3:])

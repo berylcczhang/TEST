@@ -37,11 +37,11 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
     Returns
        A namedtuple containing the following fields:
 
-       name : array of strings, shape (N_iso)
+       isotope_name : array of strings, shape (N_iso)
           Atomic symbols of the isotopes included in the yield table
-       Z : array of int, shape (N_iso)
+       isotope_Z : array of int, shape (N_iso)
           Atomic numbers of the isotopes included in the yield table
-       A : array of int, shape (N_iso)
+       isotope_A : array of int, shape (N_iso)
           Atomic mass number of the isotopes included in the yield table
        id : array, dtype uint
           unique ID of cluster
@@ -249,6 +249,7 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
 
         # Read data
         isotope_name = fp[1].data['Name']
+        isotope_name = np.array([iso.strip().title() for iso in isotope_name])
         isotope_Z = fp[1].data['Z']
         isotope_A = fp[1].data['A']
         cluster_id = fp[2].data['UniqueID']
@@ -260,9 +261,11 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
     fp.close()
 
     # Build output holder
-    fieldnames = ['name', 'Z', 'A', 'cluster_id', 'time', 'trial', 'yld']
-    fields = [ isotope_name, isotope_Z, isotope_A, cluster_id, time,
-               trial, yld]
+    fieldnames = ['cluster_id', 'time', 'trial', 
+                  'isotope_name', 'isotope_Z', 'isotope_A', 
+                  'yld']
+    fields = [ cluster_id, time, trial, isotope_name, isotope_Z, 
+               isotope_A, yld]
     out_type = namedtuple('integrated_yield', fieldnames)
     out = out_type(*fields)
 

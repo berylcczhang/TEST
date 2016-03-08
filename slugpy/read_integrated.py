@@ -6,6 +6,7 @@ from collections import namedtuple
 from read_integrated_prop import read_integrated_prop
 from read_integrated_phot import read_integrated_phot
 from read_integrated_spec import read_integrated_spec
+from read_integrated_yield import read_integrated_yield
 from cloudy.read_integrated_cloudyphot import read_integrated_cloudyphot
 from cloudy.read_integrated_cloudylines import read_integrated_cloudylines
 from cloudy.read_integrated_cloudyspec import read_integrated_cloudyspec
@@ -150,6 +151,19 @@ def read_integrated(model_name, output_dir=None, fmt=None,
 
        If extinction is enabled, phot_ex will contain photometry  
        after extinction has been applied.     
+
+       (Only present if an integrate_yield file is found)
+
+       isotope_name : array of strings
+          Atomic symbols of the isotopes included in the yield table
+       isotope_Z : array of int
+          Atomic numbers of the isotopes included in the yield table
+       isotope_A : array of int
+          Atomic mass number of the isotopes included in the yield table
+       yld : array
+          Yield of each isotope, defined as the instantaneous amount
+          produced up to that time; for unstable isotopes, this
+          includes the effects of decay since production
 
        (Only present if an integrated_cloudyspec file is found)
 
@@ -296,6 +310,17 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     except IOError:
         cloudyphot = None
 
+    # Read yield data
+    try:
+        yld = read_integrated_yield(model_name, output_dir=output_dir,
+                                    fmt=fmt, verbose=verbose,
+                                    read_info=read_info)
+        if read_info is not None:
+            read_info['yield_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        yld = None
+
     # Build the output
     out_fields = ['time']
     if prop is not None:
@@ -304,6 +329,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
         out_data = [spec.time]
     elif phot is not None:
         out_data = [phot.time]
+    elif yld is not None:
+        out_data = [yld.time]
     elif cloudyspec is not None:
         out_data = [cloudyspec.time]
     elif cloudylines is not None:
@@ -322,6 +349,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     if phot is not None:
         out_fields = out_fields + list(phot._fields[1:])
         out_data = out_data + list(phot[1:])
+    if yld is not None:
+        out_fields = out_fields + list(yld._fields[1:])
+        out_data = out_data + list(yld[1:])
     if cloudyspec is not None:
         out_fields = out_fields + list(cloudyspec._fields[1:])
         out_data = out_data + list(cloudyspec[1:])
