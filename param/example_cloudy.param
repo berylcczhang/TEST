@@ -139,6 +139,12 @@ out_cluster_phot  1
 # Default: 1
 out_cluster_spec  1
 
+# Write out cluster yields? Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_cluster_yield  0
+
 # Write out integrated physical properties of galaxy? Can be omitted,
 # and will be ignored, if sim_type = cluster.  Allowed values:
 # -- 0 (no)
@@ -159,6 +165,13 @@ out_integrated_phot  1
 # -- 1 (yes)
 # Default: 1
 out_integrated_spec  1
+
+# Write out integrated yields? Can be omitted, and will be ignored,
+# if sim_type = cluster. Allowed values:
+# -- 0 (no)
+# -- 1 (yes)
+# Default: 1
+out_integrated_yield  0
 
 # Write output as binary, ASCII, or FITS; allowed values:
 # -- binary
