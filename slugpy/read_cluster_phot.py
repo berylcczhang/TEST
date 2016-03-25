@@ -605,19 +605,19 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 # Get photometric data
                 if read_nebular is not True and \
                    read_extinct is not True:
-                    phot = np.zeros((len(time), nf_final))
+                    phot = np.zeros((fp[1].header['NAXIS2'], nf_final))
                 if nebular and \
                    read_nebular is not False and \
                    read_extinct is not True:
-                    phot_neb = np.zeros((len(time), nf_final))
+                    phot_neb = np.zeros((fp[1].header['NAXIS2'], nf_final))
                 if extinct and \
                    read_nebular is not True and \
                    read_extinct is not False:
-                    phot_ex = np.zeros((len(time), nf_final))
+                    phot_ex = np.zeros((fp[1].header['NAXIS2'], nf_final))
                 if nebular and extinct and \
                    read_nebular is not False and \
                    read_extinct is not False:
-                    phot_neb_ex = np.zeros((len(time), nf_final))
+                    phot_neb_ex = np.zeros((fp[1].header['NAXIS2'], nf_final))
                 ptr = 0
                 for i in range(len(filters)):
                     if fread[i]:
