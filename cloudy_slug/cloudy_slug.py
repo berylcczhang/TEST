@@ -396,9 +396,9 @@ def do_cloudy_run(thread_num, q):
                     hden = 288*np.pi*c**3*args.ionparam**3 / \
                            (81*alphaB**2*qH0)
                 else:
-                    fac = 1.0 + args.windparam - \
-                          args.windparam**(1./3.)/3.0 * \
-                          ((4.0+3.0*args.windparam)/(1.0+args.windparam))
+                    fac = (1.0 + args.windparam)**(1./3.) - \
+                          args.windparam**(1./3.) * \
+                          ((4.0+3.0*args.windparam)/(3.0+3.0*args.windparam))
                     hden = 288*np.pi*c**3*(args.ionparam/fac)**3 / \
                            (81*alphaB**2*qH0)
             # Now compute Stromgren and inner radii
