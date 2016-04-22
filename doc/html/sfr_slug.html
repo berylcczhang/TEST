@@ -51,7 +51,7 @@
 <p>The <code class="docutils literal"><span class="pre">sfr_slug/sfr_slug_example.py</span></code> file in the repository provides an example of how to use sfr_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr_slug. The required steps are as follows:</p>
 <ol class="arabic">
 <li><p class="first">Import the library and instantiate an <code class="docutils literal"><span class="pre">sfr_slug</span></code> object (see <a class="reference internal" href="#sec-sfr-slug-full"><span>Full Documentation of slugpy.sfr_slug</span></a> for full details):</p>
-<div class="highlight-rest"><div class="highlight"><pre>from slugpy.sfr_slug import sfr_slug
+<div class="highlight-rest"><div class="highlight"><pre><span></span>from slugpy.sfr_slug import sfr_slug
 sfr_estimator = sfr_slug()
 </pre></div>
 </div>
@@ -60,7 +60,7 @@ sfr_estimator = sfr_slug()
 <p>This creates an sfr_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/SFR_SLUG. If you have another library of simulations you&#8217;d rather use, you can use the <code class="docutils literal"><span class="pre">libname</span></code> keyword to the <code class="docutils literal"><span class="pre">sfr_slug</span></code> constructor to select it.</p>
 <ol class="arabic" start="2">
 <li><p class="first">Specify your filter(s), for example:</p>
-<div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.add_filters(&#39;QH0&#39;)
+<div class="highlight-rest"><div class="highlight"><pre><span></span>sfr_estimator.add_filters(&#39;QH0&#39;)
 </pre></div>
 </div>
 </li>
@@ -68,7 +68,7 @@ sfr_estimator = sfr_slug()
 <p>The <code class="docutils literal"><span class="pre">add_filter</span></code> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <code class="docutils literal"><span class="pre">add_filters</span></code> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
 <ol class="arabic" start="3">
 <li><p class="first">Specify your priors, for example:</p>
-<div class="highlight-rest"><div class="highlight"><pre>sfr_estimator.priors = &#39;schechter&#39;
+<div class="highlight-rest"><div class="highlight"><pre><span></span>sfr_estimator.priors = &#39;schechter&#39;
 </pre></div>
 </div>
 </li>
@@ -79,7 +79,7 @@ sfr_estimator = sfr_slug()
 <p>with <span class="math">\(\alpha = -0.51\)</span> and <span class="math">\(\mathrm{SFR}_* = 9.2\,M_\odot\,\mathrm{yr}^{-1}\)</span>.</p>
 <ol class="arabic" start="4">
 <li><p class="first">Generate the posterior probability distribuiton of SFR via:</p>
-<div class="highlight-rest"><div class="highlight"><pre>logSFR, pdf = sfr_estimator.mpdf(logSFR_in, logSFRphoterr = logSFR_err)
+<div class="highlight-rest"><div class="highlight"><pre><span></span>logSFR, pdf = sfr_estimator.mpdf(logSFR_in, logSFRphoterr = logSFR_err)
 </pre></div>
 </div>
 </li>
@@ -411,7 +411,7 @@ dimensions match the dimensions of the output grid</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

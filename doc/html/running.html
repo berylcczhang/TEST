@@ -42,21 +42,21 @@
   <div class="section" id="running-a-slug-simulation">
 <h1>Running a SLUG simulation<a class="headerlink" href="#running-a-slug-simulation" title="Permalink to this headline">¶</a></h1>
 <p>Once SLUG is compiled, running a simulation is extremely simple. The first step, which is not required but makes life a lot simpler, is to set the environment variable <code class="docutils literal"><span class="pre">SLUG_DIR</span></code> to the directory where you have installed SLUG. If you are using a <code class="docutils literal"><span class="pre">bash</span></code>-like shell, the syntax for this is:</p>
-<div class="highlight-rest"><div class="highlight"><pre>export SLUG_DIR = /path/to/slug
+<div class="highlight-rest"><div class="highlight"><pre><span></span>export SLUG_DIR = /path/to/slug
 </pre></div>
 </div>
 <p>while for a <code class="docutils literal"><span class="pre">csh</span></code>-like shell, it is:</p>
-<div class="highlight-rest"><div class="highlight"><pre>setenv SLUG_DIR /path/to/slug
+<div class="highlight-rest"><div class="highlight"><pre><span></span>setenv SLUG_DIR /path/to/slug
 </pre></div>
 </div>
 <p>This is helpful because SLUG needs a lot of input data, and if you don&#8217;t set this variable, you will have to manually specify where to find it.</p>
 <p>Next, to run on a single processor, just do:</p>
-<div class="highlight-rest"><div class="highlight"><pre>./bin/slug param/filename.param
+<div class="highlight-rest"><div class="highlight"><pre><span></span>./bin/slug param/filename.param
 </pre></div>
 </div>
 <p>where <code class="docutils literal"><span class="pre">filename.param</span></code> is the name of a parameter file, formatted as specified in <a class="reference internal" href="parameters.html#sec-parameters"><span>Parameter Specification</span></a>. The code will write a series of output files as described in <a class="reference internal" href="output.html#sec-output"><span>Output Files and Format</span></a>.</p>
 <p>If you have more than one core at your disposal, you can also run SLUG in parallel, using the command line:</p>
-<div class="highlight-rest"><div class="highlight"><pre>python ./bin/slug.py param/filename.param
+<div class="highlight-rest"><div class="highlight"><pre><span></span>python ./bin/slug.py param/filename.param
 </pre></div>
 </div>
 <p>This called a python script that automatically divides up the Monte Carlo trials you have requested between the available processors, then consolidates the output so that it looks the same as if you had run a single-processor job. The python script allows fairly fine-grained control of the parallelism. It accepts the following command line arguments:</p>
@@ -109,7 +109,7 @@
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
