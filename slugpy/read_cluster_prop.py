@@ -425,7 +425,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                                 
             out = out_type(cluster_id, trial, time, form_time, lifetime, 
                        target_mass, actual_mass, live_mass, stellar_mass,
-                       num_star, max_star_mass, A_V,*vpn_tuple)   
+                       num_star, max_star_mass,*vpn_tuple)   
     # Return
     return out
 
