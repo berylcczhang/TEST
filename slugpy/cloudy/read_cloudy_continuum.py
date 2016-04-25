@@ -47,6 +47,9 @@ def read_cloudy_continuum(filename, r0=None):
 
     # Read the data
     for line in fp:
+        # Skip comment lines that start with #
+        if line.strip()[0] == '#':
+            continue
         linesplit = line.split()
         en.append(float(linesplit[0]))
         incident = float(linesplit[1])

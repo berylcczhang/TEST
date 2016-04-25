@@ -99,6 +99,8 @@ parser.add_argument('-nl', '--nicelevel', default=0, type=int,
 parser.add_argument('-n', '--nproc', default=None, type=int,
                     help="number of cloudy processes (default: "+
                     "number of cores)")
+parser.add_argument('-ri', '--rinner', default=None, type=float,
+                    help='inner radius of HII region, in cm')
 parser.add_argument('-s', '--save', default=False,
                     action='store_true', help='save full cloudy ' +
                     'output (default: delete after extracting data)')
@@ -107,6 +109,8 @@ parser.add_argument("--slugpath", default=None, type=str,
                     "checks cwd, then $SLUG_DIR/output)")
 parser.add_argument('-v', '--verbose', action='store_true',
                     default=False, help="produce verbose output")
+parser.add_argument('-w', '--windparam', default=None, type=float,
+                    help='Yeh & Matzner wind parameter Omega')
 args = parser.parse_args()
 cwd = osp.dirname(osp.realpath(__file__))
 
@@ -149,7 +153,13 @@ if (args.hden is not None) and (args.ionparam is not None):
         "cloudy_slug: error: cannot simultaneously set hden and ionparam")
 if args.ionparam is not None:
     args.nodynamic = True
-
+if (args.rinner is not None) and (args.windparam is not None):
+    raise IOError(
+        "cloudy_slug: error: cannot simultaneously set rinner and windparam")
+if (args.rinner is not None) and (args.ionparam is not None):
+    raise IOError(
+        "cloudy_slug: error: cannot simultaneously set rinner and ionparam")
+    
 # Step 3: read the SLUG output to be processed, and check that we have
 # what we need
 file_info = {}
@@ -366,18 +376,40 @@ def do_cloudy_run(thread_num, q):
             xIIgas = (49.0*tau**2/36.0)**(2.0/7.0)
             # Get outer radius, inner radius, density
             r = rch*(xIIrad**3.5 + xIIgas**3.5)**(2.0/7.0)
-            r0 = r/1e3
-            hden = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
+            if args.windparam is None:
+                if args.rinner is None:
+                    r0 = r/1e3
+                    hden = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
+                else:
+                    r0 = min(0.99*r, args.rinner)
+                    hden = (3.0*qH0 / (4.0*np.pi*alphaB*(r-rinner)**3))**0.5
+            else:
+                r0 = (args.windparam/(1.0+args.windparam))**(1./3.)
+                hden = (3.0*qH0*(1.0+args.windparam) /
+                        (4.0*np.pi*alphaB*r**3))**0.5
         else:
             # Not in dynamic mode
             # If given an ionization parameter, use it to recompute
             # the density
             if args.ionparam is not None:
-                hden = 288*np.pi*c**3*args.ionparam**3 / \
-                       (81*alphaB**2*qH0)
+                if args.windparam is None:
+                    hden = 288*np.pi*c**3*args.ionparam**3 / \
+                           (81*alphaB**2*qH0)
+                else:
+                    fac = (1.0 + args.windparam)**(1./3.) - \
+                          args.windparam**(1./3.) * \
+                          ((4.0+3.0*args.windparam)/(3.0+3.0*args.windparam))
+                    hden = 288*np.pi*c**3*(args.ionparam/fac)**3 / \
+                           (81*alphaB**2*qH0)
             # Now compute Stromgren and inner radii
             rstrom = (3.0*qH0/(4.4*np.pi*alphaB*hden**2))**(1./3.)
-            r0 = rstrom/1e3
+            if args.windparam is None:
+                if args.rinner is None:
+                    r0 = rstrom/1e3
+                else:
+                    r0 = args.rinner
+            else:
+                r0 = rstrom*args.windparam**(1./3.)
 
         # Write inner radius and density to cloudy input file
         fpout.write("hden {0:f}\n".format(np.log10(hden)))

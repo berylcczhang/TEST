@@ -58,11 +58,11 @@ nebular emission.</p>
 <li><p class="first">Set the environment variable <code class="docutils literal"><span class="pre">$CLOUDY_DIR</span></code> to the directory where
 the cloudy executable <code class="docutils literal"><span class="pre">cloudy.exe</span></code> is located.  If you are using
 a <code class="docutils literal"><span class="pre">bash</span></code>-like shell, the syntax for this is:</p>
-<div class="highlight-rest"><div class="highlight"><pre>export CLOUDY_DIR = /path/to/cloudy
+<div class="highlight-rest"><div class="highlight"><pre><span></span>export CLOUDY_DIR = /path/to/cloudy
 </pre></div>
 </div>
 <p>while for a <code class="docutils literal"><span class="pre">csh</span></code>-like shell, it is:</p>
-<div class="highlight-rest"><div class="highlight"><pre>setenv CLOUDY_DIR /path/to/cloudy
+<div class="highlight-rest"><div class="highlight"><pre><span></span>setenv CLOUDY_DIR /path/to/cloudy
 </pre></div>
 </div>
 </li>
@@ -83,7 +83,7 @@ required, and if running in cluster mode, cluster spectra and
 photometry are required.</p>
 </li>
 <li><p class="first">Invoke the cloudy_slug interface script via:</p>
-<div class="highlight-rest"><div class="highlight"><pre>python cloudy_slug/cloudy_slug.py SLUG_MODEL_NAME
+<div class="highlight-rest"><div class="highlight"><pre><span></span>python cloudy_slug/cloudy_slug.py SLUG_MODEL_NAME
 </pre></div>
 </div>
 <p>where <code class="docutils literal"><span class="pre">SLUG_MODEL_NAME</span></code> is the name of the SLUG run to be
@@ -134,16 +134,31 @@ emission produced by that stellar spectrum interacting with a
 surrounding HII region. The density in the first zone of the HII
 region will be as specified by the standard <code class="docutils literal"><span class="pre">hden</span></code> keyword in the
 cloudy input template (see <a class="reference internal" href="#ssec-cloudy-template"><span>The cloudy_slug Input Template</span></a>). The inner
-radius of the HII region will be computed automatically, and will be
+radius of the HII region will be computed automatically, and can be
+specified in one of two ways. By default it will be set to
 set to <span class="math">\(10^{-3}\)</span> of the Stromgren radius for that density, where</p>
 <div class="math">
-\[r_{\mathrm{St}} = \left(\frac{3.0 Q(\mathrm{H}^0)}{4\pi
+\[r_{\mathrm{St}} = \left(\frac{3 Q(\mathrm{H}^0)}{4\pi
 \alpha_B n_{\mathrm{H}}^2}\right)^{1/3}\]</div>
 <p>where <span class="math">\(Q(\mathrm{H}^0)\)</span> is the ionizing luminosity computed by
 SLUG, <span class="math">\(n_{\mathrm{H}}\)</span> is the hydrogen number density stored in
 the cloudy input template, and <span class="math">\(\alpha_B\)</span> is the case B
 recombination coefficient, which is taken to have a value of
-<span class="math">\(2.59\times 10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}\)</span>.</p>
+<span class="math">\(2.59\times 10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}\)</span>. In this
+case the HII region goes essentially all of the way to the star
+cluster.</p>
+<p>The alternative choice is to assume that there is a wind bubble around
+the stars, which evacuates the gas out to some inner radius
+<span class="math">\(r_w\)</span>. This radius can be specfied in two ways. First, it can be set
+directly. Second, it can be set terms of a slightly modified version
+of the wind parameter <span class="math">\(\Omega\)</span> defined by <a class="reference external" href="http://adsabs.harvard.edu/abs/2012ApJ...757..108Y">Yeh &amp; Matnzer (2012,
+ApJ, 757, 108)</a>, which is</p>
+<div class="math">
+\[\Omega = \frac{r_w^3}{r_i^3 - r_w^3}\]</div>
+<p>where <span class="math">\(r_i\)</span> is the outer radius of the HII region. Under the
+assumption that the gas density is uniform, one can show that this
+condition is satisfied if the inner radius is
+<span class="math">\(r_i = \Omega^{1/3} r_{\mathrm{St}}\)</span>.</p>
 </div>
 <div class="section" id="cluster-mode">
 <span id="sssec-cloudy-cluster-mode"></span><h3>Cluster Mode<a class="headerlink" href="#cluster-mode" title="Permalink to this headline">¶</a></h3>
@@ -153,7 +168,9 @@ will perform a cloudy calculation to determine the corresponding
 nebular emission. By default the density and radius are handled somewhat
 differently in this case, since, for a mono-age stellar population, it
 is possible to compute the time evolution of the HII region radius and
-density.</p>
+density. However, it is also possible to perform a calculation in
+cluster mode treating the density and inner radius in exactly the same
+manner as is used in integrated mode.</p>
 <p>Default behavior in cluster mode is as follows:
 the hydrogen number density <span class="math">\(n_{\mathrm{H}}\)</span>
 stored in the cloudy input template (see <a class="reference internal" href="#ssec-cloudy-template"><span>The cloudy_slug Input Template</span></a>)
@@ -188,18 +205,40 @@ a fully sampled IMF at zero age, and <span class="math">\(\mu = 1.33\)</span> is
 mass per hydrogen nucleus for gas of the standard cosmic
 composition. See <a class="reference external" href="http://adsabs.harvard.edu/abs/2009ApJ...703.1352K">Krumholz &amp; Matzner (2009)</a> for a discussion
 of the fiducial choices of these factors.</p>
-<p>Once the outer radius is known, cloudy_slug sets the starting radius
-for the cloudy calculation to <span class="math">\(10^{-3} r_{\mathrm{II}}\)</span>, and
-sets the starting density to the value expected for photoionization
-equilibrum in a uniform HII region,</p>
+<p>Once the outer radius is known, cloudy_slug can set the starting
+radius and density in a two different ways. The default option is to
+assume there there is a fully-filled HII region with negligible
+radiation pressure, in which case the inner radius will be set to
+<span class="math">\(10^{-3} r_{\mathrm{II}}\)</span>, and the density will be set to</p>
 <div class="math">
 \[n_{\mathrm{II}} = \left(\frac{3
 Q(\mathrm{H}^0)}{4.4 \pi\alpha_B
 r_{\mathrm{II}}^3}\right)^{1/2}\]</div>
-<p>Note that this approximation will be highly inaccurate if
-<span class="math">\(r_{\mathrm{II}} \ll r_{\mathrm{ch}}\)</span>, but no better analytic
-approximation is available, and this phase should be very short-lived
-for most clusters.</p>
+<p>Note that the number in the denominator is 4.4 rather than 4 under the
+assumption that He will be singly ionized. Also note that this
+approximation will be highly inaccurate if <span class="math">\(r_{\mathrm{II}} \ll
+r_{\mathrm{ch}}\)</span>, but no better analytic approximation is available,
+and this phase should be very short-lived for most clusters.</p>
+<p>The second option to specify the radius and density is in terms of an
+ionization parameter and a wind parameter. The wind parameter is as
+defined above, and the dimensionless ionization parameter
+<span class="math">\(\langle\mathcal{U}\rangle\)</span> is defined as the volume average
+over the photoionized region of
+<span class="math">\(\mathcal{U} = n_\gamma / n_\mathrm{H}\)</span>, where <span class="math">\(n_\gamma\)</span>
+is the number density of ionizing photons and <span class="math">\(n_{\mathrm{H}}\)</span>
+is the number density of H nuclei. From these definitions, one can
+show that the ionization parameter, wind parameter, and density are
+related via</p>
+<div class="math">
+\[\mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}}
+Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}
+\left[\left(1 + \Omega\right)^{1/3} - \Omega^{1/3}
+\left(\frac{4+3\Omega}{3+3\Omega}\right)\right]\]</div>
+<p>The density <span class="math">\(n_{\mathrm{II}}\)</span> is determined implicitly from this
+relation, and the inner radius is then given by
+<span class="math">\(r_i = \Omega^{1/3} r_{\mathrm{St}}\)</span>,
+where <span class="math">\(r_{\mathrm{St}}\)</span> is evaluated using density
+<span class="math">\(n_{\mathrm{II}}\)</span>.</p>
 </div>
 </div>
 <div class="section" id="the-cloudy-slug-input-template">
@@ -255,7 +294,7 @@ list file would work as well.</p>
 <span id="ssec-cloudy-slug-options"></span><h2>The cloudy_slug Interface Script<a class="headerlink" href="#the-cloudy-slug-interface-script" title="Permalink to this headline">¶</a></h2>
 <p>The <code class="docutils literal"><span class="pre">cloudy_slug.py</span></code> script provides the interface between SLUG and
 cloudy. Usage for this script is as follows:</p>
-<div class="highlight-rest"><div class="highlight"><pre>cloudy_slug.py [-h] [-a AGEMAX] [--cloudypath CLOUDYPATH]
+<div class="highlight-rest"><div class="highlight"><pre><span></span>cloudy_slug.py [-h] [-a AGEMAX] [--cloudypath CLOUDYPATH]
                [--cloudytemplate CLOUDYTEMPLATE] [-cm]
                [-cf COVERINGFAC] [-hd HDEN] [-ip IONPARAM] [-nd]
                [-nl NICELEVEL] [-n NPROC] [-s] [--slugpath SLUGPATH]
@@ -308,17 +347,10 @@ is reduced by the specified factor; defaults to 1.0, i.e., the full
 ionizing luminosity is passed to cloudy</li>
 <li><code class="docutils literal"><span class="pre">-hd</span> <span class="pre">HDEN,</span> <span class="pre">--hden</span> <span class="pre">HDEN</span></code>: hydrogen density; if set, this value
 overrides the value of hden found in the cloudy template file</li>
-<li><code class="docutils literal"><span class="pre">-ip</span> <span class="pre">IONPARAM,</span> <span class="pre">--ionparam</span> <span class="pre">IONPARAM</span></code>: ionization parameter; this is
-an alternate means of setting the hydrogen density, which will set
-the density <span class="math">\(n_{\mathrm{II}}\)</span> so that the volume-averaged
-ionization parameter <span class="math">\(\mathcal{U}\)</span> for a spherically-symmetric
-uniform-density HII region is <code class="docutils literal"><span class="pre">IONPARAM</span></code>. The relationship used to
-define the density is</li>
-</ul>
-<div class="math">
-\[\mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}}
-Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}\]</div>
-<ul class="simple">
+<li><code class="docutils literal"><span class="pre">-ip</span> <span class="pre">IONPARAM,</span> <span class="pre">--ionparam</span> <span class="pre">IONPARAM</span></code>: ionization parameter, used to
+set the density and inner radius. If this is not set, then the
+density is set to <code class="docutils literal"><span class="pre">HDEN</span></code> or, if that is not set, to the value of
+hden found in the cloudy template file.</li>
 <li><code class="docutils literal"><span class="pre">-nd,</span> <span class="pre">--nodynamic</span></code>: this disables the dynamical calculation of the
 HII region radius and density for calculations in
 <a class="reference internal" href="#sssec-cloudy-cluster-mode"><span>Cluster Mode</span></a>, and instead treats the density as
@@ -330,6 +362,8 @@ level. If it is not set, they will not be nice&#8217;d. Note that this
 option will only work correctly on platforms that support nice.</li>
 <li><code class="docutils literal"><span class="pre">-n</span> <span class="pre">NPROC,</span> <span class="pre">--nproc</span> <span class="pre">NPROC</span></code>: number of simultaneous cloudy processes
 to run; default is the number of cores available on the system</li>
+<li><code class="docutils literal"><span class="pre">-ri</span> <span class="pre">RINNER,</span> <span class="pre">--rinner</span> <span class="pre">RINNER</span></code>: inner radius of the HII region, in
+cm; cannot set this and either <code class="docutils literal"><span class="pre">ionparam</span></code> or <code class="docutils literal"><span class="pre">windparam</span></code></li>
 <li><code class="docutils literal"><span class="pre">-s,</span> <span class="pre">--save</span></code>: by default, cloudy_slug will extract line and
 spectral data from the cloudy outputs and store them as described in
 <a class="reference internal" href="#ssec-cloudy-output"><span>Full Description of cloudy_slug Output</span></a>, then delete the cloudy output files. If
@@ -344,6 +378,9 @@ first in the current working directory, and next in
 <code class="docutils literal"><span class="pre">$SLUG_DIR/output</span></code></li>
 <li><code class="docutils literal"><span class="pre">-v,</span> <span class="pre">--verbose</span></code>: if this option is set, cloudy_slug produces
 verbose output as it runs</li>
+<li><code class="docutils literal"><span class="pre">-w,</span> <span class="pre">--windparam</span></code>: if set, this gives the value of the wind
+parameter <span class="math">\(\Omega\)</span>. Default behavior is that <span class="math">\(\Omega\)</span> is
+set to a small value.</li>
 </ul>
 </div>
 <div class="section" id="full-description-of-cloudy-slug-output">
@@ -376,7 +413,7 @@ of a series of entries containing the following fields:</p>
 <li><code class="docutils literal"><span class="pre">Time</span></code>: evolution time at which the output is produced</li>
 <li><code class="docutils literal"><span class="pre">LineLabel</span></code>: four letter code labeling each line. These codes
 are the codes used by cloudy (see the <a class="reference external" href="http://nublado.org">cloudy documentation</a>)</li>
-<li>`` Wavelength``: wavelength of the line, in Angstrom. Note that
+<li><code class="docutils literal"><span class="pre">Wavelength</span></code>: wavelength of the line, in Angstrom. Note that
 default cloudy behavior is to round wavelengths to the nearest
 Angstrom.</li>
 <li><code class="docutils literal"><span class="pre">Luminosity</span></code>: line luminosity, in erg/s</li>
@@ -1385,7 +1422,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

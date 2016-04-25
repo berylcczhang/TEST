@@ -38,8 +38,11 @@ def read_cloudy_linelist(filename):
     lum=[]
     for line in fp:
 
-        # Skip blank lines
+        # Skip blank lines and lines that start with hash marks, which
+        # are comments
         if len(line.strip()) == 0:
+            continue
+        if line.strip()[0] == '#':
             continue
 
         # First 4 characters are descriptor

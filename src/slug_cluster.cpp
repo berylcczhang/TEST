@@ -950,13 +950,18 @@ slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial,
   else mstar = 0.0;
   fits_write_col(out_fits, TDOUBLE, 11, nrows+1, 1, 1, &mstar,
 		 &fits_status);
+		 
+  int colnum = 11;			 
   if (extinct != NULL)
-    fits_write_col(out_fits, TDOUBLE, 12, nrows+1, 1, 1, &A_V,
-		   &fits_status);
-	if (imfvp.size()>0)
+  {
+    fits_write_col(out_fits, TDOUBLE, 12, nrows+1, 1, 1, &A_V, &fits_status);
+    colnum++;
+  }		 
+
+   
+  if (imfvp.size()>0)
   {
     //Loop over the variable parameters
-    int colnum=12;  //Current column number
     for (int p = 0; p<imfvp.size();p++)
     {
       colnum++;
