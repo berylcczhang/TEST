@@ -75,6 +75,16 @@ You can generate your own library by running slug; you might want to do this, fo
 
 One subtle post-processing step you should take once you've generated your library is to read it in using :ref:`sec-slugpy` and then write the photometry back out using the ``slugpy.write_cluster_phot`` routine with the format set to ``fits2``. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the ``fits2`` format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
 
+
+Variable Mode IMF
+-----------------------------------------
+
+If your library was run with variable IMF parameters, these can also be used in ``cluster_slug``. When creating a ``cluster_slug`` object, you can pass the array ``vp_list`` as an argument. This list should have an element for each variable parameter in your library. Each element should then be either ``True`` or ``False`` depending on whether you wish to include this parameter in the analysis.
+For example, for a library with four variable parameters you could have::
+      
+      vp_list=[True,False,True,True]
+
+
 .. _ssec-cluster-slug-full:
 
 Full Documentation of slugpy.cluster_slug

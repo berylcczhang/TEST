@@ -93,7 +93,7 @@ class cluster_slug(object):
                  bw_phys=0.1, bw_phot=None, ktype='gaussian', 
                  priors=None, sample_density=None, reltol=1.0e-2,
                  abstol=1.0e-8, leafsize=16, use_nebular=True,
-                 use_extinction=True, thread_safe=True):
+                 use_extinction=True, thread_safe=True, vp_list=[]):
         """
         Initialize a cluster_slug object.
 
@@ -179,6 +179,10 @@ class cluster_slug(object):
               multiprocessing; this incurs a minor performance
               penalty, and can be disabled by setting to False if the
               code will not be run with the multiprocessing module
+           vp_list : list
+              A list with an element for each of the variable parameters
+              in the data. An element is set to True if we wish to use
+              that parameter here, or False if we do not.
 
         Returns
            Nothing
@@ -277,15 +281,38 @@ class cluster_slug(object):
                 raise IOError("still unable to open default library")
 
         # Store the physical properties
+        
+     
+        
+        #Find out how many variable parameters we have
+        #and how many we want to use
+        nvp_total = np.size(vp_list)
+        nvp = np.size(np.where(vp_list))
+        print "Total Number of Variable Parameters in data: ",nvp_total
+        print "Number of Variable Parameters to use: ",nvp
+        
+                
         if use_extinction:
-            self.__nphys = 3
+            self.__nphys = 3 + nvp
         else:
-            self.__nphys = 2
+            self.__nphys = 2 + nvp
+            
+            
         self.__ds_phys = np.zeros((len(prop.id), self.__nphys))
         self.__ds_phys[:,0] = np.log10(prop.actual_mass)
         self.__ds_phys[:,1] = np.log10(prop.time - prop.form_time)
+        pnum = 1
         if use_extinction:
             self.__ds_phys[:,2] = prop.A_V
+            pnum = 2
+        #Grab the variable parameters we want to use
+        for vpi in range (0,nvp_total,1):
+            if vp_list[vpi] is True:
+                self.__ds_phys[:,pnum+(vpi+1)] = getattr(prop, "VP"+`vpi`)
+        
+      
+
+
 
         # Record available filters
         filter_info = read_cluster_phot(self.__libname,
@@ -679,6 +706,7 @@ class cluster_slug(object):
                     bw[self.__nphys+i] = self.__photbw[f]
 
         # Build the bp object
+       
         newfilter['bp'] = bp(newfilter['dataset'], self.__nphys,
                              filters=filters,
                              bandwidth = bw,
@@ -828,7 +856,9 @@ class cluster_slug(object):
               array giving values of the log M, log T, and A_V; for a
               multidimensional array, the operation is vectorized over
               the leading dimensions; if created with use_extinct =
-              False, the A_V dimension should be omitted
+              False, the A_V dimension should be omitted.
+              Will also include variable any variable parameters VPx if
+              they are requested.
            photprop : arraylike, shape (nfilter) or (..., nfilter)
               array giving the photometric values; for a
               multidimensional array, the operation is vectorized over
@@ -886,8 +916,8 @@ class cluster_slug(object):
         Parameters:
            idx : int or listlike containing ints
               index of the physical quantity whose PDF is to be
-              computed; 0 = log M, 1 = log T, 2 = A_V; if this is an
-              iterable, the joint distribution of the indicated
+              computed; 0 = log M, 1 = log T, 2 = A_V, (2 or 3)+x = VPx; 
+              if this is an iterable, the joint distribution of the indicated
               quantities is returned
            photprop : arraylike, shape (nfilter) or (..., nfilter)
               array giving the photometric values; for a
@@ -1267,7 +1297,7 @@ class cluster_slug(object):
         matches to an input set of photometry.
 
         Parameters:
-           phot : arraylike, shape (nphys) or (..., nphys)
+           phys : arraylike, shape (nphys) or (..., nphys)
               array giving the physical values; for a
               multidimensional array, the operation is vectorized over
               the leading dimensions
