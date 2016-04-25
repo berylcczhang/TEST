@@ -105,17 +105,36 @@ emission produced by that stellar spectrum interacting with a
 surrounding HII region. The density in the first zone of the HII
 region will be as specified by the standard ``hden`` keyword in the
 cloudy input template (see :ref:`ssec-cloudy-template`). The inner
-radius of the HII region will be computed automatically, and will be
+radius of the HII region will be computed automatically, and can be
+specified in one of two ways. By default it will be set to
 set to :math:`10^{-3}` of the Stromgren radius for that density, where
 
-.. math:: r_{\mathrm{St}} = \left(\frac{3.0 Q(\mathrm{H}^0)}{4\pi
+.. math:: r_{\mathrm{St}} = \left(\frac{3 Q(\mathrm{H}^0)}{4\pi
 	  \alpha_B n_{\mathrm{H}}^2}\right)^{1/3}
 
 where :math:`Q(\mathrm{H}^0)` is the ionizing luminosity computed by
 SLUG, :math:`n_{\mathrm{H}}` is the hydrogen number density stored in
 the cloudy input template, and :math:`\alpha_B` is the case B
 recombination coefficient, which is taken to have a value of
-:math:`2.59\times 10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}`.
+:math:`2.59\times 10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}`. In this
+case the HII region goes essentially all of the way to the star
+cluster.
+
+The alternative choice is to assume that there is a wind bubble around
+the stars, which evacuates the gas out to some inner radius
+:math:`r_w`. This radius can be specfied in two ways. First, it can be set
+directly. Second, it can be set terms of a slightly modified version
+of the wind parameter :math:`\Omega` defined by `Yeh & Matnzer (2012,
+ApJ, 757, 108)
+<http://adsabs.harvard.edu/abs/2012ApJ...757..108Y>`_, which is
+
+.. math:: \Omega = \frac{r_w^3}{r_i^3 - r_w^3}
+
+where :math:`r_i` is the outer radius of the HII region. Under the
+assumption that the gas density is uniform, one can show that this
+condition is satisfied if the inner radius is
+:math:`r_i = \Omega^{1/3} r_{\mathrm{St}}`.
+
 
 .. _sssec-cloudy-cluster-mode:
 
@@ -128,7 +147,9 @@ will perform a cloudy calculation to determine the corresponding
 nebular emission. By default the density and radius are handled somewhat
 differently in this case, since, for a mono-age stellar population, it
 is possible to compute the time evolution of the HII region radius and
-density.
+density. However, it is also possible to perform a calculation in
+cluster mode treating the density and inner radius in exactly the same
+manner as is used in integrated mode.
 
 Default behavior in cluster mode is as follows:
 the hydrogen number density :math:`n_{\mathrm{H}}`
@@ -179,19 +200,43 @@ composition. See `Krumholz & Matzner (2009)
 <http://adsabs.harvard.edu/abs/2009ApJ...703.1352K>`_ for a discussion
 of the fiducial choices of these factors.
 
-Once the outer radius is known, cloudy_slug sets the starting radius
-for the cloudy calculation to :math:`10^{-3} r_{\mathrm{II}}`, and
-sets the starting density to the value expected for photoionization
-equilibrum in a uniform HII region,
+Once the outer radius is known, cloudy_slug can set the starting
+radius and density in a two different ways. The default option is to
+assume there there is a fully-filled HII region with negligible
+radiation pressure, in which case the inner radius will be set to 
+:math:`10^{-3} r_{\mathrm{II}}`, and the density will be set to
 
 .. math:: n_{\mathrm{II}} = \left(\frac{3
 	  Q(\mathrm{H}^0)}{4.4 \pi\alpha_B
 	  r_{\mathrm{II}}^3}\right)^{1/2}
 
-Note that this approximation will be highly inaccurate if
-:math:`r_{\mathrm{II}} \ll r_{\mathrm{ch}}`, but no better analytic
-approximation is available, and this phase should be very short-lived
-for most clusters.
+Note that the number in the denominator is 4.4 rather than 4 under the
+assumption that He will be singly ionized. Also note that this
+approximation will be highly inaccurate if :math:`r_{\mathrm{II}} \ll
+r_{\mathrm{ch}}`, but no better analytic approximation is available,
+and this phase should be very short-lived for most clusters.
+
+The second option to specify the radius and density is in terms of an
+ionization parameter and a wind parameter. The wind parameter is as
+defined above, and the dimensionless ionization parameter
+:math:`\langle\mathcal{U}\rangle` is defined as the volume average
+over the photoionized region of
+:math:`\mathcal{U} = n_\gamma / n_\mathrm{H}`, where :math:`n_\gamma`
+is the number density of ionizing photons and :math:`n_{\mathrm{H}}`
+is the number density of H nuclei. From these definitions, one can
+show that the ionization parameter, wind parameter, and density are
+related via
+
+.. math:: \mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}} 
+	  Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}
+	  \left[\left(1 + \Omega\right)^{1/3} - \Omega^{1/3}
+	  \left(\frac{4+3\Omega}{3+3\Omega}\right)\right]
+
+The density :math:`n_{\mathrm{II}}` is determined implicitly from this
+relation, and the inner radius is then given by
+:math:`r_i = \Omega^{1/3} r_{\mathrm{St}}`,
+where :math:`r_{\mathrm{St}}` is evaluated using density
+:math:`n_{\mathrm{II}}`.
 
 
 .. _ssec-cloudy-template:
@@ -309,16 +354,10 @@ The optional arguments are as follows:
   ionizing luminosity is passed to cloudy
 * ``-hd HDEN, --hden HDEN``: hydrogen density; if set, this value
   overrides the value of hden found in the cloudy template file
-* ``-ip IONPARAM, --ionparam IONPARAM``: ionization parameter; this is
-  an alternate means of setting the hydrogen density, which will set
-  the density :math:`n_{\mathrm{II}}` so that the volume-averaged
-  ionization parameter :math:`\mathcal{U}` for a spherically-symmetric
-  uniform-density HII region is ``IONPARAM``. The relationship used to
-  define the density is
-
-.. math:: \mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}} 
-	  Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}
-
+* ``-ip IONPARAM, --ionparam IONPARAM``: ionization parameter, used to
+  set the density and inner radius. If this is not set, then the
+  density is set to ``HDEN`` or, if that is not set, to the value of
+  hden found in the cloudy template file.
 * ``-nd, --nodynamic``: this disables the dynamical calculation of the
   HII region radius and density for calculations in
   :ref:`sssec-cloudy-cluster-mode`, and instead treats the density as
@@ -330,6 +369,8 @@ The optional arguments are as follows:
   option will only work correctly on platforms that support nice.
 * ``-n NPROC, --nproc NPROC``: number of simultaneous cloudy processes
   to run; default is the number of cores available on the system
+* ``-ri RINNER, --rinner RINNER``: inner radius of the HII region, in
+  cm; cannot set this and either ``ionparam`` or ``windparam``
 * ``-s, --save``: by default, cloudy_slug will extract line and
   spectral data from the cloudy outputs and store them as described in
   :ref:`ssec-cloudy-output`, then delete the cloudy output files. If
@@ -344,6 +385,9 @@ The optional arguments are as follows:
   ``$SLUG_DIR/output``
 * ``-v, --verbose``: if this option is set, cloudy_slug produces
   verbose output as it runs
+* ``-w, --windparam``: if set, this gives the value of the wind
+  parameter :math:`\Omega`. Default behavior is that :math:`\Omega` is
+  set to a small value.
 
 .. _ssec-cloudy-output:
 
@@ -382,7 +426,7 @@ of a series of entries containing the following fields:
 * ``LineLabel``: four letter code labeling each line. These codes
   are the codes used by cloudy (see the `cloudy documentation
   <http://nublado.org>`_)
-* `` Wavelength``: wavelength of the line, in Angstrom. Note that
+* ``Wavelength``: wavelength of the line, in Angstrom. Note that
   default cloudy behavior is to round wavelengths to the nearest
   Angstrom.
 * ``Luminosity``: line luminosity, in erg/s
