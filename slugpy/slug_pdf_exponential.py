@@ -1,20 +1,20 @@
 """
-This defines a class that can be used to draw random numbers from a
-powerlaw distribution.
+This defines a class that can be used to draw random numbers from an
+exponential distribution.
 """
 
 import numpy as np
 from .slug_pdf_segment import slug_pdf_segment
 
-class slug_pdf_powerlaw(slug_pdf_segment):
+class slug_pdf_exponential(slug_pdf_segment):
     """
-    This class defines a powerlaw segment of a PDF
+    This class defines an exponential segment of a PDF
     """
 
-    def __init__(self, a, b, rand=None, fp=None, alpha=None):
+    def __init__(self, a, b, rand=None, fp=None, scale=None):
         """
-        Class initializer for a PDF of the form x^alpha in the range
-        [a,b]
+        Class initializer for a PDF of the form 
+        dp/dx ~ e^(x/scale) in the range [a,b]
 
         Parameters
            a : float
@@ -24,26 +24,27 @@ class slug_pdf_powerlaw(slug_pdf_segment):
            rand : RandomState
               a numpy RandomState object, used to produce random
               deviates; if None, a new RandomState object is created
-           alpha : float
-              slope of the PDF; ignored if fp is set
+           scale : float
+              scale length of the exponential; ignored if fp is set
            fp : file
               file object pointing to the start of the PDF data
         """
 
         # Call parent constructor
-        super(slug_pdf_powerlaw, self).__init__(a, b, rand)
+        super(slug_pdf_exponential, self).__init__(a, b, rand)
 
-        # See if we were given a file or an explicit slope
+        # See if we were given a file or explicit values
         if fp is None:
-            if alpha is None:
+            if scale is None:
                 raise ValueError(
-                    "slug_pdf_powerlaw.__init__: "+
-                    "must set fp or alpha")
+                    "slug_pdf_exponential.__init__: "+
+                    "must set either fp or scale")
             else:
-                self.alpha = alpha
+                self.scale = scale
 
         else:
-            # Read slope from the file we've been given
+            # Read mean and dispersion from the file we've been given
+            self._scale = None
             for line in fp:
 
                 # Strip trailing comments
@@ -57,17 +58,15 @@ class slug_pdf_powerlaw(slug_pdf_segment):
                 if len(line) == 0:
                     continue
 
-                # Make sure this is a properly formatted slope specified
-                if len(line.split()) != 2 or line.split()[0] != 'slope':
-                    raise IOError(
-                        "slug_pdf_powerlaw: expected 'slope SLOPE', "+
-                        "found '"+line+"'")
-
-                # Read slope
-                self.alpha = float(line.split()[1])
-
-                # Break
-                break
+                # Read the keyword and store its value
+                spl = line.split()
+                if spl[0] == 'scale':
+                    if len(spl) != 2:
+                        raise IOError(
+                            "slug_pdf_exponential: expected "+
+                            "'scale SCALE', found "+line)
+                    self.scale = float(spl[1])
+                    break
 
 
     @slug_pdf_segment.a.setter
@@ -79,11 +78,11 @@ class slug_pdf_powerlaw(slug_pdf_segment):
         self._b = val
         self.normalize()
     @property
-    def alpha(self):
-        return self._alpha
-    @alpha.setter
-    def alpha(self, val):
-        self._alpha = val
+    def scale(self):
+        return self._scale
+    @scale.setter
+    def scale(self, val):
+        self._scale = val
         self.normalize()
 
         
@@ -101,11 +100,11 @@ class slug_pdf_powerlaw(slug_pdf_segment):
         """
         if hasattr(x, '__iter__'):
             xarr = np.array(x)
-            pdf = self._norm * xarr**self._alpha
+            pdf = self._norm * np.exp(-x/self._xscale)
             pdf[np.logical_or(xarr < self._a, xarr > self._b)] = 0.0
         else:
             if self._a <= x and x <= self._b:
-                pdf = self._norm * x**self._alpha
+                pdf = self._norm * np.exp(x/self._xscale)
             else:
                 pdf = 0.0
         return pdf
@@ -113,7 +112,7 @@ class slug_pdf_powerlaw(slug_pdf_segment):
 
     def draw(self, *d):
         """
-        Draw from the powerlaw PDF
+        Draw from the lognormal PDF
 
         Parameters:
            d0, d1, ..., dn : int, optional
@@ -126,12 +125,9 @@ class slug_pdf_powerlaw(slug_pdf_segment):
         """
 
         dev = self._rnd.rand(*d)
-        if self._alpha != -1.0:
-            return (dev*self._b**(self._alpha+1) +
-                    (1-dev)*self._a**(self._alpha+1)) \
-                    **(1.0/(self._alpha+1.0))
-        else:
-            return self._b**dev / self._a**(dev-1.0)
+        samples = -self._scale * \
+                  ( np.log(dev*np.exp(-self._b/self._scale) +
+                           (1.0-dev)*np.exp(-self._a/self._scale)) )
 
 
     def expectation(self):
@@ -145,16 +141,10 @@ class slug_pdf_powerlaw(slug_pdf_segment):
            expec : float
               Expectation value of the PDF
         """
-        if (self._alpha != -1.0) and (self._alpha != -2.0):
-            return (self._alpha+1.0)/(self._alpha+2.0) * \
-                (self._b**(self._alpha+2.0) -
-                 self._a**(self._alpha+2.0)) / \
-                 (self._b**(self._alpha+1.0) -
-                  self._a**(self._alpha+1.0))
-        elif self._alpha == -1.0:
-            return (self._b-self._a) / np.log(self._b/self._a)
-        else:
-            return (self._b+self._a)/2.0
+        return self._a + self._scale + (self._a-self._b) * \
+            np.exp(self._a/self._scale) / \
+            (np.exp(self._b/self._scale) - np.exp(self._a/self._scale))
+    
 
     def normalize(self):
         """
@@ -166,11 +156,7 @@ class slug_pdf_powerlaw(slug_pdf_segment):
         Returns:
            Nothing
         """
-        if self._alpha != -1.0:
-            self._norm = (self.alpha+1.0) / \
-                         (self._b**(self._alpha+1.0) - 
-                          self._a**(self._alpha+1.0))
-        else:
-            self._norm = 1.0 / np.log(self._b/self._a)
-            
-            
+        self._norm \
+            = 1.0 / (self._scale *
+                     (np.exp(-self._a/self._scale) -
+                      np.exp(-self._b/self._scale)))

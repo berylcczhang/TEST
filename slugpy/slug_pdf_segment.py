@@ -2,6 +2,8 @@
 This defines a class of a single segment of a PDF; used together with slug_pdf.
 """
 
+from numpy.random import RandomState
+
 class slug_pdf_segment(object):
     """
     A class that works together with slug_pdf to implement the PDF
@@ -9,9 +11,28 @@ class slug_pdf_segment(object):
     to define a common interface for PDF segments.
     """
     
-    def __init__(self, a, b, fp=None):
-        raise NotImplementedError(
-            "slug_pdf_segment should never be instantiated directly!")
+    def __init__(self, a, b, rand=None):
+        """
+        Initializer for slug_pdf_segment
+
+        Parameters
+           a : float
+              lower limit of the segment
+           b : float
+              upper limit of the segment
+           rand : RandomState
+              a numpy RandomState object, used to produce random
+              deviates; handled in user-space for thread safety
+              reasons
+        """
+
+        # Store limits and RNG
+        self._a = a
+        self._b = b
+        if rand is not None:
+            self._rnd = rand
+        else:
+            self._rnd = RandomState()
 
     def draw(self, *d):
         raise NotImplementedError(

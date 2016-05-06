@@ -1,18 +1,27 @@
 """
 This defines a class that can be used to parse slug PDF files and draw
-random values from them.
+random values from them. This code is thread-safe, in the sense that
+if multiple slug_pdf instances are instantiated in different threads,
+the random streams they generate will not be identical.
 """
 
 import numpy as np
-from numpy.random import rand
+from numpy.random import RandomState
+from .slug_pdf_delta import slug_pdf_delta
+from .slug_pdf_exponential import slug_pdf_exponential
+from .slug_pdf_powerlaw import slug_pdf_powerlaw
 from .slug_pdf_lognormal import slug_pdf_lognormal
 from .slug_pdf_powerlaw import slug_pdf_powerlaw
+from .slug_pdf_normal import slug_pdf_normal
 
 class slug_pdf(object):
     """
     A class that implements the SLUG PDF drawing method. This class
     contains a method to parse slug-formatted PDF files and then draw
-    values from the PDFs they specify.
+    values from the PDFs they specify. This class is thread-safe, in
+    the sense that if multiple slug_pdf instances are instantiated in
+    different threads, the random streams they generate will not be
+    identical.
     """
 
     ##################################################################
@@ -21,6 +30,8 @@ class slug_pdf(object):
     def __init__(self, pdffile=None):
         self.segments = []
         self.wgts = np.array(0)
+        # Use /dev/urandom to initialize, so should be thread-safe
+        self._rnd = RandomState()
         if pdffile is not None:
             self.readfile(pdffile)
 
@@ -143,12 +154,27 @@ class slug_pdf(object):
                 b = self.bkpts[ptr+1]
                 
                 # Call parsing routine for this segment
-                if segtype == 'powerlaw':
+                if segtype == 'delta':
+                    if a != b:
+                        raise IOError("slug_pdf: delta segments "+
+                                      "must have a == b")
+                    self.segments.append(slug_pdf_delta(a))
+                elif segtype == 'exponential':
                     self.segments.append(
-                        slug_pdf_powerlaw(a, b, fp=fp))
+                        slug_pdf_exponential(a, b, fp=fp, rand=self._rnd))
                 elif segtype == 'lognormal':
                     self.segments.append(
-                        slug_pdf_lognormal(a, b, fp=fp))
+                        slug_pdf_lognormal(a, b, fp=fp, rand=self._rnd))
+                elif segtype == 'powerlaw':
+                    self.segments.append(
+                        slug_pdf_powerlaw(a, b, fp=fp, rand=self._rnd))
+                elif segtype == 'normal':
+                    self.segments.append(
+                        slug_pdf_normal(a, b, fp=fp, rand=self._rnd))
+                elif segtype == 'schechter':
+                    raise NotImplementedError(
+                        "slug_pdf: schechter segments not yet "+
+                        "implemented")
 
                 # Reset the segment pointer
                 in_segment = False
@@ -226,7 +252,7 @@ class slug_pdf(object):
         """
 
         # Figure out which segments to draw from
-        dev = rand(*d)
+        dev = self._rnd.rand(*d)
         seg = np.digitize(dev, self.cumwgts)
 
         # Draw

@@ -83,12 +83,12 @@ parser.add_argument("-cm", "--clustermode", action='store_true',
                     "each cluster is a separate cloudy run "+
                     "(default: integrated mode, one cloudy run / "
                     "trial)")
-parser.add_argument('-cf', '--coveringfac', default=1.0, type=float,
-                    help="covering factor")
-parser.add_argument('-hd', '--hden', default=None, type=float,
-                    help='hydrogen number density')
-parser.add_argument('-ip', '--ionparam', default=None, type=float,
-                    help="ionization parameter")
+parser.add_argument('-cf', '--coveringfac', default=1.0, type=str,
+                    help="covering factor; can be a PDF")
+parser.add_argument('-hd', '--hden', default=None, type=str,
+                    help='hydrogen number density in cm^-3; can be a PDF')
+parser.add_argument('-ip', '--ionparam', default=None, type=str,
+                    help="ionization parameter; can be a PDF")
 parser.add_argument('-nd', '--nodynamic', action='store_true', default=False,
                     help='do not use dynamical expansion model in' +
                     ' cluster mode (has no effect in integrated '
@@ -99,8 +99,8 @@ parser.add_argument('-nl', '--nicelevel', default=0, type=int,
 parser.add_argument('-n', '--nproc', default=None, type=int,
                     help="number of cloudy processes (default: "+
                     "number of cores)")
-parser.add_argument('-ri', '--rinner', default=None, type=float,
-                    help='inner radius of HII region, in cm')
+parser.add_argument('-ri', '--rinner', default=None, type=str,
+                    help='inner radius of HII region in cm; can be a PDF')
 parser.add_argument('-s', '--save', default=False,
                     action='store_true', help='save full cloudy ' +
                     'output (default: delete after extracting data)')
@@ -109,10 +109,13 @@ parser.add_argument("--slugpath", default=None, type=str,
                     "checks cwd, then $SLUG_DIR/output)")
 parser.add_argument('-v', '--verbose', action='store_true',
                     default=False, help="produce verbose output")
-parser.add_argument('-w', '--windparam', default=None, type=float,
-                    help='Yeh & Matzner wind parameter Omega')
+parser.add_argument('-wp', '--windparam', default=None, type=str,
+                    help='Yeh & Matzner wind parameter Omega; can be a PDF')
+parser.add_argument('-wr', '--writeparams', default=False,
+                    action='store_true',
+                    help='write out all run parameters')
 args = parser.parse_args()
-cwd = osp.dirname(osp.realpath(__file__))
+cwd = os.getcwd()
 
 
 # Step 2: set some defaults and check for consistency of arguments
@@ -159,14 +162,41 @@ if (args.rinner is not None) and (args.windparam is not None):
 if (args.rinner is not None) and (args.ionparam is not None):
     raise IOError(
         "cloudy_slug: error: cannot simultaneously set rinner and ionparam")
-    
+
+
 # Step 3: read the SLUG output to be processed, and check that we have
 # what we need
 file_info = {}
 if (args.clustermode):
-    data = read_cluster(args.slug_model_name, read_info=file_info, output_dir=slugdir)
+    if args.slugpath is None:
+        # If no directory is set, check cwd, then default directory
+        try:
+            data = read_cluster(args.slug_model_name,
+                                read_info=file_info,
+                                output_dir=cwd)
+        except IOError:
+            data = read_cluster(args.slug_model_name,
+                                read_info=file_info,
+                                output_dir=slugdir)
+    else:
+        data = read_cluster(args.slug_model_name,
+                            read_info=file_info,
+                            output_dir=slugdir)
 else:
-    data = read_integrated(args.slug_model_name, read_info=file_info, output_dir=slugdir)
+    if args.slugpath is None:
+        # If no directory is set, check cwd, then default directory
+        try:
+            data = read_integrated(args.slug_model_name,
+                                   read_info=file_info,
+                                   output_dir=cwd)
+        except IOError:
+            data = read_integrated(args.slug_model_name,
+                                   read_info=file_info,
+                                   output_dir=slugdir)
+    else:
+        data = read_integrated(args.slug_model_name,
+                               read_info=file_info,
+                               output_dir=slugdir)
 outpath = osp.dirname(file_info['spec_name'])
 valid = True
 if 'spec' not in data._fields:
@@ -260,7 +290,16 @@ if compute_lines:
             linelum.append([])
             for i in range(args.start_spec, end_spec):
                 linelum[j].append(None)
-
+if args.writeparams:
+    cloudy_params = []
+    if args.clustermode:
+        for i in range(end_spec-args.start_spec):
+            cloudy_params.append(None)
+    else:
+        for j in range(data.spec.shape[-2]):
+            cloudy_params.append([])
+            for i in range(args.start_spec, end_spec):
+                cloudy_params[j].append(None)
 
 # Step 5: queue up the SLUG runs
 slug_queue = Queue()
@@ -289,6 +328,8 @@ def do_cloudy_run(thread_num, q):
         global linelist
         global linewl
         global linelum
+    if args.writeparams:
+        global cloudy_params
 
     # Terminate when queue empties
     while not q.empty():
@@ -333,9 +374,9 @@ def do_cloudy_run(thread_num, q):
             if len(linesplit) > 0:
                 if (linesplit[0] == 'hden'):
                     if args.hden is None:
-                        hden = 10.0**float(linesplit[1])
+                        hden_ = 10.0**float(linesplit[1])
                     else:
-                        hden = args.hden
+                        hden_ = hden
                 elif (linesplit[0] == 'radius'):
                     radset = True
                     fpout.write(line+'\n')
@@ -356,6 +397,39 @@ def do_cloudy_run(thread_num, q):
                 else:
                     fpout.write(line+'\n')
 
+        # For arguments that are PDFs, draw from them;
+        # otherwise convert to float
+        if args.hden is not None:
+            try:
+                hden = float(args.hden)
+            except ValueError:
+                pdf = slug_pdf(args.hden)
+                hden = pdf.draw()
+        if args.rinner is not None:
+            try:
+                rinner = float(args.rinner)
+            except ValueError:
+                pdf = slug_pdf(args.rinner)
+                rinner = pdf.draw()
+        if args.ionparam is not None:
+            try:
+                ionparam = float(args.ionparam)
+            except ValueError:
+                pdf = slug_pdf(args.ionparam)
+                ionparam = pdf.draw()
+        if args.windparam is not None:
+            try:
+                windparam = float(args.windparam)
+            except ValueError:
+                pdf = slug_pdf(args.windparam)
+                windparam = pdf.draw()
+        if args.coveringfac is not None:
+            try:
+                coveringfac = float(args.coveringfac)
+            except ValueError:
+                pdf = slug_pdf(args.coveringfac)
+                coveringfac = pdf.draw()
+
         # Are we in dynamic mode? If so, that specifies the density
         # and radius
         if args.clustermode and (not args.nodynamic):
@@ -368,7 +442,7 @@ def do_cloudy_run(thread_num, q):
             rch = alphaB/(12.0*np.pi*phi) * \
                   (eps0/(2.2*kB*1e7*TII))**2 * ft**2 * \
                   psi**2 * qH0 / c**2
-            tch = (4.0*np.pi * muH*hden*c * rch**4 /
+            tch = (4.0*np.pi * muH*hden_*c * rch**4 /
                    (3.0*ft*qH0*psi*eps0))**0.5
             # Get xIIgas, xIIrad
             tau = age*365.25*24.*3600./tch
@@ -379,13 +453,13 @@ def do_cloudy_run(thread_num, q):
             if args.windparam is None:
                 if args.rinner is None:
                     r0 = r/1e3
-                    hden = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
+                    hden_ = (3.0*qH0 / (4.0*np.pi*alphaB*r**3))**0.5
                 else:
-                    r0 = min(0.99*r, args.rinner)
-                    hden = (3.0*qH0 / (4.0*np.pi*alphaB*(r-rinner)**3))**0.5
+                    r0 = min(0.99*r, rinner)
+                    hden_ = (3.0*qH0 / (4.0*np.pi*alphaB*(r-rinner)**3))**0.5
             else:
                 r0 = (args.windparam/(1.0+args.windparam))**(1./3.)
-                hden = (3.0*qH0*(1.0+args.windparam) /
+                hden_ = (3.0*qH0*(1.0+args.windparam) /
                         (4.0*np.pi*alphaB*r**3))**0.5
         else:
             # Not in dynamic mode
@@ -393,30 +467,30 @@ def do_cloudy_run(thread_num, q):
             # the density
             if args.ionparam is not None:
                 if args.windparam is None:
-                    hden = 256*1.1*np.pi*c**3*args.ionparam**3 / \
-                           (81*alphaB**2*qH0)
+                    hden_ = 256*1.1*np.pi*c**3*ionparam**3 / \
+                            (81*alphaB**2*qH0)
                 else:
-                    fac = (1.0 + args.windparam)**(4./3.) - \
-                          args.windparam**(1./3.) * \
-                          (4./3.+args.windparam)
-                    hden = 256*1.1*np.pi*c**3*(args.ionparam/fac)**3 / \
-                           (81*alphaB**2*qH0)
+                    fac = (1.0 + windparam)**(4./3.) - \
+                          windparam**(1./3.) * \
+                          (4./3.+windparam)
+                    hden_ = 256*1.1*np.pi*c**3*(ionparam/fac)**3 / \
+                            (81*alphaB**2*qH0)
             # Now compute Stromgren and inner radii
-            rstrom = (3.0*qH0/(4*1.1*np.pi*alphaB*hden**2))**(1./3.)
+            rstrom = (3.0*qH0/(4*1.1*np.pi*alphaB*hden_**2))**(1./3.)
             if args.windparam is None:
                 if args.rinner is None:
                     r0 = rstrom/1e3
                 else:
-                    r0 = args.rinner
+                    r0 = rinner
             else:
-                r0 = rstrom*args.windparam**(1./3.)
+                r0 = rstrom*windparam**(1./3.)
 
         # Write inner radius and density to cloudy input file
-        fpout.write("hden {0:f}\n".format(np.log10(hden)))
+        fpout.write("hden {0:f}\n".format(np.log10(hden_)))
         fpout.write("radius {0:f}\n".format(np.log10(r0)))
 
         # Write the ionizing luminosity to the cloudy input file
-        fpout.write("Q(H) = {0:f}\n".format(np.log10(qH0*args.coveringfac)))
+        fpout.write("Q(H) = {0:f}\n".format(np.log10(qH0*coveringfac)))
 
         # Write the spectral shape into the cloudy input file,
         # prepending and appending low values outside the range
@@ -448,6 +522,19 @@ def do_cloudy_run(thread_num, q):
         if args.verbose:
             print("thread {0:d}: ".format(thread_num+1) + outstr)
 
+        # If we're saving parameters, put them in a dict now to write
+        # out later
+        if args.writeparams:
+            params = { 'hden' : hden_, 'r0' : r0,
+                       'QH0' : qH0*coveringfac,
+                       'coveringfac' : coveringfac }
+            if args.windparam is not None:
+                params['windparam'] = windparam
+            if args.ionparam is not None:
+                params['ionparam'] = ionparam
+            if args.rinner is not None:
+                params['rinner'] = rinner
+            
         # Launch the cloudy process and wait for it to complete
         cloudy_out_fname = osp.join(cwd, tmpdirname, 'cloudy.out'+ext)
         cmd = cloudypath + " < " + cloudy_in_fname + \
@@ -514,7 +601,7 @@ def do_cloudy_run(thread_num, q):
                 cloudyphot[cluster_num] = phot
             else:
                 cloudyphot[time][trial] = phot
-
+                
         # Clean up the cloudy output unless requested to keep it
         if not args.save:
             if continuum_file is not None:
@@ -524,6 +611,20 @@ def do_cloudy_run(thread_num, q):
             os.remove(cloudy_in_fname)
             os.remove(cloudy_out_fname)
 
+        # Store the run parameters, and write them out, if requested
+        if args.writeparams:
+            if args.clustermode:
+                cloudy_params[cluster_num] = params
+            else:
+                cloudy_params[time][trial] = params
+            if args.save:
+                param_fname = osp.join(cwd, tmpdirname,
+                                       'cloudy_slug.param'+ext)
+                fpp = open(param_fname, 'w')
+                for k in params.keys():
+                    fpp.write('{:s}    {:e}\n'.format(k, params[k]))
+                fpp.close()
+            
         # Declare that we're done
         q.task_done()
 
@@ -547,6 +648,8 @@ slug_queue.join()
 # have the same wavelength spacing and the same maximum wavelength,
 # but different minimum wavelengths. Thus we are padding the
 # beginnings of the arrays.
+if args.verbose:
+    print("cloudy computation done, consolidating output...")
 if compute_continuum:
 
     # Get the maximum length wavelength array
@@ -736,6 +839,8 @@ if compute_continuum:
 
 # Step 12: final cleanup
 if not args.save:
+    if args.verbose:
+        print("Cleaning up temporary directory...")
     try:
         os.rmdir(osp.join(cwd, tmpdirname))
     except OSError:
