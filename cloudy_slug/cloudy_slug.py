@@ -393,16 +393,16 @@ def do_cloudy_run(thread_num, q):
             # the density
             if args.ionparam is not None:
                 if args.windparam is None:
-                    hden = 288*np.pi*c**3*args.ionparam**3 / \
+                    hden = 256*1.1*np.pi*c**3*args.ionparam**3 / \
                            (81*alphaB**2*qH0)
                 else:
-                    fac = (1.0 + args.windparam)**(1./3.) - \
+                    fac = (1.0 + args.windparam)**(4./3.) - \
                           args.windparam**(1./3.) * \
-                          ((4.0+3.0*args.windparam)/(3.0+3.0*args.windparam))
-                    hden = 288*np.pi*c**3*(args.ionparam/fac)**3 / \
+                          (4./3.+args.windparam)
+                    hden = 256*1.1*np.pi*c**3*(args.ionparam/fac)**3 / \
                            (81*alphaB**2*qH0)
             # Now compute Stromgren and inner radii
-            rstrom = (3.0*qH0/(4.4*np.pi*alphaB*hden**2))**(1./3.)
+            rstrom = (3.0*qH0/(4*1.1*np.pi*alphaB*hden**2))**(1./3.)
             if args.windparam is None:
                 if args.rinner is None:
                     r0 = rstrom/1e3

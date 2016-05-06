@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{April 22, 2016}
+\date{May 06, 2016}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -4150,16 +4150,18 @@ ionization parameter and a wind parameter. The wind parameter is as
 defined above, and the dimensionless ionization parameter
 \(\langle\mathcal{U}\rangle\) is defined as the volume average
 over the photoionized region of
-\(\mathcal{U} = n_\gamma / n_\mathrm{H}\), where \(n_\gamma\)
-is the number density of ionizing photons and \(n_{\mathrm{H}}\)
-is the number density of H nuclei. From these definitions, one can
-show that the ionization parameter, wind parameter, and density are
-related via
+\(\mathcal{U} = n_\gamma / n_e\), where \(n_\gamma\)
+is the number density of ionizing photons and \(n_e\)
+is the number density of free electrons, which is taken to be
+1.1 times the hydrogen number density \(n_{\mathrm{H}}\) under
+the assumption that He will be singly ionized. From these definitions,
+one can show that the ionization parameter, wind parameter, and
+density are related via
 \begin{gather}
 \begin{split}\mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}}
-Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}
-\left[\left(1 + \Omega\right)^{1/3} - \Omega^{1/3}
-\left(\frac{4+3\Omega}{3+3\Omega}\right)\right]\end{split}\notag
+Q(\mathrm{H}^0)}{256 (1.1) \pi c^3}\right]^{1/3}
+\left[\left(1 + \Omega\right)^{4/3}
+- \Omega^{1/3} \left(\frac{4}{3}+\Omega\right)\right]\end{split}\notag
 \end{gather}
 The density \(n_{\mathrm{II}}\) is determined implicitly from this
 relation, and the inner radius is then given by
@@ -6801,11 +6803,21 @@ You can generate your own library by running slug; you might want to do this, fo
 One subtle post-processing step you should take once you've generated your library is to read it in using {\hyperref[slugpy:sec\string-slugpy]{\emph{slugpy -- The Python Helper Library}}} and then write the photometry back out using the \code{slugpy.write\_cluster\_phot} routine with the format set to \code{fits2}. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster\_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the \code{fits2} format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
 
 
+\section{Variable Mode IMF}
+\label{cluster_slug:variable-mode-imf}
+If your library was run with variable IMF parameters, these can also be used in \code{cluster\_slug}. When creating a \code{cluster\_slug} object, you can pass the array \code{vp\_list} as an argument. This list should have an element for each variable parameter in your library. Each element should then be either \code{True} or \code{False} depending on whether you wish to include this parameter in the analysis.
+For example, for a library with four variable parameters you could have:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+vp\PYGZus{}list=[True,False,True,True]
+\end{Verbatim}
+
+
 \section{Full Documentation of slugpy.cluster\_slug}
 \label{cluster_slug:ssec-cluster-slug-full}\label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{vp\_list={[}{]}}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -6878,7 +6890,7 @@ physical properties
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{vp\_list={[}{]}}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -6976,6 +6988,11 @@ make\_approx\_phys, mpdf\_approx) are used with
 multiprocessing; this incurs a minor performance
 penalty, and can be disabled by setting to False if the
 code will not be run with the multiprocessing module
+
+\item[{vp\_list}] \leavevmode{[}list{]}
+A list with an element for each of the variable parameters
+in the data. An element is set to True if we wish to use
+that parameter here, or False if we do not.
 
 \end{description}
 
@@ -7083,7 +7100,7 @@ Searches through the simulation library and returns the closest
 matches to an input set of photometry.
 \begin{description}
 \item[{Parameters:}] \leavevmode\begin{description}
-\item[{phot}] \leavevmode{[}arraylike, shape (nphys) or (..., nphys){]}
+\item[{phys}] \leavevmode{[}arraylike, shape (nphys) or (..., nphys){]}
 array giving the physical values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions
@@ -7245,7 +7262,9 @@ extinction, and set of log luminosities
 array giving values of the log M, log T, and A\_V; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions; if created with use\_extinct =
-False, the A\_V dimension should be omitted
+False, the A\_V dimension should be omitted.
+Will also include variable any variable parameters VPx if
+they are requested.
 
 \item[{photprop}] \leavevmode{[}arraylike, shape (nfilter) or (..., nfilter){]}
 array giving the photometric values; for a
@@ -7455,8 +7474,8 @@ values, in the same style as meshgrid
 \item[{Parameters:}] \leavevmode\begin{description}
 \item[{idx}] \leavevmode{[}int or listlike containing ints{]}
 index of the physical quantity whose PDF is to be
-computed; 0 = log M, 1 = log T, 2 = A\_V; if this is an
-iterable, the joint distribution of the indicated
+computed; 0 = log M, 1 = log T, 2 = A\_V, (2 or 3)+x = VPx; 
+if this is an iterable, the joint distribution of the indicated
 quantities is returned
 
 \item[{photprop}] \leavevmode{[}arraylike, shape (nfilter) or (..., nfilter){]}

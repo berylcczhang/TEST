@@ -51,7 +51,7 @@
 <p>For an example of how to use cluster_slug, see the file <code class="docutils literal"><span class="pre">cluster_slug/cluster_slug_example.py</span></code> in the repository. All funtionality is provided through the cluster_slug class. The basic steps are as follows:</p>
 <ol class="arabic">
 <li><p class="first">Import the library and instantiate an <code class="docutils literal"><span class="pre">sfr_slug</span></code> object (see <a class="reference internal" href="#ssec-cluster-slug-full"><span>Full Documentation of slugpy.cluster_slug</span></a> for full details):</p>
-<div class="highlight-rest"><div class="highlight"><pre>from slugpy.cluster_slug import cluster_slug
+<div class="highlight-rest"><div class="highlight"><pre><span></span>from slugpy.cluster_slug import cluster_slug
 cs = cluster_slug(photsystem=photsystem)
 </pre></div>
 </div>
@@ -60,7 +60,7 @@ cs = cluster_slug(photsystem=photsystem)
 <p>This creates a cluster_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/clusterslug_mw. If you have another library of simulations you&#8217;d rather use, you can use the <code class="docutils literal"><span class="pre">libname</span></code> keyword to the <code class="docutils literal"><span class="pre">cluster_slug</span></code> constructor to select it. The optional argument <code class="docutils literal"><span class="pre">photsystem</span></code> specifies the photometric system you will be using for your data. Possible values are <code class="docutils literal"><span class="pre">L_nu</span></code> (flux per unit frequency, in erg/s/Hz), <code class="docutils literal"><span class="pre">L_lambda</span></code> (flux per unit wavelength, in erg/s/Angstrom), <code class="docutils literal"><span class="pre">AB</span></code> (AB magnitudes), <code class="docutils literal"><span class="pre">STMAG</span></code> (ST magnitudes), and <code class="docutils literal"><span class="pre">Vega</span></code> (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the <code class="docutils literal"><span class="pre">L_nu</span></code> system.</p>
 <ol class="arabic" start="2">
 <li><p class="first">Specify your filter(s), for example:</p>
-<div class="highlight-rest"><div class="highlight"><pre>cs.add_filters([&#39;WFC3_UVIS_F336W&#39;, &#39;WFC3_UVIS_F438W&#39;, &#39;WFC3_UVIS_F555W&#39;,
+<div class="highlight-rest"><div class="highlight"><pre><span></span>cs.add_filters([&#39;WFC3_UVIS_F336W&#39;, &#39;WFC3_UVIS_F438W&#39;, &#39;WFC3_UVIS_F555W&#39;,
                 &#39;WFC3_UVIS_F814W&#39;, &#39;WFC3_UVIS_F657N&#39;])
 </pre></div>
 </div>
@@ -69,7 +69,7 @@ cs = cluster_slug(photsystem=photsystem)
 <p>The <code class="docutils literal"><span class="pre">add_filter</span></code> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <code class="docutils literal"><span class="pre">add_filters</span></code> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
 <ol class="arabic" start="3">
 <li><p class="first">Specify your priors, for example:</p>
-<div class="highlight-rest"><div class="highlight"><pre># Set priors to be flat in log T and A_V, but vary with log M as
+<div class="highlight-rest"><div class="highlight"><pre><span></span># Set priors to be flat in log T and A_V, but vary with log M as
 # p(log M) ~ 1/M
 def priorfunc(physprop):
    # Note: physprop is an array of shape (N, 3) where physprop[:,0] =
@@ -83,7 +83,7 @@ cs.priors = prorfunc
 <p>The <code class="docutils literal"><span class="pre">priors</span></code> property specifies the assumed prior probability distribution on the physical properties of star clusters. It can be either <code class="docutils literal"><span class="pre">None</span></code> (in which case all simulations in the library are given equal prior probability), an array with as many elements as there are simulations in the library giving the prior for each one, or a callable that takes a vector of physical properties as input and returns the prior for it.</p>
 <ol class="arabic" start="4">
 <li><p class="first">Generate a marginal posterior probability distribuiton via:</p>
-<div class="highlight-rest"><div class="highlight"><pre>logm, pdf = cs.mpdf(idx, phot, photerr = photerr)
+<div class="highlight-rest"><div class="highlight"><pre><span></span>logm, pdf = cs.mpdf(idx, phot, photerr = photerr)
 </pre></div>
 </div>
 </li>
@@ -110,11 +110,19 @@ cs.priors = prorfunc
 <p>You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug_mw library) is included in the <code class="docutils literal"><span class="pre">cluster_slug</span></code> directory. This file uses slug&#8217;s capability to pick the output time and the cluster mass from specified PDFs.</p>
 <p>One subtle post-processing step you should take once you&#8217;ve generated your library is to read it in using <a class="reference internal" href="slugpy.html#sec-slugpy"><span>slugpy &#8211; The Python Helper Library</span></a> and then write the photometry back out using the <code class="docutils literal"><span class="pre">slugpy.write_cluster_phot</span></code> routine with the format set to <code class="docutils literal"><span class="pre">fits2</span></code>. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the <code class="docutils literal"><span class="pre">fits2</span></code> format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)</p>
 </div>
+<div class="section" id="variable-mode-imf">
+<h2>Variable Mode IMF<a class="headerlink" href="#variable-mode-imf" title="Permalink to this headline">¶</a></h2>
+<p>If your library was run with variable IMF parameters, these can also be used in <code class="docutils literal"><span class="pre">cluster_slug</span></code>. When creating a <code class="docutils literal"><span class="pre">cluster_slug</span></code> object, you can pass the array <code class="docutils literal"><span class="pre">vp_list</span></code> as an argument. This list should have an element for each variable parameter in your library. Each element should then be either <code class="docutils literal"><span class="pre">True</span></code> or <code class="docutils literal"><span class="pre">False</span></code> depending on whether you wish to include this parameter in the analysis.
+For example, for a library with four variable parameters you could have:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>vp_list=[True,False,True,True]
+</pre></div>
+</div>
+</div>
 <div class="section" id="full-documentation-of-slugpy-cluster-slug">
 <span id="ssec-cluster-slug-full"></span><h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -174,7 +182,7 @@ physical properties</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -260,6 +268,10 @@ make_approx_phys, mpdf_approx) are used with
 multiprocessing; this incurs a minor performance
 penalty, and can be disabled by setting to False if the
 code will not be run with the multiprocessing module</dd>
+<dt>vp_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>A list with an element for each of the variable parameters
+in the data. An element is set to True if we wish to use
+that parameter here, or False if we do not.</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -351,7 +363,7 @@ matches to an input set of photometry.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span></dt>
+<dt>phys <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span></dt>
 <dd>array giving the physical values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
@@ -488,7 +500,9 @@ extinction, and set of log luminosities</p>
 <dd>array giving values of the log M, log T, and A_V; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions; if created with use_extinct =
-False, the A_V dimension should be omitted</dd>
+False, the A_V dimension should be omitted.
+Will also include variable any variable parameters VPx if
+they are requested.</dd>
 <dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
 <dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
@@ -671,8 +685,8 @@ values, in the same style as meshgrid</p>
 <dd><dl class="first last docutils">
 <dt>idx <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
 <dd>index of the physical quantity whose PDF is to be
-computed; 0 = log M, 1 = log T, 2 = A_V; if this is an
-iterable, the joint distribution of the indicated
+computed; 0 = log M, 1 = log T, 2 = A_V, (2 or 3)+x = VPx; 
+if this is an iterable, the joint distribution of the indicated
 quantities is returned</dd>
 <dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
 <dd>array giving the photometric values; for a
@@ -976,6 +990,7 @@ default</dd>
 <li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 <li><a class="reference internal" href="#using-cluster-slug-in-parallel">Using cluster_slug in Parallel</a></li>
 <li><a class="reference internal" href="#making-your-own-library">Making Your Own Library</a></li>
+<li><a class="reference internal" href="#variable-mode-imf">Variable Mode IMF</a></li>
 <li><a class="reference internal" href="#full-documentation-of-slugpy-cluster-slug">Full Documentation of slugpy.cluster_slug</a></li>
 </ul>
 </li>
@@ -1017,7 +1032,7 @@ default</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

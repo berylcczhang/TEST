@@ -221,16 +221,18 @@ ionization parameter and a wind parameter. The wind parameter is as
 defined above, and the dimensionless ionization parameter
 :math:`\langle\mathcal{U}\rangle` is defined as the volume average
 over the photoionized region of
-:math:`\mathcal{U} = n_\gamma / n_\mathrm{H}`, where :math:`n_\gamma`
-is the number density of ionizing photons and :math:`n_{\mathrm{H}}`
-is the number density of H nuclei. From these definitions, one can
-show that the ionization parameter, wind parameter, and density are
-related via
+:math:`\mathcal{U} = n_\gamma / n_e`, where :math:`n_\gamma`
+is the number density of ionizing photons and :math:`n_e`
+is the number density of free electrons, which is taken to be
+1.1 times the hydrogen number density :math:`n_{\mathrm{H}}` under
+the assumption that He will be singly ionized. From these definitions,
+one can show that the ionization parameter, wind parameter, and
+density are related via
 
 .. math:: \mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}} 
-	  Q(\mathrm{H}^0)}{288 \pi c^3}\right]^{1/3}
-	  \left[\left(1 + \Omega\right)^{1/3} - \Omega^{1/3}
-	  \left(\frac{4+3\Omega}{3+3\Omega}\right)\right]
+	  Q(\mathrm{H}^0)}{256 (1.1) \pi c^3}\right]^{1/3}
+	  \left[\left(1 + \Omega\right)^{4/3} 
+	  - \Omega^{1/3} \left(\frac{4}{3}+\Omega\right)\right]
 
 The density :math:`n_{\mathrm{II}}` is determined implicitly from this
 relation, and the inner radius is then given by
