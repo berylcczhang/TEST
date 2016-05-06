@@ -221,11 +221,11 @@ ionization parameter and a wind parameter. The wind parameter is as
 defined above, and the dimensionless ionization parameter
 :math:`\langle\mathcal{U}\rangle` is defined as the volume average
 over the photoionized region of
-:math:`\mathcal{U} = n_\gamma / n_e`, where :math:`n_\gamma`
-is the number density of ionizing photons and :math:`n_e`
-is the number density of free electrons, which is taken to be
+:math:`\mathcal{U} = n_\gamma / n_i`, where :math:`n_\gamma`
+is the number density of ionizing photons and :math:`n_i`
+is the number density of ions, which is taken to be
 1.1 times the hydrogen number density :math:`n_{\mathrm{H}}` under
-the assumption that He will be singly ionized. From these definitions,
+the assumption that there is 1 He per 10 H. From these definitions,
 one can show that the ionization parameter, wind parameter, and
 density are related via
 
