@@ -226,7 +226,7 @@ def read_cluster_cloudyphot(model_name, output_dir=None, fmt=None,
             data_list = struct.unpack(('L'+'d'*nfilter*3)*ncluster, data)
 
             # Pack clusters into data list
-            cluster_id.extend(data_list[::nfilter+1])
+            cluster_id.extend(data_list[::3*nfilter+1])
             phot_trans.extend(
                 [data_list[(nfilter+1)*i+1:(nfilter+1)*i+1+nfilter] 
                  for i in range(ncluster)])
