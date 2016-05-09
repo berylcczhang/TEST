@@ -38,7 +38,7 @@ def combine_integrated(data):
     single_fields = ['time', 'wl', 'wl_neb', 'wl_ex', 'wl_neb_ex',
                      'filter_names', 'filter_units', 'filter_wl', 
                      'filter_wl_eff', 'filter_response', 'filter_beta', 
-                     'filter_wl_c',
+                     'filter_wl_c', 'isotope_name', 'isotope_Z', 'isotope_A',
                      'cloudy_linelabel', 'cloudy_linewl',
                      'cloudy_wl', 'cloudy_filter_names',
                      'cloudy_filter_units', 'cloudy_filter_wl_eff',

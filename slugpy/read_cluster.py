@@ -3,13 +3,14 @@ Function to read all cluster data for a SLUG2 run.
 """
 
 from collections import namedtuple
-from read_cluster_prop import read_cluster_prop
-from read_cluster_phot import read_cluster_phot
-from read_cluster_spec import read_cluster_spec
-from read_cluster_yield import read_cluster_yield
-from cloudy.read_cluster_cloudyphot import read_cluster_cloudyphot
-from cloudy.read_cluster_cloudylines import read_cluster_cloudylines
-from cloudy.read_cluster_cloudyspec import read_cluster_cloudyspec
+from .read_cluster_prop import read_cluster_prop
+from .read_cluster_phot import read_cluster_phot
+from .read_cluster_spec import read_cluster_spec
+from .read_cluster_yield import read_cluster_yield
+from .cloudy.read_cluster_cloudyparams import read_cluster_cloudyparams
+from .cloudy.read_cluster_cloudyphot import read_cluster_cloudyphot
+from .cloudy.read_cluster_cloudylines import read_cluster_cloudylines
+from .cloudy.read_cluster_cloudyspec import read_cluster_cloudyspec
 
 def read_cluster(model_name, output_dir=None, fmt=None,
                  nofilterdata=False, photsystem=None, verbose=False,
@@ -244,6 +245,33 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           plus the diffuse light emitted by the HII region); units are as
           indicated in the units field 
 
+       (Present if the run being read contains a cluster_cloudyparams file)
+       cloudy_hden : array
+          number density of H nuclei at the inner edge of the ionized
+          region simulated by cloudy
+       cloudy_r0 : array
+          inner radius of the ionized region simulated by cloudy
+       cloudy_rS : array
+          outer radius of the ionized region simulated by cloudy (approximate!)
+       cloudy_QH0 : array
+          ionizing luminosity used in the cloudy computation
+       cloudy_covFac : array
+          covering factor assumed in the cloudy computation; only a
+          fraction covFac of the ionizing photons are assumed to
+          produce emission within the HII region, while the remainder
+          are assumed to escape
+       cloudy_U : array
+          volume-averaged ionization parameter of the HII region
+          simulated by cloudy; note that this value is approximate,
+          not exact, and the approximation can be very poor if
+          radiation pressure effects are significant
+       cloudy_Omega : array
+          Yeh & Matzner (2012) wind parameter for the HII region
+          simulated by cloudy; as with U, this value is approximate,
+          and the approximation is valid only if radiation pressure
+          effects are small
+
+
     Raises
        IOError, if no photometry file can be opened
        ValueError, if photsystem is set to an unknown values
@@ -340,6 +368,17 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     except IOError:
         cloudyphot = None
 
+    # Read cloudy parameters
+    try:
+        cloudyparams \
+            = read_cluster_cloudyparams(model_name, output_dir, fmt=fmt,
+                                        verbose=verbose, read_info=read_info)
+        if read_info is not None:
+            read_info['cloudylines_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudyparams = None
+    
     # Build the output
     out_fields = ['id', 'trial', 'time']
     if prop is not None:
@@ -380,6 +419,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     if cloudyphot is not None:
         out_fields = out_fields + list(cloudyphot._fields[3:])
         out_data = out_data + list(cloudyphot[3:])
+    if cloudyparams is not None:
+        out_fields = out_fields + list(cloudyparams._fields[3:])
+        out_data = out_data + list(cloudyparams[3:])
     out_type = namedtuple('cluster_data', out_fields)
     out = out_type._make(out_data)
 

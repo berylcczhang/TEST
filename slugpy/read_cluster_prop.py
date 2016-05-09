@@ -256,11 +256,8 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 nfield = 9
             if no_stellar_mass:
                 nfield = nfield-1
-            
             if imf_is_var:
-                nfield = len(datastr)
-
-            
+                nfield = len(datastr)            
             cluster_id.extend(data_list[0::nfield])
             time.extend([t]*ncluster)
             trial.extend([trialptr]*ncluster)

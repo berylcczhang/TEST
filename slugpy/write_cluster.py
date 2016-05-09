@@ -8,6 +8,7 @@ fits), or to consolidate multiple runs into a single output file.
 import numpy as np
 import struct
 from scipy.interpolate import interp1d
+from cloudy import write_cluster_cloudyparams
 from cloudy import write_cluster_cloudyphot
 from cloudy import write_cluster_cloudylines
 from cloudy import write_cluster_cloudyspec
@@ -1065,6 +1066,8 @@ def write_cluster(data, model_name, fmt):
     ################################################################
     # Write cloudy files if we have the data for them
     ################################################################
+    if 'cloudy_hden' in data._fields:
+        write_cluster_cloudyparams(data, model_name, fmt=fmt)
     if 'cloudy_inc' in data._fields:
         write_cluster_cloudyspec(data, model_name, fmt=fmt)
     if 'cloudy_linelum' in data._fields:
