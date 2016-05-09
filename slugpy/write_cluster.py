@@ -253,77 +253,55 @@ def write_cluster(data, model_name, fmt):
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
+
             # Write out number of variable parameters
             nvp = 0
             for field in data._fields:
                 if field.startswith("VP"):
-#                    print "FOUND VP",nvp
                     nvp+=1
 
             fp.write( struct.pack('i', nvp) )   
            
-
-            # Construct lists of times and trials
-            trials = np.unique(data.trial)
-            times = np.unique(data.time)
-
             # Break data into blocks of clusters with the same time
             # and trial number
             ptr = 0
-            for i in range(len(trials)):
-                for j in range(len(times)):
+            while ptr < data.trial.size:
 
-                    # Find block of clusters with this time and trial
-                    block_match \
-                        = np.logical_and(data.trial[ptr:] == trials[i],
-                                         data.time[ptr:] == times[j])
-                    block_end = ptr + np.argmin(block_match)
+                # Find the next cluster that differs from this one in
+                # either time or trial number
+                diff = np.where(
+                    np.logical_or(data.trial[ptr+1:] != data.trial[ptr],
+                                  data.time[ptr+1:] != data.time[ptr]))[0]
+                if diff.size == 0:
+                    block_end = data.trial.size
+                else:
+                    block_end = ptr + diff[0] + 1
 
-                    # Special case: if we found no clusters in this
-                    # block, make sure that's not because all the
-                    # remaining clusters belong in it, and the search
-                    # ran off the end of the data. If that is the
-                    # case, adjust block_end appropriately.
-                    if block_end == ptr:
-                        if np.sum(block_match) > 0:
-                            block_end = len(data.trial)
+                # Write out time and number of clusters
+                ncluster = block_end - ptr
+                fp.write(np.uint(data.trial[ptr]))
+                fp.write(data.time[ptr])
+                fp.write(ncluster)
 
-                    # Special case: if block_end is the last entry in
-                    # the data, check if the last entry is the same as
-                    # the previous one. If so, move block_end one
-                    # space, to off the edge of the data.
-                    if block_end == len(data.trial)-1 and \
-                       data.trial[-1] == trials[i] and \
-                       data.time[-1] == times[j]:
-                        block_end = block_end+1
+                # Loop over clusters and write them
+                for k in range(ptr, block_end):
+                    fp.write(data.id[k])
+                    fp.write(data.form_time[k])
+                    fp.write(data.lifetime[k])
+                    fp.write(data.target_mass[k])
+                    fp.write(data.actual_mass[k])
+                    fp.write(data.live_mass[k])
+                    fp.write(data.stellar_mass[k])
+                    fp.write(data.num_star[k])
+                    fp.write(data.max_star_mass[k])
+                    if 'A_V' in data._fields:
+                        fp.write(data.A_V[k])
+                    for field in sorted(data._fields):
+                        if field.startswith("VP"):
+                            fp.write(getattr(data, field)[k])
 
-                    # Write out time and number of clusters
-                    ncluster = block_end - ptr
-                    fp.write(np.uint(i))
-                    fp.write(times[j])
-                    fp.write(ncluster)
-
-                    # Loop over clusters and write them
-                    for k in range(ptr, block_end):
-                        fp.write(data.id[k])
-                        fp.write(data.form_time[k])
-                        fp.write(data.lifetime[k])
-                        fp.write(data.target_mass[k])
-                        fp.write(data.actual_mass[k])
-                        fp.write(data.live_mass[k])
-                        fp.write(data.stellar_mass[k])
-                        fp.write(data.num_star[k])
-                        fp.write(data.max_star_mass[k])
-                        if 'A_V' in data._fields:
-                            fp.write(data.A_V[k])
-                        
-                        for field in sorted(data._fields):
-                            if field.startswith("VP"):
-#                                print "WRITING",field," with ",getattr(data, field)[k]
-                                fp.write(getattr(data, field)[k])                     
-
-                    # Move pointer
-                    ptr = block_end
+                # Move pointer
+                ptr = block_end
 
             # Close file
             fp.close()
@@ -542,59 +520,40 @@ def write_cluster(data, model_name, fmt):
                 fp.write(np.int64(len(data.wl_neb_ex)))
                 fp.write(data.wl_neb_ex)
 
-            # Construct lists of times and trials
-            trials = np.unique(data.trial)
-            times = np.unique(data.time)
-
             # Break data into blocks of clusters with the same time
             # and trial number
             ptr = 0
-            for i in range(len(trials)):
-                for j in range(len(times)):
+            while ptr < data.trial.size:
 
-                    # Find block of clusters with this time and trial
-                    block_match \
-                        = np.logical_and(data.trial[ptr:] == trials[i],
-                                         data.time[ptr:] == times[j])
-                    block_end = ptr + np.argmin(block_match)
+                # Find the next cluster that differs from this one in
+                # either time or trial number
+                diff = np.where(
+                    np.logical_or(data.trial[ptr+1:] != data.trial[ptr],
+                                  data.time[ptr+1:] != data.time[ptr]))[0]
+                if diff.size == 0:
+                    block_end = data.trial.size
+                else:
+                    block_end = ptr + diff[0] + 1
 
-                    # Special case: if we found no clusters in this
-                    # block, make sure that's not because all the
-                    # remaining clusters belong in it, and the search
-                    # ran off the end of the data. If that is the
-                    # case, adjust block_end appropriately.
-                    if block_end == ptr:
-                        if np.sum(block_match) > 0:
-                            block_end = len(data.trial)
+                # Write out time and number of clusters
+                ncluster = block_end - ptr
+                fp.write(np.uint(data.trial[ptr]))
+                fp.write(data.time[ptr])
+                fp.write(ncluster)
 
-                    # Special case: if block_end is the last entry in
-                    # the data, check if the last entry is the same as
-                    # the previous one. If so, move block_end one
-                    # space, to off the edge of the data.
-                    if block_end == len(data.trial)-1 and \
-                       data.trial[-1] == trials[i] and \
-                       data.time[-1] == times[j]:
-                        block_end = block_end+1
+                # Loop over clusters and write them
+                for k in range(ptr, block_end):
+                    fp.write(data.id[k])
+                    fp.write(data.spec[k,:])
+                    if 'spec_neb' in data._fields:
+                        fp.write(data.spec_neb[k,:])
+                    if 'spec_ex' in data._fields:
+                        fp.write(data.spec_ex[k,:])
+                    if 'spec_neb_ex' in data._fields:
+                        fp.write(data.spec_neb_ex[k,:])
 
-                    # Write out time and number of clusters
-                    ncluster = block_end - ptr
-                    fp.write(np.uint(i))
-                    fp.write(times[j])
-                    fp.write(ncluster)
-
-                    # Loop over clusters and write them
-                    for k in range(ptr, block_end):
-                        fp.write(data.id[k])
-                        fp.write(data.spec[k,:])
-                        if 'spec_neb' in data._fields:
-                            fp.write(data.spec_neb[k,:])
-                        if 'spec_ex' in data._fields:
-                            fp.write(data.spec_ex[k,:])
-                        if 'spec_neb_ex' in data._fields:
-                            fp.write(data.spec_neb_ex[k,:])
-
-                    # Move pointer
-                    ptr = block_end
+                # Move pointer
+                ptr = block_end
 
             # Close file
             fp.close()
@@ -785,59 +744,40 @@ def write_cluster(data, model_name, fmt):
             else:
                 fp.write(str(bytearray([0])))
 
-            # Construct lists of times and trials
-            trials = np.unique(data.trial)
-            times = np.unique(data.time)
-
             # Break data into blocks of clusters with the same time
             # and trial number
             ptr = 0
-            for i in range(len(trials)):
-                for j in range(len(times)):
+            while ptr < data.trial.size:
 
-                    # Find block of clusters with this time and trial
-                    block_match \
-                        = np.logical_and(data.trial[ptr:] == trials[i],
-                                         data.time[ptr:] == times[j])
-                    block_end = ptr + np.argmin(block_match)
+                # Find the next cluster that differs from this one in
+                # either time or trial number
+                diff = np.where(
+                    np.logical_or(data.trial[ptr+1:] != data.trial[ptr],
+                                  data.time[ptr+1:] != data.time[ptr]))[0]
+                if diff.size == 0:
+                    block_end = data.trial.size
+                else:
+                    block_end = ptr + diff[0] + 1
 
-                    # Special case: if we found no clusters in this
-                    # block, make sure that's not because all the
-                    # remaining clusters belong in it, and the search
-                    # ran off the end of the data. If that is the
-                    # case, adjust block_end appropriately.
-                    if block_end == ptr:
-                        if np.sum(block_match) > 0:
-                            block_end = len(data.trial)
+                # Write out time and number of clusters
+                ncluster = block_end - ptr
+                fp.write(np.uint(data.trial[ptr]))
+                fp.write(data.time[ptr])
+                fp.write(ncluster)
+                
+                # Loop over clusters and write them
+                for k in range(ptr, block_end):
+                    fp.write(data.id[k])
+                    fp.write(data.phot[k,:])
+                    if 'phot_neb' in data._fields:
+                        fp.write(data.phot_neb[k,:])
+                    if 'phot_ex' in data._fields:
+                        fp.write(data.phot_ex[k,:])
+                    if 'phot_neb_ex' in data._fields:
+                        fp.write(data.phot_neb_ex[k,:])
 
-                    # Special case: if block_end is the last entry in
-                    # the data, check if the last entry is the same as
-                    # the previous one. If so, move block_end one
-                    # space, to off the edge of the data.
-                    if block_end == len(data.trial)-1 and \
-                       data.trial[-1] == trials[i] and \
-                       data.time[-1] == times[j]:
-                        block_end = block_end+1
-
-                    # Write out time and number of clusters
-                    ncluster = block_end - ptr
-                    fp.write(np.uint(i))
-                    fp.write(times[j])
-                    fp.write(ncluster)
-
-                    # Loop over clusters and write them
-                    for k in range(ptr, block_end):
-                        fp.write(data.id[k])
-                        fp.write(data.phot[k,:])
-                        if 'phot_neb' in data._fields:
-                            fp.write(data.phot_neb[k,:])
-                        if 'phot_ex' in data._fields:
-                            fp.write(data.phot_ex[k,:])
-                        if 'phot_neb_ex' in data._fields:
-                            fp.write(data.phot_neb_ex[k,:])
-
-                    # Move pointer
-                    ptr = block_end
+                # Move pointer
+                ptr = block_end
 
             # Close file
             fp.close()

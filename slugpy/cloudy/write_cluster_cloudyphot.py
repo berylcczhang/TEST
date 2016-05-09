@@ -103,55 +103,36 @@ def write_cluster_cloudyphot(data, model_name, fmt):
             fp.write(data.cloudy_filter_names[i] + " " + 
                      data.cloudy_filter_units[i] + "\n")
 
-        # Construct lists of times and trials
-        trials = np.unique(data.trial)
-        times = np.unique(data.time)
-
         # Break data into blocks of clusters with the same time
         # and trial number
-        ptr = 0.
-        for i in range(len(trials)):
-            for j in range(len(times)):
+        ptr = 0
+        while ptr < data.trial.size:
 
-                # Find block of clusters with this time and trial
-                block_match \
-                    = np.logical_and(data.trial[ptr:] == trials[i],
-                                     data.time[ptr:] == times[j])
-                block_end = ptr + np.argmin(block_match)
+            # Find the next cluster that differs from this one in
+            # either time or trial number
+            diff = np.where(
+                np.logical_or(data.trial[ptr+1:] != data.trial[ptr],
+                              data.time[ptr+1:] != data.time[ptr]))[0]
+            if diff.size == 0:
+                block_end = data.trial.size
+            else:
+                block_end = ptr + diff[0] + 1
 
-                # Special case: if we found no clusters in this
-                # block, make sure that's not because all the
-                # remaining clusters belong in it, and the search
-                # ran off the end of the data. If that is the
-                # case, adjust block_end appropriately.
-                if block_end == ptr:
-                    if np.sum(block_match) > 0:
-                        block_end = len(data.trial)
+            # Write out time and number of clusters
+            ncluster = block_end - ptr
+            fp.write(np.uint(data.trial[ptr]))
+            fp.write(data.time[ptr])
+            fp.write(ncluster)
 
-                # Special case: if block_end is the last entry in
-                # the data, check if the last entry is the same as
-                # the previous one. If so, move block_end one
-                # space, to off the edge of the data.
-                if block_end == len(data.trial)-1 and \
-                   data.trial[-1] == trials[i] and \
-                   data.time[-1] == times[j]:
-                    block_end = block_end+1
+            # Loop over clusters and write them
+            for k in range(ptr, block_end):
+                fp.write(data.id[k])
+                fp.write(data.cloudy_phot_trans[k,:])
+                fp.write(data.cloudy_phot_emit[k,:])
+                fp.write(data.cloudy_phot_trans_emit[k,:])
 
-                # Write out time and number of clusters
-                ncluster = block_end - ptr
-                fp.write(np.uint(i))
-                fp.write(times[j])
-                fp.write(ncluster)
-
-                # Loop over clusters and write them
-                for k in range(ptr, block_end):
-                    fp.write(data.id[k])
-                    fp.write(data.cloudy_phot_trans[k,:])
-                    fp.write(data.cloudy_phot_emit[k,:])
-                    fp.write(data.cloudy_phot_trans_emit[k,:])
-
-                # Move pointer
-                ptr = block_end
+            # Move pointer
+            ptr = block_end
 
         # Close file
         fp.close()
