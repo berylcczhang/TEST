@@ -516,6 +516,32 @@ void slug_sim::galaxy_sim() {
 #endif
       }
 
+      // Write yield if requested
+      if (pp.get_writeIntegratedYield()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_integrated_yield(int_yield_file, out_mode, i,
+					del_cluster);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_integrated_yield(int_yield_fits, i,
+					 del_cluster);
+	}
+#endif
+      }
+      if (pp.get_writeClusterYield()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_cluster_yield(cluster_yield_file, out_mode, i);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_cluster_yield(cluster_yield_fits, i);
+	}
+#endif
+      }	
+
       // Write spectra if requested
       if (pp.get_writeIntegratedSpec()) {
 #ifdef ENABLE_FITS
@@ -566,32 +592,6 @@ void slug_sim::galaxy_sim() {
 	}
 #endif
       }
-
-      // Write yield if requested
-      if (pp.get_writeIntegratedYield()) {
-#ifdef ENABLE_FITS
-	if (out_mode != FITS) {
-#endif
-	  galaxy->write_integrated_yield(int_yield_file, out_mode, i,
-					del_cluster);
-#ifdef ENABLE_FITS
-	} else {
-	  galaxy->write_integrated_yield(int_yield_fits, i,
-					 del_cluster);
-	}
-#endif
-      }
-      if (pp.get_writeClusterYield()) {
-#ifdef ENABLE_FITS
-	if (out_mode != FITS) {
-#endif
-	  galaxy->write_cluster_yield(cluster_yield_file, out_mode, i);
-#ifdef ENABLE_FITS
-	} else {
-	  galaxy->write_cluster_yield(cluster_yield_fits, i);
-	}
-#endif
-      }	
     }
   }
     
@@ -1060,9 +1060,9 @@ void slug_sim::open_cluster_prop() {
     int fits_status = 0;
     fits_create_tbl(cluster_prop_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, nullptr, &fits_status);
-    delete ttype;
-    delete tform;
-    delete tunit;
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
   }
 #endif
 }
@@ -1241,9 +1241,9 @@ void slug_sim::open_integrated_spec() {
     // Create the table
     fits_create_tbl(int_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, wl_name, &fits_status);
-    delete ttype;
-    delete tform;
-    delete tunit;
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
 
     // Write wavelength data to table
     fits_write_col(int_spec_fits, TDOUBLE, 1, 1, 1, nl,
@@ -1300,9 +1300,9 @@ void slug_sim::open_integrated_spec() {
     }
     fits_create_tbl(int_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype2, tform2, tunit2, spec_name, &fits_status);
-    delete ttype2;
-    delete tform2;
-    delete tunit2;
+    delete [] ttype2;
+    delete [] tform2;
+    delete [] tunit2;
   }
 #endif
 }
@@ -1483,9 +1483,9 @@ void slug_sim::open_cluster_spec() {
     // Create the table
     fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, wl_name, &fits_status);
-    delete ttype;
-    delete tform;
-    delete tunit;
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
 
     // Write wavelength data to table
     fits_write_col(cluster_spec_fits, TDOUBLE, 1, 1, 1, nl,
@@ -1543,9 +1543,9 @@ void slug_sim::open_cluster_spec() {
     }
     fits_create_tbl(cluster_spec_fits, BINARY_TBL, 0, ncol,
 		    ttype2, tform2, tunit2, spec_name, &fits_status);
-    delete ttype2;
-    delete tform2;
-    delete tunit2;
+    delete [] ttype2;
+    delete [] tform2;
+    delete [] tunit2;
   }
 #endif
 }
@@ -2042,9 +2042,9 @@ void slug_sim::open_integrated_yield() {
     // Create the table
     fits_create_tbl(int_yield_fits, BINARY_TBL, 0, ncol,
         ttype, tform, tunit, table_name, &fits_status);
-    delete ttype;
-    delete tform;
-    delete tunit;
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
 
     // Write isotope data to table
     fits_write_col(int_yield_fits, TSTRING, 1, 1, 1, isotopes.size(),
@@ -2080,9 +2080,9 @@ void slug_sim::open_integrated_yield() {
     // Create the table
     fits_create_tbl(int_yield_fits, BINARY_TBL, 0, ncol,
         ttype2, tform2, tunit2, yield_table_name, &fits_status);
-    delete ttype2;
-    delete tform2;
-    delete tunit2;
+    delete [] ttype2;
+    delete [] tform2;
+    delete [] tunit2;
   }
 #endif
 }
@@ -2216,9 +2216,9 @@ void slug_sim::open_cluster_yield() {
     // Create the table
     fits_create_tbl(cluster_yield_fits, BINARY_TBL, 0, ncol,
         ttype, tform, tunit, table_name, &fits_status);
-    delete ttype;
-    delete tform;
-    delete tunit;
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
 
     // Write isotope data to table
     fits_write_col(cluster_yield_fits, TSTRING, 1, 1, 1, isotopes.size(),
@@ -2254,9 +2254,9 @@ void slug_sim::open_cluster_yield() {
     // Create the table
     fits_create_tbl(cluster_yield_fits, BINARY_TBL, 0, ncol,
         ttype2, tform2, tunit2, yield_table_name, &fits_status);
-    delete ttype2;
-    delete tform2;
-    delete tunit2;
+    delete [] ttype2;
+    delete [] tform2;
+    delete [] tunit2;
   }
 #endif
 }
