@@ -191,14 +191,13 @@ def read_integrated_cloudyphot(model_name, output_dir=None, fmt=None,
 
         # Unpack the data
         chunkstr = 'L'+(nfilter+1)*'d'
-        if extinct:
-            chunkstr = chunkstr + 3*nfilter*'d'
         nchunk = len(data)/struct.calcsize(chunkstr)
         data_list = struct.unpack(nchunk*chunkstr, data)
 
         # Parse into arrays
         trial = np.array(data_list[::3*nfilter+2])
         time = np.array(data_list[1::3*nfilter+2])
+        ntime = len(time)
         phot_trans = np.zeros((ntime, nfilter))
         phot_emit = np.zeros((ntime, nfilter))
         phot_trans_emit = np.zeros((ntime, nfilter))
