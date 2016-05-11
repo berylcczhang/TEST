@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{May 06, 2016}
+\date{May 11, 2016}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -1190,6 +1190,9 @@ For \code{binary} outputs, variable types refer to C++ types
 This file contains data on the bulk physical properties of the galaxy as a whole. It consists of a series of entries containing the following fields:
 \begin{itemize}
 \item {} 
+\code{Trial}: which trial these data are from
+
+\item {} 
 \code{Time}: evolution time at which the output is produced
 
 \item {} 
@@ -1222,6 +1225,9 @@ If \code{output\_mode} is \code{ascii}, these data are output in a series of col
 
 For \code{binary} output, the file consists of a series of records containing the following variables
 \begin{itemize}
+\item {} 
+\code{Trial} (\code{unsigned int})
+
 \item {} 
 \code{Time} (\code{double})
 
@@ -1258,6 +1264,9 @@ There is one record of this form for each output time, with different trials ord
 \label{output:the-integrated-spec-file}\label{output:ssec-int-spec-file}
 This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:
 \begin{itemize}
+\item {} 
+\code{Trial}: which trial these data are from
+
 \item {} 
 \code{Time}: evolution time at which the output is produced
 
@@ -1328,6 +1337,9 @@ For binary output, the file is formatted as follows. The file starts with
 and then contains a series of records in the format
 \begin{itemize}
 \item {} 
+\code{Trial} (\code{unsigned int})
+
+\item {} 
 \code{Time} (\code{double})
 
 \item {} 
@@ -1351,6 +1363,9 @@ There is one such record for each output time, with different trials ordered seq
 \label{output:the-integrated-phot-file}\label{output:ssec-int-phot-file}
 This file contains data on the photometric properties of the entire galaxy, and consists of a series of entries containing the following fields:
 \begin{itemize}
+\item {} 
+\code{Trial}: which trial these data are from
+
 \item {} 
 \code{Time}: evolution time at which the output is produced
 
@@ -1455,6 +1470,9 @@ indicating that it was enabled
 This is followed by a series of entries of the form
 \begin{itemize}
 \item {} 
+\code{Trial} (\code{unsigned int})
+
+\item {} 
 \code{Time} (\code{double})
 
 \item {} 
@@ -1480,6 +1498,9 @@ This file contains data on the integrated chemical yield of the entire
 galaxy, and consists of a series of entries containing the following
 fields:
 \begin{itemize}
+\item {} 
+\code{Trial}: which trial these data are from
+
 \item {} 
 \code{Time}: evolution time at which the output is produced
 
@@ -1530,6 +1551,9 @@ This is followed by \code{NIso} entries of the form
 
 The remainder of the file contains records of the from
 \begin{itemize}
+\item {} 
+\code{Trial} (\code{unsigned int})
+
 \item {} 
 \code{Time} (\code{double})
 
@@ -2707,6 +2731,41 @@ indicated in the units field
 
 \end{description}
 
+(Present if the run being read contains a cluster\_cloudyparams file)
+\begin{description}
+\item[{cloudy\_hden}] \leavevmode{[}array{]}
+number density of H nuclei at the inner edge of the ionized
+region simulated by cloudy
+
+\item[{cloudy\_r0}] \leavevmode{[}array{]}
+inner radius of the ionized region simulated by cloudy
+
+\item[{cloudy\_rS}] \leavevmode{[}array{]}
+outer radius of the ionized region simulated by cloudy (approximate!)
+
+\item[{cloudy\_QH0}] \leavevmode{[}array{]}
+ionizing luminosity used in the cloudy computation
+
+\item[{cloudy\_covFac}] \leavevmode{[}array{]}
+covering factor assumed in the cloudy computation; only a
+fraction covFac of the ionizing photons are assumed to
+produce emission within the HII region, while the remainder
+are assumed to escape
+
+\item[{cloudy\_U}] \leavevmode{[}array{]}
+volume-averaged ionization parameter of the HII region
+simulated by cloudy; note that this value is approximate,
+not exact, and the approximation can be very poor if
+radiation pressure effects are significant
+
+\item[{cloudy\_Omega}] \leavevmode{[}array{]}
+Yeh \& Matzner (2012) wind parameter for the HII region
+simulated by cloudy; as with U, this value is approximate,
+and the approximation is valid only if radiation pressure
+effects are small
+
+\end{description}
+
 \item[{Raises}] \leavevmode
 IOError, if no photometry file can be opened
 ValueError, if photsystem is set to an unknown values
@@ -3435,6 +3494,41 @@ indicated in the units field
 
 \end{description}
 
+(Only present if an integrated\_cloudyparams file is found)
+\begin{description}
+\item[{cloudy\_hden}] \leavevmode{[}array{]}
+number density of H nuclei at the inner edge of the ionized
+region simulated by cloudy
+
+\item[{cloudy\_r0}] \leavevmode{[}array{]}
+inner radius of the ionized region simulated by cloudy
+
+\item[{cloudy\_rS}] \leavevmode{[}array{]}
+outer radius of the ionized region simulated by cloudy (approximate!)
+
+\item[{cloudy\_QH0}] \leavevmode{[}array{]}
+ionizing luminosity used in the cloudy computation
+
+\item[{cloudy\_covFac}] \leavevmode{[}array{]}
+covering factor assumed in the cloudy computation; only a
+fraction covFac of the ionizing photons are assumed to
+produce emission within the HII region, while the remainder
+are assumed to escape
+
+\item[{cloudy\_U}] \leavevmode{[}array{]}
+volume-averaged ionization parameter of the HII region
+simulated by cloudy; note that this value is approximate,
+not exact, and the approximation can be very poor if
+radiation pressure effects are significant
+
+\item[{cloudy\_Omega}] \leavevmode{[}array{]}
+Yeh \& Matzner (2012) wind parameter for the HII region
+simulated by cloudy; as with U, this value is approximate,
+and the approximation is valid only if radiation pressure
+effects are small
+
+\end{description}
+
 \end{description}
 
 \end{fulllineitems}
@@ -3876,6 +3970,42 @@ IOError, if a file of the specified name cannot be found
 
 \end{fulllineitems}
 
+\index{slug\_pdf (class in slugpy)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.slug_pdf}\pysiglinewithargsret{\strong{class }\code{slugpy.}\bfcode{slug\_pdf}}{\emph{pdffile=None}}{}
+A class that implements the SLUG PDF drawing method. This class
+contains a method to parse slug-formatted PDF files and then draw
+values from the PDFs they specify. This class is thread-safe, in
+the sense that if multiple slug\_pdf instances are instantiated in
+different threads, the random streams they generate will not be
+identical.
+\index{draw() (slugpy.slug\_pdf method)}
+
+\begin{fulllineitems}
+\phantomsection\label{slugpy:slugpy.slug_pdf.draw}\pysiglinewithargsret{\bfcode{draw}}{\emph{*d}}{}
+Draw from the PDF
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{d0, d1, ..., dn}] \leavevmode{[}int, optional{]}
+Dimensions of the returned array; if left unspecified, a
+single python float is returned
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{x}] \leavevmode{[}float or array{]}
+One or more numbers drawn from the PDF
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+
+\end{fulllineitems}
+
 \index{write\_cluster() (in module slugpy)}
 
 \begin{fulllineitems}
@@ -4068,16 +4198,16 @@ cluster.
 
 The alternative choice is to assume that there is a wind bubble around
 the stars, which evacuates the gas out to some inner radius
-\(r_w\). This radius can be specfied in two ways. First, it can be set
+\(r_0\). This radius can be specfied in two ways. First, it can be set
 directly. Second, it can be set terms of a slightly modified version
 of the wind parameter \(\Omega\) defined by \href{http://adsabs.harvard.edu/abs/2012ApJ...757..108Y}{Yeh \& Matnzer (2012,
 ApJ, 757, 108)}, which is
 \begin{gather}
-\begin{split}\Omega = \frac{r_w^3}{r_i^3 - r_w^3}\end{split}\notag
+\begin{split}\Omega = \frac{r_0^3}{r_{\mathrm{II}}^3 - r_0^3}\end{split}\notag
 \end{gather}
-where \(r_i\) is the outer radius of the HII region. Under the
-assumption that the gas density is uniform, one can show that this
-condition is satisfied if the inner radius is
+where \(r_{\mathrm{II}}\) is the outer radius of the HII region.
+Under the assumption that the gas density is uniform, one can show
+that this condition is satisfied if the inner radius is
 \(r_i = \Omega^{1/3} r_{\mathrm{St}}\).
 
 
@@ -4130,7 +4260,7 @@ composition. See \href{http://adsabs.harvard.edu/abs/2009ApJ...703.1352K}{Krumho
 of the fiducial choices of these factors.
 
 Once the outer radius is known, cloudy\_slug can set the starting
-radius and density in a two different ways. The default option is to
+radius and density in a three different ways. The default option is to
 assume there there is a fully-filled HII region with negligible
 radiation pressure, in which case the inner radius will be set to
 \(10^{-3} r_{\mathrm{II}}\), and the density will be set to
@@ -4145,7 +4275,19 @@ approximation will be highly inaccurate if \(r_{\mathrm{II}} \ll
 r_{\mathrm{ch}}\), but no better analytic approximation is available,
 and this phase should be very short-lived for most clusters.
 
-The second option to specify the radius and density is in terms of an
+The second option is to manually specify an inner radius \(r_0\),
+which will be used for all calculations. The density is then computed
+from the ionized volume as
+\begin{gather}
+\begin{split}n_{\mathrm{II}} = \left(\frac{3
+Q(\mathrm{H}^0)}{4.4 \pi\alpha_B
+(r_{\mathrm{II}}^3 - r_0^3)}\right)^{1/2}\end{split}\notag
+\end{gather}
+Note that this expression implicitly assumes \(r_{\mathrm{II}} >
+r_0\). If this is not the case, then \(r_0\) will automatically be
+set to \(0.99 r_{\mathrm{II}}\).
+
+The third option to specify the radius and density is in terms of an
 ionization parameter and a wind parameter. The wind parameter is as
 defined above, and the dimensionless ionization parameter
 \(\langle\mathcal{U}\rangle\) is defined as the volume average
@@ -4248,8 +4390,9 @@ cloudy. Usage for this script is as follows:
 cloudy\PYGZus{}slug.py [\PYGZhy{}h] [\PYGZhy{}a AGEMAX] [\PYGZhy{}\PYGZhy{}cloudypath CLOUDYPATH]
                [\PYGZhy{}\PYGZhy{}cloudytemplate CLOUDYTEMPLATE] [\PYGZhy{}cm]
                [\PYGZhy{}cf COVERINGFAC] [\PYGZhy{}hd HDEN] [\PYGZhy{}ip IONPARAM] [\PYGZhy{}nd]
-               [\PYGZhy{}nl NICELEVEL] [\PYGZhy{}n NPROC] [\PYGZhy{}s] [\PYGZhy{}\PYGZhy{}slugpath SLUGPATH]
-               [\PYGZhy{}v]
+               [\PYGZhy{}nl NICELEVEL] [\PYGZhy{}n NPROC] [\PYGZhy{}qm QH0MIN] [\PYGZhy{}ri RINNER]
+               [\PYGZhy{}s] [\PYGZhy{}\PYGZhy{}slugformat SLUGFORMAT] [\PYGZhy{}\PYGZhy{}slugpath SLUGPATH]
+               [\PYGZhy{}v] [\PYGZhy{}wp WINDPARAM] [\PYGZhy{}wr]
                slug\PYGZus{}model\PYGZus{}name [start\PYGZus{}spec] [end\PYGZus{}spec]
 \end{Verbatim}
 
@@ -4343,7 +4486,8 @@ option will only work correctly on platforms that support nice.
 to run; default is the number of cores available on the system
 
 \item {} 
-\code{-ri RINNER, -{-}rinner RINNER}: inner radius of the HII region, in
+\code{-ri RINNER, -{-}rinner RINNER}: inner radius of the HII region,
+corresponding to \(r_0\) in the explanation above, in
 cm; cannot set this and either \code{ionparam} or \code{windparam}
 
 \item {} 
@@ -4351,10 +4495,20 @@ cm; cannot set this and either \code{ionparam} or \code{windparam}
 spectral data from the cloudy outputs and store them as described in
 {\hyperref[cloudy:ssec\string-cloudy\string-output]{\emph{Full Description of cloudy\_slug Output}}}, then delete the cloudy output files. If
 this option is set, the cloudy output files will NOT be deleted, and
-will be left in place. WARNING: cloudy's outputs are written in
-ASCII and are quite voluminous, so only choose this option if you
-are only running cloudy on a small number of SLUG spectra and/or you
-are prepared to store hundreds of GB more more.
+will be left in place, in sub-directory of the working directory
+called \code{cloudy\_tmp\_MODEL\_NAME} where \code{MODEL\_NAME} is the SLUG model
+name. WARNING: cloudy's outputs are written in ASCII and are quite
+voluminous, so choose this option only if you are running
+cloudy on a small number of SLUG spectra and/or you are prepared to
+store hundreds of GB or more. The data that \code{cloudy\_slug} extract
+are much, much smaller, and (if you do not use ASCII format) are
+stored in a much more compact form.
+
+\item {} 
+\code{-{-}slugformat SLUGFORMAT}: the format of slug output data to use;
+valid values are \code{ascii}, \code{bin}, \code{binary}, and \code{fits}. By
+default \code{cloudy\_slug} checks for any output whose name and path
+match the model name and search path, regardless of format.
 
 \item {} 
 \code{-{-}slugpath SLUGPATH}: path to the SLUG output data. If not set,
@@ -4367,9 +4521,16 @@ first in the current working directory, and next in
 verbose output as it runs
 
 \item {} 
-\code{-w, -{-}windparam}: if set, this gives the value of the wind
-parameter \(\Omega\). Default behavior is that \(\Omega\) is
-set to a small value.
+\code{-wp WINDPARAM, -{-}windparam WINDPARAM}: if set, this gives the
+value of the wind parameter \(\Omega\). Default behavior is that
+\(\Omega\) is set to a small value.
+
+\item {} 
+\code{-wr, -{-}writeparams}: if set, this option causes \code{cloudy\_slug}
+to write out a file beginning with \code{cloudy\_slug.param} for each
+cloudy run. This file is written in the same directory used by the
+save command, and it contains an ASCII printout of the various
+parameters. This option is only applied if \code{-{-}save} is also set.
 
 \end{itemize}
 
@@ -4381,13 +4542,15 @@ and produce a series of new output files, which will be written to the
 same directory where the input SLUG files are located, and using the
 same output mode (ASCII text, raw binary, or FITS -- see
 {\hyperref[output:sec\string-output]{\emph{Output Files and Format}}}). If cloudy\_slug is run in
-{\hyperref[cloudy:sssec\string-cloudy\string-integrated\string-mode]{\emph{Integrated Mode}}}, the three output files will be
+{\hyperref[cloudy:sssec\string-cloudy\string-integrated\string-mode]{\emph{Integrated Mode}}}, the four output files will be
+\code{MODEL\_NAME\_integrated\_cloudyparams.ext},
 \code{MODEL\_NAME\_integrated\_cloudylines.ext},
 \code{MODEL\_NAME\_integrated\_cloudyphot.ext}, and
 \code{MODEL\_NAME\_integrated\_cloudyspec.ext}, where the extension \code{.ext}
 is one of \code{.txt}, \code{.bin}, or \code{.fits}, depending on the
 \code{output\_mode}. If cloudy\_slug is run in
-{\hyperref[cloudy:sssec\string-cloudy\string-cluster\string-mode]{\emph{Cluster Mode}}}, the three output files will be
+{\hyperref[cloudy:sssec\string-cloudy\string-cluster\string-mode]{\emph{Cluster Mode}}}, the four output files will be
+\code{MODEL\_NAME\_cluster\_cloudyparams.ext},
 \code{MODEL\_NAME\_cluster\_cloudylines.ext},
 \code{MODEL\_NAME\_cluster\_cloudyphot.ext}, and
 \code{MODEL\_NAME\_cluster\_cloudyspec.ext}. All of these output files will
@@ -4395,7 +4558,93 @@ be read and processed automatically if the outputs are read using
 \code{read\_integrated} or \code{read\_cluster} in the {\hyperref[slugpy:sec\string-slugpy]{\emph{slugpy -- The Python Helper Library}}}
 library.
 
-The format of those files is described below.
+The format of these files is described below.
+
+
+\subsection{The \texttt{integrated\_cloudyparams} File}
+\label{cloudy:the-integrated-cloudyparams-file}
+This file contains the input parameters for the cloudy runs, and
+quantities derived from them. It consists of a series of entries
+containin the following fields:
+\begin{itemize}
+\item {} 
+\code{Trial}: which trial these data are from
+
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{Hden}: number density of hydrogen nuclei at the inner edge of the
+HII region whose structure cloudy computes, in H/cm\textasciicircum{}3
+
+\item {} 
+\code{R0}: radius of the inner edge of the HII region, in cm
+
+\item {} 
+\code{RS}: Stromgren radius of the HII region, defined as described in
+{\hyperref[cloudy:sssec\string-cloudy\string-integrated\string-mode]{\emph{Integrated Mode}}}; in units of cm
+
+\item {} 
+\code{QH0}: ionizing luminosity input to cloudy, in photons/s
+
+\item {} 
+\code{CovFac}: covering factor used; the ionizing luminosity that is
+passed to cloudy is \code{QH0*covFac}
+
+\item {} 
+\code{U}: volume-averaged ionization parameter \(\mathcal{U}\) for
+the HII region, defined as in {\hyperref[cloudy:sssec\string-cloudy\string-cluster\string-mode]{\emph{Cluster Mode}}}
+
+\item {} 
+\code{Omega}: wind parameter \(\Omega\) for the HII region, defined
+as in {\hyperref[cloudy:sssec\string-cloudy\string-cluster\string-mode]{\emph{Cluster Mode}}}
+
+\end{itemize}
+
+Note that the only parameters that are actually used in the cloudy
+computation are \code{R0} and \code{QH0*covFac}; the remainder are derived
+from them.
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+the data are written in a FITS file containing a binary table
+extension. The table contains one column whose name corresponds to the
+list of fields above.
+
+If the SLUG data input to cloudy\_slug were writtin in \code{binary} mode,
+these data are written in a raw binary file that is formatted as a
+series of records containing the following fields:
+\begin{itemize}
+\item {} 
+\code{Trial} (numpy \code{uint64})
+
+\item {} 
+\code{Time} (numpy \code{float64})
+
+\item {} 
+\code{Hden} (numpy \code{float64})
+
+\item {} 
+\code{R0} (numpy \code{float64})
+
+\item {} 
+\code{RS} (numpy \code{float64})
+
+\item {} 
+\code{covFac} (numpy \code{float64})
+
+\item {} 
+\code{U} (numpy \code{float64})
+
+\item {} 
+\code{Omega} (numpy \code{float64})
+
+\end{itemize}
+
+There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
 
 \subsection{The \texttt{integrated\_cloudylines} File}
@@ -4449,7 +4698,10 @@ labels listed in ASCII, one label per line
 This is followed by a series of entries of the form
 \begin{itemize}
 \item {} 
-\code{Time} (\code{double})
+\code{Trial} (numpy \code{uint64})
+
+\item {} 
+\code{Time} (numpy \code{float64})
 
 \item {} 
 \code{LineLum} (\code{NLine} entries of type numpy \code{float64})
@@ -4467,6 +4719,9 @@ This file contains data on the spectrum produced by interaction
 between the stellar radiation field and the nebula. Each entry in the
 output file contains the folling fields:
 \begin{itemize}
+\item {} 
+\code{Trial}: which trial these data are from
+
 \item {} 
 \code{Time}: evolution time at which the output is produced
 
@@ -4536,6 +4791,9 @@ follows. The file begins with a header consisting of
 and then contains a series of records of the form
 \begin{itemize}
 \item {} 
+\code{Trial} (numpy \code{uint64})
+
+\item {} 
 \code{Time} (numpy \code{float64})
 
 \item {} 
@@ -4563,6 +4821,9 @@ by the interaction between the stellar radiation field and the HII
 region. The file consists of a series of entries containing the
 following fields:
 \begin{itemize}
+\item {} 
+\code{Trial}: which trial these data are from
+
 \item {} 
 \code{Time}: evolution time at which the output is computed
 
@@ -4651,6 +4912,104 @@ ordered sequentially, so that all the times for one trial are output
 before the first time for the next trial.
 
 
+\subsection{The \texttt{cluster\_cloudyparams} File}
+\label{cloudy:the-cluster-cloudyparams-file}
+This file contains the input parameters for the cloudy runs, and
+quantities derived from them. It consists of a series of entries
+containin the following fields:
+\begin{itemize}
+\item {} 
+\code{UniqueID}: a unique identifier number for each cluster that is
+preserved across times and output files
+
+\item {} 
+\code{Time}: evolution time at which the output is produced
+
+\item {} 
+\code{Hden}: number density of hydrogen nuclei at the inner edge of the
+HII region whose structure cloudy computes, in H/cm\textasciicircum{}3
+
+\item {} 
+\code{R0}: radius of the inner edge of the HII region, in cm
+
+\item {} 
+\code{RS}: Stromgren radius of the HII region, defined as described in
+{\hyperref[cloudy:sssec\string-cloudy\string-integrated\string-mode]{\emph{Integrated Mode}}}; in units of cm
+
+\item {} 
+\code{QH0}: ionizing luminosity input to cloudy, in photons/s
+
+\item {} 
+\code{CovFac}: covering factor used; the ionizing luminosity that is
+passed to cloudy is \code{QH0*covFac}
+
+\item {} 
+\code{U}: volume-averaged ionization parameter \(\mathcal{U}\) for
+the HII region, defined as in {\hyperref[cloudy:sssec\string-cloudy\string-cluster\string-mode]{\emph{Cluster Mode}}}
+
+\item {} 
+\code{Omega}: wind parameter \(\Omega\) for the HII region, defined
+as in {\hyperref[cloudy:sssec\string-cloudy\string-cluster\string-mode]{\emph{Cluster Mode}}}
+
+\end{itemize}
+
+Note that the only parameters that are actually used in the cloudy
+computation are \code{R0} and \code{QH0*covFac}; the remainder are derived
+from them.
+
+If the SLUG data input to cloudy\_slug were written in \code{ascii} mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy\_slug were written in \code{fits} mode,
+the data are written in a FITS file containing a binary table
+extension. The table contains one column whose name corresponds to the
+list of fields above.
+
+If the SLUG data input to cloudy\_slug were writtin in \code{binary} mode,
+these data are written in a raw binary file that is formatted as a
+a series of records, one for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial. Each record consists of a
+header containing
+\begin{itemize}
+\item {} 
+\code{Time} (\code{double})
+
+\item {} 
+\code{NCluster} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long}): number of non-disrupted clusters present at this time
+
+\end{itemize}
+
+This is followed by \code{NCluster} entries of the following form:
+\begin{itemize}
+\item {} 
+\code{UniqueID} (numpy \code{uint64})
+
+\item {} 
+\code{Time} (numpy \code{float64})
+
+\item {} 
+\code{Hden} (numpy \code{float64})
+
+\item {} 
+\code{R0} (numpy \code{float64})
+
+\item {} 
+\code{RS} (numpy \code{float64})
+
+\item {} 
+\code{covFac} (numpy \code{float64})
+
+\item {} 
+\code{U} (numpy \code{float64})
+
+\item {} 
+\code{Omega} (numpy \code{float64})
+
+\end{itemize}
+
+
 \subsection{The \texttt{cluster\_cloudylines} File}
 \label{cloudy:the-cluster-cloudylines-file}
 This file contains data on the nebular line emission produced by the
@@ -4704,7 +5063,10 @@ labels listed in ASCII, one label per line
 
 \end{itemize}
 
-This is followed by a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+This is followed by a series of records, one for each output time,
+with different trials ordered sequentially, so that all the times for
+one trial are output before the first time for the next trial. Each
+record consists of a header containing
 \begin{itemize}
 \item {} 
 \code{Time} (\code{double})
@@ -4991,6 +5353,89 @@ array of line wavelengths, in Angstrom
 \item[{lum}] \leavevmode{[}array{]}
 array of line luminosities; this will be in whatever units the
 cloudy output is in
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{read\_cluster\_cloudyparams() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{cloudy:slugpy.cloudy.read_cluster_cloudyparams}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_cluster\_cloudyparams}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 cluster\_cloudyparams file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}`txt' \textbar{} `ascii' \textbar{} `bin' \textbar{} `binary' \textbar{} `fits' \textbar{} `fits2'{]}
+Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(`txt' or `ascii'), 
+binary (`bin' or `binary'), or FITS (`fits' or `fits2')
+formatted output, ending in .txt., .bin, or .fits,
+respectively. If set to None, the code will try to open
+ASCII files first, then if it fails try binary files, and if
+it fails again try FITS files.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{id}] \leavevmode{[}array, dtype uint{]}
+unique ID of cluster
+
+\item[{trial: array, dtype uint}] \leavevmode
+which trial was this cluster part of
+
+\item[{time}] \leavevmode{[}array{]}
+time at which cluster's properties are being evaluated
+
+\item[{cloudy\_hden}] \leavevmode{[}array{]}
+number density of H nuclei at the inner edge of the ionized
+region simulated by cloudy
+
+\item[{cloudy\_r0}] \leavevmode{[}array{]}
+inner radius of the ionized region simulated by cloudy
+
+\item[{cloudy\_rS}] \leavevmode{[}array{]}
+outer radius of the ionized region simulated by cloudy (approximate!)
+
+\item[{cloudy\_QH0}] \leavevmode{[}array{]}
+ionizing luminosity used in the cloudy computation
+
+\item[{cloudy\_covFac}] \leavevmode{[}array{]}
+covering factor assumed in the cloudy computation; only a
+fraction covFac of the ionizing photons are assumed to
+produce emission within the HII region, while the remainder
+are assumed to escape
+
+\item[{cloudy\_U}] \leavevmode{[}array{]}
+volume-averaged ionization parameter of the HII region
+simulated by cloudy; note that this value is approximate,
+not exact, and the approximation can be very poor if
+radiation pressure effects are significant
+
+\item[{cloudy\_Omega}] \leavevmode{[}array{]}
+Yeh \& Matzner (2012) wind parameter for the HII region
+simulated by cloudy; as with U, this value is approximate,
+and the approximation is valid only if radiation pressure
+effects are small
 
 \end{description}
 
@@ -5310,6 +5755,85 @@ luminosity of each line at each time for each trial, in erg/s
 
 \end{fulllineitems}
 
+\index{read\_integrated\_cloudyparams() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{cloudy:slugpy.cloudy.read_integrated_cloudyparams}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{read\_integrated\_cloudyparams}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}}{}
+Function to read a SLUG2 integrated\_cloudyparams file.
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{model\_name}] \leavevmode{[}string{]}
+The name of the model to be read
+
+\item[{output\_dir}] \leavevmode{[}string{]}
+The directory where the SLUG2 output is located; if set to None,
+the current directory is searched, followed by the SLUG\_DIR
+directory if that environment variable is set
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the file to be read. Allowed values are `ascii',
+`bin' or `binary, and `fits'. If one of these is set, the code
+will only attempt to open ASCII-, binary-, or FITS-formatted
+output, ending in .txt., .bin, or .fits, respectively. If set
+to None, the code will try to open ASCII files first, then if
+it fails try binary files, and if it fails again try FITS
+files.
+
+\item[{verbose}] \leavevmode{[}bool{]}
+If True, verbose output is printed as code runs
+
+\item[{read\_info}] \leavevmode{[}dict{]}
+On return, this dict will contain the keys `fname' and
+`format', giving the name of the file read and the format it
+was in; `format' will be one of `ascii', `binary', or `fits'
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+A namedtuple containing the following fields:
+\begin{description}
+\item[{time}] \leavevmode{[}array, shape (N\_times) or shape (N\_trials){]}
+Times at which data are output; shape is either N\_times (if
+the run was done with fixed output times) or N\_trials (if
+the run was done with random output times)
+
+\item[{cloudy\_hden}] \leavevmode{[}array{]}
+number density of H nuclei at the inner edge of the ionized
+region simulated by cloudy
+
+\item[{cloudy\_r0}] \leavevmode{[}array{]}
+inner radius of the ionized region simulated by cloudy
+
+\item[{cloudy\_rS}] \leavevmode{[}array{]}
+outer radius of the ionized region simulated by cloudy (approximate!)
+
+\item[{cloudy\_QH0}] \leavevmode{[}array{]}
+ionizing luminosity used in the cloudy computation
+
+\item[{cloudy\_covFac}] \leavevmode{[}array{]}
+covering factor assumed in the cloudy computation; only a
+fraction covFac of the ionizing photons are assumed to
+produce emission within the HII region, while the remainder
+are assumed to escape
+
+\item[{cloudy\_U}] \leavevmode{[}array{]}
+volume-averaged ionization parameter of the HII region
+simulated by cloudy; note that this value is approximate,
+not exact, and the approximation can be very poor if
+radiation pressure effects are significant
+
+\item[{cloudy\_Omega}] \leavevmode{[}array{]}
+Yeh \& Matzner (2012) wind parameter for the HII region
+simulated by cloudy; as with U, this value is approximate,
+and the approximation is valid only if radiation pressure
+effects are small
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{read\_integrated\_cloudyphot() (in module slugpy.cloudy)}
 
 \begin{fulllineitems}
@@ -5492,6 +6016,36 @@ by an observer looking at both the star cluster and its nebula
 
 \end{fulllineitems}
 
+\index{write\_cluster\_cloudyparams() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{cloudy:slugpy.cloudy.write_cluster_cloudyparams}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_cluster\_cloudyparams}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out photometry for nebular emission computed by cloudy on a
+slug spectrum for a series of clusters
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Cluster cloudy parameter data; a namedtuple containing the
+fields id, trial, time, cloudy\_age, cloudy\_hden, cloudy\_r0, 
+cloudy\_rS, cloudy\_QH0, cloudy\_covFac, cloudy\_U, and cloudy\_Omega
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
 \index{write\_cluster\_cloudyphot() (in module slugpy.cloudy)}
 
 \begin{fulllineitems}
@@ -5563,6 +6117,36 @@ Write out data computed by cloudy on a slug spectrum
 Cloudy spectral data for clusters to be written; a namedtuple
 containing the fields id, time, cloudy\_wl, cloudy\_inc, cloudy\_trans,
 cloudy\_emit, and cloudy\_trans\_emit
+
+\item[{model\_name}] \leavevmode{[}string{]}
+Base file name to give the model to be written. Can include a
+directory specification if desired.
+
+\item[{fmt}] \leavevmode{[}string{]}
+Format for the output file. Allowed values are `ascii', `bin'
+or `binary, and `fits'.
+
+\end{description}
+
+\item[{Returns}] \leavevmode
+Nothing
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{write\_integrated\_cloudyparams() (in module slugpy.cloudy)}
+
+\begin{fulllineitems}
+\phantomsection\label{cloudy:slugpy.cloudy.write_integrated_cloudyparams}\pysiglinewithargsret{\code{slugpy.cloudy.}\bfcode{write\_integrated\_cloudyparams}}{\emph{data}, \emph{model\_name}, \emph{fmt}}{}
+Write out photometry for nebular emission computed by cloudy on a
+slug spectrum for a series of clusters
+\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{data}] \leavevmode{[}namedtuple{]}
+Cluster cloudy parameter data; a namedtuple containing the
+fields time, cloudy\_hden, cloudy\_r0, cloudy\_rS, 
+cloudy\_QH0, cloudy\_covFac, cloudy\_U, and cloudy\_Omega
 
 \item[{model\_name}] \leavevmode{[}string{]}
 Base file name to give the model to be written. Can include a

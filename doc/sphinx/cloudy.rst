@@ -122,17 +122,17 @@ cluster.
 
 The alternative choice is to assume that there is a wind bubble around
 the stars, which evacuates the gas out to some inner radius
-:math:`r_w`. This radius can be specfied in two ways. First, it can be set
+:math:`r_0`. This radius can be specfied in two ways. First, it can be set
 directly. Second, it can be set terms of a slightly modified version
 of the wind parameter :math:`\Omega` defined by `Yeh & Matnzer (2012,
 ApJ, 757, 108)
 <http://adsabs.harvard.edu/abs/2012ApJ...757..108Y>`_, which is
 
-.. math:: \Omega = \frac{r_w^3}{r_i^3 - r_w^3}
+.. math:: \Omega = \frac{r_0^3}{r_{\mathrm{II}}^3 - r_0^3}
 
-where :math:`r_i` is the outer radius of the HII region. Under the
-assumption that the gas density is uniform, one can show that this
-condition is satisfied if the inner radius is
+where :math:`r_{\mathrm{II}}` is the outer radius of the HII region.
+Under the assumption that the gas density is uniform, one can show
+that this condition is satisfied if the inner radius is
 :math:`r_i = \Omega^{1/3} r_{\mathrm{St}}`.
 
 
@@ -201,7 +201,7 @@ composition. See `Krumholz & Matzner (2009)
 of the fiducial choices of these factors.
 
 Once the outer radius is known, cloudy_slug can set the starting
-radius and density in a two different ways. The default option is to
+radius and density in a three different ways. The default option is to
 assume there there is a fully-filled HII region with negligible
 radiation pressure, in which case the inner radius will be set to 
 :math:`10^{-3} r_{\mathrm{II}}`, and the density will be set to
@@ -216,7 +216,19 @@ approximation will be highly inaccurate if :math:`r_{\mathrm{II}} \ll
 r_{\mathrm{ch}}`, but no better analytic approximation is available,
 and this phase should be very short-lived for most clusters.
 
-The second option to specify the radius and density is in terms of an
+The second option is to manually specify an inner radius :math:`r_0`,
+which will be used for all calculations. The density is then computed
+from the ionized volume as
+
+.. math:: n_{\mathrm{II}} = \left(\frac{3
+	  Q(\mathrm{H}^0)}{4.4 \pi\alpha_B
+	  (r_{\mathrm{II}}^3 - r_0^3)}\right)^{1/2}
+
+Note that this expression implicitly assumes :math:`r_{\mathrm{II}} >
+r_0`. If this is not the case, then :math:`r_0` will automatically be
+set to :math:`0.99 r_{\mathrm{II}}`.
+	  
+The third option to specify the radius and density is in terms of an
 ionization parameter and a wind parameter. The wind parameter is as
 defined above, and the dimensionless ionization parameter
 :math:`\langle\mathcal{U}\rangle` is defined as the volume average
@@ -305,10 +317,11 @@ The ``cloudy_slug.py`` script provides the interface between SLUG and
 cloudy. Usage for this script is as follows::
 
    cloudy_slug.py [-h] [-a AGEMAX] [--cloudypath CLOUDYPATH]
-                  [--cloudytemplate CLOUDYTEMPLATE] [-cm] 
+                  [--cloudytemplate CLOUDYTEMPLATE] [-cm]
                   [-cf COVERINGFAC] [-hd HDEN] [-ip IONPARAM] [-nd]
-                  [-nl NICELEVEL] [-n NPROC] [-s] [--slugpath SLUGPATH]
-                  [-v]
+                  [-nl NICELEVEL] [-n NPROC] [-qm QH0MIN] [-ri RINNER]
+                  [-s] [--slugformat SLUGFORMAT] [--slugpath SLUGPATH]
+                  [-v] [-wp WINDPARAM] [-wr]
                   slug_model_name [start_spec] [end_spec]
 
 The positional arguments are as follows:
@@ -371,25 +384,39 @@ The optional arguments are as follows:
   option will only work correctly on platforms that support nice.
 * ``-n NPROC, --nproc NPROC``: number of simultaneous cloudy processes
   to run; default is the number of cores available on the system
-* ``-ri RINNER, --rinner RINNER``: inner radius of the HII region, in
+* ``-ri RINNER, --rinner RINNER``: inner radius of the HII region,
+  corresponding to :math:`r_0` in the explanation above, in
   cm; cannot set this and either ``ionparam`` or ``windparam``
 * ``-s, --save``: by default, cloudy_slug will extract line and
   spectral data from the cloudy outputs and store them as described in
   :ref:`ssec-cloudy-output`, then delete the cloudy output files. If
   this option is set, the cloudy output files will NOT be deleted, and
-  will be left in place. WARNING: cloudy's outputs are written in
-  ASCII and are quite voluminous, so only choose this option if you
-  are only running cloudy on a small number of SLUG spectra and/or you
-  are prepared to store hundreds of GB more more.
+  will be left in place, in sub-directory of the working directory
+  called ``cloudy_tmp_MODEL_NAME`` where ``MODEL_NAME`` is the SLUG model
+  name. WARNING: cloudy's outputs are written in ASCII and are quite
+  voluminous, so choose this option only if you are running
+  cloudy on a small number of SLUG spectra and/or you are prepared to
+  store hundreds of GB or more. The data that ``cloudy_slug`` extract
+  are much, much smaller, and (if you do not use ASCII format) are
+  stored in a much more compact form.
+* ``--slugformat SLUGFORMAT``: the format of slug output data to use;
+  valid values are ``ascii``, ``bin``, ``binary``, and ``fits``. By
+  default ``cloudy_slug`` checks for any output whose name and path
+  match the model name and search path, regardless of format.
 * ``--slugpath SLUGPATH``: path to the SLUG output data. If not set,
   cloudy_slug searches for an appropriately-named set of output files
   first in the current working directory, and next in
   ``$SLUG_DIR/output``
 * ``-v, --verbose``: if this option is set, cloudy_slug produces
   verbose output as it runs
-* ``-w, --windparam``: if set, this gives the value of the wind
-  parameter :math:`\Omega`. Default behavior is that :math:`\Omega` is
-  set to a small value.
+* ``-wp WINDPARAM, --windparam WINDPARAM``: if set, this gives the
+  value of the wind parameter :math:`\Omega`. Default behavior is that
+  :math:`\Omega` is set to a small value.
+* ``-wr, --writeparams``: if set, this option causes ``cloudy_slug``
+  to write out a file beginning with ``cloudy_slug.param`` for each
+  cloudy run. This file is written in the same directory used by the
+  save command, and it contains an ASCII printout of the various
+  parameters. This option is only applied if ``--save`` is also set.
 
 .. _ssec-cloudy-output:
 
@@ -401,13 +428,15 @@ and produce a series of new output files, which will be written to the
 same directory where the input SLUG files are located, and using the
 same output mode (ASCII text, raw binary, or FITS -- see
 :ref:`sec-output`). If cloudy_slug is run in
-:ref:`sssec-cloudy-integrated-mode`, the three output files will be
+:ref:`sssec-cloudy-integrated-mode`, the four output files will be
+``MODEL_NAME_integrated_cloudyparams.ext``,
 ``MODEL_NAME_integrated_cloudylines.ext``, 
 ``MODEL_NAME_integrated_cloudyphot.ext``, and 
 ``MODEL_NAME_integrated_cloudyspec.ext``, where the extension ``.ext``
 is one of ``.txt``, ``.bin``, or ``.fits``, depending on the
 ``output_mode``. If cloudy_slug is run in
-:ref:`sssec-cloudy-cluster-mode`, the three output files will be
+:ref:`sssec-cloudy-cluster-mode`, the four output files will be
+``MODEL_NAME_cluster_cloudyparams.ext``,
 ``MODEL_NAME_cluster_cloudylines.ext``, 
 ``MODEL_NAME_cluster_cloudyphot.ext``, and 
 ``MODEL_NAME_cluster_cloudyspec.ext``. All of these output files will
@@ -415,7 +444,57 @@ be read and processed automatically if the outputs are read using
 ``read_integrated`` or ``read_cluster`` in the :ref:`sec-slugpy`
 library.
 
-The format of those files is described below.
+The format of these files is described below.
+
+The ``integrated_cloudyparams`` File
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This file contains the input parameters for the cloudy runs, and
+quantities derived from them. It consists of a series of entries
+containin the following fields:
+
+* ``Trial``: which trial these data are from
+* ``Time``: evolution time at which the output is produced
+* ``Hden``: number density of hydrogen nuclei at the inner edge of the
+  HII region whose structure cloudy computes, in H/cm^3
+* ``R0``: radius of the inner edge of the HII region, in cm
+* ``RS``: Stromgren radius of the HII region, defined as described in
+  :ref:`sssec-cloudy-integrated-mode`; in units of cm
+* ``QH0``: ionizing luminosity input to cloudy, in photons/s
+* ``CovFac``: covering factor used; the ionizing luminosity that is
+  passed to cloudy is ``QH0*covFac``
+* ``U``: volume-averaged ionization parameter :math:`\mathcal{U}` for
+  the HII region, defined as in :ref:`sssec-cloudy-cluster-mode`
+* ``Omega``: wind parameter :math:`\Omega` for the HII region, defined
+  as in :ref:`sssec-cloudy-cluster-mode`
+
+Note that the only parameters that are actually used in the cloudy
+computation are ``R0`` and ``QH0*covFac``; the remainder are derived
+from them.
+
+If the SLUG data input to cloudy_slug were written in ``ascii`` mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy_slug were written in ``fits`` mode,
+the data are written in a FITS file containing a binary table
+extension. The table contains one column whose name corresponds to the
+list of fields above.
+
+If the SLUG data input to cloudy_slug were writtin in ``binary`` mode,
+these data are written in a raw binary file that is formatted as a
+series of records containing the following fields:
+
+* ``Trial`` (numpy ``uint64``)
+* ``Time`` (numpy ``float64``)
+* ``Hden`` (numpy ``float64``)
+* ``R0`` (numpy ``float64``)
+* ``RS`` (numpy ``float64``)
+* ``covFac`` (numpy ``float64``)
+* ``U`` (numpy ``float64``)
+* ``Omega`` (numpy ``float64``)
+
+There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 
 The ``integrated_cloudylines`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -455,7 +534,8 @@ header consisting of
 
 This is followed by a series of entries of the form
 
-* ``Time`` (``double``)
+* ``Trial`` (numpy ``uint64``)
+* ``Time`` (numpy ``float64``)
 * ``LineLum`` (``NLine`` entries of type numpy ``float64``)
 
 There is one such record for each output time, with different trials
@@ -471,6 +551,7 @@ This file contains data on the spectrum produced by interaction
 between the stellar radiation field and the nebula. Each entry in the
 output file contains the folling fields:
 
+* ``Trial``: which trial these data are from
 * ``Time``: evolution time at which the output is produced
 * ``Wavelength``: the wavelength at which the spectrum is evaluated,
   in Angstrom
@@ -521,6 +602,7 @@ follows. The file begins with a header consisting of
 
 and then contains a series of records of the form
 
+* ``Trial`` (numpy ``uint64``)
 * ``Time`` (numpy ``float64``)
 * ``Incident`` (``NWavelength`` entries of numpy ``float64``)
 * ``Transmitted`` (``NWavelength`` entries of numpy ``float64``)
@@ -538,6 +620,7 @@ by the interaction between the stellar radiation field and the HII
 region. The file consists of a series of entries containing the
 following fields:
 
+* ``Trial``: which trial these data are from
 * ``Time``: evolution time at which the output is computed
 * ``PhotFilter1_trans``: photometric value for the *Transmitted*
   radiation field through filter 1, where filter 1 here is the same as
@@ -597,6 +680,64 @@ There is one such record for each output time, with different trials
 ordered sequentially, so that all the times for one trial are output
 before the first time for the next trial.
 
+The ``cluster_cloudyparams`` File
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This file contains the input parameters for the cloudy runs, and
+quantities derived from them. It consists of a series of entries
+containin the following fields:
+
+* ``UniqueID``: a unique identifier number for each cluster that is
+  preserved across times and output files
+* ``Time``: evolution time at which the output is produced
+* ``Hden``: number density of hydrogen nuclei at the inner edge of the
+  HII region whose structure cloudy computes, in H/cm^3
+* ``R0``: radius of the inner edge of the HII region, in cm
+* ``RS``: Stromgren radius of the HII region, defined as described in
+  :ref:`sssec-cloudy-integrated-mode`; in units of cm
+* ``QH0``: ionizing luminosity input to cloudy, in photons/s
+* ``CovFac``: covering factor used; the ionizing luminosity that is
+  passed to cloudy is ``QH0*covFac``
+* ``U``: volume-averaged ionization parameter :math:`\mathcal{U}` for
+  the HII region, defined as in :ref:`sssec-cloudy-cluster-mode`
+* ``Omega``: wind parameter :math:`\Omega` for the HII region, defined
+  as in :ref:`sssec-cloudy-cluster-mode`
+
+Note that the only parameters that are actually used in the cloudy
+computation are ``R0`` and ``QH0*covFac``; the remainder are derived
+from them.
+
+If the SLUG data input to cloudy_slug were written in ``ascii`` mode,
+these data are output as a text file containing a series of columns,
+with different trials separated by lines of dashes.
+
+If the SLUG data input to cloudy_slug were written in ``fits`` mode,
+the data are written in a FITS file containing a binary table
+extension. The table contains one column whose name corresponds to the
+list of fields above.
+
+If the SLUG data input to cloudy_slug were writtin in ``binary`` mode,
+these data are written in a raw binary file that is formatted as a
+a series of records, one for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial. Each record consists of a
+header containing
+
+* ``Time`` (``double``)
+* ``NCluster`` (``std::vector<double>::size_type``, usually ``unsigned long long``): number of non-disrupted clusters present at this time
+
+This is followed by ``NCluster`` entries of the following form:
+
+* ``UniqueID`` (numpy ``uint64``)
+* ``Time`` (numpy ``float64``)
+* ``Hden`` (numpy ``float64``)
+* ``R0`` (numpy ``float64``)
+* ``RS`` (numpy ``float64``)
+* ``covFac`` (numpy ``float64``)
+* ``U`` (numpy ``float64``)
+* ``Omega`` (numpy ``float64``)
+
+
 The ``cluster_cloudylines`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -636,7 +777,10 @@ header consisting of
 * ``LineLabel`` (``NLine`` entries stored as ``ASCII text``): line
   labels listed in ASCII, one label per line
 
-This is followed by a series of records, one for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial. Each record consists of a header containing
+This is followed by a series of records, one for each output time,
+with different trials ordered sequentially, so that all the times for
+one trial are output before the first time for the next trial. Each
+record consists of a header containing
 
 * ``Time`` (``double``)
 * ``NCluster`` (``std::vector<double>::size_type``, usually ``unsigned long long``): number of non-disrupted clusters present at this time

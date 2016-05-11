@@ -25,6 +25,7 @@ The ``integrated_prop`` File
 
 This file contains data on the bulk physical properties of the galaxy as a whole. It consists of a series of entries containing the following fields:
 
+* ``Trial``: which trial these data are from
 * ``Time``: evolution time at which the output is produced
 * ``TargetMass``: target mass of stars in the galaxy up that time, if the IMF and SFH were perfectly sampled
 * ``ActualMass``: actual mass of stars produced in the galaxy up to that time; generally not exactly equal to ``TargetMass`` due to finite sampling of the IMF and SFH
@@ -40,6 +41,7 @@ If ``output_mode`` is ``ascii``, these data are output in a series of columns, w
 
 For ``binary`` output, the file consists of a series of records containing the following variables
 
+* ``Trial`` (``unsigned int``)
 * ``Time`` (``double``)
 * ``TargetMass`` (``double``)
 * ``ActualMass`` (``double``)
@@ -59,6 +61,7 @@ The ``integrated_spec`` File
 
 This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:
 
+* ``Trial``: which trial these data are from
 * ``Time``: evolution time at which the output is produced
 * ``Wavelength``: observed frame wavelength at which the stellar spectrum is evaluated
 * ``L_lambda``: specific luminosity at the specified wavelength, before extinction or nebular effects are applied
@@ -88,6 +91,7 @@ For binary output, the file is formatted as follows. The file starts with
 
 and then contains a series of records in the format
 
+* ``Trial`` (``unsigned int``)
 * ``Time`` (``double``)
 * ``L_lambda`` (``NWavelength`` entries of type ``double``)
 * ``L_lambda_neb`` (``NWavelength_neb`` entries of type ``double``); only present if ``Nebular`` is 1
@@ -103,6 +107,7 @@ The ``integrated_phot`` File
 
 This file contains data on the photometric properties of the entire galaxy, and consists of a series of entries containing the following fields:
 
+* ``Trial``: which trial these data are from
 * ``Time``: evolution time at which the output is produced
 * ``PhotFilter1``: photometric value through filter 1, where filters follow the order in which they are specified by the ``phot_bands`` keyword; units depend on the value of ``phot_mode`` (see :ref:`ssec-phot-keywords`)
 * ``PhotFilter2``
@@ -162,6 +167,7 @@ For binary output, the file is formatted as follows. The file starts with
 
 This is followed by a series of entries of the form
 
+* ``Trial`` (``unsigned int``)
 * ``Time`` (``double``)
 * ``PhotFilter`` (``NFilter`` entries of type ``double``)
 * ``PhotFilter_neb`` (``NFilter`` entries of type ``double``); only present if ``Nebular`` is 1.
@@ -179,6 +185,7 @@ This file contains data on the integrated chemical yield of the entire
 galaxy, and consists of a series of entries containing the following
 fields:
 
+* ``Trial``: which trial these data are from
 * ``Time``: evolution time at which the output is produced
 * ``Name``: name (i.e., atomic symbol) of an isotope being produced
 * ``Z``: atomic number of an isotope being produced
@@ -208,6 +215,7 @@ This is followed by ``NIso`` entries of the form
 
 The remainder of the file contains records of the from
 
+* ``Trial`` (``unsigned int``)
 * ``Time`` (``double``)
 * ``Yield`` (``double[NIso]``)
 

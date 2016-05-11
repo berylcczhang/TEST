@@ -48,26 +48,26 @@
 <li><p class="first">Using <code class="docutils literal"><span class="pre">Make</span></code>. If you compile the main slug code by doing <code class="docutils literal"><span class="pre">Make</span></code> in the main slug directory, the c slugpy extensions will be build automatically. Once that is done, you will be able to use slugpy just by importing it, provided that the slugpy directory is in your python import path.</p>
 </li>
 <li><p class="first">Using <code class="docutils literal"><span class="pre">setup.py</span></code>. The slug distribution comes with a <code class="docutils literal"><span class="pre">setup.py</span></code> script that follows the standard python package convensions. Just do:</p>
-<div class="highlight-rest"><div class="highlight"><pre>python setup.py build
+<div class="highlight-rest"><div class="highlight"><pre><span></span>python setup.py build
 </pre></div>
 </div>
 </li>
 </ol>
 <p>to build the c extensions in place, which will let you import slugpy from the directory where it is located. Alternately, do:</p>
-<div class="highlight-rest"><div class="highlight"><pre>python setup.py install
+<div class="highlight-rest"><div class="highlight"><pre><span></span>python setup.py install
 </pre></div>
 </div>
 <p>to install as a site package. Installing as a site package often requires root permissions, in which case you should do:</p>
-<div class="highlight-rest"><div class="highlight"><pre>sudo python setup.py install
+<div class="highlight-rest"><div class="highlight"><pre><span></span>sudo python setup.py install
 </pre></div>
 </div>
 <p>or:</p>
-<div class="highlight-rest"><div class="highlight"><pre>python setup.py install --user
+<div class="highlight-rest"><div class="highlight"><pre><span></span>python setup.py install --user
 </pre></div>
 </div>
 <p>instead.</p>
 <p>A note on compiling slugpy with setup.py: the slugpy c extensions require the <a class="reference external" href="http://www.gnu.org/software/gsl/">GNU Scientific Library</a>; to build or install slugpy, the appropriate headers must be in your default include path, and the appropriate libraries in your default link path. If they are not, you can tell setup where they are located by creating a file named <code class="docutils literal"><span class="pre">setup.cfg</span></code> in the slug2 directory, which contains the lines:</p>
-<div class="highlight-rest"><div class="highlight"><pre>[build_ext]
+<div class="highlight-rest"><div class="highlight"><pre><span></span>[build_ext]
 include_dirs=/PATH/TO/GSL/HEADER
 library_dirs=/PATH/TO/GSL/LIBRARIES
 </pre></div>
@@ -77,7 +77,7 @@ library_dirs=/PATH/TO/GSL/LIBRARIES
 <div class="section" id="basic-usage">
 <h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
 <p>The most common task is to read a set of SLUG outputs into memory so that they can be processed. To read the data from a SLUG run using slugpy, one can simply do the following:</p>
-<div class="highlight-rest"><div class="highlight"><pre>from slugpy import *
+<div class="highlight-rest"><div class="highlight"><pre><span></span>from slugpy import *
 idata = read_integrated(&#39;SLUG_MODEL_NAME&#39;)
 cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 </pre></div>
@@ -515,7 +515,7 @@ notation</dd>
 <dd>luminosity of each line at each time for each trial, in erg/s</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_cloudyphot file)</p>
-<dl class="last docutils">
+<dl class="docutils">
 <dt>cloudy_filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
 <dd>a list giving the name for each filter</dd>
 <dt>cloudy_filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
@@ -552,6 +552,33 @@ transmitted plus emitted light (i.e., the light coming
 directly from the stars after absorption by the HII region,
 plus the diffuse light emitted by the HII region); units are as
 indicated in the units field</dd>
+</dl>
+<p>(Present if the run being read contains a cluster_cloudyparams file)</p>
+<dl class="last docutils">
+<dt>cloudy_hden <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>number density of H nuclei at the inner edge of the ionized
+region simulated by cloudy</dd>
+<dt>cloudy_r0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>inner radius of the ionized region simulated by cloudy</dd>
+<dt>cloudy_rS <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>outer radius of the ionized region simulated by cloudy (approximate!)</dd>
+<dt>cloudy_QH0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>ionizing luminosity used in the cloudy computation</dd>
+<dt>cloudy_covFac <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>covering factor assumed in the cloudy computation; only a
+fraction covFac of the ionizing photons are assumed to
+produce emission within the HII region, while the remainder
+are assumed to escape</dd>
+<dt>cloudy_U <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>volume-averaged ionization parameter of the HII region
+simulated by cloudy; note that this value is approximate,
+not exact, and the approximation can be very poor if
+radiation pressure effects are significant</dd>
+<dt>cloudy_Omega <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yeh &amp; Matzner (2012) wind parameter for the HII region
+simulated by cloudy; as with U, this value is approximate,
+and the approximation is valid only if radiation pressure
+effects are small</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
@@ -1091,7 +1118,7 @@ notation</dd>
 <dd>luminosity of each line at each time for each trial, in erg/s</dd>
 </dl>
 <p>(Only present if an integrated_cloudyphot file is found)</p>
-<dl class="last docutils">
+<dl class="docutils">
 <dt>cloudy_filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
 <dd>a list giving the name for each filter</dd>
 <dt>cloudy_filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
@@ -1128,6 +1155,33 @@ the transmitted plus emitted light (i.e., the light coming
 directly from the stars after absorption by the HII region,
 plus the diffuse light emitted by the HII region); units are as
 indicated in the units field</dd>
+</dl>
+<p>(Only present if an integrated_cloudyparams file is found)</p>
+<dl class="last docutils">
+<dt>cloudy_hden <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>number density of H nuclei at the inner edge of the ionized
+region simulated by cloudy</dd>
+<dt>cloudy_r0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>inner radius of the ionized region simulated by cloudy</dd>
+<dt>cloudy_rS <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>outer radius of the ionized region simulated by cloudy (approximate!)</dd>
+<dt>cloudy_QH0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>ionizing luminosity used in the cloudy computation</dd>
+<dt>cloudy_covFac <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>covering factor assumed in the cloudy computation; only a
+fraction covFac of the ionizing photons are assumed to
+produce emission within the HII region, while the remainder
+are assumed to escape</dd>
+<dt>cloudy_U <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>volume-averaged ionization parameter of the HII region
+simulated by cloudy; note that this value is approximate,
+not exact, and the approximation can be very poor if
+radiation pressure effects are significant</dd>
+<dt>cloudy_Omega <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yeh &amp; Matzner (2012) wind parameter for the HII region
+simulated by cloudy; as with U, this value is approximate,
+and the approximation is valid only if radiation pressure
+effects are small</dd>
 </dl>
 </dd>
 </dl>
@@ -1493,6 +1547,38 @@ it fails again try FITS files.</dd>
 </dl>
 </dd></dl>
 
+<dl class="class">
+<dt id="slugpy.slug_pdf">
+<em class="property">class </em><code class="descclassname">slugpy.</code><code class="descname">slug_pdf</code><span class="sig-paren">(</span><em>pdffile=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/slug_pdf.html#slug_pdf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.slug_pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that implements the SLUG PDF drawing method. This class
+contains a method to parse slug-formatted PDF files and then draw
+values from the PDFs they specify. This class is thread-safe, in
+the sense that if multiple slug_pdf instances are instantiated in
+different threads, the random streams they generate will not be
+identical.</p>
+<dl class="method">
+<dt id="slugpy.slug_pdf.draw">
+<code class="descname">draw</code><span class="sig-paren">(</span><em>*d</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/slug_pdf.html#slug_pdf.draw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.slug_pdf.draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw from the PDF</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>d0, d1, ..., dn <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd>Dimensions of the returned array; if left unspecified, a
+single python float is returned</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span></dt>
+<dd>One or more numbers drawn from the PDF</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="slugpy.write_cluster">
 <code class="descclassname">slugpy.</code><code class="descname">write_cluster</code><span class="sig-paren">(</span><em>data</em>, <em>model_name</em>, <em>fmt</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/write_cluster.html#write_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.write_cluster" title="Permalink to this definition">¶</a></dt>
@@ -1600,7 +1686,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

@@ -56,6 +56,7 @@
 <h2>The <code class="docutils literal"><span class="pre">integrated_prop</span></code> File<a class="headerlink" href="#the-integrated-prop-file" title="Permalink to this headline">¶</a></h2>
 <p>This file contains data on the bulk physical properties of the galaxy as a whole. It consists of a series of entries containing the following fields:</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code>: which trial these data are from</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code>: evolution time at which the output is produced</li>
 <li><code class="docutils literal"><span class="pre">TargetMass</span></code>: target mass of stars in the galaxy up that time, if the IMF and SFH were perfectly sampled</li>
 <li><code class="docutils literal"><span class="pre">ActualMass</span></code>: actual mass of stars produced in the galaxy up to that time; generally not exactly equal to <code class="docutils literal"><span class="pre">TargetMass</span></code> due to finite sampling of the IMF and SFH</li>
@@ -69,6 +70,7 @@
 <p>If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">ascii</span></code>, these data are output in a series of columns, with different trials separated by lines of dashes. If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">fits</span></code>, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
 <p>For <code class="docutils literal"><span class="pre">binary</span></code> output, the file consists of a series of records containing the following variables</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">TargetMass</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">ActualMass</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
@@ -85,6 +87,7 @@
 <span id="ssec-int-spec-file"></span><h2>The <code class="docutils literal"><span class="pre">integrated_spec</span></code> File<a class="headerlink" href="#the-integrated-spec-file" title="Permalink to this headline">¶</a></h2>
 <p>This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code>: which trial these data are from</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code>: evolution time at which the output is produced</li>
 <li><code class="docutils literal"><span class="pre">Wavelength</span></code>: observed frame wavelength at which the stellar spectrum is evaluated</li>
 <li><code class="docutils literal"><span class="pre">L_lambda</span></code>: specific luminosity at the specified wavelength, before extinction or nebular effects are applied</li>
@@ -112,6 +115,7 @@
 </ul>
 <p>and then contains a series of records in the format</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">L_lambda</span></code> (<code class="docutils literal"><span class="pre">NWavelength</span></code> entries of type <code class="docutils literal"><span class="pre">double</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">L_lambda_neb</span></code> (<code class="docutils literal"><span class="pre">NWavelength_neb</span></code> entries of type <code class="docutils literal"><span class="pre">double</span></code>); only present if <code class="docutils literal"><span class="pre">Nebular</span></code> is 1</li>
@@ -124,6 +128,7 @@
 <span id="ssec-int-phot-file"></span><h2>The <code class="docutils literal"><span class="pre">integrated_phot</span></code> File<a class="headerlink" href="#the-integrated-phot-file" title="Permalink to this headline">¶</a></h2>
 <p>This file contains data on the photometric properties of the entire galaxy, and consists of a series of entries containing the following fields:</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code>: which trial these data are from</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code>: evolution time at which the output is produced</li>
 <li><code class="docutils literal"><span class="pre">PhotFilter1</span></code>: photometric value through filter 1, where filters follow the order in which they are specified by the <code class="docutils literal"><span class="pre">phot_bands</span></code> keyword; units depend on the value of <code class="docutils literal"><span class="pre">phot_mode</span></code> (see <a class="reference internal" href="parameters.html#ssec-phot-keywords"><span>Photometric Filter Keywords</span></a>)</li>
 <li><code class="docutils literal"><span class="pre">PhotFilter2</span></code></li>
@@ -181,6 +186,7 @@ indicating that it was enabled</li>
 </ul>
 <p>This is followed by a series of entries of the form</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">PhotFilter</span></code> (<code class="docutils literal"><span class="pre">NFilter</span></code> entries of type <code class="docutils literal"><span class="pre">double</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">PhotFilter_neb</span></code> (<code class="docutils literal"><span class="pre">NFilter</span></code> entries of type <code class="docutils literal"><span class="pre">double</span></code>); only present if <code class="docutils literal"><span class="pre">Nebular</span></code> is 1.</li>
@@ -195,6 +201,7 @@ indicating that it was enabled</li>
 galaxy, and consists of a series of entries containing the following
 fields:</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code>: which trial these data are from</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code>: evolution time at which the output is produced</li>
 <li><code class="docutils literal"><span class="pre">Name</span></code>: name (i.e., atomic symbol) of an isotope being produced</li>
 <li><code class="docutils literal"><span class="pre">Z</span></code>: atomic number of an isotope being produced</li>
@@ -223,6 +230,7 @@ column specifying the trial number for each entry.</p>
 </ul>
 <p>The remainder of the file contains records of the from</p>
 <ul class="simple">
+<li><code class="docutils literal"><span class="pre">Trial</span></code> (<code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">int</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">Time</span></code> (<code class="docutils literal"><span class="pre">double</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">Yield</span></code> (<code class="docutils literal"><span class="pre">double[NIso]</span></code>)</li>
 </ul>
@@ -487,7 +495,7 @@ before the first time for the next trial.</p>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
