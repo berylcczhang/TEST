@@ -120,7 +120,8 @@ parser.add_argument('-wp', '--windparam', default=None, type=str,
                     help='Yeh & Matzner wind parameter Omega; can be a PDF')
 parser.add_argument('-wr', '--writeparams', default=False,
                     action='store_true',
-                    help='write out all run parameters')
+                    help='write out run parameters in the cloudy'+
+                    'output directory; only applied if --save is set')
 args = parser.parse_args()
 cwd = os.getcwd()
 
@@ -303,16 +304,15 @@ if compute_lines:
             linelum.append([])
             for i in range(args.start_spec, end_spec):
                 linelum[j].append(None)
-if args.writeparams:
-    cloudy_params = []
-    if args.clustermode:
-        for i in range(end_spec-args.start_spec):
-            cloudy_params.append(None)
-    else:
-        for j in range(data.spec.shape[-2]):
-            cloudy_params.append([])
-            for i in range(args.start_spec, end_spec):
-                cloudy_params[j].append(None)
+cloudy_params = []
+if args.clustermode:
+    for i in range(end_spec-args.start_spec):
+        cloudy_params.append(None)
+else:
+    for j in range(data.spec.shape[-2]):
+        cloudy_params.append([])
+        for i in range(args.start_spec, end_spec):
+            cloudy_params[j].append(None)
 
 # Step 5: queue up the SLUG runs
 slug_queue = Queue()
@@ -333,6 +333,7 @@ def do_cloudy_run(thread_num, q):
     global data
     global basename
     global tmpdirname
+    global cloudy_params
     if compute_continuum:
         global cloudywl
         global cloudyspec
@@ -341,8 +342,6 @@ def do_cloudy_run(thread_num, q):
         global linelist
         global linewl
         global linelum
-    if args.writeparams:
-        global cloudy_params
 
     # Terminate when queue empties
     while not q.empty():
@@ -385,7 +384,8 @@ def do_cloudy_run(thread_num, q):
                       "time {:d} of {:d}").\
                       format(trial+1, data.spec.shape[-1],
                              time+1, data.spec.shape[-2])
-            if qH0 < data.qH0min:
+            skip = False
+            if qH0 < args.qH0min:
                 skip = True
                 outstr = ("skipping trial {:d} of {:d}, " +
                           "time {:d} of {:d} (QH0 < {:e})").\
@@ -530,25 +530,42 @@ def do_cloudy_run(thread_num, q):
         if not skip:
             fpout.write("Q(H) = {0:f}\n".format(np.log10(qH0*coveringfac)))
 
-        # Write the spectral shape into the cloudy input file,
-        # prepending and appending low values outside the range
-        # covered by SLUG to make cloudy happy. Make sure to handle
-        # zeros gracefully.
+        # Write the spectral shape into the cloudy input file. Cloudy
+        # is very particular about the format of these data, so this
+        # has to be done with a bit of care to correctly handle the
+        # following issues:
+        # 1. We need to prepend and append low fluxes for frequencies
+        #    outside the range covered by SLUG to make cloudy happy.
+        # 2. We need to make sure to handle zeros fluxes gracefully,
+        #    so that we don't feed cloudy NaNs.
+        # 3. We need to check to make sure that we don't put
+        #    the same frequency twice in the cloudy iput. This can
+        #    occur if the SLUG output is in ASCII, and does not
+        #    contain enough digits of precision for two adjacent
+        #    wavelengths to be separated. Should never occur for SLUG
+        #    output in FITS or binary format.
+        # 4. We have to write out the frequencies to an absurb number
+        #    of digits of precision, to prevent cases where two
+        #    adjacent frequencies are close enough that they would
+        #    appear identical when printed out as ASCII in the cloudy
+        #    input file.
         if not skip:
             specclean = np.copy(spec)
             specclean[spec == 0.0] = np.amin(spec[spec > 0])*1e-4
             logL_nu = np.log10(specclean*c/freq**2)
             fpout.write("interpolate")
-            fpout.write(" ({0:f} {1:f})".format(7.51, 
+            fpout.write(" ({0:15.12f} {1:f})".format(7.51, 
                                                 np.amin(logL_nu)-4))
-            fpout.write(" ({0:f} {1:f})".format(logfreq[-1]-0.01, 
+            fpout.write(" ({0:15.12f} {1:f})".format(logfreq[-1]-0.01, 
                                                 np.amin(logL_nu)-4))
             for i in range(len(logL_nu)):
                 if i % 4 == 0:
                     fpout.write("\ncontinue")
-                fpout.write(" ({0:f} {1:f})".format(logfreq[-i-1],
-                                                  logL_nu[-i-1]))
-            fpout.write("\ncontinue ({0:f} {1:f})".
+                if logfreq[-i-1] == logfreq[-(i-1)-1]:
+                    continue
+                fpout.write(" ({0:15.12f} {1:f})".format(logfreq[-i-1],
+                                                         logL_nu[-i-1]))
+            fpout.write("\ncontinue ({0:15.12f} {1:f})".
                         format(logfreq[0]+0.01, 
                                np.amin(logL_nu)-4))
             fpout.write(" ({0:f} {1:f})\n".format(22.4, 
@@ -561,36 +578,32 @@ def do_cloudy_run(thread_num, q):
         if args.verbose:
             print("thread {0:d}: ".format(thread_num+1) + outstr)
 
-        # If we're saving parameters, put them in a dict now to write
-        # out later
-        if args.writeparams:
-            params = { 'hden' : hden_, 'r0' : r0, 'rS' : rstrom,
-                       'QH0' : qH0*coveringfac,
-                       'coveringfac' : coveringfac }
+        # Save parameters
+        params = { 'hden' : hden_, 'r0' : r0, 'rS' : rstrom,
+                   'QH0' : qH0*coveringfac,
+                   'coveringfac' : coveringfac }
+        if args.windparam is not None:
+            params['windparam'] = windparam
+        else:
+            params['windparam'] = 0.0
+        if args.ionparam is not None:
+            params['ionparam'] = ionparam
+        else:
             if args.windparam is not None:
-                params['windparam'] = windparam
+                fac = (1.0 + windparam)**(4./3.) - \
+                      windparam**(1./3.) * \
+                      (4./3.+windparam)
             else:
-                params['windparam'] = 0.0
-            if args.ionparam is not None:
-                params['ionparam'] = ionparam
-            else:
-                if args.windparam is not None:
-                    fac = (1.0 + windparam)**(4./3.) - \
-                          windparam**(1./3.) * \
-                          (4./3.+windparam)
-                else:
-                    fac = 1.0
-                params['ionparam'] \
-                    = (81*alphaB**2*hden*qH0 /
-                       (256*1.1*np.pi*c**3))**(1./3.) * fac**3
-            if args.clustermode:
-                params['age'] \
-                    = data.time[cluster_num] - data.form_time[cluster_num]
-                params['id'] = data.id[cluster_num]
-                params['trial'] = data.trial[cluster_num]
-                params['time'] = data.time[cluster_num]
-            else:
-                params['time'] = data.time['time']
+                fac = 1.0
+            params['ionparam'] \
+                = (81*alphaB**2*hden*qH0 /
+                   (256*1.1*np.pi*c**3))**(1./3.) * fac**3
+        if args.clustermode:
+            params['id'] = data.id[cluster_num]
+            params['trial'] = data.trial[cluster_num]
+            params['time'] = data.time[cluster_num]
+        else:
+            params['time'] = data.time[time]
             
         # Launch the cloudy process and wait for it to complete
         if not skip:
@@ -670,19 +683,18 @@ def do_cloudy_run(thread_num, q):
                 os.remove(cloudy_in_fname)
                 os.remove(cloudy_out_fname)
 
-        # Store the run parameters, and write them out, if requested
-        if args.writeparams:
-            if args.clustermode:
-                cloudy_params[cluster_num] = params
-            else:
-                cloudy_params[time][trial] = params
-            if args.save:
-                param_fname = osp.join(cwd, tmpdirname,
-                                       'cloudy_slug.param'+ext)
-                fpp = open(param_fname, 'w')
-                for k in params.keys():
-                    fpp.write(str(k) + '    ' + str(params[k]) + '\n')
-                fpp.close()
+        # Store the run parameters, and write them out if requested
+        if args.clustermode:
+            cloudy_params[cluster_num] = params
+        else:
+            cloudy_params[time][trial] = params
+        if args.writeparams and args.save:
+            param_fname = osp.join(cwd, tmpdirname,
+                                   'cloudy_slug.param'+ext)
+            fpp = open(param_fname, 'w')
+            for k in params.keys():
+                fpp.write(str(k) + '    ' + str(params[k]) + '\n')
+            fpp.close()
             
         # Declare that we're done
         q.task_done()
@@ -903,53 +915,61 @@ if compute_continuum:
 
 
 # Step 12: write cloudy parameters to file
-if args.writeparams:
-    if args.clustermode:
-        # Build namedtuple
-        cloudyparams_type \
-            = namedtuple('cluster_cloudyparams',
-                         ['id', 'trial', 'time',
-                          'cloudy_hden', 'cloudy_r0', 'cloudy_rS',
-                          'cloudy_QH0', 'cloudy_covFac',
-                          'cloudy_U', 'cloudy_Omega'])
-        cloudyparams_data \
-            = cloudyparams_type(
-                np.array([p['id'] for p in cloudy_params], dtype=int),
-                np.array([p['trial'] for p in cloudy_params], dtype=int),
-                np.array([p['time'] for p in cloudy_params]),
-                np.array([p['hden'] for p in cloudy_params]),
-                np.array([p['r0'] for p in cloudy_params]),
-                np.array([p['rS'] for p in cloudy_params]),
-                np.array([p['QH0'] for p in cloudy_params]),
-                np.array([p['coveringfac'] for p in cloudy_params]),
-                np.array([p['ionparam'] for p in cloudy_params]),
-                np.array([p['windparam'] for p in cloudy_params]))
-        # Write to file
-        write_cluster_cloudyparams(
-            cloudyparams_data, 
-            osp.join(outpath,args.slug_model_name),
-            file_info['format'])
-    else:
-        # Build namedtuple
-        cloudyparams_type \
-            = namedtuple('integrated_cloudyparams',
-                         ['time',
-                          'hden', 'r0', 'QH0', 'covFac',
-                          'U', 'Omega'])
-        cloudyparams_data \
-            = cloudyparams_type(
-                np.array([p['time'] for p in cloudy_params]),
-                np.array([p['hden'] for p in cloudy_params]),
-                np.array([p['r0'] for p in cloudy_params]),
-                np.array([p['QH0'] for p in cloudy_params]),
-                np.array([p['coveringfac'] for p in cloudy_params]),
-                np.array([p['ionparam'] for p in cloudy_params]),
-                np.array([p['windparam'] for p in cloudy_params]))
-        # Write to file
-        write_integrated_cloudyparams(
-            cloudyparams_data, 
-            osp.join(outpath,args.slug_model_name),
-            file_info['format'])
+if args.clustermode:
+    # Build namedtuple
+    cloudyparams_type \
+        = namedtuple('cluster_cloudyparams',
+                     ['id', 'trial', 'time',
+                      'cloudy_hden', 'cloudy_r0', 'cloudy_rS',
+                      'cloudy_QH0', 'cloudy_covFac',
+                      'cloudy_U', 'cloudy_Omega'])
+    cloudyparams_data \
+        = cloudyparams_type(
+            np.array([p['id'] for p in cloudy_params], dtype=int),
+            np.array([p['trial'] for p in cloudy_params], dtype=int),
+            np.array([p['time'] for p in cloudy_params]),
+            np.array([p['hden'] for p in cloudy_params]),
+            np.array([p['r0'] for p in cloudy_params]),
+            np.array([p['rS'] for p in cloudy_params]),
+            np.array([p['QH0'] for p in cloudy_params]),
+            np.array([p['coveringfac'] for p in cloudy_params]),
+            np.array([p['ionparam'] for p in cloudy_params]),
+            np.array([p['windparam'] for p in cloudy_params]))
+    # Write to file
+    write_cluster_cloudyparams(
+        cloudyparams_data, 
+        osp.join(outpath,args.slug_model_name),
+        file_info['format'])
+else:
+    # Build namedtuple
+    cloudyparams_type \
+        = namedtuple('integrated_cloudyparams',
+                     ['time',
+                      'cloudy_hden', 'cloudy_r0', 'cloudy_rS',
+                      'cloudy_QH0', 'cloudy_covFac',
+                      'cloudy_U', 'cloudy_Omega'])
+    cloudyparams_data \
+        = cloudyparams_type(
+            np.array([p[0]['time'] for p in cloudy_params]),
+            np.array([[q['hden'] for q in p]
+                      for p in cloudy_params]),
+            np.array([[q['r0'] for q in p]
+                      for p in cloudy_params]),
+            np.array([[q['rS'] for q in p]
+                      for p in cloudy_params]),
+            np.array([[q['QH0'] for q in p]
+                      for p in cloudy_params]),
+            np.array([[q['coveringfac'] for q in p]
+                      for p in cloudy_params]),
+            np.array([[q['ionparam'] for q in p]
+                      for p in cloudy_params]),
+            np.array([[q['windparam'] for q in p]
+                      for p in cloudy_params]))
+    # Write to file
+    write_integrated_cloudyparams(
+        cloudyparams_data, 
+        osp.join(outpath,args.slug_model_name),
+        file_info['format'])
 
 # Step 13: final cleanup
 if not args.save:

@@ -395,6 +395,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         out_data = [cloudylines.id, cloudylines.trial, cloudylines.time]
     elif cloudyphot is not None:
         out_data = [cloudyphot.id, cloudyphot.trial, cloudyphot.time]
+    elif cloudyparams is not None:
+        out_data = [cloudyparams.id, cloudyparams.trial, cloudyparams.time]
     else:
         raise IOError("unable to open any cluster files for run " +
                       model_name)

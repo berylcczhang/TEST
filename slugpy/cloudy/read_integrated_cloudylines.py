@@ -8,7 +8,7 @@ import struct
 from ..slug_open import slug_open
 
 def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
-                               verbose=False, read_info=None):
+                                verbose=False, read_info=None):
     """
     Function to read a SLUG2 integrated_cloudylines file.
 

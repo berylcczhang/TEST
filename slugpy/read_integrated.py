@@ -3,13 +3,14 @@ Function to read all integrated data for a SLUG2 run.
 """
 
 from collections import namedtuple
-from read_integrated_prop import read_integrated_prop
-from read_integrated_phot import read_integrated_phot
-from read_integrated_spec import read_integrated_spec
-from read_integrated_yield import read_integrated_yield
-from cloudy.read_integrated_cloudyphot import read_integrated_cloudyphot
-from cloudy.read_integrated_cloudylines import read_integrated_cloudylines
-from cloudy.read_integrated_cloudyspec import read_integrated_cloudyspec
+from .read_integrated_prop import read_integrated_prop
+from .read_integrated_phot import read_integrated_phot
+from .read_integrated_spec import read_integrated_spec
+from .read_integrated_yield import read_integrated_yield
+from .cloudy.read_integrated_cloudyparams import read_integrated_cloudyparams
+from .cloudy.read_integrated_cloudyphot import read_integrated_cloudyphot
+from .cloudy.read_integrated_cloudylines import read_integrated_cloudylines
+from .cloudy.read_integrated_cloudyspec import read_integrated_cloudyspec
 
 def read_integrated(model_name, output_dir=None, fmt=None,
                     nofilterdata=False, photsystem=None, 
@@ -310,6 +311,18 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     except IOError:
         cloudyphot = None
 
+    # Read cloudy parameters
+    try:
+        cloudyparams \
+            = read_integrated_cloudyparams(
+                model_name, output_dir, fmt=fmt,
+                verbose=verbose, read_info=read_info)
+        if read_info is not None:
+            read_info['cloudylines_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        cloudyparams = None
+
     # Read yield data
     try:
         yld = read_integrated_yield(model_name, output_dir=output_dir,
@@ -337,6 +350,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
         out_data = [cloudylines.time]
     elif cloudyphot is not None:
         out_data = [cloudyphot.time]
+    elif cloudyparams is not None:
+        out_data = [cloudyparams.time]
     else:
         raise IOError("unable to open any integrated files for run " +
                       model_name)
@@ -361,6 +376,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     if cloudyphot is not None:
         out_fields = out_fields + list(cloudyphot._fields[1:])
         out_data = out_data + list(cloudyphot[1:])
+    if cloudyparams is not None:
+        out_fields = out_fields + list(cloudyparams._fields[1:])
+        out_data = out_data + list(cloudyparams[1:])
     out_type = namedtuple('integrated_data', out_fields)
     out = out_type._make(out_data)
 

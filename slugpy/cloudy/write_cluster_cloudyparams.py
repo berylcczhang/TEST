@@ -1,5 +1,5 @@
 """
-This fucntion write out the parameters that were used for a cloudy_slug run.
+This fucntion writes out the parameters that were used for a cloudy_slug run.
 """
 
 import numpy as np
@@ -19,8 +19,8 @@ def write_cluster_cloudyparams(data, model_name, fmt):
     Parameters
        data : namedtuple
           Cluster cloudy parameter data; a namedtuple containing the
-          fields id, trial, time, cloudy_hden, cloudy_r0, cloudy_rS, 
-          cloudy_QH0, cloudy_covFac, cloudy_U, and cloudy_Omega
+          fields id, trial, time, cloudy_age, cloudy_hden, cloudy_r0, 
+          cloudy_rS, cloudy_QH0, cloudy_covFac, cloudy_U, and cloudy_Omega
        model_name : string
           Base file name to give the model to be written. Can include a
           directory specification if desired.
@@ -49,7 +49,7 @@ def write_cluster_cloudyparams(data, model_name, fmt):
 
         # Write header lines
         fp.write(("{:<14s}"*9).
-                 format('UniqueID', 'Time', 'hden', 'r0', 'rS',
+                 format('UniqueID', 'Time', 'Hden', 'R0', 'RS',
                         'QH0', 'CovFac', 'U', 'Omega') + "\n")
         fp.write(("{:<14s}"*9).
                  format('', '(yr)', '(cm^-3)', '(cm)', '(s^-1)',
@@ -69,7 +69,7 @@ def write_cluster_cloudyparams(data, model_name, fmt):
             fp.write(("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   " +
                       "{:11.5e}   {:11.5e}   {:11.5e}   " +
                       "{:11.5e}   {:11.5e}\n").format(
-                          data.id[i], data.time[i],
+                          data.id[i], data.time[i], 
                           data.cloudy_hden[i], data.cloudy_r0[i],
                           data.cloudy_rS[i],
                           data.cloudy_QH0[i], data.cloudy_covFac[i],
@@ -131,11 +131,11 @@ def write_cluster_cloudyparams(data, model_name, fmt):
                                 unit="", array=data.id))
         cols.append(fits.Column(name="Time", format="1D",
                                 unit="yr", array=data.time))
-        cols.append(fits.Column(name="hden", format="1D",
+        cols.append(fits.Column(name="Hden", format="1D",
                                 unit="cm^-3", array=data.cloudy_hden))
-        cols.append(fits.Column(name="r0", format="1D",
+        cols.append(fits.Column(name="R0", format="1D",
                                 unit="cm", array=data.cloudy_r0))
-        cols.append(fits.Column(name="rS", format="1D",
+        cols.append(fits.Column(name="RS", format="1D",
                                 unit="cm", array=data.cloudy_rS))
         cols.append(fits.Column(name="QH0",
                                 format="1D",
