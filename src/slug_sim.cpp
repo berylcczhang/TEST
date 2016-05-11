@@ -931,7 +931,14 @@ void slug_sim::open_cluster_prop() {
       //Loop over the variable parameters
       for (int p = 0; p<imf_vpdraws.size();p++)
       {
+#ifndef __INTEL_COMPILER
         cluster_prop_file << setw(14) << left << "VP"+ std::to_string(p);
+#else
+	// This is needed to fix a deficiency in the intel implementation of
+	// the C++11 STL, which fails to define std::to_string(int)
+	cluster_prop_file << setw(14) << left << "VP" +
+	  std::to_string(static_cast<long long>(p));
+#endif
       }
     
     }
@@ -1038,7 +1045,13 @@ void slug_sim::open_cluster_prop() {
       //Loop over the variable parameters
       for (int p = 0; p<imf_vpdraws.size();p++)
       {
+#ifndef __INTEL_COMPILER
         ttype_str.push_back("VP"+std::to_string(p));
+#else
+	// This is needed to fix a deficiency in the intel implementation of
+	// the C++11 STL, which fails to define std::to_string(int)
+        ttype_str.push_back("VP"+std::to_string(static_cast<long long>(p)));
+#endif
         tform_str.push_back("1D");
         tunit_str.push_back("");
         ncol++; 
