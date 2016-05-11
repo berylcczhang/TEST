@@ -1,11 +1,13 @@
 # Makefile for the slug code, v2
-.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug
+.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe
 
 MACHINE	=
 FITS ?= ENABLE_FITS
 GSLVERSION ?= 2
 
 all: slug bayesphot
+
+exe: slug
 
 debug: slug-debug bayesphot-debug
 
