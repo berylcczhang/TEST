@@ -133,7 +133,7 @@ ApJ, 757, 108)
 where :math:`r_{\mathrm{II}}` is the outer radius of the HII region.
 Under the assumption that the gas density is uniform, one can show
 that this condition is satisfied if the inner radius is
-:math:`r_i = \Omega^{1/3} r_{\mathrm{St}}`.
+:math:`r_0 = \Omega^{1/3} r_{\mathrm{St}}`.
 
 
 .. _sssec-cloudy-cluster-mode:
@@ -248,7 +248,7 @@ density are related via
 
 The density :math:`n_{\mathrm{II}}` is determined implicitly from this
 relation, and the inner radius is then given by
-:math:`r_i = \Omega^{1/3} r_{\mathrm{St}}`,
+:math:`r_0 = \Omega^{1/3} r_{\mathrm{St}}`,
 where :math:`r_{\mathrm{St}}` is evaluated using density
 :math:`n_{\mathrm{II}}`.
 
