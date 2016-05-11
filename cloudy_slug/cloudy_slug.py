@@ -22,6 +22,7 @@ import subprocess
 import sys
 from threading import Thread
 from time import sleep
+import warnings
 try:
     from slugpy import *    # If slugpy is already in our path
     from slugpy.cloudy import *
