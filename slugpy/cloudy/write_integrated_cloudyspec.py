@@ -3,7 +3,6 @@ This function writes out integrated spectra computed by cloudy from a slug
 run.
 """
 
-from collections import namedtuple
 import numpy as np
 try:
     import astropy.io.fits as fits
@@ -122,8 +121,8 @@ def write_integrated_cloudyspec(data, model_name, fmt):
                 tmp = np.copy(data.cloudy_trans_emit[:,j,i])
                 fp.write(tmp)
 
-            # Close file
-            fp.close()
+        # Close file
+        fp.close()
 
     elif fmt == 'fits':
 
