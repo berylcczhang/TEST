@@ -115,6 +115,9 @@ parser.add_argument('--slugformat', default=None, type=str,
 parser.add_argument("--slugpath", default=None, type=str,
                     help="path to the SLUG output data (default: "+
                     "checks cwd, then $SLUG_DIR/output)")
+parser.add_argument('-t', '--tmpdir', default=None, type=str,
+                    help="location of directory in which to store "+
+                    "temporary files")
 parser.add_argument('-v', '--verbose', action='store_true',
                     default=False, help="produce verbose output")
 parser.add_argument('-wp', '--windparam', default=None, type=str,
@@ -232,7 +235,10 @@ if args.clustermode and 'form_time' not in data._fields:
 freq = c/(data.wl*1e-8)           # Frequency in Hz
 logfreq = np.log10(freq)          # Log frequency in Hz
 basename = osp.basename(args.slug_model_name)
-tmpdirname = 'cloudy_tmp_'+basename
+if args.tmpdir is None:
+    tmpdirname = osp.join(cwd, 'cloudy_tmp_'+basename)
+else:
+    tmpdirname = args.tmpdir
 if args.clustermode:
     if args.end_spec != -1:
         end_spec = min(args.end_spec, len(data.id))
@@ -397,7 +403,7 @@ def do_cloudy_run(thread_num, q):
         # Write out the cloudy input file header, substituting a
         # custom name for OUTPUT_FILENAME
         if not skip:
-            cloudy_in_fname = osp.join(cwd, tmpdirname, 'cloudy.in'+ext)
+            cloudy_in_fname = osp.join(tmpdirname, 'cloudy.in'+ext)
             fpout = open(cloudy_in_fname, 'w')
         radset = False
         for line in tempfile:
@@ -415,7 +421,7 @@ def do_cloudy_run(thread_num, q):
                     if not skip:
                         newline \
                             = line.replace('OUTPUT_FILENAME',
-                                           osp.join(cwd, tmpdirname,
+                                           osp.join(tmpdirname,
                                                     basename+ext))
                         fpout.write(newline + '\n')
                         if 'continuum' in newline:
@@ -608,7 +614,7 @@ def do_cloudy_run(thread_num, q):
             
         # Launch the cloudy process and wait for it to complete
         if not skip:
-            cloudy_out_fname = osp.join(cwd, tmpdirname, 'cloudy.out'+ext)
+            cloudy_out_fname = osp.join(tmpdirname, 'cloudy.out'+ext)
             cmd = cloudypath + " < " + cloudy_in_fname + \
                   " > " + cloudy_out_fname
             if args.nicelevel > 0:
@@ -690,7 +696,7 @@ def do_cloudy_run(thread_num, q):
         else:
             cloudy_params[time][trial] = params
         if args.writeparams and args.save:
-            param_fname = osp.join(cwd, tmpdirname,
+            param_fname = osp.join(tmpdirname,
                                    'cloudy_slug.param'+ext)
             fpp = open(param_fname, 'w')
             for k in params.keys():
@@ -703,7 +709,7 @@ def do_cloudy_run(thread_num, q):
 
 # Step 7: start a set of threads to do the job
 try: 
-    os.mkdir(osp.join(cwd, tmpdirname))  # Temporary working directory
+    os.mkdir(osp.join(tmpdirname))  # Temporary working directory
 except OSError: pass           # Probably failed because dir exists
 if __name__ == '__main__' :
     for i in range(nproc):
@@ -977,7 +983,7 @@ if not args.save:
     if args.verbose:
         print("Cleaning up temporary directory...")
     try:
-        os.rmdir(osp.join(cwd, tmpdirname))
+        os.rmdir(osp.join(tmpdirname))
     except OSError:
         warnings.warn("unable to clean up temporary directory "+
-                      osp.join(cwd, tmpdirname))
+                      osp.join(tmpdirname))
