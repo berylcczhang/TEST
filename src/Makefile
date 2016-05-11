@@ -80,7 +80,7 @@ endif
 # Specify which version of the GSL we're using
 DEFINES += -DGSLVERSION=$(GSLVERSION)
 
-CXXFLAGS +=  $(INCFLAGS) $(DEFINES) $(CLIBFLAGS)
+CXXFLAGS +=  $(INCFLAGS) $(DEFINES)
 LDFLAGS  +=  $(LDLIBFLAGS)
 
 # Name for executable
@@ -106,11 +106,11 @@ debug: CXXFLAGS += $(CXXDEBFLAGS)
 debug: LDFLAGS  += $( LDDEBFLAGS)
 debug: $(EXENAME)
 
-lib: CXXFLAGS += $(CXXOPTFLAGS)
+lib: CXXFLAGS += $(CXXOPTFLAGS) $(CLIBFLAGS)
 lib: LDFLAGS  += $( LDOPTFLAGS)
 lib: $(LIBNAME)
 
-debuglib: CXXFLAGS += $(CXXDEBFLAGS)
+debuglib: CXXFLAGS += $(CXXDEBFLAGS) $(CLIBFLAGS)
 debuglib: LDFLAGS  += $( LDDEBFLAGS)
 debuglib: $(LIBNAME)
 
