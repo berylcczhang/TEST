@@ -246,6 +246,7 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           indicated in the units field 
 
        (Present if the run being read contains a cluster_cloudyparams file)
+
        cloudy_hden : array
           number density of H nuclei at the inner edge of the ionized
           region simulated by cloudy

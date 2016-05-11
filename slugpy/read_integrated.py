@@ -233,6 +233,33 @@ def read_integrated(model_name, output_dir=None, fmt=None,
           directly from the stars after absorption by the HII region,
           plus the diffuse light emitted by the HII region); units are as
           indicated in the units field
+
+       (Only present if an integrated_cloudyparams file is found)
+
+       cloudy_hden : array
+          number density of H nuclei at the inner edge of the ionized
+          region simulated by cloudy
+       cloudy_r0 : array
+          inner radius of the ionized region simulated by cloudy
+       cloudy_rS : array
+          outer radius of the ionized region simulated by cloudy (approximate!)
+       cloudy_QH0 : array
+          ionizing luminosity used in the cloudy computation
+       cloudy_covFac : array
+          covering factor assumed in the cloudy computation; only a
+          fraction covFac of the ionizing photons are assumed to
+          produce emission within the HII region, while the remainder
+          are assumed to escape
+       cloudy_U : array
+          volume-averaged ionization parameter of the HII region
+          simulated by cloudy; note that this value is approximate,
+          not exact, and the approximation can be very poor if
+          radiation pressure effects are significant
+       cloudy_Omega : array
+          Yeh & Matzner (2012) wind parameter for the HII region
+          simulated by cloudy; as with U, this value is approximate,
+          and the approximation is valid only if radiation pressure
+          effects are small
     """
 
     # Read properties
