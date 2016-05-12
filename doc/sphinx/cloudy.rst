@@ -400,6 +400,11 @@ The optional arguments are as follows:
   option will only work correctly on platforms that support nice.
 * ``-n NPROC, --nproc NPROC``: number of simultaneous cloudy processes
   to run; default is the number of cores available on the system
+* ``-qm QH0MIN, --qH0min QH0MIN``: minimum ionizing luminosity for
+  which to run cloudy (default = 0). As with ``--agemax``, for
+  clusters / times where cloudy is not run, that case will still
+  appear in the output, but the nebular spectra and nebular line
+  luminosities will all be set to zero.
 * ``-ri RINNER, --rinner RINNER``: inner radius of the HII region,
   corresponding to :math:`r_0` in the explanation above, in
   cm; cannot set this and either ``ionparam`` or ``windparam``

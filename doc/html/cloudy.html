@@ -389,6 +389,11 @@ level. If it is not set, they will not be nice&#8217;d. Note that this
 option will only work correctly on platforms that support nice.</li>
 <li><code class="docutils literal"><span class="pre">-n</span> <span class="pre">NPROC,</span> <span class="pre">--nproc</span> <span class="pre">NPROC</span></code>: number of simultaneous cloudy processes
 to run; default is the number of cores available on the system</li>
+<li><code class="docutils literal"><span class="pre">-qm</span> <span class="pre">QH0MIN,</span> <span class="pre">--qH0min</span> <span class="pre">QH0MIN</span></code>: minimum ionizing luminosity for
+which to run cloudy (default = 0). As with <code class="docutils literal"><span class="pre">--agemax</span></code>, for
+clusters / times where cloudy is not run, that case will still
+appear in the output, but the nebular spectra and nebular line
+luminosities will all be set to zero.</li>
 <li><code class="docutils literal"><span class="pre">-ri</span> <span class="pre">RINNER,</span> <span class="pre">--rinner</span> <span class="pre">RINNER</span></code>: inner radius of the HII region,
 corresponding to <span class="math">\(r_0\)</span> in the explanation above, in
 cm; cannot set this and either <code class="docutils literal"><span class="pre">ionparam</span></code> or <code class="docutils literal"><span class="pre">windparam</span></code></li>

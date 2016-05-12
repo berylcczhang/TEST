@@ -4501,6 +4501,13 @@ option will only work correctly on platforms that support nice.
 to run; default is the number of cores available on the system
 
 \item {} 
+\code{-qm QH0MIN, -{-}qH0min QH0MIN}: minimum ionizing luminosity for
+which to run cloudy (default = 0). As with \code{-{-}agemax}, for
+clusters / times where cloudy is not run, that case will still
+appear in the output, but the nebular spectra and nebular line
+luminosities will all be set to zero.
+
+\item {} 
 \code{-ri RINNER, -{-}rinner RINNER}: inner radius of the HII region,
 corresponding to \(r_0\) in the explanation above, in
 cm; cannot set this and either \code{ionparam} or \code{windparam}
