@@ -41,9 +41,12 @@
             
   <div class="section" id="cloudy-slug-an-automated-interface-to-cloudy">
 <span id="sec-cloudy-slug"></span><h1>cloudy_slug: An Automated Interface to cloudy<a class="headerlink" href="#cloudy-slug-an-automated-interface-to-cloudy" title="Permalink to this headline">¶</a></h1>
-<p>SLUG stochastically generates stellar spectra, but it does not compute
-the nebular lines produced when those photons interact with the
-interstellar medium. To perform such calculations, SLUG includes an
+<p>SLUG stochastically generates stellar spectra, and it includes an
+approximate computation of the nebular lines produced when those
+photons interact with the interstellar medium. However, this
+approximation ignores a number of potentially important effects, and
+does not properly account for the stochastic nature of the stellar
+spectra. To perform a much more accurate calculation, SLUG includes an
 automated interface to <a class="reference external" href="http://nublado.org/">cloudy</a> (<a class="reference external" href="http://adsabs.harvard.edu/abs/2013RMxAA..49..137F">Ferland et
 al., 2013, RMxAA, 49, 137</a>). This can be
 used to post-process the output of a SLUG run in order to compute
@@ -101,6 +104,17 @@ automatically by the slugpy helper routines (see
 of the outputs.</p>
 </li>
 </ol>
+<p>Note that some care is required in selecting the conditions passed to
+cloudy to ensure that the results are physically sensible. In
+particular, if you are stochastically sampling the IMF in a small
+cluster or a galaxy with a low star formation rate, there may be
+cluster or times where the total ionizing luminosity is very small,
+and no HII region should actually form. If you attempt to process
+these with cloudy it is very easy to produce non-sensical results,
+and/or to make cloudy abort. Use of the <code class="docutils literal"><span class="pre">--qH0min</span></code> keyword in
+<a class="reference internal" href="#ssec-cloudy-slug-options"><span>The cloudy_slug Interface Script</span></a> and similar steps to ensure that the
+calculations being performed are physically sensible is strongly
+encouraged.</p>
 </div>
 <div class="section" id="the-cloudy-slug-physical-model-integrated-mode-versus-cluster-mode">
 <span id="ssec-cloudy-cluster"></span><h2>The cloudy_slug Physical Model: Integrated Mode Versus Cluster Mode<a class="headerlink" href="#the-cloudy-slug-physical-model-integrated-mode-versus-cluster-mode" title="Permalink to this headline">¶</a></h2>

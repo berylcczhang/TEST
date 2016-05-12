@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{May 11, 2016}
+\date{May 12, 2016}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -4072,9 +4072,12 @@ Nothing
 
 \chapter{cloudy\_slug: An Automated Interface to cloudy}
 \label{cloudy:cloudy-slug-an-automated-interface-to-cloudy}\label{cloudy::doc}\label{cloudy:sec-cloudy-slug}
-SLUG stochastically generates stellar spectra, but it does not compute
-the nebular lines produced when those photons interact with the
-interstellar medium. To perform such calculations, SLUG includes an
+SLUG stochastically generates stellar spectra, and it includes an
+approximate computation of the nebular lines produced when those
+photons interact with the interstellar medium. However, this
+approximation ignores a number of potentially important effects, and
+does not properly account for the stochastic nature of the stellar
+spectra. To perform a much more accurate calculation, SLUG includes an
 automated interface to \href{http://nublado.org/}{cloudy} (\href{http://adsabs.harvard.edu/abs/2013RMxAA..49..137F}{Ferland et
 al., 2013, RMxAA, 49, 137}). This can be
 used to post-process the output of a SLUG run in order to compute
@@ -4145,6 +4148,18 @@ automatically by the slugpy helper routines (see
 of the outputs.
 
 \end{enumerate}
+
+Note that some care is required in selecting the conditions passed to
+cloudy to ensure that the results are physically sensible. In
+particular, if you are stochastically sampling the IMF in a small
+cluster or a galaxy with a low star formation rate, there may be
+cluster or times where the total ionizing luminosity is very small,
+and no HII region should actually form. If you attempt to process
+these with cloudy it is very easy to produce non-sensical results,
+and/or to make cloudy abort. Use of the \code{-{-}qH0min} keyword in
+{\hyperref[cloudy:ssec\string-cloudy\string-slug\string-options]{\emph{The cloudy\_slug Interface Script}}} and similar steps to ensure that the
+calculations being performed are physically sensible is strongly
+encouraged.
 
 
 \section{The cloudy\_slug Physical Model: Integrated Mode Versus Cluster Mode}

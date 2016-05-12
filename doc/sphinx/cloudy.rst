@@ -5,9 +5,12 @@
 cloudy_slug: An Automated Interface to cloudy
 =============================================
 
-SLUG stochastically generates stellar spectra, but it does not compute
-the nebular lines produced when those photons interact with the
-interstellar medium. To perform such calculations, SLUG includes an
+SLUG stochastically generates stellar spectra, and it includes an
+approximate computation of the nebular lines produced when those
+photons interact with the interstellar medium. However, this
+approximation ignores a number of potentially important effects, and
+does not properly account for the stochastic nature of the stellar
+spectra. To perform a much more accurate calculation, SLUG includes an
 automated interface to `cloudy <http://nublado.org/>`_ (`Ferland et
 al., 2013, RMxAA, 49, 137
 <http://adsabs.harvard.edu/abs/2013RMxAA..49..137F>`_). This can be
@@ -66,6 +69,19 @@ The basic steps (described in greater detail below) are as follows:
    :ref:`sec-slugpy`). See :ref:`ssec-cloudy-output` for a description
    of the outputs.
 
+Note that some care is required in selecting the conditions passed to
+cloudy to ensure that the results are physically sensible. In
+particular, if you are stochastically sampling the IMF in a small
+cluster or a galaxy with a low star formation rate, there may be
+cluster or times where the total ionizing luminosity is very small,
+and no HII region should actually form. If you attempt to process
+these with cloudy it is very easy to produce non-sensical results,
+and/or to make cloudy abort. Use of the ``--qH0min`` keyword in
+:ref:`ssec-cloudy-slug-options` and similar steps to ensure that the
+calculations being performed are physically sensible is strongly
+encouraged.
+
+   
 .. _ssec-cloudy-cluster:
 
 The cloudy_slug Physical Model: Integrated Mode Versus Cluster Mode
