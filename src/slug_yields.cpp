@@ -138,7 +138,7 @@ slug_yields::slug_yields(const char *yield_dir) {
   for (vector<double>::size_type i=0; i<nmass; i++) {
 
     // Open yield file
-    ifstream std::yf_stream;
+    std::ifstream yf_stream;
     path dirname(yield_dir);
     path yield_path = dirname / path(yield_files[i].fname.c_str());
     yf_stream.open(yield_path.c_str());
@@ -248,7 +248,7 @@ slug_yields::slug_yields(const char *yield_dir) {
   for (vector<double>::size_type i=0; i<nmass; i++) {
 
     // Open yield file
-    ifstream std::yf_stream;
+    std::ifstream yf_stream;
     path dirname(yield_dir);
     path yield_path = dirname / path(yield_files[i].fname.c_str());
     yf_stream.open(yield_path.c_str());
