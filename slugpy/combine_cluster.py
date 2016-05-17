@@ -56,8 +56,12 @@ def combine_cluster(data):
             # ID field requires special handling
             cluster_id = data[0].id
             for j in range(1,len(data)):
-                cluster_id = np.append(cluster_id, 
-                                       data[j].id+np.amax(cluster_id))
+                if len(cluster_id) > 0:
+                    cluster_id = np.append(
+                        cluster_id, 
+                        data[j].id+np.amax(cluster_id))
+                else:
+                    cluster_id = np.append(cluster_id, data[j].id)
             new_fields.append(cluster_id)
 
         elif f == 'trial':
@@ -66,8 +70,13 @@ def combine_cluster(data):
             # field is 1 offset and the trial number is 0 offset
             trial = data[0].trial
             for j in range(1,len(data)):
-                trial = np.append(trial,
-                                  data[j].trial+np.amax(trial)+1)
+                if len(trial) > 0:
+                    trial = np.append(
+                        trial,
+                        data[j].trial+np.amax(trial)+1)
+                else:
+                    trial = np.append(
+                        trial, data[j].trial)
             new_fields.append(trial)
 
         # For the following fields we just need one copy
