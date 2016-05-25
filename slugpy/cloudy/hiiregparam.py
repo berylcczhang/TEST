@@ -11,16 +11,23 @@ import warnings
 # Set some constants; change to cgs units
 ######################################################################
 
-from scipy.constants import c
-from scipy.constants import k as kB
-from scipy.constants import m_e
-from scipy.constants import m_p
-from scipy.constants import physical_constants as physcons
-c = c*1e2
-kB = kB*1e7
-m_e = m_e * 1e3
-m_p = m_p * 1e3
-eps0 = physcons['Rydberg constant times hc in J'][0] * 1e7
+# Units and constants
+try:
+    from scipy.constants import c, m_e, m_p
+    from scipy.constants import k as kB
+    from scipy.constants import physical_constants as physcons
+    c = c*1e2
+    kB = kB*1e7
+    m_e = m_e * 1e3
+    m_p = m_p * 1e3
+    eps0 = physcons['Rydberg constant times hc in J'][0] * 1e7
+except:
+    # This exception is to deal with readthedocs not having scipy
+    c = 3.0e10
+    kB = 1.38e-16
+    m_e = 9.11e-28
+    m_p = 1.67e-24
+    
 mH = m_e + m_p       # Hydrogen atom mass
 alphaB = 2.59e-13    # Case B recombination coefficient
 muH = 1.4            # Mean mass per H nucleus for standard cosmic composition
@@ -30,6 +37,7 @@ TII = 1.0e4          # Fiducial temperature
 psi = 3.2            # Krumholz & Matzner psi parameter
 ftrap = 2.0          # Krumholz & Matzner trapping factor
 Myr = 365.25*24.*3600.*1e6    # 1 Myr in seconds
+
 
 ######################################################################
 # Define a little utility class
