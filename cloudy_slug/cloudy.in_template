@@ -4,9 +4,11 @@ sphere expanding
 constant pressure no abort
 cosmic rays background
 cmb redshift 0
-hden 0
+hden 2
+radius 17
 stop temperature 1000
 stop efrac 0.1
 iterate to convergence
-save last continuum "OUTPUT_FILENAME.con"
-save last line list emergent absolute column "OUTPUT_FILENAME.lines" "LineList_HII.dat"
+save last hydrogen conditions "$OUTPUT_FILENAME.hcon"
+save last continuum "$OUTPUT_FILENAME.con"
+save last line list emergent absolute column "$OUTPUT_FILENAME.lines" "LineList_HII.dat"

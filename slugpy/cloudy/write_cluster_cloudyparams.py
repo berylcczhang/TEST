@@ -19,8 +19,11 @@ def write_cluster_cloudyparams(data, model_name, fmt):
     Parameters
        data : namedtuple
           Cluster cloudy parameter data; a namedtuple containing the
-          fields id, trial, time, cloudy_age, cloudy_hden, cloudy_r0, 
-          cloudy_rS, cloudy_QH0, cloudy_covFac, cloudy_U, and cloudy_Omega
+          fields id, trial, time, cloudy_hden, cloudy_r0, 
+          cloudy_r1, cloudy_QH0, cloudy_covFac, cloudy_U, cloudy_U0,
+          cloudy_Omega, and cloudy_zeta; may also optionally contain
+          the fields cloudy_r1_out, cloudy_hden_out, cloudy_Omega_out,
+          and cloudy_zeta_out
        model_name : string
           Base file name to give the model to be written. Can include a
           directory specification if desired.
@@ -48,33 +51,63 @@ def write_cluster_cloudyparams(data, model_name, fmt):
         fp = open(model_name+'_cluster_cloudyparams.txt', 'w')
 
         # Write header lines
-        fp.write(("{:<14s}"*9).
-                 format('UniqueID', 'Time', 'Hden', 'R0', 'RS',
-                        'QH0', 'CovFac', 'U', 'Omega') + "\n")
-        fp.write(("{:<14s}"*9).
-                 format('', '(yr)', '(cm^-3)', '(cm)', '(s^-1)',
-                        '', '', '', '') + "\n")
-        fp.write(("{:<14s}"*9).
-                 format('-----------', '-----------', '-----------',
-                        '-----------', '-----------', '-----------',
-                        '-----------', '-----------', '-----------')
-                 + "\n")
+        fields = ['UniqueID', 'Time', 'Hden', 'R0', 'R1',
+                  'QH0', 'CovFac', 'U', 'U0', 'Omega', 'Zeta']
+        units = ['', '(yr)', '(cm^-3)', '(cm)', '(cm)',
+                 '(s^-1)', '', '', '', '', '']
+        if 'cloudy_hden_out' in data._fields:
+            fields.append('Hden_out')
+            units.append('(cm^-3)')
+        if 'cloudy_r1_out' in data._fields:
+            fields.append('R1_out')
+            units.append('(cm)')
+        if 'cloudy_Omega_out' in data._fields:
+            fields.append('Omega_out')
+            units.append('')
+        if 'cloudy_zeta_out' in data._fields:
+            fields.append('Zeta_out')
+            units.append('')
+        nfields = len(fields)
+        for f in fields:
+            fp.write("{:<14s}".format(f))
+        fp.write("\n")
+        for u in units:
+            fp.write("{:<14s}".format(u))
+        fp.write("\n")
+        for i in range(nfields):
+            fp.write("{:<14s}".format('-----------'))
+        fp.write("\n")
 
         # Write data
         for i in range(data.trial.size):
             # If this is a new trial, write a separator
             if i != 0:
                 if data.trial[i] != data.trial[i-1]:
-                    fp.write("-"*(9*14-3)+"\n")
+                    fp.write("-"*(nfields*14-3)+"\n")
             fp.write(("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   " +
-                      "{:11.5e}   {:11.5e}   {:11.5e}   " +
-                      "{:11.5e}   {:11.5e}\n").format(
+                      "{:11.5e}   {:11.5e}   {:11.5e}   {:11.5e}   " +
+                      "{:11.5e}   {:11.5e}   {:11.5e}").format(
                           data.id[i], data.time[i], 
                           data.cloudy_hden[i], data.cloudy_r0[i],
-                          data.cloudy_rS[i],
+                          data.cloudy_r1[i],
                           data.cloudy_QH0[i], data.cloudy_covFac[i],
-                          data.cloudy_U[i], data.cloudy_Omega[i]))
-
+                          data.cloudy_U[i], data.cloudy_U0[i],
+                          data.cloudy_Omega[i],
+                          data.cloudy_zeta[i]))
+            if 'cloudy_hden_out' in data._fields:
+                fp.write("   {:11.5e}".
+                         format(data.cloudy_hden_out[i]))
+            if 'cloudy_r1_out' in data._fields:
+                fp.write("   {:11.5e}".
+                         format(data.cloudy_r1_out[i]))
+            if 'cloudy_Omega_out' in data._fields:
+                fp.write("   {:11.5e}".
+                         format(data.cloudy_Omega_out[i]))
+            if 'cloudy_zeta_out' in data._fields:
+                fp.write("   {:11.5e}".
+                         format(data.cloudy_zeta_out[i]))
+            fp.write("\n")
+                
         # Close
         fp.close()
 
@@ -83,6 +116,26 @@ def write_cluster_cloudyparams(data, model_name, fmt):
 
         # Binary mode
         fp = open(model_name+'_cluster_cloudyparams.bin', 'wb')
+
+        # Write out bytes indicating if we have various optional
+        # fields
+        if 'cloudy_hden_out' in data._fields:
+            fp.write(str(bytearray([1])))
+        else:
+            fp.write(str(bytearray([0])))
+        if 'cloudy_r1_out' in data._fields:
+            fp.write(str(bytearray([1])))
+        else:
+            fp.write(str(bytearray([0])))
+            fp.write(str(bytearray([0])))
+        if 'cloudy_Omega_out' in data._fields:
+            fp.write(str(bytearray([1])))
+        else:
+            fp.write(str(bytearray([0])))
+        if 'cloudy_zeta_out' in data._fields:
+            fp.write(str(bytearray([1])))
+        else:
+            fp.write(str(bytearray([0])))
 
         # Break data into blocks of clusters with the same time
         # and trial number
@@ -109,12 +162,22 @@ def write_cluster_cloudyparams(data, model_name, fmt):
             for k in range(ptr, block_end):
                 fp.write(data.cloudy_hden[k])
                 fp.write(data.cloudy_r0[k])
-                fp.write(data.cloudy_rS[k])
+                fp.write(data.cloudy_r1[k])
                 fp.write(data.cloudy_QH0[k])
                 fp.write(data.cloudy_covFac[k])
                 fp.write(data.cloudy_U[k])
+                fp.write(data.cloudy_U0[k])
                 fp.write(data.cloudy_Omega[k])
-        
+                fp.write(data.cloudy_zeta[k])
+                if 'cloudy_hden_out' in data._fields:
+                    fp.write(data.cloudy_hden_out[k])
+                if 'cloudy_r1_out' in data._fields:
+                    fp.write(data.cloudy_r1_out[k])
+                if 'cloudy_Omega_out' in data._fields:
+                    fp.write(data.cloudy_Omega_out[k])
+                if 'cloudy_zeta_out' in data._fields:
+                    fp.write(data.cloudy_zeta_out[k])
+
             # Move pointer
             ptr = block_end
                 
@@ -135,8 +198,8 @@ def write_cluster_cloudyparams(data, model_name, fmt):
                                 unit="cm^-3", array=data.cloudy_hden))
         cols.append(fits.Column(name="R0", format="1D",
                                 unit="cm", array=data.cloudy_r0))
-        cols.append(fits.Column(name="RS", format="1D",
-                                unit="cm", array=data.cloudy_rS))
+        cols.append(fits.Column(name="R1", format="1D",
+                                unit="cm", array=data.cloudy_r1))
         cols.append(fits.Column(name="QH0",
                                 format="1D",
                                 unit="s^-1", array=data.cloudy_QH0))
@@ -144,8 +207,28 @@ def write_cluster_cloudyparams(data, model_name, fmt):
                                 unit="", array=data.cloudy_covFac))
         cols.append(fits.Column(name="U", format="1D",
                                 unit="", array=data.cloudy_U))
+        cols.append(fits.Column(name="U0", format="1D",
+                                unit="", array=data.cloudy_U0))
         cols.append(fits.Column(name="Omega", format="1D",
                                 unit="", array=data.cloudy_Omega))
+        cols.append(fits.Column(name="zeta", format="1D",
+                                unit="", array=data.cloudy_zeta))
+        if 'cloudy_hden_out' in data._fields:
+            cols.append(fits.Column(
+                name="Hden_out", format="1D",
+                unit="cm^-3", array=data.cloudy_hden_out))
+        if 'cloudy_r1_out' in data._fields:
+            cols.append(fits.Column(
+                name="R1_out", format="1D",
+                unit="cm", array=data.cloudy_r1_out))
+        if 'cloudy_Omega_out' in data._fields:
+            cols.append(fits.Column(
+                name="Omega_out", format="1D",
+                unit="", array=data.cloudy_Omega_out))
+        if 'cloudy_zeta_out' in data._fields:
+            cols.append(fits.Column(
+                name="zeta_out", format="1D",
+                unit="", array=data.cloudy_zeta_out))
         fitscols = fits.ColDefs(cols)
 
         # Create the binary table HDU
