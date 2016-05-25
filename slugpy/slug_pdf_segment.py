@@ -2,7 +2,14 @@
 This defines a class of a single segment of a PDF; used together with slug_pdf.
 """
 
-from numpy.random import RandomState
+# Special check for readthedocs
+import os
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    from numpy.random import RandomState
+else:
+    def RandomState():
+        return None
 
 class slug_pdf_segment(object):
     """
