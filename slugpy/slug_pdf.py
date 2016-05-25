@@ -5,8 +5,16 @@ if multiple slug_pdf instances are instantiated in different threads,
 the random streams they generate will not be identical.
 """
 
+# Special check for readthedocs
+import os
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    from numpy.random import RandomState
+else:
+    def RandomState():
+        return None
+
 import numpy as np
-from numpy.random import RandomState
 from .slug_pdf_delta import slug_pdf_delta
 from .slug_pdf_exponential import slug_pdf_exponential
 from .slug_pdf_powerlaw import slug_pdf_powerlaw
