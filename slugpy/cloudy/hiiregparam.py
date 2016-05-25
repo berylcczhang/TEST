@@ -3,9 +3,17 @@ This module defines a little utility class that can be used to derive
 properties of HII regions from other properties.
 """
 
+# Special check for readthedocs
+import os
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
 import numpy as np
-from scipy.optimize import brentq
 import warnings
+if not on_rtd:
+    from scipy.optimize import brentq
+else:
+    def brentq(dummy1, dummy2, dummy3):
+        pass
 
 ######################################################################
 # Set some constants; change to cgs units
