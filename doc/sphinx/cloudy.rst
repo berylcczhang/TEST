@@ -45,18 +45,19 @@ The basic steps (described in greater detail below) are as follows:
 
 4. Perform the desired SLUG simulation. The SLUG simulation outputs
    must include spectra and photometry, and one of the photometric
-   bands output must be ``QH0`` (see :ref:`ssec-phot-keywords`). If
-   running in integrated mode (the default -- see
-   :ref:`ssec-cloudy-cluster`), integrated specta and photometry are
-   required, and if running in cluster mode, cluster spectra and
-   photometry are required.
+   bands output must be ``QH0`` (see
+   :ref:`ssec-phot-keywords`). Depending on whether one is running in
+   integrated or cluster mode (see
+   :ref:`sssec-cloudy-integrated-cluster`), either integrated specta
+   and photometry or cluster spectra and photometry are
+   required.
 
 5. Invoke the cloudy_slug interface script via::
 
      python cloudy_slug/cloudy_slug.py SLUG_MODEL_NAME
 
    where ``SLUG_MODEL_NAME`` is the name of the SLUG run to be
-   processed. See :ref:`ssec-cloudy-cluster` for more information on
+   processed. See :ref:`ssec-cloudy-model` for more information on
    the underlying physical model assumed in the calculation, and
    :ref:`ssec-cloudy-slug-options` for more details on the python
    script and its options.
@@ -70,203 +71,290 @@ The basic steps (described in greater detail below) are as follows:
    of the outputs.
 
 Note that some care is required in selecting the conditions passed to
-cloudy to ensure that the results are physically sensible. In
-particular, if you are stochastically sampling the IMF in a small
-cluster or a galaxy with a low star formation rate, there may be
-cluster or times where the total ionizing luminosity is very small,
-and no HII region should actually form. If you attempt to process
-these with cloudy it is very easy to produce non-sensical results,
-and/or to make cloudy abort. Use of the ``--qH0min`` keyword in
-:ref:`ssec-cloudy-slug-options` and similar steps to ensure that the
-calculations being performed are physically sensible is strongly
-encouraged.
+cloudy to ensure that the results are physically sensible. Users are
+strongly encouraged to read :ref:`ssec-cloudy-model` to understand
+exactly what physical assumptions are being made, and to ensure that
+they are reasonable.
 
    
-.. _ssec-cloudy-cluster:
+.. _ssec-cloudy-model:
 
-The cloudy_slug Physical Model: Integrated Mode Versus Cluster Mode
--------------------------------------------------------------------
+The cloudy_slug Physical Model
+------------------------------
 
-Associating nebular emission with the stellar populations produced by
-SLUG requires some assumptions about geometry, and some choices about
-what quantities one is interested in computed. SLUG outputs both
-integrated spectra for all the stars in a galaxy, and spectra for
-individual clusters. One on hand, one could make the exteme assumption
-that all the star clusters are spatially close enough to one another
-that one can think of the entire galaxy as a single giant HII region,
-and compute the nebular emission for the galaxy as a whole. This may
-be a reasonable assumption for galaxies where the star formation is
-highly spatially-concentrated. At the other extreme, one may assume that
-there is no overlap whatsoever between the HII regions surrounding
-different star clusters, so that nebular emission should be computed
-for each one independently. This may be a reasonable assumption for
-extended, slowly star-forming systems like the outer disk of the Milky
-Way. Each of these assumptions entails somewhat different choices
-about how to set the inner radius and inner density the HII region, as
-required by cloudy. The cloudy_slug interface can compute nebular
-emission under either of these scenarios; we refer to the former as
-integrated mode, and to the latter as cluster mode. Note that, in
-either mode, the spectrum that is used to compute the nebular emission
-will be the *unextincted, non-redshifted* spectrum computed by SLUG.
+The cloudy_slug code computes emission from a spherical HII region
+surrounding a stellar population. The stellar population comes from
+SLUG, and the emission calculation is performed with cloudy. Combining
+the two requires some physical assumptions and inputs, which are
+explained in this section.
 
-.. _sssec-cloudy-integrated-mode:
+.. _sssec-cloudy-integrated-cluster:
 
-Integrated Mode
-^^^^^^^^^^^^^^^
+Integrated versus Cluster Spectra
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In integrated mode, cloudy_slug will read all the spectra contained in
-the SLUG integrated_spec output file, and for each stellar spectrum it
-will perform a cloudy run to produce a calculation of the nebular
-emission produced by that stellar spectrum interacting with a
-surrounding HII region. The density in the first zone of the HII
-region will be as specified by the standard ``hden`` keyword in the
-cloudy input template (see :ref:`ssec-cloudy-template`). The inner
-radius of the HII region will be computed automatically, and can be
-specified in one of two ways. By default it will be set to
-set to :math:`10^{-3}` of the Stromgren radius for that density, where
+SLUG outputs both integrated spectra for all the stars in a galaxy,
+and spectra for individual clusters. Both the integrated spectra and
+the individual cluster spectra can be processed by cloudy. However, it
+is important to understand the implicit physical assumptions that one
+is making while doing so. If one has a galaxy where all stars are in
+clusters (i.e., cluster formation fraction is unity and there is no
+cluster disruption), then the integrated starlight spectrum is just
+the sum of the individual cluster spectra. For nebular emission,
+however, this is not the case: nebular emission does not, in general,
+add linearly.
 
-.. math:: r_{\mathrm{St}} = \left(\frac{3 Q(\mathrm{H}^0)}{4\pi
-	  \alpha_B n_{\mathrm{H}}^2}\right)^{1/3}
+For this reason, if one processes the integrated spectrum through
+cloudy, the implicit physical assumption is that the entire galaxy is
+a single giant HII region being ionized by the starlight of all the
+clusters present. If one processes the individual cluster spectra
+instead, the implicit physical picture is that there is no overlap
+whatsoever between the HII regions surrounding different star
+clusters. Reality almost certainly lies somewhere between these two
+extremes, but it is important to understand physically what assumption
+one is making by adopting one or the other. We refer to processing the
+integrated spectrum as integrated mode, and to processing the
+individual cluster spectra as cluster mode. Note that cluster mode can
+be very computationally intensive if there are many clusters present,
+and that in cluster mode there is no processing of nebular emission
+produced by field stars.
 
-where :math:`Q(\mathrm{H}^0)` is the ionizing luminosity computed by
-SLUG, :math:`n_{\mathrm{H}}` is the hydrogen number density stored in
-the cloudy input template, and :math:`\alpha_B` is the case B
-recombination coefficient, which is taken to have a value of
-:math:`2.59\times 10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}`. In this
-case the HII region goes essentially all of the way to the star
-cluster.
+In either mode, the spectrum that is used to compute the nebular
+emission will be the *unextincted, non-redshifted* spectrum computed
+by SLUG.
 
-The alternative choice is to assume that there is a wind bubble around
-the stars, which evacuates the gas out to some inner radius
-:math:`r_0`. This radius can be specfied in two ways. First, it can be set
-directly. Second, it can be set terms of a slightly modified version
-of the wind parameter :math:`\Omega` defined by `Yeh & Matnzer (2012,
-ApJ, 757, 108)
-<http://adsabs.harvard.edu/abs/2012ApJ...757..108Y>`_, which is
+.. _sssec-cloudy-nebular properties:
 
-.. math:: \Omega = \frac{r_0^3}{r_{\mathrm{II}}^3 - r_0^3}
+Nebular Properties
+^^^^^^^^^^^^^^^^^^
 
-where :math:`r_{\mathrm{II}}` is the outer radius of the HII region.
-Under the assumption that the gas density is uniform, one can show
-that this condition is satisfied if the inner radius is
-:math:`r_0 = \Omega^{1/3} r_{\mathrm{St}}`.
+Computing the nebular emission requires specifying the physical
+properties of the interstellar gas into which the
+photons propagate. Codes like cloudy require that the HII region be
+described by an inner radius :math:`r_0` and a number density
+:math:`n_{0}` of hydrogen nuclei at that radius. One option for
+cloudy_slug is that these parameters can be set in the cloudy inputs
+as they would be for a normal cloudy run. However, these parameters
+are not necessarily the most convenient or descriptive ones with which
+to describe HII regions. For this reason, cloudy_slug allows users to
+specify HII region properties in a number of other more convneient
+ways.
 
+The basic assumptions made in cloudy_slug's parameterization is
+that the HII region is isobaric and isothermal, at all points hydrogen
+is fully ionized and helium is singly ionized, and that radiation
+pressure is negligible. The HII region occupies a spherical shell
+bounded by an inner radius :math:`r_0` and an outer radius
+:math:`r_1`. The inner radius is set by the presence of a bubble of
+shocked stellar wind material at a temperature :math:`\sim 10^6` K,
+which is assumed to be optically thick to ionizing photons. The
+outer radius is set by the location where all the ionizing photons
+have been absorbed.
 
-.. _sssec-cloudy-cluster-mode:
+Under these assumptions, the inner density :math:`n_0` is simply the
+(uniform) density :math:`n_{\mathrm{II}}` throughout the ionized
+region, and the ionizing photon luminosity passing through a shell of
+material at a distance :math:`r` from the stars is 
 
-Cluster Mode
-^^^^^^^^^^^^
+.. math:: Q(r) = Q(\mathrm{H}^0)
+	  \left[1 - \left(\frac{r}{r_S}\right)^3 +
+	  \left(\frac{r_0}{r_S}\right)^3\right],
 
-In cluster mode, cloudy_slug will read all the individual cluster
-spectra contained in the SLUG cluster_spec file, and for each one it
-will perform a cloudy calculation to determine the corresponding
-nebular emission. By default the density and radius are handled somewhat
-differently in this case, since, for a mono-age stellar population, it
-is possible to compute the time evolution of the HII region radius and
-density. However, it is also possible to perform a calculation in
-cluster mode treating the density and inner radius in exactly the same
-manner as is used in integrated mode.
+where :math:`Q(\mathrm{H}^0)` is the hydrogen-ionizing luminosity of
+the source and :math:`r_S` is the Stromgren radius, given by
 
-Default behavior in cluster mode is as follows:
-the hydrogen number density :math:`n_{\mathrm{H}}`
-stored in the cloudy input template (see :ref:`ssec-cloudy-template`)
-is taken to specify the density of the *neutral* gas around the HII
-region, not the density of the gas inside the HII region. The outer
-radius of the HII region is then computed using the approximate
-analytic solution for the expansion of an HII region into a uniform
-medium, including the effects of radiation presssure and stellar wind
-momentum deposition, given by `Krumholz & Matzner (2009, ApJ,
-703, 1352) <http://adsabs.harvard.edu/abs/2009ApJ...703.1352K>`_. The
-radius is computed from the ionizing luminosity
-:math:`Q(\mathrm{H}^0)`, hydrogen number density
-:math:`n_{\mathrm{H}}`, and star cluster age :math:`t` as
+.. math:: r_S = \left(\frac{3 Q(\mathrm{H}^0)}{4\pi
+	  \alpha_B f_e n_{\mathrm{II}}^2}\right)^{1/3}.
 
-.. math::
+Here :math:`\alpha_B` is the case B recombination coefficient and
+:math:`f_e` is the abundance of electrons per H nucleus. For the
+purposes of cloudy_slug, we take these two quantities to have
+the fixed values :math:`\alpha_B = 2.59\times
+10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}`, appropriate for a
+temperature of :math:`10^4` K, and :math:`f_e = 1.1`, appropriate for
+a region where He is singly ionized.
 
-   r_{\mathrm{II}} & = r_{\mathrm{ch}}
-   \left(x_{\mathrm{II,rad}}^{7/2} +
-   x_{\mathrm{II,gas}}^{7/2}\right)^{2/7} \\
+From this setup one can define some useful dimensionless numbers. One
+is the wind parameter :math:`\Omega` introduced by `Yeh &
+Matnzer (2012, ApJ, 757, 108)
+<http://adsabs.harvard.edu/abs/2012ApJ...757..108Y>`_, which under the
+simple assumptions made in cloudy_slug is given by
 
-   x_{\mathrm{II,rad}} &= (2\tau^2)^{1/4} \\
+.. math:: \Omega = \frac{r_0^3}{r_1^3-r_0^3}
 
-   x_{\mathrm{II,gas}} &= (49\tau^2/36)^{2/7} \\
+i.e., it is just the ratio of the volume occupied by the wind gas to
+that occupied by the photoionized gas. The value of :math:`\Omega`
+determines whether winds are important (:math:`\Omega \gg 1`) or
+unimportant (:math:`\Omega \ll 1`) for the dynamics of the HII
+region. The second dimensionless parameter is the volume-averaged
+ionization parameter
 
-   \tau &= t/t_{\mathrm{ch}} \\
+.. math:: \mathcal{U} = \frac{3}{4\pi (r_1^3-r_0^3)} \int_{r_0}^{r_1}
+	  \left(\frac{Q(r)}{4\pi r^2 c f_i n_{\mathrm{II}}}\right)
+	  4\pi r^2 \, dr.
 
-   r_{\mathrm{ch}} & = \frac{\alpha_B}{12\pi\phi}
-   \left(\frac{\epsilon_0}{2.2 k_B T_{\mathrm{II}}}\right)^2
-   f_{\mathrm{trap}}^2 \frac{\psi^2 Q(\mathrm{H}^0)}{c^2} \\
+Here :math:`f_i` is the number of free ions per H nucleus, and is
+equal to :math:`f_i = 1.1` under the assumption that He is singly
+ionized. The quantity in parentheses is the ratio of the ionizing
+photon to ion number densities at radius :math:`r`. The value of
+:math:`\mathcal{U}` is, together with :math:`n_{\mathrm{II}}`, the
+most important factor in determining the output spectrum. A third
+useful dimensionless parameter is the ionization parameter at the
+inner radius,
 
-   t_{\mathrm{ch}} & = \left(\frac{4\pi \mu m_{\mathrm{H}}
-   n_{\mathrm{H}} c r_{\mathrm{ch}}^4}{3 f_{\mathrm{trap}}
-   Q(\mathrm{H}^0) \psi \epsilon_0}\right)^{1/2}
+.. math:: \mathcal{U}_0 = \frac{Q(\mathrm{H}^0)}
+	  {4\pi r_0^2 f_i n_{\mathrm{II}} c}.
 
-where :math:`\alpha_B = 2.59\times
-10^{-13}\;\mathrm{cm}^3\;\mathrm{s}^{-1}` is the case B recombination
-coefficient, :math:`\phi = 0.73` is the fraction of ionizing photons absorbed
+The various quantities are not unrelated. It is straightforward to
+show that they are constrained by the following relationships:
+
+.. math:: r_0 & = \Omega^{1/3} r_S \\
+
+	  r_1 & = \left(1 + \Omega\right)^{1/3} r_S \\
+
+	  \mathcal{U} & = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}}
+	  Q(\mathrm{H}^0)}{256 \pi c^3 f_e}\right]^{1/3}
+	  \left[\left(1 + \Omega\right)^{4/3} 
+	  - \Omega^{1/3} \left(\frac{4}{3}+\Omega\right)\right] \\
+
+	  & = \left[\frac{81 \alpha_B Q(\mathrm{H}^0)}
+	  {64 \pi c^2 f_e r_S}\right]^{1/2}
+	  \left[\left(1 + \Omega\right)^{4/3} 
+	  - \Omega^{1/3} \left(\frac{4}{3}+\Omega\right)\right]
+
+	  \mathcal{U}_0 &= \left[
+	  \frac{\alpha_B^2 n_{\mathrm{II}} Q(\mathrm{H}^0)}
+	  {36 \pi c^3 f_e}\right]^{1/3} \frac{1}{\Omega^{2/3}}
+
+	  &= \frac{4}{9}\Omega^{-2/3} \left[(1+\Omega)^{4/3} -
+	  \Omega^{1/3}\left(\frac{4}{3}+\Omega\right)\right]^{-1}
+	  \mathcal{U}
+
+These relations may be used to compute any four of the quantities
+:math:`n_{\mathrm{II}}`, :math:`r_0`, :math:`r_1`, :math:`\mathcal{U}`,
+:math:`\mathcal{U}_0` and :math:`\Omega` given the other two.
+:ref:`sec-slugpy` provides a class ``hiiregparam`` that can be used
+to perform such a computation.
+
+Given this background, cloudy_slug allows the user to specify the
+physical properties of the HII region by setting any two of the
+following six quantities:
+
+#. The photoionized gas density :math:`n_{\mathrm{II}}`.
+#. The inner radius :math:`r_0`.
+#. The outer radius :math:`r_1`.
+#. The volume-averaged ionization parameter :math:`\mathcal{U}`.
+#. The inner radius ionization parameter :math:`\mathcal{U}_0`.
+#. The wind parameter :math:`\Omega`.
+
+The two quantities chosen can be specified exactly, or can be drawn
+from a specified PDF. One final option, which is only available in
+cluster mode, is to obtain the required quantities from a dynamical
+model -- see :ref:`sssec-cloudy-dynamical-cluster-mode`.
+
+A few caveats are in order at this point.
+
+#. Not all combinations of values are realizable. In addition to the
+   obvious constraints (e.g., :math:`r_1 > r_0`), there are some
+   subtle ones. For example, for any given ionizing luminosity
+   :math:`Q(\mathrm{H}^0)` and density :math:`n_{\mathrm{II}}`, the
+   value of :math:`\mathcal{U}` is bounded from above. Increasing the
+   wind parameter :math:`\Omega` can allow arbitrarily small values of
+   :math:`\mathcal{U}`, but not arbitrarily large ones. If the user
+   requests a physically impossible combination of parameters,
+   cloudy_slug will correct the parameters to the allowed range and
+   run, while issuing a warning.
+#. Even for parameters that are not physically impossible, the results
+   may not be sensible, and may cause cloudy to crash in extreme
+   cases. For example, if one sets :math:`\Omega = 0` and
+   :math:`\mathcal{U} = 10^{-4}`, then for an ionizing lumnosity of
+   :math:`Q(\mathrm{H}^0) = 10^{50}` photons/s (typical for a cluster
+   of :math:`\sim 10^4M_\odot`), the corresponding density is
+   :math:`n_{\mathrm{II}} \approx 10^{-5}\mbox{ cm}^{-3}`! As this
+   density the gas will be fully ionized by cosmic rays and the
+   extragalactic background, and it makes no sense to think of it as
+   an HII region. Caution is required.
+#. The parameter combinations :math:`(r_0,\mathcal{U})` and
+   :math:`(r_1,\mathcal{U}_0)` not allowed
+   because they do not define a unique solution for the other
+   parameters (the resulting equations have multiple physically-valid
+   solutions).
+#. The relations given above are only valid if radiation pressure is
+   not dynamically significant. If it is, then there are no known
+   analytic relations between the various quantities. The cloudy_slug
+   code will still run, and will use the relations above, but the
+   actual HII region properties may be markedly different from those
+   requested. In cases where radiation pressure is important, it is
+   generally advisable to save the HII region physical conditions
+   output by cloudy to compute quatities from them directly. The
+   cloudy_slug script will issue a warning if radiation pressure is
+   expected to be significant for the HII region being computed. As a rule
+   of thumb, radiation pressure is significant if
+
+.. math:: \zeta \equiv \frac{r_{\mathrm{ch}}}{r_1} > 1
+
+where :math:`r_{\mathrm{ch}}` is the
+characteristic radius defined by `Krumholz & Matzner (2009, ApJ,
+703, 1352) <http://adsabs.harvard.edu/abs/2009ApJ...703.1352K>`_ as
+
+.. math:: r_{\mathrm{ch}} & = \frac{\alpha_B}{12\pi\phi}
+	  \left(\frac{\epsilon_0}{2 f_e k_B T_{\mathrm{II}}}\right)^2
+	  f_{\mathrm{trap}}^2 \frac{\psi^2 Q(\mathrm{H}^0)}{c^2}
+
+Here  :math:`\phi = 0.73` is the fraction of ionizing photons absorbed
 by hydrogen atoms rather than dust, :math:`\epsilon_0 =
 13.6\;\mathrm{eV}` is the hydrogen ionization potential,
 :math:`T_{\mathrm{II}} = 10^4\;\mathrm{K}` is the temperature inside
 the HII region, :math:`f_{\mathrm{trap}} = 2` is the trapping factor
 that accounts for stellar wind and trapped infrared radiation
-pressure, :math:`\psi = 3.2` is the mean photon energy in Rydberg for
-a fully sampled IMF at zero age, and :math:`\mu = 1.33` is the mean
+pressure, and :math:`\psi = 3.2` is the mean photon energy in Rydberg for
+a fully sampled IMF at zero age. 
+
+
+.. _sssec-cloudy-dynamical-cluster-mode:
+
+Dynamical Mode
+^^^^^^^^^^^^^^
+
+In cluster mode, cloudy_slug allows an additional option to derive the
+physical properties of the HII region. They can be computed from a
+dynamical model of HII region expansion, taken from `Krumholz &
+Matzner (2009, ApJ, 703, 1352)
+<http://adsabs.harvard.edu/abs/2009ApJ...703.1352K>`_.  In this model,
+the radius of an HII region can be computed as a function of the
+ionizing luminosity :math:`Q(\mathrm{H}^0)`, ambient hydrogen number
+density :math:`n_{\mathrm{H}}`, and star cluster age :math:`t` as
+
+.. math::
+
+   r_1 & = r_{\mathrm{ch}}
+   \left(x_{\mathrm{rad}}^{7/2} +
+   x_{\mathrm{gas}}^{7/2}\right)^{2/7} \\
+
+   x_{\mathrm{rad}} &= (2\tau^2)^{1/4} \\
+
+   x_{\mathrm{gas}} &= (49\tau^2/36)^{2/7} \\
+
+   \tau &= t/t_{\mathrm{ch}} \\
+
+   t_{\mathrm{ch}} & = \left(\frac{4\pi \mu m_{\mathrm{H}}
+   n_{\mathrm{H}} c r_{\mathrm{ch}}^4}{3 f_{\mathrm{trap}}
+   Q(\mathrm{H}^0) \psi \epsilon_0}\right)^{1/2}
+
+Definitions of various quantities appearing in these equations are
+given above. The quantity :math:`\mu = 1.4` is the mean
 mass per hydrogen nucleus for gas of the standard cosmic
-composition. See `Krumholz & Matzner (2009)
-<http://adsabs.harvard.edu/abs/2009ApJ...703.1352K>`_ for a discussion
-of the fiducial choices of these factors.
+composition.
 
-Once the outer radius is known, cloudy_slug can set the starting
-radius and density in a three different ways. The default option is to
-assume there there is a fully-filled HII region with negligible
-radiation pressure, in which case the inner radius will be set to 
-:math:`10^{-3} r_{\mathrm{II}}`, and the density will be set to
-
-.. math:: n_{\mathrm{II}} = \left(\frac{3
-	  Q(\mathrm{H}^0)}{4.4 \pi\alpha_B
-	  r_{\mathrm{II}}^3}\right)^{1/2}
-
-Note that the number in the denominator is 4.4 rather than 4 under the
-assumption that He will be singly ionized. Also note that this
-approximation will be highly inaccurate if :math:`r_{\mathrm{II}} \ll
-r_{\mathrm{ch}}`, but no better analytic approximation is available,
-and this phase should be very short-lived for most clusters.
-
-The second option is to manually specify an inner radius :math:`r_0`,
-which will be used for all calculations. The density is then computed
-from the ionized volume as
-
-.. math:: n_{\mathrm{II}} = \left(\frac{3
-	  Q(\mathrm{H}^0)}{4.4 \pi\alpha_B
-	  (r_{\mathrm{II}}^3 - r_0^3)}\right)^{1/2}
-
-Note that this expression implicitly assumes :math:`r_{\mathrm{II}} >
-r_0`. If this is not the case, then :math:`r_0` will automatically be
-set to :math:`0.99 r_{\mathrm{II}}`.
-	  
-The third option to specify the radius and density is in terms of an
-ionization parameter and a wind parameter. The wind parameter is as
-defined above, and the dimensionless ionization parameter
-:math:`\langle\mathcal{U}\rangle` is defined as the volume average
-over the photoionized region of
-:math:`\mathcal{U} = n_\gamma / n_i`, where :math:`n_\gamma`
-is the number density of ionizing photons and :math:`n_i`
-is the number density of ions, which is taken to be
-1.1 times the hydrogen number density :math:`n_{\mathrm{H}}` under
-the assumption that there is 1 He per 10 H. From these definitions,
-one can show that the ionization parameter, wind parameter, and
-density are related via
-
-.. math:: \mathcal{U} = \left[\frac{81 \alpha_B^2 n_{\mathrm{II}} 
-	  Q(\mathrm{H}^0)}{256 (1.1) \pi c^3}\right]^{1/3}
-	  \left[\left(1 + \Omega\right)^{4/3} 
-	  - \Omega^{1/3} \left(\frac{4}{3}+\Omega\right)\right]
-
-The density :math:`n_{\mathrm{II}}` is determined implicitly from this
-relation, and the inner radius is then given by
-:math:`r_0 = \Omega^{1/3} r_{\mathrm{St}}`,
-where :math:`r_{\mathrm{St}}` is evaluated using density
-:math:`n_{\mathrm{II}}`.
+We refer to this method of computing HII region properties as
+dynamical mode. In this mode, a user can specify the properties of the
+nebula in terms of an ambient density :math:`n_{\mathrm{H}}` and
+a wind parameter :math:`\Omega`. All other quantities are
+derived from these two and from the ionizing luminosity
+:math:`Q(\mathrm{H}^0)` and age :math:`t` of each cluster. Dynamical
+mode can only be used in combination with cluster mode, not integrated
+mode, because composite stellar populations do not have well-defined
+ages.
 
 
 .. _ssec-cloudy-template:
@@ -290,15 +378,26 @@ input file, subject to the following restrictions:
 #. The input file *must not* contain any commands that specify the
    luminosity, intensity, or the spectral shape. These will be
    inserted automatically by the cloudy_slug script.
-#. The input file *must not* contain a radius command. This too will
-   be computed automatically by the cloudy_slug script.
-#. The input file *must* contain an entry ``hden N`` where ``N`` is
-   the log base 10 of the hydrogen density. This will be interpreted
-   differently depending on whether cloudy_slug is being run in
-   cluster mode or integrated mode -- see :ref:`ssec-cloudy-cluster`.
+#. The input file *may* contain a radius command specifying the inner
+   radius of the HII region. If it does not, then the user must
+   specify the radius in another way, by setting 2 of the 6 inputs
+   described in :ref:`sssec-cloudy-nebular properties` (for
+   simulations not done in dynamic mode) or by setting an ambient
+   density and wind parameters in
+   :ref:`sssec-cloudy-dynamical-cluster-mode`. If the user does
+   set these quantities, any radius command in the template file will be
+   ignored, and a warning message will be issued if one is
+   found. Finally, note that cluster_slug will only compute derived
+   parameters correctly from a radius in the template file if the
+   radius is specified in cloudy's default format, by giving a log of
+   the radius in cm; the keywords "linear" and "parsecs" are not
+   currently supported.
+#. The input file *may* contain a hydrogen density command specifying
+   the starting hydrogen density. The rules for this are the same as
+   for the radius command.
 #. Any outputs to be written (specified using the ``save`` or
    ``punch`` keywords) must give file names containing the string
-   ``OUTPUT_FILENAME``. This string will be replaced by the
+   ``$OUTPUT_FILENAME``. This string will be replaced by the
    cloudy_slug script to generate a unique file name for each cloudy
    run, and to read back these outputs for post-processing.
 #. The cloudy_slug output will contain output spectra only if the
@@ -307,6 +406,10 @@ input file, subject to the following restrictions:
 #. The cloudy_slug output will contain output line luminosities only
    if the cloudy input file contains a ``save last line list emergent
    absolute column`` command. See :ref:`ssec-cloudy-output`.
+#. The cloudy_slug output will contain output physical conditions and
+   dimensionless values only if the cloudy input file contains a
+   ``save last hydrogen conditions`` command. See
+   :ref:`ssec-cloudy-output`.
 #. If any other outputs are produced by the input file, they will
    neither be processed nor moved, deleted, or otherwise changed by
    the cloudy_slug script.
@@ -332,13 +435,16 @@ The cloudy_slug Interface Script
 The ``cloudy_slug.py`` script provides the interface between SLUG and
 cloudy. Usage for this script is as follows::
 
-   cloudy_slug.py [-h] [-a AGEMAX] [--cloudypath CLOUDYPATH]
-                  [--cloudytemplate CLOUDYTEMPLATE] [-cm]
-                  [-cf COVERINGFAC] [-hd HDEN] [-ip IONPARAM] [-nd]
-                  [-nl NICELEVEL] [-n NPROC] [-qm QH0MIN] [-ri RINNER]
-                  [-s] [--slugformat SLUGFORMAT] [--slugpath SLUGPATH]
-                  [-v] [-wp WINDPARAM] [-wr]
-                  slug_model_name [start_spec] [end_spec]
+  cloudy_slug.py [-h] [-a AGEMAX] [--cloudypath CLOUDYPATH]
+                 [--cloudytemplate CLOUDYTEMPLATE] [-cm]
+                 [-cf COVERINGFAC] [-d] [-hd HDEN] [-ip IONPARAM]
+                 [-ip0 IONPARAM0] [-ipm IONPARAMMAX]
+		 [--ionparammin IONPARAMMIN] [-nl NICELEVEL]
+                 [-n NPROC] [-ps PARAMSAFETY] [-qm QH0MIN] [-r0 R0]
+                 [-r1 R1] [-s] [--slugformat SLUGFORMAT]
+                 [--slugpath SLUGPATH] [-t TMPDIR] [-v] [-wp WINDPARAM]
+                 [-wr]
+                 slug_model_name [start_spec] [end_spec]
 
 The positional arguments are as follows:
 
@@ -347,67 +453,110 @@ The positional arguments are as follows:
   the ``model_name`` parameter used in the SLUG simulation, with the
   optional addition of a path specification in front.
 * ``start_spec``: default behavior is to run cloudy on all the
-  integrated spectra (in :ref:`sssec-cloudy-integrated-mode`) or
-  cluster spectra (in :ref:`sssec-cloudy-cluster-mode`). If this
+  integrated spectra or cluster spectra (see
+  :ref:`sssec-cloudy-integrated-cluster`). If this
   argument is set, cloudy will only be run in spectra starting with
-  the specified trial number (in :ref:`sssec-cloudy-integrated-mode`)
-  or cluster number (in :ref:`sssec-cloudy-cluster-mode`); numbers are
+  the specified trial number or cluster number; numbers are
   0-offset, so the first trial/cluster is 0, the next is 1, etc.
-* ``end_spec``: default behavior is to run cloudy on all the
-  integrated spectra (in :ref:`sssec-cloudy-integrated-mode`) or
-  cluster spectra (in :ref:`sssec-cloudy-cluster-mode`). If this
-  argument is set, cloudy will only be run on spectra up to the
-  specified trial number (in :ref:`sssec-cloudy-integrated-mode`) or
-  cluster number (in :ref:`sssec-cloudy-cluster-mode`); numbers are
-  0-offset, so the first trial/cluster is 0, the next is 1, etc.
+* ``end_spec``: same as ``start_spec``, but specifying the last
+  cluster to be processed. Per standard python convention, the spectra
+  processed will go up to but not include ``end_spec``.
 
-The optional arguments are as follows:
+The following optional arguments control paths and file locations:
 
-* ``-h, --help``: prints a help message and then exits
-* ``-a AGEMAX, --agemax AGEMAX``: maximum cluster age in Myr for
-  cloudy computation. Cloudy will not be run on clusters older than
-  this value, and the predicted nebular emission for such clusters
-  will be recorded as zero. Default value is 10 Myr. This argument only
-  has an effect if running in :ref:`sssec-cloudy-cluster-mode`;
-  otherwise it is ignored.
 * ``--cloudypath CLOUDYPATH``: path to the cloudy executable; default
   is ``$CLOUDY_DIR/cloudy.exe``
 * ``--cloudytemplate CLOUDYTEMPLATE``: cloudy input file template (see
   :ref:`ssec-cloudy-template`); default is
   ``$SLUG_DIR/cloudy_slug/cloudy.in_template``
-* ``-cm, --clustermode``: if this argument is set, then cloudy_slug
-  will run in :ref:`sssec-cloudy-cluster-mode`; default behavior is to
-  run in :ref:`sssec-cloudy-integrated-mode`
+* ``--slugformat SLUGFORMAT``: the format of slug output data to use;
+  valid values are ``ascii``, ``bin``, ``binary``, and ``fits``. By
+  default ``cloudy_slug`` checks for any output whose name and path
+  match the model name and search path, regardless of format.
+* ``--slugpath SLUGPATH``: path to the SLUG output data. If not set,
+  cloudy_slug searches for an appropriately-named set of output files
+  first in the current working directory, and next in
+  ``$SLUG_DIR/output``
+* ``-t TMPDIR, --tmpdir TMPDIR``: location of the temporary directory
+  where temporary files should be stored; defaults to
+  `./cloudy_tmp_MODEL_NAME`.
+
+The following arguments control how HII regions are processed:
+  
+* ``-a AGEMAX, --agemax AGEMAX``: maximum cluster age in Myr for
+  cloudy computation. Cloudy will not be run on clusters older than
+  this value, and the predicted nebular emission for such clusters
+  will be recorded as zero. Default value is 10 Myr. This argument only
+  has an effect if running in cluster mode (see
+  :ref:`sssec-cloudy-integrated-cluster`); otherwise it is ignored.
 * ``-cf COVERINGFRAC, --coveringfrac COVERINGFRAC``: this sets the
-  covering fraction of the HII region; formally, the effect of this
-  parameter is that the ionizing luminosity that is passed to cloudy
-  is reduced by the specified factor; defaults to 1.0, i.e., the full
-  ionizing luminosity is passed to cloudy
-* ``-hd HDEN, --hden HDEN``: hydrogen density; if set, this value
-  overrides the value of hden found in the cloudy template file
-* ``-ip IONPARAM, --ionparam IONPARAM``: ionization parameter, used to
-  set the density and inner radius. If this is not set, then the
-  density is set to ``HDEN`` or, if that is not set, to the value of
-  hden found in the cloudy template file.
-* ``-nd, --nodynamic``: this disables the dynamical calculation of the
-  HII region radius and density for calculations in
-  :ref:`sssec-cloudy-cluster-mode`, and instead treats the density as
-  the starting density for the cloudy calculation, exactly as in
-  :ref:`sssec-cloudy-integrated-mode`
+  covering fraction of the HII region, i.e., the fraction of ionizing
+  photons that are assumed to produce nebular emission; the output
+  luminosity is decreased by a factor of the covering fraction
+* ``-cm, --clustermode``: if this argument is set, then cloudy_slug
+  will process cluster spectra; the default behavior is to process
+  integrated spectra
+* ``--ionparammax IONPARAMMAX``: maximum value for the inner radius
+  ionization parameter :math:`\mathcal{U}_0`. If the value falls
+  outside this range, the behavior is controlled by the setting of the
+  ``paramsafety`` option (see below).
+* ``--ionparammmin IONPARAMMIN``: same as ``ionparammax``, but sets a
+  minimum instead of a maximum. 
+* ``-qm QH0MIN, --qH0min QH0MIN``: minimum ionizing luminosity for
+  which to run cloudy (default = 0). As with ``--agemax``, for
+  clusters / times where cloudy is not run, that case will still
+  appear in the output, but the nebular spectra and nebular line
+  luminosities will all be set to zero.
+
+The following parameters specify the physical properties of HII
+regions, as explained in :ref:`sssec-cloudy-nebular
+properties`. Parameters can be set to either fixed values, or to the
+names of PDF files. Any numerical value given is interpreted as a
+fixed constant, while non-numerical values are interpreted as the
+names of PDF files that specify a PDF from which the corresponding
+parameter is to be drawn. See :ref:`sec-pdfs` for details on PDF file
+formats.
+
+* ``-hd HDEN, --hden HDEN``: hydrogen density in HII region,
+  :math:`n_{\mathrm{II}}`
+* ``-ip IONPARAM, --ionparam IONPARAM``: volume-averaged ionization
+  parameter, :math:`\mathcal{U}`
+* ``-ip0 IONPARAM, --ionparam0 IONPARAM0``: ionization parameter at
+  HII region inner edge, :math:`\mathcal{U}_0`
+* ``-r0 R0``: inner radius of the HII region
+* ``-r1 R1``: outer radius of the HII region
+* ``-wp WINDPARAM, --windparam WINDPARAM``: wind parameter,
+  :math:`\Omega`
+
+The following arguments control general code behavior:
+
+* ``-h, --help``: prints a help message and then exits
 * ``-nl NICELEVEL, --nicelevel NICELEVEL``: if this is set, then the
   cloudy processes launched by the script will be run at this nice
   level. If it is not set, they will not be nice'd. Note that this
   option will only work correctly on platforms that support nice.
 * ``-n NPROC, --nproc NPROC``: number of simultaneous cloudy processes
   to run; default is the number of cores available on the system
-* ``-qm QH0MIN, --qH0min QH0MIN``: minimum ionizing luminosity for
-  which to run cloudy (default = 0). As with ``--agemax``, for
-  clusters / times where cloudy is not run, that case will still
-  appear in the output, but the nebular spectra and nebular line
-  luminosities will all be set to zero.
-* ``-ri RINNER, --rinner RINNER``: inner radius of the HII region,
-  corresponding to :math:`r_0` in the explanation above, in
-  cm; cannot set this and either ``ionparam`` or ``windparam``
+* ``--ps PARAMSAFETY, --paramsafety PARAMSAFETY``: specifies how to
+  handle situations where the combination of input HII region
+  parameters is not physically allowed, or falls outside the bounds
+  set by ``ionparammin`` and ``ionparammax``. Available options are:
+  
+  *  ``warn``: one of the input parameters is adjusted to bring it
+     to a physically-allowed value, and a warning is issued; the run
+     continues. This is the default behaviour.
+  *  ``skip``: runs with unphysical parameter choices are skipped; the
+     parameters that were chosen are recorded in the output file, but
+     the output spectrum, all line luminosities, and all other
+     parameters are set to 0, and cloudy is not run.
+  *  ``halt``: if a forbidden parameter combination is found, the
+     entire cloudy_slug run is halted.
+  *  ``redraw``: if a forbidden parameter combination is found, and
+     one or more parameters are being drawn from a PDF, a new set of
+     parameters will be drawn from the PDF. Redrawing will continue up
+     to 100 times until a physically-allowed parameter combination is
+     found. If no valid parameter combination is found after 100
+     attempts, revert to ``skip``.
 * ``-s, --save``: by default, cloudy_slug will extract line and
   spectral data from the cloudy outputs and store them as described in
   :ref:`ssec-cloudy-output`, then delete the cloudy output files. If
@@ -420,19 +569,8 @@ The optional arguments are as follows:
   store hundreds of GB or more. The data that ``cloudy_slug`` extract
   are much, much smaller, and (if you do not use ASCII format) are
   stored in a much more compact form.
-* ``--slugformat SLUGFORMAT``: the format of slug output data to use;
-  valid values are ``ascii``, ``bin``, ``binary``, and ``fits``. By
-  default ``cloudy_slug`` checks for any output whose name and path
-  match the model name and search path, regardless of format.
-* ``--slugpath SLUGPATH``: path to the SLUG output data. If not set,
-  cloudy_slug searches for an appropriately-named set of output files
-  first in the current working directory, and next in
-  ``$SLUG_DIR/output``
 * ``-v, --verbose``: if this option is set, cloudy_slug produces
   verbose output as it runs
-* ``-wp WINDPARAM, --windparam WINDPARAM``: if set, this gives the
-  value of the wind parameter :math:`\Omega`. Default behavior is that
-  :math:`\Omega` is set to a small value.
 * ``-wr, --writeparams``: if set, this option causes ``cloudy_slug``
   to write out a file beginning with ``cloudy_slug.param`` for each
   cloudy run. This file is written in the same directory used by the
@@ -448,15 +586,15 @@ The cloudy_slug script will automatically process the cloudy output
 and produce a series of new output files, which will be written to the
 same directory where the input SLUG files are located, and using the
 same output mode (ASCII text, raw binary, or FITS -- see
-:ref:`sec-output`). If cloudy_slug is run in
-:ref:`sssec-cloudy-integrated-mode`, the four output files will be
+:ref:`sec-output`). If cloudy_slug is called to process integrated
+spectra, the four output files will be
 ``MODEL_NAME_integrated_cloudyparams.ext``,
 ``MODEL_NAME_integrated_cloudylines.ext``, 
 ``MODEL_NAME_integrated_cloudyphot.ext``, and 
 ``MODEL_NAME_integrated_cloudyspec.ext``, where the extension ``.ext``
 is one of ``.txt``, ``.bin``, or ``.fits``, depending on the
-``output_mode``. If cloudy_slug is run in
-:ref:`sssec-cloudy-cluster-mode`, the four output files will be
+``output_mode``. If cloudy_slug is run on cluster spectra, the four
+output files will be
 ``MODEL_NAME_cluster_cloudyparams.ext``,
 ``MODEL_NAME_cluster_cloudylines.ext``, 
 ``MODEL_NAME_cluster_cloudyphot.ext``, and 
@@ -471,27 +609,35 @@ The ``integrated_cloudyparams`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This file contains the input parameters for the cloudy runs, and
-quantities derived from them. It consists of a series of entries
-containin the following fields:
+quantities derived from them. All parameters are as defined in
+:ref:`sssec-cloudy-nebular properties`. The output file consists of a
+series of entries containin the following fields:
 
 * ``Trial``: which trial these data are from
 * ``Time``: evolution time at which the output is produced
 * ``Hden``: number density of hydrogen nuclei at the inner edge of the
-  HII region whose structure cloudy computes, in H/cm^3
+  HII region, in H/cm^3
 * ``R0``: radius of the inner edge of the HII region, in cm
-* ``RS``: Stromgren radius of the HII region, defined as described in
-  :ref:`sssec-cloudy-integrated-mode`; in units of cm
+* ``R1``: radius of the outer edge of the HII region, in cm
 * ``QH0``: ionizing luminosity input to cloudy, in photons/s
-* ``CovFac``: covering factor used; the ionizing luminosity that is
-  passed to cloudy is ``QH0*covFac``
-* ``U``: volume-averaged ionization parameter :math:`\mathcal{U}` for
-  the HII region, defined as in :ref:`sssec-cloudy-cluster-mode`
-* ``Omega``: wind parameter :math:`\Omega` for the HII region, defined
-  as in :ref:`sssec-cloudy-cluster-mode`
+* ``CovFac``: covering factor used
+* ``U``: volume-averaged ionization parameter :math:`\mathcal{U}`
+* ``U0``: inner edge ionization parameter :math:`\mathcal{U}_0`
+* ``Omega``: wind parameter :math:`\Omega`
+* ``zeta``: radiation pressure parameter :math:`\zeta`
 
-Note that the only parameters that are actually used in the cloudy
-computation are ``R0`` and ``QH0*covFac``; the remainder are derived
-from them.
+It will also contain the following fields if the cloudy template file
+includes a ``save last hydrogen conditions`` command:
+
+* ``Hden_out``: mean H number density for the HII region structure
+  computed by cloudy, in H/cm^3; the average is weighted by the
+  ionized volume, i.e., it is weighted by :math:`x\, dV`, where
+  :math:`x` is the hydrogen ionization fraction.
+* ``R1_out``: HII region outer radius returned by cloudy
+* ``Omega_out``: wind parameter :math:`\Omega`, computed using
+  ``R1_out`` instead of ``R1``
+* ``zeta_out``: radiation pressure parameter :math:`\zeta`, computing
+  using ``R1_out`` instead of ``R1``
 
 If the SLUG data input to cloudy_slug were written in ``ascii`` mode,
 these data are output as a text file containing a series of columns,
@@ -503,19 +649,44 @@ extension. The table contains one column whose name corresponds to the
 list of fields above.
 
 If the SLUG data input to cloudy_slug were writtin in ``binary`` mode,
-these data are written in a raw binary file that is formatted as a
-series of records containing the following fields:
+these data are written in a raw binary file that is formatted as
+follows. First, there are four bytes specifying if the optional fields
+are included:
+
+* ``Hden_out_set`` (byte): 0 if the data do not include ``Hden_out``, 1 if
+  they do include it
+* ``R1_out_set`` (byte): 0 if the data do not include ``R1_out``, 1 if
+  they do include it
+* ``Omega_out_set`` (byte): 0 if the data do not include ``Omega_out``, 1 if
+  they do include it
+* ``zeta_out_set`` (byte): 0 if the data do not include ``zeta_out``, 1 if
+  they do include it
+
+This is followed by a series of records containing the following fields:
 
 * ``Trial`` (numpy ``uint64``)
 * ``Time`` (numpy ``float64``)
 * ``Hden`` (numpy ``float64``)
 * ``R0`` (numpy ``float64``)
-* ``RS`` (numpy ``float64``)
+* ``R1`` (numpy ``float64``)
+* ``QH0`` (numpy ``float64``)
 * ``covFac`` (numpy ``float64``)
 * ``U`` (numpy ``float64``)
+* ``U0`` (numpy ``float64``)
 * ``Omega`` (numpy ``float64``)
+* ``zeta`` (numpy ``float64``)
+* ``Hden_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to )
+* ``R1_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to )
+* ``Omega_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to )
+* ``zeta_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to 1)
 
-There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
 
 The ``integrated_cloudylines`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -714,19 +885,26 @@ containin the following fields:
 * ``Hden``: number density of hydrogen nuclei at the inner edge of the
   HII region whose structure cloudy computes, in H/cm^3
 * ``R0``: radius of the inner edge of the HII region, in cm
-* ``RS``: Stromgren radius of the HII region, defined as described in
-  :ref:`sssec-cloudy-integrated-mode`; in units of cm
+* ``R1``: radius of the outer edge of the HII region, cm
 * ``QH0``: ionizing luminosity input to cloudy, in photons/s
-* ``CovFac``: covering factor used; the ionizing luminosity that is
-  passed to cloudy is ``QH0*covFac``
-* ``U``: volume-averaged ionization parameter :math:`\mathcal{U}` for
-  the HII region, defined as in :ref:`sssec-cloudy-cluster-mode`
-* ``Omega``: wind parameter :math:`\Omega` for the HII region, defined
-  as in :ref:`sssec-cloudy-cluster-mode`
+* ``CovFac``: covering factor used
+* ``U``: volume-averaged ionization parameter :math:`\mathcal{U}`
+* ``U0``: inner edge ionization parameter :math:`\mathcal{U}_0`
+* ``Omega``: wind parameter :math:`\Omega`
+* ``zeta``: radiation pressure parameter :math:`\zeta`
 
-Note that the only parameters that are actually used in the cloudy
-computation are ``R0`` and ``QH0*covFac``; the remainder are derived
-from them.
+It will also contain the following fields if the cloudy template file
+includes a ``save last hydrogen conditions`` command:
+
+* ``Hden_out``: mean H number density for the HII region structure
+  computed by cloudy, in H/cm^3; the average is weighted by the
+  ionized volume, i.e., it is weighted by :math:`x\, dV`, where
+  :math:`x` is the hydrogen ionization fraction.
+* ``R1_out``: HII region outer radius returned by cloudy
+* ``Omega_out``: wind parameter :math:`\Omega`, computed using
+  ``R1_out`` instead of ``R1``
+* ``zeta_out``: radiation pressure parameter :math:`\zeta`, computing
+  using ``R1_out`` instead of ``R1``
 
 If the SLUG data input to cloudy_slug were written in ``ascii`` mode,
 these data are output as a text file containing a series of columns,
@@ -738,11 +916,24 @@ extension. The table contains one column whose name corresponds to the
 list of fields above.
 
 If the SLUG data input to cloudy_slug were writtin in ``binary`` mode,
-these data are written in a raw binary file that is formatted as a
-a series of records, one for each output time, with different trials
-ordered sequentially, so that all the times for one trial are output
-before the first time for the next trial. Each record consists of a
-header containing
+these data are written in a raw binary file that is formatted as
+follows. First, there are four bytes specifying if the optional fields
+are included:
+
+* ``Hden_out_set`` (byte): 0 if the data do not include ``Hden_out``, 1 if
+  they do include it
+* ``R1_out_set`` (byte): 0 if the data do not include ``R1_out``, 1 if
+  they do include it
+* ``Omega_out_set`` (byte): 0 if the data do not include ``Omega_out``, 1 if
+  they do include it
+* ``zeta_out_set`` (byte): 0 if the data do not include ``zeta_out``, 1 if
+  they do include it
+
+
+Next there are a series of records, one for each output time, with
+different trials ordered sequentially, so that all the times for one
+trial are output before the first time for the next trial. Each record
+consists of a header containing
 
 * ``Time`` (``double``)
 * ``NCluster`` (``std::vector<double>::size_type``, usually ``unsigned long long``): number of non-disrupted clusters present at this time
@@ -753,11 +944,21 @@ This is followed by ``NCluster`` entries of the following form:
 * ``Time`` (numpy ``float64``)
 * ``Hden`` (numpy ``float64``)
 * ``R0`` (numpy ``float64``)
-* ``RS`` (numpy ``float64``)
+* ``R1`` (numpy ``float64``)
+* ``QH0`` (numpy ``float64``)
 * ``covFac`` (numpy ``float64``)
 * ``U`` (numpy ``float64``)
+* ``U0`` (numpy ``float64``)
 * ``Omega`` (numpy ``float64``)
-
+* ``zeta`` (numpy ``float64``)
+* ``Hden_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to )
+* ``R1_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to )
+* ``Omega_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to )
+* ``zeta_out`` (numpy ``float64``; optional, only if the relevant byte
+  in the header is set to 1)
 
 The ``cluster_cloudylines`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
