@@ -4,7 +4,14 @@ normal distribution.
 """
 
 import numpy as np
-from scipy.special import erf
+import os
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    from scipy.special import erf
+else:
+    # Dummy erf function
+    def erf(x):
+        pass
 from .slug_pdf_segment import slug_pdf_segment
 
 class slug_pdf_normal(slug_pdf_segment):

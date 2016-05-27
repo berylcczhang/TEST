@@ -8,7 +8,14 @@ single output file.
 
 import numpy as np
 import struct
-from scipy.interpolate import interp1d
+import os
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if not on_rtd:
+    from scipy.interpolate import interp1d
+else:
+    # Dummy interp1d function for RTD
+    def interp1d(dummy1, dummy2, axis=None):
+        pass
 from .cloudy import write_integrated_cloudyparams
 from .cloudy import write_integrated_cloudyphot
 from .cloudy import write_integrated_cloudylines
