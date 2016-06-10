@@ -253,21 +253,24 @@ slug_cluster::advance(double time) {
       // Find the lowest mass star that is still alive
       while (stars[starptr] > mass_cuts[interval_ptr]) {
 	starptr--;
-	if (starptr <= 0) break;
+	if (starptr < 0) break;
       }
 
-      // If we've reached the bottom of the star list, we're done
-      if (starptr <= 0) break;
+      // If we've reached the bottom of the star list, and this star
+      // is still alive, we're done
+      if (starptr == -1) break;
 
       // If this star is below the minimum mass star we're killing
       // off, go to next iteration
-      if (stars[starptr] < mass_cuts[interval_ptr-1]) {
-	interval_ptr -= 2;
-	continue;
+      if (interval_ptr > 0) {
+	if (stars[starptr] < mass_cuts[interval_ptr-1]) {
+	  interval_ptr -= 2;
+	  continue;
+	}
       }
 
       // If we're here, starptr points to a star that should be dead
-      // and this age. We now proceed through the star list to find
+      // at this age. We now proceed through the star list to find
       // the minimum mass stars that is still alive.
       int starptr2 = starptr;
       for (; starptr2 > 0; starptr2--)
