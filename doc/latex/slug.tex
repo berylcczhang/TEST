@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{June 29, 2016}
+\date{June 30, 2016}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -6915,7 +6915,9 @@ interpreted as the prior probability of each data point;
 callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
-all data points have equal prior probability
+no reweighting is performed, so all data points in the library
+have equal prior probability, i.e. the prior is the same as
+the sampling of points in the library
 
 \item[{pobs}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} None{]}
 the probability that a particular object would be observed,
