@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{May 25, 2016}
+\date{June 29, 2016}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -368,7 +368,7 @@ The \href{http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html}{cfitsio library} (opt
 
 \end{itemize}
 
-Compilation will be easiest if you install these libraries such that the header files are included in your \code{CXX\_INCLUDE\_PATH} and the compiled object files are in your \code{LIBRARY\_PATH}. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag \code{FITS=DISABLE\_FITS} when calling \code{make} (see below). Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
+Compilation will be easiest if you install these libraries such that the header files are included in your \code{CXX\_INCLUDE\_PATH} (for Boost) and \code{C\_INCLUDE\_PATH} (for GSL) and the compiled object files are in your \code{LIBRARY\_PATH}. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag \code{FITS=DISABLE\_FITS} when calling \code{make} (see below). Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
 
 In addition to the core dependencies, slugpy, the python helper library requires:
 \begin{itemize}
@@ -395,7 +395,7 @@ This is only required performing cloudy runs, and is not required for any other 
 
 \section{Compiling}
 \label{compiling:compiling}
-If you have boost, GSL, and (if you're using it) cfitsio included in your \code{CXX\_INCLUDE\_PATH} and \code{LIBRARY\_PATH} environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:
+If you have Boost in your \code{CXX\_INCLUDE\_PATH}, GSL in your \code{C\_INCLUDE\_PATH}, and (if you're using it) cfitsio in your \code{C\_INCLUDE\_PATH}, and the compiled libraries for each of these in your \code{LIBRARY\_PATH} environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 make

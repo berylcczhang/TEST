@@ -41,6 +41,9 @@ LDDEBFLAGS	= $(MACH_LDDEBFLAGS) $(MACH_CXXFLAG)
 -include Make.config.override
 
 # Include flags
+ifdef C_INCLUDE_PATH
+     INCFLAGS += -I$(C_INCLUDE_PATH)
+endif
 ifdef CXX_INCLUDE_PATH
      INCFLAGS += -I$(CXX_INCLUDE_PATH)
 endif
