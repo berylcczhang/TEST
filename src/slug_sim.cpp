@@ -745,10 +745,43 @@ void slug_sim::cluster_sim() {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Method to call functions for enzo simulation
+// Method to call functions for enzo simulation (Yusuke Fujimoto)
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::enzo_sim() {
 cout << "Hello, world!" << endl;
+
+  unsigned int i = 0;
+
+    // Reset the cluster if the mass is constant, destroy it and build
+    // a new one if not
+    if (pp.get_random_cluster_mass()) {
+      unsigned long id = cluster->get_id();
+      delete cluster;
+      cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
+				 tracks, specsyn, filters,
+				 extinct, nebular, yields, clf);
+    } else {
+      cluster->reset();
+    }
+
+    // Loop over time steps
+    for (unsigned int j=0; j<outTimes.size(); j++) {
+
+      // Advance to next time
+      cluster->advance(outTimes[j]);
+
+      // See if cluster has disrupted; if so, terminate this iteration
+      if (cluster->disrupted()) {
+	break;
+      }
+
+      // Write yields if requested
+      if (pp.get_writeClusterYield()) {
+	  cluster->write_yield(cluster_yield_file, out_mode, i, true);
+      }      
+
+    } // End of loop over time steps
+
 }
 
 ////////////////////////////////////////////////////////////////////////
