@@ -22,7 +22,7 @@ namespace std
 }
 #endif
 #include "slug_PDF_powerlaw.H"
-#include "slug_sim.H"
+#include "slug_enzo.H"
 #include "slug_specsyn_hillier.H"
 #include "slug_specsyn_kurucz.H"
 #include "slug_specsyn_pauldrach.H"
@@ -45,7 +45,7 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
-slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
+slug_enzo::slug_enzo(const slug_parmParser& pp_) : pp(pp_) {
   
   // Either read a random seed from a file, or generate one
   unsigned int seed;
@@ -345,7 +345,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 ////////////////////////////////////////////////////////////////////////
 // Destructor
 ////////////////////////////////////////////////////////////////////////
-slug_sim::~slug_sim() {
+slug_enzo::~slug_enzo() {
 
 
   // Clean up variable parameter storage
@@ -406,7 +406,7 @@ slug_sim::~slug_sim() {
 ////////////////////////////////////////////////////////////////////////
 // Method to run a galaxy simulation
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::galaxy_sim() {
+void slug_enzo::galaxy_sim() {
 
   // Loop over number of trials
   for (unsigned long i=0; i<pp.get_nTrials(); i++) {
@@ -606,7 +606,7 @@ void slug_sim::galaxy_sim() {
 ////////////////////////////////////////////////////////////////////////
 // Method to run a cluster simulation
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::cluster_sim() {
+void slug_enzo::cluster_sim() {
 
   // Loop over number of trials
   for (unsigned long i=0; i<pp.get_nTrials(); i++) {
@@ -747,7 +747,7 @@ void slug_sim::cluster_sim() {
 ////////////////////////////////////////////////////////////////////////
 // Method to call functions for enzo simulation (Yusuke Fujimoto)
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::enzo_sim() {
+void slug_enzo::enzo_sim() {
 cout << "Hello, world!" << endl;
 
   unsigned int i = 0;
@@ -797,7 +797,7 @@ cout << "Hello, world!" << endl;
 ////////////////////////////////////////////////////////////////////////
 // Open integrated properties file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_prop() {
+void slug_enzo::open_integrated_prop() {
 
 
   // Construct file name and path
@@ -913,7 +913,7 @@ void slug_sim::open_integrated_prop() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster properties file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_prop() {
+void slug_enzo::open_cluster_prop() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1133,7 +1133,7 @@ void slug_sim::open_cluster_prop() {
 ////////////////////////////////////////////////////////////////////////
 // Open integrated spectra file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_spec() {
+void slug_enzo::open_integrated_spec() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1373,7 +1373,7 @@ void slug_sim::open_integrated_spec() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster spectra file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_spec() {
+void slug_enzo::open_cluster_spec() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1616,7 +1616,7 @@ void slug_sim::open_cluster_spec() {
 ////////////////////////////////////////////////////////////////////////
 // Open integrated photometry file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_phot() {
+void slug_enzo::open_integrated_phot() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1797,7 +1797,7 @@ void slug_sim::open_integrated_phot() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster photometry file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_phot() {
+void slug_enzo::open_cluster_phot() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1982,7 +1982,7 @@ void slug_sim::open_cluster_phot() {
 ////////////////////////////////////////////////////////////////////////
 // Open integrated yield file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_yield() {
+void slug_enzo::open_integrated_yield() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -2153,7 +2153,7 @@ void slug_sim::open_integrated_yield() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster yield file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_yield() {
+void slug_enzo::open_cluster_yield() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -2327,7 +2327,7 @@ void slug_sim::open_cluster_yield() {
 ////////////////////////////////////////////////////////////////////////
 // Write out a separator
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::write_separator(std::ofstream& file, 
+void slug_enzo::write_separator(std::ofstream& file, 
 			       const unsigned int width) {
   string sep;
   for (unsigned int i=0; i<width; i++) sep += "-";

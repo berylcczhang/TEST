@@ -15,15 +15,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
 ////////////////////////////////////////////////////////////////////////
-// slug_sim class
+// slug_enzo class
 //
-// This defined the slug_sim class, which is the main driver class for
+// This defined the slug_enzo class, which is the main driver class for
 // running simulations. It is responsible for initializing
 // simulations, running them, and managing the output.
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef _slug_sim_H_
-#define _slug_sim_H_
+#ifndef _slug_enzo_H_
+#define _slug_enzo_H_
 
 #include "slug.H"
 #include "slug_cluster.H"
@@ -40,15 +40,15 @@ extern "C" {
 }
 #endif
 
-class slug_sim {
+class slug_enzo {
 
 public:
 
   // Constructor
-  slug_sim(const slug_parmParser& pp_);
+  slug_enzo(const slug_parmParser& pp_);
 
   // Destructor
-  ~slug_sim();
+  ~slug_enzo();
 
   // Class to run a galaxy simulation
   void galaxy_sim();
@@ -124,4 +124,4 @@ private:
 };
 
 #endif
-// _slug_sim_H_
+// _slug_enzo_H_
