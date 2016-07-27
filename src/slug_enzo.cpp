@@ -50,6 +50,7 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
                      const double particle_mass,
                      const double particle_age) : pp(pp_) {
   
+  /* Yusuke Fujimoto
   // Either read a random seed from a file, or generate one
   unsigned int seed;
   if (pp.read_rng_seed()) {
@@ -109,6 +110,7 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
       seed_file.close();
     }
   }
+  */
 
   // Set up the random number generator
   //rng = new rng_type(seed);
@@ -339,6 +341,7 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
     int_yield_fits = cluster_yield_fits = nullptr;
 #endif
 
+/* Yusuke Fujimoto
   // Open the output files we'll need and write their headers
   if (pp.get_verbosity() > 1)
     std::cout << "slug: opening output files" << std::endl;
@@ -354,6 +357,7 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
   if (pp.galaxy_sim() && pp.get_writeIntegratedYield())
     open_integrated_yield();
   if (pp.get_writeClusterYield()) open_cluster_yield();
+*/
 }
 
 
