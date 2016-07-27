@@ -45,7 +45,10 @@ class slug_enzo {
 public:
 
   // Constructor
-  slug_enzo(const slug_parmParser& pp_);
+  slug_enzo(const slug_parmParser& pp_,
+            const unsigned long particle_id,
+            const double particle_mass,
+            const double particle_age);
 
   // Destructor
   ~slug_enzo();

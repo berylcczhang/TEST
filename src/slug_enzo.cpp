@@ -45,7 +45,10 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
-slug_enzo::slug_enzo(const slug_parmParser& pp_) : pp(pp_) {
+slug_enzo::slug_enzo(const slug_parmParser& pp_,
+                     const unsigned long particle_id,
+                     const double particle_mass,
+                     const double particle_age) : pp(pp_) {
   
   // Either read a random seed from a file, or generate one
   unsigned int seed;
@@ -108,7 +111,8 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_) : pp(pp_) {
   }
 
   // Set up the random number generator
-  rng = new rng_type(seed);
+  //rng = new rng_type(seed);
+  rng = new rng_type(particle_id);//Yusuke Fujimoto
 
   // Warm up the rng by drawing 1000 random numbers. This is another
   // safety measure to avoid getting correlated sequences of random
@@ -313,6 +317,16 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_) : pp(pp_) {
 			       extinct, nebular, yields, clf);
     galaxy = nullptr;
   }
+
+  // Yusuke Fujimoto
+  cluster->advance(particle_age);
+  cout << "Yusuke: particle_id       = " << particle_id << endl;
+  cout << "Yusuke: particle_mass     = " << particle_mass << endl;
+  cout << "Yusuke: particle_age      = " << particle_age << endl;
+  cout << "Yusuke: get_stoch_sn()    = " << cluster->get_stoch_sn() << endl;
+  cout << "Yusuke: get_target_mass() = " << cluster->get_target_mass() << endl;
+  cout << "Yusuke: get_birth_mass()  = " << cluster->get_birth_mass() << endl;
+  cout << "Yusuke: get_alive_mass()  = " << cluster->get_alive_mass() << endl;
 
   // Record the output mode
   out_mode = pp.get_outputMode();
