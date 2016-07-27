@@ -312,7 +312,8 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
       cluster_mass = cmf->draw();
     else
       cluster_mass = pp.get_cluster_mass();
-    cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
+    //cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
+    cluster = new slug_cluster(0, particle_mass, 0.0, imf,// Yusuke Fujimoto
 			       tracks, specsyn, filters,
 			       extinct, nebular, yields, clf);
     galaxy = nullptr;
