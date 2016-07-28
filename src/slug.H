@@ -41,7 +41,7 @@ class slug_filter_set;
 class slug_galaxy;
 class slug_parmParser;
 class slug_sim;
-class slug_enzo;
+class slug_enzo; // added by Yusuke Fujimoto 2016/07
 class slug_specsyn;
 class slug_specsyn_hillier;
 class slug_specsyn_kurucz;

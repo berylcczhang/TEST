@@ -56,9 +56,6 @@ public:
   // Class to run a cluster simulation
   void cluster_sim();
 
-  // Class to call functions for enzo simulation
-  void enzo_sim();
-
 private:
 
   // Functions to open output files and write headers of the various

@@ -14,6 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
+////////////////////////////////////////////////////////////////////////
+// slug_enzo class
+//
+// Written by Yusuke Fujimoto
+// Date 2016/07
+// This is based on slug_sim class.
+////////////////////////////////////////////////////////////////////////
+
 #ifdef __INTEL_COMPILER
 // Need this to fix a bug in the intel compilers relating to c++11
 namespace std
@@ -325,15 +333,8 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
   cluster->advance(particle_age);
   enzo_stoch_sn = cluster->get_stoch_sn();
   enzo_alive_mass = cluster->get_alive_mass();
-  enzo_yield1 = cluster->get_yields()[77];
-  enzo_yield2 = cluster->get_yields()[26];
-  cout << "Yusuke: particle_id       = " << particle_id << endl;
-  cout << "Yusuke: particle_mass     = " << particle_mass << endl;
-  cout << "Yusuke: particle_age      = " << particle_age << endl;
-  cout << "Yusuke: get_stoch_sn()    = " << cluster->get_stoch_sn() << endl;
-  cout << "Yusuke: get_alive_mass()  = " << cluster->get_alive_mass() << endl;
-  cout << "Yusuke: get_yield()[77] '60Fe' = " << cluster->get_yields()[77] << endl;
-  cout << "Yusuke: get_yield()[26] '26Al' = " << cluster->get_yields()[26] << endl;
+  enzo_yield1 = cluster->get_yields()[77]; // 60Fe
+  enzo_yield2 = cluster->get_yields()[26]; // 26Al
 
   // Record the output mode
   out_mode = pp.get_outputMode();
@@ -767,55 +768,6 @@ void slug_enzo::cluster_sim() {
   
 }
 
-////////////////////////////////////////////////////////////////////////
-// Method to call functions for enzo simulation (Yusuke Fujimoto)
-////////////////////////////////////////////////////////////////////////
-void slug_enzo::enzo_sim() {
-cout << "Hello, world!" << endl;
-
-  unsigned int i = 0;
-
-    // Reset the cluster if the mass is constant, destroy it and build
-    // a new one if not
-/* Yusuke Fujimoto
-    if (pp.get_random_cluster_mass()) {
-      unsigned long id = cluster->get_id();
-      delete cluster;
-      cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
-				 tracks, specsyn, filters,
-				 extinct, nebular, yields, clf);
-    } else {
-      cluster->reset();
-    }
-*/
-
-    // Loop over time steps
-    for (unsigned int j=0; j<outTimes.size(); j++) {
-
-      // Advance to next time
-      cluster->advance(outTimes[j]);
-
-      // See if cluster has disrupted; if so, terminate this iteration
-      if (cluster->disrupted()) {
-	break;
-      }
-
-      // Write yields if requested
-      if (pp.get_writeClusterYield()) {
-	  cluster->write_yield(cluster_yield_file, out_mode, i, true);
-      }      
-
-      cout << "Yusuke: get_id() = " << cluster->get_id() << endl;
-      //cout << "Yusuke: get_sn()           = " << cluster->get_sn() << endl;
-      cout << "Yusuke: get_stoch_sn()     = " << cluster->get_stoch_sn() << endl;
-      //cout << "Yusuke: get_non_stoch_sn() = " << cluster->get_non_stoch_sn() << endl;
-      cout << "Yusuke: get_target_mass()     = " << cluster->get_target_mass() << endl;
-      cout << "Yusuke: get_birth_mass()      = " << cluster->get_birth_mass() << endl;
-      cout << "Yusuke: get_alive_mass()      = " << cluster->get_alive_mass() << endl;
-
-    } // End of loop over time steps
-
-}
 
 ////////////////////////////////////////////////////////////////////////
 // Open integrated properties file and write its header

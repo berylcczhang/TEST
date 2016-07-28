@@ -17,9 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 // slug_enzo class
 //
-// This defined the slug_enzo class, which is the main driver class for
-// running simulations. It is responsible for initializing
-// simulations, running them, and managing the output.
+// Written by Yusuke Fujimoto
+// Date 2016/07
+// This is based on slug_sim class.
 ////////////////////////////////////////////////////////////////////////
 
 #ifndef _slug_enzo_H_
@@ -44,7 +44,7 @@ class slug_enzo {
 
 public:
 
-  // Constructor
+  // Constructor (Modified by Yusuke Fujimoto)
   slug_enzo(const slug_parmParser& pp_,
             const unsigned long particle_id,
             const double particle_mass,
@@ -58,9 +58,6 @@ public:
 
   // Class to run a cluster simulation
   void cluster_sim();
-
-  // Class to call functions for enzo simulation
-  void enzo_sim();
 
   // Yusuke Fujimoto
   unsigned long enzo_get_stoch_sn() const { return enzo_stoch_sn; }
