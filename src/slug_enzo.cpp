@@ -327,9 +327,9 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
   cout << "Yusuke: particle_mass     = " << particle_mass << endl;
   cout << "Yusuke: particle_age      = " << particle_age << endl;
   cout << "Yusuke: get_stoch_sn()    = " << cluster->get_stoch_sn() << endl;
-  cout << "Yusuke: get_target_mass() = " << cluster->get_target_mass() << endl;
-  cout << "Yusuke: get_birth_mass()  = " << cluster->get_birth_mass() << endl;
   cout << "Yusuke: get_alive_mass()  = " << cluster->get_alive_mass() << endl;
+  cout << "Yusuke: get_yield()[77] '60Fe' = " << cluster->get_yields()[77] << endl;
+  cout << "Yusuke: get_yield()[26] '26Al' = " << cluster->get_yields()[26] << endl;
 
   // Record the output mode
   out_mode = pp.get_outputMode();
