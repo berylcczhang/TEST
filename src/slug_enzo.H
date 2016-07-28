@@ -62,7 +62,19 @@ public:
   // Class to call functions for enzo simulation
   void enzo_sim();
 
+  // Yusuke Fujimoto
+  unsigned long enzo_get_stoch_sn() const { return enzo_stoch_sn; }
+  double enzo_get_alive_mass() const { return enzo_alive_mass; }
+  double enzo_get_yield1() const { return enzo_yield1; }
+  double enzo_get_yield2() const { return enzo_yield2; }
+
 private:
+
+  // Yusuke Fujimoto
+  unsigned long enzo_stoch_sn;
+  double enzo_alive_mass;
+  double enzo_yield1;
+  double enzo_yield2;
 
   // Functions to open output files and write headers of the various
   // output files

@@ -323,6 +323,10 @@ slug_enzo::slug_enzo(const slug_parmParser& pp_,
 
   // Yusuke Fujimoto
   cluster->advance(particle_age);
+  enzo_stoch_sn = cluster->get_stoch_sn();
+  enzo_alive_mass = cluster->get_alive_mass();
+  enzo_yield1 = cluster->get_yields()[77];
+  enzo_yield2 = cluster->get_yields()[26];
   cout << "Yusuke: particle_id       = " << particle_id << endl;
   cout << "Yusuke: particle_mass     = " << particle_mass << endl;
   cout << "Yusuke: particle_age      = " << particle_age << endl;
