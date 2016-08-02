@@ -45,8 +45,5 @@ int main(int argc, char *argv[]) {
     sim.galaxy_sim();
   else
     sim.cluster_sim();
-
-  // Call function for Enzo
-  sim.enzo_sim();
 }
   
