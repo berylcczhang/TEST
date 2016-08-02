@@ -98,24 +98,24 @@ OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
-.PHONY: all exe debug lib debuglib compile clean
+.PHONY: all exe debug lib lib-debug compile clean
 
 
 exe: CXXFLAGS += $(CXXOPTFLAGS)
-exe: LDFLAGS  += $( LDOPTFLAGS)
+exe: LDFLAGS  += $(LDOPTFLAGS)
 exe: $(EXENAME) 
 
 debug: CXXFLAGS += $(CXXDEBFLAGS)
-debug: LDFLAGS  += $( LDDEBFLAGS)
+debug: LDFLAGS  += $(LDDEBFLAGS)
 debug: $(EXENAME)
 
 lib: CXXFLAGS += $(CXXOPTFLAGS) $(CLIBFLAGS)
-lib: LDFLAGS  += $( LDOPTFLAGS)
+lib: LDFLAGS  += $(LDOPTFLAGS)
 lib: $(LIBNAME)
 
-debuglib: CXXFLAGS += $(CXXDEBFLAGS) $(CLIBFLAGS)
-debuglib: LDFLAGS  += $( LDDEBFLAGS)
-debuglib: $(LIBNAME)
+lib-debug: CXXFLAGS += $(CXXDEBFLAGS) $(CLIBFLAGS)
+lib-debug: LDFLAGS  += $(LDDEBFLAGS)
+lib-debug: $(LIBNAME)
 
 all: exe
 all: lib
@@ -127,7 +127,7 @@ $(EXENAME): $(OBJECTS)
 	$(CXX) -o $(EXENAME) $^ $(LDFLAGS) $(LDLIBFLAGS)
 
 $(LIBNAME): $(OBJECTS)
-	$(CC) -o $(LIBNAME) $^ $(LDFLAGS) $(LDLIBFLAGS) $(DYNLIBFLAG)
+	$(CXX) -o $(LIBNAME) $^ $(LDFLAGS) $(LDLIBFLAGS) $(DYNLIBFLAG)
 
 compile:	$(OBJECTS)
 

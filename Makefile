@@ -1,11 +1,11 @@
 # Makefile for the slug code, v2
-.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe
+.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe lib lib-debug
 
 MACHINE	=
 FITS ?= ENABLE_FITS
 GSLVERSION ?= 2
 
-all: slug bayesphot
+all: slug bayesphot lib
 
 exe: slug
 
@@ -42,6 +42,12 @@ slug-debug:
 		mkdir output; \
 	fi)
 	@(cp src/slug bin)
+
+lib:
+	cd src && $(MAKE) lib MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+
+lib-debug:
+	cd src && $(MAKE) lib-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
 
 clean:
 	cd src && $(MAKE) clean
