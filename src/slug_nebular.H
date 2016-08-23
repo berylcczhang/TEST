@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/multi_array.hpp>
 #include "slug.H"
 #include "slug_filter.H"
+#include <iostream>
 
 typedef boost::multi_array<double, 2> array2d;
 typedef boost::multi_array<double, 4> array4d;
