@@ -33,7 +33,7 @@ parser = argparse. \
              "Script to consolidate unconsolidate slug.py outputs")
 parser.add_argument("name", nargs='?',
                     help="base name(s) of run to be consolidated;"
-                    "default is all runs in the target directory")
+                    " default is all runs in the target directory")
 parser.add_argument("-d", "--dir", default=None,
                     help="directory containing files to be "
                     "consolidated; default is the current directory")
