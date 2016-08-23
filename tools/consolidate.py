@@ -9,6 +9,7 @@ import os
 import os.path as osp
 import copy
 import glob
+import sys
 try:
     from slugpy import read_cluster, combine_cluster, \
         read_integrated, combine_integrated, write_cluster, \
