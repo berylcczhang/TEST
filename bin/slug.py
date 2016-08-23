@@ -87,10 +87,11 @@ ntrials = 1
 ntrials_line = -1
 model_name = 'SLUG_DEF'
 model_name_line = -1
-if 'SLUG_DIR' in os.environ:
-    out_dir = osp.join(os.environ['SLUG_DIR'], 'output')
-else:
-    out_dir = 'output'
+#if 'SLUG_DIR' in os.environ:
+#    out_dir = osp.join(os.environ['SLUG_DIR'], 'output')
+#else:
+#    out_dir = 'output'
+out_dir = cwd
 out_dir_line = -1
 output_mode = 'ascii'
 verbosity = 0
@@ -117,8 +118,8 @@ for i, line in enumerate(pfile):
     if linesplit[0].lower() == 'out_dir':
         try:
             out_dir = linesplit[1]
-            if not osp.isabs(out_dir) and 'SLUG_DIR' in os.environ:
-                out_dir = osp.join(os.environ['SLUG_DIR'], out_dir)
+            if not osp.isabs(out_dir):
+                out_dir = osp.join(cwd, out_dir)
             out_dir_line = i
         except IndexError, ValueError:
             raise IOError("slug: error: couldn't parse the following"
