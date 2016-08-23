@@ -12,7 +12,7 @@ import textwrap
 
 # An enum to represent types of menu items
 class ItemType:
-    Str, Bool, Real, PosInt, PosReal, Vals = range(6)
+    Str, Bool, Real, PosInt, PosReal, Vals, PosRealList = range(7)
 
 # This class defines a menu option
 class Menu_opt(object):
@@ -20,8 +20,8 @@ class Menu_opt(object):
                  param_type, allowed_vals = None,
                  optional = False, required_if = None, 
                  only_if_num = None, only_if_not = None,                  
-                 only_if = None, trigger_redraw = False,
-                 help_txt = None):
+                 only_if = None, only_if_empty = None,
+                 trigger_redraw = False, help_txt = None):
         self.menu_str = menu_str
         self.val = start_val
         self.menu_loc = menu_loc
@@ -33,6 +33,7 @@ class Menu_opt(object):
         self.only_if_num = only_if_num
         self.only_if_not = only_if_not
         self.only_if = only_if
+        self.only_if_empty = only_if_empty
         self.trigger_redraw = True
         self.help_txt = help_txt
 
@@ -88,6 +89,7 @@ class Menu(object):
             ('log_time', Menu_opt(
                 'Logarithmic Timestepping', False, 'Control', 
                 ItemType.Bool, only_if_num = ['time_step'],
+                only_if_empty = ['output_times'],
                 trigger_redraw = True,
                 help_txt =
                 'true = logarithmically-spaced outputs, false = ' +
@@ -95,12 +97,13 @@ class Menu(object):
             ('time_step', Menu_opt(
                 'Time Step [yr, dex, or file name]', '1.0e6',
                 'Control', ItemType.Str, trigger_redraw = True,
+                only_if_empty = ['output_times'],
                 help_txt = 'time step in yr (for linear time step) ' +
-                'or dex (for logarithmic time step), or name of PDF file ' +
-                'giving distribution of output times')),
+                'or dex (for logarithmic time step), or name of PDF file')),
             ('start_time', Menu_opt(
-                'Start Time [yr]', ' ', 'Control', ItemType.PosReal,
+                'Start Time [yr]', '', 'Control', ItemType.PosReal,
                 only_if_num = ['time_step'],
+                only_if_empty = ['output_times'],
                 optional = True, required_if = [('log_time', True)],
                 help_txt = 'time of first output; if left ' +
                 'unspecified, and time stepping is linear, defaults '+
@@ -108,17 +111,23 @@ class Menu(object):
             ('end_time', Menu_opt(
                 'End Time [yr]', '1.0e8', 'Control', ItemType.PosReal,
                 only_if_num = ['time_step'],
+                only_if_empty = ['output_times'],
                 help_txt = 'time at which to end simulation')),
+            ('output_times', Menu_opt(
+                'Output Times [yr]', '', 'Control', ItemType.PosRealList,
+                optional=True, trigger_redraw = True,
+                help_txt = 'comma-separated list '
+                'of exact output times, in yr; if set, overrides '
+                'all other timestepping options')),
             ('sfr', Menu_opt(
                 'Star Formation Rate [Msun/yr or "sfh"]', '1.0',
                 'Control', ItemType.Str,
                 only_if = [('sim_type', 'galaxy')],
-                help_txt = 'numerical values are interpreted as ' +
-                'a constant SFR; the string "sfh" is interpreted ' +
-                'specifying that a star formation history file ' +
-                'should be read')),
+                help_txt = 'numerical values give ' +
+                'constant SFR; "sfh" causes the SFR to be read ' +
+                'from a file')),
             ('sfh', Menu_opt(
-                'Star Formation History', ' ', 'Control', 
+                'Star Formation History', '', 'Control', 
                 ItemType.Str, optional = True,
                 only_if = [('sim_type', 'galaxy'),
                            ('sfr', 'sfh')],
@@ -133,7 +142,7 @@ class Menu(object):
                 'giving the PDF from which the star cluster mass ' +
                 'should be drawn')), 
             ('redshift', Menu_opt(
-                'Redshift', ' ', 'Control', ItemType.PosReal,
+                'Redshift', '', 'Control', ItemType.PosReal,
                 optional=True, help_txt = 
                 'redshift of the system; all output spectra and ' +
                 'photometry will be computed in the observed frame;' +
@@ -154,6 +163,12 @@ class Menu(object):
                 only_if = [('sim_type', 'galaxy')],
                 help_txt = 'if true, write out spectra of ' +
                 'galaxy as a whole')),
+            ('out_integrated_yield', Menu_opt(
+                'Write integrated yield', True,
+                'Output', ItemType.Bool,
+                only_if = [('sim_type', 'galaxy')],
+                help_txt = 'if true, write out chemical yield of ' +
+                'galaxy as a whole')),
             ('out_cluster', Menu_opt(
                 'Write cluster properties', True,
                 'Output', ItemType.Bool,
@@ -168,6 +183,11 @@ class Menu(object):
                 'Write cluster spectra', True,
                 'Output', ItemType.Bool,
                 help_txt = 'if true, write out spectra ' +
+                'of each star cluster')),
+            ('out_cluster_yield', Menu_opt(
+                'Write cluster yields', True,
+                'Output', ItemType.Bool,
+                help_txt = 'if true, write out chemical yields ' +
                 'of each star cluster')),
             ('output_mode', Menu_opt(
                 'Output format', 'ascii', 'Output', ItemType.Vals,
@@ -219,17 +239,17 @@ class Menu(object):
                 'Stellar', ItemType.Real, help_txt = 
                 'minimum star mass to treat stochastically')),
             ('metallicity', Menu_opt(
-                'Metallicity [Zsun]', ' ',
+                'Metallicity [Zsun]', '',
                 'Stellar', ItemType.PosReal, optional=True,
                 help_txt = 'metallicity normalized to Solar')),
             ('WR_mass', Menu_opt(
-                'Minimum WR mass [Msun]', ' ',
+                'Minimum WR mass [Msun]', '',
                 'Stellar', ItemType.PosReal, optional=True,
                 help_txt = 'minimum mass of star that will have a '+
                 'WR phase')),
             ('A_V', Menu_opt(
                 'A_V [mag or file name]',
-                ' ',
+                '',
                 'ISM', ItemType.Str, optional=True,
                 trigger_redraw=True, help_txt =
                 'visual extinction; numeric values give a constant '+
@@ -240,7 +260,7 @@ class Menu(object):
                 'Extinction curve', osp.join('lib', 'extinct',
                                              'SB_ATT_SLUG.dat'),
                 'ISM', ItemType.Str, optional=True,
-                only_if_not = [('A_V', ' ')], help_txt =
+                only_if_not = [('A_V', '')], help_txt =
                 'file containing the shape of the extinction curve')),
             ('compute_nebular', Menu_opt(
                 'Compute nebular emission', True,
@@ -387,9 +407,16 @@ class Menu(object):
                         include = False
                 if include == False:
                     continue
+            if self.params[k].only_if_empty is not None:
+                include = True
+                for con in self.params[k].only_if_empty:
+                    if len(self.params[con].val) > 0:
+                        include = False
+                if include == False:
+                    continue
 
             # Skip optional parameters that have been left blank
-            if self.params[k].optional and self.params[k].val == ' ':
+            if self.params[k].optional and self.params[k].val == '':
                 continue
 
             # Write
@@ -397,7 +424,8 @@ class Menu(object):
             if (self.params[k].param_type == ItemType.Str) or \
                (self.params[k].param_type == ItemType.Vals) or \
                (self.params[k].param_type == ItemType.PosReal) or \
-               (self.params[k].param_type == ItemType.Real):
+               (self.params[k].param_type == ItemType.Real) or \
+               (self.params[k].param_type == ItemType.PosRealList):
                 fp.write(self.params[k].val + '\n')
             elif self.params[k].param_type == ItemType.PosInt:
                 fp.write(str(self.params[k].val) + '\n')
@@ -453,7 +481,8 @@ class Menu(object):
             if (p.param_type == ItemType.Str) or \
                (p.param_type == ItemType.PosInt) or \
                (p.param_type == ItemType.PosReal) or \
-               (p.param_type == ItemType.Real):
+               (p.param_type == ItemType.Real) or \
+               (p.param_type == ItemType.PosRealList):
 
                 # String or number option: go into text editing mode
 
@@ -489,7 +518,7 @@ class Menu(object):
                             numval = float(newtxt)
                         except ValueError:
                             numval = 0
-                            newtxt = ' '
+                            newtxt = ''
                         if numval <= 0 and not p.optional:
                             self.message('Error: ' + p.menu_str + 
                                          ' must be a positive' +
@@ -499,18 +528,34 @@ class Menu(object):
                         try:
                             numval = float(newtxt)
                         except ValueError:
-                            newtxt = ' '
+                            newtxt = ''
                             if not p.optional:
                                 self.message('Error: ' + p.menu_str + 
                                              ' must be a real number')
+                                edit_done = False
+                    elif p.param_type == ItemType.PosRealList:
+                        try:
+                            listval = newtxt.split(',')
+                            if len(listval) == 0:
+                                raise ValueError
+                            for i in range(len(listval)):
+                                listval[i] = float(listval[i])
+                        except ValueError:
+                            newtxt = ''
+                            if not p.optional:
+                                self.message(
+                                    'Error: ' + p.menu_str +
+                                    ' must be a comma-separated'
+                                    ' list of positive real numbers')
                                 edit_done = False
                 if p.param_type == ItemType.PosInt:
                     p.val = numval
                 elif (p.param_type == ItemType.Str) or \
                      (p.param_type == ItemType.PosReal) or \
-                     (p.param_type == ItemType.Real):
+                     (p.param_type == ItemType.Real) or \
+                     (p.param_type == ItemType.PosRealList):
                     if len(newtxt) == 0:
-                        newtxt = ' '
+                        newtxt = ''
                     p.val = newtxt
 
                 # Turn cursor off and redraw
@@ -769,6 +814,13 @@ class Menu(object):
                         try:
                             numval = float(self.params[con].val)
                         except ValueError:
+                            show = False
+                    if show == False:
+                        continue
+                if p.only_if_empty is not None:
+                    show = True
+                    for con in p.only_if_empty:
+                        if len(self.params[con].val) > 0:
                             show = False
                     if show == False:
                         continue
