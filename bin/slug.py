@@ -21,6 +21,7 @@ import os
 import os.path as osp
 import subprocess
 import sys
+import tempfile
 import threading
 import warnings
 try:
@@ -58,9 +59,10 @@ parser.add_argument('-v', '--verbose', action='store_true',
                     default=False, help="produce verbose output")
 parser.add_argument('-t', '--tmpdir', default=None,
                     help="directory for temporary work files" +
-                    " (default: cwd/MODELNAME_tmp)")
+                    " (default is to use mkdtemp)")
 args = parser.parse_args()
-cwd = osp.dirname(osp.realpath(__file__))
+scrdir = osp.dirname(osp.realpath(__file__))
+cwd = os.getcwd()
 
 
 # Step 2: suck the slug paramter file into memory
@@ -182,12 +184,12 @@ out_names = []
 trial_num = []
 ON_POSIX = 'posix' in sys.builtin_module_names
 if args.tmpdir == None:
-    tmpdir = osp.join(cwd, model_name+'_tmp')
+    tmpdir = tempfile.mkdtemp()
 else:
     tmpdir = args.tmpdir
-try: 
-    os.mkdir(tmpdir)  # Temporary working directory
-except OSError: pass           # Probably failed because dir exists
+    try:
+        os.mkdir(tmpdir)  # Temporary working directory
+    except OSError: pass           # Probably failed because dir exists
 while completed_trials < ntrials:
 
     # Step 5a: see if any running processes have completed; flag those
@@ -263,7 +265,7 @@ while completed_trials < ntrials:
                          ntrials))
 
         # Start new process
-        cmd = osp.join(cwd, 'slug') + " " + pfile_name
+        cmd = osp.join(scrdir, '..', 'bin', 'slug') + " " + pfile_name
         if args.nicelevel > 0:
             cmd = "nice -n " + str(args.nicelevel) + " " + cmd
         proc_list[p] \
