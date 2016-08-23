@@ -28,7 +28,7 @@ Any line starting with ``#`` is considered to be a comment and is ignored, and a
 * Some keywords have default values, indicated in parenthesis in the list below. These keywords are optional and need not appear in the parameter file. All others are required. 
 * Keywords and values are case-insensitive. 
 * Unless explicitly stated otherwise, units for mass are always :math:`M_\odot`, units for time are always yr.
-* Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable ``$SLUG_DIR``. If this environment variable is not set, it is assumed to be relative to the current working directory.
+* Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable ``$SLUG_DIR``. If this environment variable is not set, it is assumed to be relative to the current working directory. EXCEPTION: the output directory (if it is specified as a relative rather than absolute path) is always assumed to be relative to the current working directory.
 
 The keywords recognized by SLUG can be categorized as described in the remainder of this section.
 
@@ -40,7 +40,7 @@ Basic Keywords
 These specify basic data for the run.
 
 * ``model_name`` (default: ``SLUG_DEF``): name of the model. This will become the base filename for the output files.
-* ``out_dir`` (default: ``output``): name of the directory into which output should be written.
+* ``out_dir`` (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the SLUG executable is called.
 * ``verbosity`` (default: ``1``): level of verbosity when running, with 0 indicating no output, 1 indicating some output, and 2 indicating a great deal of output.
 
 Simulation Control Keywords

@@ -515,7 +515,7 @@ Keywords and values are case-insensitive.
 Unless explicitly stated otherwise, units for mass are always \(M_\odot\), units for time are always yr.
 
 \item {} 
-Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable \code{\$SLUG\_DIR}. If this environment variable is not set, it is assumed to be relative to the current working directory.
+Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable \code{\$SLUG\_DIR}. If this environment variable is not set, it is assumed to be relative to the current working directory. EXCEPTION: the output directory (if it is specified as a relative rather than absolute path) is always assumed to be relative to the current working directory.
 
 \end{itemize}
 
@@ -530,7 +530,7 @@ These specify basic data for the run.
 \code{model\_name} (default: \code{SLUG\_DEF}): name of the model. This will become the base filename for the output files.
 
 \item {} 
-\code{out\_dir} (default: \code{output}): name of the directory into which output should be written.
+\code{out\_dir} (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the SLUG executable is called.
 
 \item {} 
 \code{verbosity} (default: \code{1}): level of verbosity when running, with 0 indicating no output, 1 indicating some output, and 2 indicating a great deal of output.

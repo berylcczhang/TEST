@@ -107,7 +107,7 @@ slug_parmParser::setDefaults() {
 
   // Basic data
   model = "SLUG_DEF";
-  outDir = "output";
+  outDir = "";
   verbosity = 1;
 
   // Control flow parameters
@@ -606,7 +606,7 @@ slug_parmParser::checkParams() {
   string slug_dir;
   if (slug_dir_ptr != NULL)
     slug_dir = slug_dir_ptr;
-  if (slug_dir.length() == 0) slug_dir = ".";
+  if (slug_dir.length() == 0) slug_dir = current_path().string();
   path slug_path(slug_dir);
 
   // If any of the input file names/directories are relative paths,
@@ -624,7 +624,7 @@ slug_parmParser::checkParams() {
   path out_time_path(out_time_dist);
   path yield_path(yield_dir);
   if (!out_path.is_absolute())
-    outDir = (slug_path / out_path).string();
+    outDir = (current_path() / out_path).string();
   if (!imf_path.is_absolute()) 
     imf = (slug_path / imf_path).string();
   if (!cmf_path.is_absolute()) 

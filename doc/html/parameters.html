@@ -61,7 +61,7 @@
 <li>Some keywords have default values, indicated in parenthesis in the list below. These keywords are optional and need not appear in the parameter file. All others are required.</li>
 <li>Keywords and values are case-insensitive.</li>
 <li>Unless explicitly stated otherwise, units for mass are always <span class="math">\(M_\odot\)</span>, units for time are always yr.</li>
-<li>Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable <code class="docutils literal"><span class="pre">$SLUG_DIR</span></code>. If this environment variable is not set, it is assumed to be relative to the current working directory.</li>
+<li>Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable <code class="docutils literal"><span class="pre">$SLUG_DIR</span></code>. If this environment variable is not set, it is assumed to be relative to the current working directory. EXCEPTION: the output directory (if it is specified as a relative rather than absolute path) is always assumed to be relative to the current working directory.</li>
 </ul>
 <p>The keywords recognized by SLUG can be categorized as described in the remainder of this section.</p>
 </div>
@@ -70,7 +70,7 @@
 <p>These specify basic data for the run.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">model_name</span></code> (default: <code class="docutils literal"><span class="pre">SLUG_DEF</span></code>): name of the model. This will become the base filename for the output files.</li>
-<li><code class="docutils literal"><span class="pre">out_dir</span></code> (default: <code class="docutils literal"><span class="pre">output</span></code>): name of the directory into which output should be written.</li>
+<li><code class="docutils literal"><span class="pre">out_dir</span></code> (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the SLUG executable is called.</li>
 <li><code class="docutils literal"><span class="pre">verbosity</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): level of verbosity when running, with 0 indicating no output, 1 indicating some output, and 2 indicating a great deal of output.</li>
 </ul>
 </div>
