@@ -59,7 +59,7 @@ class Menu(object):
         # Store default parameter values and menu keys
         self.params = OrderedDict([
             ('file_name', Menu_opt(
-                'Parameter file', osp.join('param', 'default.param'),
+                'Parameter file', 'default.param',
                 'Home', ItemType.Str, help_txt = 
                 'name of parameter file to be written')),
             ('model_name', Menu_opt(
@@ -67,9 +67,10 @@ class Menu(object):
                 help_txt = 
                 'name of model (base name of SLUG output files)')),
             ('out_dir', Menu_opt(
-                'Output directory', 'output'+osp.sep, 'Home', 
-                ItemType.Str, help_txt = 
-                'directory in which to place SLUG output files')),
+                'Output directory', '', 'Home', 
+                ItemType.Str, optional = True, help_txt = 
+                'directory in which to place SLUG output files;'
+                ' default = current working directory')),
             ('verbosity', Menu_opt(
                 'Verbosity level', '1', 'Home', ItemType.Vals,
                 allowed_vals = ['0', '1', '2'], help_txt = 
@@ -83,7 +84,7 @@ class Menu(object):
                 'type of stellar popualtion to simulate; cluster = ' +
                 'simple stellar population, galaxy = '+
                 'composite stellar population')),
-            ('ntrials', Menu_opt(
+            ('n_trials', Menu_opt(
                 'Number of Trials', 1, 'Control', ItemType.PosInt,
                 help_txt = 'number of Monte Carlo simulations to run')),
             ('log_time', Menu_opt(
@@ -136,11 +137,9 @@ class Menu(object):
             ('cluster_mass', Menu_opt(
                 'Cluster Mass [Msun or file name]', '1.0e3', 'Control', 
                 ItemType.Str, only_if=[('sim_type', 'cluster')], help_txt =
-                'numerical values are interpreted as giving a star ' +
-                'cluster mass; non-numerical values are ' +
-                'interpreted as a file name ' +
-                'giving the PDF from which the star cluster mass ' +
-                'should be drawn')), 
+                'numerical values give the ' +
+                'cluster mass; non-numerical values specify a '
+                'PDF file')), 
             ('redshift', Menu_opt(
                 'Redshift', '', 'Control', ItemType.PosReal,
                 optional=True, help_txt = 
@@ -268,7 +267,7 @@ class Menu(object):
                 'true = compute nebular contribution for clusters < '+
                 '10 Myr old; false = do not comput nebular ' +
                 'contribution')),
-            ('atomic_dir', Menu_opt(
+            ('atomic_data', Menu_opt(
                 'Atomic data directory', 
                 osp.join('lib', 'atomic')+osp.sep,
                 'ISM', ItemType.Str,
@@ -490,7 +489,7 @@ class Menu(object):
                 ncols = self.winx-int(self.offset*self.winx)-1
                 win = curses.newwin(1, ncols,
                                     posy, int(self.offset*self.winx))
-                win.addstr(old_val)
+                win.addstr(str(old_val))
                 tb = curses.textpad.Textbox(win)
 
                 # Turn cursor back on and edit; make sure that the
