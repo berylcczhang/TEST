@@ -40,7 +40,7 @@
 model_name        SLUG_EXAMPLE
 
 # Directory into which to write output
-# Default: output
+# Default: directory from which executable is run
 #out_dir           output
 
 # Level of verbosity while running; allowed values:
@@ -280,7 +280,7 @@ A_V                  lib/avdist/slug_default.av
 # Directory containing atomic data; only needed if nebular emission is
 # being used
 # Default: lib/atomic
-#atomic_dir           lib/atomic
+#atomic_data           lib/atomic
 
 # Turn of metal line emission (also includes He line emission) in the
 # nebular computation?
