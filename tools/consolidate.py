@@ -7,6 +7,7 @@ noconsolidate was not set.
 import argparse
 import os
 import os.path as osp
+import copy
 import glob
 try:
     from slugpy import read_cluster, combine_cluster, \
