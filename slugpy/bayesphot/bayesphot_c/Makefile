@@ -14,6 +14,10 @@ else
           include Make.mach.ucsc-hyades
      else ifeq ($(UNAMEN), cosma-e)
           include Make.mach.icc-cosma4
+     else ifeq ($(UNAMEN), mosura)
+          include Make.mach.coala
+     else ifneq (,$(findstring raijin, $(UNAMEN)))
+          include Make.mach.icc-raijin
      else ifeq ($(UNAME), Linux)
           include Make.mach.linux-gnu
      else ifeq ($(UNAME), Darwin)
@@ -42,7 +46,7 @@ LDDEBFLAGS	= $(MACH_LDDEBFLAGS) $(MACH_OPENMPFLAGS)
 
 # Include flags
 ifdef C_INCLUDE_PATH
-     INCFLAGS += -I$(C_INCLUDE_PATH)
+     INCFLAGS += -I$(subst :, -I ,$(C_INCLUDE_PATH))
 endif
 ifdef GSL_HDR_PATH
      INCFLAGS += -I$(GSL_HDR_PATH)
@@ -51,10 +55,10 @@ endif
 # Link flags
 LDLIBFLAGS      = -lgsl -lgslcblas
 ifdef LD_LIBRARY_PATH
-     LDLIBFLAGS += -L$(LD_LIBRARY_PATH)
+     LDLIBFLAGS += -L$(subst :, -L ,$(LD_LIBRARY_PATH))
 endif
 ifdef LIBRARY_PATH
-     LDLIBFLAGS += -L$(LIBRARY_PATH)
+     LDLIBFLAGS += -L$(subst :, -L ,$(LIBRARY_PATH))
 endif
 ifdef GSL_LIB_PATH
      LDLIBFLAGS += -L$(GSL_LIB_PATH)

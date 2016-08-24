@@ -27,8 +27,9 @@ MACH_CXXDEBFLAGS  = -g
 MACH_COPTFLAGS	  = $(MACH_CXXDEBFLAGS)
 MACH_LDDEBFLAGS   = -g
 
-# Flags to compile shared libaries
+# Flags to compile as a shared or static libary
 LIB_EXTENSION	   = .so
+LIBSTAT_EXTENSION  = .a
 CLIBFLAGS	   = -fPIC
 DYNLIBFLAG	   = -shared
 

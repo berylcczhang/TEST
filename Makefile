@@ -1,19 +1,15 @@
 # Makefile for the slug code, v2
-.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe lib lib-debug
+.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe lib lib-debug libstatic
 
 MACHINE	=
 FITS ?= ENABLE_FITS
 GSLVERSION ?= 2
 
-all: slug bayesphot lib
+exe: slug bayesphot
 
-exe: slug
+all: slug bayesphot lib libstatic
 
 debug: slug-debug bayesphot-debug
-
-bayesphot:
-	cd slugpy/bayesphot/bayesphot_c && $(MAKE) MACHINE=$(MACHINE)
-	@(cp slugpy/bayesphot/bayesphot_c/bayesphot.* slugpy/bayesphot)
 
 slug:
 	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
@@ -26,6 +22,10 @@ slug:
                 mkdir output; \
         fi)
 	@(cp src/slug bin)
+
+bayesphot:
+	cd slugpy/bayesphot/bayesphot_c && $(MAKE) MACHINE=$(MACHINE)
+	@(cp slugpy/bayesphot/bayesphot_c/bayesphot.* slugpy/bayesphot)
 
 bayesphot-debug:
 	cd slugpy/bayesphot/bayesphot_c && $(MAKE) debug MACHINE=$(MACHINE)
@@ -49,6 +49,9 @@ lib:
 lib-debug:
 	cd src && $(MAKE) lib-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
 
+libstatic:
+	cd src && $(MAKE) libstatic MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+
 clean:
 	cd src && $(MAKE) clean
 	@(if [ ! -e bin ]; \
@@ -62,3 +65,5 @@ clean:
 	@(rm -f src/libslug.so)
 	@(rm -f src/libslug.dylib)
 	@(rm -f src/libslug.dll)
+	@(rm -f src/libslug.a)
+	@(rm -f src/libslug.lib)

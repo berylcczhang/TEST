@@ -93,8 +93,9 @@ LDFLAGS  +=  $(LDLIBFLAGS)
 # Name for executable
 EXENAME		= slug
 
-# Name for compiled library
+# Name for compiled library, shared or static
 LIBNAME		= lib$(EXENAME)$(LIB_EXTENSION)
+LIBSTATNAME	= lib$(EXENAME)$(LIBSTAT_EXTENSION)
 
 # Pointers to sources
 SOURCES		= $(wildcard *.cpp)
@@ -102,8 +103,7 @@ OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
-.PHONY: all exe debug lib lib-debug compile clean
-
+.PHONY: all exe debug lib lib-debug libstatic compile clean
 
 exe: CXXFLAGS += $(CXXOPTFLAGS)
 exe: LDFLAGS  += $(LDOPTFLAGS)
@@ -121,6 +121,9 @@ lib-debug: CXXFLAGS += $(CXXDEBFLAGS) $(CLIBFLAGS)
 lib-debug: LDFLAGS  += $(LDDEBFLAGS)
 lib-debug: $(LIBNAME)
 
+libstatic: CXXFLAGS += $(CXXOPTFLAGS) $(CLIBFLAGS)
+libstatic: $(LIBSTATNAME)
+
 all: exe
 all: lib
 
@@ -132,6 +135,9 @@ $(EXENAME): $(OBJECTS)
 
 $(LIBNAME): $(OBJECTS)
 	$(CXX) -o $(LIBNAME) $^ $(LDFLAGS) $(LDLIBFLAGS) $(DYNLIBFLAG)
+
+$(LIBSTATNAME): $(OBJECTS)
+	ar rcs $(LIBSTATNAME) $^
 
 compile:	$(OBJECTS)
 
