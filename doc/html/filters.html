@@ -42,7 +42,7 @@
   <div class="section" id="filters-and-filter-data">
 <span id="sec-filters"></span><h1>Filters and Filter Data<a class="headerlink" href="#filters-and-filter-data" title="Permalink to this headline">¶</a></h1>
 <p>SLUG comes with a fairly extensive list of filters, adapted from the list maintained by Charlie Conroy as part of <a class="reference external" href="https://code.google.com/p/fsps/">fsps</a>. However, users may wish to add additional filters, and so the format of the filter list is documented here for convenience.</p>
-<p>Filter data is stored in two ASCII text files, <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> and <code class="docutils literal"><span class="pre">allfilters.dat</span></code>, which are stored in the <code class="docutils literal"><span class="pre">lib/filters</span></code> directory. The <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the <code class="docutils literal"><span class="pre">phot_bands</span></code> keyword (see <a class="reference internal" href="parameters.html#ssec-phot-keywords"><span>Photometric Filter Keywords</span></a>) to request photometry in that filter. The third and fourth columns the value of <span class="math">\(\beta\)</span> and <span class="math">\(\lambda_c\)</span> (the central wavelength) for that filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span>Spectra and Photometry</span></a> for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.</p>
+<p>Filter data is stored in two ASCII text files, <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> and <code class="docutils literal"><span class="pre">allfilters.dat</span></code>, which are stored in the <code class="docutils literal"><span class="pre">lib/filters</span></code> directory. The <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the <code class="docutils literal"><span class="pre">phot_bands</span></code> keyword (see <a class="reference internal" href="parameters.html#ssec-phot-keywords"><span class="std std-ref">Photometric Filter Keywords</span></a>) to request photometry in that filter. The third and fourth columns the value of <span class="math">\(\beta\)</span> and <span class="math">\(\lambda_c\)</span> (the central wavelength) for that filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a> for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.</p>
 <p>The <code class="docutils literal"><span class="pre">allfilters.dat</span></code> file contains the filter responses. The file contains a series of entires for different filters, each delineated by a header line that begins with <code class="docutils literal"><span class="pre">#</span></code>. The order in which filters appear in this file matches that in which they appear in the <code class="docutils literal"><span class="pre">FILTER_LIST</span></code>. After the header line, are a series of lines each containing two numbers. The first is the wavelength in Angstrom, and the second is the filter response function at that wavelength.</p>
 </div>
 
@@ -70,14 +70,11 @@
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -88,7 +85,7 @@
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

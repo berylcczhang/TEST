@@ -41,7 +41,7 @@
             
   <div class="section" id="probability-distribution-functions">
 <span id="sec-pdfs"></span><h1>Probability Distribution Functions<a class="headerlink" href="#probability-distribution-functions" title="Permalink to this headline">¶</a></h1>
-<p>The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction <span class="math">\(A_V\)</span> as probability distribution functions &#8211; see <a class="reference internal" href="intro.html#ssec-slugpdfs"><span>Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution</span></a>. The code provides a generic file format through which PDFs can be specified. Examples can be found in the <code class="docutils literal"><span class="pre">lib/imf</span></code>, <code class="docutils literal"><span class="pre">lib/cmf</span></code>, <code class="docutils literal"><span class="pre">lib/clf</span></code>, and <code class="docutils literal"><span class="pre">lib/sfh</span></code> directories of the SLUG distribution.</p>
+<p>The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction <span class="math">\(A_V\)</span> as probability distribution functions &#8211; see <a class="reference internal" href="intro.html#ssec-slugpdfs"><span class="std std-ref">Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution</span></a>. The code provides a generic file format through which PDFs can be specified. Examples can be found in the <code class="docutils literal"><span class="pre">lib/imf</span></code>, <code class="docutils literal"><span class="pre">lib/cmf</span></code>, <code class="docutils literal"><span class="pre">lib/clf</span></code>, and <code class="docutils literal"><span class="pre">lib/sfh</span></code> directories of the SLUG distribution.</p>
 <p>PDFs in SLUG are generically written as functions</p>
 <div class="math">
 \[\frac{dp}{dx} = n_1 f_1(x; x_{1,a}, x_{1,b}) + n_2 f_2(x; x_{2,a}, x_{2,b}) + n_3 f_3(x; x_{3,a}, x_{3,b}) + \cdots,\]</div>
@@ -56,7 +56,7 @@
 </ol>
 <p>Given these constraints, the PDF can be specified fully simply by giving the <span class="math">\(x\)</span> values that define the edges of the segments and the functional forms <span class="math">\(f\)</span> of each segment; the normalizations can be computed from the constraint equations. Note that SFH PDFs cannot be described using basic mode, because they are not normalized to unity. Specifying a non-constant SFH requires advanced mode.</p>
 <p>An example of a basic mode PDF file is as follows:</p>
-<div class="highlight-rest"><div class="highlight"><pre>###############################################################
+<div class="highlight-rest"><div class="highlight"><pre><span></span>###############################################################
 # This is an IMF definition file for SLUG v2.
 <span class="gh"># This file defines the Chabrier (2005) IMF</span>
 <span class="gh">###############################################################</span>
@@ -87,19 +87,19 @@ slope -2.35
 \[\begin{split}\frac{dp}{dm} \propto \left\{\begin{array}{ll} \exp[-\log(m/m_0)^2/(2\sigma^2)] (m/m_b)^{-1} , &amp; m &lt; m_b \\ \exp[-\log(m_b/m_0)^2/(2\sigma^2)] (m/m_b)^{-2.35}, &amp; m \geq m_b \end{array} \right.,\end{split}\]</div>
 <p>where <span class="math">\(m_0 = 0.2\)</span> <span class="math">\(M_\odot\)</span>, <span class="math">\(\sigma = 0.55\)</span>, and <span class="math">\(m_b = 1\)</span> <span class="math">\(M_\odot\)</span>.</p>
 <p>Formally, the format of a basic mode file is as follows. Any line beginning with <code class="docutils literal"><span class="pre">#</span></code> is a comment and is ignored. The first non-empty, non-comment line in a basic mode PDF file must be of the form:</p>
-<div class="highlight-rest"><div class="highlight"><pre>breakpoints x1 x2 x3 ...
+<div class="highlight-rest"><div class="highlight"><pre><span></span>breakpoints x1 x2 x3 ...
 </pre></div>
 </div>
 <p>where <code class="docutils literal"><span class="pre">x1</span></code>, <code class="docutils literal"><span class="pre">x2</span></code>, <code class="docutils literal"><span class="pre">x3</span></code>, <code class="docutils literal"><span class="pre">...</span></code> are a non-decreasing series of real numbers. These represent the breakpoints that define the edges of the segment, in units of <span class="math">\(M_\odot\)</span>. In the example given above, the breakpoints are are <span class="math">\(0.08\)</span>, <span class="math">\(1\)</span>, and <span class="math">\(120\)</span>, indicating that the first segment goes from <span class="math">\(0.08 - 1\)</span> <span class="math">\(M_\odot\)</span>, and the second from <span class="math">\(1 - 120\)</span> <span class="math">\(M_\odot\)</span>.</p>
 <p>After the <code class="docutils literal"><span class="pre">breakpoints</span></code> line, there must be a series of entries of the form:</p>
-<div class="highlight-rest"><div class="highlight"><pre>segment
+<div class="highlight-rest"><div class="highlight"><pre><span></span>segment
 type TYPE
 key1 VAL1
 <span class="gh">key2 VAL2</span>
 <span class="gh">...</span>
 </pre></div>
 </div>
-<p>where <code class="docutils literal"><span class="pre">TYPE</span></code> specifies what functional form describes the segment, and <code class="docutils literal"><span class="pre">key1</span> <span class="pre">VAL1</span></code>, <code class="docutils literal"><span class="pre">key2</span> <span class="pre">VAL2</span></code>, etc. are a series of (key, value) pairs the define the free parameters for that segment. In the example above, the first segment is described as having a <code class="docutils literal"><span class="pre">lognormal</span></code> functional form, and the keywords <code class="docutils literal"><span class="pre">mean</span></code> and <code class="docutils literal"><span class="pre">disp</span></code> specify that the lognormal has a mean of 0.2 <span class="math">\(M_\odot\)</span> and a dispersion of 0.55 in <span class="math">\(\log_{10}\)</span>. The second segment is of type <code class="docutils literal"><span class="pre">powerlaw</span></code>, and it has a slope of <span class="math">\(-2.35\)</span>. The full list of allowed segment types and the keywords that must be specified with them are listed in the <a class="reference internal" href="#tab-segtypes"><span>Segment Types</span></a> Table. Keywords and segment types are case-insensitive. Where more than one keyword is required, the order is arbitrary.</p>
+<p>where <code class="docutils literal"><span class="pre">TYPE</span></code> specifies what functional form describes the segment, and <code class="docutils literal"><span class="pre">key1</span> <span class="pre">VAL1</span></code>, <code class="docutils literal"><span class="pre">key2</span> <span class="pre">VAL2</span></code>, etc. are a series of (key, value) pairs the define the free parameters for that segment. In the example above, the first segment is described as having a <code class="docutils literal"><span class="pre">lognormal</span></code> functional form, and the keywords <code class="docutils literal"><span class="pre">mean</span></code> and <code class="docutils literal"><span class="pre">disp</span></code> specify that the lognormal has a mean of 0.2 <span class="math">\(M_\odot\)</span> and a dispersion of 0.55 in <span class="math">\(\log_{10}\)</span>. The second segment is of type <code class="docutils literal"><span class="pre">powerlaw</span></code>, and it has a slope of <span class="math">\(-2.35\)</span>. The full list of allowed segment types and the keywords that must be specified with them are listed in the <a class="reference internal" href="#tab-segtypes"><span class="std std-ref">Segment Types</span></a> Table. Keywords and segment types are case-insensitive. Where more than one keyword is required, the order is arbitrary.</p>
 <p>The total number of segments must be equal to one less than the number of breakpoints, so that each segment is described. Note that it is not necessary to specify a normalization for each segment, as the segments will be normalized relative to one another automatically so as to guarantee that the overall function is continuous.</p>
 <table border="1" class="docutils" id="id1">
 <span id="tab-segtypes"></span><caption><span class="caption-text">Segment Types</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
@@ -170,13 +170,13 @@ key1 VAL1
 <h2>Variable Mode<a class="headerlink" href="#variable-mode" title="Permalink to this headline">¶</a></h2>
 <p>Variable Mode works as an extension to Basic Mode. Instead of assigning a value to a parameter, you can define a PDF and then draw values for the parameter from it.</p>
 <p>Formally, the format of a Variable Mode PDF file follows that of a Basic Mode PDF file, but with one addition. To specify a parameter as variable, the entry must be of the form:</p>
-<div class="highlight-rest"><div class="highlight"><pre>key1 V path/to/pdf.vpar
+<div class="highlight-rest"><div class="highlight"><pre><span></span>key1 V path/to/pdf.vpar
 </pre></div>
 </div>
 <p>with the <code class="docutils literal"><span class="pre">V</span></code> instructing the code that the parameter is variable. The <code class="docutils literal"><span class="pre">.vpar</span></code> files are formatted as if they are standard Basic Mode PDF files. Variable Mode is an extension of Basic Mode, and it is not supported in Advanced Mode PDF files.</p>
 <p>Any number of parameters belonging to a PDF can be made to vary, and the distributions from which their values are drawn can be constructed from any combination of the PDF segment types specified for Basic Mode.</p>
 <p>An example of a Variable Mode PDF file for the IMF is as follows:</p>
-<div class="highlight-rest"><div class="highlight"><pre>###############################################################
+<div class="highlight-rest"><div class="highlight"><pre><span></span>###############################################################
 # This is an IMF definition file for SLUG v2.
 <span class="gh"># This file defines a power law PDF with variable slope</span>
 <span class="gh">###############################################################</span>
@@ -195,7 +195,7 @@ slope V lib/imf/slope_pdf.vpar
 </pre></div>
 </div>
 <p>An example of a parameter&#8217;s PDF file is as follows:</p>
-<div class="highlight-rest"><div class="highlight"><pre>###############################################################
+<div class="highlight-rest"><div class="highlight"><pre><span></span>###############################################################
 # This is a parameter definition file for SLUG v2.
 <span class="gh"># lib/imf/slope_pdf.vpar</span>
 <span class="gh">###############################################################</span>
@@ -217,7 +217,7 @@ disp 0.1
 <h2>Advanced Mode<a class="headerlink" href="#advanced-mode" title="Permalink to this headline">¶</a></h2>
 <p>In advanced mode, one has complete freedom to set all the parameters describing the PDF: the endpoints of each segment <span class="math">\(x_{i,a}\)</span> and <span class="math">\(x_{i,b}\)</span>, the normalization of each segment <span class="math">\(n_i\)</span>, and the functional forms of each segment <span class="math">\(f_i\)</span>. This can be used to defined PDFs that are non-continuous, or that are overlapping; the latter option can be used to construct segments with nearly arbitrary functional forms, by constructing a Taylor series approximation to the desired functional form and then using a series of overlapping <code class="docutils literal"><span class="pre">powerlaw</span></code> segments to implement that series.</p>
 <p>An example of an advanced mode PDF file is as follows:</p>
-<div class="highlight-rest"><div class="highlight"><pre>###############################################################
+<div class="highlight-rest"><div class="highlight"><pre><span></span>###############################################################
 # This is a SFH definition file for SLUG v2.
 # This defines a SF history consisting of a series of
 # exponentially-decaying bursts with a period of 100 Myr and
@@ -271,11 +271,11 @@ scale    1.0e7
 \[\dot{M}_* = n e^{-(t\,\mathrm{mod}\, P)/t_{\rm dec}},\]</div>
 <p>where <span class="math">\(P = 100\)</span> Myr is the period and <span class="math">\(t_{\rm dec} = 10\)</span> Myr is the decay time, from times <span class="math">\(0-500\)</span> Myr. The normalization constant <span class="math">\(n\)</span> is set by the condition that <span class="math">\((1/P) \int_0^P \dot{M}_* \,dt = 0.001\)</span> <span class="math">\(M_\odot\;\mathrm{yr}^{-1}\)</span>, i.e., that the mean SFR averaged over a single burst period is 0.001 <span class="math">\(M_\odot\;\mathrm{yr}^{-1}\)</span>.</p>
 <p>Formally, the format of an advanced mode file is as follows. First, all advanced mode files must start with the line:</p>
-<div class="highlight-rest"><div class="highlight"><pre>advanced
+<div class="highlight-rest"><div class="highlight"><pre><span></span>advanced
 </pre></div>
 </div>
 <p>to declare that the file is in advanced mode. After that, there must be a series of entries of the form:</p>
-<div class="highlight-rest"><div class="highlight"><pre>segment
+<div class="highlight-rest"><div class="highlight"><pre><span></span>segment
 type TYPE
 min MIN
 max MAX
@@ -285,7 +285,7 @@ key1 VAL1
 <span class="gh">...</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal"><span class="pre">type</span></code> keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords <code class="docutils literal"><span class="pre">key1</span></code>, <code class="docutils literal"><span class="pre">key2</span></code>, <span class="math">\(\ldots\)</span>. The same functional forms, listed in the <a class="reference internal" href="#tab-segtypes"><span>Segment Types</span></a> Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are <code class="docutils literal"><span class="pre">min</span></code>, <code class="docutils literal"><span class="pre">max</span></code>, and <code class="docutils literal"><span class="pre">weight</span></code>. The <code class="docutils literal"><span class="pre">min</span></code> and <code class="docutils literal"><span class="pre">max</span></code> keywords give the upper and lower limits <span class="math">\(x_{i,a}\)</span> and <span class="math">\(x_{i,b}\)</span> for the segment; the probability is zero outside these limits. The keyword <code class="docutils literal"><span class="pre">weight</span></code> specifies the integral under the segment, i.e., the weight <span class="math">\(w_i\)</span> given for segment <span class="math">\(i\)</span> is used to set the normalization <span class="math">\(n_i\)</span> via the equation</p>
+<p>The <code class="docutils literal"><span class="pre">type</span></code> keyword is exactly the same as in basic mode, as are the segment-specific parameter keywords <code class="docutils literal"><span class="pre">key1</span></code>, <code class="docutils literal"><span class="pre">key2</span></code>, <span class="math">\(\ldots\)</span>. The same functional forms, listed in the <a class="reference internal" href="#tab-segtypes"><span class="std std-ref">Segment Types</span></a> Table, are available as in basic mode. The additional keywords that must be supplied in advanced mode are <code class="docutils literal"><span class="pre">min</span></code>, <code class="docutils literal"><span class="pre">max</span></code>, and <code class="docutils literal"><span class="pre">weight</span></code>. The <code class="docutils literal"><span class="pre">min</span></code> and <code class="docutils literal"><span class="pre">max</span></code> keywords give the upper and lower limits <span class="math">\(x_{i,a}\)</span> and <span class="math">\(x_{i,b}\)</span> for the segment; the probability is zero outside these limits. The keyword <code class="docutils literal"><span class="pre">weight</span></code> specifies the integral under the segment, i.e., the weight <span class="math">\(w_i\)</span> given for segment <span class="math">\(i\)</span> is used to set the normalization <span class="math">\(n_i\)</span> via the equation</p>
 <div class="math">
 \[w_i = n_i \int_{x_{i,a}}^{x_{i,b}} f_i(x) \, dx.\]</div>
 <p>In the case of a star formation history, as in the example above, the weight <span class="math">\(w_i\)</span> of a segment is simply the total mass of stars formed in that segment. In the example given above, the first segment declaration sets up a PDF that with a minimum at 0 Myr, a maximum at 100 Myr, following an exponential functional form with a decay time of <span class="math">\(10^7\)</span> yr. During this time, a total mass of <span class="math">\(10^5\)</span> <span class="math">\(M_\odot\)</span> of stars is formed.</p>
@@ -294,7 +294,7 @@ key1 VAL1
 <div class="section" id="sampling-methods">
 <span id="sampling-metod-label"></span><h2>Sampling Methods<a class="headerlink" href="#sampling-methods" title="Permalink to this headline">¶</a></h2>
 <p>A final option allowed in both basic and advanced mode is a specification of the sampling method. The sampling method is a description of how to draw a population of objects from the PDF, when the population is specified as having a total sum <span class="math">\(M_{\rm target}\)</span> (usually but not necessarily a total mass) rather than a total number of members <span class="math">\(N\)</span>; there are a number of ways to do this, which do not necessarily yield identical distributions, even for the same underlying PDF. To specify a sampling method, simply add the line:</p>
-<div class="highlight-rest"><div class="highlight"><pre>method METHOD
+<div class="highlight-rest"><div class="highlight"><pre><span></span>method METHOD
 </pre></div>
 </div>
 <p>to the PDF file. This line can appear anywhere except inside a <code class="docutils literal"><span class="pre">segment</span></code> specification, or before the <code class="docutils literal"><span class="pre">breakpoints</span></code> or <code class="docutils literal"><span class="pre">advanced</span></code> line that begins the file. The following values are allowed for <code class="docutils literal"><span class="pre">METHOD</span></code> (case-insensitive, as always):</p>
@@ -346,14 +346,11 @@ key1 VAL1
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -364,7 +361,7 @@ key1 VAL1
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |

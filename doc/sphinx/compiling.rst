@@ -57,3 +57,19 @@ An example machine-specific file, ``src/Make.mach.ucsc-hyades`` is included in t
 
 Finally, note that SLUG is written in C++11, and requires some C++11 features, so it may not work with older C++ compilers. The following compiler versions are known to work: gcc >= 4.8 (4.7 works on most but not all platforms), clang/llvm >= 3.3, icc >= 14.0. Earlier versions may work as well, but no guarantees.
 
+Using SLUG as a Library
+-----------------------
+
+In addition to using SLUG as a standalone program, SLUG can be compiled as a library that can be called by external programs. This is useful for including stellar population synthesis calculations within some larger code, e.g., a galaxy simulation code. To compile in library mode, simply do::
+
+  make lib
+
+in the main directory. This will cause a dynamically linked library file ``libslug.x`` to be created in the ``src`` directory, where ``x`` is whatever the standard extension for dynamically linked libraries on your system is (``.so`` for unix-like systems, ``.dylib`` for MacOS).
+
+Alternately, if you prefer a statically-linked version, you can do::
+
+  make libstatic
+
+and a statically-linked archive ``libslug.y`` will be created instead, where ``y`` is the standard statically-linked library extension on your system (generally ``.a``).
+
+In addition to ``lib`` and ``libstatic``, the makefile supports ``lib-debug`` and ``libstatic-debug`` as targets as well. These compile the same libraries, but with optimization disabled and debugging symbols enabled.
