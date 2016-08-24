@@ -1,5 +1,5 @@
 # Makefile for the slug code, v2
-.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe lib lib-debug libstatic
+.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe lib lib-debug libstatic libstatic-debug
 
 MACHINE	=
 FITS ?= ENABLE_FITS
@@ -51,6 +51,9 @@ lib-debug:
 
 libstatic:
 	cd src && $(MAKE) libstatic MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+
+libstatic-debug:
+	cd src && $(MAKE) libstatic-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
 
 clean:
 	cd src && $(MAKE) clean

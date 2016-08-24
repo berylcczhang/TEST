@@ -103,7 +103,7 @@ OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
 # Default target
-.PHONY: all exe debug lib lib-debug libstatic compile clean
+.PHONY: all exe debug lib lib-debug libstatic libstatic-debug compile clean
 
 exe: CXXFLAGS += $(CXXOPTFLAGS)
 exe: LDFLAGS  += $(LDOPTFLAGS)
@@ -123,6 +123,9 @@ lib-debug: $(LIBNAME)
 
 libstatic: CXXFLAGS += $(CXXOPTFLAGS) $(CLIBFLAGS)
 libstatic: $(LIBSTATNAME)
+
+libstatic-debug: CXXFLAGS += $(CXXDEBFLAGS) $(CLIBFLAGS)
+libstatic-debug: $(LIBSTATNAME)
 
 all: exe
 all: lib
