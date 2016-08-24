@@ -204,6 +204,20 @@ while completed_trials < ntrials:
             # Process completed, flag as available
             proc_avail_list.append(i)
             proc_ctr[i] = proc_ctr[i] + 1
+            # Issue warning if process appears to have terminated
+            # abnormally
+            retcode = proc.poll()
+            if retcode < 0:
+                warnings.warn(
+                    "thread {:d}".format(i+1)+" appears to have "
+                    "been killed by signal {:d}".format(-retcode) +
+                    "; results may be incomplete")
+            elif retcode > 0:
+                warnings.warn(
+                    "thread {:d}".format(i+1)+" appears to have "
+                    "terminated abnormally with return code "
+                    "{:d}".format(retcode) +
+                    "; results may be incomplete")
 
     # Step 5b: if there is work remaining to be done, and we have
     # processors available, launch jobs on them
