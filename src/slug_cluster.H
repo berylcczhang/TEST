@@ -43,6 +43,13 @@ extern "C" {
 }
 #endif
 
+// slug_cluster_buffer is an alias for a general buffer, which holds
+// data used to reconstruct a slug_cluster object. Note that this has
+// to be declared as a general buffer instead of a struct (which would
+// certainly be prettier) because we do not know in advance how many
+// stars will be in the cluster.
+typedef void slug_cluster_buffer;
+
 class slug_cluster {
 
 public:
@@ -57,8 +64,35 @@ public:
 	       const slug_yields *yields_,
 	       const slug_PDF *clf_=NULL);
 
+  // Constructor to reconstruct a slug_cluster object from a
+  // serialized buffer
+  slug_cluster(const slug_cluster_buffer *buf,
+	       const slug_PDF *imf_, 
+	       const slug_tracks *tracks_, 
+	       const slug_specsyn *specsyn_,
+	       const slug_filter_set *filters_,
+	       const slug_extinction *extinct_,
+	       const slug_nebular *nebular_,
+	       const slug_yields *yields_,
+	       const slug_PDF *clf_=NULL);
+
   // Destructor
   ~slug_cluster() { }
+
+  // Routines for manipulating serialized buffers
+
+  // Return size in bytes needed for a buffer
+  size_t buffer_size();
+
+  // Allocate and fill a buffer
+  slug_cluster_buffer *make_buffer();
+
+  // Fill a buffer; user must allocate it and guarantee that it
+  // contains sufficient memory
+  void pack_buffer(slug_cluster_buffer *buf);
+
+  // Free a buffer allocated by make_buffer
+  void free_buffer(slug_cluster_buffer *buffer);
 
   // Routine to return the id
   unsigned long get_id() const { return id; }

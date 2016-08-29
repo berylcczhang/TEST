@@ -114,6 +114,251 @@ slug_cluster::slug_cluster(const unsigned long id_,
 }
 
 ////////////////////////////////////////////////////////////////////////
+// Constructor to build an object from a serialized buffer
+////////////////////////////////////////////////////////////////////////
+slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
+			   const slug_PDF *imf_, 
+			   const slug_tracks *tracks_, 
+			   const slug_specsyn *specsyn_,
+			   const slug_filter_set *filters_,
+			   const slug_extinction *extinct_,
+			   const slug_nebular *nebular_,
+			   const slug_yields *yields_,
+			   const slug_PDF *clf_) :
+  targetMass(((double *) buf)[0]), imf(imf_), clf(clf_), tracks(tracks_), 
+  specsyn(specsyn_), filters(filters_), extinct(extinct_),
+  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr)
+{
+  // Pull out the basic data first
+  // Doubles
+  const double *buf_dbl = (const double *) buf;
+  birthMass = buf_dbl[1];
+  aliveMass = buf_dbl[2];
+  stochBirthMass = buf_dbl[3];
+  stochAliveMass = buf_dbl[4];
+  nonStochBirthMass = buf_dbl[5];
+  nonStochAliveMass = buf_dbl[6];
+  stochRemnantMass = buf_dbl[7];
+  nonStochRemnantMass = buf_dbl[8];
+  stellarMass = buf_dbl[9];
+  stochStellarMass = buf_dbl[10];
+  nonStochStellarMass = buf_dbl[11];
+  formationTime = buf_dbl[12];
+  curTime = buf_dbl[13];
+  clusterAge = buf_dbl[14];
+  lifetime = buf_dbl[15];
+  stellarDeathMass = buf_dbl[16];
+  A_V = buf_dbl[17];
+  Lbol = buf_dbl[18];
+  Lbol_ext = buf_dbl[19];
+  tot_sn = buf_dbl[20];
+  last_yield_time = buf_dbl[21];
+
+  // Unsigned longs
+  const unsigned long *buf_ul = (const unsigned long *) (buf_dbl+22);
+  id = buf_ul[0];
+  stoch_sn = buf_ul[1];
+
+  // Bools; could pack these into an integer, but this is easier to
+  // read, the the storage space and communication cost isn't going to
+  // be affected significantly one way or the other
+  const bool *buf_bool = (const bool *) (buf_ul+2);
+  is_disrupted = buf_bool[0];
+  data_set = buf_bool[1];
+  Lbol_set = buf_bool[2];
+  spec_set = buf_bool[3];
+  phot_set = buf_bool[4];
+  yield_set = buf_bool[5];
+
+  // Sizes of various vectors
+  const vector<double>::size_type *buf_sz =
+    (const vector<double>::size_type *) (buf_bool+6);
+  stars.resize(buf_sz[0]);
+  dead_stars.resize(buf_sz[1]);
+  L_lambda.resize(buf_sz[2]);
+  phot.resize(buf_sz[3]);
+  L_lambda_ext.resize(buf_sz[4]);
+  phot_ext.resize(buf_sz[5]);
+  L_lambda_neb.resize(buf_sz[6]);
+  phot_neb.resize(buf_sz[7]);
+  L_lambda_neb_ext.resize(buf_sz[8]);
+  phot_neb_ext.resize(buf_sz[9]);
+  all_yields.resize(buf_sz[10]);
+  stoch_yields.resize(buf_sz[11]);
+  non_stoch_yields.resize(buf_sz[12]);
+  stardata.resize(buf_sz[13]);
+
+  // Contents of the vectors
+  const double *buf_vec = (const double *) (buf_sz+14);
+  vector<double>::size_type offset, offset0;
+  for (offset = 0; offset < stars.size(); offset++)
+    stars[offset] = buf_vec[offset];
+  for (offset0 = offset; offset < dead_stars.size(); offset++)
+    dead_stars[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < L_lambda.size(); offset++)
+    L_lambda[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < phot.size(); offset++)
+    phot[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < L_lambda_ext.size(); offset++)
+    L_lambda_ext[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < phot_ext.size(); offset++)
+    phot_ext[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < L_lambda_neb.size(); offset++)
+    L_lambda_neb[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < phot_neb.size(); offset++)
+    phot_neb[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < L_lambda_neb_ext.size(); offset++)
+    L_lambda_neb_ext[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < phot_neb_ext.size(); offset++)
+    phot_neb_ext[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < all_yields.size(); offset++)
+    all_yields[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < stoch_yields.size(); offset++)
+    stoch_yields[offset-offset0] = buf_vec[offset];
+  for (offset0 = offset; offset < non_stoch_yields.size(); offset++)
+    non_stoch_yields[offset-offset0] = buf_vec[offset];
+  const slug_stardata *buf_stardata =
+    (const slug_stardata *) buf_vec+offset;
+  for (offset = 0; offset < stardata.size(); offset++)
+    stardata[offset] = buf_stardata[offset];
+}
+
+////////////////////////////////////////////////////////////////////////
+// Routines to build and manipulate serialized buffers
+////////////////////////////////////////////////////////////////////////
+size_t
+slug_cluster::buffer_size() {
+  // Add up the storage needed for the buffer
+  size_t bufsize = 22*sizeof(double) + 2*sizeof(unsigned long) +
+    6*sizeof(bool) + 14*sizeof(vector<double>::size_type) +
+    sizeof(double) * (stars.size() + dead_stars.size() +
+		      L_lambda.size() + phot.size() +
+		      L_lambda_ext.size() + phot_ext.size() +
+		      L_lambda_neb.size() + phot_neb.size() +
+		      L_lambda_neb_ext.size() + phot_neb_ext.size() +
+		      all_yields.size() + stoch_yields.size() +
+		      non_stoch_yields.size()) +
+    sizeof(slug_stardata) * stardata.size();
+  return bufsize;
+}
+
+slug_cluster_buffer *
+slug_cluster::make_buffer() {
+
+  // Allocate the buffer
+  slug_cluster_buffer *buf = malloc(buffer_size());
+
+  // Pack the buffer
+  pack_buffer(buf);
+  
+  // Return the buffer
+  return(buf);
+}
+
+void
+slug_cluster::pack_buffer(slug_cluster_buffer *buf) {
+
+  // Doubles
+  double *buf_dbl = (double *) buf;
+  buf_dbl[0] = targetMass;
+  buf_dbl[1] = birthMass;
+  buf_dbl[2] = aliveMass;
+  buf_dbl[3] = stochBirthMass;
+  buf_dbl[4] = stochAliveMass;
+  buf_dbl[5] = nonStochBirthMass;
+  buf_dbl[6] = nonStochAliveMass;
+  buf_dbl[7] = stochRemnantMass;
+  buf_dbl[8] = nonStochRemnantMass;
+  buf_dbl[9] = stellarMass;
+  buf_dbl[10] = stochStellarMass;
+  buf_dbl[11] = nonStochStellarMass;
+  buf_dbl[12] = formationTime;
+  buf_dbl[13] = curTime;
+  buf_dbl[14] = clusterAge;
+  buf_dbl[15] = lifetime;
+  buf_dbl[16] = stellarDeathMass;
+  buf_dbl[17] = A_V;
+  buf_dbl[18] = Lbol;
+  buf_dbl[19] = Lbol_ext;
+  buf_dbl[20] = tot_sn;
+  buf_dbl[21] = last_yield_time;
+
+  // Unsigned longs
+  unsigned long *buf_ul = (unsigned long *) (buf_dbl+22);
+  buf_ul[0] = id;
+  buf_ul[1] = stoch_sn;
+
+  // Bools; could pack these into an integer, but this is much easier
+  // to read, and the overall storage space and cost isn't going to be
+  // affected in any significant way
+  bool *buf_bool = (bool *) (buf_ul+2);
+  buf_bool[0] = is_disrupted;
+  buf_bool[1] = data_set;
+  buf_bool[2] = Lbol_set;
+  buf_bool[3] = spec_set;
+  buf_bool[4] = phot_set;
+  buf_bool[5] = yield_set;
+
+  // Sizes of the various vectors
+  vector<double>::size_type *buf_sz =
+    (vector<double>::size_type *) (buf_bool+6);
+  buf_sz[0] = stars.size();
+  buf_sz[1] = dead_stars.size();
+  buf_sz[2] = L_lambda.size();
+  buf_sz[3] = phot.size();
+  buf_sz[4] = L_lambda_ext.size();
+  buf_sz[5] = phot_ext.size();
+  buf_sz[6] = L_lambda_neb.size();
+  buf_sz[7] = phot_neb.size();
+  buf_sz[8] = L_lambda_neb_ext.size();
+  buf_sz[9] = phot_neb_ext.size();
+  buf_sz[10] = all_yields.size();
+  buf_sz[11] = stoch_yields.size();
+  buf_sz[12] = non_stoch_yields.size();
+  buf_sz[13] = stardata.size();
+
+  // Data in the vectors
+  buf_dbl = (double *) (buf_sz+14);
+  vector<double>::size_type offset, offset0;
+  for (offset = 0; offset < stars.size(); offset++)
+    buf_dbl[offset] = stars[offset];
+  for (offset0 = offset; offset < dead_stars.size(); offset++)
+    buf_dbl[offset] = dead_stars[offset-offset0];
+  for (offset0 = offset; offset < L_lambda.size(); offset++)
+    buf_dbl[offset] = L_lambda[offset-offset0];
+  for (offset0 = offset; offset < phot.size(); offset++)
+    buf_dbl[offset] = phot[offset-offset0];
+  for (offset0 = offset; offset < L_lambda_ext.size(); offset++)
+    buf_dbl[offset] = L_lambda_ext[offset-offset0];
+  for (offset0 = offset; offset < phot_ext.size(); offset++)
+    buf_dbl[offset] = phot_ext[offset-offset0];
+  for (offset0 = offset; offset < L_lambda_neb.size(); offset++)
+    buf_dbl[offset] = L_lambda_neb[offset-offset0];
+  for (offset0 = offset; offset < phot_neb.size(); offset++)
+    buf_dbl[offset] = phot_neb[offset-offset0];
+  for (offset0 = offset; offset < L_lambda_neb_ext.size(); offset++)
+    buf_dbl[offset] = L_lambda_neb_ext[offset-offset0];
+  for (offset0 = offset; offset < phot_neb_ext.size(); offset++)
+    buf_dbl[offset] = phot_neb_ext[offset-offset0];
+  for (offset0 = offset; offset < all_yields.size(); offset++)
+    buf_dbl[offset] = all_yields[offset-offset0];
+  for (offset0 = offset; offset < stoch_yields.size(); offset++)
+    buf_dbl[offset] = stoch_yields[offset-offset0];
+  for (offset0 = offset; offset < non_stoch_yields.size(); offset++)
+    buf_dbl[offset] = non_stoch_yields[offset-offset0];
+  slug_stardata *buf_stardata =
+    (slug_stardata *) buf_dbl+offset;
+  for (offset = 0; offset < stardata.size(); offset++)
+    buf_stardata[offset] = stardata[offset];
+}
+
+void
+slug_cluster::free_buffer(slug_cluster_buffer *buffer) {
+  free(buffer);
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Routine to reset the cluster
 ////////////////////////////////////////////////////////////////////////
 void
