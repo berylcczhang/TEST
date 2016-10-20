@@ -46,10 +46,10 @@ LDDEBFLAGS	= $(MACH_LDDEBFLAGS) $(MACH_CXXFLAG)
 
 # Include flags
 ifdef C_INCLUDE_PATH
-     INCFLAGS += -I$(subst :, -I ,$(C_INCLUDE_PATH))
+     INCFLAGS += -I$(subst :, -I,$(C_INCLUDE_PATH))
 endif
 ifdef CXX_INCLUDE_PATH
-     INCFLAGS += -I$(subst :, -I ,$(CXX_INCLUDE_PATH))
+     INCFLAGS += -I$(subst :, -I,$(CXX_INCLUDE_PATH))
 endif
 ifdef BOOST_HDR_PATH
      INCFLAGS += -I$(BOOST_HDR_PATH)
@@ -63,10 +63,10 @@ LDLIBFLAGS      = -lgsl -lgslcblas -lboost_system$(MACH_BOOST_TAG) \
 	-lboost_filesystem$(MACH_BOOST_TAG) \
 	-lboost_regex$(MACH_BOOST_TAG)
 ifdef LD_LIBRARY_PATH
-     LDLIBFLAGS += -L$(subst :, -L ,$(LD_LIBRARY_PATH))
+     LDLIBFLAGS += -L$(subst :, -L,$(LD_LIBRARY_PATH))
 endif
 ifdef LIBRARY_PATH
-     LDLIBFLAGS += -L$(subst :, -L ,$(LIBRARY_PATH))
+     LDLIBFLAGS += -L$(subst :, -L,$(LIBRARY_PATH))
 endif
 ifdef BOOST_LIB_PATH
      LDLIBFLAGS += -L$(BOOST_LIB_PATH)
