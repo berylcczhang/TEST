@@ -6,6 +6,10 @@
 MACH_CXX          = c++
 MACH_CC		  = cc
 
+# For MPI compilation, use mpiCC
+MACH_MPICXX	  = mpiCC
+MACH_MPICC 	  = mpicc
+
 # Flag needed to specify c++11 standard
 MACH_C11FLAG      = -std=c++11
 

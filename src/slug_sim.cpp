@@ -61,18 +61,14 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     }
     seed_file.open(seed_file_name.c_str(), ios::in);
     
-    
-    //Check if the file exists
+    // Check if the file exists
     if (!seed_file) 
     {
       cerr << "Can't open RNG seed file " << seed_file_name << endl;
       exit(1);
-    }
-    
-    
+    }   
     seed_file >> seed;
     seed_file.close();
-
 	
   } else {
 
@@ -929,7 +925,7 @@ void slug_sim::open_cluster_prop() {
     if (is_imf_var == true)
     {
       //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
+      for (vector<double>::size_type p = 0; p<imf_vpdraws.size();p++)
       {
 #ifndef __INTEL_COMPILER
         cluster_prop_file << setw(14) << left << "VP"+ std::to_string(p);
@@ -964,7 +960,7 @@ void slug_sim::open_cluster_prop() {
     if (is_imf_var == true)
     {
       //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
+      for (vector<double>::size_type p = 0; p<imf_vpdraws.size();p++)
       {
         cluster_prop_file << setw(14) << left << "";
       }
@@ -989,7 +985,7 @@ void slug_sim::open_cluster_prop() {
     if (is_imf_var == true)
     {
       //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
+      for (vector<double>::size_type p = 0; p<imf_vpdraws.size();p++)
       {
         cluster_prop_file << setw(14) << left << "-----------";
       }
@@ -1043,7 +1039,7 @@ void slug_sim::open_cluster_prop() {
     if (is_imf_var == true)
     {
       //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
+      for (vector<double>::size_type p = 0; p<imf_vpdraws.size();p++)
       {
 #ifndef __INTEL_COMPILER
         ttype_str.push_back("VP"+std::to_string(p));
@@ -1210,7 +1206,7 @@ void slug_sim::open_integrated_spec() {
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
     vector<double> lambda_neb, lambda_ext, lambda_neb_ext;
-    vector<double>::size_type nl_ext, nl_neb, nl_neb_ext;
+    vector<double>::size_type nl_ext = 0, nl_neb = 0, nl_neb_ext = 0;
     vector<string> ttype_str = { "Wavelength" };
     vector<string> tform_str;
     tform_str.push_back(lexical_cast<string>(nl) + "D");
@@ -1452,7 +1448,7 @@ void slug_sim::open_cluster_spec() {
     vector<double> lambda = specsyn->lambda();
     vector<double>::size_type nl = lambda.size();
     vector<double> lambda_neb, lambda_ext, lambda_neb_ext;
-    vector<double>::size_type nl_neb, nl_ext, nl_neb_ext;
+    vector<double>::size_type nl_neb = 0, nl_ext = 0, nl_neb_ext = 0;
     vector<string> ttype_str = { "Wavelength" };
     vector<string> tform_str;
     tform_str.push_back(lexical_cast<string>(nl) + "D");
@@ -2083,7 +2079,7 @@ void slug_sim::open_integrated_yield() {
     char **ttype2 = new char *[ncol];
     char **tform2 = new char *[ncol];
     char **tunit2 = new char *[ncol];
-    for (vector<double>::size_type i=0; i<ncol; i++) {
+    for (vector<double>::size_type i=0; i<(unsigned int)ncol; i++) {
       ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
       tform2[i] = const_cast<char*>(tform2_str[i].c_str());
       tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());
@@ -2257,7 +2253,7 @@ void slug_sim::open_cluster_yield() {
     char **ttype2 = new char *[ncol];
     char **tform2 = new char *[ncol];
     char **tunit2 = new char *[ncol];
-    for (vector<double>::size_type i=0; i<ncol; i++) {
+    for (vector<double>::size_type i=0; i<(unsigned int) ncol; i++) {
       ttype2[i] = const_cast<char*>(ttype2_str[i].c_str());
       tform2[i] = const_cast<char*>(tform2_str[i].c_str());
       tunit2[i] = const_cast<char*>(tunit2_str[i].c_str());

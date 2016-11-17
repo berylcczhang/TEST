@@ -227,22 +227,15 @@ void slug_PDF_segment::update(const std::vector<double>& drawn_vals)
 
   //Loop over list of indices and modify the appropriate values
   //in the token list.	
-  for (int i=0; i<variable_tok.size(); i++) 
-  {		
-
-//		//Test draw
-//    cout << "Previous value of token " << variable_tok.at(i) << " was " << alltoks.at(variable_tok.at(i)) << endl;
+  for (vector<double>::size_type i=0; i<variable_tok.size(); i++) {		
 
     //Assign the newly drawn value to the correct parameter.
     alltoks.at(variable_tok.at(i)) = drawn_vals.at(i);
-
-    //Test draw
-//  cout << "New value of token " << variable_tok.at(i) << " is " << alltoks.at(variable_tok.at(i)) << endl;
-
+    
   }
 
   //Initialize the segment again, now with new parameters
-   initialize(alltoks);
+  initialize(alltoks);
    
 }
 ////////////////////////////////////////////////////////////////////////
@@ -251,7 +244,7 @@ void slug_PDF_segment::update(const std::vector<double>& drawn_vals)
 void slug_PDF_segment::delete_v_pdfs()
 {
 
-  for (int i = 0; i < variable_param_pdfs.size(); ++i) 
+  for (vector<double>::size_type i = 0; i < variable_param_pdfs.size(); ++i) 
   {
     delete variable_param_pdfs[i];
   }

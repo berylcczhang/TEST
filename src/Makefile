@@ -30,6 +30,7 @@ endif
 
 # Set compiler
 CXX		= $(MACH_CXX)
+MPICXX		= $(MACH_MPICXX)
 
 # Set optimization mode flags
 CXXOPTFLAGS	= $(MACH_CXXOPTFLAGS) $(MACH_C11FLAG) -DNDEBUG \
@@ -45,34 +46,34 @@ LDDEBFLAGS	= $(MACH_LDDEBFLAGS) $(MACH_CXXFLAG)
 -include Make.config.override
 
 # Include flags
-ifdef C_INCLUDE_PATH
-     INCFLAGS += -I$(subst :, -I,$(C_INCLUDE_PATH))
-endif
-ifdef CXX_INCLUDE_PATH
-     INCFLAGS += -I$(subst :, -I,$(CXX_INCLUDE_PATH))
-endif
 ifdef BOOST_HDR_PATH
      INCFLAGS += -I$(BOOST_HDR_PATH)
 endif
 ifdef GSL_HDR_PATH
      INCFLAGS += -I$(GSL_HDR_PATH)
 endif
+ifdef C_INCLUDE_PATH
+     INCFLAGS += -I$(subst :, -I,$(C_INCLUDE_PATH))
+endif
+ifdef CXX_INCLUDE_PATH
+     INCFLAGS += -I$(subst :, -I,$(CXX_INCLUDE_PATH))
+endif
 
 # Link flags
 LDLIBFLAGS      = -lgsl -lgslcblas -lboost_system$(MACH_BOOST_TAG) \
 	-lboost_filesystem$(MACH_BOOST_TAG) \
 	-lboost_regex$(MACH_BOOST_TAG)
-ifdef LD_LIBRARY_PATH
-     LDLIBFLAGS += -L$(subst :, -L,$(LD_LIBRARY_PATH))
-endif
-ifdef LIBRARY_PATH
-     LDLIBFLAGS += -L$(subst :, -L,$(LIBRARY_PATH))
-endif
 ifdef BOOST_LIB_PATH
      LDLIBFLAGS += -L$(BOOST_LIB_PATH)
 endif
 ifdef GSL_LIB_PATH
      LDLIBFLAGS += -L$(GSL_LIB_PATH)
+endif
+ifdef LD_LIBRARY_PATH
+     LDLIBFLAGS += -L$(subst :, -L,$(LD_LIBRARY_PATH))
+endif
+ifdef LIBRARY_PATH
+     LDLIBFLAGS += -L$(subst :, -L,$(LIBRARY_PATH))
 endif
 
 # Turn FITS on or off
@@ -86,6 +87,12 @@ endif
 
 # Specify which version of the GSL we're using
 DEFINES += -DGSLVERSION=$(GSLVERSION)
+
+# Switch to MPI compiler if requested to compile with MPI enables
+ifeq ($(MPI), ENABLE_MPI)
+     CXX        =  $(MPICXX)
+     DEFINES    += -DENABLE_MPI
+endif
 
 CXXFLAGS +=  $(INCFLAGS) $(DEFINES)
 LDFLAGS  +=  $(LDLIBFLAGS)

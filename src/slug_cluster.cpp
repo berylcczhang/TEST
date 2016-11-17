@@ -227,7 +227,7 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
 // Routines to build and manipulate serialized buffers
 ////////////////////////////////////////////////////////////////////////
 size_t
-slug_cluster::buffer_size() {
+slug_cluster::buffer_size() const {
   // Add up the storage needed for the buffer
   size_t bufsize = 22*sizeof(double) + 2*sizeof(unsigned long) +
     6*sizeof(bool) + 14*sizeof(vector<double>::size_type) +
@@ -243,7 +243,7 @@ slug_cluster::buffer_size() {
 }
 
 slug_cluster_buffer *
-slug_cluster::make_buffer() {
+slug_cluster::make_buffer() const {
 
   // Allocate the buffer
   slug_cluster_buffer *buf = malloc(buffer_size());
@@ -256,7 +256,7 @@ slug_cluster::make_buffer() {
 }
 
 void
-slug_cluster::pack_buffer(slug_cluster_buffer *buf) {
+slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
 
   // Doubles
   double *buf_dbl = (double *) buf;
@@ -353,7 +353,7 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) {
 }
 
 void
-slug_cluster::free_buffer(slug_cluster_buffer *buffer) {
+slug_cluster::free_buffer(slug_cluster_buffer *buffer) const {
   free(buffer);
 }
 
@@ -526,7 +526,7 @@ slug_cluster::advance(double time) {
       // contribution to the remnant mass, then remove them from the
       // list of stars. Note that we need to add 1 to starptr because
       // the c++ vector erase method excludes the last element.
-      for (vector<double>::size_type i=starptr2; i<=starptr; i++) {
+      for (int i=starptr2; i<=starptr; i++) {
 	stochRemnantMass += tracks->remnant_mass(stars[i]);
 	if (yields)
 	  if (yields->produces_sn(stars[i])) stoch_sn++;
@@ -545,11 +545,11 @@ slug_cluster::advance(double time) {
     if (mass_cuts[0] > 0.0) {
 
       // Find all stars smaller than the minimum alive mass
-      for (starptr=0; starptr<stars.size(); starptr++)
+      for (starptr=0; (unsigned int) starptr<stars.size(); starptr++)
 	if (stars[starptr] > mass_cuts[0]) break;
 
       // Kill those stars, adding to the remnant mass
-      for (unsigned int i=0; i<starptr; i++) {
+      for (int i=0; i<starptr; i++) {
 	stochRemnantMass += tracks->remnant_mass(stars[i]);
 	if (yields)
 	  if (yields->produces_sn(stars[i])) stoch_sn++;
@@ -1106,7 +1106,7 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
     if (imfvp.size()>0)
     {
       //Loop over the variable parameters
-      for (int p = 0; p<imfvp.size();p++)
+      for (vector<double>::size_type p = 0; p<imfvp.size();p++)
       {
         outfile << "   " << setw(11) << right << imfvp[p];
       }
@@ -1145,7 +1145,7 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
     if (imfvp.size()>0)
     {
       //Loop over the variable parameters
-      for (int p = 0; p<imfvp.size();p++)
+      for (vector<double>::size_type p = 0; p<imfvp.size(); p++)
       {
         outfile.write((char *) &imfvp[p], sizeof imfvp[p]);
       }
@@ -1210,7 +1210,7 @@ slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial,
   if (imfvp.size()>0)
   {
     //Loop over the variable parameters
-    for (int p = 0; p<imfvp.size();p++)
+    for (vector<double>::size_type p = 0; p<imfvp.size();p++)
     {
       colnum++;
       double vp_p=imfvp[p];
@@ -1264,7 +1264,7 @@ write_spectrum(ofstream& outfile, const outputMode out_mode,
 	int j;
 	if (nebular == NULL) j = i - extinct->off();
 	else j = i - extinct->off_neb();
-	if ((j >= 0) && (j < L_lambda_star_ext.size())) {
+	if ((j >= 0) && ((unsigned int) j < L_lambda_star_ext.size())) {
 	  outfile << "   "
 		  << setw(11) << right << L_lambda_star_ext[j];
 	  if (nebular != NULL)

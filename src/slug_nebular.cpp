@@ -350,7 +350,7 @@ slug_nebular(const char *atomic_dir,
 
     // Next line is list of ionization parameters; read that, and see
     // which ionization parameter we're going to use
-    double logU_in, logU_match, logU_diff = constants::big;
+    double logU_in, logU_match = constants::big, logU_diff = constants::big;
     for (unsigned int i=0; i<cloudy_nLogU; i++) {
       cloudytab_file >> logU_in;
       if (fabs(logU_in - logU) < logU_diff) {

@@ -4,6 +4,7 @@
 MACHINE	=
 FITS ?= ENABLE_FITS
 GSLVERSION ?= 2
+MPI ?= NO_MPI
 
 exe: slug bayesphot
 
@@ -12,7 +13,7 @@ all: slug bayesphot lib libstatic
 debug: slug-debug bayesphot-debug
 
 slug:
-	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION) MPI=$(MPI)
 	@(if [ ! -e bin ]; \
 	then \
 		mkdir bin; \
@@ -44,16 +45,16 @@ slug-debug:
 	@(cp src/slug bin)
 
 lib:
-	cd src && $(MAKE) lib MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+	cd src && $(MAKE) lib MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION) MPI=$(MPI)
 
 lib-debug:
-	cd src && $(MAKE) lib-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+	cd src && $(MAKE) lib-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION) MPI=$(MPI)
 
 libstatic:
-	cd src && $(MAKE) libstatic MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+	cd src && $(MAKE) libstatic MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION) MPI=$(MPI)
 
 libstatic-debug:
-	cd src && $(MAKE) libstatic-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+	cd src && $(MAKE) libstatic-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION) MPI=$(MPI)
 
 clean:
 	cd src && $(MAKE) clean

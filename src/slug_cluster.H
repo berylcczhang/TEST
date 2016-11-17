@@ -82,17 +82,17 @@ public:
   // Routines for manipulating serialized buffers
 
   // Return size in bytes needed for a buffer
-  size_t buffer_size();
+  size_t buffer_size() const;
 
   // Allocate and fill a buffer
-  slug_cluster_buffer *make_buffer();
+  slug_cluster_buffer *make_buffer() const;
 
   // Fill a buffer; user must allocate it and guarantee that it
   // contains sufficient memory
-  void pack_buffer(slug_cluster_buffer *buf);
+  void pack_buffer(slug_cluster_buffer *buf) const;
 
   // Free a buffer allocated by make_buffer
-  void free_buffer(slug_cluster_buffer *buffer);
+  void free_buffer(slug_cluster_buffer *buffer) const;
 
   // Routine to return the id
   unsigned long get_id() const { return id; }

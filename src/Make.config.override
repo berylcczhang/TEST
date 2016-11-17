@@ -5,6 +5,10 @@
 #CXX           =
 #CC	       =
 
+# MPI versions of compilers
+MPICXX	       = /opt/local/bin/mpicxx-mpich-clang 
+MPICC	       = /opt/local/bin/mpicc-mpich-clang 
+
 # Optimization flags for compile and link stages
 #CXXOPTFLAGS   =
 #COPTFLAGS     =
@@ -23,7 +27,7 @@
 # Locations of boost, GSL, and cfitsio libraries. Can be left blank if
 # these are in the default link/include paths.
 #BOOST_HDR_PATH	= 
-#BOOST_LIB_PATH	=
+#BOOST_LIB_PATH	= 
 #GSL_HDR_PATH	=
 #GSL_LIB_PATH	=
 #FITS_HDR_PATH  =

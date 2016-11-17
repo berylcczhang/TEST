@@ -211,7 +211,7 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
     to_lower(tokens[0]);
     try {
       if (!(tokens[0].compare("verbosity"))) {
-	verbosity = lexical_cast<int>(tokens[1]);
+	verbosity = lexical_cast<unsigned int>(tokens[1]);
       } else if (!(tokens[0].compare("sim_type"))) {
 	to_lower(tokens[1]);
 	if (tokens[1].compare("cluster") == 0) {
@@ -227,7 +227,7 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  exit(1);
 	}
       } else if (!(tokens[0].compare("n_trials"))) {
-	nTrials = lexical_cast<int>(tokens[1]);
+	nTrials = lexical_cast<unsigned int>(tokens[1]);
       } else if (!(tokens[0].compare("start_time"))) {
 	startTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
@@ -496,12 +496,12 @@ void
 slug_parmParser::checkParams() {
 
   // Make sure parameters have acceptable values
-  if (verbosity < 0 || verbosity > 2) {
+  if (verbosity > 2) {
     cerr << "slug: error: verbosity must be 0, 1, or 2" 
 	      << endl;
     exit(1);
   }
-  if (nTrials < 0) {
+  if (nTrials < 1) {
     cerr << "slug: error: n_trials must be >= 1" << endl;
     exit(1);
   }
@@ -783,8 +783,8 @@ slug_parmParser::writeParams() const {
 // Functions that just return copies of internal data
 ////////////////////////////////////////////////////////////////////////
 
-int slug_parmParser::get_verbosity() const { return verbosity; }
-int slug_parmParser::get_nTrials() const { return nTrials; }
+unsigned int slug_parmParser::get_verbosity() const { return verbosity; }
+unsigned int slug_parmParser::get_nTrials() const { return nTrials; }
 double slug_parmParser::get_startTime() const { return startTime; }
 double slug_parmParser::get_timeStep() const { return timeStep; }
 double slug_parmParser::get_endTime() const { return endTime; }

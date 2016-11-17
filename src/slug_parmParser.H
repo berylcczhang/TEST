@@ -34,8 +34,8 @@ public:
   ~slug_parmParser();                     // The desctructor
 
   // Functions that return values from parameter file
-  int get_verbosity() const;              // Level of verbosity
-  int get_nTrials() const;                // How many trials to run
+  unsigned int get_verbosity() const;     // Level of verbosity
+  unsigned int get_nTrials() const;       // How many trials to run
   double get_timeStep() const;            // Size of timestep
   double get_startTime() const;           // Starting time
   double get_endTime() const;             // Final time
@@ -105,8 +105,8 @@ public:
 
 private:
   // Storage for parameter file values
-  int verbosity;                          // Level of verbosity
-  int nTrials;                            // How many trials to run
+  unsigned int verbosity;                 // Level of verbosity
+  unsigned int nTrials;                   // How many trials to run
   unsigned int rng_offset;                // Offset to rng
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode

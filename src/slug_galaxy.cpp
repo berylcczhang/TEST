@@ -903,7 +903,7 @@ slug_galaxy::write_integrated_spec(ofstream& int_spec_file,
 	int j;
 	if (nebular == NULL) j = i - extinct->off();
 	else j = i - extinct->off_neb();
-	if ((j >= 0) && (j < L_lambda_star_ext.size())) {
+	if ((j >= 0) && ((unsigned int) j < L_lambda_star_ext.size())) {
 	  int_spec_file << "   "
 			<< setw(11) << right << L_lambda_star_ext[j];
 	  if (nebular != NULL)

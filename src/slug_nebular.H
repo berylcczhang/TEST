@@ -117,7 +117,7 @@ private:
   // Wavelength grid and associated information
   const std::vector<double> &lambda_star;
   std::vector<double> lambda_neb, lambda_neb_obs;
-  const int ngrid_line = 17;  // Number of gridpoints to represent a line
+  const unsigned int ngrid_line = 17;  // Number of gridpoints to represent a line
   const double linewidth = 2.0e6; // Make lines 20 km/s wide
   const double line_extent = 5.0; // Number of sigma to go out
 
