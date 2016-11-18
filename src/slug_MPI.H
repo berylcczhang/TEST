@@ -37,11 +37,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Blocking send/receive of single clusters and vectors of clusters
 ////////////////////////////////////////////////////////////////////////
 
+// Sending processor passes in a cluster and a target to which it is
+// sent
 void MPI_send_slug_cluster(const slug_cluster &cluster, int dest, int tag,
 			   MPI_Comm comm);
-void MPI_send_slug_cluster_vec(const std::vector<slug_cluster *> &clusters,
-			       int dest, int tag, MPI_Comm comm);
 
+// Receiving processor specifies who the sender is, and gets back a
+// pointer to a newly-constructed slug_cluster and matches the one
+// that was sent
 slug_cluster *
 MPI_recv_slug_cluster(int source, int tag, MPI_Comm comm,
 		      const slug_PDF *imf_, 
@@ -53,6 +56,14 @@ MPI_recv_slug_cluster(int source, int tag, MPI_Comm comm,
 		      const slug_yields *yields_,
 		      const slug_PDF *clf_=NULL);
 
+// Sender passes in a vector of pointers to slug_cluster, which are
+// all sent to a destination processor
+void MPI_send_slug_cluster_vec(const std::vector<slug_cluster *> &clusters,
+			       int dest, int tag, MPI_Comm comm);
+
+// Receiver specifies which processor to get data from; the returned
+// value is a vector of pointers to slug_cluster; the pointers point
+// to newly-constructed slug_clusters that are copies of the ones sent
 std::vector<slug_cluster *>
 MPI_recv_slug_cluster_vec(int source, int tag, MPI_Comm comm,
 			  const slug_PDF *imf_, 
@@ -63,6 +74,49 @@ MPI_recv_slug_cluster_vec(int source, int tag, MPI_Comm comm,
 			  const slug_nebular *nebular_,
 			  const slug_yields *yields_,
 			  const slug_PDF *clf_=NULL);
+
+
+////////////////////////////////////////////////////////////////////////
+// Broadcasting of single clusters and vectors of clusters
+////////////////////////////////////////////////////////////////////////
+
+// The broadcasting processor passes in a pointer to the cluster it
+// wants to broadcast; receiving processors can pass in null. The
+// return value is a pointer to a slug_cluster that is a copy of the
+// one provided on the broadcasting processor. On the broadcasting
+// processor, this pointer is a copy of the variable cluster, and on
+// all other processors it is a pointer to a newly-constructed
+// cluster that is a copy of the one that was sent.
+slug_cluster *
+MPI_bcast_slug_cluster(slug_cluster *cluster, int root,
+		       MPI_Comm comm,
+		       const slug_PDF *imf_, 
+		       const slug_tracks *tracks_, 
+		       const slug_specsyn *specsyn_,
+		       const slug_filter_set *filters_,
+		       const slug_extinction *extinct_,
+		       const slug_nebular *nebular_,
+		       const slug_yields *yields_,
+		       const slug_PDF *clf_=NULL);
+
+// The broadcasting processor passes in a vector of pointers to
+// slug_clusters it wants to send; all other processors can pass an
+// empty vector to clusters. The return value is a vector of pointers
+// to slug_clusters. On the sending processor these pointers are just
+// copies of the pointers in clusters, while on all other processors
+// they are pointers to newly-constructed slug_cluster objects that
+// are copies of the ones sent.
+std::vector<slug_cluster *>
+MPI_bcast_slug_cluster_vec(std::vector<slug_cluster *> &clusters,
+			   int root, MPI_Comm comm,
+			   const slug_PDF *imf_, 
+			   const slug_tracks *tracks_, 
+			   const slug_specsyn *specsyn_,
+			   const slug_filter_set *filters_,
+			   const slug_extinction *extinct_,
+			   const slug_nebular *nebular_,
+			   const slug_yields *yields_,
+			   const slug_PDF *clf_=NULL);
 
 
 #endif
