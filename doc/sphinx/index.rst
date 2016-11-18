@@ -26,6 +26,7 @@ Contents:
    cluster_slug
    sfr_slug
    tests
+   library
    acknowledgements
 
 Indices and tables

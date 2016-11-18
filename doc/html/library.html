@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using SLUG as a Library &mdash; slug 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <link rel="next" title="Contributors and Acknowledgements" href="acknowledgements.html" />
+    <link rel="prev" title="Test Problems" href="tests.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="using-slug-as-a-library">
+<h1>Using SLUG as a Library<a class="headerlink" href="#using-slug-as-a-library" title="Permalink to this headline">¶</a></h1>
+<p>In addition to running as a standalone program, SLUG can be
+compiled as a library that can be called by external programs. This is
+useful for including stellar population synthesis calculations within
+some larger code, e.g., a galaxy simulation code in which star
+particles represent individual star clusters, where the stars in them
+are treated stochastically.</p>
+<div class="section" id="compiling-in-library-mode">
+<span id="ssec-library-mode"></span><h2>Compiling in Library Mode<a class="headerlink" href="#compiling-in-library-mode" title="Permalink to this headline">¶</a></h2>
+<p>To compile in library mode, simply do:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>make lib
+</pre></div>
+</div>
+<p>in the main directory. This will cause a dynamically linked library
+file <code class="docutils literal"><span class="pre">libslug.x</span></code> to be created in the <code class="docutils literal"><span class="pre">src</span></code> directory, where <code class="docutils literal"><span class="pre">x</span></code>
+is whatever the standard extension for dynamically linked libraries on
+your system is (<code class="docutils literal"><span class="pre">.so</span></code> for unix-like systems, <code class="docutils literal"><span class="pre">.dylib</span></code> for MacOS).</p>
+<p>Alternately, if you prefer a statically-linked version, you can do:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>make libstatic
+</pre></div>
+</div>
+<p>and a statically-linked archive <code class="docutils literal"><span class="pre">libslug.y</span></code> will be created instead,
+where <code class="docutils literal"><span class="pre">y</span></code> is the standard statically-linked library extension on
+your system (generally <code class="docutils literal"><span class="pre">.a</span></code>).</p>
+<p>In addition to <code class="docutils literal"><span class="pre">lib</span></code> and <code class="docutils literal"><span class="pre">libstatic</span></code>, the makefile supports
+<code class="docutils literal"><span class="pre">lib-debug</span></code> and <code class="docutils literal"><span class="pre">libstatic-debug</span></code> as targets as well. These
+compile the same libraries, but with optimization disabled and
+debugging symbols enabled.</p>
+</div>
+<div class="section" id="support-for-mpi-parallelism">
+<span id="ssec-mpi-support"></span><h2>Support for MPI Parallelism<a class="headerlink" href="#support-for-mpi-parallelism" title="Permalink to this headline">¶</a></h2>
+<p>In large codes where one might wish to use SLUG for subgrid stellar
+models, it is often necessary to pass information between processors
+using MPI. Since SLUG&#8217;s representation of stellar populations is
+complex, and much information is shared between particles rather than
+specific to individual particles (e.g., tables of yields and
+evolutionary tracks), passing SLUG information between processors is
+non-trivial.</p>
+<p>To facilitate parallel implementations, SLUG provides routines that
+wrap the base MPI routines and allow seamless and efficient exchange
+of the slug_cluster class (which SLUG uses to represent simple stellar
+populations) between processors. The prototypes for these functions
+are found in the <code class="docutils literal"><span class="pre">src/slug_MPI.H</span></code> header file.</p>
+<p>By default MPI support is not included in the library. To enable MPI
+support, compile the library as follows:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>make lib MPI=ENABLE_MPI
+</pre></div>
+</div>
+<p>This will enable MPI support. In addition, you may need to specify the
+names of your preferred MPI C++ compiler by setting the variable
+<code class="docutils literal"><span class="pre">MACH_MPICXX</span></code> in your machine-specific makefile &#8211; see
+<a class="reference internal" href="compiling.html#ssec-machine-makefiles"><span>Machine-Specific Makefiles</span></a>. The Makefiles contain reasonable
+guesses, but since MPI compiler names are much less standardized than
+general compiler names, you may need to supply yours rather than
+relying on the default.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Using SLUG as a Library</a><ul>
+<li><a class="reference internal" href="#compiling-in-library-mode">Compiling in Library Mode</a></li>
+<li><a class="reference internal" href="#support-for-mpi-parallelism">Support for MPI Parallelism</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="tests.html" title="previous chapter">Test Problems</a></li>
+      <li>Next: <a href="acknowledgements.html" title="next chapter">Contributors and Acknowledgements</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/library.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/library.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

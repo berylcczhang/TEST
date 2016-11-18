@@ -41,7 +41,7 @@
             
   <div class="section" id="sfr-slug-bayesian-inference-of-star-formation-rates">
 <span id="sec-sfr-slug"></span><h1>sfr_slug: Bayesian Inference of Star Formation Rates<a class="headerlink" href="#sfr-slug-bayesian-inference-of-star-formation-rates" title="Permalink to this headline">¶</a></h1>
-<p>The slugy.sfr_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the &#8220;point mass estimate&#8221; (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around <a class="reference internal" href="bayesphot.html#sec-bayesphot"><span class="std std-ref">bayesphot: Bayesian Inference for Stochastic Stellar Populations</span></a>, so for details on how the calculation is performed see the bayesphot documentation.</p>
+<p>The slugy.sfr_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the &#8220;point mass estimate&#8221; (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around <a class="reference internal" href="bayesphot.html#sec-bayesphot"><span>bayesphot: Bayesian Inference for Stochastic Stellar Populations</span></a>, so for details on how the calculation is performed see the bayesphot documentation.</p>
 <div class="section" id="getting-the-default-library">
 <h2>Getting the Default Library<a class="headerlink" href="#getting-the-default-library" title="Permalink to this headline">¶</a></h2>
 <p>The sfr_slug module requires a pre-computed library of slug simulations to use as a &#8220;training set&#8221; for its calculations. Due to its size, the default library <em>is not</em> included in the slug git repository. Instead, it is provided for download from the <a class="reference external" href="http://www.slugsps.com/data">SLUG data products website</a>. Download the two files <code class="docutils literal"><span class="pre">SFR_SLUG_integrated_phot.fits</span></code> and <code class="docutils literal"><span class="pre">SFR_SLUG_integrated_prop.fits</span></code> and save them in the <code class="docutils literal"><span class="pre">sfr_slug</span></code> directory of the main respository. If you do not do so, and do not provide your own library when you attempt to use sfr_slug, you will be prompted to download the default library.</p>
@@ -50,7 +50,7 @@
 <h2>Basic Usage<a class="headerlink" href="#basic-usage" title="Permalink to this headline">¶</a></h2>
 <p>The <code class="docutils literal"><span class="pre">sfr_slug/sfr_slug_example.py</span></code> file in the repository provides an example of how to use sfr_slug. Usage of is simple, as the functionality is all implemented through a single class, sfr_slug. The required steps are as follows:</p>
 <ol class="arabic">
-<li><p class="first">Import the library and instantiate an <code class="docutils literal"><span class="pre">sfr_slug</span></code> object (see <a class="reference internal" href="#sec-sfr-slug-full"><span class="std std-ref">Full Documentation of slugpy.sfr_slug</span></a> for full details):</p>
+<li><p class="first">Import the library and instantiate an <code class="docutils literal"><span class="pre">sfr_slug</span></code> object (see <a class="reference internal" href="#sec-sfr-slug-full"><span>Full Documentation of slugpy.sfr_slug</span></a> for full details):</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>from slugpy.sfr_slug import sfr_slug
 sfr_estimator = sfr_slug()
 </pre></div>
@@ -85,7 +85,7 @@ sfr_estimator = sfr_slug()
 </li>
 </ol>
 <p>The argument <code class="docutils literal"><span class="pre">logSFR_in</span></code> can be a float or an array specifying one or more point mass estimates of the SFR in your chosen filter. For a case with two or more filters, then <code class="docutils literal"><span class="pre">logSFR_in</span></code> must be an array whose trailing dimension matches the number of filters. If you have added two or more filter sets, you need to specify which one you want to use via the <code class="docutils literal"><span class="pre">filters</span></code> keyword. The optional argument <code class="docutils literal"><span class="pre">logSFRphoterr</span></code> can be used to provide errors on the photometric SFRs. Like <code class="docutils literal"><span class="pre">logSFR_in</span></code>, it can be a float or an array.</p>
-<p>The <code class="docutils literal"><span class="pre">sfr_slug.mpdf</span></code> method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#sec-sfr-slug-full"><span class="std std-ref">Full Documentation of slugpy.sfr_slug</span></a>.</p>
+<p>The <code class="docutils literal"><span class="pre">sfr_slug.mpdf</span></code> method returns a tuple of two quantities. The first is a grid of log SFR values, and the second is the posterior probability distribution at each value of log SFR. If the input consisted of multiple photometric SFRs, the output will contains posterior probabilities for each input. The output grid will be created automatically be default, but all aspects of it (shape, size, placement of grid points) can be controlled by keywords &#8211; see <a class="reference internal" href="#sec-sfr-slug-full"><span>Full Documentation of slugpy.sfr_slug</span></a>.</p>
 </div>
 <div class="section" id="full-documentation-of-slugpy-sfr-slug">
 <span id="sec-sfr-slug-full"></span><h2>Full Documentation of slugpy.sfr_slug<a class="headerlink" href="#full-documentation-of-slugpy-sfr-slug" title="Permalink to this headline">¶</a></h2>
@@ -98,8 +98,8 @@ star formation rate.</p>
 <dl class="docutils">
 <dt>Properties</dt>
 <dd><dl class="first last docutils">
-<dt>priors</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;flat&#8217; | &#8216;schechter&#8217; | None</span><dd>prior probability on each data point; interpretation
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;flat&#8217; | &#8216;schechter&#8217; | None</span></dt>
+<dd>prior probability on each data point; interpretation
 depends on the type passed; array, shape (N): values are
 interpreted as the prior probability of each data point;
 callable: the callable must take as an argument an array
@@ -110,8 +110,8 @@ all data points have equal prior probability; the values
 p(log SFR) ~ SFR^alpha exp(-SFR/SFR_*), respectively, where
 alpha = -0.51 and SFR_* = 9.2 Msun/yr are the values
 measured by Bothwell et al. (2011)</dd>
-<dt>bandwidth</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span><dd>bandwidth for kernel density estimation; if set to
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | array, shape (M)</span></dt>
+<dd>bandwidth for kernel density estimation; if set to
 &#8216;auto&#8217;, the bandwidth will be estimated automatically</dd>
 </dl>
 </dd>
@@ -125,35 +125,35 @@ measured by Bothwell et al. (2011)</dd>
 <dt>Parameters</dt>
 <dd><blockquote class="first">
 <div><dl class="docutils">
-<dt>libname</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>name of the SLUG model to load; if left as None, the default
+<dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of the SLUG model to load; if left as None, the default
 is $SLUG_DIR/sfr_slug/SFR_SLUG</dd>
-<dt>detname</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>name of a SLUG model run with the same parameters but no
+<dt>detname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>name of a SLUG model run with the same parameters but no
 stochasticity; used to establish the non-stochastic
 photometry to SFR conversions; if left as None, the default
 is libname_DET</dd>
-<dt>filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span><dd>list of filter names to be used for inferenence</dd>
-<dt>bandwidth</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span><dd>bandwidth for kernel density estimation; if set to
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
+<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span></dt>
+<dd>bandwidth for kernel density estimation; if set to
 &#8216;auto&#8217;, the bandwidth will be estimated automatically;
 if set to a float, the same bandwidth is used in all
 dimensions</dd>
-<dt>ktype</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>type of kernel to be used in densty estimation; allowed
+<dt>ktype <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>type of kernel to be used in densty estimation; allowed
 values are &#8216;gaussian&#8217; (default), &#8216;epanechnikov&#8217;, and
 &#8216;tophat&#8217;; only Gaussian can be used with error bars</dd>
-<dt>priors</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span><dd>prior probability on each data point; interpretation
+<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dd>prior probability on each data point; interpretation
 depends on the type passed; array, shape (N): values are
 interpreted as the prior probability of each data point;
 callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability</dd>
-<dt>sample_density</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | &#8216;read&#8217; | None</span><dd>the density of the data samples at each data point; this
+<dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | &#8216;read&#8217; | None</span></dt>
+<dd>the density of the data samples at each data point; this
 need not match the prior density; interpretation depends
 on the type passed; array, shape (N): values are
 interpreted as the density of data sampling at each
@@ -167,17 +167,17 @@ this analytically if it is known; &#8216;read&#8217;: the sample
 density is to be read from a numpy save file whose name
 matches that of the library, with the extension _density.npy
 added; None: data are assumed to be uniformly sampled</dd>
-<dt>reltol</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>relative error tolerance; errors on all returned
+<dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>relative error tolerance; errors on all returned
 probabilities p will satisfy either
 abs(p_est - p_true) &lt;= reltol * p_est   OR
 abs(p_est - p_true) &lt;= abstol,
 where p_est is the returned estimate and p_true is the
 true value</dd>
-<dt>abstol</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>absolute error tolerance; see above</dd>
-<dt>leafsize</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of data points in each leaf of the KD tree</dd>
+<dt>abstol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>absolute error tolerance; see above</dd>
+<dt>leafsize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of data points in each leaf of the KD tree</dd>
 </dl>
 </div></blockquote>
 <dl class="last docutils">
@@ -203,8 +203,8 @@ true value</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span><dd>list of filter names to be used for inferenence</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
+<dd>list of filter names to be used for inferenence</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -221,8 +221,8 @@ true value</dd>
 <dd>None</dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of strings</span><dd>list of available filter names</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">list of strings</span></dt>
+<dd>list of available filter names</dd>
 </dl>
 </dd>
 </dl>
@@ -237,19 +237,19 @@ luminosities</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>logSFR</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span><dd>float or array giving values of the log SFR; for an
+<dt>logSFR <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>float or array giving values of the log SFR; for an
 array, the operation is vectorized</dd>
-<dt>logSFRphot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike, shape (nfilter) or (..., nfilter)</span><dd>float or array giving the SFR inferred from photometry using a
+<dt>logSFRphot <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>float or array giving the SFR inferred from photometry using a
 deterministic conversion; for an array, the operation is
 vectorized over the leading dimensions</dd>
-<dt>logSFRphoterr</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float arraylike, shape (nfilter) or (..., nfilter)</span><dd>float or array giving photometric SFR errors; for a
+<dt>logSFRphoterr <span class="classifier-delimiter">:</span> <span class="classifier">float arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>float or array giving photometric SFR errors; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span><dd>list of photometric filters used for the SFR estimation;
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters used for the SFR estimation;
 if left as None, and only 1 set of photometric filters
 has been defined for the sfr_slug object, that set will
 be used by default</dd>
@@ -257,8 +257,8 @@ be used by default</dd>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>logL</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span><dd>natural log of the likelihood function</dd>
+<dt>logL <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>natural log of the likelihood function</dd>
 </dl>
 </dd>
 </dl>
@@ -271,22 +271,22 @@ be used by default</dd>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>photprop</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving the photometric values; for a
+<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>photerr</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving photometric errors; for a multidimensional
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
-<dt>mc_walkers</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of walkers to use in the MCMC</dd>
-<dt>mc_steps</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of steps in the MCMC</dd>
-<dt>mc_burn_in</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of steps to consider &#8220;burn-in&#8221; and discard</dd>
-<dt>filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span><dd>list of photometric filters to use; if left as None, and
+<dt>mc_walkers <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of walkers to use in the MCMC</dd>
+<dt>mc_steps <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps in the MCMC</dd>
+<dt>mc_burn_in <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of steps to consider &#8220;burn-in&#8221; and discard</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
 only 1 set of photometric filters has been defined for
 the cluster_slug object, that set will be used by
 default</dd>
@@ -294,8 +294,8 @@ default</dd>
 </dd>
 <dt>Returns</dt>
 <dd><dl class="first last docutils">
-<dt>samples</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of sample points returned by the MCMC</dd>
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of sample points returned by the MCMC</dd>
 </dl>
 </dd>
 </dl>
@@ -310,29 +310,29 @@ computed on a grid of values, in the same style as meshgrid</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>logSFRphot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span><dd>float or array giving the log SFR inferred from
+<dt>logSFRphot <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
+<dd>float or array giving the log SFR inferred from
 photometry using a deterministic conversion; if the
 argument is an array, the operation is vectorized over
 it</dd>
-<dt>logSFRphoterr</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving photometric errors; for a multidimensional
+<dt>logSFRphoterr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
-<dt>ngrid</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of points in the output log SFR grid</dd>
-<dt>qmin</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>minimum value in the output log SFR grid</dd>
-<dt>qmax</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>maximum value in the output log SFR grid</dd>
-<dt>grid</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>set of values defining the grid of SFR values at which
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of points in the output log SFR grid</dd>
+<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>minimum value in the output log SFR grid</dd>
+<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>maximum value in the output log SFR grid</dd>
+<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>set of values defining the grid of SFR values at which
 to evaluate; if set, overrides ngrid, qmin, and qmax</dd>
-<dt>norm</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, returned pdf&#8217;s will be normalized to integrate
+<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, returned pdf&#8217;s will be normalized to integrate
 to 1</dd>
-<dt>filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span><dd>list of photometric filters to use; if left as None, and
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
 only 1 set of photometric filters has been defined for
 the cluster_slug object, that set will be used by
 default</dd>
@@ -340,10 +340,10 @@ default</dd>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>grid_out</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of log SFR values at which the PDF is evaluated</dd>
-<dt>pdf</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of marginal posterior probabilities at each point
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of log SFR values at which the PDF is evaluated</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
 of the output grid, for each input photometric value;
 the leading dimensions match the leading dimensions
 produced by broadcasting the leading dimensions of
@@ -393,11 +393,14 @@ dimensions match the dimensions of the output grid</dd>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -408,7 +411,7 @@ dimensions match the dimensions of the output grid</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
