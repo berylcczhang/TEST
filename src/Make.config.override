@@ -6,8 +6,8 @@
 #CC	       =
 
 # MPI versions of compilers
-MPICXX	       = /opt/local/bin/mpicxx-mpich-clang 
-MPICC	       = /opt/local/bin/mpicc-mpich-clang 
+#MPICXX	       = 
+#MPICC	       =  
 
 # Optimization flags for compile and link stages
 #CXXOPTFLAGS   =
