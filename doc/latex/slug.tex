@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{November 18, 2016}
+\date{December 02, 2016}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -9621,19 +9621,53 @@ compile the same libraries, but with optimization disabled and
 debugging symbols enabled.
 
 
+\section{Predefined Objects}
+\label{library:ssec-predefined-objects}\label{library:predefined-objects}
+In order to make it more convenient to use slug as a library, the
+library pre-defines some of the most commonly-used classes, in order
+to save users the need to construct them. These predefined objects can
+be accessed by including the file \code{slug\_predefined.H} in your source
+file. This function defines the class \code{slug\_predef}, which
+pre-defines all the IMFs, evolutionary tracks, spectral synthesizers,
+and yields that ship with slug, without forcing the user to interact
+with the parameter parsing structure.
+
+The \code{slug\_predef} class provides the methods \code{imf}, \code{tracks},
+\code{specsyn}, and \code{yields}. These methods take as arguments a string
+specifying one of the predefined names of an IMF, set of tracks, or
+spectral synthesizer, and return an object of that class that can then
+be passed to \code{slug\_cluster} to produce a cluster object. For
+example, the following sytax creates a \code{slug\_cluster} with ID number
+1, a mass of 100 solar masses, age 0, a Chabrier IMF, Padova solar
+metallicity tracks, starburst99-style spectral synthesis, and slug's
+default nuclear yields:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZsh{}include \PYGZdq{}slug\PYGZus{}predefined.H\PYGZdq{}
+\PYGZsh{}include \PYGZdq{}slug\PYGZus{}cluster.H\PYGZdq{}
+
+slug\PYGZus{}cluster *cluster =
+   new slug\PYGZus{}cluster(1, 100.0, 0.0, slug\PYGZus{}predef.imf(\PYGZdq{}chabrier\PYGZdq{}),
+                    slug\PYGZus{}predef.tracks(\PYGZdq{}modp020.dat\PYGZdq{}),
+                    slug\PYGZus{}predef.specsyn(\PYGZdq{}sb99\PYGZdq{}),
+                    nullptr, nullptr, nullptr,
+                    slug\PYGZus{}predef.yields());
+\end{Verbatim}
+
+
 \section{Support for MPI Parallelism}
 \label{library:support-for-mpi-parallelism}\label{library:ssec-mpi-support}
-In large codes where one might wish to use SLUG for subgrid stellar
+In large codes where one might wish to use slug for subgrid stellar
 models, it is often necessary to pass information between processors
-using MPI. Since SLUG's representation of stellar populations is
+using MPI. Since slug's representation of stellar populations is
 complex, and much information is shared between particles rather than
 specific to individual particles (e.g., tables of yields and
-evolutionary tracks), passing SLUG information between processors is
+evolutionary tracks), passing slug information between processors is
 non-trivial.
 
-To facilitate parallel implementations, SLUG provides routines that
+To facilitate parallel implementations, slug provides routines that
 wrap the base MPI routines and allow seamless and efficient exchange
-of the slug\_cluster class (which SLUG uses to represent simple stellar
+of the slug\_cluster class (which slug uses to represent simple stellar
 populations) between processors. The prototypes for these functions
 are found in the \code{src/slug\_MPI.H} header file.
 
@@ -9651,6 +9685,66 @@ names of your preferred MPI C++ compiler by setting the variable
 guesses, but since MPI compiler names are much less standardized than
 general compiler names, you may need to supply yours rather than
 relying on the default.
+
+Here is an example of MPI usage, in which one processor creates a
+cluster and then sends it to another one:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZsh{}include \PYGZdq{}slug\PYGZus{}cluster.H\PYGZdq{}
+\PYGZsh{}include \PYGZdq{}slug\PYGZus{}MPI.H\PYGZdq{}
+\PYGZsh{}include \PYGZdq{}mpi.h\PYGZdq{}
+\PYGZsh{}include \PYGZlt{}vector\PYGZgt{}
+\PYGZsh{}include \PYGZlt{}cstdio\PYGZgt{}
+
+int main(int argc, char *argv[]) \PYGZob{}
+
+  // Start MPI
+  MPI\PYGZus{}Init(\PYGZam{}argc, \PYGZam{}argv);
+
+  // Get rank
+  int rank;
+  MPI\PYGZus{}Comm\PYGZus{}rank(MPI\PYGZus{}COMM\PYGZus{}WORLD, \PYGZam{}rank);
+
+  // Rank 0 creates a cluster and prints out the masses of the stars
+  slug\PYGZus{}cluster *cluster;
+  if (rank == 0) \PYGZob{}
+    cluster =
+       new slug\PYGZus{}cluster(1, 100.0, 0.0, slug\PYGZus{}predef.imf(\PYGZdq{}chabrier\PYGZdq{}),
+                        slug\PYGZus{}predef.tracks(\PYGZdq{}modp020.dat\PYGZdq{}),
+                        slug\PYGZus{}predef.specsyn(\PYGZdq{}sb99\PYGZdq{}),
+                        nullptr, nullptr, nullptr,
+                        slug\PYGZus{}predef.yields());
+    const std::vector\PYGZlt{}double\PYGZgt{} stars = cluster\PYGZhy{}\PYGZgt{}get\PYGZus{}stars();
+    for (int j=0; j\PYGZlt{}stars.size(); j++)
+      std::cout \PYGZlt{}\PYGZlt{} \PYGZdq{}rank 0, star \PYGZdq{} \PYGZlt{}\PYGZlt{} j
+                \PYGZlt{}\PYGZlt{} \PYGZdq{}: \PYGZdq{} \PYGZlt{}\PYGZlt{} stars[j] \PYGZlt{}\PYGZlt{} std::endl;
+  \PYGZcb{}
+
+  // Barrier to make sure rank 0 outputs come first
+  MPI\PYGZus{}Barrier(MPI\PYGZus{}COMM\PYGZus{}WORLD);
+
+  // Rank 0 sends cluster, rank 1 receives it
+  if (rank == 0) \PYGZob{}
+    MPI\PYGZus{}send\PYGZus{}slug\PYGZus{}cluster(*cluster, 1, 0, MPI\PYGZus{}COMM\PYGZus{}WORLD);
+  \PYGZcb{} else if (rank == 1) \PYGZob{}
+    cluster = MPI\PYGZus{}recv\PYGZus{}slug\PYGZus{}cluster(0, 1, MPI\PYGZus{}COMM\PYGZus{}WORLD,
+                                    slug\PYGZus{}predef.imf(\PYGZdq{}chabrier\PYGZdq{}),
+                                    slug\PYGZus{}predef.tracks(\PYGZdq{}modp020.dat\PYGZdq{}),
+                                    slug\PYGZus{}predef.specsyn(\PYGZdq{}sb99\PYGZdq{}),
+                                    nullptr, nullptr, nullptr,
+                                    slug\PYGZus{}predef.yields());
+  \PYGZcb{}
+
+  // Rank 1 prints the masses of the stars; the resulting masses
+  // should be identical to that produced on rank 0
+  if (rank == 1) \PYGZob{}
+    const std::vector\PYGZlt{}double\PYGZgt{} stars = cluster\PYGZhy{}\PYGZgt{}get\PYGZus{}stars();
+    for (int j=0; j\PYGZlt{}stars.size(); j++)
+      std::cout \PYGZlt{}\PYGZlt{} \PYGZdq{}rank 1, star \PYGZdq{} \PYGZlt{}\PYGZlt{} j
+                \PYGZlt{}\PYGZlt{} \PYGZdq{}: \PYGZdq{} \PYGZlt{}\PYGZlt{} stars[j] \PYGZlt{}\PYGZlt{} std::endl;
+  \PYGZcb{}
+\PYGZcb{}
+\end{Verbatim}
 
 
 \chapter{Contributors and Acknowledgements}

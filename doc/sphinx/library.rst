@@ -38,22 +38,56 @@ compile the same libraries, but with optimization disabled and
 debugging symbols enabled.
 
 
+.. _ssec-predefined-objects:
+
+Predefined Objects
+------------------
+
+In order to make it more convenient to use slug as a library, the
+library pre-defines some of the most commonly-used classes, in order
+to save users the need to construct them. These predefined objects can
+be accessed by including the file ``slug_predefined.H`` in your source
+file. This function defines the class ``slug_predef``, which
+pre-defines all the IMFs, evolutionary tracks, spectral synthesizers,
+and yields that ship with slug, without forcing the user to interact
+with the parameter parsing structure.
+
+The ``slug_predef`` class provides the methods ``imf``, ``tracks``,
+``specsyn``, and ``yields``. These methods take as arguments a string
+specifying one of the predefined names of an IMF, set of tracks, or
+spectral synthesizer, and return an object of that class that can then
+be passed to ``slug_cluster`` to produce a cluster object. For
+example, the following sytax creates a ``slug_cluster`` with ID number
+1, a mass of 100 solar masses, age 0, a Chabrier IMF, Padova solar
+metallicity tracks, starburst99-style spectral synthesis, and slug's
+default nuclear yields::
+
+  #include "slug_predefined.H"
+  #include "slug_cluster.H"
+  
+  slug_cluster *cluster =
+     new slug_cluster(1, 100.0, 0.0, slug_predef.imf("chabrier"),
+                      slug_predef.tracks("modp020.dat"),
+		      slug_predef.specsyn("sb99"),
+		      nullptr, nullptr, nullptr,
+		      slug_predef.yields());
+
 .. _ssec-mpi-support:
 
 Support for MPI Parallelism
 ---------------------------
 
-In large codes where one might wish to use SLUG for subgrid stellar
+In large codes where one might wish to use slug for subgrid stellar
 models, it is often necessary to pass information between processors
-using MPI. Since SLUG's representation of stellar populations is
+using MPI. Since slug's representation of stellar populations is
 complex, and much information is shared between particles rather than
 specific to individual particles (e.g., tables of yields and
-evolutionary tracks), passing SLUG information between processors is
+evolutionary tracks), passing slug information between processors is
 non-trivial.
 
-To facilitate parallel implementations, SLUG provides routines that
+To facilitate parallel implementations, slug provides routines that
 wrap the base MPI routines and allow seamless and efficient exchange
-of the slug_cluster class (which SLUG uses to represent simple stellar
+of the slug_cluster class (which slug uses to represent simple stellar
 populations) between processors. The prototypes for these functions
 are found in the ``src/slug_MPI.H`` header file.
 
@@ -69,3 +103,61 @@ names of your preferred MPI C++ compiler by setting the variable
 guesses, but since MPI compiler names are much less standardized than
 general compiler names, you may need to supply yours rather than
 relying on the default.
+
+Here is an example of MPI usage, in which one processor creates a
+cluster and then sends it to another one::
+
+  #include "slug_cluster.H"
+  #include "slug_MPI.H"
+  #include "mpi.h"
+  #include <vector>
+  #include <cstdio>
+
+  int main(int argc, char *argv[]) {
+
+    // Start MPI
+    MPI_Init(&argc, &argv);
+
+    // Get rank
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    // Rank 0 creates a cluster and prints out the masses of the stars
+    slug_cluster *cluster;
+    if (rank == 0) {
+      cluster =
+         new slug_cluster(1, 100.0, 0.0, slug_predef.imf("chabrier"),
+                          slug_predef.tracks("modp020.dat"),
+	    	          slug_predef.specsyn("sb99"),
+		          nullptr, nullptr, nullptr,
+		          slug_predef.yields());
+      const std::vector<double> stars = cluster->get_stars();
+      for (int j=0; j<stars.size(); j++)
+	std::cout << "rank 0, star " << j
+		  << ": " << stars[j] << std::endl;
+    }
+    
+    // Barrier to make sure rank 0 outputs come first
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // Rank 0 sends cluster, rank 1 receives it
+    if (rank == 0) {
+      MPI_send_slug_cluster(*cluster, 1, 0, MPI_COMM_WORLD);
+    } else if (rank == 1) {
+      cluster = MPI_recv_slug_cluster(0, 1, MPI_COMM_WORLD,
+                                      slug_predef.imf("chabrier"),
+                                      slug_predef.tracks("modp020.dat"),
+	    	                      slug_predef.specsyn("sb99"),
+		                      nullptr, nullptr, nullptr,
+		                      slug_predef.yields());
+    }
+
+    // Rank 1 prints the masses of the stars; the resulting masses
+    // should be identical to that produced on rank 0
+    if (rank == 1) {
+      const std::vector<double> stars = cluster->get_stars();
+      for (int j=0; j<stars.size(); j++)
+	std::cout << "rank 1, star " << j
+		  << ": " << stars[j] << std::endl;
+    }
+  }
