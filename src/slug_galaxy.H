@@ -154,7 +154,7 @@ private:
   const slug_yields *yields;          // Stellar yields
   const slug_imf_integrator<double> integ; // Integration helper class
   const slug_imf_integrator
-  <std::vector<double>> v_integ;      // Integration helper class for vectors
+  <std::vector<double> > v_integ;     // Integration helper class for vectors
 
   // Simulation data
   double curTime;                     // Current time

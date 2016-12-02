@@ -140,7 +140,7 @@ protected:
 
   // Integration helpers
   slug_imf_integrator<double> integ; 
-  slug_imf_integrator<std::vector<double>> v_integ;
+  slug_imf_integrator<std::vector<double> > v_integ;
 
 private:
 
