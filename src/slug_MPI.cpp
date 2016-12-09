@@ -152,10 +152,6 @@ pack_slug_clusters_chunk(const vector<slug_cluster *> &clusters,
       ptr += sizes[cluster_ptr+j];
     }
 
-    // Add terminating int
-    if (i < chunk_sizes.size()-1) *((int *) ptr) = 1;
-    else *((int *) ptr) = 0;
-
     // Advance the cluster pointer
     cluster_ptr += ncluster[i];
   }
@@ -536,6 +532,7 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 	  for (vector<size_t>::size_type j=0; j<chunk_sizes.size(); j++) {
 	    MPI_Isend(ptr, chunk_sizes[j], MPI_BYTE, i, j, comm,
 		      &(send_req[i][j]));
+	    ptr += chunk_sizes[j];
 	  }
 
 	} else {
