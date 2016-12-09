@@ -119,6 +119,43 @@ MPI_bcast_slug_cluster_vec(std::vector<slug_cluster *> &clusters,
 			   const slug_PDF *clf_=NULL);
 
 
+////////////////////////////////////////////////////////////////////////
+// Synchronisation of clusters. This is the most automated
+// routine. The user invokes this routine on every processor,
+// supplying a vector of the clusters to be sent and a destination for
+// each cluster; destinations of -1 are skipped. The routine returns a
+// vector of the clusters received from all other
+// processors. This routine is blocking, but internal communications
+// are non-blocking to maximise efficiency. In terms of function, the
+// communication pattern in this routine is equivalent to MPI_Alltoallv.
+//
+// Arguments:
+//    clusters = vector of pointers to clusters to be sent
+//    destinations = vector of MPI ranks giving desination for each
+//                   cluster
+//    comm = MPI communicator to use
+//    imf, tracks, specsyn, filters, extinct, nebular, yields, clf =
+//       pointers to these objects, used to reconstruct clusters that
+//       are received; not communicated
+// Returns:
+//    a vector of pointers to clusters received from all other
+//    processors; no guarantee is made on how these are ordered, and
+//    the ordering is not guaranteed to be the same from run to run --
+//    it is set by race conditions
+////////////////////////////////////////////////////////////////////////
+std::vector<slug_cluster *>
+MPI_exchange_slug_cluster(const std::vector<slug_cluster *> &clusters,
+			  const std::vector<int> &destinations,
+			  MPI_Comm comm,
+			  const slug_PDF *imf_, 
+			  const slug_tracks *tracks_, 
+			  const slug_specsyn *specsyn_,
+			  const slug_filter_set *filters_,
+			  const slug_extinction *extinct_,
+			  const slug_nebular *nebular_,
+			  const slug_yields *yields_,
+			  const slug_PDF *clf_=NULL);
+
 #endif
 // _slug_MPI_H_
 
