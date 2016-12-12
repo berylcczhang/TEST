@@ -1,14 +1,15 @@
 
 #ifdef ENABLE_MPI
 
+#include <stdexcept>
 #include "slug_MPI.H"
 
 // Default max chunk size = 4 MB; this is set by a tradeoff of
 // efficiency vs. memory. We want to use big chunks so as to guarantee
 // that we send as few messages as possible, but we need to allocate a
-// minimum memory size of MAX_CHUNK_SIZE on each process, so big chunk
-// sizes can be memory expensive.
-#define MAX_CHUNK_SIZE 4194304
+// minimum memory size of SLUG_MPI_CHUNK_SIZE on each process, so
+// big chunk sizes can be memory expensive.
+#define SLUG_MPI_CHUNK_SIZE 4194304
 
 using namespace std;
 
@@ -69,18 +70,20 @@ unpack_slug_clusters(const vector<size_t>::size_type ncluster,
 // buffer also contains information on the number of clusters and
 // their sizes, packed into a single message. The buffer is broken up
 // into chunks of a specified maximum size, and the routine returns
-// the size of each chunk. Each chunk contains the following:
+// the size of each chunk. The first chunk starts with
 //
-// total number of chunks [sizeof(size_t) bytes, only included in
-// first chunk]
+// total number of chunks [sizeof(size_t) bytes]
 //
-// number of clusters in this chunk [sizeof(size_t) bytes]
+// number of clusters in each chunk [nchunk * sizeof(size_t) bytes]
 //
-// size of each cluster in the chunk [ncluster * sizeof(size_t) bytes]
-// buffer containing cluster data
+// This is followed by:
 //
-// terminating int of 0 or 1; 0 indicates no more chunks follow this
-// one, 1 indicates the more chunks follow
+// size of each cluster [ncluster * sizeof(size_t) bytes]
+//
+// data for each cluster
+//
+// All chunks but the first only contain the size of each cluster and
+// the data for each cluster.
 //
 // For most applications the idea is that there will be only a single
 // chunk, but for generality we cannot guarantee the data will all fit
@@ -90,55 +93,90 @@ static slug_cluster_buffer *
 pack_slug_clusters_chunk(const vector<slug_cluster *> &clusters,
 			 vector<size_t> &chunk_sizes) {
 
-  // Get size of each cluster to be packed
+  // Get size of each cluster to be packed; runtime error if any
+  // individual cluster is too large to fit within maximum chunk size
   vector<size_t> sizes(clusters.size());
-  for (vector<size_t>::size_type i=0; i<sizes.size(); i++)
+  for (vector<size_t>::size_type i=0; i<sizes.size(); i++) {
     sizes[i] = clusters[i]->buffer_size();
-  
-  // Figure out how to chunk the data
+    if (sizes[i] > SLUG_MPI_CHUNK_SIZE)
+      throw runtime_error("cluster memory size exceeds "
+			  "SLUG_MPI_CHUNK_SIZE"
+			  "in pack_slug_clusters_chunk; try recompiling"
+			  "with a larger value for "
+			  "SLUG_MPI_CHUNK_SIZE");
+  }
+      
+  // Loop through the clusters, figuring out how to chunk them; note
+  // that we traverse the cluster list backwards, because we don't
+  // know in advance how much space we're going to need in the first
+  // chunk to store the list of individual chunk sizes. Starting at
+  // the back of the list guarantees that we minimise the odds that
+  // we'll need to add an extra chunk to accommodate the header
+  // information.
   vector<size_t> ncluster;
-  ncluster.push_back(0);
   chunk_sizes.resize(1);
   chunk_sizes[0] = 0;
-  size_t chunk_size = 2*sizeof(size_t);
-  for (vector<size_t>::size_type i=0; i<sizes.size(); i++) {
+  ncluster.push_back(0);
+  
+  // Loop through the clusters, figuring out how to chunk them
+  for (long i=sizes.size()-1; i>=0; i--) {
 
-    // Add storage needed for this cluster to size of current chunk
-    chunk_size += sizes[i] + sizeof(size_t);
-    
-    // Check if adding this cluster will overflow the current chunk;
-    // if not, increment number of clusters in this chunk; if so,
-    // record size of this chunk, start new chunk and initialise its size
-    if (chunk_size <= MAX_CHUNK_SIZE) {
-      ncluster[chunk_sizes.size()-1]++;
+    // See if we have room for this cluster in the current chunk
+    if (chunk_sizes.front() + sizeof(size_t) + sizes[i]
+	<= SLUG_MPI_CHUNK_SIZE) {
+      // Yes, there is room, so increment size and number of clusters
+      // in current chunk
+      chunk_sizes.front() += sizes[i] + sizeof(size_t);
+      ncluster.front()++;
     } else {
-      chunk_sizes.back() = chunk_size - sizes[i] - sizeof(size_t);
-      chunk_sizes.push_back(0);
-      ncluster.push_back(1);
-      chunk_size = 2*sizeof(size_t) + sizes[i];
+      // Current chunk is full; add a new chunk holder
+      chunk_sizes.insert(chunk_sizes.begin(), sizes[i] + sizeof(size_t));
+      ncluster.insert(ncluster.begin(), 1);
     }
   }
-  // Last chunk
-  chunk_sizes.back() = chunk_size;
+
+  // Now add size of header data to first chunk; if that makes it too
+  // big, split the first chunk in two.
+  chunk_sizes[0] += sizeof(size_t) * (chunk_sizes.size() + 1);
+  if (chunk_sizes[0] > SLUG_MPI_CHUNK_SIZE) {
+    // Create a new chunk in second position
+    chunk_sizes.insert(chunk_sizes.begin()+1, 0);
+    ncluster.insert(ncluster.begin()+1, 0);
+    // Move clusters from the first chunk into the newly-created
+    // second one until the size of the first chunk is small enough
+    long i=ncluster[0];
+    while (chunk_sizes[0] > SLUG_MPI_CHUNK_SIZE) {
+      ncluster[1]++;
+      ncluster[0]--;
+      chunk_sizes[1] += sizes[i] + sizeof(size_t);
+      chunk_sizes[0] -= sizes[i] + sizeof(size_t);
+      i--;
+      if (i < 0)
+	throw runtime_error("insufficient memory chunk size in "
+			    "pack_slug_clusters_chunk; try recompiling "
+			    "with a larger value for "
+			    "SLUG_MPI_CHUNK_SIZE");
+    }
+  }	
 
   // We now know how the data should be chunked; allocate a buffer
-  // large enough to hold all the chunks, and record the number of
-  // chunks
+  // large enough to hold all the chunks
   size_t bufsize = 0;
   for (vector<size_t>::size_type i=0; i<chunk_sizes.size(); i++)
     bufsize += chunk_sizes[i];
   slug_cluster_buffer *buf = malloc(bufsize);
 
-  // Now fill in the chunks; note that first chunk starts with total
-  // number of chunks
-  vector<size_t>::size_type cluster_ptr = 0;
+  // Store the total number of chunks and size of each chunk
   *((size_t *) buf) = (size_t) chunk_sizes.size();
   char *ptr = (char *) buf + sizeof(size_t);
-  for (vector<size_t>::size_type i=0; i<chunk_sizes.size(); i++) {
-
-     // Fill in the number of clusters
+  for (vector<size_t>::size_type i=0; i<ncluster.size(); i++) {
     *((size_t *) ptr) = ncluster[i];
     ptr += sizeof(size_t);
+  }
+  
+  // Now fill in the sizes of each cluster and the cluster data
+  vector<size_t>::size_type cluster_ptr = 0;
+  for (vector<size_t>::size_type i=0; i<chunk_sizes.size(); i++) {
 
     // Fill in the sizes of the clusters in this chunk
     for (vector<size_t>::size_type j=0; j<ncluster[i]; j++) {
@@ -146,7 +184,7 @@ pack_slug_clusters_chunk(const vector<slug_cluster *> &clusters,
       ptr += sizeof(size_t);
     }
 
-    // Write the cluster data
+    // Write the cluster data for this chunk
     for (vector<size_t>::size_type j=0; j<ncluster[i]; j++) {
       clusters[cluster_ptr+j]->pack_buffer(ptr);
       ptr += sizes[cluster_ptr+j];
@@ -158,31 +196,6 @@ pack_slug_clusters_chunk(const vector<slug_cluster *> &clusters,
 
   // Return
   return buf;
-}
-
-// Utility routine to unpack a chunk
-static inline void
-unpack_slug_clusters_chunk(vector<slug_cluster *> &clusters,
-			   const slug_cluster_buffer *buf,
-			   const slug_PDF *imf_, 
-			   const slug_tracks *tracks_, 
-			   const slug_specsyn *specsyn_,
-			   const slug_filter_set *filters_,
-			   const slug_extinction *extinct_,
-			   const slug_nebular *nebular_,
-			   const slug_yields *yields_,
-			   const slug_PDF *clf_) {
-  size_t ncluster = *((size_t *) buf);
-  size_t *sizes = (size_t *) ((char *) buf + sizeof(size_t));
-  size_t ptr = (ncluster+1) * sizeof(size_t);
-  for (size_t i=0; i<ncluster; i++) {
-    slug_cluster_buffer *bufptr = (slug_cluster_buffer *)
-      ((char *) buf + ptr);
-    clusters.push_back(new slug_cluster(bufptr, imf_, tracks_, specsyn_,
-					filters_, extinct_, nebular_,
-					yields_, clf_));
-    ptr += sizes[i];
-  }
 }
 
 
@@ -453,9 +466,11 @@ MPI_bcast_slug_cluster_vec(std::vector<slug_cluster *> &clusters,
 // Exchanging clusters
 ////////////////////////////////////////////////////////////////////////
 
-vector<slug_cluster *>
+void
 MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 			  const vector<int> &destinations,
+			  vector<slug_cluster *> &received_clusters,
+			  vector<int> &sources,
 			  MPI_Comm comm,
 			  const slug_PDF *imf_, 
 			  const slug_tracks *tracks_, 
@@ -472,17 +487,19 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
   MPI_Comm_rank(comm, &myrank);
 
   // Prepare storage to hold the data we'll be sending and receiving
-  vector<slug_cluster *> received_clusters;
-  vector<vector<slug_cluster *> > send_clusters(nrank);
+  vector<vector<slug_cluster *> > send_clusters(nrank),
+    recv_clusters(nrank);
   vector<slug_cluster_buffer *> send_buf(nrank);
   vector<vector<slug_cluster_buffer *> > recv_buf(nrank);
+  vector<vector<size_t>::size_type> recv_nchunk(nrank);
+  vector<vector<vector<size_t>::size_type> >  recv_ncluster(nrank);
 
   // Sort clusters by destination; for sends to myself, just copy the
   // pointers directly to the output list
   for (vector<int>::size_type i=0; i<destinations.size(); i++) {
     if (destinations[i] < 0) continue;
     else if (destinations[i] == myrank) {
-      received_clusters.push_back(clusters[i]);
+      recv_clusters[i].push_back(clusters[i]);
     } else {
       send_clusters[destinations[i]].push_back(clusters[i]);
     }
@@ -491,7 +508,6 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
   // Record status of communication at start
   vector<bool> send_done(nrank), recv_done(nrank);
   vector<vector<MPI_Request> > send_req(nrank), recv_req(nrank);
-  vector<vector<size_t>::size_type> recv_nchunk(nrank);
   for (int i=0; i<nrank; i++) {
     if (i != myrank)
       send_done[i] = recv_done[i] = false;
@@ -576,12 +592,13 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 
 	  // No receive request registered yet, so register a request
 	  // to receive one chunk
-	  recv_buf[i].push_back(malloc(MAX_CHUNK_SIZE));
+	  recv_buf[i].push_back(malloc(SLUG_MPI_CHUNK_SIZE));
 	  recv_req[i].push_back(MPI_REQUEST_NULL);
-	  MPI_Irecv(recv_buf[i][0], MAX_CHUNK_SIZE, MPI_BYTE, i, 0, comm,
-		    &(recv_req[i][0]));
+	  MPI_Irecv(recv_buf[i][0], SLUG_MPI_CHUNK_SIZE, MPI_BYTE,
+		    i, 0, comm,
+		    recv_req[i].data());
 	  recv_nchunk[i] = 1;
-	  
+
 	} else {
 
 	  // We have registered at least one receive request; check
@@ -601,19 +618,39 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 	      if (!flag) continue;
 
 	      // If we just received the first chunk, see how many
-	      // chunks in total there will be
-	      slug_cluster_buffer *bufptr = recv_buf[i][j];
+	      // chunks in total there will be, and get the number of
+	      // clusters in each; set the cluster array to the
+	      // correct size
+	      char *bufptr = (char *) recv_buf[i][j];
 	      if (j==0) {
-		recv_nchunk[i] = *((size_t *) recv_buf[i][j]);
-		bufptr = (slug_cluster_buffer *)
-		  ((char *) bufptr + sizeof(size_t));
+		recv_nchunk[i] = *((size_t *) bufptr);
+		recv_ncluster[i].resize(recv_nchunk[i]);
+		bufptr += sizeof(size_t);
+		vector<int>::size_type ncluster_tot = 0;
+		for (vector<int>::size_type k=0; k<recv_nchunk[i]; k++) {
+		  recv_ncluster[i][k] = *((size_t *) bufptr);
+		  bufptr += sizeof(size_t);
+		  ncluster_tot += recv_ncluster[i][k];
+		}
+		recv_clusters[i].resize(ncluster_tot);
+		if (ncluster_tot == 0) break;
 	      }
 
 	      // Unpack this chunk into the output array
-	      unpack_slug_clusters_chunk(received_clusters, bufptr,
-					 imf_, tracks_, specsyn_,
-					 filters_, extinct_, nebular_,
-					 yields_, clf_);
+	      size_t *sizes = (size_t *) bufptr;
+	      bufptr += recv_ncluster[i][j] * sizeof(size_t);
+	      vector<int>::size_type start = 0, stop;
+	      for (vector<int>::size_type k=0; k<j; k++)
+		start += recv_ncluster[i][k];
+	      stop = start + recv_ncluster[i][j];
+	      for (vector<int>::size_type k=start; k<stop; k++) {
+		recv_clusters[i][k] =
+		  new slug_cluster((slug_cluster_buffer *) bufptr,
+				   imf_, tracks_, specsyn_,
+				   filters_, extinct_, nebular_,
+				   yields_, clf_);
+		bufptr += sizes[k-start];
+	      }
 
 	      // Free the buffer
 	      free(recv_buf[i][j]);
@@ -624,12 +661,14 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 	  // first chunk we received says there are more chunks? If
 	  // so, do that now.
 	  if (recv_nchunk[i] > recv_req[i].size()) {
+	    recv_buf[i].resize(recv_nchunk[i]);
+	    recv_req[i].resize(recv_nchunk[i]);
 	    for (vector<MPI_Request>::size_type j=1; j<recv_nchunk[i];
 		 j++) {
-	      recv_buf[i].push_back(malloc(MAX_CHUNK_SIZE));
-	      recv_req[i].push_back(MPI_REQUEST_NULL);
-	      MPI_Irecv(recv_buf[i][j], MAX_CHUNK_SIZE, MPI_BYTE, i, j, comm,
-			&(recv_req[i][j]));
+	      recv_buf[i][j] = malloc(SLUG_MPI_CHUNK_SIZE);
+	      MPI_Irecv(recv_buf[i][j], SLUG_MPI_CHUNK_SIZE, MPI_BYTE,
+			i, j, comm,
+			recv_req[i].data() + j);
 	    }
 	    all_done = false;
 	  }
@@ -645,8 +684,19 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 
   } // End main loop
 
-  // Return the received clusters
-  return received_clusters;
+  // Pack the clusters we've received into the final output array, and
+  // record the source for each cluster we're returning
+  vector<int>::size_type ncluster_tot = 0, ptr = 0;
+  for (int i=0; i<nrank; i++) ncluster_tot += recv_clusters[i].size();
+  received_clusters.resize(ncluster_tot);
+  sources.resize(ncluster_tot);
+  for (int i=0; i<nrank; i++) {
+    for (vector<int>::size_type j=0; j<recv_clusters[i].size(); j++) {
+      received_clusters[ptr] = recv_clusters[i][j];
+      sources[ptr] = i;
+      ptr += 1;
+    }
+  }
 }
 
 

@@ -124,28 +124,35 @@ MPI_bcast_slug_cluster_vec(std::vector<slug_cluster *> &clusters,
 // routine. The user invokes this routine on every processor,
 // supplying a vector of the clusters to be sent and a destination for
 // each cluster; destinations of -1 are skipped. The routine returns a
-// vector of the clusters received from all other
-// processors. This routine is blocking, but internal communications
-// are non-blocking to maximise efficiency. In terms of function, the
-// communication pattern in this routine is equivalent to MPI_Alltoallv.
+// vector of the clusters received from all other processors. This
+// routine is blocking, but internal communications are non-blocking
+// to maximise efficiency. In terms of function, the communication
+// pattern in this routine is equivalent to MPI_Alltoallv. The routine
+// preserves cluster order, in the sense that the clusters that are
+// received are ordered by MPI rank (i.e., all clusters from processor
+// 0 come first, those from processor 1 come next, etc.), and within a
+// given MPI rank clusters are ordered as they were on the sending
+// processor.
 //
 // Arguments:
 //    clusters = vector of pointers to clusters to be sent
 //    destinations = vector of MPI ranks giving desination for each
 //                   cluster
+//    received_clusters = vector of pointers to clusters received from
+//                        other processors
+//    sources = vector of MPI ranks listing the processor from which
+//              each of the received clusters came
 //    comm = MPI communicator to use
 //    imf, tracks, specsyn, filters, extinct, nebular, yields, clf =
 //       pointers to these objects, used to reconstruct clusters that
 //       are received; not communicated
-// Returns:
-//    a vector of pointers to clusters received from all other
-//    processors; no guarantee is made on how these are ordered, and
-//    the ordering is not guaranteed to be the same from run to run --
-//    it is set by race conditions
+//
 ////////////////////////////////////////////////////////////////////////
-std::vector<slug_cluster *>
+void
 MPI_exchange_slug_cluster(const std::vector<slug_cluster *> &clusters,
 			  const std::vector<int> &destinations,
+			  std::vector<slug_cluster *> &received_clusters,
+			  std::vector<int> &sources,
 			  MPI_Comm comm,
 			  const slug_PDF *imf_, 
 			  const slug_tracks *tracks_, 
