@@ -10,6 +10,7 @@ import os.path as osp
 import copy
 import glob
 import sys
+import warnings
 try:
     from slugpy import read_cluster, combine_cluster, \
         read_integrated, combine_integrated, write_cluster, \
@@ -42,6 +43,11 @@ parser.add_argument("--delete", default=False, action="store_true",
 parser.add_argument("-f", "--fmt", default=None,
                     help="format for consolidated output; valid "+
                     "options are ascii, bin, fits, and fits2")
+parser.add_argument("--halt", default=False,
+                    action="store_true",
+                    help="halt execution on read failure; if this"
+                    "option is not set, a warning is issued instead, "
+                    "and processing continues")
 parser.add_argument("-v", "--verbose", action="store_true",
                     default=False, help="produce verbose output")
 args = parser.parse_args()
@@ -51,7 +57,6 @@ if args.dir is None:
     workdir = os.getcwd()
 else:
     workdir = args.dir
-print workdir
 extension = '_p[0-9][0-9][0-9][0-9][0-9]' \
             '_n[0-9][0-9][0-9][0-9][0-9]_summary.txt'
 if args.name is not None:
@@ -67,10 +72,9 @@ if args.verbose:
         print("   "+runname)
 
 # Step 3: loop over runs
-for runname in runs:
+for basename in runs:
 
     # Step 3a: grab list of files to consolidate
-    basename = osp.join(workdir, runname)
     files = glob.glob(basename+extension)
     for i in range(len(files)):
         files[i] = files[i][:-len('_summary.txt')]
@@ -90,10 +94,20 @@ for runname in runs:
         if args.verbose:
             print("... reading cluster data for "+f)
         rinfo={}
-        data.append(read_cluster(f, nofilterdata=True, read_info=rinfo))
-        for k in rinfo.keys():
-            if k != 'format':
-                read.append(rinfo[k])
+        try:
+            cldata = read_cluster(f, nofilterdata=True, read_info=rinfo) 
+            data.append(cldata)
+            for k in rinfo.keys():
+                if k != 'format':
+                    read.append(rinfo[k])
+        except IOError as e:
+            if args.halt:
+                raise IOError(e)
+            else:
+                warnings.warn("IOError during processing of cluster "
+                              "data for "+ f + ":" 
+                              + str(e) + "; processing continues", 
+                              RuntimeWarning)
 
     # Step 3c: combine data in memory and write
     if len(data) > 0:
@@ -103,7 +117,8 @@ for runname in runs:
         else:
             fmt = rinfo['format']
         if args.verbose:
-            print("Writing cluster data for "+basename)
+            print("Writing {:d} clusters for {:s}"
+                  .format(comb.id.size, basename))
         write_cluster(comb, basename, fmt=fmt)
 
     # Step 3d: repeat 3b for integrated data
@@ -115,10 +130,20 @@ for runname in runs:
         if args.verbose:
             print("... reading integrated data for "+f)
         rinfo={}
-        data.append(read_integrated(f, nofilterdata=True, read_info=rinfo))
-        for k in rinfo.keys():
-            if k != 'format':
-                read.append(rinfo[k])
+        try:
+            indata = read_integrated(f, nofilterdata=True, read_info=rinfo)
+            data.append(indata)
+            for k in rinfo.keys():
+                if k != 'format':
+                    read.append(rinfo[k])
+        except IOError as e:
+            if args.halt:
+                raise IOError(e)
+            else:
+                warnings.warn("IOError during processing of integrated "
+                              "data for " + f +":" 
+                              + str(e) + "; processing continues", 
+                              RuntimeWarning)
                 
     # Step 3e: repeat 3c for integrated data
     if len(data) > 0:
@@ -128,19 +153,31 @@ for runname in runs:
         else:
             fmt = rinfo['format']
         if args.verbose:
-            print("Writing integrated data for "+basename)
-        write_cluster(comb, basename, fmt=fmt)
+            print("Writing {:d} times, {:d}} trials for {:s}"
+                  .format(comb.time.size, data.target_mass.shape[-1], 
+                          basename))
+        write_integrated(comb, basename, fmt=fmt)
 
     # Step 3f: combine summary files
     ntrials = 0
     for f in files:
-        fp = open(f+'_summary.txt', 'r')
-        read.append(f+'_summary.txt')
-        for line in fp:
-            linesplit = line.split()
-            if linesplit[0] == 'n_trials':
-                ntrials += int(linesplit[1])
-        fp.close()
+        try:
+            fp = open(f+'_summary.txt', 'r')
+            read.append(f+'_summary.txt')
+            for line in fp:
+                linesplit = line.split()
+                if linesplit[0] == 'n_trials':
+                    ntrials += int(linesplit[1])
+            fp.close()
+        except IOError as e:
+            if args.halt:
+                raise IOError(e)
+            else:
+                warnings.warn("IOError during processing of summary file "
+                              "for " + f +":" 
+                              + str(e) + "; processing continues", 
+                              RuntimeWarning)
+ 
     print("Writing summary file for "+basename)
     fpout = open(basename+'_summary.txt', 'w')
     fp = open(files[0]+'_summary.txt', 'r')
@@ -156,7 +193,6 @@ for runname in runs:
             fpout.write(line)
     fp.close()
     fpout.close()
-
 
     # Step 3g: clean up if requested
     if args.delete:
