@@ -1189,6 +1189,18 @@ class cluster_slug(object):
               only 1 set of photometric filters has been defined for
               the cluster_slug object, that set will be used by
               default
+
+        Returns:
+           grid_out : array
+              array of values at which the PDF is evaluated; contents
+              are the same as returned by meshgrid
+           pdf : array
+              array of marginal posterior probabilities at each point
+              of the output grid, for each input set of properties; the leading
+              dimensions match the leading dimensions produced by
+              broadcasting the leading dimensions of photprop and
+              photerr together, while the trailing dimensions match
+              the dimensions of the output grid
         """
         # Were we given a set of filters?
         if filters is None:

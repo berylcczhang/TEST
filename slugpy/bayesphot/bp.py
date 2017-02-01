@@ -1670,6 +1670,18 @@ class bp(object):
            norm : bool
               if True, returned pdf's will be normalized to integrate
               to 1
+
+        Returns:
+           grid_out : array
+              array of values at which the PDF is evaluated; contents
+              are the same as returned by meshgrid
+           pdf : array
+              array of marginal posterior probabilities at each point
+              of the output grid, for each input set of properties; the leading
+              dimensions match the leading dimensions produced by
+              broadcasting the leading dimensions of photprop and
+              photerr together, while the trailing dimensions match
+              the dimensions of the output grid
         """
 
         # Safety check: make sure the dimensions all match up
