@@ -1053,7 +1053,7 @@ class cluster_slug(object):
                   qmin=None, qmax=None, grid=None, norm=True,
                   filters=None):
         """
-        Returns the marginal probability for one or mode photometric
+        Returns the marginal probability for one or more photometric
         quantities corresponding to an input set or distribution of
         physical properties. Output quantities are computed on a grid of
         values, in the same style as meshgrid.
@@ -1154,7 +1154,7 @@ class cluster_slug(object):
            fixeddim : int | arraylike of ints | None
               The index or indices of the physical or photometric
               properties to be held fixed; physical properties are
-              numbered 0 ... nphys-1, and phtometric ones are numbered
+              numbered 0 ... nphys-1, and photometric ones are numbered
               nphys ... nphys + nphot - 1. This can also be set to
               None, in which case no properties are held fixed.
            fixedprop : array | None
