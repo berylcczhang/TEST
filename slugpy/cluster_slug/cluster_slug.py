@@ -90,7 +90,7 @@ class cluster_slug(object):
     # Initializer method
     ##################################################################
     def __init__(self, libname=None, filters=None, photsystem=None,
-                 bw_phys=0.1, bw_phot=None, ktype='gaussian', 
+                 lib=None, bw_phys=0.1, bw_phot=None, ktype='gaussian', 
                  priors=None, sample_density=None, reltol=1.0e-2,
                  abstol=1.0e-8, leafsize=16, use_nebular=True,
                  use_extinction=True, thread_safe=True, vp_list=[]):
@@ -101,6 +101,12 @@ class cluster_slug(object):
            libname : string
               name of the SLUG model to load; if left as None, the default
               is $SLUG_DIR/cluster_slug/modp020_chabrier_MW
+           lib : object
+              a library read by the read_cluster function; if specified
+              this overrides the libname option; the library must
+              contain both physical properties and photometry, and
+              must include filter data; if this is not None, then the 
+              photsystem keyword is ignored
            filters : iterable of stringlike
               list of filter names to be used for inferenence
            photsystem : None or string
@@ -192,7 +198,7 @@ class cluster_slug(object):
         """
 
         # If using the default library, assign the library name
-        if libname is None:
+        if libname is None and lib is None:
             self.__libname = osp.join('cluster_slug', 'modp020_chabrier_MW')
             if 'SLUG_DIR' in os.environ:
                 self.__libname = osp.join(os.environ['SLUG_DIR'], 
@@ -200,9 +206,19 @@ class cluster_slug(object):
         else:
             self.__libname = libname
 
+        # If using a library passed in, store a pointer to is
+        if lib is not None:
+            self.__lib = lib
+            self.__libname = None
+        else:
+            self.__lib = None
+
         # Load the cluster physical properties
         try:
-            prop = read_cluster_prop(self.__libname)
+            if self.__lib is None:
+                prop = read_cluster_prop(self.__libname)
+            else:
+                prop = self.__lib
         except IOError:
 
             # If we're here, we failed to load the library. If we were
@@ -266,7 +282,8 @@ class cluster_slug(object):
             print("Fetching modp020_chabrier_MW_cluster_phot.fits " +
                   "(this make take a while)...")
             url = urllib2.urlopen(
-                'https://www.dropbox.com/s/inmeeuldkxsazzs/modp020_chabrier_MW_cluster_phot.fits?dl=0')
+                'https://www.dropbox.com/s/inmeeuldkxsazzs/'
+                'modp020_chabrier_MW_cluster_phot.fits?dl=0')
             rawdata = url.read()
             url.close()
             fp = open(osp.join(osp.dirname(self.__libname),
@@ -279,25 +296,22 @@ class cluster_slug(object):
                 prop = read_integrated_prop(self.__libname)
             except IOError:
                 raise IOError("still unable to open default library")
-
-        # Store the physical properties
-        
-     
-        
-        #Find out how many variable parameters we have
-        #and how many we want to use
+             
+        # Find out how many variable parameters we have and how many
+        # we want to use
         nvp_total = np.size(vp_list)
         nvp = np.size(np.where(vp_list))
-        print "Total Number of Variable Parameters in data: ",nvp_total
-        print "Number of Variable Parameters to use: ",nvp
-        
-                
+        if nvp_total > 0:
+            print "Total Number of Variable Parameters in data: ",nvp_total
+            print "Number of Variable Parameters to use: ",nvp
+
+        # Set number of physical properties
         if use_extinction:
             self.__nphys = 3 + nvp
         else:
             self.__nphys = 2 + nvp
             
-            
+        # Store the physical properties
         self.__ds_phys = np.zeros((len(prop.id), self.__nphys))
         self.__ds_phys[:,0] = np.log10(prop.actual_mass)
         self.__ds_phys[:,1] = np.log10(prop.time - prop.form_time)
@@ -305,24 +319,27 @@ class cluster_slug(object):
         if use_extinction:
             self.__ds_phys[:,2] = prop.A_V
             pnum = 2
-        #Grab the variable parameters we want to use
+            
+        # Grab the variable parameters we want to use
         for vpi in range (0,nvp_total,1):
             if vp_list[vpi] is True:
                 self.__ds_phys[:,pnum+(vpi+1)] = getattr(prop, "VP"+`vpi`)
-        
-      
-
-
 
         # Record available filters
-        filter_info = read_cluster_phot(self.__libname,
-                                        filters_only=True, 
-                                        nofilterdata=True)
+        if self.__lib is None:
+            filter_info = read_cluster_phot(self.__libname,
+                                            filters_only=True, 
+                                            nofilterdata=True)
+        else:
+            filter_info = self.__lib
         self.__allfilters = filter_info.filter_names
         self.__allunits = filter_info.filter_units
 
         # Record other stuff that we'll use later
-        self.__photsystem = photsystem
+        if self.__lib is None:
+            self.__photsystem = photsystem
+        else:
+            self.__photsystem = None
         self.__use_nebular = use_nebular
         self.__use_extinction = use_extinction
         self.__ktype = ktype
@@ -354,7 +371,9 @@ class cluster_slug(object):
 
 
     ##################################################################
-    # Method to load the data off disk for a particular filter
+    # Method to load the data off disk for a particular filter, or to
+    # set up arrays pointing to data if using a library stored in
+    # memory
     ##################################################################
     def load_data(self, filter_name, bandwidth=None, 
                   force_reload=False):
@@ -367,8 +386,8 @@ class cluster_slug(object):
            bandwidth : float
               default bandwidth for this filter
            force_reload : bool
-              if True, re-read the filter data off disk even if it has
-              already been read
+              if True, reinitialize the data even if has already been
+              stored
 
         Returns:
            None
@@ -398,21 +417,27 @@ class cluster_slug(object):
         # photometric system conversion
         if filter_name == 'QH0' or filter_name == 'QHe0' or \
            filter_name == 'QHe1':
-            phot = read_cluster_phot(self.__libname, 
-                                     read_filters=filter_name,
-                                     read_nebular=False,
-                                     read_extinct=False,
-                                     phot_only=True)
+            if self.__lib is None:
+                phdata = read_cluster_phot(self.__libname, 
+                                           read_filters=filter_name,
+                                           read_nebular=False,
+                                           read_extinct=False,
+                                           phot_only=True)
+            else:
+                phdata = self.__lib.phot[:,self.__allfilters.index(filter_name)]
         else:
 
             # Load data; first try reading the requested combination
             # of nebular and extincted values
-            phot = read_cluster_phot(self.__libname, 
-                                     read_filters=filter_name,
-                                     read_nebular=self.__use_nebular,
-                                     read_extinct=self.__use_extinction,
-                                     phot_only=True,
-                                     photsystem=self.__photsystem)
+            if self.__lib is None:
+                phot = read_cluster_phot(self.__libname, 
+                                         read_filters=filter_name,
+                                         read_nebular=self.__use_nebular,
+                                         read_extinct=self.__use_extinction,
+                                         phot_only=True,
+                                         photsystem=self.__photsystem)
+            else:
+                phot = self.__lib
 
             # Make sure we have the data we want; if not, lots of ugly
             # special cases as fallbacks
@@ -420,51 +445,65 @@ class cluster_slug(object):
                 # Wanted nebular + extinction
                 if 'phot_neb_ex' in phot._fields:
                     # Got it
-                    phdata = np.squeeze(phot.phot_neb_ex)
+                    if self.__lib is None:
+                        phdata = np.squeeze(phot.phot_neb_ex)
+                    else:
+                        phdata = phot.phot_neb_ex[:,self.__allfilters.index(filter_name)]
                     warn_nebular = False
                     warn_extinct = False
                     nebular = True
                     extinct = True
                 else:
                     # Didn't get it; try without nebular
-                    phot = read_cluster_phot(
-                        self.__libname, 
-                        read_filters=filter_name,
-                        read_nebular=False,
-                        read_extinct=True,
-                        phot_only=True,
-                        photsystem=self.__photsystem)
+                    if self.__lib is None:
+                        phot = read_cluster_phot(
+                            self.__libname, 
+                            read_filters=filter_name,
+                            read_nebular=False,
+                            read_extinct=True,
+                            phot_only=True,
+                            photsystem=self.__photsystem)
                     if 'phot_ex' in phot._fields:
-                        phdata = np.squeeze(phot.phot_ex)
+                        if self.__lib is None:
+                            phdata = np.squeeze(phot.phot_ex)
+                        else:
+                            phdata = phot.phot_ex[:,self.__allfilters.index(filter_name)]
                         warn_nebular = True
                         warn_extinct = False
                         nebular = False
                         extinct = True
                     else:
                         # Couldn't get extinction only; try nebular only
-                        phot = read_cluster_phot(
-                            self.__libname, 
-                            read_filters=filter_name,
-                            read_nebular=True,
-                            read_extinct=False,
-                            phot_only=True,
-                            photsystem=self.__photsystem)
+                        if self.__lib is None:
+                            phot = read_cluster_phot(
+                                self.__libname, 
+                                read_filters=filter_name,
+                                read_nebular=True,
+                                read_extinct=False,
+                                phot_only=True,
+                                photsystem=self.__photsystem)
                         if 'phot_neb' in phot._fields:
-                            phdata = np.squeeze(phot.phot_neb)
+                            if self.__lib is None:
+                                phdata = np.squeeze(phot.phot_neb)
+                            else:
+                                phdata = phot.phot_neb[:,self.__allfilters.index(filter_name)]
                             warn_nebular = False
                             warn_extinct = True
                             nebular = True
                             extinct = False
                         else:
                             # Ultimate fallback: no nebular or extinction
-                            phot = read_cluster_phot(
-                                self.__libname, 
-                                read_filters=filter_name,
-                                read_nebular=False,
-                                read_extinct=False,
-                                phot_only=True,
-                                photsystem=self.__photsystem)
-                            phdata = np.squeeze(phot.phot)
+                            if self.__lib is None:
+                                phot = read_cluster_phot(
+                                    self.__libname, 
+                                    read_filters=filter_name,
+                                    read_nebular=False,
+                                    read_extinct=False,
+                                    phot_only=True,
+                                    photsystem=self.__photsystem)
+                                phdata = np.squeeze(phot.phot)
+                            else:
+                                phdata = phot.phot[:,self.__allfilters.index(filter_name)]
                             warn_nebular = True
                             warn_extinct = True
                             nebular = False
@@ -474,21 +513,27 @@ class cluster_slug(object):
                 # Want nebular, no extinction
                 if 'phot_neb' in phot._fields:
                     # Got it
-                    phdata = np.squeeze(phot.phot_neb)
+                    if self.__lib is None:
+                        phdata = np.squeeze(phot.phot_neb)
+                    else:
+                        phdata = phot.phot_neb[:,self.__allfilters.index(filter_name)]
                     warn_nebular = False
                     warn_extinct = False
                     nebular = True
                     extinct = False
                 else:
                     # Didn't get it; go to no nebular or extinction
-                    phot = read_cluster_phot(
-                        self.__libname, 
-                        read_filters=filter_name,
-                        read_nebular=False,
-                        read_extinct=False,
-                        phot_only=True,
-                        photsystem=self.__photsystem)
-                    phdata = np.squeeze(phot.phot)
+                    if self.__lib is None:
+                        phot = read_cluster_phot(
+                            self.__libname, 
+                            read_filters=filter_name,
+                            read_nebular=False,
+                            read_extinct=False,
+                            phot_only=True,
+                            photsystem=self.__photsystem)
+                        phdata = np.squeeze(phot.phot)
+                    else:
+                        phdata = phot.phot[:,self.__allfilters.index(filter_name)]                        
                     warn_nebular = True
                     warn_extinct = False
                     nebular = False
@@ -498,21 +543,27 @@ class cluster_slug(object):
                 # Wanted extinction, no nebular
                 if 'phot_ex' in phot._fields:
                     # Got it
-                    phdata = np.squeeze(phot.phot_ex)
+                    if self.__lib is None:
+                        phdata = np.squeeze(phot.phot_ex)
+                    else:
+                        phdata = phot.phot_ex[:,self.__allfilters.index(filter_name)]                        
                     warn_nebular = False
                     warn_extinct = False
                     nebular = False
                     extinct = True
                 else:
                     # Didn't get it; go to no nebular or extinction
-                    phot = read_cluster_phot(
-                        self.__libname, 
-                        read_filters=filter_name,
-                        read_nebular=False,
-                        read_extinct=False,
-                        phot_only=True,
-                        photsystem=self.__photsystem)
-                    phdata = np.squeeze(phot.phot)
+                    if self.__lib is None:
+                        phot = read_cluster_phot(
+                            self.__libname, 
+                            read_filters=filter_name,
+                            read_nebular=False,
+                            read_extinct=False,
+                            phot_only=True,
+                            photsystem=self.__photsystem)
+                        phdata = np.squeeze(phot.phot)
+                    else:
+                        phdata = phot.phot[:,self.__allfilters.index(filter_name)]                        
                     warn_nebular = False
                     warn_extinct = True
                     nebular = False
@@ -524,22 +575,24 @@ class cluster_slug(object):
             if np.isnan(phdata[0]):
                 warn_extinct = True
                 if nebular:
-                    phot = read_cluster_phot(
-                        self.__libname, 
-                        read_filters=filter_name,
-                        read_nebular=True,
-                        read_extinct=False,
-                        phot_only=True,
-                        photsystem=self.__photsystem)
+                    if self.__lib is None:
+                        phot = read_cluster_phot(
+                            self.__libname, 
+                            read_filters=filter_name,
+                            read_nebular=True,
+                            read_extinct=False,
+                            phot_only=True,
+                            photsystem=self.__photsystem)
                     phdata = np.squeeze(phot.phot_neb)
                 else:
-                    phot = read_cluster_phot(
-                        self.__libname, 
-                        read_filters=filter_name,
-                        read_nebular=False,
-                        read_extinct=False,
-                        phot_only=True,
-                        photsystem=self.__photsystem)
+                    if self.__lib is None:
+                        phot = read_cluster_phot(
+                            self.__libname, 
+                            read_filters=filter_name,
+                            read_nebular=False,
+                            read_extinct=False,
+                            phot_only=True,
+                            photsystem=self.__photsystem)
                     phdata = np.squeeze(phot.phot)
             else:
                 warn_extinct = False
