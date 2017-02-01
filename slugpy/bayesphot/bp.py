@@ -55,7 +55,9 @@ class bp(object):
           callable: the callable must take as an argument an array
           of shape (N, nphys), and return an array of shape (N)
           giving the prior probability at each data point; None:
-          all data points have equal prior probability
+          no reweighting is performed, so all data points in the library
+          have equal prior probability, i.e. the prior is the same as
+          the sampling of points in the library
        pobs : array, shape (N) | callable | None
           the probability that a particular object would be observed,
           which is used, like prior, to weight the library;
@@ -567,7 +569,7 @@ class bp(object):
                             np.ravel(self.__dataset_phys), 
                             self.__nphys, self.__ndata,
                             None, self.leafsize, self.__bandwidth,
-                            self.__ktype, self.__nphys)
+                            self.__ktype, 0)
 
                     # Use the unweighted kernel density object to
                     # evaluate the raw sample density near each data
