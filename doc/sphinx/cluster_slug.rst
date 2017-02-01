@@ -23,14 +23,14 @@ For an example of how to use cluster_slug, see the file ``cluster_slug/cluster_s
      from slugpy.cluster_slug import cluster_slug
      cs = cluster_slug(photsystem=photsystem)
 
-This creates a cluster_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/clusterslug_mw. If you have another library of simulations you'd rather use, you can use the ``libname`` keyword to the ``cluster_slug`` constructor to select it. The optional argument ``photsystem`` specifies the photometric system you will be using for your data. Possible values are ``L_nu`` (flux per unit frequency, in erg/s/Hz), ``L_lambda`` (flux per unit wavelength, in erg/s/Angstrom), ``AB`` (AB magnitudes), ``STMAG`` (ST magnitudes), and ``Vega`` (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the ``L_nu`` system.
+This creates a cluster_slug object, using the default simulation library. If you have another library of simulations you'd rather use, you can use the ``libname`` keyword to the ``cluster_slug`` constructor to select it. The optional argument ``photsystem`` specifies the photometric system you will be using for your data. Possible values are ``L_nu`` (flux per unit frequency, in erg/s/Hz), ``L_lambda`` (flux per unit wavelength, in erg/s/Angstrom), ``AB`` (AB magnitudes), ``STMAG`` (ST magnitudes), and ``Vega`` (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the ``L_nu`` system. Finally, if you have already read a library into memory using ``read_cluster``, you can set the keyword ``lib`` in the ``cluster_slug`` constructor to specify that library should be used.
 
 2. Specify your filter(s), for example::
 
      cs.add_filters(['WFC3_UVIS_F336W', 'WFC3_UVIS_F438W', 'WFC3_UVIS_F555W',
                      'WFC3_UVIS_F814W', 'WFC3_UVIS_F657N'])
 
-The ``add_filter`` method takes as an argument a string or list of strings specifying which filters you're going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling ``add_filters`` more than once), and then specify which set of filters you're using for any given calculation.
+The ``add_filter`` method takes as an argument a string or list of strings specifying which filters were used for the observations you're going to analyze. You can have more than one set of filters active at a time (just by calling ``add_filters`` more than once), and then specify which set of filters you're using for any given calculation.
 
 3. Specify your priors, for example::
 
@@ -73,11 +73,11 @@ Making Your Own Library
 
 You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug_mw library) is included in the ``cluster_slug`` directory. This file uses slug's capability to pick the output time and the cluster mass from specified PDFs.
 
-One subtle post-processing step you should take once you've generated your library is to read it in using :ref:`sec-slugpy` and then write the photometry back out using the ``slugpy.write_cluster_phot`` routine with the format set to ``fits2``. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the ``fits2`` format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
+One subtle post-processing step you should take once you've generated your library is to read it in using :ref:`sec-slugpy` and then write the photometry back out using the ``slugpy.write_cluster_phot`` routine with the format set to ``fits2``. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, while the ``fits2`` format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
 
 
 Variable Mode IMF
------------------------------------------
+-----------------
 
 If your library was run with variable IMF parameters, these can also be used in ``cluster_slug``. When creating a ``cluster_slug`` object, you can pass the array ``vp_list`` as an argument. This list should have an element for each variable parameter in your library. Each element should then be either ``True`` or ``False`` depending on whether you wish to include this parameter in the analysis.
 For example, for a library with four variable parameters you could have::

@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{December 02, 2016}
+\date{February 01, 2017}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -7567,6 +7567,21 @@ to 1
 
 \end{description}
 
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{grid\_out}] \leavevmode{[}array{]}
+array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid
+
+\item[{pdf}] \leavevmode{[}array{]}
+array of marginal posterior probabilities at each point
+of the output grid, for each input set of properties; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid
+
+\end{description}
+
 \end{description}
 
 \end{fulllineitems}
@@ -7759,7 +7774,7 @@ cs = cluster\PYGZus{}slug(photsystem=photsystem)
 
 \end{enumerate}
 
-This creates a cluster\_slug object, using the default simulation library, \$SLUG\_DIR/sfr\_slug/clusterslug\_mw. If you have another library of simulations you'd rather use, you can use the \code{libname} keyword to the \code{cluster\_slug} constructor to select it. The optional argument \code{photsystem} specifies the photometric system you will be using for your data. Possible values are \code{L\_nu} (flux per unit frequency, in erg/s/Hz), \code{L\_lambda} (flux per unit wavelength, in erg/s/Angstrom), \code{AB} (AB magnitudes), \code{STMAG} (ST magnitudes), and \code{Vega} (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the \code{L\_nu} system.
+This creates a cluster\_slug object, using the default simulation library. If you have another library of simulations you'd rather use, you can use the \code{libname} keyword to the \code{cluster\_slug} constructor to select it. The optional argument \code{photsystem} specifies the photometric system you will be using for your data. Possible values are \code{L\_nu} (flux per unit frequency, in erg/s/Hz), \code{L\_lambda} (flux per unit wavelength, in erg/s/Angstrom), \code{AB} (AB magnitudes), \code{STMAG} (ST magnitudes), and \code{Vega} (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the \code{L\_nu} system. Finally, if you have already read a library into memory using \code{read\_cluster}, you can set the keyword \code{lib} in the \code{cluster\_slug} constructor to specify that library should be used.
 \begin{enumerate}
 \setcounter{enumi}{1}
 \item {} 
@@ -7772,7 +7787,7 @@ cs.add\PYGZus{}filters([\PYGZsq{}WFC3\PYGZus{}UVIS\PYGZus{}F336W\PYGZsq{}, \PYGZ
 
 \end{enumerate}
 
-The \code{add\_filter} method takes as an argument a string or list of strings specifying which filters you're going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling \code{add\_filters} more than once), and then specify which set of filters you're using for any given calculation.
+The \code{add\_filter} method takes as an argument a string or list of strings specifying which filters were used for the observations you're going to analyze. You can have more than one set of filters active at a time (just by calling \code{add\_filters} more than once), and then specify which set of filters you're using for any given calculation.
 \begin{enumerate}
 \setcounter{enumi}{2}
 \item {} 
@@ -7842,7 +7857,7 @@ The \code{cluster\_slug} module has full support for threaded computation using 
 \label{cluster_slug:making-your-own-library}
 You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug\_mw library) is included in the \code{cluster\_slug} directory. This file uses slug's capability to pick the output time and the cluster mass from specified PDFs.
 
-One subtle post-processing step you should take once you've generated your library is to read it in using {\hyperref[slugpy:sec\string-slugpy]{\emph{slugpy -- The Python Helper Library}}} and then write the photometry back out using the \code{slugpy.write\_cluster\_phot} routine with the format set to \code{fits2}. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster\_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the \code{fits2} format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
+One subtle post-processing step you should take once you've generated your library is to read it in using {\hyperref[slugpy:sec\string-slugpy]{\emph{slugpy -- The Python Helper Library}}} and then write the photometry back out using the \code{slugpy.write\_cluster\_phot} routine with the format set to \code{fits2}. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster\_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, while the \code{fits2} format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)
 
 
 \section{Variable Mode IMF}
@@ -7859,7 +7874,7 @@ vp\PYGZus{}list=[True,False,True,True]
 \label{cluster_slug:ssec-cluster-slug-full}\label{cluster_slug:full-documentation-of-slugpy-cluster-slug}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{vp\_list={[}{]}}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug}\pysiglinewithargsret{\strong{class }\code{slugpy.cluster\_slug.}\bfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{lib=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{vp\_list={[}{]}}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -7932,13 +7947,20 @@ physical properties
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{vp\_list={[}{]}}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}\pysiglinewithargsret{\bfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{lib=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{vp\_list={[}{]}}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
 \item[{libname}] \leavevmode{[}string{]}
 name of the SLUG model to load; if left as None, the default
 is \$SLUG\_DIR/cluster\_slug/modp020\_chabrier\_MW
+
+\item[{lib}] \leavevmode{[}object{]}
+a library read by the read\_cluster function; if specified
+this overrides the libname option; the library must
+contain both physical properties and photometry, and
+must include filter data; if this is not None, then the 
+photsystem keyword is ignored
 
 \item[{filters}] \leavevmode{[}iterable of stringlike{]}
 list of filter names to be used for inferenence
@@ -8275,8 +8297,8 @@ name of filter to load
 default bandwidth for this filter
 
 \item[{force\_reload}] \leavevmode{[}bool{]}
-if True, re-read the filter data off disk even if it has
-already been read
+if True, reinitialize the data even if has already been
+stored
 
 \end{description}
 
@@ -8683,7 +8705,7 @@ marginal PDF routine provided.
 \item[{fixeddim}] \leavevmode{[}int \textbar{} arraylike of ints \textbar{} None{]}
 The index or indices of the physical or photometric
 properties to be held fixed; physical properties are
-numbered 0 ... nphys-1, and phtometric ones are numbered
+numbered 0 ... nphys-1, and photometric ones are numbered
 nphys ... nphys + nphot - 1. This can also be set to
 None, in which case no properties are held fixed.
 
@@ -8728,6 +8750,21 @@ default
 
 \end{description}
 
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{grid\_out}] \leavevmode{[}array{]}
+array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid
+
+\item[{pdf}] \leavevmode{[}array{]}
+array of marginal posterior probabilities at each point
+of the output grid, for each input set of properties; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid
+
+\end{description}
+
 \end{description}
 
 \end{fulllineitems}
@@ -8736,7 +8773,7 @@ default
 
 \begin{fulllineitems}
 \phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.mpdf_phot}\pysiglinewithargsret{\bfcode{mpdf\_phot}}{\emph{idx}, \emph{physprop}, \emph{ngrid=128}, \emph{qmin=None}, \emph{qmax=None}, \emph{grid=None}, \emph{norm=True}, \emph{filters=None}}{}
-Returns the marginal probability for one or mode photometric
+Returns the marginal probability for one or more photometric
 quantities corresponding to an input set or distribution of
 physical properties. Output quantities are computed on a grid of
 values, in the same style as meshgrid.

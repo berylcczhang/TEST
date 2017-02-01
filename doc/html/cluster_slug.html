@@ -57,7 +57,7 @@ cs = cluster_slug(photsystem=photsystem)
 </div>
 </li>
 </ol>
-<p>This creates a cluster_slug object, using the default simulation library, $SLUG_DIR/sfr_slug/clusterslug_mw. If you have another library of simulations you&#8217;d rather use, you can use the <code class="docutils literal"><span class="pre">libname</span></code> keyword to the <code class="docutils literal"><span class="pre">cluster_slug</span></code> constructor to select it. The optional argument <code class="docutils literal"><span class="pre">photsystem</span></code> specifies the photometric system you will be using for your data. Possible values are <code class="docutils literal"><span class="pre">L_nu</span></code> (flux per unit frequency, in erg/s/Hz), <code class="docutils literal"><span class="pre">L_lambda</span></code> (flux per unit wavelength, in erg/s/Angstrom), <code class="docutils literal"><span class="pre">AB</span></code> (AB magnitudes), <code class="docutils literal"><span class="pre">STMAG</span></code> (ST magnitudes), and <code class="docutils literal"><span class="pre">Vega</span></code> (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the <code class="docutils literal"><span class="pre">L_nu</span></code> system.</p>
+<p>This creates a cluster_slug object, using the default simulation library. If you have another library of simulations you&#8217;d rather use, you can use the <code class="docutils literal"><span class="pre">libname</span></code> keyword to the <code class="docutils literal"><span class="pre">cluster_slug</span></code> constructor to select it. The optional argument <code class="docutils literal"><span class="pre">photsystem</span></code> specifies the photometric system you will be using for your data. Possible values are <code class="docutils literal"><span class="pre">L_nu</span></code> (flux per unit frequency, in erg/s/Hz), <code class="docutils literal"><span class="pre">L_lambda</span></code> (flux per unit wavelength, in erg/s/Angstrom), <code class="docutils literal"><span class="pre">AB</span></code> (AB magnitudes), <code class="docutils literal"><span class="pre">STMAG</span></code> (ST magnitudes), and <code class="docutils literal"><span class="pre">Vega</span></code> (Vega magnitudes). If left unspecified, the photometric system will be whatever the library was written in; the default library is in the <code class="docutils literal"><span class="pre">L_nu</span></code> system. Finally, if you have already read a library into memory using <code class="docutils literal"><span class="pre">read_cluster</span></code>, you can set the keyword <code class="docutils literal"><span class="pre">lib</span></code> in the <code class="docutils literal"><span class="pre">cluster_slug</span></code> constructor to specify that library should be used.</p>
 <ol class="arabic" start="2">
 <li><p class="first">Specify your filter(s), for example:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>cs.add_filters([&#39;WFC3_UVIS_F336W&#39;, &#39;WFC3_UVIS_F438W&#39;, &#39;WFC3_UVIS_F555W&#39;,
@@ -66,7 +66,7 @@ cs = cluster_slug(photsystem=photsystem)
 </div>
 </li>
 </ol>
-<p>The <code class="docutils literal"><span class="pre">add_filter</span></code> method takes as an argument a string or list of strings specifying which filters you&#8217;re going to point mass SFRs based on. You can have more than one set of filters active at a time (just by calling <code class="docutils literal"><span class="pre">add_filters</span></code> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
+<p>The <code class="docutils literal"><span class="pre">add_filter</span></code> method takes as an argument a string or list of strings specifying which filters were used for the observations you&#8217;re going to analyze. You can have more than one set of filters active at a time (just by calling <code class="docutils literal"><span class="pre">add_filters</span></code> more than once), and then specify which set of filters you&#8217;re using for any given calculation.</p>
 <ol class="arabic" start="3">
 <li><p class="first">Specify your priors, for example:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span># Set priors to be flat in log T and A_V, but vary with log M as
@@ -108,7 +108,7 @@ cs.priors = prorfunc
 <div class="section" id="making-your-own-library">
 <h2>Making Your Own Library<a class="headerlink" href="#making-your-own-library" title="Permalink to this headline">¶</a></h2>
 <p>You can generate your own library by running slug; you might want to do this, for example, to have a library that works at different metallicity or for a different set of stellar tracks. An example parameter file (the one that was used to generate the default clusterslug_mw library) is included in the <code class="docutils literal"><span class="pre">cluster_slug</span></code> directory. This file uses slug&#8217;s capability to pick the output time and the cluster mass from specified PDFs.</p>
-<p>One subtle post-processing step you should take once you&#8217;ve generated your library is to read it in using <a class="reference internal" href="slugpy.html#sec-slugpy"><span>slugpy &#8211; The Python Helper Library</span></a> and then write the photometry back out using the <code class="docutils literal"><span class="pre">slugpy.write_cluster_phot</span></code> routine with the format set to <code class="docutils literal"><span class="pre">fits2</span></code>. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, whilte the <code class="docutils literal"><span class="pre">fits2</span></code> format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)</p>
+<p>One subtle post-processing step you should take once you&#8217;ve generated your library is to read it in using <a class="reference internal" href="slugpy.html#sec-slugpy"><span>slugpy &#8211; The Python Helper Library</span></a> and then write the photometry back out using the <code class="docutils literal"><span class="pre">slugpy.write_cluster_phot</span></code> routine with the format set to <code class="docutils literal"><span class="pre">fits2</span></code>. This uses an alternative FITS format that is faster to search when you want to load only a few filters out of a large library. For large data sets, this can reduce cluster_slug load times by an order of magnitude. (To be precise: the default format for FITS outputs to put all filters into a single binary table HDU, while the <code class="docutils literal"><span class="pre">fits2</span></code> format puts each filter in its own HDU. This puts all data for a single filter into a contiguous block, rather than all the data for a single cluster into a contiguous block, and is therefore faster to load when one wants to load the data filter by filter.)</p>
 </div>
 <div class="section" id="variable-mode-imf">
 <h2>Variable Mode IMF<a class="headerlink" href="#variable-mode-imf" title="Permalink to this headline">¶</a></h2>
@@ -122,7 +122,7 @@ For example, for a library with four variable parameters you could have:</p>
 <span id="ssec-cluster-slug-full"></span><h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -182,7 +182,7 @@ physical properties</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -190,6 +190,12 @@ physical properties</dd>
 <dt>libname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
 <dd>name of the SLUG model to load; if left as None, the default
 is $SLUG_DIR/cluster_slug/modp020_chabrier_MW</dd>
+<dt>lib <span class="classifier-delimiter">:</span> <span class="classifier">object</span></dt>
+<dd>a library read by the read_cluster function; if specified
+this overrides the libname option; the library must
+contain both physical properties and photometry, and
+must include filter data; if this is not None, then the 
+photsystem keyword is ignored</dd>
 <dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">iterable of stringlike</span></dt>
 <dd>list of filter names to be used for inferenence</dd>
 <dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span></dt>
@@ -475,8 +481,8 @@ data, just the data for the KD tree used internally.</p>
 <dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd>default bandwidth for this filter</dd>
 <dt>force_reload <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, re-read the filter data off disk even if it has
-already been read</dd>
+<dd>if True, reinitialize the data even if has already been
+stored</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
@@ -829,7 +835,7 @@ marginal PDF routine provided.</p>
 <dt>fixeddim <span class="classifier-delimiter">:</span> <span class="classifier">int | arraylike of ints | None</span></dt>
 <dd>The index or indices of the physical or photometric
 properties to be held fixed; physical properties are
-numbered 0 ... nphys-1, and phtometric ones are numbered
+numbered 0 ... nphys-1, and photometric ones are numbered
 nphys ... nphys + nphot - 1. This can also be set to
 None, in which case no properties are held fixed.</dd>
 <dt>fixedprop <span class="classifier-delimiter">:</span> <span class="classifier">array | None</span></dt>
@@ -866,13 +872,27 @@ the cluster_slug object, that set will be used by
 default</dd>
 </dl>
 </dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
+of the output grid, for each input set of properties; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.mpdf_phot">
 <code class="descname">mpdf_phot</code><span class="sig-paren">(</span><em>idx</em>, <em>physprop</em>, <em>ngrid=128</em>, <em>qmin=None</em>, <em>qmax=None</em>, <em>grid=None</em>, <em>norm=True</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.mpdf_phot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.mpdf_phot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the marginal probability for one or mode photometric
+<dd><p>Returns the marginal probability for one or more photometric
 quantities corresponding to an input set or distribution of
 physical properties. Output quantities are computed on a grid of
 values, in the same style as meshgrid.</p>

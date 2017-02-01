@@ -751,6 +751,20 @@ be evaluated, in the same format used by meshgrid</dd>
 to 1</dd>
 </dl>
 </dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of values at which the PDF is evaluated; contents
+are the same as returned by meshgrid</dd>
+<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of marginal posterior probabilities at each point
+of the output grid, for each input set of properties; the leading
+dimensions match the leading dimensions produced by
+broadcasting the leading dimensions of photprop and
+photerr together, while the trailing dimensions match
+the dimensions of the output grid</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
