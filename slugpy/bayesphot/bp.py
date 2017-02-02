@@ -1558,12 +1558,12 @@ class bp(object):
         else:
             nidx = 1
         dims = np.zeros(nidx+self.__nphys, dtype=c_ulong)
-        dims[:nidx] = idx
+        dims[:nidx] = self.__nphys + idx
         dims[nidx:] = np.arange(self.__nphys, dtype=c_ulong)
         ndim = c_ulong(nidx + self.__nphys)
 
         # Prepare output holder
-        pdf = np.zeros(np.array(phyprop)[..., 0].shape +
+        pdf = np.zeros(np.array(physprop)[..., 0].shape +
                        out_shape)
 
         # Prepare inputs for passing to c
@@ -1615,7 +1615,7 @@ class bp(object):
 
             # Compute integral
             normfac = np.sum(pdf*cellsize, axis = 
-                             tuple(range(np.array(photprop).ndim-1, pdf.ndim)))
+                             tuple(range(np.array(physprop).ndim-1, pdf.ndim)))
 
             # Normalize
             pdf = np.transpose(np.transpose(pdf)/normfac)
