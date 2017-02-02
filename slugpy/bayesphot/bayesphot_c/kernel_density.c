@@ -709,7 +709,6 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
       }
       if (!(nodepdf = (double *) 
 	    malloc(NODEBLOCKSIZE*sizeof(double)))) {
-	printf("alloc error flag\n");
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int_grid\n");
 	exit(1);
       }
@@ -2119,7 +2118,7 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
 		       (const double **) kd->tree->tree[curnode].xbnd,
 		       ndimfixed, ndim_tot, dimfixed, NULL, 
 		       kd->h, ndim_tot);
-
+    
     /* Return 0.5 * PDF at minimum distance */
     switch (kd->ktype) {
     case epanechnikov: {
