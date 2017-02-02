@@ -690,7 +690,8 @@ class bp(object):
            (type(self.__priors) == np.ndarray):
             if np.array_equal(pr, self.__priors):
                 return
-        elif pr == self.__priors:
+        elif (type(pr) == type(self.__priors)) and \
+              (pr == self.__priors):
             return
 
         # If priors and pobs are both None, just remove all weighting
@@ -879,14 +880,15 @@ class bp(object):
         # new bandwidth; zero out the stored sample density, and
         # adjust the kernel density estimator for the physical
         # parameters to the new bandwidth before doing so
-        if self.__sden == 'auto':
-            self.__sample_density = None
-            if self.__kd_phys is not None:
-                self.__clib.kd_change_bandwidth(
-                    self.__bandwidth[:self.__nphys], self.__kd_phys)
-            pr = self.priors
-            self.priors = None
-            self.priors = pr
+        if type(self.__sden) is str:
+            if self.__sden == 'auto':
+                self.__sample_density = None
+                if self.__kd_phys is not None:
+                    self.__clib.kd_change_bandwidth(
+                        self.__bandwidth[:self.__nphys], self.__kd_phys)
+                pr = self.priors
+                self.priors = None
+                self.priors = pr
 
     ##################################################################
     # Utitlity methods to return the number of physical and
@@ -1653,6 +1655,10 @@ class bp(object):
               properties to be maginalized over, numbered in the same
               way as with fixeddim; if set to None, no marginalization
               is performed
+           ngrid : int or listlike containing ints
+              number of points in each dimension of the output grid;
+              if this is an iterable, it must have nphys + nphot -
+              len(fixeddim) - len(margindim) elements
            qmin : float | arraylike
               minimum value in the output grid in each quantity; if
               left as None, defaults to the minimum value in the
