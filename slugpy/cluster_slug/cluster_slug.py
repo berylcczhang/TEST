@@ -424,7 +424,8 @@ class cluster_slug(object):
                                            read_extinct=False,
                                            phot_only=True)
             else:
-                phdata = self.__lib.phot[:,self.__allfilters.index(filter_name)]
+                phdata = np.copy(self.__lib.phot
+                                 [:,self.__allfilters.index(filter_name)])
         else:
 
             # Load data; first try reading the requested combination
@@ -448,7 +449,8 @@ class cluster_slug(object):
                     if self.__lib is None:
                         phdata = np.squeeze(phot.phot_neb_ex)
                     else:
-                        phdata = phot.phot_neb_ex[:,self.__allfilters.index(filter_name)]
+                        phdata = np.copy(phot.phot_neb_ex
+                                         [:,self.__allfilters.index(filter_name)])
                     warn_nebular = False
                     warn_extinct = False
                     nebular = True
@@ -467,7 +469,8 @@ class cluster_slug(object):
                         if self.__lib is None:
                             phdata = np.squeeze(phot.phot_ex)
                         else:
-                            phdata = phot.phot_ex[:,self.__allfilters.index(filter_name)]
+                            phdata = np.copy(phot.phot_ex
+                                             [:,self.__allfilters.index(filter_name)])
                         warn_nebular = True
                         warn_extinct = False
                         nebular = False
@@ -486,7 +489,8 @@ class cluster_slug(object):
                             if self.__lib is None:
                                 phdata = np.squeeze(phot.phot_neb)
                             else:
-                                phdata = phot.phot_neb[:,self.__allfilters.index(filter_name)]
+                                phdata = np.copy(phot.phot_neb
+                                                 [:,self.__allfilters.index(filter_name)])
                             warn_nebular = False
                             warn_extinct = True
                             nebular = True
@@ -503,7 +507,8 @@ class cluster_slug(object):
                                     photsystem=self.__photsystem)
                                 phdata = np.squeeze(phot.phot)
                             else:
-                                phdata = phot.phot[:,self.__allfilters.index(filter_name)]
+                                phdata = np.copy(phot.phot
+                                                 [:,self.__allfilters.index(filter_name)])
                             warn_nebular = True
                             warn_extinct = True
                             nebular = False
@@ -516,7 +521,8 @@ class cluster_slug(object):
                     if self.__lib is None:
                         phdata = np.squeeze(phot.phot_neb)
                     else:
-                        phdata = phot.phot_neb[:,self.__allfilters.index(filter_name)]
+                        phdata = np.copy(phot.phot_neb
+                                         [:,self.__allfilters.index(filter_name)])
                     warn_nebular = False
                     warn_extinct = False
                     nebular = True
@@ -533,7 +539,8 @@ class cluster_slug(object):
                             photsystem=self.__photsystem)
                         phdata = np.squeeze(phot.phot)
                     else:
-                        phdata = phot.phot[:,self.__allfilters.index(filter_name)]                        
+                        phdata = np.copy(phot.phot
+                                         [:,self.__allfilters.index(filter_name)])
                     warn_nebular = True
                     warn_extinct = False
                     nebular = False
@@ -546,7 +553,8 @@ class cluster_slug(object):
                     if self.__lib is None:
                         phdata = np.squeeze(phot.phot_ex)
                     else:
-                        phdata = phot.phot_ex[:,self.__allfilters.index(filter_name)]                        
+                        phdata = np.copy(phot.phot_ex
+                                         [:,self.__allfilters.index(filter_name)])
                     warn_nebular = False
                     warn_extinct = False
                     nebular = False
@@ -563,7 +571,8 @@ class cluster_slug(object):
                             photsystem=self.__photsystem)
                         phdata = np.squeeze(phot.phot)
                     else:
-                        phdata = phot.phot[:,self.__allfilters.index(filter_name)]                        
+                        phdata = np.copy(phot.phot
+                                         [:,self.__allfilters.index(filter_name)])
                     warn_nebular = False
                     warn_extinct = True
                     nebular = False
@@ -583,7 +592,10 @@ class cluster_slug(object):
                             read_extinct=False,
                             phot_only=True,
                             photsystem=self.__photsystem)
-                    phdata = np.squeeze(phot.phot_neb)
+                        phdata = np.squeeze(phot.phot_neb)
+                    else:
+                        phdata = np.copy(phot.phot_neb
+                                         [:,self.__allfilters.index(filter_name)])
                 else:
                     if self.__lib is None:
                         phot = read_cluster_phot(
@@ -593,7 +605,10 @@ class cluster_slug(object):
                             read_extinct=False,
                             phot_only=True,
                             photsystem=self.__photsystem)
-                    phdata = np.squeeze(phot.phot)
+                        phdata = np.squeeze(phot.phot)
+                    else:
+                        phdata = np.copy(phot.phot
+                                         [:,self.__allfilters.index(filter_name)])
             else:
                 warn_extinct = False
 
@@ -1167,6 +1182,10 @@ class cluster_slug(object):
               properties to be maginalized over, numbered in the same
               way as with fixeddim; if set to None, no marginalization
               is performed
+           ngrid : int or listlike containing ints
+              number of points in each dimension of the output grid;
+              if this is an iterable, it must have nphys + nphot -
+              len(fixeddim) - len(margindim) elements
            qmin : float | arraylike
               minimum value in the output grid in each quantity; if
               left as None, defaults to the minimum value in the
