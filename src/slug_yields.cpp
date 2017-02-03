@@ -240,6 +240,7 @@ slug_yields::slug_yields(const char *yield_dir) {
     ss << isotopes[i].symbol() << isotopes[i].wgt();
     iso_map[ss.str()] = i;
     isotope_map[isotopes[i]] = i;
+    isotope_map1[make_pair(isotopes[i].num(), isotopes[i].wgt())] = i;
   }
 
   // Now pass through files again, this time reading yields, and

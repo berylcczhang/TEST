@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <cmath>
 #include <map>
+#include <utility>
 #include <boost/multi_array.hpp>
 extern "C" {
 #   include <gsl/gsl_errno.h>
@@ -196,14 +197,14 @@ public:
   // when it dies
   bool produces_sn(const double m) const;
 
-  // Bin SN death masses
-  //const std::vector<double>
-  //bin_SN(const std::vector<double> sn) const;
-
-  // Compute stellar yields by applying yield values to bins
-  //const std::vector<double> 
-  //compute_bin_yields(const std::vector<double> death_bins) const;
- 
+  // Function to return the index within the yield table for a
+  // particular isotope, specified by its atomic number and atomic
+  // weight
+  std::vector<double>::size_type
+  isotope_index(unsigned int num, unsigned int wgt) const {
+    return isotope_map1[std::make_pair(num, wgt)];
+  }
+   
 private:
 
   // Data
@@ -216,9 +217,11 @@ private:
   std::vector<isotope_data> isotopes;    // Isotopes
   array2d sn_yield_tab;			 // Yield table values for SNe	
   array2d wind_yield_tab;		 // Yield table for pre-SN winds
+  // Isotope indices
   mutable std::map<isotope_data, 
-	   std::vector<double>::size_type> isotope_map; // Isotope indices
-
+		   std::vector<double>::size_type> isotope_map;
+  mutable std::map<std::pair<unsigned int, unsigned int>,
+		   std::vector<double>::size_type> isotope_map1;
 
   // Interpolation machinery
   std::vector<gsl_spline *> sn_yield, wind_yield;

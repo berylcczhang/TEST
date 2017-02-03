@@ -130,6 +130,13 @@ public:
   const std::vector<double>& get_yields() 
   { set_yield(); return all_yields; }
 
+  // Pass through to routine that returns the mapping between isotope
+  // number and weight and index in the yield table
+  std::vector<double>::size_type
+  isotope_index(unsigned int num, unsigned int wgt) const {
+    return yields->isotope_index(num, wgt);
+  }
+
   // Routine to report if this cluster is disrupted
   bool disrupted() const { return is_disrupted; }
 
