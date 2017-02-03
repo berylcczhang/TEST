@@ -760,6 +760,8 @@ class bp(object):
             # record the new prior, and, if it is a callable, call it
             if hasattr(pr, '__iter__'):
                 self.__priors = np.array(pr)[self.__idxmap]
+            else:
+                self.__priors = pr
             if hasattr(self.__priors, '__call__'):
                 self.__prior_data \
                     = self.__priors(self.__dataset[:,:self.__nphys]).flatten()
