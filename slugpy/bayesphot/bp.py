@@ -1872,7 +1872,7 @@ class bp(object):
 
         # Normalize if requested
         if norm:
-            self.__mpdf_normalize(nidx, grid_out, pdf)
+            pdf = self.__mpdf_normalize(nidx, grid_out, pdf)
 
         # Return
         return grid_out, pdf
@@ -1982,7 +1982,7 @@ class bp(object):
                 cellsize = np.multiply.outer(cellsize, csize[i])
 
         # Compute integral
-        normfac = np.sum(pdf*cellsize, axis = 
+        normfac = np.sum(pdf*np.abs(cellsize), axis = 
                          tuple(range(pdf.ndim-nidx, pdf.ndim)))
 
         # Normalize
