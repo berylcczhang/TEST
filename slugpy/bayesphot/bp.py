@@ -171,6 +171,16 @@ class bp(object):
 
         Raises
            IOError, if the bayesphot c library cannot be found
+
+        Notes
+           Because the data sets passed in may be large, this class
+           does not make copies of any of its arguments, and instead
+           modifies them in place. However, this means it is the
+           responsibility of the user not to alter the any of the
+           arguments once they are passed to this class; for example,
+           dataset must not be modified after it is passed. Altering the
+           arguments, except through this class's methods, may cause
+           incorrect results to be generated.
         """
 
         # Load the c library
@@ -186,14 +196,15 @@ class bp(object):
         self.__clib.build_kd.restype = c_void_p
         self.__clib.build_kd.argtypes \
             = [ array_1d_double,   # x
-                c_ulong,            # ndim
+                c_ulong,           # ndim
                 c_ulong,           # npt
                 ctypes.
                 POINTER(c_double), # wgt
                 c_ulong,           # leafsize
                 array_1d_double,   # bandwidth
                 c_int,             # ktype
-                c_ulong ]          # minsplit
+                c_ulong,           # minsplit
+                POINTER(c_ulong) ] # sortmap
 
         self.__clib.build_kd_sortdims.restype = c_void_p
         self.__clib.build_kd_sortdims.argtypes \
@@ -205,7 +216,8 @@ class bp(object):
                 c_ulong,           # leafsize
                 array_1d_double,   # bandwidth
                 c_int,             # ktype
-                array_1d_int ]     # nosort
+                array_1d_int,      # nosort
+                POINTER(c_ulong) ] # sortmap
 
         self.__clib.copy_kd.restype = c_void_p
         self.__clib.copy_kd.argtypes = [ c_void_p ] # kd
@@ -457,8 +469,6 @@ class bp(object):
         self.leafsize = leafsize
         self.abstol = abstol
         self.reltol = reltol
-        self.__sden = sample_density
-        self.__sample_density = None
         self.thread_safe = thread_safe
 
         # Store data set
@@ -480,21 +490,37 @@ class bp(object):
         self.__kd_phys = None
 
         # Build the initial kernel density estimation object, using a
-        # dummy bandwidth
+        # dummy bandwidth; record mapping from indices of input data
+        # to sorted indices, in case we need it to interpret arrays of
+        # sample density, observation probability, or prior
         self.__bandwidth = np.ones(self.__nphys + self.__nphot)
+        self.__idxmap = np.zeros(self.__ndata, dtype=c_ulong)
         if nosort is None:
             self.__kd = self.__clib.build_kd(
                 np.ravel(self.__dataset), self.__dataset.shape[1],
                 self.__ndata, None, self.leafsize, self.__bandwidth,
-                self.__ktype, 0)
+                self.__ktype, 0,
+                self.__idxmap.ctypes.data_as(POINTER(c_ulong)))
         else:
             nosort_c = np.zeros(nosort.shape, dtype=np.intc)
             nosort_c[:] = nosort == True
             self.__kd = self.__clib.build_kd_sortdims(
                 np.ravel(self.__dataset), self.__dataset.shape[1],
                 self.__ndata, None, self.leafsize, self.__bandwidth,
-                self.__ktype, nosort_c)
+                self.__ktype, nosort_c,
+                self.__idxmap.ctypes.data_as(POINTER(c_ulong)))
 
+        # If pobs, priors, or sample_density are arrays, sort them
+        if hasattr(priors, '__iter__'):
+            priors = np.array(priors)[self.__idxmap]
+        if hasattr(pobs, '__iter__'):
+            pobs = np.array(pobs)[self.__idxmap]
+        if hasattr(sample_density, '__iter__'):
+            sample_density = np.array(sample_density)[self.__idxmap]
+
+        # Store sample density
+        self.__sden = sample_density
+        self.__sample_density = None
 
         # Initialize the bandwidth
         self.bandwidth = bandwidth
@@ -643,10 +669,37 @@ class bp(object):
 
     @sample_density.setter
     def sample_density(self, sden):
+        """
+        This function sets the sampling density for the library
+
+        Parameters
+           sden : array, shape (N) | callable | None
+              sample density each data point; interpretation depends
+              on the type passed:
+                 array, shape (N) : 
+                    values are interpreted as the sampling density at
+                    each data point in the dataset used to construct
+                    the bp object
+                 callable : 
+                    the callable must take as an argument an array of
+                    shape (N, nphys), and return an array of shape (N)
+                    giving the prior probability at each data point
+                 None :
+                    all data points have equal prior probability
+
+        Returns
+           Nothing
+        """
         # Erase current sample density information, then force
         # recomputation
         self.__sample_density = None
-        self.__sden = sden
+        if hasattr(sden, '__iter__'):
+            # If passed an array, assume it is ordered as was the
+            # original data set, not our re-ordered version, so
+            # re-order before storing
+            self.__sden = np.array(sden)[self.__idxmap]
+        else:
+            self.__sden = sden
         dummy = self.sample_density
             
 
@@ -668,12 +721,13 @@ class bp(object):
         This function sets the prior probabilities to use
 
         Parameters
-           priors : array, shape (N) | callable | None
+           pr : array, shape (N) | callable | None
               prior probability on each data point; interpretation
               depends on the type passed:
                  array, shape (N) : 
                     values are interpreted as the prior probability of
-                    each data point
+                    each data point in the dataset used to construct
+                    the bp object
                  callable : 
                     the callable must take as an argument an array of
                     shape (N, nphys), and return an array of shape (N)
@@ -688,10 +742,10 @@ class bp(object):
         # If the prior is unchanged, do nothing
         if (type(pr) == np.ndarray) and \
            (type(self.__priors) == np.ndarray):
-            if np.array_equal(pr, self.__priors):
+            if np.array_equal(pr[self.__idxmap], self.__priors):
                 return
         elif (type(pr) == type(self.__priors)) and \
-              (pr == self.__priors):
+             (pr == self.__priors):
             return
 
         # If priors and pobs are both None, just remove all weighting
@@ -704,7 +758,8 @@ class bp(object):
         else:
             # If we're here, we have a non-trival prior or pobs;
             # record the new prior, and, if it is a callable, call it
-            self.__priors = pr
+            if hasattr(pr, '__iter__'):
+                self.__priors = np.array(pr)[self.__idxmap]
             if hasattr(self.__priors, '__call__'):
                 self.__prior_data \
                     = self.__priors(self.__dataset[:,:self.__nphys]).flatten()
@@ -743,7 +798,8 @@ class bp(object):
               interpretation depends on the type passed:
                  array, shape (N) : 
                     values are interpreted as the probability of
-                    observation each data point
+                    observation each data point in the dataset used to
+                    construct the bp object
                  callable : 
                     the callable must take as an argument an array of
                     shape (N, nphot), and return an array of shape (N)
@@ -760,10 +816,11 @@ class bp(object):
         # If the observation probability is unchanged, do nothing
         if (type(po) == np.ndarray) and \
            (type(self.__pobs) == np.ndarray):
-            if np.array_equal(po, self.__pobs):
+            if np.array_equal(po[self.__idxmap], self.__pobs):
                 return
-            elif po == self.__pobs:
-                return
+        elif (type(po) == type(self.__pobs)) and \
+             (po == self.__pobs):
+            return
 
         # If pobs and prior are both None, just remove all weighting
         if po is None and self.priors is None:
@@ -776,7 +833,10 @@ class bp(object):
 
             # If we're here, we have a non-trivial pobs or prior; if
             # the new pobs is a callable, call it and save the result
-            self.__pobs = po
+            if hasattr(po, '__iter__'):
+                self.__pobs = np.array(po)[self.__idxmap]
+            else:
+                self.__pobs = po
             if hasattr(self.__pobs, '__call__'):
                 self.__pobs_data \
                     = self.__pobs(self.__dataset[:,self.__nphys:]).\
@@ -1695,7 +1755,7 @@ class bp(object):
             nfixed = 0
         else:
             nfixed = np.atleast_1d(np.array(fixeddim)).shape[0]
-            if len(set(fixeddim)) != nfixed:
+            if len(set(np.atleast_1d(fixeddim))) != nfixed:
                 raise ValueError("fixeddim must not have any "
                                  "repeated elements!")
             if np.array(fixedprop).shape[-1] != nfixed:
@@ -1706,7 +1766,7 @@ class bp(object):
             nmargin = 0
         else:
             nmargin = np.atleast_1d(np.array(margindim)).shape[0]
-            if len(set(margindim)) != nmargin:
+            if len(set(np.atleast_1d(margindim))) != nmargin:
                 raise ValueError("margindim must not have any "
                                  "repeated elements!")
         if qmin is not None:

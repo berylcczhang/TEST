@@ -10,6 +10,7 @@ import os
 import os.path as osp
 import warnings
 import urllib2
+from copy import deepcopy
 
 # Import the data reading and Bayesian inference stuff we need
 from ..bayesphot import bp
@@ -719,7 +720,7 @@ class cluster_slug(object):
               set, and for a newly-created one the default physical
               and photometric bandwidths are used; if set to 'auto',
               bandwidth is estimated automatically; if set to a float,
-              this bandwidth is used for all physical photometric
+              this bandwidth is used for all physical and photometric
               dimensions; if set to an array, the array must have the
               same number of entries as nphys+len(filters)
 
@@ -774,16 +775,16 @@ class cluster_slug(object):
                     bw[self.__nphys+i] = self.__photbw[f]
 
         # Build the bp object
-       
-        newfilter['bp'] = bp(newfilter['dataset'], self.__nphys,
-                             filters=filters,
-                             bandwidth = bw,
-                             ktype = self.__ktype,
-                             priors = self.__priors,
-                             sample_density = self.__sample_density,
-                             reltol = self.__reltol,
-                             abstol = self.__abstol,
-                             thread_safe = self.__thread_safe)
+        newfilter['bp'] \
+            = bp(newfilter['dataset'], self.__nphys,
+                 filters=filters,
+                 bandwidth = bw,
+                 ktype = self.__ktype,
+                 priors = deepcopy(self.__priors),
+                 sample_density = deepcopy(self.__sample_density),
+                 reltol = self.__reltol,
+                 abstol = self.__abstol,
+                 thread_safe = self.__thread_safe)
 
         # Save to the master filter list
         self.__filtersets.append(newfilter)
@@ -837,7 +838,7 @@ class cluster_slug(object):
     def priors(self, pr):
         self.__priors = pr
         for f in self.__filtersets:
-            f['bp'].priors = self.__priors
+            f['bp'].priors = deepcopy(self.__priors)
 
     ##################################################################
     # Define the pobs property. This wraps around the corresponding
@@ -853,24 +854,17 @@ class cluster_slug(object):
 
     @pobs.setter
     def pobs(self, po):
-        if not hasattr(po, '__iter__'):
-            # Is po an iterable? If not, assign it to every filter set
-            for f in self.__filtersets:
-                f['bp'].pobs = po
-        elif len(self.__filtersets) == 1:
-            # po is an iterable, but we have only one filter set; this
-            # probably means we've been given an array, and we should
-            # just assign it to our 1 filter set; if that doesn't
-            # work, try assigning just that one element
-            try:
-                self.__filtersets[0]['bp'].pobs = po
-            except:
-                self.__filtersets[0]['bp'].pobs = po[0]
-        else:
-            # Multiple filter sets, iterable, so iterate
-            for f, p in zip(self.__filtersets, po):
-                f['bp'].pobs = p
-                
+        # If po is an iterable and matches the number of filter sets,
+        # we assume that this is an observation probably to be
+        # assigned to each filter set. If not, we try assigning it to
+        # each filter set
+        if hasattr(po, '__iter__'):
+            if len(po) == len(self.__filtersets):
+                for f, p in zip(self.__filtersets, po):
+                    f['bp'].pobs = p
+                return
+        for f in self.__filtersets:
+            f['bp'].pobs = deepcopy(po)                
     
     ##################################################################
     # Define properties that update the current values for the

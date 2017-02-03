@@ -316,7 +316,7 @@ unsigned long squeeze_rep(const unsigned long npt,
 
   /* Build a kernel density representation of the data, with leaves
      consisting of two points */
-  kd = build_kd(*x, ndim, npt, *wgts, 2, h, gaussian, 0);
+  kd = build_kd(*x, ndim, npt, *wgts, 2, h, gaussian, 0, NULL);
 
   /* Allocate temporaries */
   if (!(node_err = (double *) calloc(kd->tree->nodes, sizeof(double)))) {

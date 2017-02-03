@@ -29,7 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 kernel_density* build_kd(double *x, unsigned long ndim, 
 			 unsigned long npt, double *wgt,
 			 unsigned long leafsize, double *bandwidth, 
-			 kernel_type ktype, unsigned long minsplit) {
+			 kernel_type ktype, unsigned long minsplit,
+			 unsigned long *sortmap) {
   unsigned long i, j, curnode;
   double ds_n, hprod, wgttot=0.0;
   kernel_density *kd;
@@ -83,10 +84,11 @@ kernel_density* build_kd(double *x, unsigned long ndim,
 
   /* Build the KD tree around the data */
   if (wgt == NULL) {
-    kd->tree = build_tree(x, ndim, npt, leafsize, NULL, 0, minsplit);
+    kd->tree = build_tree(x, ndim, npt, leafsize, NULL, 0, minsplit,
+			  sortmap);
   } else {
     kd->tree = build_tree(x, ndim, npt, leafsize, wgt, 
-			  sizeof(double), minsplit);
+			  sizeof(double), minsplit, sortmap);
   }
 
   /* Allocate memory to hold summed weights of the nodes of the tree */
@@ -146,7 +148,8 @@ kernel_density* build_kd_sortdims(double *x, unsigned long ndim,
 				  unsigned long npt, double *wgt,
 				  unsigned long leafsize, 
 				  double *bandwidth, 
-				  kernel_type ktype, int *nosort) {
+				  kernel_type ktype, int *nosort,
+				  unsigned long *sortmap) {
   unsigned long i, j, curnode;
   double ds_n, hprod, wgttot=0.0;
   kernel_density *kd;
@@ -200,10 +203,11 @@ kernel_density* build_kd_sortdims(double *x, unsigned long ndim,
 
   /* Build the KD tree around the data */
   if (wgt == NULL) {
-    kd->tree = build_tree_sortdims(x, ndim, npt, leafsize, NULL, 0, nosort);
+    kd->tree = build_tree_sortdims(x, ndim, npt, leafsize, NULL, 0,
+				   nosort, sortmap);
   } else {
     kd->tree = build_tree_sortdims(x, ndim, npt, leafsize, wgt, 
-				   sizeof(double), nosort);
+				   sizeof(double), nosort, sortmap);
   }
 
   /* Allocate memory to hold summed weights of the nodes of the tree */
