@@ -29,8 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static inline
 void exchange_points(double *pt1, double *pt2, unsigned long ndim,
 		     void *dptr1, void *dptr2, void *dswap,
-		     size_t dsize, unsigned long lptr,
-		     unsigned long rptr, unsigned long *sortmap) {
+		     size_t dsize, unsigned long *sortmap1,
+		     unsigned long *sortmap2) {
   double tmp;
   unsigned long i;
   for (i=0; i<ndim; i++) {
@@ -43,10 +43,10 @@ void exchange_points(double *pt1, double *pt2, unsigned long ndim,
     memcpy(dptr1, dptr2, dsize);
     memcpy(dptr2, dswap, dsize);
   }
-  if (sortmap) {
-    i = sortmap[lptr];
-    sortmap[lptr] = sortmap[rptr];
-    sortmap[rptr] = i;
+  if (sortmap1) {
+    i = *sortmap1;
+    *sortmap1 = *sortmap2;
+    *sortmap2 = i;
   }
 }
 
@@ -59,6 +59,7 @@ void partition_node(KDnode *node, unsigned long ndim, void *dswap,
 		    size_t dsize, unsigned long *sortmap) {
 
   unsigned long l, r, m, lptr, rptr;
+  unsigned long *sortmap1 = NULL, *sortmap2 = NULL;
   double splitval;
 
   /* Initialize pointers */
@@ -86,12 +87,16 @@ void partition_node(KDnode *node, unsigned long ndim, void *dswap,
 	     (lptr <= rptr))
 	rptr--;
       if (lptr >= rptr) break;
+      if (sortmap) {
+	sortmap1 = sortmap + lptr;
+	sortmap2 = sortmap + rptr;
+      }
       exchange_points(&(node->x[ndim*lptr]), 
 		      &(node->x[ndim*rptr]), 
 		      ndim,
 		      ((char *) node->dptr) + dsize*lptr,
 		      ((char *) node->dptr) + dsize*rptr,
-		      dswap, dsize, lptr, rptr, sortmap);
+		      dswap, dsize, sortmap1, sortmap2);
       lptr++;
       rptr--;
     }
@@ -313,7 +318,9 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
       }
 
       /* Partition the points along the split dimension */
-      partition_node(&(tree->tree[curnode]), tree->ndim, dswap, dsize, sortmap);
+      partition_node(&(tree->tree[curnode]), tree->ndim, dswap, dsize,
+		     sortmap +
+		     (tree->tree[curnode].x - tree->tree[ROOT].x)/ndim);
 
       /* Set the bounding box on the child nodes */
       for (i=0; i<tree->ndim; i++) {
