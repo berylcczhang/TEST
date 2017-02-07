@@ -145,6 +145,14 @@ class cluster_slug(object):
               of shape (N, nphys), and return an array of shape (N)
               giving the prior probability at each data point; None:
               all data points have equal prior probability
+           pobs : array, shape (N) | callable | None
+              probability of being observed on each data point; interpretation
+              depends on the type passed; array, shape (N): values are
+              interpreted as the prior probability of each data point;
+              callable: the callable must take as an argument an array
+              of shape (N, nphys), and return an array of shape (N)
+              giving the prior probability at each data point; None:
+              all data points have equal prior probability
            sample_density : array, shape (N) | callable | 'auto' | None
               the density of the data samples at each data point; this
               need not match the prior density; interpretation depends
@@ -368,7 +376,7 @@ class cluster_slug(object):
         # If we have been given a filter list, create the data set to
         # go with it
         if filters is not None:
-            self.add_filters(filters, bandwidth=bw_phot)
+            self.add_filters(filters, bandwidth=bw_phot, pobs=pobs)
 
 
     ##################################################################
@@ -723,16 +731,17 @@ class cluster_slug(object):
               this bandwidth is used for all physical and photometric
               dimensions; if set to an array, the array must have the
               same number of entries as nphys+len(filters)
-           pobs : array, shape (N) | callable | None
+           pobs : array, shape (N) | callable | 'equal' | None
               the probability that a particular object would be observed,
               which is used, like prior, to weight the library;
-              interpretation depends on type. None means all objects are
+              interpretation depends on type. 'equal' means all objects are
               equally likely to be observed, array is an array giving the
               observation probability of each object in the library, and
               callable means must be a function that takes an array
               containing the photometry, of shape (N, nhpot), as an
               argument, and returns an array of shape (N) giving the
-              probability of observation for that object
+              probability of observation for that object. Finally,
+              None leaves the observational probability unchanged
 
         Returns
            nothing
@@ -744,7 +753,11 @@ class cluster_slug(object):
             if filters == f['filters']:
                 if bandwidth is not None:
                     self.__filtersets[i]['bp'].bandwidth = bandwidth
-                self.__filtersets[i]['bp'].pobs = pobs
+                if pobs is not None:
+                    if pobs is 'equal':
+                        self.__filtersets[i]['bp'].pobs = None
+                    else:
+                        self.__filtersets[i]['bp'].pobs = pobs
                 return
 
         # We're adding a new filter set, so save its name
