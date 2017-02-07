@@ -707,7 +707,7 @@ class cluster_slug(object):
     ##################################################################
     # Method to prepare to analyze a particular set of filters
     ##################################################################
-    def add_filters(self, filters, bandwidth=None):
+    def add_filters(self, filters, bandwidth=None, pobs=None):
         """
         Add a set of filters to use for cluster property estimation
 
@@ -723,17 +723,28 @@ class cluster_slug(object):
               this bandwidth is used for all physical and photometric
               dimensions; if set to an array, the array must have the
               same number of entries as nphys+len(filters)
+           pobs : array, shape (N) | callable | None
+              the probability that a particular object would be observed,
+              which is used, like prior, to weight the library;
+              interpretation depends on type. None means all objects are
+              equally likely to be observed, array is an array giving the
+              observation probability of each object in the library, and
+              callable means must be a function that takes an array
+              containing the photometry, of shape (N, nhpot), as an
+              argument, and returns an array of shape (N) giving the
+              probability of observation for that object
 
         Returns
            nothing
         """
 
         # If we already have this filter set in our dict, just set the
-        # bandwidth and return
+        # bandwidth and pobs and return
         for i, f in enumerate(self.__filtersets):
             if filters == f['filters']:
                 if bandwidth is not None:
                     self.__filtersets[i]['bp'].bandwidth = bandwidth
+                self.__filtersets[i]['bp'].pobs = pobs
                 return
 
         # We're adding a new filter set, so save its name
@@ -781,6 +792,7 @@ class cluster_slug(object):
                  bandwidth = bw,
                  ktype = self.__ktype,
                  priors = deepcopy(self.__priors),
+                 pobs = pobs,
                  sample_density = deepcopy(self.__sample_density),
                  reltol = self.__reltol,
                  abstol = self.__abstol,

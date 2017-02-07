@@ -510,17 +510,13 @@ class bp(object):
                 self.__ktype, nosort_c,
                 self.__idxmap.ctypes.data_as(POINTER(c_ulong)))
 
-        # If pobs, priors, or sample_density are arrays, sort them
-        if hasattr(priors, '__iter__'):
-            priors = np.array(priors)[self.__idxmap]
-        if hasattr(pobs, '__iter__'):
-            pobs = np.array(pobs)[self.__idxmap]
-        if hasattr(sample_density, '__iter__'):
-            sample_density = np.array(sample_density)[self.__idxmap]
-
         # Store sample density
-        self.__sden = sample_density
+        if hasattr(sample_density, '__iter__'):
+            self.__sden = np.array(sample_density)[self.__idxmap]
+        else:
+            self.__sden = sample_density
         self.__sample_density = None
+        dummy = self.sample_density
 
         # Initialize the bandwidth
         self.bandwidth = bandwidth
@@ -562,19 +558,14 @@ class bp(object):
         if self.__sample_density is None:
 
             # Choose computation method
-            if self.__sden is None:
-
-                # None means uniform sampling
-                self.__sample_density = np.ones(self.__ndata)
-
-            elif hasattr(self.__sden, '__call__'):
+            if hasattr(self.__sden, '__call__'):
 
                 # Callable, so pass the physical data to the
                 # callable and store the result
                 self.__sample_density \
                     = self.__sden(self.__dataset[:,:self.__nphys])
 
-            elif type(self.__sden) is np.ndarray:
+            elif type(self.__sden) is np.ndarray or self.__sden is None:
 
                 # Array, so treat treat this as the data
                 self.__sample_density = self.__sden
@@ -621,7 +612,7 @@ class bp(object):
                             self.__clib.kd_pdf_vec(
                                 self.__kd_phys, pts,
                                 self.__ndata, self.reltol, self.abstol,
-                                self.__sample_density, nodecheck, 
+                                self.__sample_density_sorted, nodecheck, 
                                 leafcheck, termcheck)
                     else:
                         # Many data points, so choose a sample at random
@@ -663,8 +654,10 @@ class bp(object):
                                                 pts,
                                                 method='linear')).flatten()
                         
-        # Return result
-        return self.__sample_density
+        # Return result, sorted back into the order of the original
+        # data
+        idxmap_inv = np.argsort(self.__idxmap)
+        return self.__sample_density[idxmap_inv]
     
 
     @sample_density.setter
@@ -711,17 +704,22 @@ class bp(object):
     def priors(self):
         """
         The current set of prior probabilities for every
-        simulation in the library
+        simulation in the library; data returned are in the same order
+        as the data originally used to construct the library
         """
-        return self.__prior_data
+        if self.__priors is None:
+            return None
+        else:
+            idxmap_inv = np.argsort(self.__idxmap)
+            return self.__prior_data[idxmap_inv]
 
     @priors.setter
-    def priors(self, pr):
+    def priors(self, prior):
         """
         This function sets the prior probabilities to use
 
         Parameters
-           pr : array, shape (N) | callable | None
+           prior : array, shape (N) | callable | None
               prior probability on each data point; interpretation
               depends on the type passed:
                  array, shape (N) : 
@@ -739,10 +737,16 @@ class bp(object):
            Nothing
         """
 
+        # If prior is an arraylike, sort it using our index map
+        if hasattr(prior, '__iter__'):
+            pr = np.array(prior)[self.__idxmap]
+        else:
+            pr = prior
+
         # If the prior is unchanged, do nothing
         if (type(pr) == np.ndarray) and \
            (type(self.__priors) == np.ndarray):
-            if np.array_equal(pr[self.__idxmap], self.__priors):
+            if np.array_equal(pr, self.__priors):
                 return
         elif (type(pr) == type(self.__priors)) and \
              (pr == self.__priors):
@@ -758,23 +762,27 @@ class bp(object):
         else:
             # If we're here, we have a non-trival prior or pobs;
             # record the new prior, and, if it is a callable, call it
-            if hasattr(pr, '__iter__'):
-                self.__priors = np.array(pr)[self.__idxmap]
-            else:
-                self.__priors = pr
+            self.__priors = pr
             if hasattr(self.__priors, '__call__'):
                 self.__prior_data \
-                    = self.__priors(self.__dataset[:,:self.__nphys]).flatten()
+                    = self.__priors(self.__dataset[:,:self.__nphys]) \
+                          .flatten()
             else:
                 self.__prior_data = self.__priors
 
             # Compute the weights from the ratio of the prior times
             # the observation probability to the sample density, then
-            # adjust the weights in the kd
-            wgt = 1.0 / self.sample_density
+            # adjust the weights in the kd; note that a bit of
+            # trickery is required, because the sample_density property
+            # returns the sample density sorted in the original data
+            # order, not in the sorted order, which is what we need
+            dummy = self.sample_density    # Force re-computation
+            wgt = np.ones(self.__ndata)
+            if self.__sample_density is not None:
+                wgt *= 1.0 / self.__sample_density
             if self.__prior_data is not None:
                 wgt *= self.__prior_data
-            if self.pobs is not None:
+            if self.__pobs_data is not None:
                 wgt *= self.__pobs_data
             self.__wgt = wgt
             self.__clib.kd_change_wgt(self.__wgt.ctypes.data_as(
@@ -785,17 +793,22 @@ class bp(object):
     def pobs(self):
         """
         The current set of observation probabilities for every
-        simulation in the library
+        simulation in the library; data returned are in the same order
+        as the data originally used to construct the library
         """
-        return self.__pobs_data
+        if self.__pobs_data is None:
+            return None
+        else:
+            idxmap_inv = np.argsort(self.__idxmap)
+            return self.__pobs_data[idxmap_inv]
 
     @pobs.setter
-    def pobs(self, po):
+    def pobs(self, p_obs):
         """
         This function sets the observation probabilities to use
 
         Parameters
-           pobs : array, shape (N) | callable | None
+           p_obs : array, shape (N) | callable | None
               probability of observation for each data point;
               interpretation depends on the type passed:
                  array, shape (N) : 
@@ -815,10 +828,16 @@ class bp(object):
            Nothing
         """
 
+        # If prior is an arraylike, sort it using our index map
+        if hasattr(p_obs, '__iter__'):
+            po = np.array(p_obs)[self.__idxmap]
+        else:
+            po = p_obs
+
         # If the observation probability is unchanged, do nothing
         if (type(po) == np.ndarray) and \
            (type(self.__pobs) == np.ndarray):
-            if np.array_equal(po[self.__idxmap], self.__pobs):
+            if np.array_equal(po, self.__pobs):
                 return
         elif (type(po) == type(self.__pobs)) and \
              (po == self.__pobs):
@@ -835,10 +854,7 @@ class bp(object):
 
             # If we're here, we have a non-trivial pobs or prior; if
             # the new pobs is a callable, call it and save the result
-            if hasattr(po, '__iter__'):
-                self.__pobs = np.array(po)[self.__idxmap]
-            else:
-                self.__pobs = po
+            self.__pobs = po
             if hasattr(self.__pobs, '__call__'):
                 self.__pobs_data \
                     = self.__pobs(self.__dataset[:,self.__nphys:]).\
@@ -848,8 +864,11 @@ class bp(object):
 
             # Compute the weights on the points, and change the kd
             # object appropriately
-            wgt = 1.0 / self.sample_density
-            if self.priors is not None:
+            dummy = self.sample_density    # Force re-computation
+            wgt = np.ones(self.__ndata)
+            if self.__sample_density is not None:
+                wgt *= 1.0 / self.__sample_density
+            if self.__prior_data is not None:
                 wgt *= self.__prior_data
             if self.__pobs_data is not None:
                 wgt *= self.__pobs_data
