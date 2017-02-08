@@ -46,6 +46,7 @@ namespace std
 #endif
 #include "slug.H"
 #include "slug_PDF.H"
+#include "slug_filter_set.H"
 #include "slug_specsyn.H"
 #include "slug_tracks.H"
 #include "slug_yields.H"
@@ -68,10 +69,11 @@ public:
   ~slug_predefined();
 
   // Method to produce predefined IMFs, tracks, spectral synthesizers,
-  // and yields
+  // filter sets, and yields
   const slug_PDF* imf(const std::string& imfname);
   const slug_tracks* tracks(const std::string& trackname);
   const slug_specsyn* specsyn(const std::string& specsyn_name);
+  const slug_filter_set* filter_set(const std::string& filter_set_name);
   const slug_yields* yields();
   
 private:
@@ -81,15 +83,19 @@ private:
   const slug_PDF *build_PDF(const std::string& fname);
   const slug_PDF *build_IMF(const std::string& imfname);
   const slug_tracks *build_tracks(const std::string& trackname);
+  const slug_filter_set
+  *build_filter_set(const std::string& filter_set_name);
 
   // Private data
   rng_type *rng;
-  boost::filesystem::path imf_dir, track_dir, atmos_dir, yield_dir;
+  boost::filesystem::path imf_dir, track_dir, atmos_dir, filter_dir,
+    yield_dir;
 
   // Lists of things we know about
   std::map<const std::string, const slug_PDF*> known_imfs;
   std::map<const std::string, const slug_tracks*> known_tracks;
   std::map<const std::string, const slug_specsyn*> known_specsyn;
+  std::map<const std::string, const slug_filter_set*> known_filter_sets;
   slug_yields *known_yields;
 };
 

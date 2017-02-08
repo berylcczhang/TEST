@@ -8,8 +8,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <boost/tokenizer.hpp>
 
 using namespace std;
+using namespace boost;
 using namespace boost::filesystem;
 
 ////////////////////////////////////////////////////////////////////////
@@ -31,6 +33,7 @@ slug_predefined::slug_predefined() : rng(nullptr), known_yields(nullptr)
   track_dir = lib_path / "tracks";
   atmos_dir = lib_path / "atmospheres";
   yield_dir = lib_path / "yields";
+  filter_dir = lib_path / "filters";
 
   // Load IMFs
   vector<string> predefined_imfs = {
@@ -55,6 +58,12 @@ slug_predefined::slug_predefined() : rng(nullptr), known_yields(nullptr)
     "planck", "kurucz", "kurucz_hillier", "kurucz_pauldrach", "sb99" };
   for (vector<string>::size_type i=0; i<predefined_specsyn.size(); i++)
     known_specsyn[predefined_specsyn[i]] = nullptr;
+
+  // Load tiler sets
+  vector<string> predefined_filter_sets = {
+    "Lbol", "QH0", "QHe0", "QHe1", "Lbol+QH0", "Lbol+QH0+QHe0+QHe1" };
+  for (vector<string>::size_type i=0; i<predefined_filter_sets.size(); i++)
+    known_filter_sets[predefined_filter_sets[i]] = nullptr;
 }
 
 
@@ -83,6 +92,13 @@ slug_predefined::~slug_predefined() {
   for (map<const string, const slug_specsyn*>::iterator
 	 it = known_specsyn.begin();
        it != known_specsyn.end(); it++) {
+    if (it->second) delete it->second;
+  }
+
+  // Free filter sets
+  for (map<const string, const slug_filter_set*>::iterator
+	 it = known_filter_sets.begin();
+       it != known_filter_sets.end(); it++) {
     if (it->second) delete it->second;
   }
 
@@ -126,7 +142,7 @@ inline const slug_PDF* slug_predefined::build_PDF(const string& fname) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Method to construct IMFs, tracks
+// Method to construct IMFs, tracks, filter sets
 ////////////////////////////////////////////////////////////////////////
 inline const slug_PDF*
 slug_predefined::build_IMF(const string& imfname) {
@@ -140,7 +156,19 @@ slug_predefined::build_tracks(const string&trackname) {
   build_rng();
   return new slug_tracks((track_dir / p).string().c_str());
 }
-  
+
+inline const slug_filter_set*
+slug_predefined::build_filter_set(const string& filter_set_name) {
+  char_separator<char> sep("+");
+  tokenizer< char_separator<char> > fnames(filter_set_name, sep);
+  vector<string> filter_names;
+  for (tokenizer< char_separator<char> >::iterator it = fnames.begin();
+       it != fnames.end(); ++it) {
+    filter_names.push_back(*it);
+  }
+  return new slug_filter_set(filter_names, filter_dir.string().c_str(),
+			     L_NU, nullptr);
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Methods to fetch IMFs, tracks, specsyn, yields
@@ -199,6 +227,19 @@ slug_predefined::specsyn(const string& specsyn_name) {
     }
     return known_specsyn[specsyn_name];
   } else return nullptr;
+}
+
+const slug_filter_set*
+slug_predefined::filter_set(const string& filter_set_name) {
+  map<const string, const slug_filter_set*>::iterator it
+    = known_filter_sets.find(filter_set_name);
+  if (it != known_filter_sets.end()) {
+    if (!known_filter_sets[filter_set_name])
+      known_filter_sets[filter_set_name]
+	= build_filter_set(filter_set_name);
+    return known_filter_sets[filter_set_name];
+  }
+  else return nullptr;
 }
 
 const slug_yields *slug_predefined::yields() {
