@@ -322,13 +322,15 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
          repeated or appear in both dimfixed and dimgrid; dimensions
          that are not included in either dimfixed or dimgrid will be
          integrated over (i.e., marginalized out)
+      INPUT ndimfixed
+         number of dimensions that are fixed; must be > 0
       INPUT nfixed
-         number of fixed points
+         number of fixed points; must be > 0
       INPUT xgridlo
          an ndimgrid element array, giving the coordinates of the
          lower left corner of the grid on which the PDF is to be
          evaluated
-      INPUT xgridlo
+      INPUT xgridhi
          an ndimgrid element array, giving the coordinates of the
          upper right corner of the grid on which the PDF is to be
          evaluated

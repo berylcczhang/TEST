@@ -83,14 +83,20 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 	 weights are normalized to have a sum of unity
 
    Returns:
-      npt, the number of points in xpt and wgts
+      npt, the number of points in xpt and wgts. A return value of 0
+      indicates that the routine terminated prematurely due to
+      inadequate numerical precision to achieve the desired
+      tolerance. This usually indicates that the input point x was too
+      far from the library for the exp(-dist) kernel functions to be
+      evaluated with adequate precision.
 
    Notes:
-      A return value of 0 indicates that the routine terminated
-      prematurely due to inadequate numerical precision to achieve the
-      desired tolerance. This usually indicates that the input point
-      was too far from the library for the exp(-dist) kernel functions
-      to be evaluated with adequate precision.
+      The approximate PDF can be computed from the representation as
+      p(x[j]) = sum_i wgts[i] * prod_j exp(-(x[j] - xpt[i,j]) / 
+      (2*bandwidth[j]**2)),
+      where the sum over i runs over all the returned points, the
+      product over j runs over all the returned dimensions, and x[j]
+      is the point at which the PDF is to be computed.
 */
 
 void free_kd_rep(double **xpt, double **wgts);
@@ -137,7 +143,10 @@ unsigned long squeeze_rep(const unsigned long npts,
          contain npt_out elements
 
    Returns:
-      npt_out, the number of points in the squeezed representation
+      npt_out, the number of points in the squeezed
+      representation. The squeezed representation may be used to
+      reconstruct the PDF in exactly the same manner as the original
+      one (see kd_rep).
 */
 
 #endif

@@ -76,7 +76,7 @@ typedef struct {
 
 KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt, 
 		   unsigned long leafsize, void *dptr, size_t dsize,
-		   unsigned long minsplit);
+		   unsigned long minsplit, unsigned long *sortmap);
 /* This routine builds a KD tree from the input data.
 
    Parameters:
@@ -97,6 +97,11 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
       INPUT minsplit
          when building the KD tree, no splittings along dimensions <
 	 minsplit will be performed
+      OUTPUT sortmap
+         array of npt elements that, on return, will contain the
+         mapping from the initial position of every input to its final
+         position in the list; if this is not needed, set to NULL when
+         calling
 
    Returns:
       OUTPUT tree
@@ -106,7 +111,7 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
 KDtree* build_tree_sortdims(double *x, unsigned long ndim, 
 			    unsigned long npt, unsigned long leafsize, 
 			    void *dptr, size_t dsize,
-			    int *nosort);
+			    int *nosort, unsigned long *sortmap);
 /* This routine builds a KD tree from the input data. It differs from
    the basic build_tree routine in that it allows users to specify
    that the tree is only to be sorted in certain dimensions. This can
@@ -132,6 +137,11 @@ KDtree* build_tree_sortdims(double *x, unsigned long ndim,
          array of ndim values; for any dimension for which nosort is
          non-zero, the tree will not be partitioned along that
          dimension
+      OUTPUT sortmap
+         array of npt elements that, on return, will contain the
+         mapping from the initial position of every input to its final
+         position in the list; if this is not needed, set to NULL when
+         calling
 
    Returns:
       OUTPUT tree

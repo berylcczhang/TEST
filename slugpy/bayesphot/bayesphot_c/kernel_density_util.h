@@ -32,7 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 kernel_density* build_kd(double *x, unsigned long ndim, 
 			 unsigned long npt, double *wgt,
 			 unsigned long leafsize, double *bandwidth, 
-			 kernel_type ktype, unsigned long minsplit);
+			 kernel_type ktype, unsigned long minsplit,
+			 unsigned long *sortmap);
 /* This routine builds a kernel density object from a set of input
    samples and weights
 
@@ -60,6 +61,11 @@ kernel_density* build_kd(double *x, unsigned long ndim,
       INPUT minsplit
          when building the KD tree, no splittings along dimensions <
 	 minsplit will be performed
+      OUTPUT sortmap
+         array of npt elements that, on return, will contain the
+         mapping from the initial position of every input to its final
+         position in the list; if this is not needed, set to NULL when
+         calling
 
    Returns:
       OUTPUT kd
@@ -69,7 +75,8 @@ kernel_density* build_kd(double *x, unsigned long ndim,
 kernel_density* build_kd_sortdims(double *x, unsigned long ndim, 
 				  unsigned long npt, double *wgt,
 				  unsigned long leafsize, double *bandwidth, 
-				  kernel_type ktype, int *nosort);
+				  kernel_type ktype, int *nosort,
+				  unsigned long *sortmap);
 /* This routine builds a kernel density object from a set of input
    samples and weights. It differs from build_kd in that it allows
    users to specify that the tree is only to be sorted in certain
@@ -102,6 +109,11 @@ kernel_density* build_kd_sortdims(double *x, unsigned long ndim,
          array of ndim values; for any dimension for which nosort is
          non-zero, the tree will not be partitioned along that
          dimension
+      OUTPUT sortmap
+         array of npt elements that, on return, will contain the
+         mapping from the initial position of every input to its final
+         position in the list; if this is not needed, set to NULL when
+         calling
 
    Returns:
       OUTPUT kd
