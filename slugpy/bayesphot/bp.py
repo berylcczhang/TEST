@@ -657,7 +657,10 @@ class bp(object):
         # Return result, sorted back into the order of the original
         # data
         idxmap_inv = np.argsort(self.__idxmap)
-        return self.__sample_density[idxmap_inv]
+        if self.__sample_density is not None:
+            return self.__sample_density[idxmap_inv]
+        else:
+            return None
     
 
     @sample_density.setter
