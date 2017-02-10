@@ -127,7 +127,7 @@ class slug_yields {
 
 public:
   // Construct a set of yield tables from files containing them
-  slug_yields(const char *yield_dir);
+  slug_yields(const char *yield_dir, const bool no_decay_ = false);
 
   // Destructor
   ~slug_yields();
@@ -217,6 +217,8 @@ private:
   std::vector<isotope_data> isotopes;    // Isotopes
   array2d sn_yield_tab;			 // Yield table values for SNe	
   array2d wind_yield_tab;		 // Yield table for pre-SN winds
+  const bool no_decay;                   // Flag to turn off radioactive decay
+
   // Isotope indices
   mutable std::map<isotope_data, 
 		   std::vector<double>::size_type> isotope_map;

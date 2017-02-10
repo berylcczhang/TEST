@@ -94,7 +94,8 @@ namespace yields {
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
-slug_yields::slug_yields(const char *yield_dir) {
+slug_yields::slug_yields(const char *yield_dir, bool no_decay_) :
+  no_decay(no_decay_) {
 
   // Read filenames from directory. Assumes all filenames have the format
   // "sI.I.yield_table" where I is an integer (I.I is yield table
@@ -376,7 +377,7 @@ vector<double> slug_yields::yield(const double m,
     yld[i] = gsl_spline_eval(sn_yield[i], m, sn_yield_accel[i]);
     yld[i] += gsl_spline_eval(wind_yield[i], m, wind_yield_accel[i]);
   }
-  if (t_decay > 0) {
+  if (t_decay > 0 && !no_decay) {
     for (vector<double>::size_type i=0; i<niso; i++) {
       if (!isotopes[i].stable())
 	yld[i] *= exp(-t_decay/isotopes[i].ltime());
@@ -409,7 +410,7 @@ slug_yields::yield_unstable(const double m,
     if (!isotopes[i].stable()) {
       yld[ptr] = gsl_spline_eval(sn_yield[i], m, sn_yield_accel[i]);
       yld[ptr] += gsl_spline_eval(wind_yield[i], m, wind_yield_accel[i]);
-      if (t_decay > 0)
+      if (t_decay > 0 && !no_decay)
 	yld[ptr] *= exp(-t_decay/isotopes[i].ltime());
       ptr++;
     }
@@ -466,7 +467,7 @@ double slug_yields::yield(const double m,
   else {
     double yld = gsl_spline_eval(sn_yield[i], m, sn_yield_accel[i]) +
       gsl_spline_eval(wind_yield[i], m, wind_yield_accel[i]);
-    if (!isotopes[i].stable() && (t_decay > 0.0)) {
+    if (!isotopes[i].stable() && (t_decay > 0.0) && !no_decay) {
       yld *= exp(-t_decay / isotopes[i].ltime());
     }
     return yld;
@@ -482,7 +483,7 @@ double slug_yields::yield(const vector<double>& m,
     double yld_tmp =
       gsl_spline_eval(sn_yield[i], m[j], sn_yield_accel[i]) +
       gsl_spline_eval(wind_yield[i], m[j], wind_yield_accel[i]);
-    if (!isotopes[i].stable() && (t_decay.size() > 0)) {
+    if (!isotopes[i].stable() && (t_decay.size() > 0) && !no_decay) {
       yld_tmp *= exp(-t_decay[i]/isotopes[i].ltime());
     }
     yld += yld_tmp;

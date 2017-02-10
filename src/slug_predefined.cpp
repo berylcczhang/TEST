@@ -17,7 +17,7 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // Constructors
 ////////////////////////////////////////////////////////////////////////
-slug_predefined::slug_predefined() : rng(nullptr), known_yields(nullptr)
+slug_predefined::slug_predefined() : rng(nullptr)
 { 
   // Get location of SLUG_DIR
   char *slug_dir_ptr = getenv("SLUG_DIR");
@@ -59,11 +59,17 @@ slug_predefined::slug_predefined() : rng(nullptr), known_yields(nullptr)
   for (vector<string>::size_type i=0; i<predefined_specsyn.size(); i++)
     known_specsyn[predefined_specsyn[i]] = nullptr;
 
-  // Load tiler sets
+  // Load filter sets
   vector<string> predefined_filter_sets = {
     "Lbol", "QH0", "QHe0", "QHe1", "Lbol+QH0", "Lbol+QH0+QHe0+QHe1" };
   for (vector<string>::size_type i=0; i<predefined_filter_sets.size(); i++)
     known_filter_sets[predefined_filter_sets[i]] = nullptr;
+
+  // Load yields
+  vector<string> predefined_yields = {
+    "SNII_Sukhbold16", "SNII_Sukhbold16_nodecay" };
+  for (vector<string>::size_type i=0; i<predefined_yields.size(); i++)
+    known_yields[predefined_yields[i]] = nullptr;
 }
 
 
@@ -103,7 +109,11 @@ slug_predefined::~slug_predefined() {
   }
 
   // Free yields
-  if (known_yields) delete known_yields;
+  for (map<const string, const slug_yields*>::iterator
+	 it = known_yields.begin();
+       it != known_yields.end(); it++) {
+    if (it->second) delete it->second;
+  } 
 }
 
 
@@ -242,10 +252,21 @@ slug_predefined::filter_set(const string& filter_set_name) {
   else return nullptr;
 }
 
-const slug_yields *slug_predefined::yields() {
-  if (!known_yields)
-    known_yields = new slug_yields(yield_dir.string().c_str());
-  return known_yields;
+const slug_yields *slug_predefined::yields(const string& yields_name) {
+  map<const string, const slug_yields*>::iterator it
+    = known_yields.find(yields_name);
+  if (it != known_yields.end()) {
+    if (!known_yields[yields_name]) {
+      if (yields_name == "SNII_Sukhbold16") {
+	known_yields[yields_name]
+	  = new slug_yields(yield_dir.string().c_str());
+      } else if (yields_name == "SNII_Sukhbold16_nodecay") {
+	known_yields[yields_name]
+	  = new slug_yields(yield_dir.string().c_str(), true);
+      }
+    }
+    return known_yields[yields_name];
+  } else return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////

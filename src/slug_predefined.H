@@ -74,7 +74,7 @@ public:
   const slug_tracks* tracks(const std::string& trackname);
   const slug_specsyn* specsyn(const std::string& specsyn_name);
   const slug_filter_set* filter_set(const std::string& filter_set_name);
-  const slug_yields* yields();
+  const slug_yields* yields(const std::string& yields_name);
   
 private:
 
@@ -96,7 +96,7 @@ private:
   std::map<const std::string, const slug_tracks*> known_tracks;
   std::map<const std::string, const slug_specsyn*> known_specsyn;
   std::map<const std::string, const slug_filter_set*> known_filter_sets;
-  slug_yields *known_yields;
+  std::map<const std::string, const slug_yields*> known_yields;
 };
 
 extern slug_predefined slug_predef;
