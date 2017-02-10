@@ -423,10 +423,17 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 
     // Build splines
     const gsl_interp_type *interp_type;
+#if GSLVERSION == 2
+    if (n_uniq >= gsl_interp_type_min_size(gsl_interp_steffen))
+      interp_type = gsl_interp_steffen;
+    else
+      interp_type = gsl_interp_linear;
+#else
     if (n_uniq >= gsl_interp_type_min_size(gsl_interp_akima))
       interp_type = gsl_interp_akima;
     else
       interp_type = gsl_interp_linear;
+#endif
     logcur_mass_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
     logcur_mass_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(logcur_mass_m_interp[i], tracktimes.data(),
@@ -514,10 +521,17 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 
     // Build splines in the time direction
     const gsl_interp_type *interp_type;
+#if GSLVERSION == 2
+    if (ntrack >= gsl_interp_type_min_size(gsl_interp_steffen))
+      interp_type = gsl_interp_steffen;
+    else
+      interp_type = gsl_interp_linear;
+#else
     if (ntrack >= gsl_interp_type_min_size(gsl_interp_akima))
       interp_type = gsl_interp_akima;
     else
       interp_type = gsl_interp_linear;
+#endif
     logcur_mass_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
     logcur_mass_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(logcur_mass_t_interp[j], dist.data(),
@@ -1445,10 +1459,17 @@ slug_tracks::compute_isochrone(const double logt,
   isochrone_logm_lim[0] = logm_tmp.front();
   isochrone_logm_lim[1] = logm_tmp.back();
   const gsl_interp_type *interp_type;
+#if GSLVERSION == 2
+  if (logm_tmp.size() >= gsl_interp_type_min_size(gsl_interp_steffen))
+    interp_type = gsl_interp_steffen;
+  else
+    interp_type = gsl_interp_linear;
+#else
   if (logm_tmp.size() >= gsl_interp_type_min_size(gsl_interp_akima))
     interp_type = gsl_interp_akima;
   else
     interp_type = gsl_interp_linear;
+#endif
   isochrone_logcur_mass 
     = gsl_spline_alloc(interp_type, logm_tmp.size());
   isochrone_logcur_mass_acc = gsl_interp_accel_alloc();
@@ -1620,10 +1641,15 @@ get_isochrone(const double t, const vector<double> &m) const {
       - 0.5*constants::logsigmaSB - 2.0*stars[starptr].logTeff
       - constants::logRsun;
 
-    // Current mass
+    // Current mass; note that we do a safety check here to ensure
+    // current mass does not exceed birth mass; this can happen in
+    // some odd parts of parameter space due to non-linear
+    // interpolation schemes
     stars[starptr].logM = constants::loge *
       gsl_spline_eval(isochrone_logcur_mass, logm, 
 		      isochrone_logcur_mass_acc);
+    if (pow(10.0, stars[starptr].logM) > m[i])
+      stars[starptr].logM = log10(m[i]);
 
     // log g
     stars[starptr].logg = constants::logG + stars[starptr].logM +
