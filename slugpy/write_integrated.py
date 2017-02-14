@@ -77,17 +77,51 @@ def write_integrated(data, model_name, fmt):
             fp.write(("{:<14s}"*9).
                      format('Time', 'TargetMass', 'ActualMass',
                             'LiveMass', 'StellarMass', 'ClusterMass', 
-                            'NumClusters', 'NumDisClust', 'NumFldStar')
-                     + "\n")
+                            'NumClusters', 'NumDisClust', 'NumFldStar',))
+                            
+            vp_i=0   
+            adding_vcols = True                                     
+            while adding_vcols == True:
+                                        
+                if 'VP'+`vp_i` in data._fields:            
+                    fp.write(("{:<14s}"*1).format('VP'+`vp_i`,))
+                    vp_i+=1
+                else:
+                    nvp = vp_i
+                    adding_vcols = False                   
+                    fp.write("\n")            
+                            
             fp.write(("{:<14s}"*9).
                      format('(yr)', '(Msun)', '(Msun)', '(Msun)',
-                            '(Msun)', '(Msun)', '', '', '') + "\n")
+                            '(Msun)', '(Msun)', '', '', '',))
+            vp_i=0   
+            adding_vcols = True  
+            while adding_vcols == True:
+                                        
+                if 'VP'+`vp_i` in data._fields:            
+                    fp.write(("{:<14s}"*1).format('',))
+                    vp_i+=1
+                else:
+                    adding_vcols = False                   
+                    fp.write("\n")
+                            
+                            
+                            
             fp.write(("{:<14s}"*9).
                      format('-----------', '-----------', '-----------',
                             '-----------', '-----------', '-----------',
                             '-----------', '-----------',
-                            '-----------') + "\n")
-
+                            '-----------',))
+            vp_i=0   
+            adding_vcols = True  
+            while adding_vcols == True:
+                                        
+                if 'VP'+`vp_i` in data._fields:            
+                    fp.write(("{:<14s}"*1).format('-----------',))
+                    vp_i+=1
+                else:
+                    adding_vcols = False                   
+                    fp.write("\n")         
             # Write data
             ntime = data.actual_mass.shape[-2]
             ntrial = data.actual_mass.shape[-1]
@@ -97,7 +131,10 @@ def write_integrated(data, model_name, fmt):
                 random_time = False
             for i in range(ntrial):
                 if i != 0:
-                    fp.write("-"*(9*14-3)+"\n")
+                    if nvp == 0:
+                        fp.write("-"*(9*14-3)+"\n")
+                    else:
+                        fp.write("-"*((9+nvp)*14-3)+"\n")
                 for j in range(ntime):
                     if random_time:
                         t_out = data.time[i]
@@ -105,7 +142,7 @@ def write_integrated(data, model_name, fmt):
                         t_out = data.time[j]
                     fp.write(("{:11.5e}   {:11.5e}   {:11.5e}   " +
                               "{:11.5e}   {:11.5e}   {:11.5e}   " +
-                              "{:11d}   {:11d}   {:11d}\n")
+                              "{:11d}   {:11d}   {:11d}")
                              .format(t_out, 
                                      data.target_mass[j,i],
                                      data.actual_mass[j,i],
@@ -115,6 +152,18 @@ def write_integrated(data, model_name, fmt):
                                      data.num_clusters[j,i],
                                      data.num_dis_clusters[j,i],
                                      data.num_fld_stars[j,i]))
+
+
+                    vp_i=0   
+                    adding_vcols = True  
+                    while adding_vcols == True:                                                
+                        if 'VP'+`vp_i` in data._fields:
+                            current_vp=getattr(data, "VP"+`vp_i`)
+                            fp.write("   {:11.5e}".format(current_vp[j,i]))
+                            vp_i+=1
+                        else:
+                            adding_vcols = False                   
+                            fp.write("\n")
 
             # Close
             fp.close()
@@ -126,6 +175,16 @@ def write_integrated(data, model_name, fmt):
             ########################################################
 
             fp = open(model_name+'_integrated_prop.bin', 'wb')
+
+            # Write out number of variable parameters
+            nvp = 0
+            for field in data._fields:
+                if field.startswith("VP"):
+#                    print "FOUND VP",nvp
+                    nvp+=1
+
+            fp.write( struct.pack('i', nvp) )
+
 
             # Write data
             ntime = data.actual_mass.shape[-2]
@@ -150,6 +209,13 @@ def write_integrated(data, model_name, fmt):
                     fp.write(data.num_clusters[j,i])
                     fp.write(data.num_dis_clusters[j,i])
                     fp.write(data.num_fld_stars[j,i])
+                    for field in sorted(data._fields):
+                        if field.startswith("VP"):
+#                           print "WRITING",field," with ",getattr(data, field)[k]
+                            fp.write(getattr(data, field)[j,i])                     
+
+
+
 
             # Close
             fp.close()
@@ -210,8 +276,23 @@ def write_integrated(data, model_name, fmt):
                 fits.Column(name="NumFldStar", format="1K",
                             unit="", 
                             array=np.transpose(data.num_fld_stars).flatten()))
-            fitscols = fits.ColDefs(cols)
+            
+                                        
+            vp_i=0   
+            adding_vcols = True                                     
+            while adding_vcols == True:
+                                        
+                if 'VP'+`vp_i` in data._fields:
+                    cols.append(fits.Column(name="VP"+`vp_i`, format="1D",
+                                        unit="", array=np.transpose(getattr(data, "VP"+`vp_i`) ).flatten() ))
+                    vp_i+=1
+                else:
 
+                    adding_vcols = False  
+            
+            
+            fitscols = fits.ColDefs(cols)
+            
             # Create the binary table HDU
             tbhdu = fits.BinTableHDU.from_columns(fitscols)
 
