@@ -421,7 +421,10 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       }
     }
 
-    // Build splines
+    // Build splines; we use high order interpolation for everything
+    // except current mass; for this we use linear, because it is
+    // important to maintain monotonicity, i.e., the star's mass
+    // should never increase.
     const gsl_interp_type *interp_type;
 #if GSLVERSION == 2
     if (n_uniq >= gsl_interp_type_min_size(gsl_interp_steffen))
@@ -434,7 +437,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     else
       interp_type = gsl_interp_linear;
 #endif
-    logcur_mass_m_interp[i] = gsl_spline_alloc(interp_type, n_uniq);
+    logcur_mass_m_interp[i] = gsl_spline_alloc(gsl_interp_linear, n_uniq);
     logcur_mass_m_acc[i] = gsl_interp_accel_alloc();
     gsl_spline_init(logcur_mass_m_interp[i], tracktimes.data(),
 		    logcur_mass_tmp.data(), n_uniq);
