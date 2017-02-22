@@ -347,7 +347,7 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
   for (offset0 = offset; offset-offset0 < non_stoch_yields.size(); offset++)
     buf_dbl[offset] = non_stoch_yields[offset-offset0];
   slug_stardata *buf_stardata =
-    (slug_stardata *) buf_dbl+offset;
+    (slug_stardata *) (buf_dbl+offset);
   for (offset = 0; offset < stardata.size(); offset++)
     buf_stardata[offset] = stardata[offset];
 }
