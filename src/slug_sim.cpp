@@ -416,17 +416,19 @@ void slug_sim::galaxy_sim() {
     //Check for variable segments
     if (is_imf_var == true)
     {
-
+/*
       cerr << "slug: Variable mode is not currently ready for use in galaxy simulations." << endl;
       exit(1);
-/*
+*/
+
+
       //Draw new values for variable parameters
       //Update IMF segments and recompute weights 
-      vector<double>  pdf_draw_value = imf->vseg_draw();
+      imf_vpdraws = imf->vseg_draw();
       //Reset range restrictions
       imf->set_stoch_lim(pp.get_min_stoch_mass());
  
-*/ 
+ 
     }
 
     // Reset the galaxy
@@ -434,15 +436,30 @@ void slug_sim::galaxy_sim() {
 
     // Write trial separator to ASCII files if operating in ASCII
     // mode
-    if ((out_mode == ASCII) && (i != 0)) {
-      if (pp.get_writeIntegratedProp()) 
-	write_separator(int_prop_file, 9*14-3);
+    if ((out_mode == ASCII) && (i != 0))
+    {
+     
+      if (pp.get_writeIntegratedProp())
+      { 
+        //Write separators
+        int ncol = 9*14-3;      
+	      if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
+	      write_separator(int_prop_file, ncol);
+      }
+
+      unsigned int extrafields = 0;       //Store IMFs in prop file
       unsigned int nfield = 1;
       if (nebular != nullptr) nfield++;
-      if (extinct != nullptr) {
-	nfield++;
-	if (nebular != nullptr) nfield++;
+      if (extinct != nullptr) 
+      {
+	      nfield++;
+	      extrafields++;
+	      if (nebular != nullptr) nfield++;
       } 
+      // Add on IMF fields
+      if (is_imf_var==true) extrafields += (imf_vpdraws.size());
+      
+      
       if (pp.get_writeIntegratedSpec()) 
 	write_separator(int_spec_file, (2+nfield)*14-3);
       if (pp.get_writeIntegratedPhot())
@@ -450,7 +467,7 @@ void slug_sim::galaxy_sim() {
       if (pp.get_writeIntegratedYield())
 	write_separator(int_yield_file, 14*5-3);
       if (pp.get_writeClusterProp())
-	write_separator(cluster_prop_file, (10+nfield)*14-3);
+	write_separator(cluster_prop_file, (10+extrafields)*14-3);
       if (pp.get_writeClusterSpec())
 	write_separator(cluster_spec_file, (4+nfield)*14-3);
       if (pp.get_writeClusterPhot())
@@ -493,10 +510,10 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_prop(int_prop_file, out_mode, i);
+	  galaxy->write_integrated_prop(int_prop_file, out_mode, i, imf_vpdraws);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_integrated_prop(int_prop_fits, i);
+	  galaxy->write_integrated_prop(int_prop_fits, i, imf_vpdraws);
 	}
 #endif
       }
@@ -504,10 +521,10 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_prop(cluster_prop_file, out_mode, i);
+	  galaxy->write_cluster_prop(cluster_prop_file, out_mode, i, imf_vpdraws);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_cluster_prop(cluster_prop_fits, i);
+	  galaxy->write_cluster_prop(cluster_prop_fits, i, imf_vpdraws);
 	}
 #endif
       }
@@ -801,8 +818,20 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "ClusterMass"
 		  << setw(14) << left << "NumClusters"
 		  << setw(14) << left << "NumDisClust"
-		  << setw(14) << left << "NumFldStar"
-		  << endl;
+		  << setw(14) << left << "NumFldStar";
+
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        int_prop_file << setw(14) << left << "VP"+ std::to_string(p);
+      }
+    
+    }		  
+		int_prop_file << endl;
+
     int_prop_file << setw(14) << left << "(yr)"
 		  << setw(14) << left << "(Msun)"
 		  << setw(14) << left << "(Msun)"
@@ -811,8 +840,24 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "(Msun)"
 		  << setw(14) << left << ""
 		  << setw(14) << left << ""
-		  << setw(14) << left << ""
-		  << endl;
+		  << setw(14) << left << "";
+
+
+
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        int_prop_file << setw(14) << left << "";
+      }
+    
+    }      
+		int_prop_file << endl;
+		  
+		  		  
+		  
     int_prop_file << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
@@ -821,15 +866,54 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
-		  << setw(14) << left << "-----------"
-		  << endl;
+		  << setw(14) << left << "-----------";
+
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        int_prop_file << setw(14) << left << "-----------";
+      }
+    
+    }
+      
+    int_prop_file << endl;
+
+
   }
+  
+
+  else if (out_mode == BINARY) 
+  {
+
+      // File starts with an integer for the number of variable parameters
+      if (is_imf_var == true)
+      {
+        int nvps = imf_vpdraws.size();
+        int_prop_file.write((char *) &nvps, sizeof nvps);
+      }
+      else
+      {    
+        int nvps = 0;
+        int_prop_file.write((char *) &nvps, sizeof nvps);    
+      }
+      
+  }  
+  
+  
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
     // Note: this is pretty awkward -- we have to declare a vector of
     // string, then cast them to arrays of char *, because the cfitsio
     // library wants that. Unfortunately this awkwardness is the only
     // way to avoid lots of compiler warnings.
+    
+    
+        
+    int ncol = 10;
+    
     vector<string> ttype_str = 
       { "Trial", "Time", "TargetMass", "ActualMass", "LiveMass", 
 	"StellarMass", "ClusterMass", "NumClusters", "NumDisClust", 
@@ -838,17 +922,36 @@ void slug_sim::open_integrated_prop() {
       { "1K", "1D", "1D", "1D", "1D", "1D", "1D", "1K", "1K", "1K" };
     vector<string> tunit_str = 
       { "Msun", "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "", "" };
-    char *ttype[10], *tform[10], *tunit[10];
 
-    for (int i=0; i<10; i++) {
+    
+    //If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++)
+      {
+        ttype_str.push_back("VP"+std::to_string(p));
+        tform_str.push_back("1D");
+        tunit_str.push_back("");
+        ncol++; 
+      }
+    
+    } 
+      
+      
+    char *ttype[ncol], *tform[ncol], *tunit[ncol];
+
+    for (int i=0; i<ncol; i++) 
+    {
       ttype[i] = const_cast<char*>(ttype_str[i].c_str());
       tform[i] = const_cast<char*>(tform_str[i].c_str());
       tunit[i] = const_cast<char*>(tunit_str[i].c_str());
     }
 
     int fits_status = 0;
-    fits_create_tbl(int_prop_fits, BINARY_TBL, 0, 10,
+    fits_create_tbl(int_prop_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, nullptr, &fits_status);
+    
     
   }
 #endif

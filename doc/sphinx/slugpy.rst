@@ -122,10 +122,11 @@ The ``read_cluster`` function is analogous, except that instead of reading the w
 
 For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).
 
-The following field is present only if SLUG was run with a Variable Mode IMF in a cluster-only simulation:
+The following fields are present only if SLUG was run with a Variable Mode IMF:
 
 * VPx: The value drawn for variable parameter x (0,1,2...) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.
 
+These fields are present in both the cluster and integrated outputs if a simulation has been run using the variable mode IMF.
 
 Full Documentation of slugpy
 ----------------------------

@@ -754,9 +754,11 @@ slug_galaxy::set_yield(const bool del_cluster) {
 void
 slug_galaxy::write_integrated_prop(ofstream& int_prop_file, 
 				   const outputMode out_mode, 
-				   const unsigned long trial) {
+				   const unsigned long trial, const std::vector<double>& imfvp) {
 
   if (out_mode == ASCII) {
+  
+    //ASCII Output
     int_prop_file << setprecision(5) << scientific 
 		  << setw(11) << right << curTime << "   "
 		  << setw(11) << right << targetMass << "   "
@@ -766,9 +768,29 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 		  << setw(11) << right << clusterMass << "   "
 		  << setw(11) << right << clusters.size() << "   "
 		  << setw(11) << right << disrupted_clusters.size() << "   "
-		  << setw(11) << right << field_stars.size()
-		  << endl;
-  } else {
+		  << setw(11) << right << field_stars.size();
+	  
+		//Output any variable parameters  
+		if (imfvp.size()>0)
+    {
+      //Loop over the variable parameters and output
+      for (int p = 0; p<imfvp.size();p++)
+      {
+        int_prop_file << "   " << setw(11) << right << imfvp[p];
+      }
+    
+    }		  
+		
+		int_prop_file << endl;
+		
+		
+  }
+   		    
+		  
+  else {
+  
+    //Binary Output
+    
     int_prop_file.write((char *) &trial, sizeof trial);
     int_prop_file.write((char *) &curTime, sizeof curTime);
     int_prop_file.write((char *) &targetMass, sizeof targetMass);
@@ -782,6 +804,20 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
     int_prop_file.write((char *) &n, sizeof n);
     n = field_stars.size();
     int_prop_file.write((char *) &n, sizeof n);
+    
+    //Write out variable parameter values
+    if (imfvp.size()>0)
+    {
+      //Loop over the variable parameters
+      for (int p = 0; p<imfvp.size();p++)
+      {
+        int_prop_file.write((char *) &imfvp[p], sizeof imfvp[p]);
+      } 
+         
+    }  
+    
+    
+    
   }
 }
 
@@ -792,7 +828,7 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, 
-				   unsigned long trial) {
+				   unsigned long trial, const std::vector<double>& imfvp) {
 
   // Get current number of entries
   int fits_status = 0;
@@ -823,6 +859,22 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits,
   n = field_stars.size();
   fits_write_col(int_prop_fits, TULONG, 10, nrows+1, 1, 1, &n,	 
 		 &fits_status);
+		 
+  if (imfvp.size()>0)
+  {
+    //Loop over the variable parameters
+    int colnum=10;  //Current column number
+    for (int p = 0; p<imfvp.size();p++)
+    {
+      colnum++;
+      double vp_p=imfvp[p];
+      fits_write_col(int_prop_fits, TDOUBLE, colnum, nrows+1, 1, 1, &vp_p,
+		  &fits_status);
+    }
+  
+  }
+		 
+		 
 }
 #endif
 
@@ -832,10 +884,11 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits,
 void
 slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file, 
 				const outputMode out_mode,
-				const unsigned long trial) {
+				const unsigned long trial, const std::vector<double>& imfvp) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
+  
   if (out_mode == BINARY) {
     cluster_prop_file.write((char *) &trial, sizeof trial);
     cluster_prop_file.write((char *) &curTime, sizeof curTime);
@@ -846,7 +899,7 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
   // Now write out each cluster
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_prop(cluster_prop_file, out_mode, trial);
+    (*it)->write_prop(cluster_prop_file, out_mode, trial,false,imfvp);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -855,10 +908,10 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits, 
-				unsigned long trial) {
+				unsigned long trial, const std::vector<double>& imfvp) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
-    (*it)->write_prop(cluster_prop_fits, trial);
+    (*it)->write_prop(cluster_prop_fits, trial,imfvp);
 }
 #endif
 

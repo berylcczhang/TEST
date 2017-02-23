@@ -35,7 +35,7 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 * ``NumClusters``: number of non-disrupted clusters present in the galaxy at this time
 * ``NumDisClust``: number of disrupted clusters present in the galaxy at this time
 * ``NumFldStars``: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter ``min_stoch_mass`` in :ref:`ssec-stellar-keywords`)
-
+* ``VPx``: values drawn for variable parameter ``x`` (0,1,2 etc...); present only if SLUG was run with a variable mode IMF
 
 If ``output_mode`` is ``ascii``, these data are output in a series of columns, with different trials separated by lines of dashes. If ``output_mode`` is ``fits``, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
 
@@ -51,6 +51,11 @@ For ``binary`` output, the file consists of a series of records containing the f
 * ``NumClusters`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
 * ``NumDisClust`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
 * ``NumFldStars`` (``std::vector<double>::size_type``, usually ``unsigned long long``)
+* ``VPx`` (``double``); present only if ``nvps`` is greater than 0, with one entry present for each variable parameter ``x``
+
+The first record in the binary file indicates the number of variable parameters used.
+
+* ``nvps`` (``integer``): the number of variable parameters for the IMF.
 
 There is one record of this form for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
 

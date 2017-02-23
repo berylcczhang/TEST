@@ -90,10 +90,10 @@ public:
   // Output functions
   void write_integrated_prop(std::ofstream& int_prop_file, 
 			     const outputMode out_mode, 
-			     const unsigned long trial);
+			     const unsigned long trial, const std::vector<double>& imfvp = {});
   void write_cluster_prop(std::ofstream& cluster_prop_file, 
 			  const outputMode out_mode,
-			  const unsigned long trial);
+			  const unsigned long trial, const std::vector<double>& imfvp = {});
   void write_integrated_spec(std::ofstream& int_spec_file,
 			     const outputMode out_mode,
 			     const unsigned long trial,
@@ -118,8 +118,8 @@ public:
 
 #ifdef ENABLE_FITS
   // FITS output functions
-  void write_integrated_prop(fitsfile* int_prop_fits, unsigned long trial);
-  void write_cluster_prop(fitsfile* cluster_prop_fits, unsigned long trial);
+  void write_integrated_prop(fitsfile* int_prop_fits, unsigned long trial, const std::vector<double>& imfvp = {});
+  void write_cluster_prop(fitsfile* cluster_prop_fits, unsigned long trial, const std::vector<double>& imfvp = {});
   void write_integrated_spec(fitsfile* int_spec_fits, unsigned long trial,
 			     const bool del_cluster = false);
   void write_cluster_spec(fitsfile* cluster_spec_fits, unsigned long trial);
