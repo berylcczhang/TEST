@@ -196,8 +196,8 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             datstr = 'LddddddQQQ'
             nfield = 10
         else:
+            datstr = 'LdddddQQQ'
             nfield = 9
-            # datstr?
 
         if imf_is_var:
             datstr = datstr + nvps*'d'        
