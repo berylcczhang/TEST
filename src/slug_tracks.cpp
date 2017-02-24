@@ -535,7 +535,7 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     else
       interp_type = gsl_interp_linear;
 #endif
-    logcur_mass_t_interp[j] = gsl_spline_alloc(interp_type, ntrack);
+    logcur_mass_t_interp[j] = gsl_spline_alloc(gsl_interp_linear, ntrack);
     logcur_mass_t_acc[j] = gsl_interp_accel_alloc();
     gsl_spline_init(logcur_mass_t_interp[j], dist.data(),
 		    logcur_mass_tmp.data(), ntrack);
@@ -1474,7 +1474,7 @@ slug_tracks::compute_isochrone(const double logt,
     interp_type = gsl_interp_linear;
 #endif
   isochrone_logcur_mass 
-    = gsl_spline_alloc(interp_type, logm_tmp.size());
+    = gsl_spline_alloc(gsl_interp_linear, logm_tmp.size());
   isochrone_logcur_mass_acc = gsl_interp_accel_alloc();
   int gsl_errstat = 
     gsl_spline_init(isochrone_logcur_mass, logm_tmp.data(),
