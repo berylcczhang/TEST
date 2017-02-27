@@ -107,6 +107,9 @@ public:
   // Lifetime of a star of a specified mass
   double star_lifetime(const double mass) const;
 
+  // Mass at death of a star of a specified starting mass
+  double star_mass_at_death(const double mass) const;
+
   // Remnant mass produced by a star of a given mass; versions that
   // take an age argument return 0 for stars that have not yet died as
   // the specified age

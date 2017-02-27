@@ -224,6 +224,65 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
 }
 
 ////////////////////////////////////////////////////////////////////////
+// Copy constructor
+////////////////////////////////////////////////////////////////////////
+slug_cluster::slug_cluster(const slug_cluster &obj,
+			   const unsigned long id_) :
+  targetMass(obj.targetMass), imf(obj.imf), clf(obj.clf),
+  tracks(obj.tracks), specsyn(obj.specsyn), filters(obj.filters),
+  extinct(obj.extinct), nebular(obj.nebular), yields(obj.yields),
+  integ(obj.integ)
+{
+
+  // Copy ID or set new one
+  if (id_) id = id_;
+  else id = obj.id;
+
+  // Copy data
+  birthMass = obj.birthMass;
+  aliveMass = obj.aliveMass;
+  stochBirthMass = obj.stochBirthMass;
+  stochAliveMass = obj.stochAliveMass;
+  stochRemnantMass = obj.stochRemnantMass;
+  nonStochBirthMass = obj.nonStochBirthMass;
+  nonStochAliveMass = obj.nonStochAliveMass;
+  nonStochRemnantMass = obj.nonStochRemnantMass;
+  formationTime = obj.formationTime;
+  curTime = obj.curTime;
+  clusterAge = obj.clusterAge;
+  lifetime = obj.lifetime;
+  stellarDeathMass = obj.stellarDeathMass;
+  A_V = obj.A_V;
+  Lbol = obj.Lbol;
+  Lbol_ext = obj.Lbol_ext;
+  tot_sn = obj.tot_sn;
+  last_yield_time = obj.last_yield_time;
+  stoch_sn = obj.stoch_sn;
+  is_disrupted = obj.is_disrupted;
+  data_set = obj.data_set;
+  Lbol_set = obj.Lbol_set;
+  spec_set = obj.spec_set;
+  phot_set = obj.phot_set;
+  yield_set = obj.yield_set;
+
+  // Copy vectors
+  stars = obj.stars;
+  dead_stars = obj.dead_stars;
+  L_lambda = obj.L_lambda;
+  phot = obj.phot;
+  L_lambda_ext = obj.L_lambda_ext;
+  phot_ext = obj.phot_ext;
+  L_lambda_neb = obj.L_lambda_neb;
+  phot_neb = obj.phot_neb;
+  L_lambda_neb_ext = obj.L_lambda_neb_ext;
+  phot_neb_ext = obj.phot_neb_ext;
+  all_yields = obj.all_yields;
+  stoch_yields = obj.stoch_yields;
+  non_stoch_yields = obj.non_stoch_yields;
+  stardata = obj.stardata;
+}
+
+////////////////////////////////////////////////////////////////////////
 // Routines to build and manipulate serialized buffers
 ////////////////////////////////////////////////////////////////////////
 size_t
@@ -434,6 +493,9 @@ slug_cluster::reset(bool keep_id) {
 void
 slug_cluster::advance(double time) {
 
+  double stochRemnantMass_save = stochRemnantMass;
+  double aliveMass_save = aliveMass;
+  
   // Make sure we're not trying to go back into the past
   assert(time >= curTime);
 
@@ -553,6 +615,7 @@ slug_cluster::advance(double time) {
 	stochRemnantMass += tracks->remnant_mass(stars[i]);
 	if (yields)
 	  if (yields->produces_sn(stars[i])) stoch_sn++;
+	dead_stars.push_back(stars[i]);
       }
       stars.erase(stars.begin(), stars.begin()+starptr);
 
@@ -570,18 +633,20 @@ slug_cluster::advance(double time) {
 
   // Update all the stellar data to the new isochrone
   set_isochrone();
-
+  
   // Recompute the present-day masses of the surviving stochastic
   // stars using the new isochrone. We sum the masses of stars below
   // the minimum track mass assuming they have no mass loss, and for
   // all other stars we use the present-day mass from the tracks.
   stochAliveMass = 0.0;
   for (vector<double>::size_type i=0; i<stars.size(); i++) { 
-    if (stars[i] >= tracks->min_mass()) break;
+    if (stars[i] >= tracks->min_mass()) {
+      break;
+    }
     stochAliveMass += stars[i];
   }
-  for (vector<slug_stardata>::size_type i=0; i<stardata.size(); i++) 
-    stochAliveMass += exp(stardata[i].logM / constants::loge);
+  for (vector<slug_stardata>::size_type i=0; i<stardata.size(); i++)
+    stochAliveMass += pow(10.0, stardata[i].logM);
 
   // Now do the same calculation for the non-stochastic stars
   nonStochAliveMass = 0.0;
@@ -676,6 +741,20 @@ slug_cluster::advance(double time) {
 
   // Compute the new alive and total stellar masses
   aliveMass = nonStochAliveMass + stochAliveMass;
+
+  if ((stellarMass > 0) &&
+      (stellarMass + 1e-10 - aliveMass - stochRemnantMass < 0)) {
+    cout << "old stellar mass = "
+	 << stellarMass
+	 << ", new stellar mass = "
+	 << aliveMass + stochRemnantMass + nonStochRemnantMass
+	 << ", old remnant mass = " << stochRemnantMass_save
+	 << ", new remnant mass = " << stochRemnantMass
+	 << ", old alive mass = " << aliveMass_save
+	 << ", new alive mass = " << aliveMass
+	 << endl;
+  }
+  
   stellarMass = aliveMass + stochRemnantMass + nonStochRemnantMass;
 }
 

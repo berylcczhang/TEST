@@ -887,32 +887,70 @@ slug_tracks::star_lifetime(const double mass) const {
 }
 
 ////////////////////////////////////////////////////////////////////////
+// Mass at death of a star of a given initial mass
+////////////////////////////////////////////////////////////////////////
+double
+slug_tracks::star_mass_at_death(const double mass) const {
+
+  // Get log of mass and death time
+  double logm = log(mass);
+  double logt = log(star_lifetime(mass));
+
+  // March along outer edge of the track grid, finding which two
+  // indices we are between
+  unsigned int trackptr = ntrack-1;
+  while (logm > logmass[trackptr-1]) trackptr--;
+
+  // Get distance along track to this log mass
+  double dist = 
+    sqrt(pow(logm - logmass[trackptr], 2) +
+	 pow(logt - logtimes[trackptr][ntime-1], 2));
+  if (trackptr != ntrack-1) dist += trackdist[trackptr][ntime-1];
+
+  // Get final mass
+  double final_mass
+    = exp( gsl_spline_eval(logcur_mass_t_interp[ntime-1],
+			   dist, logcur_mass_t_acc[ntime-1]) );
+
+  // Return
+  return final_mass;
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Mass of remnant left by a star of a given mass; for now this is
 // hardcoded to the compilation of Kruijssen (2009). Versions
-// including an age argument return 0 if the star has not yet died.
+// including an age argument return 0 if the star has not yet
+// died. Note that for very massive stars the Kruijssen (2009) formula
+// returns a value larger than the final mass of the star in the
+// tracks; this is just an inconsistency between the tracks and
+// Kruijssen's adopted initial-final mass relation. We test for this
+// case and reduce the remnant mass if necessary, to avoid having a
+// situation where the predicted remnant mass exceeds the mass of the
+// star at death.
 ////////////////////////////////////////////////////////////////////////
 double
 slug_tracks::remnant_mass(const double mass) const {
-  if (mass < 8.0) return 0.109*mass + 0.394;
-  else if (mass < 30) return 0.03636*(mass-8.0) + 1.02;
-  else return 0.06*(mass-30.0) + 8.3;
+  double rem_mass;
+  if (mass < 8.0) rem_mass = 0.109*mass + 0.394;
+  else if (mass < 30) rem_mass = 0.03636*(mass-8.0) + 1.02;
+  else rem_mass = 0.06*(mass-30.0) + 8.3;
+  double final_mass = star_mass_at_death(mass);
+  if (rem_mass < final_mass) return rem_mass;
+  else return final_mass;
 }
 
 double
 slug_tracks::remnant_mass(const double mass, const double age) const {
   if (age < star_lifetime(mass)) return 0.0;
-  else if (mass < 8.0) return 0.109*mass + 0.394;
-  else if (mass < 30) return 0.03636*(mass-8.0) + 1.02;
-  else return 0.06*(mass-30.0) + 8.3;
+  else return remnant_mass(mass);
 }
 
 vector<double>
 slug_tracks::remnant_mass(const vector<double> mass) const {
   vector<double> rmass(mass.size(), 0.0);
   for (std::vector<double>::size_type i=0; i<mass.size(); i++) {
-    if (mass[i] < 8.0) rmass[i] = 0.109*mass[i] + 0.394;
-    else if (mass[i] < 30) rmass[i] = 0.03636*(mass[i]-8.0) + 1.02;
-    else rmass[i] = 0.06*(mass[i]-30.0) + 8.3;
+    rmass[i] = remnant_mass(mass[i]);
   }
   return rmass;
 }
@@ -933,9 +971,7 @@ slug_tracks::remnant_mass(const vector<double> mass,
       dead = !dead;
     }
     if (!dead) continue;
-    else if (mass[i] < 8.0) rmass[i] = 0.109*mass[i] + 0.394;
-    else if (mass[i] < 30) rmass[i] = 0.03636*(mass[i]-8.0) + 1.02;
-    else rmass[i] = 0.06*(mass[i]-30.0) + 8.3;
+    rmass[i] = remnant_mass(mass[i]);
   }
   return rmass;
 }
@@ -1651,8 +1687,9 @@ get_isochrone(const double t, const vector<double> &m) const {
     stars[starptr].logM = constants::loge *
       gsl_spline_eval(isochrone_logcur_mass, logm, 
 		      isochrone_logcur_mass_acc);
-    if (pow(10.0, stars[starptr].logM) > m[i])
+    if (pow(10.0, stars[starptr].logM) > m[i]) {
       stars[starptr].logM = log10(m[i]);
+    }
 
     // log g
     stars[starptr].logg = constants::logG + stars[starptr].logM +

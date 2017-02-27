@@ -76,6 +76,9 @@ public:
 	       const slug_yields *yields_,
 	       const slug_PDF *clf_=NULL);
 
+  // Copy constructor
+  slug_cluster(const slug_cluster &obj, const unsigned long id_ = 0);
+
   // Destructor
   ~slug_cluster() { }
 

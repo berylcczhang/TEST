@@ -54,6 +54,16 @@ public:
   std::vector<double> draw_AV(unsigned long n) const {
     return AVdist->draw(AVdist->get_xMin(), AVdist->get_xMax(), n);
   }
+  std::vector<double> draw_neb_excess_AV(unsigned long n) const {
+    if (neb_excess_AVdist)
+      return neb_excess_AVdist->
+	draw(neb_excess_AVdist->get_xMin(), neb_excess_AVdist->get_xMax(),
+	     n);
+    else {
+      std::vector<double> AV(n);
+      return AV;
+    }
+  }
 
   // Routine to apply extinction to a spectrum, using either the
   // stellar or the nebular grid
