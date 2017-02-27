@@ -45,12 +45,15 @@ public:
   bool get_constantSFR() const;           // Is SFR constant?
   bool get_randomSFR() const;             // Is SFR drawn randomly?
   bool get_constantAV() const;            // Is the A_V constant?
+  bool get_use_neb_excess_extinct() const; // Use nebular excess extinction?
+  bool get_constant_neb_excess_AV() const; // Is nebular excess const?
   bool get_random_output_time() const;    // Are output times random?
   bool get_random_cluster_mass() const;   // Is cluster mass randomly drawn?
   bool get_use_nebular() const;           // Compute nebular emission or not?
   bool nebular_no_metals() const;         // No metals in nebular emission
   double get_SFR() const;                 // SFR value for constant SFR
   double get_AV() const;                  // A_V value for constant A_V
+  double get_neb_excess_AV() const;       // A_V for constant nebular excess
   double get_z() const;                   // Return the redshift
   double get_metallicity() const;         // Metallicity
   double get_WR_mass() const;             // Mass at which WR stars appear
@@ -67,6 +70,7 @@ public:
   const char *get_trackFile() const;      // File containing stellar tracks
   const char *get_extinct_curve() const;  // Extinction curve file name
   const char *get_AV_dist() const;        // A_V distribution file
+  const char *get_neb_excess_AV_dist() const; // Nebular excess A_V file
   const char *get_atmos_dir() const;      // Directory w/atmospehre library
   const char *get_filter_dir() const;     // Directory w/filter library
   const char *get_atomic_dir() const;     // Directory w/atomic data
@@ -118,6 +122,7 @@ private:
   bool outTimesList;                      // Did user give output time list
   double sfr;                             // SFR value for constant SFR
   double A_V;                             // A_V value for constant A_V
+  double neb_excess_A_V;                  // Nebular A_V value
   double z;                               // Redshift
   double metallicity;                     // Metallicity
   double WR_mass;                         // Mass at which WR stars appear
@@ -131,6 +136,7 @@ private:
   bool constantSFR;                       // Is SFR constant?
   bool randomSFR;                         // Is SFR drawn randomly?
   bool constantAV;                        // Is A_V constant?
+  bool constant_neb_excess_AV;            // Is A_V constant?
   bool randomClusterMass;                 // Is cluster mass drawn randomly?
   bool randomOutputTime;                  // Are output times random?
   bool use_nebular;                       // Compute nebular emission or not?
@@ -144,6 +150,7 @@ private:
   bool writeIntegratedSpec;               // Write out integrated spectra?
   bool writeIntegratedYield;              // Write out integrated yields?
   bool use_extinct;                       // Apply extinction?
+  bool use_neb_excess_extinct;            // Apply nebular excess extinction?
   bool run_galaxy_sim;                    // Galaxy sim or cluster sim?
   bool save_seed;                         // Save the rng seed?
   bool read_seed;                         // Read the rng seed?
@@ -159,6 +166,7 @@ private:
   std::string atomic_dir;                 // Directory w/atomic data
   std::string extinct_curve;              // Extinction curve file name
   std::string AV_dist;                    // A_V distribution file name
+  std::string neb_excess_AV_dist;         // Nebular excess A_V file
   std::string yield_dir;                  // Directory w/yield data
   std::string model;                      // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output

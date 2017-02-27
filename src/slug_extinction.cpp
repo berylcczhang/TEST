@@ -56,6 +56,23 @@ slug_extinction(const slug_parmParser& pp,
     AVdist = new slug_PDF(pp.get_AV_dist(), rng);
   }
 
+  // See if we are using differential nebular / stellar extinction. If
+  // so, set up the distribution for the excess nebular extinction.
+  if (pp.get_use_neb_excess_extinct()) {
+    // See if the excess extinction is a constant, and, if so, set it
+    // up as a delta function
+    if (pp.get_constant_neb_excess_AV()) {
+      slug_PDF_delta *AV_neb_seg
+	= new slug_PDF_delta(pp.get_neb_excess_AV(), rng);
+      neb_excess_AVdist = new slug_PDF(AV_neb_seg, rng);
+    } else {
+    // Non-constant excess nebular A_V, so read from PDF file
+      neb_excess_AVdist = new slug_PDF(pp.get_neb_excess_AV_dist(), rng);
+    }
+  } else {
+    neb_excess_AVdist = nullptr;
+  }
+
   // Try to open extinction curve file
   ifstream exfile;
   exfile.open(pp.get_extinct_curve());

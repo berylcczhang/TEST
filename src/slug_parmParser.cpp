@@ -126,6 +126,7 @@ slug_parmParser::setDefaults() {
   save_seed = read_seed = false;
   use_extinct = false;
   use_nebular = true;
+  use_neb_excess_extinct = false;
   neb_no_metals = false;
 
   // Physical model parameters
@@ -286,7 +287,7 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
       } else if (!(tokens[0].compare("a_v"))) {
 	use_extinct = true;
 	try {
-	  // See if the A_V is a number, indicated a constant A_V
+	  // See if the A_V is a number, indicating a constant A_V
 	  A_V = lexical_cast<double>(tokens[1]);
 	  constantAV = true;
 	} catch (const bad_lexical_cast& ia) {
@@ -296,6 +297,17 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	}
       } else if (!(tokens[0].compare("extinction_curve"))) {
 	extinct_curve = tokens[1];
+      } else if (!(tokens[0].compare("a_v_nebular_excess"))) {
+	use_neb_excess_extinct = true;
+	try {
+	  // See if the nebular excess A_V is a number
+	  neb_excess_A_V = lexical_cast<double>(tokens[1]);
+	  constant_neb_excess_AV = true;
+	} catch (const bad_lexical_cast& ia) {
+	  // Not a number, so assume it is a distribution file name
+	  neb_excess_AV_dist = tokens[1];
+	  constant_neb_excess_AV = false;
+	}	
       } else if (!(tokens[0].compare("atomic_data"))) {
 	atomic_dir = tokens[1];
       } else if (!(tokens[0].compare("compute_nebular"))) {
@@ -792,8 +804,13 @@ bool slug_parmParser::get_logTime() const { return logTime; }
 bool slug_parmParser::get_constantSFR() const { return constantSFR; }
 bool slug_parmParser::get_randomSFR() const { return randomSFR; }
 bool slug_parmParser::get_constantAV() const { return constantAV; }
+bool slug_parmParser::get_use_neb_excess_extinct() const
+{ return use_neb_excess_extinct; }
+bool slug_parmParser::get_constant_neb_excess_AV() const
+{ return constant_neb_excess_AV; }
 double slug_parmParser::get_SFR() const { return sfr; }
 double slug_parmParser::get_AV() const { return A_V; }
+double slug_parmParser::get_neb_excess_AV() const { return neb_excess_A_V; }
 double slug_parmParser::get_z() const { return z; }
 double slug_parmParser::get_WR_mass() const { return WR_mass; }
 double slug_parmParser::get_metallicity() const { return metallicity; }
@@ -813,6 +830,8 @@ const char *slug_parmParser::get_extinct_curve() const
 { return extinct_curve.c_str(); }
 const char *slug_parmParser::get_AV_dist() const 
 { return AV_dist.c_str(); }
+const char *slug_parmParser::get_neb_excess_AV_dist() const 
+{ return neb_excess_AV_dist.c_str(); }
 const char *slug_parmParser::get_outtime_dist() const 
 { return out_time_dist.c_str(); }
 const char *slug_parmParser::get_filter_dir() const 

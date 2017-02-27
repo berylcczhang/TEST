@@ -86,6 +86,7 @@ public:
 private:
 
   slug_PDF *AVdist;                // PDF of A_V values
+  slug_PDF *neb_excess_AVdist;     // PDF of nebular excess A_V values
   std::vector<double> lambda_tab;  // Wavelengths in input table
   std::vector<double> kappa_tab;   // Extinction in input table
   std::vector<double> lambda_grd;  // Wavelength grid
