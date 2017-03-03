@@ -949,23 +949,30 @@ void slug_cluster::set_yield() {
   if (yield_set) return;
 
   // Make unstable isotopes decay
-  const vector<isotope_data>& isotopes = yields->get_isotopes();
-  for (vector<double>::size_type i=0; i<stoch_yields.size(); i++) {
-    if (!isotopes[i].stable()) {
-      stoch_yields[i] *= exp(-(curTime-last_yield_time)/isotopes[i].ltime());
+  if (!yields->no_decay) {
+    const vector<isotope_data>& isotopes = yields->get_isotopes();
+    for (vector<double>::size_type i=0; i<stoch_yields.size(); i++) {
+      if (!isotopes[i].stable()) {
+	stoch_yields[i] *= exp(-(curTime-last_yield_time)/isotopes[i].ltime());
+      }
     }
+    last_yield_time = curTime;
   }
-  last_yield_time = curTime;
   
   // Add yield from stars that died; for unstable isotopes, be sure to
   // apply the correct amount of radioactive decay between the star's
   // death time and the current time
   if (dead_stars.size() > 0) {
-    vector<double> decay_time(dead_stars.size());
-    for (vector<double>::size_type i=0; i<dead_stars.size(); i++)
-      decay_time[i] = curTime - formationTime -
-	tracks->star_lifetime(dead_stars[i]);
-    vector<double> star_yields = yields->yield(dead_stars, decay_time);
+    vector<double> star_yields;
+    if (!yields->no_decay) {
+      vector<double> decay_time(dead_stars.size());
+      for (vector<double>::size_type i=0; i<dead_stars.size(); i++)
+	decay_time[i] = curTime - formationTime -
+	  tracks->star_lifetime(dead_stars[i]);
+      star_yields = yields->yield(dead_stars, decay_time);
+    } else {
+      star_yields = yields->yield(dead_stars);
+    }
     for (vector<double>::size_type i=0; i<star_yields.size(); i++)
       stoch_yields[i] += star_yields[i];
   }

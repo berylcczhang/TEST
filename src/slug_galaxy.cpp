@@ -694,24 +694,31 @@ slug_galaxy::set_yield(const bool del_cluster) {
   
   // Make unstable isotopes produced by field stars decay; the cluster
   // update will have already taken care of this for the clusters
-  const vector<isotope_data>& isotopes = yields->get_isotopes();
-  for (vector<double>::size_type i=0; i<stoch_field_yields.size(); i++) {
-    if (!isotopes[i].stable()) {
-      stoch_field_yields[i] *=
-	exp(-(curTime-last_yield_time)/isotopes[i].ltime());
+  if (!yields->no_decay) {
+    const vector<isotope_data>& isotopes = yields->get_isotopes();
+    for (vector<double>::size_type i=0; i<stoch_field_yields.size(); i++) {
+      if (!isotopes[i].stable()) {
+	stoch_field_yields[i] *=
+	  exp(-(curTime-last_yield_time)/isotopes[i].ltime());
+      }
     }
+    last_yield_time = curTime;
   }
-  last_yield_time = curTime;
   
   // Add yields from stochastic field stars that died this time step
   if (dead_field_stars.size() > 0) {
     vector<double> yld_masses(dead_field_stars.size());
-    vector<double> decay_time(dead_field_stars.size());
-    for (vector<double>::size_type i=0; i<dead_field_stars.size(); i++) {
+    for (vector<double>::size_type i=0; i<dead_field_stars.size(); i++)
       yld_masses[i] = dead_field_stars[i].mass;
-      decay_time[i] = curTime - dead_field_stars[i].death_time;
+    vector<double> star_yields;
+    if (!yields->no_decay) {
+      vector<double> decay_time(dead_field_stars.size());
+      for (vector<double>::size_type i=0; i<dead_field_stars.size(); i++)
+	decay_time[i] = curTime - dead_field_stars[i].death_time;
+      star_yields = yields->yield(yld_masses, decay_time);
+    } else {
+      star_yields = yields->yield(yld_masses);
     }
-    vector<double> star_yields = yields->yield(yld_masses, decay_time);
     for (vector<double>::size_type i=0; i<star_yields.size(); i++)
       stoch_field_yields[i] += star_yields[i];
   }
@@ -754,7 +761,8 @@ slug_galaxy::set_yield(const bool del_cluster) {
 void
 slug_galaxy::write_integrated_prop(ofstream& int_prop_file, 
 				   const outputMode out_mode, 
-				   const unsigned long trial, const std::vector<double>& imfvp) {
+				   const unsigned long trial,
+				   const std::vector<double>& imfvp) {
 
   if (out_mode == ASCII) {
   

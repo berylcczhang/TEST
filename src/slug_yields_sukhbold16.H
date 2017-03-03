@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // class slug_yields_sukhbold16
 //
-// This class defines a set of yield tables based on type II SN
+// This class defines a set of yield tables for type II SN
 // nucleosynthesis (including pre-SN mass loss) based on Sukhbold et
 // al., 2016, ApJ, 821, 38.
 //
@@ -32,10 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_yields_snii.H"
 #include "slug_yields_multiple.H"
 #include <vector>
-#include <string>
-#include <cmath>
-#include <map>
-#include <utility>
 #include <boost/multi_array.hpp>
 extern "C" {
 #   include <gsl/gsl_errno.h>

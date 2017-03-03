@@ -17,11 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "constants.H"
 #include "slug_yields_sukhbold16.H"
+#include "slug_isotopes.H"
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <string>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -59,7 +61,7 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
 
   // Issue warning if metallicity is not Solar
   if (metallicity_ != 1.0) {
-    cerr << "slug: warning: Solar-normalied metallicity is "
+    cerr << "slug: warning: Solar-normalized metallicity is "
 	 << metallicity_
 	 << ", but SN type II yield model is sukhbold16, which was "
 	 << "computed for Z = Zsun. Computation will continue."
@@ -249,7 +251,7 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
     if (tokens.size() == 2) has_sn = false;
     else if (tokens.size() == 3) has_sn = true;
     else {
-      cerr << "slug: error: badly formated yield file "
+      cerr << "slug: error: badly formated yield file for sukhbold16 yields: "
 	   << yield_path.string() << endl;
       exit(1);
     }
