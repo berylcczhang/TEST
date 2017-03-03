@@ -35,8 +35,12 @@ extern "C" {
 #include "slug_filter_set.H"
 #include "slug_parmParser.H"
 #include "slug_PDF_delta.H"
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace std;
+using namespace boost;
+using namespace boost::algorithm;
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor without a nebular grid
@@ -82,16 +86,32 @@ slug_extinction(const slug_parmParser& pp,
 	 << pp.get_extinct_curve() << endl;
     exit(1);
   }
-
+  
   // Read the extinction curve file
-  double l, k;
   vector<double> nu, kappa_nu;
-  while (exfile >> l >> k) {
-    lambda_tab.push_back(l);
-    kappa_tab.push_back(k);
-    kappa_nu.push_back(k);
-    nu.push_back(constants::c/(constants::Angstrom*l));
-  }
+  string line;
+  while (getline(exfile, line)) {
+
+    // Skip lines that start with # or are blank
+    trim(line);
+    if (line.length() == 0) continue;
+    if (strncmp(line.c_str(), "#", 1) == 0) continue;
+
+    // Tokenize line
+    vector<string> tokens;
+    split(tokens, line, is_any_of("\t "), token_compress_on);
+
+    // Extract data
+    if (tokens.size() < 2) {
+      cerr << "slug: error: bad line in " << pp.get_extinct_curve()
+	   << ": " << line << endl;
+      exit(1);
+    }
+    lambda_tab.push_back(lexical_cast<double>(tokens[0]));
+    kappa_tab.push_back(lexical_cast<double>(tokens[1]));
+    kappa_nu.push_back(kappa_tab.back());
+    nu.push_back(constants::c/(constants::Angstrom*lambda_tab.back()));
+  }  
   exfile.close();
 
   // Put nu and kappa_nu into ascending order
@@ -186,14 +206,30 @@ slug_extinction(const slug_parmParser& pp,
   }
 
   // Read the extinction curve file
-  double l, k;
   vector<double> nu, kappa_nu;
-  while (exfile >> l >> k) {
-    lambda_tab.push_back(l);
-    kappa_tab.push_back(k);
-    kappa_nu.push_back(k);
-    nu.push_back(constants::c/(constants::Angstrom*l));
-  }
+  string line;
+  while (getline(exfile, line)) {
+
+    // Skip lines that start with # or are blank
+    trim(line);
+    if (line.length() == 0) continue;
+    if (strncmp(line.c_str(), "#", 1) == 0) continue;
+
+    // Tokenize line
+    vector<string> tokens;
+    split(tokens, line, is_any_of("\t "), token_compress_on);
+
+    // Extract data
+    if (tokens.size() < 2) {
+      cerr << "slug: error: bad line in " << pp.get_extinct_curve()
+	   << ": " << line << endl;
+      exit(1);
+    }
+    lambda_tab.push_back(lexical_cast<double>(tokens[0]));
+    kappa_tab.push_back(lexical_cast<double>(tokens[1]));
+    kappa_nu.push_back(kappa_tab.back());
+    nu.push_back(constants::c/(constants::Angstrom*lambda_tab.back()));
+  }  
   exfile.close();
 
   // Put nu and kappa_nu into ascending order
