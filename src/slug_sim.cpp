@@ -28,6 +28,7 @@ namespace std
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 #include "slug_specsyn_sb99.H"
+#include "slug_yields_multiple.H"
 #include <cmath>
 #include <ctime>
 #include <iomanip>
@@ -151,7 +152,9 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield()) {
     if (pp.get_verbosity() > 1)
       std::cout << "slug: reading yield tables" << std::endl;
-    yields = new slug_yields(pp.get_yield_dir());
+    yields = (slug_yields *)
+      new slug_yields_multiple(pp.get_yield_dir(),
+			       pp.get_yieldMode());
   } else {
     yields = nullptr;
   }

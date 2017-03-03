@@ -19,16 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 // class slug_yields
 //
-// This class defines a set of yield tables to be used for the
-// calculation of element yields from stellar nucleosynthesis. It can
-// read yield tables from data files and interpolate on these tables
-// using Steffen interpolation; we use Steffen rather than Akima to
-// ensure that yields are never negative, because Steffen guarantees
-// that no extrema appear between data points.
-//
-// In addition to the class itself, we also define two utility
-// classes, element_data and isotope_data, to facilitate handling
-// nuclear data.
+// This class defines a generic interface to classes that do yield
+// computations. It is pure virtual, since it just defines the
+// interface.
 //
 ////////////////////////////////////////////////////////////////////////
 
@@ -36,198 +29,133 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_yields_H_
 
 #include "slug.H"
-#include <vector>
-#include <string>
-#include <cmath>
+#include "slug_isotopes.H"
 #include <map>
 #include <utility>
-#include <boost/multi_array.hpp>
-extern "C" {
-#   include <gsl/gsl_errno.h>
-#   include <gsl/gsl_interp.h>
-#   include <gsl/gsl_spline.h>
-}
+#include <vector>
 
-typedef boost::multi_array<double, 2> array2d;
-
-////////////////////////////////////////////////////////////////////////
-// Utility classes for describing elements and isotopes, and to
-// facilitate sorting them
-////////////////////////////////////////////////////////////////////////
-class element_data {
-public:
-  element_data(std::string name_, unsigned int number_) : 
-    name(name_), number(number_) {};
-  const std::string& symbol() const { return name; }
-  unsigned int num() const { return number; }
-  inline friend bool 
-  operator<(const element_data& lhs, const element_data& rhs)
-  { return lhs.number < rhs.number; }
-  inline friend bool 
-  operator> (const element_data& lhs, const element_data& rhs)
-  { return rhs < lhs; }
-  inline friend bool 
-  operator<=(const element_data& lhs, const element_data& rhs)
-  { return !(lhs > rhs); }
-  inline friend bool 
-  operator>=(const element_data& lhs, const element_data& rhs)
-  { return !(lhs < rhs); }
-  inline friend bool
-  operator==(const element_data& lhs, const element_data& rhs)
-  { return lhs.number == rhs.number; }
-  inline friend bool
-  operator!=(const element_data& lhs, const element_data& rhs)
-  { return !(lhs == rhs); }
-protected:
-  std::string name;
-  unsigned int number;
-};
-
-class isotope_data : public element_data {
-public:
-  isotope_data(std::string name_, unsigned int number_, 
-	       unsigned int weight_, 
-	       double lifetime_ = std::numeric_limits<double>::infinity()) :
-    element_data(name_, number_), weight(weight_), lifetime(lifetime_) {};
-  unsigned int wgt() const { return weight; }
-  bool stable() const {
-    return !(lifetime < std::numeric_limits<double>::infinity()); }
-  double ltime() const { return lifetime; }
-  double halflife() const { return lifetime/log(2.0); }
-  void set_lifetime(double lifetime_) { this->lifetime = lifetime_; }
-  inline friend bool
-  operator<(const isotope_data& lhs, const isotope_data& rhs)
-  { if (lhs.number == rhs.number) { return lhs.weight < rhs.weight; }
-    else { return lhs.number < rhs.number; } }
-  inline friend bool 
-  operator> (const isotope_data& lhs, const isotope_data& rhs)
-  { return rhs < lhs; }
-  inline friend bool
-  operator<=(const isotope_data& lhs, const isotope_data& rhs)
-  { return !(lhs > rhs); }
-  inline friend bool
-  operator>=(const isotope_data& lhs, const isotope_data& rhs)
-  { return !(lhs < rhs); }
-  inline friend bool
-  operator==(const isotope_data& lhs, const isotope_data& rhs)
-  { return (lhs.number == rhs.number) && (lhs.weight == rhs.weight); }
-  inline friend bool
-  operator!=(const isotope_data& lhs, const isotope_data& rhs)
-  { return !(lhs == rhs); }
-private:
-  unsigned int weight;
-  double lifetime;
-};
-
-
-////////////////////////////////////////////////////////////////////////
-// The slug_yields class
-////////////////////////////////////////////////////////////////////////
 class slug_yields {
 
 public:
-  // Construct a set of yield tables from files containing them
-  slug_yields(const char *yield_dir, const bool no_decay_ = false);
+
+  // Constructor
+  slug_yields(const bool no_decay_ = false) : no_decay(no_decay_) {};
 
   // Destructor
-  ~slug_yields();
+  virtual ~slug_yields() {};
 
-  // Returns the list of isotopes and how many of them there are
+  // Methods to access data on the isotopes we know about
   std::vector<isotope_data>::size_type get_niso() const { return niso; }
   const std::vector<isotope_data>& get_isotopes() const { return isotopes; }
-  const std::vector<isotope_data> get_stable_isotopes() const {
-    std::vector<isotope_data> stable_isotopes;
-    for (std::vector<isotope_data>::size_type i=0; i<isotopes.size(); i++)
-      if (isotopes[i].stable()) stable_isotopes.push_back(isotopes[i]);
-    return stable_isotopes;
-  }
-  const std::vector<isotope_data> get_unstable_isotopes() const {
-    std::vector<isotope_data> unstable_isotopes;
-    for (std::vector<isotope_data>::size_type i=0; i<isotopes.size(); i++)
-      if (!isotopes[i].stable()) unstable_isotopes.push_back(isotopes[i]);
-    return unstable_isotopes;
-  }
+  const std::vector<isotope_data> get_stable_isotopes() const;
+  const std::vector<isotope_data> get_unstable_isotopes() const;
 
-  // Return the minimum and maximum masses in our table of yields
-  double min_mass() const { return mass.front(); }
-  double max_mass() const { return mass.back(); }
+  // Return mass range from which yields are available
+  double min_mass() const { return mmin; }
+  double max_mass() const { return mmax; }
 
-  // Return the yield from stars of specified initial mass; the vector
-  // version returns the sum of the yields from a set of stars; the
-  // alternative versions return the yields only from stable or
-  // unstable isotopes; the optional second argument specifies that
-  // the unstable isotopes should be decreased by an amount
-  // corresponding to decay for a specified time
+  // Return the yield from stars of specified initial mass, or from a
+  // vector of stars
   std::vector<double> yield(const double m,
 			    const double t_decay = 0.0) const;
   std::vector<double> yield(const std::vector<double>& m,
 			    const std::vector<double>& t_decay
 			    = std::vector<double>()) const;
-  std::vector<double> yield_stable(const double m) const;
-  std::vector<double> yield_stable(const std::vector<double>& m) const;
-  std::vector<double> yield_unstable(const double m,
-				     const double t_decay = 0.0) const;
-  std::vector<double> yield_unstable(const std::vector<double>& m,
-				     const std::vector<double>& t_decay
-				     = std::vector<double>()) const;
 
-  // Return the yield of a particular isotope; we have 4 versions of
-  // this function, depending on whether they accept a single scalar
-  // mass or a vector of masses, and on whether the accept an isotope
-  // identified by index or by isotope_data
-  double yield(const double m, const std::vector<double>::size_type i,
-	       const double t_decay = 0.0) const;
-  double yield(const double m, const isotope_data& iso,
+  // Return the yield of a particular isotope, from a single star or a
+  // vector of stars
+  double yield(const double m,
+	       const std::vector<double>::size_type i,
 	       const double t_decay = 0.0) const;
   double yield(const std::vector<double>& m,
 	       const std::vector<double>::size_type i,
 	       const std::vector<double>& t_decay
 	       = std::vector<double>()) const;
+
+  // As a convenience for users, we provide an alternate interface to
+  // the yield function where users can provide either isotope_data or
+  // an atomic number and weight to specify the isotope whose yield
+  // they want. These just wrap the yield functions above.
+  double yield(const double m, const isotope_data& iso,
+	       const double t_decay = 0.0) const {
+    return yield(m, isotope_map.at(iso), t_decay);
+  }
+  double yield(const double m, const unsigned int num,
+	       const unsigned int wgt,
+	       const double t_decay = 0.0) const {
+    return yield(m, isotope_map_za.at(std::make_pair(num, wgt)), t_decay);
+  }
   double yield(const std::vector<double>& m,
 	       const isotope_data& iso,
 	       const std::vector<double>& t_decay
-	       = std::vector<double>()) const;
-
-  // Return the range of masses that produce type II SNe; this is
-  // produced in the form of a vector of masses giving the lower and
-  // upper limits of mass ranges that produce SNe
-  const std::vector<double>& sn_mass_range() const { return sn_mass; }
-
-  // Function to determine if a given mass star produes a type II SN
-  // when it dies
-  bool produces_sn(const double m) const;
-
-  // Function to return the index within the yield table for a
-  // particular isotope, specified by its atomic number and atomic
-  // weight
+	       = std::vector<double>()) const {
+    return yield(m, isotope_map.at(iso), t_decay);
+  }
+  double yield(const std::vector<double>& m,
+	       const unsigned int num, const unsigned int wgt,
+	       const std::vector<double>& t_decay
+	       = std::vector<double>()) const {
+    return yield(m, isotope_map_za.at(std::make_pair(num, wgt)), t_decay);
+  }
+  
+  // Another convenience function for users; this one returns the
+  // mapping between atomic number/weight and index, or between
+  // isotope_data and index
+  std::vector<double>::size_type
+  isotope_index(const isotope_data& iso) const {
+    return isotope_map.at(iso);
+  }
   std::vector<double>::size_type
   isotope_index(unsigned int num, unsigned int wgt) const {
-    return isotope_map1[std::make_pair(num, wgt)];
+    return isotope_map_za.at(std::make_pair(num, wgt));
   }
-   
-private:
 
-  // Data
-  std::vector<double>::size_type nmass;  // Number of masses in yield table
-  std::vector<double>::size_type niso;   // Number of isotopes in table
+  // Virtual methods to be implemented by derived classes. These
+  // methods actually do the basic yield calculation, for all isotopes
+  // or for a single isotope.
+  virtual std::vector<double> get_yield(const double m) const = 0;
+  virtual double get_yield(const double m,
+			   const std::vector<double>::size_type i) const = 0;
+
+  // Methods to return information on SNII and AGB stars. These are
+  // defined here as returning no mass range and false, but are
+  // declared virtual so they can be overridden by derived classes.
+  virtual const std::vector<double>& sn_mass_range() const
+  { return null_mass_range; }
+  virtual const std::vector<double>& agb_mass_range() const
+  { return null_mass_range; }
+  virtual bool produces_sn(const double m) const { return false; }
+  virtual bool produces_agb(const double m) const { return false; }
+
+  // Flag to disable decay of unstable isotopes
+  bool no_decay;
+
+protected:
+
+  // Data on isotopes; these are to be initialized by the derived class
+  std::vector<double>::size_type niso;      // Number of isotopes
   std::vector<double>::size_type nstable;   // Number of stable isotopes
   std::vector<double>::size_type nunstable; // Number of unstable isotopes
-  std::vector<double> sn_mass;           // Mass range that produces SNe
-  std::vector<double> mass;              // Mass of yield table entries
-  std::vector<isotope_data> isotopes;    // Isotopes
-  array2d sn_yield_tab;			 // Yield table values for SNe	
-  array2d wind_yield_tab;		 // Yield table for pre-SN winds
-  const bool no_decay;                   // Flag to turn off radioactive decay
+  std::vector<isotope_data> isotopes;       // List of isotopes
 
-  // Isotope indices
-  mutable std::map<isotope_data, 
-		   std::vector<double>::size_type> isotope_map;
-  mutable std::map<std::pair<unsigned int, unsigned int>,
-		   std::vector<double>::size_type> isotope_map1;
+  // Mappings between isotope data, or between atomic number and
+  // weight, and index in the isotope table. Again, these are to be
+  // instantiated by the derived class. They are declared as mutable
+  // so that we can use the [] operator on them even if they are
+  // attached to a const instance of the derived class.
+  std::map<isotope_data, 
+	   std::vector<double>::size_type> isotope_map;
+  std::map<std::pair<unsigned int, unsigned int>,
+	   std::vector<double>::size_type> isotope_map_za;
 
-  // Interpolation machinery
-  std::vector<gsl_spline *> sn_yield, wind_yield;
-  std::vector<gsl_interp_accel *> sn_yield_accel, wind_yield_accel;
+  // Mass range covered; to be set by derived class
+  double mmin, mmax;
+
+  // Null mass range, delared so we can return const pointers to an
+  // empty vector
+  std::vector<double> null_mass_range;
+  
 };
+
 #endif
 // _slug_yields_H_

@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/random/mersenne_twister.hpp>
 
-// Declare all classes here
+// Declare all slug classes here
 class slug_PDF;
 class slug_PDF_delta;
 class slug_PDF_exponential;
@@ -49,6 +49,9 @@ class slug_specsyn_planck;
 class slug_specsyn_sb99;
 class slug_tracks;
 class slug_yields;
+class slug_yields_agb;
+class slug_yields_multiple;
+class slug_yields_snii;
 
 // Enum for WR star types
 enum WRtype { NONE, WC, WN };
@@ -65,6 +68,10 @@ enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH, SB99 };
 
 // Enum for type of photometry -- this describes what will be returned
 enum photMode { L_NU, L_LAMBDA, AB, STMAG, VEGA };
+
+// Enum of yield models
+enum yieldMode { SNII_SUKHBOLD16, AGB_KARAKAS16,
+		 SNII_SUKHBOLD16__AGB_KARAKAS16 };
 
 // Struct to represent basic data on stars
 typedef struct { 

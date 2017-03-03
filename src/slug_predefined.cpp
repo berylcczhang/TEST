@@ -4,6 +4,7 @@
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 #include "slug_specsyn_sb99.H"
+#include "slug_yields_multiple.H"
 #include "fcntl.h"
 #include <cstdlib>
 #include <ctime>
@@ -258,11 +259,13 @@ const slug_yields *slug_predefined::yields(const string& yields_name) {
   if (it != known_yields.end()) {
     if (!known_yields[yields_name]) {
       if (yields_name == "SNII_Sukhbold16") {
-	known_yields[yields_name]
-	  = new slug_yields(yield_dir.string().c_str());
+	known_yields[yields_name] = (slug_yields *)
+	  new slug_yields_multiple(yield_dir.string().c_str(),
+				   SNII_SUKHBOLD16);
       } else if (yields_name == "SNII_Sukhbold16_nodecay") {
-	known_yields[yields_name]
-	  = new slug_yields(yield_dir.string().c_str(), true);
+	known_yields[yields_name] = (slug_yields *)
+	  new slug_yields_multiple(yield_dir.string().c_str(),
+				   SNII_SUKHBOLD16, true);
       }
     }
     return known_yields[yields_name];

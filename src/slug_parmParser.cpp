@@ -153,6 +153,7 @@ slug_parmParser::setDefaults() {
   path yield_path("yields");
   yield_dir = (lib_path / yield_path).string();
   specsyn_mode = SB99;
+  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16;
   fClust = 1.0;
   min_stoch_mass = 0.0;
   metallicity = -1.0;    // Flag for not set
@@ -282,7 +283,7 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	atmos_dir = tokens[1];
       } else if (!(tokens[0].compare("filters"))) {
 	filter_dir = tokens[1];
-      } else if (!(tokens[0].compare("yields"))) {
+      } else if (!(tokens[0].compare("yield_dir"))) {
 	yield_dir = tokens[1];
       } else if (!(tokens[0].compare("a_v"))) {
 	use_extinct = true;
@@ -406,6 +407,19 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  phot_mode = VEGA;
 	else {
 	  cerr << "slug error: unknown output_mode: " << endl
+	       << line << endl;
+	  exit(1);
+	}
+      } else if (!(tokens[0].compare("yield_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("sukhbold16") == 0)
+	  yield_mode = SNII_SUKHBOLD16;
+	else if (tokens[1].compare("karakas16") == 0)
+	  yield_mode = AGB_KARAKAS16;
+	else if (tokens[1].compare("sukhbold16+karakas16") == 0)
+	  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16;
+	else {
+	  cerr << "slug error: unknown yield_mode: " << endl
 	       << line << endl;
 	  exit(1);
 	}
@@ -715,6 +729,7 @@ slug_parmParser::writeParams() const {
   paramFile << "CLF                  " << clf << endl;
   paramFile << "tracks               " << track << endl;
   paramFile << "atmos_dir            " << atmos_dir << endl;
+  paramFile << "yield_dir            " << yield_dir << endl;
   paramFile << "min_stoch_mass       " << min_stoch_mass << endl;
   paramFile << "redshift             " << z << endl;
   if (metallicity > 0)
@@ -730,6 +745,14 @@ slug_parmParser::writeParams() const {
     paramFile << "kurucz+hillier" << endl;
   } else if (specsyn_mode == SB99) {
     paramFile << "sb99" << endl;
+  }
+  paramFile << "yield_mode           ";
+  if (yield_mode == SNII_SUKHBOLD16) {
+    paramFile << "SNII: Sukhbold+16; AGB: none" << endl;
+  } else if (yield_mode == AGB_KARAKAS16) {
+    paramFile << "SNII: none; AGB: Karakas & Lugaro 2016" << endl;
+  } else if (yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
+    paramFile << "SNII: Sukhbold+16; AGB: Karakas & Lugaro 2016" << endl;
   }
   if (use_extinct) {
     paramFile << "extinction           " << "yes" << endl;
@@ -863,6 +886,7 @@ const { return writeIntegratedYield; }
 outputMode slug_parmParser::get_outputMode() const { return out_mode; }
 specsynMode slug_parmParser::get_specsynMode() const { return specsyn_mode; }
 photMode slug_parmParser::get_photMode() const { return phot_mode; }
+yieldMode slug_parmParser::get_yieldMode() const { return yield_mode; }
 bool slug_parmParser::galaxy_sim() const { return run_galaxy_sim; }
 double slug_parmParser::get_cluster_mass() const { return cluster_mass; }
 bool slug_parmParser::get_random_cluster_mass() const 

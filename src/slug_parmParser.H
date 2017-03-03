@@ -85,7 +85,6 @@ public:
   // Name of nth photometric band
   const std::vector<std::string>& get_photBand() const;
   // Reference to vector of photometric bands
-  photMode get_photMode() const;          // Photometry mode
   bool get_writeClusterProp() const;      // Write cluster phys properties?
   bool get_writeClusterPhot() const;      // Write cluster photometry?
   bool get_writeClusterSpec() const;      // Write cluster spectra?
@@ -95,8 +94,10 @@ public:
   bool get_writeIntegratedSpec() const;   // Write integrated spectra?
   bool get_writeIntegratedYield() const;  // Write integrated yields?
   bool get_use_extinct() const;           // Apply extinction?
+  photMode get_photMode() const;          // Photometry mode
   outputMode get_outputMode() const;      // Output mode
   specsynMode get_specsynMode() const;    // Spectral synthesis mode
+  yieldMode get_yieldMode() const;        // Yield mode
   bool galaxy_sim() const;                // Galaxy sim or cluster sim?
   double get_cluster_mass() const;        // Cluster mass for cluster sims
   unsigned int get_rng_offset() const;    // Offset for rng
@@ -115,6 +116,7 @@ private:
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode
   photMode phot_mode;                     // Photometry mode
+  yieldMode yield_mode;                   // Yield mode
   double startTime;                       // Time of first output
   double timeStep;                        // Size of timestep
   double endTime;                         // Final time
