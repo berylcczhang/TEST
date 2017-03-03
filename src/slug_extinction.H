@@ -29,6 +29,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "slug.H"
 #include "slug_PDF.H"
+extern "C" {
+#   include <gsl/gsl_interp.h>
+#   include <gsl/gsl_spline.h>
+}
 
 class slug_extinction {
 
@@ -94,6 +98,13 @@ public:
   { return offset_neb; }
 
 private:
+
+  // Initialization routine, stuff common to cases with and without
+  // nebular grid
+  void init(const slug_parmParser& pp,
+	    const std::vector<double> &lambda_in,
+	    rng_type *rng, gsl_spline **kappa_spline,
+	    gsl_interp_accel **kappa_acc);
 
   slug_PDF *AVdist;                // PDF of A_V values
   slug_PDF *neb_excess_AVdist;     // PDF of nebular excess A_V values
