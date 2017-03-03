@@ -52,6 +52,7 @@ class slug_yields_sukhbold16 : public slug_yields_snii {
 public:
   // Construct a set of yield tables from files containing them
   slug_yields_sukhbold16(const char *yield_dir,
+			 const double metallicity_,
 			 const bool no_decay_ = false);
 
   // Destructor

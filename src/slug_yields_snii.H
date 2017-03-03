@@ -39,7 +39,9 @@ class slug_yields_snii : public slug_yields {
 public:
 
   // Constructor
-  slug_yields_snii(bool no_decay_ = false) : slug_yields(no_decay_) {}
+  slug_yields_snii(const double metallicity_,
+		   const bool no_decay_ = false) :
+    slug_yields(metallicity_, no_decay_) {}
   
   // Destructor
   virtual ~slug_yields_snii() {};

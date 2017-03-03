@@ -32,8 +32,8 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 slug_yields_multiple::
 slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
-		     const bool no_decay_) :
-  slug_yields(no_decay_) {
+		     const double metallicity_, const bool no_decay_) :
+  slug_yields(metallicity_, no_decay_) {
 
   // Initialize SNII yields
   path yield_dirname(yield_dir);
@@ -41,7 +41,8 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
       yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
     path snii_path = yield_dirname / path("SNII_Sukhbold16");
     yields_snii = (slug_yields_snii *)
-      new slug_yields_sukhbold16(snii_path.c_str());
+      new slug_yields_sukhbold16(snii_path.c_str(), metallicity_,
+				 no_decay_);
   } else {
     yields_snii = nullptr;
   }
@@ -51,7 +52,7 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
       yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
     //path agb_path = yield_dirname / path("AGB_Karakas16");
     //yields_agb = (slug_yields_agb *)
-    //  new slug_yields_karakas(agb_path.c_str());
+    //  new slug_yields_karakas(agb_path.c_str(), metallicity_);
     yields_agb = nullptr;
   } else {
     yields_agb = nullptr;

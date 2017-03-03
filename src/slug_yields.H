@@ -39,7 +39,8 @@ class slug_yields {
 public:
 
   // Constructor
-  slug_yields(const bool no_decay_ = false) : no_decay(no_decay_) {};
+  slug_yields(const double metallicity_, const bool no_decay_ = false)
+    : no_decay(no_decay_), metallicity(metallicity_) {};
 
   // Destructor
   virtual ~slug_yields() {};
@@ -150,6 +151,9 @@ protected:
 
   // Mass range covered; to be set by derived class
   double mmin, mmax;
+
+  // Metallicity
+  double metallicity;
 
   // Null mass range, delared so we can return const pointers to an
   // empty vector

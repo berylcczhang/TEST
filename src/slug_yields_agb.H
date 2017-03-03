@@ -37,7 +37,12 @@ class slug_yields_agb : public slug_yields {
   friend class slug_yields_multiple;
 
 public:
-  
+
+  // Constructor
+  slug_yields_agb(const double metallicity_,
+		   const bool no_decay_ = false) :
+    slug_yields(metallicity_, no_decay_) {}
+
   // Destructor
   virtual ~slug_yields_agb() {};
 

@@ -53,9 +53,19 @@ namespace yields {
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_yields_sukhbold16::
-slug_yields_sukhbold16(const char *yield_dir, bool no_decay_) :
-  slug_yields_snii(no_decay_) {
+slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
+		       bool no_decay_) :
+  slug_yields_snii(metallicity_, no_decay_) {
 
+  // Issue warning if metallicity is not Solar
+  if (metallicity_ != 1.0) {
+    cerr << "slug: warning: Solar-normalied metallicity is "
+	 << metallicity_
+	 << ", but SN type II yield model is sukhbold16, which was "
+	 << "computed for Z = Zsun. Computation will continue."
+	 << endl;
+  }
+  
   // Read filenames from directory. Assumes all filenames have the format
   // "sI.I.yield_table" where I is an integer (I.I is yield table
   // mass).

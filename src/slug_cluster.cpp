@@ -493,9 +493,6 @@ slug_cluster::reset(bool keep_id) {
 void
 slug_cluster::advance(double time) {
 
-  double stochRemnantMass_save = stochRemnantMass;
-  double aliveMass_save = aliveMass;
-  
   // Make sure we're not trying to go back into the past
   assert(time >= curTime);
 
@@ -741,20 +738,6 @@ slug_cluster::advance(double time) {
 
   // Compute the new alive and total stellar masses
   aliveMass = nonStochAliveMass + stochAliveMass;
-
-  if ((stellarMass > 0) &&
-      (stellarMass + 1e-10 - aliveMass - stochRemnantMass < 0)) {
-    cout << "old stellar mass = "
-	 << stellarMass
-	 << ", new stellar mass = "
-	 << aliveMass + stochRemnantMass + nonStochRemnantMass
-	 << ", old remnant mass = " << stochRemnantMass_save
-	 << ", new remnant mass = " << stochRemnantMass
-	 << ", old alive mass = " << aliveMass_save
-	 << ", new alive mass = " << aliveMass
-	 << endl;
-  }
-  
   stellarMass = aliveMass + stochRemnantMass + nonStochRemnantMass;
 }
 

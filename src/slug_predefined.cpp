@@ -261,11 +261,11 @@ const slug_yields *slug_predefined::yields(const string& yields_name) {
       if (yields_name == "SNII_Sukhbold16") {
 	known_yields[yields_name] = (slug_yields *)
 	  new slug_yields_multiple(yield_dir.string().c_str(),
-				   SNII_SUKHBOLD16);
+				   SNII_SUKHBOLD16, 1.0);
       } else if (yields_name == "SNII_Sukhbold16_nodecay") {
 	known_yields[yields_name] = (slug_yields *)
 	  new slug_yields_multiple(yield_dir.string().c_str(),
-				   SNII_SUKHBOLD16, true);
+				   SNII_SUKHBOLD16, 1.0, true);
       }
     }
     return known_yields[yields_name];

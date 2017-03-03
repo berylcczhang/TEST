@@ -154,7 +154,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
       std::cout << "slug: reading yield tables" << std::endl;
     yields = (slug_yields *)
       new slug_yields_multiple(pp.get_yield_dir(),
-			       pp.get_yieldMode());
+			       pp.get_yieldMode(),
+			       tracks->get_metallicity());
   } else {
     yields = nullptr;
   }
@@ -168,27 +169,31 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (imf->get_xMin() < tracks->min_mass()*(1.0-1.0e-10)) {
     cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
 	 << " Msun < minimum evolution track mass " << tracks->min_mass()
-	 << " Msun." << endl;
-    cerr << "slug: warning: Calculation will proceed, but stars with mass "
+	 << " Msun. Calculation will proceed, but stars with mass "
 	 << imf->get_xMin() << " Msun to " << tracks->min_mass()
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
   if (imf->get_xMax() > tracks->max_mass()*(1.0+1.0e-10)) {
     cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
 	 << " Msun > maximum evolution track mass " << tracks->max_mass()
-	 << " Msun." << endl;
-    cerr << "slug: warning: Calculation will proceed, but stars with mass "
+	 << " Msun. Calculation will proceed, but stars with mass "
 	 << tracks->max_mass() << " Msun to " << imf->get_xMax()
 	 << " Msun will be treated as having zero luminosity." << endl;
   }
   
   // Ditto for IMF and yield table
   if (yields) {
+    if (imf->get_xMin() < yields->min_mass()*(1.0-1.0e-10)) {
+      cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
+	   << " Msun < minimum yield table mass " << yields->min_mass()
+	   << " Msun. Calculation will proceed, but stars with mass "
+	   << imf->get_xMin() << " Msun to " << yields->min_mass()
+	   << " Msun will be treated as having zero yield." << endl;
+    }
     if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10)) {
       cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
 	   << " Msun > maximum yield table mass " << yields->max_mass()
-	   << " Msun." << endl;
-      cerr << "slug: warning: Calculation will proceed, but stars with mass "
+	   << " Msun. Calculation will proceed, but stars with mass "
 	   << yields->max_mass() << " Msun to " << imf->get_xMax()
 	   << " Msun will be treated as having zero yield." << endl;
     }

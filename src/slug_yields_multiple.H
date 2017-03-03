@@ -40,8 +40,10 @@ class slug_yields_multiple : public slug_yields {
 
 public:
   // Construct a holder for yields
-  slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
-	      const bool no_decay_ = false);
+  slug_yields_multiple(const char *yield_dir,
+		       const yieldMode yield_mode,
+		       const double metallicity_,
+		       const bool no_decay_ = false);
 
   // Destructor
   ~slug_yields_multiple();
