@@ -21,46 +21,46 @@ This repository contains SLUG v2. SLUG v1 is available at <http://www.slugsps.co
 * A cleaner, easier-to-use control file structure
 * Greater flexibility in output and output formatting (ASCII, binary, or FITS)
 * Python helper routines for parsing output (replacing the older IDL routines used by SLUG v1)
-* The ability to apply stochastically-selected extinctions to the predicted light output
+* The ability to apply stochastically-selected extinctions to the predicted light output, including diffential stellar and nebular extinction
 * Quick estimation of the nebular contribution to spectra and photometry
 * An automated interface to couple the code to [cloudy](http://nublado.org) in order to provide much more accurate predictions of nebular emission
-* A suite a Bayesian estimator tools that can be used to derive posterior probabilities on star formation rates and star cluster properties from libraries of SLUG simulations.
+* A suite of Bayesian estimator tools that can be used to derive posterior probabilities on star formation rates and star cluster properties from libraries of SLUG simulations.
 
 SLUG v1 will no longer be maintained, so all users are encouraged to migrate to SLUG v2 as soon as possible.
 
 ### Layout of the repository ###
 
-The SLUG repository contains several subdirectories.
+The SLUG repository contains several subdirectories, whose contents are as follows:
 
 * *bin*: this contains the slug source code when it is compiled, as well as the parallel wrapper python script
-* *cloudy_slug*: this contains the code for the interface to [cloudy](http://nublado.org)
-* *cluster_slug*: contains example code and data for cluster_slug
-* *doc*: this contains documentation for the code
+* *cloudy_slug*: code for the interface to [cloudy](http://nublado.org)
+* *cluster_slug*: example code and data for cluster_slug
+* *doc*: documentation for the code
     - *doc/html*: documentation in html format
     - *doc/latex*: documentation in latex/pdf format
     - *doc/sphinx*: source for documentation in sphinx/rst format
-* *lib*: this contains the data files required by the code
-    - *lib/atmospheres*: contains stellar atmosphere models
-    - *lib/atomic*: contains atomic data files
-    - *lib/avdist*: contains predefined distributions of visual extinction
-    - *lib/clf*: contains predefined star cluster lifetime functions
-    - *lib/cmf*: contains predefined star cluster mass fuctions
-    - *lib/extinct*: contains predefined extinction curves
-    - *lib/filters*: contains predefined photometric filters
-    - *lib/imf*: contains predefined initial mass functions
-    - *lib/tracks*: contains stellar evolution tracks
-    - *lib/yields*: contains chemical yield tables
-* *output*: this is the default location for writing output
-* *param*: this is the default location for parameter files that control slug simulations
-* *sfr_slug*: contains example code and data for sfr_slug
+* *lib*: data files required by the code
+    - *lib/atmospheres*: stellar atmosphere models
+    - *lib/atomic*: atomic data files
+    - *lib/avdist*: predefined distributions of visual extinction
+    - *lib/clf*: predefined star cluster lifetime functions
+    - *lib/cmf*: predefined star cluster mass fuctions
+    - *lib/extinct*: predefined extinction curves
+    - *lib/filters*: predefined photometric filters
+    - *lib/imf*: predefined initial mass functions
+    - *lib/tracks*: stellar evolution tracks
+    - *lib/yields*: chemical yield tables
+* *param*: default location for parameter files that control slug simulations; example files are provided
+* *sfr_slug*: example code and data for sfr_slug
 * *slugpy*: this contains the python module slugpy, which includes routines for parsing and manipulating simulation outputs
-    - *slugpy/bayesphot*: contains python routines to do Bayesian estimation of physical properties from photometry
-      - *slugpy/bayesphot/bayesphot_c*: contains source code for c extensions to slugpy/bayesphot
-    - *slugpy/cloudy*: contains parsing routines related to the [cloudy](http://nublado.org) interface
-    - *slugpy/cluster_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star cluster properties
-    - *slugpy/sfr_slug*: contains tools for using a suite of SLUG simulations to do Bayesian inference of star formation rates
-* *src*: this contains the main source code for SLUG
-* *test*: this contains test scripts
+    - *slugpy/bayesphot*: python routines to do Bayesian estimation of physical properties from photometry
+      - *slugpy/bayesphot/bayesphot_c*: source code for c extensions to slugpy/bayesphot
+    - *slugpy/cloudy*: parsing routines related to the [cloudy](http://nublado.org) interface
+    - *slugpy/cluster_slug*: tools for using a suite of SLUG simulations to do Bayesian inference of star cluster properties
+    - *slugpy/sfr_slug*: tools for using a suite of SLUG simulations to do Bayesian inference of star formation rates
+* *src*: the main source code for SLUG
+* *test*: test scripts
+* *tools*: utility tools for manipulating input and output files
 
 ### Installing and configuring ###
 
