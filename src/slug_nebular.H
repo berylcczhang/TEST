@@ -95,6 +95,15 @@ public:
   interp_stellar(const std::vector<double> &L_lambda_star,
 		 const std::vector<double>::size_type offset = 0) const;
 
+  // Routine to add stellar and nebular spectra on their respective
+  // grids, properly subtracting the stellar spectrum above 1 Ryd
+  std::vector<double>
+  add_stellar_nebular_spec(const std::vector<double> &L_lambda_star,
+			   const std::vector<double> &L_lambda_neb,
+			   const std::vector<double>::size_type off_star = 0,
+			   const std::vector<double>::size_type off_neb = 0)
+    const;
+
   // Routines to get the emission per ionizing photon from free-free,
   // bound-free, 2-photon, H recombination lines, metal lines; for
   // metal lines, age index is which cloudy age to use; values < 0

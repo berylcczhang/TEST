@@ -110,10 +110,10 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 * ``metallicity``: metallicity of the stellar population, relative to solar. This may be omitted if ``tracks`` is set to one of the default sets of tracks that ships with SLUG, as the metallicities for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.
 * ``WR_mass``: minimum starting mass that stars must have in order to pass through a Wolf-Rayet phase. This can be omitted if ``tracks`` is set to one of the default sets of tracks that ships with SLUG, as the WR cutoff masses for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.
 
-.. _ssec-ism-keywords:
+.. _ssec-extinction-keywords:
 
-Interstellar Medium Model Keywords
-----------------------------------
+Extinction Keywords
+-------------------
 
 * ``A_V`` (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter ``A_V`` is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value :math:`A_V`, in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in :ref:`sec-pdfs`, specifying the probability distribution of :math:`A_V` values, in mag.
 * ``extinction_curve`` (default: ``lib/extinct/SB_ATT_SLUG.dat``) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction :math:`\kappa_\nu` at that wavelength / frequency in :math:`\mathrm{cm}^2`. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see :ref:`ssec-spec-phot`). SLUG ships with the following extinction curves (all in ``lib/extinct``):
@@ -121,6 +121,13 @@ Interstellar Medium Model Keywords
    * ``MW_EXT_SLUG.dat`` : MW extinction curve; optical-UV from `Fitzpatrick, E. L., 1999 PASP, 111, 63 <http://adsabs.harvard.edu/abs/1999PASP..111...63F>`_, IR from `Landini, M., et al., 1984, A&A, 134, 284 <http://adsabs.harvard.edu/abs/1984A%26A...134..284L>`_; parts combined by D. Calzetti
    * ``SB_ATT_SLUG.dat`` : "starburst" extinction curve from `Calzetti, D., et al., 2000, ApJ, 533, 682 <http://adsabs.harvard.edu/abs/2000ApJ...533..682C>`_
    * ``SMC_EXT_SLUG.dat`` : SMC extinction curve from `Bouchet, P., et al., 1985, A&A, 149, 330 <http://adsabs.harvard.edu/abs/1985A%26A...149..330B>`_
+* ``nebular_extinction_factor`` (default: 1.0): nebular extinction excess factor. This parameter specifies the ratio of the extinction applied to the nebular light to that applied to the starlight, i.e., it gives :math:`f_{\mathrm{neb,ex}} = A_{V,\mathrm{neb}} / A_{V,*}`, as defined in :ref:`ssec-extinction`. As with ``A_V``, this parameter can be set either to a real number, in which case this ratio is treated as constant and equal to the input number, or to the name of a PDF file that specified the distribution of this ratio, formatted as described in :ref:`sec-pdfs`. If this keyword is omitted entirely, the nebular and stellar extinctions are set equal to one another.
+
+.. _ssec-nebular-keywords:
+
+Nebular Keywords
+----------------
+ 
 * ``compute_nebular`` (default: ``1``): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.
 * ``atomic_data`` (default: ``lib/atomic/``): directory where the atomic data used for nebular emission calculations is located
 * ``nebular_no_metals`` (default: 0): if set to 1, metal lines are not used when computing nebular emission

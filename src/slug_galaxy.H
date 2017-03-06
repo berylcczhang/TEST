@@ -179,6 +179,7 @@ private:
   std::vector<slug_star> dead_field_stars; // Field stars that died this time step
   std::vector<slug_stardata> field_data; // Field star data
   std::vector<double> field_star_AV;  // Field star extinctions
+  std::vector<double> field_star_AV_neb;  // Field star nebular extinctions
   std::list<slug_cluster *> disrupted_clusters; // Disrupted clusters
   std::list<slug_cluster *> clusters; // Cluster list
   std::vector<double> L_lambda;       // Specific luminosity of galaxy

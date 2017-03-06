@@ -164,8 +164,8 @@
 </li>
 </ul>
 </div>
-<div class="section" id="interstellar-medium-model-keywords">
-<span id="ssec-ism-keywords"></span><h2>Interstellar Medium Model Keywords<a class="headerlink" href="#interstellar-medium-model-keywords" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="extinction-keywords">
+<span id="ssec-extinction-keywords"></span><h2>Extinction Keywords<a class="headerlink" href="#extinction-keywords" title="Permalink to this headline">¶</a></h2>
 <ul>
 <li><p class="first"><code class="docutils literal"><span class="pre">A_V</span></code> (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter <code class="docutils literal"><span class="pre">A_V</span></code> is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value <span class="math">\(A_V\)</span>, in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span>Probability Distribution Functions</span></a>, specifying the probability distribution of <span class="math">\(A_V\)</span> values, in mag.</p>
 </li>
@@ -180,20 +180,20 @@
 </dd>
 </dl>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">compute_nebular</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.</p>
+<li><p class="first"><code class="docutils literal"><span class="pre">nebular_extinction_factor</span></code> (default: 1.0): nebular extinction excess factor. This parameter specifies the ratio of the extinction applied to the nebular light to that applied to the starlight, i.e., it gives <span class="math">\(f_{\mathrm{neb,ex}} = A_{V,\mathrm{neb}} / A_{V,*}\)</span>, as defined in <a class="reference internal" href="intro.html#ssec-extinction"><span>Extinction</span></a>. As with <code class="docutils literal"><span class="pre">A_V</span></code>, this parameter can be set either to a real number, in which case this ratio is treated as constant and equal to the input number, or to the name of a PDF file that specified the distribution of this ratio, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span>Probability Distribution Functions</span></a>. If this keyword is omitted entirely, the nebular and stellar extinctions are set equal to one another.</p>
 </li>
-<li><p class="first"><code class="docutils literal"><span class="pre">atomic_data</span></code> (default: <code class="docutils literal"><span class="pre">lib/atomic/</span></code>): directory where the atomic data used for nebular emission calculations is located</p>
-</li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_no_metals</span></code> (default: 0): if set to 1, metal lines are not used when computing nebular emission</p>
-</li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_den</span></code> (default: <code class="docutils literal"><span class="pre">1e2</span></code>): hydrogen number density in <span class="math">\(\mathrm{cm}^{-3}\)</span> to use in nebular emission computations</p>
-</li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_temp</span></code> (default: <code class="docutils literal"><span class="pre">-1</span></code>): gas kinetic temperature in K to use in nebular emission computations; if set to non-positive value, the temperature will be determined via the lookup table of cloudy runs for fully sampled IMFs</p>
-</li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_logU</span></code> (default: <code class="docutils literal"><span class="pre">-3</span></code>): log of dimensionless volume-weighted ionization parameter to assume when computing metal line emission and HII region temperatures from the tabulated cloudy data. At present the allowed values are -3, -2.5, and -2.</p>
-</li>
-<li><p class="first"><code class="docutils literal"><span class="pre">nebular_phi</span></code> (default: <code class="docutils literal"><span class="pre">0.73</span></code>): fraction of ionizing photons absorbed by H atoms rather than being absorbed by dust grains or rescaping; the default value of <code class="docutils literal"><span class="pre">0.73</span></code>, taken from <a class="reference external" href="http://adsabs.harvard.edu/abs/1997ApJ...476..144M">McKee &amp; Williams (1997, ApJ, 476, 144)</a> means that 73% of ionizing photons are absorbed by H</p>
-</li>
+</ul>
+</div>
+<div class="section" id="nebular-keywords">
+<span id="ssec-nebular-keywords"></span><h2>Nebular Keywords<a class="headerlink" href="#nebular-keywords" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">compute_nebular</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.</li>
+<li><code class="docutils literal"><span class="pre">atomic_data</span></code> (default: <code class="docutils literal"><span class="pre">lib/atomic/</span></code>): directory where the atomic data used for nebular emission calculations is located</li>
+<li><code class="docutils literal"><span class="pre">nebular_no_metals</span></code> (default: 0): if set to 1, metal lines are not used when computing nebular emission</li>
+<li><code class="docutils literal"><span class="pre">nebular_den</span></code> (default: <code class="docutils literal"><span class="pre">1e2</span></code>): hydrogen number density in <span class="math">\(\mathrm{cm}^{-3}\)</span> to use in nebular emission computations</li>
+<li><code class="docutils literal"><span class="pre">nebular_temp</span></code> (default: <code class="docutils literal"><span class="pre">-1</span></code>): gas kinetic temperature in K to use in nebular emission computations; if set to non-positive value, the temperature will be determined via the lookup table of cloudy runs for fully sampled IMFs</li>
+<li><code class="docutils literal"><span class="pre">nebular_logU</span></code> (default: <code class="docutils literal"><span class="pre">-3</span></code>): log of dimensionless volume-weighted ionization parameter to assume when computing metal line emission and HII region temperatures from the tabulated cloudy data. At present the allowed values are -3, -2.5, and -2.</li>
+<li><code class="docutils literal"><span class="pre">nebular_phi</span></code> (default: <code class="docutils literal"><span class="pre">0.73</span></code>): fraction of ionizing photons absorbed by H atoms rather than being absorbed by dust grains or rescaping; the default value of <code class="docutils literal"><span class="pre">0.73</span></code>, taken from <a class="reference external" href="http://adsabs.harvard.edu/abs/1997ApJ...476..144M">McKee &amp; Williams (1997, ApJ, 476, 144)</a> means that 73% of ionizing photons are absorbed by H</li>
 </ul>
 </div>
 <div class="section" id="photometric-filter-keywords">
@@ -244,7 +244,8 @@
 <li><a class="reference internal" href="#simulation-control-keywords">Simulation Control Keywords</a></li>
 <li><a class="reference internal" href="#output-control-keywords">Output Control Keywords</a></li>
 <li><a class="reference internal" href="#stellar-model-keywords">Stellar Model Keywords</a></li>
-<li><a class="reference internal" href="#interstellar-medium-model-keywords">Interstellar Medium Model Keywords</a></li>
+<li><a class="reference internal" href="#extinction-keywords">Extinction Keywords</a></li>
+<li><a class="reference internal" href="#nebular-keywords">Nebular Keywords</a></li>
 <li><a class="reference internal" href="#photometric-filter-keywords">Photometric Filter Keywords</a></li>
 </ul>
 </li>

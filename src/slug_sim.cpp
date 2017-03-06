@@ -421,22 +421,13 @@ void slug_sim::galaxy_sim() {
 		<< pp.get_nTrials() << std::endl;
 
 
-    //Check for variable segments
-    if (is_imf_var == true)
-    {
-/*
-      cerr << "slug: Variable mode is not currently ready for use in galaxy simulations." << endl;
-      exit(1);
-*/
-
-
-      //Draw new values for variable parameters
-      //Update IMF segments and recompute weights 
+    // Check for variable segments
+    if (is_imf_var == true) {
+      // Draw new values for variable parameters
+      // Update IMF segments and recompute weights 
       imf_vpdraws = imf->vseg_draw();
-      //Reset range restrictions
+      // Reset range restrictions
       imf->set_stoch_lim(pp.get_min_stoch_mass());
- 
- 
     }
 
     // Reset the galaxy
@@ -449,7 +440,7 @@ void slug_sim::galaxy_sim() {
      
       if (pp.get_writeIntegratedProp())
       { 
-        //Write separators
+        // Write separators
         int ncol = 9*14-3;      
 	      if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
 	      write_separator(int_prop_file, ncol);
@@ -466,8 +457,6 @@ void slug_sim::galaxy_sim() {
       } 
       // Add on IMF fields
       if (is_imf_var==true) extrafields += (imf_vpdraws.size());
-      
-      
       if (pp.get_writeIntegratedSpec()) 
 	write_separator(int_spec_file, (2+nfield)*14-3);
       if (pp.get_writeIntegratedPhot())
@@ -672,6 +661,7 @@ void slug_sim::cluster_sim() {
       if (pp.get_writeClusterProp()) {
 	int ncol = 10*14-3;
 	if (pp.get_use_extinct()) ncol += 14;
+	if (pp.get_use_extinct() && pp.get_use_neb_extinct()) ncol += 14;
 	if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
 	write_separator(cluster_prop_file, ncol);
       }
@@ -756,13 +746,11 @@ void slug_sim::cluster_sim() {
     }
   }
   
-  
-  //Clean up vector of variable pdfs
+  // Clean up vector of variable pdfs
   if (is_imf_var == true)
   {
     imf->cleanup();
   }
-  
 }
 
 
@@ -770,7 +758,6 @@ void slug_sim::cluster_sim() {
 // Open integrated properties file and write its header
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::open_integrated_prop() {
-
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -917,11 +904,7 @@ void slug_sim::open_integrated_prop() {
     // string, then cast them to arrays of char *, because the cfitsio
     // library wants that. Unfortunately this awkwardness is the only
     // way to avoid lots of compiler warnings.
-    
-    
-        
-    int ncol = 10;
-    
+    int ncol = 10;    
     vector<string> ttype_str = 
       { "Trial", "Time", "TargetMass", "ActualMass", "LiveMass", 
 	"StellarMass", "ClusterMass", "NumClusters", "NumDisClust", 
@@ -932,25 +915,19 @@ void slug_sim::open_integrated_prop() {
       { "Msun", "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "", "" };
 
     
-    //If we have a variable IMF, write headers for the variable parameters
-    if (is_imf_var == true)
-    {
-      //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
-      {
+    // If we have a variable IMF, write headers for the variable parameters
+    if (is_imf_var == true) {
+      // Loop over the variable parameters
+      for (int p = 0; p<imf_vpdraws.size();p++) {
         ttype_str.push_back("VP"+std::to_string(p));
         tform_str.push_back("1D");
         tunit_str.push_back("");
         ncol++; 
       }
-    
     } 
       
-      
     char *ttype[ncol], *tform[ncol], *tunit[ncol];
-
-    for (int i=0; i<ncol; i++) 
-    {
+    for (int i=0; i<ncol; i++)  {
       ttype[i] = const_cast<char*>(ttype_str[i].c_str());
       tform[i] = const_cast<char*>(tform_str[i].c_str());
       tunit[i] = const_cast<char*>(tunit_str[i].c_str());
@@ -958,12 +935,9 @@ void slug_sim::open_integrated_prop() {
 
     int fits_status = 0;
     fits_create_tbl(int_prop_fits, BINARY_TBL, 0, ncol,
-		    ttype, tform, tunit, nullptr, &fits_status);
-    
-    
+		    ttype, tform, tunit, nullptr, &fits_status);    
   }
 #endif
-
 
 }
 
@@ -1029,10 +1003,13 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "StellarMass"
 		      << setw(14) << left << "NumStar"
 		      << setw(14) << left << "MaxStarMass";
-    if (extinct != nullptr)
+    if (extinct != nullptr) {
       cluster_prop_file << setw(14) << left << "A_V";
-      
-    //If we have a variable IMF, write headers for the variable parameters
+      if (extinct->excess_neb_extinct()) 
+	cluster_prop_file << setw(14) << left << "A_Vneb";
+    }
+    
+    // If we have a variable IMF, write headers for the variable parameters
     if (is_imf_var == true)
     {
       //Loop over the variable parameters
@@ -1047,12 +1024,9 @@ void slug_sim::open_cluster_prop() {
 	  std::to_string(static_cast<long long>(p));
 #endif
       }
-    
     }
-      
-      
+            
     cluster_prop_file << endl;
-    
     cluster_prop_file << setw(14) << left << ""
 		      << setw(14) << left << "(yr)"
 		      << setw(14) << left << "(yr)"
@@ -1064,10 +1038,13 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << ""
 		      << setw(14) << left << "(Msun)";
 		      
-    if (extinct != nullptr)
+    if (extinct != nullptr) {
       cluster_prop_file << setw(14) << left << "(mag)";
-      
-    //If we have a variable IMF, write headers for the variable parameters
+      if (extinct->excess_neb_extinct()) 
+	cluster_prop_file << setw(14) << left << "(mag)";
+    }
+    
+    // If we have a variable IMF, write headers for the variable parameters
     if (is_imf_var == true)
     {
       //Loop over the variable parameters
@@ -1089,10 +1066,13 @@ void slug_sim::open_cluster_prop() {
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------"
 		      << setw(14) << left << "-----------";
-    if (extinct != nullptr)
+    if (extinct != nullptr) {
       cluster_prop_file << setw(14) << left << "-----------";
-      
-    //If we have a variable IMF, write headers for the variable parameters
+      if (extinct->excess_neb_extinct()) 
+	cluster_prop_file << setw(14) << left << "-----------";
+    }
+    
+    // If we have a variable IMF, write headers for the variable parameters
     if (is_imf_var == true)
     {
       //Loop over the variable parameters
@@ -1100,7 +1080,6 @@ void slug_sim::open_cluster_prop() {
       {
         cluster_prop_file << setw(14) << left << "-----------";
       }
-    
     }
       
     cluster_prop_file << endl;
@@ -1108,6 +1087,12 @@ void slug_sim::open_cluster_prop() {
     // File starts with a bit indicating whether we're using extinction
     bool use_extinct = (extinct != nullptr);
     cluster_prop_file.write((char *) &use_extinct, sizeof use_extinct);
+    bool use_neb_excess = false;
+    if (use_extinct) {
+      if (extinct->excess_neb_extinct()) use_neb_excess = true;
+    }
+    cluster_prop_file.write((char *) &use_neb_excess,
+			    sizeof use_neb_excess);
 
     // File then contains an integer number of variable parameters
     if (is_imf_var == true)
@@ -1144,6 +1129,12 @@ void slug_sim::open_cluster_prop() {
       tform_str.push_back("1D");
       tunit_str.push_back("mag");
       ncol++;
+      if (extinct->excess_neb_extinct()) {
+	ttype_str.push_back("A_Vneb");
+	tform_str.push_back("1D");
+	tunit_str.push_back("mag");
+	ncol++;
+      }
     }
     
     //If we have a variable IMF, write headers for the variable parameters
@@ -1165,7 +1156,6 @@ void slug_sim::open_cluster_prop() {
       }
     
     } 
-    
     
     char **ttype = new char *[ncol];
     char **tform = new char *[ncol];

@@ -231,9 +231,13 @@ slug_galaxy::advance(double time) {
       imf->drawPopulation((1.0-fc)*fstoch*mass_to_draw, new_star_masses);
 
       // Get extinctions to field stars
-      vector<double> AV;
-      if (extinct != NULL) 
+      vector<double> AV, AVneb;
+      if (extinct != NULL) {
 	AV = extinct->draw_AV(new_star_masses.size());
+	AVneb.resize(new_star_masses.size());
+	for (vector<double>::size_type i = 0; i<AV.size(); i++)
+	  AVneb[i] = AV[i] * extinct->draw_neb_extinct_fac();
+      }
 
       // Push stars onto field star list; in the process, set the birth
       // time and death time for each of them
@@ -244,7 +248,10 @@ slug_galaxy::advance(double time) {
 	new_star.death_time = new_star.birth_time 
 	  + tracks->star_lifetime(new_star.mass);
 	field_stars.push_back(new_star);
-	if (extinct != NULL) field_star_AV.push_back(AV[i]);
+	if (extinct != NULL) {
+	  field_star_AV.push_back(AV[i]);
+	  field_star_AV_neb.push_back(AVneb[i]);
+	}
 	mass += new_star.mass;
       }
 
@@ -301,7 +308,10 @@ slug_galaxy::advance(double time) {
       fieldRemnantMass += tracks->remnant_mass(field_stars.back().mass);
       dead_field_stars.push_back(field_stars.back());
       field_stars.pop_back();
-      if (extinct != NULL) field_star_AV.pop_back();
+      if (extinct != NULL) {
+	field_star_AV.pop_back();
+	field_star_AV_neb.pop_back();
+      }
     } else {
       break;
     }
@@ -513,10 +523,12 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     for (vector<double>::size_type j=0; j<nl; j++) 
       L_lambda[j] += spec[j];
     Lbol += pow(10.0, field_data[i].logL);
-    vector<double> spec_neb;
+    vector<double> spec_neb, spec_neb_only;
     if (nebular != NULL) {
-      spec_neb = nebular->get_tot_spec(spec, 
-				       curTime-field_stars[i].birth_time);
+      spec_neb_only =
+	nebular->get_neb_spec(spec, 
+			      curTime-field_stars[i].birth_time);
+      spec_neb = nebular->add_stellar_nebular_spec(spec, spec_neb_only);
       for (vector<double>::size_type j=0; j<nebular->n_lambda(); j++) 
 	L_lambda_neb[j] += spec_neb[j];
     }
@@ -528,8 +540,26 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
       Lbol_ext += int_tabulated::
 	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
       if (nebular != NULL) {
-	vector<double> spec_neb_ext = 
-	  extinct->spec_extinct_neb(field_star_AV[i], spec_neb);
+	// Procedure depends on if nebular and stellar extinctions
+	// differ
+	vector<double> spec_neb_ext;
+	if (extinct->excess_neb_extinct()) {
+	  // We have differential nebular extinction; apply nebular
+	  // extinction to nebular portion
+	  vector<double> spec_neb_only_ext =
+	    extinct->spec_extinct_neb(field_star_AV_neb[i], spec_neb_only);
+	  // Add extincted stellar and nebular spectra
+	  spec_neb_ext = nebular->
+	    add_stellar_nebular_spec(spec_ext, spec_neb_only_ext,
+				     extinct->off(),
+				     extinct->off_neb());
+	} else {
+	  // No differential stellar and nebular spectra, so just
+	  // exintct the combined spectrum we already have in hand
+	  spec_neb_ext =
+	    extinct->spec_extinct_neb(field_star_AV[i], spec_neb);
+	}
+	// Add to running total
 	for (vector<double>::size_type j=0; j<extinct->n_lambda_neb(); 
 	     j++) 
 	  L_lambda_neb_ext[j] += spec_neb_ext[j];
@@ -539,7 +569,8 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
 
   // Finally do non-stochastic field stars; note that non-stochastic
   // field stars get extincted by the expectation value of the AV
-  // distribution.
+  // distribution, and their nebular emission gets extincted by the
+  // expectation value of the nebular A_V distribution.
   if (imf->has_stoch_lim()) {
     double Lbol_tmp;
     vector<double> spec;
@@ -547,9 +578,10 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
     for (vector<double>::size_type i=0; i<nl; i++) 
       L_lambda[i] += spec[i];
     Lbol += Lbol_tmp;
-    vector<double> spec_neb;
+    vector<double> spec_neb, spec_neb_only;
     if (nebular != NULL) {
-      spec_neb = nebular->get_tot_spec(spec, -1.0);
+      spec_neb_only = nebular->get_neb_spec(spec, -1.0);
+      spec_neb = nebular->add_stellar_nebular_spec(spec, spec_neb_only);
       for (vector<double>::size_type i=0; i<nebular->n_lambda(); i++) 
 	L_lambda_neb[i] += spec_neb[i];
     }
@@ -561,8 +593,26 @@ slug_galaxy::set_spectrum(const bool del_cluster) {
       Lbol_ext += int_tabulated::
 	integrate(extinct->lambda(), spec_ext) / constants::Lsun;
       if (nebular != NULL) {
-	vector<double> spec_neb_ext = 
-	  extinct->spec_extinct_neb(extinct->AV_expect(), spec_neb);
+	vector<double> spec_neb_ext;
+	// Procedure depends on whether we have differential extinction
+	if (extinct->excess_neb_extinct()) {
+	  // Apply nebular extinction to nebular portion
+	  vector<double> spec_neb_only_ext =
+	    extinct->spec_extinct_neb(extinct->AV_neb_expect(),
+				      spec_neb_only);
+	  // Add extincted stellar and nebular spectra
+	  spec_neb_ext = nebular->
+	    add_stellar_nebular_spec(spec_ext,
+				     spec_neb_only_ext,
+				     extinct->off(),
+				     extinct->off_neb());
+	} else {
+	  // Just apply a single extinction to the summed stellar plus
+	  // nebular spectrum
+	  spec_neb_ext = 
+	    extinct->spec_extinct_neb(extinct->AV_expect(), spec_neb);
+	}
+	// Add to running total
 	for (vector<double>::size_type i=0; i<extinct->n_lambda_neb(); 
 	     i++) 
 	  L_lambda_neb_ext[i] += spec_neb_ext[i];
@@ -778,27 +828,20 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 		  << setw(11) << right << disrupted_clusters.size() << "   "
 		  << setw(11) << right << field_stars.size();
 	  
-		//Output any variable parameters  
-		if (imfvp.size()>0)
-    {
-      //Loop over the variable parameters and output
-      for (int p = 0; p<imfvp.size();p++)
-      {
+    // Output any variable parameters  
+    if (imfvp.size()>0) {
+      // Loop over the variable parameters and output
+      for (int p = 0; p<imfvp.size();p++) {
         int_prop_file << "   " << setw(11) << right << imfvp[p];
       }
-    
-    }		  
-		
-		int_prop_file << endl;
-		
-		
-  }
-   		    
-		  
-  else {
+    }
+
+    // Close
+    int_prop_file << endl;
+
+  } else {
   
-    //Binary Output
-    
+    // Binary Output
     int_prop_file.write((char *) &trial, sizeof trial);
     int_prop_file.write((char *) &curTime, sizeof curTime);
     int_prop_file.write((char *) &targetMass, sizeof targetMass);
@@ -813,19 +856,13 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
     n = field_stars.size();
     int_prop_file.write((char *) &n, sizeof n);
     
-    //Write out variable parameter values
-    if (imfvp.size()>0)
-    {
-      //Loop over the variable parameters
-      for (int p = 0; p<imfvp.size();p++)
-      {
+    // Write out variable parameter values
+    if (imfvp.size()>0) {
+      // Loop over the variable parameters
+      for (int p = 0; p<imfvp.size();p++) {
         int_prop_file.write((char *) &imfvp[p], sizeof imfvp[p]);
-      } 
-         
-    }  
-    
-    
-    
+      }  
+    }
   }
 }
 
@@ -836,7 +873,8 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits, 
-				   unsigned long trial, const std::vector<double>& imfvp) {
+				   unsigned long trial,
+				   const std::vector<double>& imfvp) {
 
   // Get current number of entries
   int fits_status = 0;
@@ -868,9 +906,8 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits,
   fits_write_col(int_prop_fits, TULONG, 10, nrows+1, 1, 1, &n,	 
 		 &fits_status);
 		 
-  if (imfvp.size()>0)
-  {
-    //Loop over the variable parameters
+  if (imfvp.size()>0) {
+    // Loop over the variable parameters
     int colnum=10;  //Current column number
     for (int p = 0; p<imfvp.size();p++)
     {
@@ -879,10 +916,7 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits,
       fits_write_col(int_prop_fits, TDOUBLE, colnum, nrows+1, 1, 1, &vp_p,
 		  &fits_status);
     }
-  
-  }
-		 
-		 
+  }		 
 }
 #endif
 
@@ -892,7 +926,8 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits,
 void
 slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file, 
 				const outputMode out_mode,
-				const unsigned long trial, const std::vector<double>& imfvp) {
+				const unsigned long trial,
+				const std::vector<double>& imfvp) {
 
   // In binary mode, write out the time and the number of clusters
   // first, because individual clusters won't write this data
@@ -916,7 +951,8 @@ slug_galaxy::write_cluster_prop(ofstream& cluster_prop_file,
 #ifdef ENABLE_FITS
 void
 slug_galaxy::write_cluster_prop(fitsfile* cluster_prop_fits, 
-				unsigned long trial, const std::vector<double>& imfvp) {
+				unsigned long trial,
+				const std::vector<double>& imfvp) {
   for (list<slug_cluster *>::iterator it = clusters.begin();
        it != clusters.end(); ++it)
     (*it)->write_prop(cluster_prop_fits, trial,imfvp);

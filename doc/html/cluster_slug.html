@@ -233,6 +233,14 @@ callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability</dd>
+<dt>pobs <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
+<dd>probability of being observed on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability</dd>
 <dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | None</span></dt>
 <dd>the density of the data samples at each data point; this
 need not match the prior density; interpretation depends
@@ -295,7 +303,7 @@ that parameter here, or False if we do not.</dd>
 
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.add_filters">
-<code class="descname">add_filters</code><span class="sig-paren">(</span><em>filters</em>, <em>bandwidth=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.add_filters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.add_filters" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_filters</code><span class="sig-paren">(</span><em>filters</em>, <em>bandwidth=None</em>, <em>pobs=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.add_filters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.add_filters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a set of filters to use for cluster property estimation</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -308,9 +316,20 @@ None, the bandwidth is unchanged for an existing filter
 set, and for a newly-created one the default physical
 and photometric bandwidths are used; if set to &#8216;auto&#8217;,
 bandwidth is estimated automatically; if set to a float,
-this bandwidth is used for all physical photometric
+this bandwidth is used for all physical and photometric
 dimensions; if set to an array, the array must have the
 same number of entries as nphys+len(filters)</dd>
+<dt>pobs <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;equal&#8217; | None</span></dt>
+<dd>the probability that a particular object would be observed,
+which is used, like prior, to weight the library;
+interpretation depends on type. &#8216;equal&#8217; means all objects are
+equally likely to be observed, array is an array giving the
+observation probability of each object in the library, and
+callable means must be a function that takes an array
+containing the photometry, of shape (N, nhpot), as an
+argument, and returns an array of shape (N) giving the
+probability of observation for that object. Finally,
+None leaves the observational probability unchanged</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -330,6 +349,13 @@ matches to an input set of photometry.</p>
 <dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
+<dd>array giving photometric errors, which must have the
+same shape as phot; if this is not None,
+then distances will be measured in units of the
+photometric error if bandwidth_units is False, or in
+units of the bandwidth added in quadrature with the
+errors if it is True</dd>
 <dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
 <dd>number of matches to return; returned matches will be
 ordered by distance from the input</dd>
@@ -848,6 +874,10 @@ be too</dd>
 properties to be maginalized over, numbered in the same
 way as with fixeddim; if set to None, no marginalization
 is performed</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>number of points in each dimension of the output grid;
+if this is an iterable, it must have nphys + nphot -
+len(fixeddim) - len(margindim) elements</dd>
 <dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float | arraylike</span></dt>
 <dd>minimum value in the output grid in each quantity; if
 left as None, defaults to the minimum value in the

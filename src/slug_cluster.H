@@ -269,6 +269,7 @@ private:
   double lifetime;                    // Time at which this cluster disrupts
   double stellarDeathMass;            // Mass of star dying at current age
   double A_V;                         // A_V value
+  double A_Vneb;                      // Nebular A_V value
   double Lbol;                        // Bolometric luminosity
   double Lbol_ext;                    // Extincted bolometric luminosity
   double tot_sn;                      // Total number of SNe, stochastic and not

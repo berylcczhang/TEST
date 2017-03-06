@@ -66,6 +66,7 @@
 <li><code class="docutils literal"><span class="pre">NumClusters</span></code>: number of non-disrupted clusters present in the galaxy at this time</li>
 <li><code class="docutils literal"><span class="pre">NumDisClust</span></code>: number of disrupted clusters present in the galaxy at this time</li>
 <li><code class="docutils literal"><span class="pre">NumFldStars</span></code>: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter <code class="docutils literal"><span class="pre">min_stoch_mass</span></code> in <a class="reference internal" href="parameters.html#ssec-stellar-keywords"><span>Stellar Model Keywords</span></a>)</li>
+<li><code class="docutils literal"><span class="pre">VPx</span></code>: values drawn for variable parameter <code class="docutils literal"><span class="pre">x</span></code> (0,1,2 etc...); present only if SLUG was run with a variable mode IMF</li>
 </ul>
 <p>If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">ascii</span></code>, these data are output in a series of columns, with different trials separated by lines of dashes. If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">fits</span></code>, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
 <p>For <code class="docutils literal"><span class="pre">binary</span></code> output, the file consists of a series of records containing the following variables</p>
@@ -80,6 +81,11 @@
 <li><code class="docutils literal"><span class="pre">NumClusters</span></code> (<code class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></code>, usually <code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">NumDisClust</span></code> (<code class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></code>, usually <code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">NumFldStars</span></code> (<code class="docutils literal"><span class="pre">std::vector&lt;double&gt;::size_type</span></code>, usually <code class="docutils literal"><span class="pre">unsigned</span> <span class="pre">long</span> <span class="pre">long</span></code>)</li>
+<li><code class="docutils literal"><span class="pre">VPx</span></code> (<code class="docutils literal"><span class="pre">double</span></code>); present only if <code class="docutils literal"><span class="pre">nvps</span></code> is greater than 0, with one entry present for each variable parameter <code class="docutils literal"><span class="pre">x</span></code></li>
+</ul>
+<p>The first record in the binary file indicates the number of variable parameters used.</p>
+<ul class="simple">
+<li><code class="docutils literal"><span class="pre">nvps</span></code> (<code class="docutils literal"><span class="pre">integer</span></code>): the number of variable parameters for the IMF.</li>
 </ul>
 <p>There is one record of this form for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
 </div>

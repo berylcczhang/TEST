@@ -58,14 +58,25 @@ public:
   std::vector<double> draw_AV(unsigned long n) const {
     return AVdist->draw(AVdist->get_xMin(), AVdist->get_xMax(), n);
   }
-  std::vector<double> draw_neb_excess_AV(unsigned long n) const {
-    if (neb_excess_AVdist)
-      return neb_excess_AVdist->
-	draw(neb_excess_AVdist->get_xMin(), neb_excess_AVdist->get_xMax(),
-	     n);
+
+  // Routines to draw nebular extinction excess values
+  bool excess_neb_extinct() const { return neb_extinct_fac; }
+  double neb_extinct_fac_expect() const
+  { return neb_extinct_fac->expectationVal(); }
+  double AV_neb_expect() const
+  { return AV_expect() * neb_extinct_fac_expect(); }
+  double draw_neb_extinct_fac() const {
+    if (neb_extinct_fac) return neb_extinct_fac->draw();
+    else return 1.0;
+  }
+  std::vector<double> draw_neb_extinct_fac(unsigned long n) const {
+    if (neb_extinct_fac)
+      return neb_extinct_fac->draw(neb_extinct_fac->get_xMin(),
+				   neb_extinct_fac->get_xMax(), n);
     else {
-      std::vector<double> AV(n);
-      return AV;
+      std::vector<double> fac;
+      fac.assign(n, 1.0);
+      return fac;
     }
   }
 
@@ -107,7 +118,7 @@ private:
 	    gsl_interp_accel **kappa_acc);
 
   slug_PDF *AVdist;                // PDF of A_V values
-  slug_PDF *neb_excess_AVdist;     // PDF of nebular excess A_V values
+  slug_PDF *neb_extinct_fac;       // PDF of A_V,neb / A_V,star
   std::vector<double> lambda_tab;  // Wavelengths in input table
   std::vector<double> kappa_tab;   // Extinction in input table
   std::vector<double> lambda_grd;  // Wavelength grid

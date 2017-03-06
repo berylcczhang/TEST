@@ -96,6 +96,7 @@ slug_cluster::slug_cluster(const unsigned long id_,
   // If we are using extinction, draw one
   if (extinct != NULL) {
     A_V = extinct->draw_AV();
+    A_Vneb = A_V * extinct->draw_neb_extinct_fac();
   }
 
   // Initialize supernova counts
@@ -149,13 +150,14 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
   lifetime = buf_dbl[15];
   stellarDeathMass = buf_dbl[16];
   A_V = buf_dbl[17];
-  Lbol = buf_dbl[18];
-  Lbol_ext = buf_dbl[19];
-  tot_sn = buf_dbl[20];
-  last_yield_time = buf_dbl[21];
+  A_Vneb = buf_dbl[18];
+  Lbol = buf_dbl[19];
+  Lbol_ext = buf_dbl[20];
+  tot_sn = buf_dbl[21];
+  last_yield_time = buf_dbl[22];
 
   // Unsigned longs
-  const unsigned long *buf_ul = (const unsigned long *) (buf_dbl+22);
+  const unsigned long *buf_ul = (const unsigned long *) (buf_dbl+23);
   id = buf_ul[0];
   stoch_sn = buf_ul[1];
 
@@ -253,6 +255,7 @@ slug_cluster::slug_cluster(const slug_cluster &obj,
   lifetime = obj.lifetime;
   stellarDeathMass = obj.stellarDeathMass;
   A_V = obj.A_V;
+  A_V = obj.A_Vneb;
   Lbol = obj.Lbol;
   Lbol_ext = obj.Lbol_ext;
   tot_sn = obj.tot_sn;
@@ -288,7 +291,7 @@ slug_cluster::slug_cluster(const slug_cluster &obj,
 size_t
 slug_cluster::buffer_size() const {
   // Add up the storage needed for the buffer
-  size_t bufsize = 22*sizeof(double) + 2*sizeof(unsigned long) +
+  size_t bufsize = 23*sizeof(double) + 2*sizeof(unsigned long) +
     6*sizeof(bool) + 14*sizeof(vector<double>::size_type) +
     sizeof(double) * (stars.size() + dead_stars.size() +
 		      L_lambda.size() + phot.size() +
@@ -337,10 +340,11 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
   buf_dbl[15] = lifetime;
   buf_dbl[16] = stellarDeathMass;
   buf_dbl[17] = A_V;
-  buf_dbl[18] = Lbol;
-  buf_dbl[19] = Lbol_ext;
-  buf_dbl[20] = tot_sn;
-  buf_dbl[21] = last_yield_time;
+  buf_dbl[18] = A_Vneb;
+  buf_dbl[19] = Lbol;
+  buf_dbl[20] = Lbol_ext;
+  buf_dbl[21] = tot_sn;
+  buf_dbl[22] = last_yield_time;
 
   // Unsigned longs
   unsigned long *buf_ul = (unsigned long *) (buf_dbl+22);
@@ -471,6 +475,7 @@ slug_cluster::reset(bool keep_id) {
   // If we are using extinction, draw one
   if (extinct != NULL) {
     A_V = extinct->draw_AV();
+    A_Vneb = A_V * extinct->draw_neb_extinct_fac();
   }
 
   // Reset supernova counts
@@ -835,9 +840,13 @@ slug_cluster::set_spectrum() {
   }
 
   // If using nebular emission, compute the stellar+nebular spectrum
-  if (nebular != NULL) 
-    L_lambda_neb = nebular->get_tot_spec(L_lambda, this->get_age());
-
+  vector<double> L_lambda_neb_only;
+  if (nebular != NULL) {
+    L_lambda_neb_only = nebular->get_neb_spec(L_lambda, this->get_age());
+    L_lambda_neb = nebular->add_stellar_nebular_spec(L_lambda,
+						     L_lambda_neb_only);
+  }
+  
   // If using extinction, compute the extincted spectrum and the
   // bolometric luminosity after extinction is applied
   if (extinct != NULL) {
@@ -845,9 +854,29 @@ slug_cluster::set_spectrum() {
     Lbol_ext = int_tabulated::
       integrate(extinct->lambda(), L_lambda_ext) 
       / constants::Lsun;
-    if (nebular != NULL)
-      L_lambda_neb_ext = 
-	extinct->spec_extinct_neb(A_V, L_lambda_neb);
+    if (nebular != NULL) {
+      // Procedure depends on if nebular and stellar extinctions
+      // differ
+      if (extinct->excess_neb_extinct()) {
+	// Apply nebular extinction to nebular portion
+	vector<double> L_lambda_neb_only_ext =
+	  extinct->spec_extinct_neb(A_Vneb, L_lambda_neb_only);
+	// Add extincted nebular and stellar spectra; note that we
+	// must provide the offsets, because the the extincted
+	// spectrum may be truncated relative to the full stellar and
+	// nebular grids
+	L_lambda_neb_ext =
+	  nebular->add_stellar_nebular_spec(L_lambda_ext,
+					    L_lambda_neb_only_ext,
+					    extinct->off(),
+					    extinct->off_neb());
+      } else {
+	// We are using the same extinction for nebular stellar
+	// emission; just apply that extinction to both
+	L_lambda_neb_ext = 
+	  extinct->spec_extinct_neb(A_V, L_lambda_neb);
+      }
+    }
   }
 
   // Flag that things are set
@@ -1168,13 +1197,16 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
       outfile << setw(11) << right << stars[stars.size()-1];
     else
       outfile << setw(11) << right << 0.0;
-    if (extinct != NULL)
+    if (extinct != NULL) {
       outfile << "   " << setw(11) << right << A_V;
+      if (extinct->excess_neb_extinct()) {
+	outfile << "   " << setw(11) << right << A_Vneb;
+      }
+    }
 
-    
-    if (imfvp.size()>0)
-    {
-      //Loop over the variable parameters
+    // Variable parameter block
+    if (imfvp.size()>0) {
+      // Loop over the variable parameters
       for (vector<double>::size_type p = 0; p<imfvp.size();p++)
       {
         outfile << "   " << setw(11) << right << imfvp[p];
@@ -1207,20 +1239,21 @@ slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
       double mstar = 0.0;
       outfile.write((char *) &mstar, sizeof mstar);
     }
-    if (extinct != NULL)
+    if (extinct != NULL) {
       outfile.write((char *) &A_V, sizeof A_V);
-      
-    //Write out variable parameter values
-    if (imfvp.size()>0)
-    {
-      //Loop over the variable parameters
+      if (extinct->excess_neb_extinct()) {
+	outfile.write((char *) &A_Vneb, sizeof A_Vneb);
+      }
+    }
+    
+    // Write out variable parameter values
+    if (imfvp.size()>0) {
+      // Loop over the variable parameters
       for (vector<double>::size_type p = 0; p<imfvp.size(); p++)
       {
         outfile.write((char *) &imfvp[p], sizeof imfvp[p]);
       }
-    
-    }
-   
+    }   
     
   }
 }
@@ -1269,24 +1302,24 @@ slug_cluster::write_prop(fitsfile *out_fits, unsigned long trial,
 		 &fits_status);
 		 
   int colnum = 11;			 
-  if (extinct != NULL)
-  {
+  if (extinct != NULL) {
     fits_write_col(out_fits, TDOUBLE, 12, nrows+1, 1, 1, &A_V, &fits_status);
     colnum++;
-  }		 
-
+    if (extinct->excess_neb_extinct()) {
+      fits_write_col(out_fits, TDOUBLE, 13, nrows+1, 1, 1, &A_Vneb,
+		     &fits_status);
+      colnum++;
+    }
+  }
    
-  if (imfvp.size()>0)
-  {
-    //Loop over the variable parameters
-    for (vector<double>::size_type p = 0; p<imfvp.size();p++)
-    {
+  if (imfvp.size()>0) {
+    // Loop over the variable parameters
+    for (vector<double>::size_type p = 0; p<imfvp.size(); p++) {
       colnum++;
       double vp_p=imfvp[p];
       fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1, &vp_p,
 		  &fits_status);
     }
-  
   }
 }
 #endif

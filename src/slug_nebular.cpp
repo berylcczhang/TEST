@@ -699,7 +699,7 @@ slug_nebular::interp_stellar(const vector<double> &L_lambda_star,
     ptr1=0;
     while (lambda_neb[ptr1] < lambda_star[offset]) ptr1++;
     ptr2=ptr1+1;
-    while (lambda_neb[ptr2] < lambda_star[offset+L_lambda_star.size()-1]) {
+    while (lambda_neb[ptr2] <= lambda_star[offset+L_lambda_star.size()-1]) {
       ptr2++;
       if (ptr2 == lambda_neb.size()) break;
     }
@@ -743,15 +743,33 @@ slug_nebular::get_tot_spec(const vector<double>& L_lambda,
 			   const double age) const {
 
   // Get nebular contribution to spectrum
-  vector<double> tot_spec = get_neb_spec(L_lambda, age);
+  vector<double> neb_spec = get_neb_spec(L_lambda, age);
 
+  // Add stellar and nebular contributions, then return
+  return add_stellar_nebular_spec(L_lambda, neb_spec);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Add stellar and nebular spectra
+////////////////////////////////////////////////////////////////////////
+vector<double>
+slug_nebular::
+add_stellar_nebular_spec(const vector<double>& L_lambda_star,
+			 const vector<double>& L_lambda_neb,
+			 const vector<double>::size_type off_star,
+			 const vector<double>::size_type off_neb) const {
+
+  // Copy nebular spectrum to output holder
+  vector<double> tot_spec(L_lambda_neb);
+  
   // Get stellar spectrum interpolated onto nebular grid
-  vector<double> star_spec = interp_stellar(L_lambda);
+  vector<double> star_spec = interp_stellar(L_lambda_star, off_star);
 
   // Add stellar contribution at wavelengths longer than 912 Angstrom
-  unsigned int i=0;
-  while (lambda_neb[i] < constants::lambdaHI) i++;
-  for ( ; i<lambda_neb.size(); i++) tot_spec[i] += star_spec[i];
+  vector<double>::size_type i=0;
+  while (lambda_neb[i+off_neb] < constants::lambdaHI) i++;
+  for ( ; i<star_spec.size(); i++) tot_spec[i] += star_spec[i];
 
   // Return
   return tot_spec;

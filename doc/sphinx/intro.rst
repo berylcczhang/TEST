@@ -20,7 +20,7 @@ SLUG can simulate either a simple stellar population (i.e., a group of stars all
 Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution
 ----------------------------------------------------------------------------
 
-As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see :ref:`sec-pdfs` for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see :ref:`sec-pdfs`. SLUG will also, upon user request, randomly draw a visual extinction A_V to be applied to the light.
+As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see :ref:`sec-pdfs` for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see :ref:`sec-pdfs`. SLUG will also, upon user request, randomly draw a visual extinction A_V to be applied to the light (and either the same or a different visual extinction can be applied to nebular light -- see :ref:`ssec-nebula`).
 
 For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction :math:`f_c` of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction :math:`1-f_c` of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars :math:`M_*` that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses :math:`(1-f_c)M_*` and :math:`f_c M_*`. For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case, and each star is given its own randomly-generated extinction. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. Again, each cluster gets its own extinction. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.
 
@@ -91,7 +91,7 @@ Nebular emission is computed by assuming that, for stars / star clusters younger
 
 .. math:: \phi Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V
 
-Here :math:`\phi` is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and :math:`\alpha_{\mathrm{B}}(T)` is the temperature-dependent case B recombination rate coefficient. SLUG approximates :math:`\alpha_{\mathrm{B}}(T)` using the analytic approximation given by equation 14.6 of `Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_, while :math:`\phi` is a user-chosen parameter. The temperature can either be set by the user directly, or can be looked up automatically based on the age of the stellar population.
+Here :math:`\phi` is the fraction of ionizing photons that are absorbed by hydrogen within the observational aperture, and :math:`\alpha_{\mathrm{B}}(T)` is the temperature-dependent case B recombination rate coefficient. SLUG approximates :math:`\alpha_{\mathrm{B}}(T)` using the analytic approximation given by equation 14.6 of `Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press) <http://adsabs.harvard.edu/abs/2011piim.book.....D>`_. The temperature used to compute :math:`\alpha_{\mathrm{B}}(T)` can either be set by the user directly, or can be looked up automatically based on the age of the stellar population. The parameter :math:`\phi` must be chosen by the user. It encompasses two distinct effects, both of which serve to reduce nebular emission. First, not all ionizing photons will be absorbed by H; some will be absorbed by dust, and will not yield nebular emission. At Solar metallicity, this effect sets an upper limit :math:`\phi\approx 0.73` (see `McKee & Williams (1997) <http://adsabs.harvard.edu/abs/1997ApJ...476..144M>`_). Second, some of the ionizing photons may travel far from the stars before being absorbed that the nebular emission they produce is not captured within the observational aperture. The importance of this effect obviously depends on the details of the observation.
 
 The relation above determines :math:`n_e n_{\mathrm{H}} V`, and from this SLUG computes the nebular emission including the following processes:
 
@@ -132,7 +132,7 @@ Here
 Extinction
 ----------
 
-If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor :math:`\phi_{\mathrm{dust}}` used in the nebular emission calculation (see :ref:`ssec-nebula`) is not affected by the value of :math:`A_V` used in the calculation.
+If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula.
 
 SLUG computes the extincted spectrum as
 
@@ -142,16 +142,21 @@ where the optical depth :math:`\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1
 
 .. math:: \kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}
 
-where :math:`R_\nu(V)` is the filter response function as frequency :math:`\nu` for the Johnson V filter. The extinction curve :math:`\kappa_\lambda` can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see :ref:`ssec-ism-keywords` for details.
+where :math:`R_\nu(V)` is the filter response function as frequency :math:`\nu` for the Johnson V filter. The extinction curve :math:`\kappa_\lambda` can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see :ref:`ssec-extinction-keywords` for details.
 
-The computation for :math:`L_{\lambda,\mathrm{neb,ex}}` is analogous.
+The computation for the extincted stellar plus nebular spectrum :math:`L_{\lambda,\mathrm{neb,ex}}` is analogous. SLUG allows the nebular and stellar emission to undergo different amounts of extinction, consistent with observational results indicating that nebular light is usually more extincted than the stellar continuum (`Calzetti et al. (2000) <http://adsabs.harvard.edu/abs/2000ApJ...533..682C>`_, `Kreckel et al. (2013) <http://adsabs.harvard.edu/abs/2013ApJ...771...62K>`_). The total extincted stellar plus nebular spectrum is
+
+.. math:: L_{\lambda,\mathrm{neb,ex}} = L_{\lambda} e^{-\tau_\lambda} + L_{\lambda,\mathrm{neb}} e^{-\tau_\lambda f_{\mathrm{neb-ex}}}
+
+where :math:`L_{\lambda}` is the unextincted stellar spectrum, and :math:`f_{\mathrm{neb-ex}}` is the ratio of nebular to stellar extinction -- typically about 2.1 based on observations, but left as a parameter to be set by the user.
+
 
 .. _ssec-yields:
 
 Chemical Yields
 ---------------
 
-In addition to computing the light output by a stellar population, SLUG can also predict the yield of isotopes. At present SLUG includes yields for core collapse supernovae only. These are based on the yield tables provided by `Sukhbold et al. (2016, ApJ, in press) <http://adsabs.harvard.edu/abs/2015arXiv151004643S/abstract>`_, which provide a finely-spaced set of yields for progenitors of mass 9 - 120 :math:`M_\odot`. Yields from other stellar types will be added in later work.
+In addition to computing the light output by a stellar population, SLUG can also predict the yield of isotopes. At present SLUG includes yields for core collapse supernovae only. These are based on the yield tables provided by `Sukhbold et al. (2016) <http://adsabs.harvard.edu/abs/2016ApJ...821...38S>`_, which provide a finely-spaced set of yields for progenitors of mass 9 - 120 :math:`M_\odot`. Yields from other stellar types will be added in later work.
 
 SLUG operates by separately tracking the isotopes produced by stars winds and by their end-of-life explosions, as a function of progenitor mass. To obtain the yield of any star, SLUG interpolates on the wind and explosive yields using `Steffen interpolation <http://adsabs.harvard.edu/abs/1990A%26A...239..443S>`_ to guarantee that no artifical extrema are produced. The code reports production of 302 distinct isotopes, including many stable species and select unstable ones; for unstable species, radioactive decay over the course of the simulation is properly handled.
 

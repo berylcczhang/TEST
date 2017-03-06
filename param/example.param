@@ -252,11 +252,10 @@ min_stoch_mass    0.0
 
 
 #####################################################################
-# Parameters controlling the physical models used for the ISM       #
+# Parameters controlling extinction                                 #
 #####################################################################
-
-# Extinction; to turn on extintion, set the parameter A_V. If set to a
-# number, this extinction will be applied to all spectra and
+# Extinction; to turn on extintion, set the parameter A_V. If set to
+# a number, this extinction will be applied to all spectra and
 # photometry. Default behavior, if the A_V parameter is omitted
 # entirely, is not to apply any extinction. If the parameter A_V is
 # set to a real number, this will be interpreted as a uniform
@@ -269,7 +268,22 @@ A_V                  lib/avdist/slug_default.av
 # File specifying the shape fof the extinction curve
 # Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti+ 2000 starburst
 # attenuation curve)
-#extinction_curve     lib/extinct/SB_ATT_SLUG.dat
+extinction_curve     lib/extinct/SB_ATT_SLUG.dat
+
+# Should the same extinction be applied to nebular light and
+# starlight? Default is yes, but if nebular_extinction_factor is set,
+# the stellar extinction will be multiplied by this factor before it
+# is applied to the nebular light, i.e.,
+#    A_{V,neb} = nebular_extinction_factor * A_V
+# As with A_V, this parameter can be set to a real number, to specify
+# a single factor, or to the name of a PDF file specifying a
+# distribution.
+nebular_extinction_factor  lib/avdist/neb_factor_default.av
+
+
+#####################################################################
+# Parameters controlling nebular emission                           #
+#####################################################################
 
 # Compute nebular emission or not
 # -- 0 (no)

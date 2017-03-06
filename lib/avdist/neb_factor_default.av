@@ -1,0 +1,17 @@
+###############################################################
+# This file defines a nebular extinction factor excess, defined
+# by nebular_extinction_factor = A_{V,neb} / A_{V,stars}. The
+# PDF defined by this file is a normal distribution from 1
+# to infinity, centered on 2.1 (the value recommended by
+# Kreckel et al., 2013, ApJ, 771, 62), with a width of 0.5 mag
+# (calibrated by eye from Figure 7 of that paper)
+###############################################################
+
+# Breakpoints
+breakpoints 1.0 100.0
+
+# Segments
+segment
+type normal
+mean 2.1
+disp 0.5

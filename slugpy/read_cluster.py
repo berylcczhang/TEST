@@ -75,6 +75,12 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           formats, but not for binary format; if True, this specifies
           that the binary file being read does not contain a
           stellar_mass field; it has no effect for ASCII or FITS files
+       no_neb_extinct : bool
+          Prior to 2/17, SLUG did not support differential nebular
+          extinction, and thus there was no output field for it; this
+          is detected and handled automatically for ASCII and FITS
+          files; for binary outputs, this flag must be set for pre
+          2/17 output files to be read correctly
 
     Returns
        A namedtuple containing the following fields:
@@ -87,6 +93,13 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           which trial was this cluster part of
        time : array
           time at which cluster's properties are being evaluated
+       A_V : array
+          A_V value for each cluster, in mag (present only if SLUG was
+          run with extinction enabled)
+       A_Vneb : array
+          value of A_V applied to the nebular light for each cluster
+          (present only if SLUG was run with both nebular emission and
+          extinction enabled)
 
        (Present if the run being read contains a cluster_prop file)
 
@@ -106,6 +119,11 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           number of living stars in cluster being treated stochastically
        max_star_mass : array
           mass of most massive living star in cluster
+       vpn_tuple : tuple
+          tuple containing arrays for any variable parameters we have
+          (eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+          is an array. Present only if variable parameters were
+          enables when SLUG was run.
 
        (Present if the run being read contains a cluster_spec file)
 

@@ -144,6 +144,8 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
             L_lambda_ex.append(float(data[4+nebular]))
             if nebular:
                 L_lambda_neb_ex.append(float(data[6]))
+            if len(data) > 4+nebular:
+                wl_ex.append(float(data[2]))
         trial.append(trialptr)
 
         # Read the rest of the data for first cluster

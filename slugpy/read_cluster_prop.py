@@ -10,7 +10,8 @@ from slug_open import slug_open
 
 def read_cluster_prop(model_name, output_dir=None, fmt=None, 
                       verbose=False, read_info=None,
-                      no_stellar_mass=False):
+                      no_stellar_mass=False,
+                      no_neb_extinct=False):
     """
     Function to read a SLUG2 cluster_prop file.
 
@@ -41,6 +42,12 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
           formats, but not for binary format; if True, this specifies
           that the binary file being read does not contain a
           stellar_mass field; it has no effect for ASCII or FITS files
+       no_neb_extinct : bool
+          Prior to 2/17, SLUG did not support differential nebular
+          extinction, and thus there was no output field for it; this
+          is detected and handled automatically for ASCII and FITS
+          files; for binary outputs, this flag must be set for pre
+          2/17 output files to be read correctly
 
     Returns
        A namedtuple containing the following fields:
@@ -70,8 +77,15 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
        A_V : array
           A_V value for each cluster, in mag (present only if SLUG was
           run with extinction enabled)
-       vpn_tuple : contains arrays for any variable parameters we have (eg: VP0,
-            VP1,VP2...) in the IMF.
+       A_Vneb : array
+          value of A_V applied to the nebular light for each cluster
+          (present only if SLUG was run with both nebular emission and
+          extinction enabled)
+       vpn_tuple : tuple
+          tuple containing arrays for any variable parameters we have
+          (eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+          is an array. Present only if variable parameters were
+          enables when SLUG was run.
     """
 
     # Open file
@@ -97,8 +111,9 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
     stellar_mass = []
     num_star = []
     max_star_mass = []
-    
     imf_is_var = False
+
+    # Invoke appropriate reader
     if fname.endswith('.txt'):
 
         # ASCII mode
@@ -108,11 +123,16 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
         # Read the first header line
         hdr = fp.readline()
 
-        # See if we have extinction
+        # See if we have extinction, and differential nebular extinction
         hdrsplit = hdr.split()
         if 'A_V' in hdrsplit:
             extinct = True
             A_V = []
+            if 'A_Vneb' in hdrsplit:
+                neb_extinct = True
+                A_Vneb = []
+            else:
+                neb_extinct = False
         else:
             extinct = False
 
@@ -134,9 +154,6 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
 
                 else:
                   checking_for_var = False
-                    
-                
-                   
 
         # See if we have the stellar mass field; this was added later,
         # so we check in order to maintain backwards compatibility
@@ -171,15 +188,18 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 max_star_mass.append(float(data[9]))
                 if extinct:
                     A_V.append(float(data[10]))
-                   
-                #Read in variable parameter values
+                    if neb_extinct:
+                        A_Vneb.append(float(data[11]))
+
+                # Read in variable parameter values
                 if extinct:
                     datanumber = 10
                 else:
                     datanumber = 9
+                if neb_extinct:
+                    datanumber += 1
                 if imf_is_var:
                     for i in vplist:
-                        
                         datanumber += 1
                         vp_dict['VP'+`i`].append(float(data[datanumber]))
 
@@ -189,14 +209,17 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 max_star_mass.append(float(data[8]))
                 if extinct:
                     A_V.append(float(data[9]))
-                #Read in variable parameter values
+                    if neb_extinct:
+                        A_Vneb.append(float(data[10]))
+                # Read in variable parameter values
                 if imf_is_var:
                     if extinct:
                         datanumber = 9
                     else:
                         datanumber = 8
+                    if neb_extinct:
+                        datanumber += 1
                     for i in vplist:
-                       
                         datanumber += 1
                         vp_dict['VP'+`i`].append(float(data[datanumber]))
 
@@ -211,6 +234,13 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
         extinct = struct.unpack('b', data)[0] != 0
         if extinct:
             A_V = []
+        if not no_neb_extinct:
+            data = fp.read(struct.calcsize('b'))
+            neb_extinct = struct.unpack('b', data)[0] != 0
+        else:
+            neb_extinct = False
+        if neb_extinct:
+            A_Vneb = []
             
         # Read the next few bytes to see if we have any variable parameters
         data = fp.read(struct.calcsize('i'))
@@ -237,27 +267,19 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             # Read the next block of clusters
             if no_stellar_mass:
                 datastr = 'LdddddQd'
-
             else:
                 datastr = 'LddddddQd'
             if extinct:
                 datastr = datastr+'d'
-            
+            if neb_extinct:
+                datastr = datastr+'d'            
             if imf_is_var:
                 datastr = datastr + nvps*'d'
-
+            nfield = len(datastr)
             data = fp.read(struct.calcsize(datastr)*ncluster)
             data_list = struct.unpack(datastr*ncluster, data)
 
             # Pack these clusters into the data list
-            if extinct:
-                nfield = 10
-            else:
-                nfield = 9
-            if no_stellar_mass:
-                nfield = nfield-1
-            if imf_is_var:
-                nfield = len(datastr)            
             cluster_id.extend(data_list[0::nfield])
             time.extend([t]*ncluster)
             trial.extend([trialptr]*ncluster)
@@ -266,40 +288,28 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             target_mass.extend(data_list[3::nfield])
             actual_mass.extend(data_list[4::nfield])
             live_mass.extend(data_list[5::nfield])
+            field_ptr = 6
             if no_stellar_mass:
                 stellar_mass.extend([np.nan]*(len(data_list)/nfield))
-                num_star.extend(data_list[5::nfield])
-                max_star_mass.extend(data_list[7::nfield])
-                if extinct:
-                    A_V.extend(data_list[8::nfield])
-                    if imf_is_var:                  
-                        currentvp = 0
-                        while currentvp < nvps:                
-                            vp_dict['VP'+`currentvp`].extend(data_list[8+currentvp+1::nfield])
-                            currentvp += 1
-                elif imf_is_var:                  
-                    currentvp = 0
-                    while currentvp < nvps:                
-                        vp_dict['VP'+`currentvp`].extend(data_list[7+currentvp+1::nfield])
-                        currentvp += 1
-                        
-                    
             else:
-                stellar_mass.extend(data_list[6::nfield])
-                num_star.extend(data_list[7::nfield])
-                max_star_mass.extend(data_list[8::nfield])
-                if extinct:
-                    A_V.extend(data_list[9::nfield])
-                    if imf_is_var:
-                        currentvp = 0
-                        while currentvp < nvps:                
-                            vp_dict['VP'+`currentvp`].extend(data_list[9+currentvp+1::nfield])
-                            currentvp += 1      
-                elif imf_is_var:                  
-                    currentvp = 0
-                    while currentvp < nvps:                
-                        vp_dict['VP'+`currentvp`].extend(data_list[8+currentvp+1::nfield])
-                        currentvp += 1                            
+                stellar_mass.extend(data_list[field_ptr::nfield])
+                field_ptr = field_ptr+1
+            num_star.extend(data_list[field_ptr::nfield])
+            field_ptr = field_ptr+1
+            max_star_mass.extend(data_list[field_ptr::nfield])
+            field_ptr = field_ptr+1
+            if extinct:
+                A_V.extend(data_list[field_ptr::nfield])
+                field_ptr = field_ptr+1
+                if neb_extinct:
+                    A_Vneb.extend(data_list[field_ptr::nfield])
+                    field_ptr = field_ptr+1
+            if imf_is_var:                  
+                currentvp = 0
+                while currentvp < nvps:                
+                    vp_dict['VP'+`currentvp`].\
+                        extend(data_list[field_ptr+currentvp+1::nfield])
+                    currentvp += 1
                               
     elif fname.endswith('.fits'):
 
@@ -324,13 +334,18 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
         if 'A_V' in fp[1].data.columns.names:
             extinct = True
             A_V = fp[1].data.field('A_V')
+            if 'A_Vneb' in fp[1].data.columns.names:
+                A_Vneb = fp[1].data.field('A_Vneb')
+                neb_extinct = True
+            else:
+                neb_extinct = False
         else:
             extinct = False
+            neb_extinct = False
             
         # Check for variable imf parameters
         imf_is_var = True
         if 'VP0' not in fp[1].data.columns.names:
-
             imf_is_var = False
             checking_for_var = False
         else:
@@ -339,12 +354,9 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             p = 0
             vp_dict = defaultdict(list)
             while (checking_for_var == True):
-                if 'VP'+`p` in fp[1].data.columns.names:
-                    
-                    vp_dict['VP'+`p`].append(fp[1].data.field('VP'+`p`))         
-
+                if 'VP'+`p` in fp[1].data.columns.names:                    
+                    vp_dict['VP'+`p`].append(fp[1].data.field('VP'+`p`))
                     p=p+1
-
                 else:
                     checking_for_var = False
     # Close file
@@ -364,65 +376,36 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
     max_star_mass = np.array(max_star_mass)
     if extinct:
         A_V = np.array(A_V)
-    if imf_is_var:        
-        
+        if neb_extinct:
+            A_Vneb = np.array(A_Vneb)
+    if imf_is_var:                
         for VPn in vp_dict:         
             vp_dict[VPn]=np.array(vp_dict[VPn])
-
             if fname.endswith('.fits'):
                 vp_dict[VPn]=vp_dict[VPn][0]
-                
-            
-        
         
     # Build the namedtuple to hold output
+    out_list = ['id', 'trial', 'time', 'form_time', 
+                'lifetime', 'target_mass', 'actual_mass', 
+                'live_mass', 'stellar_mass', 'num_star', 
+                'max_star_mass']
+    out_dat = [cluster_id, trial, time, form_time, lifetime, 
+               target_mass, actual_mass, live_mass, stellar_mass,
+               num_star, max_star_mass]
     if extinct:
-        out_type = namedtuple('cluster_prop',
-                              ['id', 'trial', 'time', 'form_time', 
-                               'lifetime', 'target_mass', 'actual_mass', 
-                               'live_mass', 'stellar_mass', 'num_star', 
-                               'max_star_mass', 'A_V'])
-        out = out_type(cluster_id, trial, time, form_time, lifetime, 
-                       target_mass, actual_mass, live_mass, stellar_mass,
-                       num_star, max_star_mass, A_V)
-        
-        if imf_is_var:
-            vpn_tuple = ()
-
-            for VPn in vp_dict:         
-                out_type = namedtuple('cluster_prop',out_type._fields+(VPn,))
-                vpn_tuple = vpn_tuple + (vp_dict[VPn],)
-
-            out = out_type(cluster_id, trial, time, form_time, lifetime, 
-                       target_mass, actual_mass, live_mass, stellar_mass,
-                       num_star, max_star_mass, A_V,*vpn_tuple)    
+        out_list = out_list + ['A_V']
+        out_dat = out_dat + [A_V]
+    if neb_extinct:
+        out_list = out_list + ['A_Vneb']
+        out_dat = out_dat + [A_Vneb]
+    if imf_is_var:
+        vpn_tuple = ()
+        for VPn in vp_dict:
+            out_list = out_list + [VPn]
+            out_dat = out_dat + [vp_dict[VPn]]
+    out_type = namedtuple('cluster_prop', out_list)
+    out = out_type(*out_dat)
             
-                        
-                  
-
-                            
-                       
-    else:
-        out_type = namedtuple('cluster_prop',
-                              ['id', 'trial', 'time', 'form_time', 
-                               'lifetime', 'target_mass', 'actual_mass', 
-                               'live_mass', 'stellar_mass', 'num_star', 
-                               'max_star_mass'])
-        out = out_type(cluster_id, trial, time, form_time, lifetime, 
-                       target_mass, actual_mass, live_mass, stellar_mass,
-                       num_star, max_star_mass)
-        if imf_is_var:
-            vpn_tuple = ()
-
-            for VPn in vp_dict:         
-
-                out_type = namedtuple('cluster_prop',out_type._fields+(VPn,))
-                vpn_tuple = vpn_tuple + (vp_dict[VPn],)
-
-                                
-            out = out_type(cluster_id, trial, time, form_time, lifetime, 
-                       target_mass, actual_mass, live_mass, stellar_mass,
-                       num_star, max_star_mass,*vpn_tuple)   
     # Return
     return out
 

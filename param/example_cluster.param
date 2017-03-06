@@ -83,7 +83,7 @@ time_step    	  1.0e6
 #start_time        2.0e7
 
 # Maximum evolution time, in yr.
-end_time	  1.0e7
+end_time	  1.0e8
 
 # Star formation rate in case where sim_type = galaxy, in Msun/yr; can
 # be omitted, and will be ignored, if sim_type = cluster. If, instead
@@ -209,7 +209,7 @@ clf               lib/clf/nodisrupt.clf
 # Stellar tracks to use
 # Default: lib/tracks/Z0140v00.txt (Geneva 2013, solar
 # metallicity no rotation)
-tracks	  	  lib/tracks/Z0140v00.txt
+tracks	  	  lib/tracks/modp020.dat
 
 # Directory containing stellar atmosphere models
 # Default: lib/atmospheres
@@ -252,11 +252,11 @@ specsyn_mode	   sb99
 
 
 #####################################################################
-# Parameters controlling the physical models used for the ISM       #
+# Parameters controlling extinction                                 #
 #####################################################################
 
-# Extinction; to turn on extintion, set the parameter A_V. If set to a
-# number, this extinction will be applied to all spectra and
+# Extinction; to turn on extintion, set the parameter A_V. If set to
+# a number, this extinction will be applied to all spectra and
 # photometry. Default behavior, if the A_V parameter is omitted
 # entirely, is not to apply any extinction. If the parameter A_V is
 # set to a real number, this will be interpreted as a uniform
@@ -269,7 +269,22 @@ A_V                  lib/avdist/slug_default.av
 # File specifying the shape fof the extinction curve
 # Default: lib/extinct/SB_ATT_SLUG.dat (Calzetti+ 2000 starburst
 # attenuation curve)
-#extinction_curve     lib/extinct/SB_ATT_SLUG.dat
+extinction_curve     lib/extinct/SB_ATT_SLUG.dat
+
+# Should the same extinction be applied to nebular light and
+# starlight? Default is yes, but if nebular_extinction_factor is set,
+# the stellar extinction will be multiplied by this factor before it
+# is applied to the nebular light, i.e.,
+#    A_{V,neb} = nebular_extinction_factor * A_V
+# As with A_V, this parameter can be set to a real number, to specify
+# a single factor, or to the name of a PDF file specifying a
+# distribution.
+nebular_extinction_factor  lib/avdist/neb_factor_default.av
+
+
+#####################################################################
+# Parameters controlling the nebular emission                       #
+#####################################################################
 
 # Compute nebular emission or not
 # -- 0 (no)
@@ -344,3 +359,21 @@ filters	           lib/filters
 # -- VEGA (report absolute Vega magnitude)
 # Default: L_nu
 phot_mode          L_nu
+
+
+############################################
+# Parameters controlling yield calculation #
+############################################
+
+# Directory specifying where yield data can be found
+# Default: lib/yields
+yield_dir	   lib/yields
+
+# Model to use for yield calculation. Currently the following models
+# are available:
+# sukhbold16 = Solar metallicity type II SN yields from Sukhbold et
+#              al. (2016, ApJ, 821, 38); no other yields
+# karakas16 = metallicity-dependnet AGB star yields from Karakas &
+#             Lugaro (2016, ApJ, 825, 26)
+# sukhbold16+karakas16 = sukhbold16 used for SNII, karakas16 for AGB
+yield_mode         sukhbold16+karakas16

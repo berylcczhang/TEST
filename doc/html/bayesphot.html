@@ -319,6 +319,15 @@ code will not be run with the multiprocessing module</dd>
 <dd>Nothing</dd>
 <dt>Raises</dt>
 <dd>IOError, if the bayesphot c library cannot be found</dd>
+<dt>Notes</dt>
+<dd>Because the data sets passed in may be large, this class
+does not make copies of any of its arguments, and instead
+modifies them in place. However, this means it is the
+responsibility of the user not to alter the any of the
+arguments once they are passed to this class; for example,
+dataset must not be modified after it is passed. Altering the
+arguments, except through this class&#8217;s methods, may cause
+incorrect results to be generated.</dd>
 </dl>
 </dd></dl>
 
@@ -732,6 +741,10 @@ be too</dd>
 properties to be maginalized over, numbered in the same
 way as with fixeddim; if set to None, no marginalization
 is performed</dd>
+<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
+<dd>number of points in each dimension of the output grid;
+if this is an iterable, it must have nphys + nphot -
+len(fixeddim) - len(margindim) elements</dd>
 <dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float | arraylike</span></dt>
 <dd>minimum value in the output grid in each quantity; if
 left as None, defaults to the minimum value in the
@@ -855,14 +868,16 @@ object.</p>
 <dt id="slugpy.bayesphot.bp.bp.pobs">
 <code class="descname">pobs</code><a class="headerlink" href="#slugpy.bayesphot.bp.bp.pobs" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current set of observation probabilities for every
-simulation in the library</p>
+simulation in the library; data returned are in the same order
+as the data originally used to construct the library</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="slugpy.bayesphot.bp.bp.priors">
 <code class="descname">priors</code><a class="headerlink" href="#slugpy.bayesphot.bp.bp.priors" title="Permalink to this definition">¶</a></dt>
 <dd><p>The current set of prior probabilities for every
-simulation in the library</p>
+simulation in the library; data returned are in the same order
+as the data originally used to construct the library</p>
 </dd></dl>
 
 <dl class="attribute">

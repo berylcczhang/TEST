@@ -21,7 +21,7 @@
 
 
 \title{slug Documentation}
-\date{February 01, 2017}
+\date{March 06, 2017}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -170,7 +170,7 @@ SLUG can simulate either a simple stellar population (i.e., a group of stars all
 
 \section{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}
 \label{intro:probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution}\label{intro:ssec-slugpdfs}
-As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A\_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see {\hyperref[pdfs:sec\string-pdfs]{\emph{Probability Distribution Functions}}} for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see {\hyperref[pdfs:sec\string-pdfs]{\emph{Probability Distribution Functions}}}. SLUG will also, upon user request, randomly draw a visual extinction A\_V to be applied to the light.
+As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A\_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see {\hyperref[pdfs:sec\string-pdfs]{\emph{Probability Distribution Functions}}} for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see {\hyperref[pdfs:sec\string-pdfs]{\emph{Probability Distribution Functions}}}. SLUG will also, upon user request, randomly draw a visual extinction A\_V to be applied to the light (and either the same or a different visual extinction can be applied to nebular light -- see {\hyperref[intro:ssec\string-nebula]{\emph{Nebular Processing}}}).
 
 For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction \(f_c\) of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction \(1-f_c\) of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars \(M_*\) that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses \((1-f_c)M_*\) and \(f_c M_*\). For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case, and each star is given its own randomly-generated extinction. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. Again, each cluster gets its own extinction. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.
 
@@ -258,7 +258,7 @@ Nebular emission is computed by assuming that, for stars / star clusters younger
 \begin{gather}
 \begin{split}\phi Q(\mathrm{H}^0) = \alpha_{\mathrm{B}}(T) n_e n_{\mathrm{H}} V\end{split}\notag
 \end{gather}
-Here \(\phi\) is the fraction of ionizing photons that are absorbed by hydrogen rather than dust grains, and \(\alpha_{\mathrm{B}}(T)\) is the temperature-dependent case B recombination rate coefficient. SLUG approximates \(\alpha_{\mathrm{B}}(T)\) using the analytic approximation given by equation 14.6 of \href{http://adsabs.harvard.edu/abs/2011piim.book.....D}{Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press)}, while \(\phi\) is a user-chosen parameter. The temperature can either be set by the user directly, or can be looked up automatically based on the age of the stellar population.
+Here \(\phi\) is the fraction of ionizing photons that are absorbed by hydrogen within the observational aperture, and \(\alpha_{\mathrm{B}}(T)\) is the temperature-dependent case B recombination rate coefficient. SLUG approximates \(\alpha_{\mathrm{B}}(T)\) using the analytic approximation given by equation 14.6 of \href{http://adsabs.harvard.edu/abs/2011piim.book.....D}{Draine (2011, Physics of the Interstellar and Intergalactic Medium, Princeton University Press)}. The temperature used to compute \(\alpha_{\mathrm{B}}(T)\) can either be set by the user directly, or can be looked up automatically based on the age of the stellar population. The parameter \(\phi\) must be chosen by the user. It encompasses two distinct effects, both of which serve to reduce nebular emission. First, not all ionizing photons will be absorbed by H; some will be absorbed by dust, and will not yield nebular emission. At Solar metallicity, this effect sets an upper limit \(\phi\approx 0.73\) (see \href{http://adsabs.harvard.edu/abs/1997ApJ...476..144M}{McKee \& Williams (1997)}). Second, some of the ionizing photons may travel far from the stars before being absorbed that the nebular emission they produce is not captured within the observational aperture. The importance of this effect obviously depends on the details of the observation.
 
 The relation above determines \(n_e n_{\mathrm{H}} V\), and from this SLUG computes the nebular emission including the following processes:
 \begin{itemize}
@@ -326,7 +326,7 @@ Here
 
 \section{Extinction}
 \label{intro:extinction}\label{intro:ssec-extinction}
-If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula. Note that the nebular plus extincted spectrum computation is not fully self-consistent, in that the dust absorption factor \(\phi_{\mathrm{dust}}\) used in the nebular emission calculation (see {\hyperref[intro:ssec\string-nebula]{\emph{Nebular Processing}}}) is not affected by the value of \(A_V\) used in the calculation.
+If extinction is enabled, SLUG applies extinction to the stellar spectra and, if nebular processing is enabled as well, to the spectrum that emerges from the nebula.
 
 SLUG computes the extincted spectrum as
 \begin{gather}
@@ -336,14 +336,18 @@ where the optical depth \(\tau_\lambda = (\kappa_\lambda / \kappa_V) (A_V/1.086)
 \begin{gather}
 \begin{split}\kappa_V = \frac{\int \kappa_\nu R_\nu(V) \, d\nu}{\int R_\nu(V) \, d\nu}\end{split}\notag
 \end{gather}
-where \(R_\nu(V)\) is the filter response function as frequency \(\nu\) for the Johnson V filter. The extinction curve \(\kappa_\lambda\) can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see {\hyperref[parameters:ssec\string-ism\string-keywords]{\emph{Interstellar Medium Model Keywords}}} for details.
+where \(R_\nu(V)\) is the filter response function as frequency \(\nu\) for the Johnson V filter. The extinction curve \(\kappa_\lambda\) can be specified via a user-provided file, or the user may select from a set of pre-defined extinction curves; see {\hyperref[parameters:ssec\string-extinction\string-keywords]{\emph{Extinction Keywords}}} for details.
 
-The computation for \(L_{\lambda,\mathrm{neb,ex}}\) is analogous.
+The computation for the extincted stellar plus nebular spectrum \(L_{\lambda,\mathrm{neb,ex}}\) is analogous. SLUG allows the nebular and stellar emission to undergo different amounts of extinction, consistent with observational results indicating that nebular light is usually more extincted than the stellar continuum (\href{http://adsabs.harvard.edu/abs/2000ApJ...533..682C}{Calzetti et al. (2000)}, \href{http://adsabs.harvard.edu/abs/2013ApJ...771...62K}{Kreckel et al. (2013)}). The total extincted stellar plus nebular spectrum is
+\begin{gather}
+\begin{split}L_{\lambda,\mathrm{neb,ex}} = L_{\lambda} e^{-\tau_\lambda} + L_{\lambda,\mathrm{neb}} e^{-\tau_\lambda f_{\mathrm{neb-ex}}}\end{split}\notag
+\end{gather}
+where \(L_{\lambda}\) is the unextincted stellar spectrum, and \(f_{\mathrm{neb-ex}}\) is the ratio of nebular to stellar extinction -- typically about 2.1 based on observations, but left as a parameter to be set by the user.
 
 
 \section{Chemical Yields}
 \label{intro:chemical-yields}\label{intro:ssec-yields}
-In addition to computing the light output by a stellar population, SLUG can also predict the yield of isotopes. At present SLUG includes yields for core collapse supernovae only. These are based on the yield tables provided by \href{http://adsabs.harvard.edu/abs/2015arXiv151004643S/abstract}{Sukhbold et al. (2016, ApJ, in press)}, which provide a finely-spaced set of yields for progenitors of mass 9 - 120 \(M_\odot\). Yields from other stellar types will be added in later work.
+In addition to computing the light output by a stellar population, SLUG can also predict the yield of isotopes. At present SLUG includes yields for core collapse supernovae only. These are based on the yield tables provided by \href{http://adsabs.harvard.edu/abs/2016ApJ...821...38S}{Sukhbold et al. (2016)}, which provide a finely-spaced set of yields for progenitors of mass 9 - 120 \(M_\odot\). Yields from other stellar types will be added in later work.
 
 SLUG operates by separately tracking the isotopes produced by stars winds and by their end-of-life explosions, as a function of progenitor mass. To obtain the yield of any star, SLUG interpolates on the wind and explosive yields using \href{http://adsabs.harvard.edu/abs/1990A\%26A...239..443S}{Steffen interpolation} to guarantee that no artifical extrema are produced. The code reports production of 302 distinct isotopes, including many stable species and select unstable ones; for unstable species, radioactive decay over the course of the simulation is properly handled.
 
@@ -725,8 +729,8 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \end{itemize}
 
 
-\section{Interstellar Medium Model Keywords}
-\label{parameters:ssec-ism-keywords}\label{parameters:interstellar-medium-model-keywords}\begin{itemize}
+\section{Extinction Keywords}
+\label{parameters:extinction-keywords}\label{parameters:ssec-extinction-keywords}\begin{itemize}
 \item {} 
 \code{A\_V} (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter \code{A\_V} is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value \(A_V\), in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in {\hyperref[pdfs:sec\string-pdfs]{\emph{Probability Distribution Functions}}}, specifying the probability distribution of \(A_V\) values, in mag.
 
@@ -748,6 +752,14 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 
 \end{description}
 
+\item {} 
+\code{nebular\_extinction\_factor} (default: 1.0): nebular extinction excess factor. This parameter specifies the ratio of the extinction applied to the nebular light to that applied to the starlight, i.e., it gives \(f_{\mathrm{neb,ex}} = A_{V,\mathrm{neb}} / A_{V,*}\), as defined in {\hyperref[intro:ssec\string-extinction]{\emph{Extinction}}}. As with \code{A\_V}, this parameter can be set either to a real number, in which case this ratio is treated as constant and equal to the input number, or to the name of a PDF file that specified the distribution of this ratio, formatted as described in {\hyperref[pdfs:sec\string-pdfs]{\emph{Probability Distribution Functions}}}. If this keyword is omitted entirely, the nebular and stellar extinctions are set equal to one another.
+
+\end{itemize}
+
+
+\section{Nebular Keywords}
+\label{parameters:ssec-nebular-keywords}\label{parameters:nebular-keywords}\begin{itemize}
 \item {} 
 \code{compute\_nebular} (default: \code{1}): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.
 
@@ -1238,6 +1250,9 @@ This file contains data on the bulk physical properties of the galaxy as a whole
 \item {} 
 \code{NumFldStars}: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter \code{min\_stoch\_mass} in {\hyperref[parameters:ssec\string-stellar\string-keywords]{\emph{Stellar Model Keywords}}})
 
+\item {} 
+\code{VPx}: values drawn for variable parameter \code{x} (0,1,2 etc...); present only if SLUG was run with a variable mode IMF
+
 \end{itemize}
 
 If \code{output\_mode} is \code{ascii}, these data are output in a series of columns, with different trials separated by lines of dashes. If \code{output\_mode} is \code{fits}, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.
@@ -1273,6 +1288,16 @@ For \code{binary} output, the file consists of a series of records containing th
 
 \item {} 
 \code{NumFldStars} (\code{std::vector\textless{}double\textgreater{}::size\_type}, usually \code{unsigned long long})
+
+\item {} 
+\code{VPx} (\code{double}); present only if \code{nvps} is greater than 0, with one entry present for each variable parameter \code{x}
+
+\end{itemize}
+
+The first record in the binary file indicates the number of variable parameters used.
+\begin{itemize}
+\item {} 
+\code{nvps} (\code{integer}): the number of variable parameters for the IMF.
 
 \end{itemize}
 
@@ -2258,12 +2283,14 @@ All the remaining fields are identical to those listed above for integrated quan
 
 For all these fields, scalar quantities that are different for each cluster (e.g., actual\_mass) will be stored as arrays of shape (N\_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N\_cluster, N).
 
-The following field is present only if SLUG was run with a Variable Mode IMF in a cluster-only simulation:
+The following fields are present only if SLUG was run with a Variable Mode IMF:
 \begin{itemize}
 \item {} 
 VPx: The value drawn for variable parameter x (0,1,2...) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.
 
 \end{itemize}
+
+These fields are present in both the cluster and integrated outputs if a simulation has been run using the variable mode IMF.
 
 
 \section{Full Documentation of slugpy}
@@ -2524,6 +2551,13 @@ formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
 stellar\_mass field; it has no effect for ASCII or FITS files
 
+\item[{no\_neb\_extinct}] \leavevmode{[}bool{]}
+Prior to 2/17, SLUG did not support differential nebular
+extinction, and thus there was no output field for it; this
+is detected and handled automatically for ASCII and FITS
+files; for binary outputs, this flag must be set for pre
+2/17 output files to be read correctly
+
 \end{description}
 
 \item[{Returns}] \leavevmode
@@ -2539,6 +2573,15 @@ which trial was this cluster part of
 
 \item[{time}] \leavevmode{[}array{]}
 time at which cluster's properties are being evaluated
+
+\item[{A\_V}] \leavevmode{[}array{]}
+A\_V value for each cluster, in mag (present only if SLUG was
+run with extinction enabled)
+
+\item[{A\_Vneb}] \leavevmode{[}array{]}
+value of A\_V applied to the nebular light for each cluster
+(present only if SLUG was run with both nebular emission and
+extinction enabled)
 
 \end{description}
 
@@ -2567,6 +2610,12 @@ number of living stars in cluster being treated stochastically
 
 \item[{max\_star\_mass}] \leavevmode{[}array{]}
 mass of most massive living star in cluster
+
+\item[{vpn\_tuple}] \leavevmode{[}tuple{]}
+tuple containing arrays for any variable parameters we have
+(eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+is an array. Present only if variable parameters were
+enables when SLUG was run.
 
 \end{description}
 
@@ -2935,7 +2984,7 @@ ValueError, if photsystem is set to an unknown value
 \index{read\_cluster\_prop() (in module slugpy)}
 
 \begin{fulllineitems}
-\phantomsection\label{slugpy:slugpy.read_cluster_prop}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster\_prop}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}, \emph{no\_stellar\_mass=False}}{}
+\phantomsection\label{slugpy:slugpy.read_cluster_prop}\pysiglinewithargsret{\code{slugpy.}\bfcode{read\_cluster\_prop}}{\emph{model\_name}, \emph{output\_dir=None}, \emph{fmt=None}, \emph{verbose=False}, \emph{read\_info=None}, \emph{no\_stellar\_mass=False}, \emph{no\_neb\_extinct=False}}{}
 Function to read a SLUG2 cluster\_prop file.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -2970,6 +3019,13 @@ field; this can be detected automatically for ASCII and FITS
 formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
 stellar\_mass field; it has no effect for ASCII or FITS files
+
+\item[{no\_neb\_extinct}] \leavevmode{[}bool{]}
+Prior to 2/17, SLUG did not support differential nebular
+extinction, and thus there was no output field for it; this
+is detected and handled automatically for ASCII and FITS
+files; for binary outputs, this flag must be set for pre
+2/17 output files to be read correctly
 
 \end{description}
 
@@ -3013,8 +3069,16 @@ mass of most massive living star in cluster
 A\_V value for each cluster, in mag (present only if SLUG was
 run with extinction enabled)
 
-\item[{vpn\_tuple}] \leavevmode{[}contains arrays for any variable parameters we have (eg: VP0,{]}
-VP1,VP2...) in the IMF.
+\item[{A\_Vneb}] \leavevmode{[}array{]}
+value of A\_V applied to the nebular light for each cluster
+(present only if SLUG was run with both nebular emission and
+extinction enabled)
+
+\item[{vpn\_tuple}] \leavevmode{[}tuple{]}
+tuple containing arrays for any variable parameters we have
+(eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+is an array. Present only if variable parameters were
+enables when SLUG was run.
 
 \end{description}
 
@@ -7068,6 +7132,16 @@ Nothing
 \item[{Raises}] \leavevmode
 IOError, if the bayesphot c library cannot be found
 
+\item[{Notes}] \leavevmode
+Because the data sets passed in may be large, this class
+does not make copies of any of its arguments, and instead
+modifies them in place. However, this means it is the
+responsibility of the user not to alter the any of the
+arguments once they are passed to this class; for example,
+dataset must not be modified after it is passed. Altering the
+arguments, except through this class's methods, may cause
+incorrect results to be generated.
+
 \end{description}
 
 \end{fulllineitems}
@@ -7544,6 +7618,11 @@ properties to be maginalized over, numbered in the same
 way as with fixeddim; if set to None, no marginalization
 is performed
 
+\item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
+number of points in each dimension of the output grid;
+if this is an iterable, it must have nphys + nphot -
+len(fixeddim) - len(margindim) elements
+
 \item[{qmin}] \leavevmode{[}float \textbar{} arraylike{]}
 minimum value in the output grid in each quantity; if
 left as None, defaults to the minimum value in the
@@ -7689,7 +7768,8 @@ object.
 \begin{fulllineitems}
 \phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.pobs}\pysigline{\bfcode{pobs}}
 The current set of observation probabilities for every
-simulation in the library
+simulation in the library; data returned are in the same order
+as the data originally used to construct the library
 
 \end{fulllineitems}
 
@@ -7698,7 +7778,8 @@ simulation in the library
 \begin{fulllineitems}
 \phantomsection\label{bayesphot:slugpy.bayesphot.bp.bp.priors}\pysigline{\bfcode{priors}}
 The current set of prior probabilities for every
-simulation in the library
+simulation in the library; data returned are in the same order
+as the data originally used to construct the library
 
 \end{fulllineitems}
 
@@ -8005,6 +8086,15 @@ of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability
 
+\item[{pobs}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} None{]}
+probability of being observed on each data point; interpretation
+depends on the type passed; array, shape (N): values are
+interpreted as the prior probability of each data point;
+callable: the callable must take as an argument an array
+of shape (N, nphys), and return an array of shape (N)
+giving the prior probability at each data point; None:
+all data points have equal prior probability
+
 \item[{sample\_density}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} `auto' \textbar{} None{]}
 the density of the data samples at each data point; this
 need not match the prior density; interpretation depends
@@ -8081,7 +8171,7 @@ list of weak references to the object (if defined)
 \index{add\_filters() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.add_filters}\pysiglinewithargsret{\bfcode{add\_filters}}{\emph{filters}, \emph{bandwidth=None}}{}
+\phantomsection\label{cluster_slug:slugpy.cluster_slug.cluster_slug.add_filters}\pysiglinewithargsret{\bfcode{add\_filters}}{\emph{filters}, \emph{bandwidth=None}, \emph{pobs=None}}{}
 Add a set of filters to use for cluster property estimation
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -8094,9 +8184,21 @@ None, the bandwidth is unchanged for an existing filter
 set, and for a newly-created one the default physical
 and photometric bandwidths are used; if set to `auto',
 bandwidth is estimated automatically; if set to a float,
-this bandwidth is used for all physical photometric
+this bandwidth is used for all physical and photometric
 dimensions; if set to an array, the array must have the
 same number of entries as nphys+len(filters)
+
+\item[{pobs}] \leavevmode{[}array, shape (N) \textbar{} callable \textbar{} `equal' \textbar{} None{]}
+the probability that a particular object would be observed,
+which is used, like prior, to weight the library;
+interpretation depends on type. `equal' means all objects are
+equally likely to be observed, array is an array giving the
+observation probability of each object in the library, and
+callable means must be a function that takes an array
+containing the photometry, of shape (N, nhpot), as an
+argument, and returns an array of shape (N) giving the
+probability of observation for that object. Finally,
+None leaves the observational probability unchanged
 
 \end{description}
 
@@ -8119,6 +8221,14 @@ matches to an input set of photometry.
 array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions
+
+\item[{photerr}] \leavevmode{[}arraylike, shape (nfilter) or (..., nfilter){]}
+array giving photometric errors, which must have the
+same shape as phot; if this is not None,
+then distances will be measured in units of the
+photometric error if bandwidth\_units is False, or in
+units of the bandwidth added in quadrature with the
+errors if it is True
 
 \item[{nmatch}] \leavevmode{[}int{]}
 number of matches to return; returned matches will be
@@ -8720,6 +8830,11 @@ The index or indices of the physical or photometric
 properties to be maginalized over, numbered in the same
 way as with fixeddim; if set to None, no marginalization
 is performed
+
+\item[{ngrid}] \leavevmode{[}int or listlike containing ints{]}
+number of points in each dimension of the output grid;
+if this is an iterable, it must have nphys + nphot -
+len(fixeddim) - len(margindim) elements
 
 \item[{qmin}] \leavevmode{[}float \textbar{} arraylike{]}
 minimum value in the output grid in each quantity; if

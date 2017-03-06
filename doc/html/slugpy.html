@@ -155,10 +155,11 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>All the remaining fields are identical to those listed above for integrated quantities, starting with wl</li>
 </ul>
 <p>For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).</p>
-<p>The following field is present only if SLUG was run with a Variable Mode IMF in a cluster-only simulation:</p>
+<p>The following fields are present only if SLUG was run with a Variable Mode IMF:</p>
 <ul class="simple">
 <li>VPx: The value drawn for variable parameter x (0,1,2...) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.</li>
 </ul>
+<p>These fields are present in both the cluster and integrated outputs if a simulation has been run using the variable mode IMF.</p>
 </div>
 <div class="section" id="module-slugpy">
 <span id="full-documentation-of-slugpy"></span><h2>Full Documentation of slugpy<a class="headerlink" href="#module-slugpy" title="Permalink to this headline">¶</a></h2>
@@ -384,6 +385,12 @@ field; this can be detected automatically for ASCII and FITS
 formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
 stellar_mass field; it has no effect for ASCII or FITS files</dd>
+<dt>no_neb_extinct <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 2/17, SLUG did not support differential nebular
+extinction, and thus there was no output field for it; this
+is detected and handled automatically for ASCII and FITS
+files; for binary outputs, this flag must be set for pre
+2/17 output files to be read correctly</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -396,6 +403,13 @@ stellar_mass field; it has no effect for ASCII or FITS files</dd>
 <dd>which trial was this cluster part of</dd>
 <dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>time at which cluster&#8217;s properties are being evaluated</dd>
+<dt>A_V <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>A_V value for each cluster, in mag (present only if SLUG was
+run with extinction enabled)</dd>
+<dt>A_Vneb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>value of A_V applied to the nebular light for each cluster
+(present only if SLUG was run with both nebular emission and
+extinction enabled)</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_prop file)</p>
 <dl class="docutils">
@@ -415,6 +429,11 @@ stellar_mass field; it has no effect for ASCII or FITS files</dd>
 <dd>number of living stars in cluster being treated stochastically</dd>
 <dt>max_star_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>mass of most massive living star in cluster</dd>
+<dt>vpn_tuple <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
+<dd>tuple containing arrays for any variable parameters we have
+(eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+is an array. Present only if variable parameters were
+enables when SLUG was run.</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_spec file)</p>
 <dl class="docutils">
@@ -700,7 +719,7 @@ ValueError, if photsystem is set to an unknown value</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster_prop">
-<code class="descclassname">slugpy.</code><code class="descname">read_cluster_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster_prop.html#read_cluster_prop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster_prop" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster_prop</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>verbose=False</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em>, <em>no_neb_extinct=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster_prop.html#read_cluster_prop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster_prop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read a SLUG2 cluster_prop file.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -731,6 +750,12 @@ field; this can be detected automatically for ASCII and FITS
 formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
 stellar_mass field; it has no effect for ASCII or FITS files</dd>
+<dt>no_neb_extinct <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 2/17, SLUG did not support differential nebular
+extinction, and thus there was no output field for it; this
+is detected and handled automatically for ASCII and FITS
+files; for binary outputs, this flag must be set for pre
+2/17 output files to be read correctly</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -761,8 +786,15 @@ stellar_mass field; it has no effect for ASCII or FITS files</dd>
 <dt>A_V <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>A_V value for each cluster, in mag (present only if SLUG was
 run with extinction enabled)</dd>
-<dt>vpn_tuple <span class="classifier-delimiter">:</span> <span class="classifier">contains arrays for any variable parameters we have (eg: VP0,</span></dt>
-<dd>VP1,VP2...) in the IMF.</dd>
+<dt>A_Vneb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>value of A_V applied to the nebular light for each cluster
+(present only if SLUG was run with both nebular emission and
+extinction enabled)</dd>
+<dt>vpn_tuple <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
+<dd>tuple containing arrays for any variable parameters we have
+(eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+is an array. Present only if variable parameters were
+enables when SLUG was run.</dd>
 </dl>
 </dd>
 </dl>

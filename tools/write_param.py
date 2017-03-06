@@ -249,7 +249,7 @@ class Menu(object):
             ('A_V', Menu_opt(
                 'A_V [mag or file name]',
                 '',
-                'ISM', ItemType.Str, optional=True,
+                'Extinction', ItemType.Str, optional=True,
                 trigger_redraw=True, help_txt =
                 'visual extinction; numeric values give a constant '+
                 'extinction, non-numeric values give a file name '+
@@ -258,37 +258,48 @@ class Menu(object):
             ('extinction_curve', Menu_opt(
                 'Extinction curve', osp.join('lib', 'extinct',
                                              'SB_ATT_SLUG.dat'),
-                'ISM', ItemType.Str, optional=True,
+                'Extinction', ItemType.Str, optional=True,
                 only_if_not = [('A_V', '')], help_txt =
                 'file containing the shape of the extinction curve')),
+            ('nebular_extinction_factor', Menu_opt(
+                'A_V,neb/A_V [num or name]',
+                '',
+                'Extinction', ItemType.Str, optional=True,
+                only_if_not = [('A_V', '')],
+                help_txt =
+                'ratio of nebular to stellar extinction; numeric values ' +
+                'give a constant '+
+                'extinction, non-numeric values give a file name '+
+                'containing the PDF of extinction; if omitted, no '+
+                'extinction is included')),
             ('compute_nebular', Menu_opt(
                 'Compute nebular emission', True,
-                'ISM', ItemType.Bool, help_txt =
+                'Nebular', ItemType.Bool, help_txt =
                 'true = compute nebular contribution for clusters < '+
                 '10 Myr old; false = do not comput nebular ' +
                 'contribution')),
             ('atomic_data', Menu_opt(
                 'Atomic data directory', 
                 osp.join('lib', 'atomic')+osp.sep,
-                'ISM', ItemType.Str,
+                'Nebular', ItemType.Str,
                 only_if = [('compute_nebular', True)], help_txt =
                 'directory containing atomic data used in nebular '+
                 'computations')),
             ('nebular_no_metals', Menu_opt(
                 'Omit nebular metal lines', False,
-                'ISM', ItemType.Bool, 
+                'Nebular', ItemType.Bool, 
                 only_if = [('compute_nebular', True)], help_txt =
                 'true = treat nebula as pure H; false = nebular of '+
                 'scaled Solar composition')),
             ('nebular_den', Menu_opt(
                 'Nebular density [cm^-3]', '1.0e2',
-                'ISM', ItemType.PosReal,
+                'Nebular', ItemType.PosReal,
                 only_if = [('compute_nebular', True)], help_txt =
                 'density of nebula to be used in computing '+
                 'continuum emission')),
             ('nebular_temp', Menu_opt(
                 'Nebular temp. [K, or -1 for auto]',
-                '-1', 'ISM', ItemType.Real,
+                '-1', 'Nebular', ItemType.Real,
                 only_if = [('compute_nebular', True)], help_txt =
                 'temperature of nebular to be used in computing '+
                 'continuum emission; if set to a value < 0, '+
@@ -296,14 +307,14 @@ class Menu(object):
                 'value of log U')),
             ('nebular_logU', Menu_opt(
                 'log ionization parameter (U)',
-                '-3', 'ISM', ItemType.Vals,
+                '-3', 'Nebular', ItemType.Vals,
                 allowed_vals = ['-3', '-2.5', '-2'],
                 only_if = [('compute_nebular', True)], help_txt =
                 'value of log U to use in computing the nebular '+
                 'emission')),
             ('nebular_phi', Menu_opt(
                 'phi (ioniz. photon absorption frac.)',
-                '0.73', 'ISM', ItemType.Real,
+                '0.73', 'Nebular', ItemType.Real,
                 only_if = [('compute_nebular', True)], help_txt =
                 'fraction of ionizing photons absorbed by H ' +
                 'within the observational aperture and thus ' +
@@ -338,7 +349,8 @@ class Menu(object):
             ('Control', 'Simulation control keywords'),
             ('Output', 'Output control keywords'),
             ('Stellar', 'Stellar model keywords'),
-            ('ISM', 'ISM model keywords'),
+            ('Extinction', 'Extinction keywords'),
+            ('Nebular', 'Nebular emission keywords'),
             ('Photometry', 'Photometry keywords')
         ])
 
