@@ -133,9 +133,10 @@ namespace atomic_data {
   const isotope_data ni57("ni", 28, 57, 3.08e6*log(2.0));
   const isotope_data ni59("ni", 28, 59, 2.41e12*log(2.0));
   const isotope_data ni63("ni", 28, 63, 3.16e9*log(2.0));
-  const std::vector<const isotope_data> unstable_isotopes =
-    { c14, na22, al26, si32, cl36, ar39, k40, ca41, ca45, ti44, v49, mn53, 
-      mn54, fe55, fe60, co60, ni56, ni57, ni59, ni63 };
+  const std::vector<const isotope_data *> unstable_isotopes =
+    { &c14, &na22, &al26, &si32, &cl36, &ar39, &k40, &ca41, &ca45, 
+      &ti44, &v49, &mn53, &mn54, &fe55, &fe60, &co60, &ni56, &ni57,
+      &ni59, &ni63 };
 }
 
 #endif

@@ -169,9 +169,9 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
       if (!stable) {
 	vector<double>::size_type j;
 	for (j=0; j<atomic_data::unstable_isotopes.size(); j++) {
-	  if ((atomic_data::unstable_isotopes[j].num() == isonum) &&
-	      (atomic_data::unstable_isotopes[j].wgt() == isowgt)) {
-	    iso.set_lifetime(atomic_data::unstable_isotopes[j].ltime());
+	  if ((atomic_data::unstable_isotopes[j]->num() == isonum) &&
+	      (atomic_data::unstable_isotopes[j]->wgt() == isowgt)) {
+	    iso.set_lifetime(atomic_data::unstable_isotopes[j]->ltime());
 	    break;
 	  }
 	}
