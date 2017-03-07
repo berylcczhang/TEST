@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <limits>
 #include <string>
+#include <vector>
 
 // Information on elements
 class element_data {

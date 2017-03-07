@@ -816,17 +816,16 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "NumFldStar";
 
     //If we have a variable IMF, write headers for the variable parameters
-    if (is_imf_var == true)
-    {
+    if (is_imf_var) {
       //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
-      {
-        int_prop_file << setw(14) << left << "VP"+ std::to_string(p);
+      for (vector<double>::size_type p = 0; p<imf_vpdraws.size();p++) {
+        int_prop_file << setw(14) << left 
+		      << "VP"+ std::to_string(static_cast<long long>(p));
       }
-    
-    }		  
-		int_prop_file << endl;
+    }
+    int_prop_file << endl;
 
+    // Write unit line
     int_prop_file << setw(14) << left << "(yr)"
 		  << setw(14) << left << "(Msun)"
 		  << setw(14) << left << "(Msun)"
@@ -836,23 +835,15 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << ""
 		  << setw(14) << left << ""
 		  << setw(14) << left << "";
-
-
-
-    //If we have a variable IMF, write headers for the variable parameters
-    if (is_imf_var == true)
-    {
+    if (is_imf_var) {
       //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
-      {
+      for (vector<double>::size_type p=0; p<imf_vpdraws.size(); p++) {
         int_prop_file << setw(14) << left << "";
       }
-    
     }      
-		int_prop_file << endl;
-		  
-		  		  
-		  
+    int_prop_file << endl;
+		  		  		  
+    // Line of underscores
     int_prop_file << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
@@ -862,41 +853,24 @@ void slug_sim::open_integrated_prop() {
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------"
 		  << setw(14) << left << "-----------";
-
-    //If we have a variable IMF, write headers for the variable parameters
-    if (is_imf_var == true)
-    {
-      //Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++)
-      {
+    if (is_imf_var) {
+      for (vector<double>::size_type p=0; p<imf_vpdraws.size(); p++) {
         int_prop_file << setw(14) << left << "-----------";
       }
-    
-    }
-      
+    }      
     int_prop_file << endl;
-
-
-  }
   
+  } else if (out_mode == BINARY) {
 
-  else if (out_mode == BINARY) 
-  {
-
-      // File starts with an integer for the number of variable parameters
-      if (is_imf_var == true)
-      {
+    // File starts with an integer for the number of variable parameters
+    if (is_imf_var == true) {
         int nvps = imf_vpdraws.size();
         int_prop_file.write((char *) &nvps, sizeof nvps);
-      }
-      else
-      {    
-        int nvps = 0;
-        int_prop_file.write((char *) &nvps, sizeof nvps);    
-      }
-      
-  }  
-  
+    } else {    
+      int nvps = 0;
+      int_prop_file.write((char *) &nvps, sizeof nvps);    
+    }      
+  }
   
 #ifdef ENABLE_FITS
   else if (out_mode == FITS) {
@@ -913,19 +887,19 @@ void slug_sim::open_integrated_prop() {
       { "1K", "1D", "1D", "1D", "1D", "1D", "1D", "1K", "1K", "1K" };
     vector<string> tunit_str = 
       { "Msun", "Msun", "Msun", "Msun", "Msun", "Msun", "", "", "", "" };
-
     
     // If we have a variable IMF, write headers for the variable parameters
-    if (is_imf_var == true) {
+    if (is_imf_var) {
       // Loop over the variable parameters
-      for (int p = 0; p<imf_vpdraws.size();p++) {
-        ttype_str.push_back("VP"+std::to_string(p));
+      for (vector<double>::size_type p = 0; p<imf_vpdraws.size(); p++) {
+        ttype_str.push_back("VP"+std::to_string(static_cast<long long>(p)));
         tform_str.push_back("1D");
         tunit_str.push_back("");
         ncol++; 
       }
     } 
-      
+
+    // Make things we can pass to c
     char *ttype[ncol], *tform[ncol], *tunit[ncol];
     for (int i=0; i<ncol; i++)  {
       ttype[i] = const_cast<char*>(ttype_str[i].c_str());
@@ -933,12 +907,12 @@ void slug_sim::open_integrated_prop() {
       tunit[i] = const_cast<char*>(tunit_str[i].c_str());
     }
 
+    // Create FITS table
     int fits_status = 0;
     fits_create_tbl(int_prop_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, nullptr, &fits_status);    
   }
 #endif
-
 }
 
 
