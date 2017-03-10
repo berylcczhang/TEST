@@ -62,7 +62,7 @@
              reltol=1.0e-3, abstol=1.0e-10, leafsize=16):
 </pre></div>
 </div>
-<p>A full description of all options is included in the <a class="reference internal" href="#ssec-slugpy-bayesphot"><span>Full Documentation of slugpy.bayesphot</span></a>, but the essential features are summarized here.</p>
+<p>A full description of all options is included in the <a class="reference internal" href="#ssec-slugpy-bayesphot"><span class="std std-ref">Full Documentation of slugpy.bayesphot</span></a>, but the essential features are summarized here.</p>
 <p>The argument <code class="docutils literal"><span class="pre">dataset</span></code> is an array of shape (N, M) that contains the library of N models that represents the training set for the Bayesian analysis. Each model consists of M properties; the first <code class="docutils literal"><span class="pre">nphys</span></code> of these are physical properties that are the quantities to be inferred from the observations, while the remaining ones are photometric properties. An important point is that the <code class="docutils literal"><span class="pre">dataset</span></code> object is NOT copied, so altering it after the <code class="docutils literal"><span class="pre">bp</span></code> object is created will result in erroneous results.</p>
 <p>The <code class="docutils literal"><span class="pre">priors</span></code> and <code class="docutils literal"><span class="pre">sample_density</span></code> arguments are used to compute the weighting to apply to the input models. The <code class="docutils literal"><span class="pre">priors</span></code> argument specifies the prior probability to assign to each model; it can be either an array giving a prior probability directly, or a callable that can take the physical properties of models as an input and return the prior probability as an output. Similarly, the <code class="docutils literal"><span class="pre">sample_density</span></code> argument specifies the probablity distribution from which the physical models were selected; as with <code class="docutils literal"><span class="pre">priors</span></code>, it can be an array or a callable.</p>
 <p>The <code class="docutils literal"><span class="pre">bandwidth</span></code> argument specifies the bandwidth to use in the kernel density estimation; this need not be the same in each dimension. The <code class="docutils literal"><span class="pre">bandwidth</span></code> can be specified as a float, in which case it is the same for every dimension, or as an array of M elements giving the bandwidth for every dimension. Finally, it can be set to the string <code class="docutils literal"><span class="pre">auto</span></code>, in which case the <code class="docutils literal"><span class="pre">bp</span></code> will attempt to make a reasonable choice of bandwidth autonomously. However, this autonomous choice will probably perform less well than something that is hand-chosen by the user based on their knowledge of the library. As a rule of thumb, bandwidths should be chosen so that, for typical input photometric values, there are ~10 simulations within the 1 kernel size.</p>
@@ -199,8 +199,8 @@ measured photometric values.</p>
 <dl class="docutils">
 <dt>Properties</dt>
 <dd><dl class="first last docutils">
-<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
-<dd>prior probability on each data point; interpretation
+<dt>priors</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span><dd>prior probability on each data point; interpretation
 depends on the type passed; array, shape (N): values are
 interpreted as the prior probability of each data point;
 callable: the callable must take as an argument an array
@@ -209,8 +209,8 @@ giving the prior probability at each data point; None:
 no reweighting is performed, so all data points in the library
 have equal prior probability, i.e. the prior is the same as
 the sampling of points in the library</dd>
-<dt>pobs <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
-<dd>the probability that a particular object would be observed,
+<dt>pobs</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span><dd>the probability that a particular object would be observed,
 which is used, like prior, to weight the library;
 interpretation depends on type. None means all objects are
 equally likely to be observed, array is an array giving the
@@ -219,17 +219,17 @@ callable means must be a function that takes an array
 containing the photometry, of shape (N, nhpot), as an
 argument, and returns an array of shape (N) giving the
 probability of observation for that object</dd>
-<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span></dt>
-<dd>bandwidth for kernel density estimation; if set to
+<dt>bandwidth</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span><dd>bandwidth for kernel density estimation; if set to
 &#8216;auto&#8217;, the bandwidth will be estimated automatically; if
 set to a scalar quantity, the same bandwidth is used for all
 dimensions</dd>
-<dt>nphys <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of physical properties in the library</dd>
-<dt>nphot <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of photometric properties in the library</dd>
-<dt>ndim <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>nphys + nphot</dd>
+<dt>nphys</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of physical properties in the library</dd>
+<dt>nphot</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of photometric properties in the library</dd>
+<dt>ndim</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>nphys + nphot</dd>
 </dl>
 </dd>
 </dl>
@@ -240,36 +240,36 @@ dimensions</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>dataset <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N, M)</span></dt>
-<dd>training data set; this is a set of N sample stellar
+<dt>dataset</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N, M)</span><dd>training data set; this is a set of N sample stellar
 populations, having M properties each; the first nphys
 represent physical properties (e.g., log mass, log age),
 while the next M - nphys represent photometric
 properties</dd>
-<dt>nphys <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of physical properties in dataset</dd>
-<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
-<dd>names of photometric filters; not used, but can be
+<dt>nphys</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of physical properties in dataset</dd>
+<dt>filters</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span><dd>names of photometric filters; not used, but can be
 stored for convenience</dd>
-<dt>bandwidth <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span></dt>
-<dd>bandwidth for kernel density estimation; if set to
+<dt>bandwidth</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;auto&#8217; | float | array, shape (M)</span><dd>bandwidth for kernel density estimation; if set to
 &#8216;auto&#8217;, the bandwidth will be estimated automatically; if
 set to a scalar quantity, the same bandwidth is used for all
 dimensions</dd>
-<dt>ktype <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd>type of kernel to be used in densty estimation; allowed
+<dt>ktype</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>type of kernel to be used in densty estimation; allowed
 values are &#8216;gaussian&#8217; (default), &#8216;epanechnikov&#8217;, and
 &#8216;tophat&#8217;; only Gaussian can be used with error bars</dd>
-<dt>priors <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
-<dd>prior probability on each data point; interpretation
+<dt>priors</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span><dd>prior probability on each data point; interpretation
 depends on the type passed; array, shape (N): values are
 interpreted as the prior probability of each data point;
 callable: the callable must take as an argument an array
 of shape (N, nphys), and return an array of shape (N)
 giving the prior probability at each data point; None:
 all data points have equal prior probability</dd>
-<dt>pobs <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span></dt>
-<dd>the probability that a particular object would be observed,
+<dt>pobs</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | None</span><dd>the probability that a particular object would be observed,
 which is used, like prior, to weight the library;
 interpretation depends on type. None means all objects are
 equally likely to be observed, array is an array giving the
@@ -278,8 +278,8 @@ callable means must be a function that takes an array
 containing the photometry, of shape (N, nhpot), as an
 argument, and returns an array of shape (N) giving the
 probability of observation for that object</dd>
-<dt>sample_density <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | None</span></dt>
-<dd>the density of the data samples at each data point; this
+<dt>sample_density</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N) | callable | &#8216;auto&#8217; | None</span><dd>the density of the data samples at each data point; this
 need not match the prior density; interpretation depends
 on the type passed; array, shape (N): values are
 interpreted as the density of data sampling at each
@@ -291,22 +291,22 @@ directly from the data set; note that this can be quite
 slow for large data sets, so it is preferable to specify
 this analytically if it is known; None: data are assumed
 to be uniformly sampled</dd>
-<dt>reltol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>relative error tolerance; errors on all returned
+<dt>reltol</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>relative error tolerance; errors on all returned
 probabilities p will satisfy either
 abs(p_est - p_true) &lt;= reltol * p_est   OR
 abs(p_est - p_true) &lt;= abstol,
 where p_est is the returned estimate and p_true is the
 true value</dd>
-<dt>abstol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd>absolute error tolerance; see above</dd>
-<dt>leafsize <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of data points in each leaf of the KD tree</dd>
-<dt>nosort <span class="classifier-delimiter">:</span> <span class="classifier">arraylike of bool, shape (N) | None</span></dt>
-<dd>if specified, this keyword causes the KD tree not to be
+<dt>abstol</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float</span><dd>absolute error tolerance; see above</dd>
+<dt>leafsize</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of data points in each leaf of the KD tree</dd>
+<dt>nosort</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike of bool, shape (N) | None</span><dd>if specified, this keyword causes the KD tree not to be
 sorted along the dimensions for which nosort is True</dd>
-<dt>thread_safe <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, bayesphot will make extra copies of internals
+<dt>thread_safe</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, bayesphot will make extra copies of internals
 as needed to ensure thread safety when the computation
 routines (logL, mpdf, mcmc, bestmatch, make_approx_phot,
 make_approx_phys, mpdf_approx) are used with
@@ -351,34 +351,34 @@ matches to an input set of photometry.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving the photometric values; for a
+<dt>phot</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving photometric errors, which must have the
+<dt>photerr</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving photometric errors, which must have the
 same shape as phot; if this is not None,
 then distances will be measured in units of the
 photometric error if bandwidth_units is False, or in
 units of the bandwidth added in quadrature with the
 errors if it is True</dd>
-<dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of matches to return; returned matches will be
+<dt>nmatch</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of matches to return; returned matches will be
 ordered by distance from the input</dd>
-<dt>bandwidth_units <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if False, distances are computed based on the
+<dt>bandwidth_units</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if False, distances are computed based on the
 logarithmic difference in luminosity; if True, they are
 measured in units of the bandwidth</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span></dt>
-<dd>best matches to the input photometry; shape in the
+<dt>matches</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span><dd>best matches to the input photometry; shape in the
 leading dimensions will be the same as for phot, and if
 nmatch == 1 then that dimension will be omitted</dd>
-<dt>dist <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span></dt>
-<dd>distances between the matches and the input photometry</dd>
+<dt>dist</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span><dd>distances between the matches and the input photometry</dd>
 </dl>
 </dd>
 </dl>
@@ -392,27 +392,27 @@ matches to an input set of photometry.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span></dt>
-<dd>array giving the physical values; for a
+<dt>phot</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span><dd>array giving the physical values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>nmatch <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of matches to return; returned matches will be
+<dt>nmatch</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of matches to return; returned matches will be
 ordered by distance from the input</dd>
-<dt>bandwidth_units <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if False, distances are computed based on the
+<dt>bandwidth_units</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if False, distances are computed based on the
 logarithmic difference in physical properties; if True,
 they are measured in units of the bandwidth</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>matches <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span></dt>
-<dd>best matches to the input properties; shape in the
+<dt>matches</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch, nphys + nfilter)</span><dd>best matches to the input properties; shape in the
 leading dimensions will be the same as for phot, and if
 nmatch == 1 then that dimension will be omitted</dd>
-<dt>dist <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span></dt>
-<dd>distances between the matches and the input physical
+<dt>dist</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (..., nmatch)</span><dd>distances between the matches and the input physical
 properties</dd>
 </dl>
 </dd>
@@ -428,24 +428,24 @@ extinction, and set of log luminosities</p>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span></dt>
-<dd>array giving values of the physical properties; for a
+<dt>physprop</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span><dd>array giving values of the physical properties; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving the photometric values; for a
+<dt>photprop</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving photometric errors; for a multidimensional
+<dt>photerr</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><dl class="first last docutils">
-<dt>logL <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span></dt>
-<dd>natural log of the likelihood function</dd>
+<dt>logL</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float or arraylike</span><dd>natural log of the likelihood function</dd>
 </dl>
 </dd>
 </dl>
@@ -464,15 +464,15 @@ of reltol as well.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>phys <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (N, nphys)</span></dt>
-<dd>the set or sets of physical properties for which the
+<dt>phys</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (N, nphys)</span><dd>the set or sets of physical properties for which the
 approximation is to be generated</dd>
-<dt>squeeze <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, the representation returned will be squeezed to
+<dt>squeeze</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, the representation returned will be squeezed to
 minimize the number of points included, using reltol as
 the error tolerance</dd>
-<dt>filter_ignore <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span></dt>
-<dd>if None, the kernel density representation returned
+<dt>filter_ignore</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span><dd>if None, the kernel density representation returned
 covers all filters; otherwise this must be a listlike of
 bool, one entry per filter, with a value of False
 indicating that filter should be excluded from the
@@ -482,12 +482,12 @@ efficient representations</dd>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphot), or a list of such arrays</span></dt>
-<dd>an array containing the list of points to be used for
+<dt>x</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphot), or a list of such arrays</span><dd>an array containing the list of points to be used for
 the approximation, where nphot is the number of
 photometric filters being returned</dd>
-<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span></dt>
-<dd>an array containing the weights of the points</dd>
+<dt>wgts</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span><dd>an array containing the weights of the points</dd>
 </dl>
 </dd>
 <dt>Notes:</dt>
@@ -511,20 +511,20 @@ of reltol as well.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span></dt>
-<dd>the set or sets of photometric properties for which the
+<dt>phot</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span><dd>the set or sets of photometric properties for which the
 approximation is to be generated</dd>
-<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span></dt>
-<dd>array giving photometric errors; the number of elements
+<dt>photerr</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (N, nfilter)</span><dd>array giving photometric errors; the number of elements
 in the output lists will be the size that results from
 broadcasting together the leading dimensions of phot and
 photerr</dd>
-<dt>squeeze <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, the representation returned will be squeezed to
+<dt>squeeze</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, the representation returned will be squeezed to
 minimize the number of points included, using reltol as
 the error tolerance</dd>
-<dt>phys_ignore <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span></dt>
-<dd>if None, the kernel density representation returned
+<dt>phys_ignore</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">None or listlike of bool</span><dd>if None, the kernel density representation returned
 covers all physical properties; otherwise this must be a
 listlike of bool, one entry per physical dimension, with
 a value of False indicating that dimension should be
@@ -534,12 +534,12 @@ dimensions can allow for more efficient representations</dd>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphys), or a list of such arrays</span></dt>
-<dd>an array containing the list of points to be used for
+<dt>x</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, nphys), or a list of such arrays</span><dd>an array containing the list of points to be used for
 the approximation, where nphys is the number of
 physical dimensions being returned</dd>
-<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span></dt>
-<dd>an array containing the weights of the points</dd>
+<dt>wgts</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M), or a list of such arrays</span><dd>an array containing the weights of the points</dd>
 </dl>
 </dd>
 <dt>Notes:</dt>
@@ -558,26 +558,26 @@ physical parameters at a specified set of photometric values.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving the photometric values; for a
+<dt>photprop</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving photometric errors; for a multidimensional
+<dt>photerr</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
-<dt>mc_walkers <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of walkers to use in the MCMC</dd>
-<dt>mc_steps <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of steps in the MCMC</dd>
-<dt>mc_burn_in <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
-<dd>number of steps to consider &#8220;burn-in&#8221; and discard</dd>
+<dt>mc_walkers</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of walkers to use in the MCMC</dd>
+<dt>mc_steps</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of steps in the MCMC</dd>
+<dt>mc_burn_in</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int</span><dd>number of steps to consider &#8220;burn-in&#8221; and discard</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><dl class="first last docutils">
-<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of sample points returned by the MCMC</dd>
+<dt>samples</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of sample points returned by the MCMC</dd>
 </dl>
 </dd>
 </dl>
@@ -593,47 +593,47 @@ values, in the same style as meshgrid.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>idx <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
-<dd>index of the physical quantity whose PDF is to be
+<dt>idx</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span><dd>index of the physical quantity whose PDF is to be
 computed; if this is an iterable, the joint distribution of
 the indicated quantities is returned</dd>
-<dt>photprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving the photometric values; for a
+<dt>photprop</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving the photometric values; for a
 multidimensional array, the operation is vectorized over
 the leading dimensions</dd>
-<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span></dt>
-<dd>array giving photometric errors; for a multidimensional
+<dt>photerr</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nfilter) or (..., nfilter)</span><dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
-<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
-<dd>number of points in each dimension of the output grid;
+<dt>ngrid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span><dd>number of points in each dimension of the output grid;
 if this is an iterable, it must have the same number of
 elements as idx</dd>
-<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
-<dd>minimum value in the output grid in each quantity; if
+<dt>qmin</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span><dd>minimum value in the output grid in each quantity; if
 left as None, defaults to the minimum value in the
 library; if this is an iterable, it must contain the
 same number of elements as idx</dd>
-<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
-<dd>maximum value in the output grid in each quantity; if
+<dt>qmax</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span><dd>maximum value in the output grid in each quantity; if
 left as None, defaults to the maximum value in the
 library; if this is an iterable, it must contain the
 same number of elements as idx</dd>
-<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
-<dd>set of values defining the grid on which the PDF is to
+<dt>grid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span><dd>set of values defining the grid on which the PDF is to
 be evaluated, in the same format used by meshgrid</dd>
-<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, returned pdf&#8217;s will be normalized to integrate
+<dt>norm</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, returned pdf&#8217;s will be normalized to integrate
 to 1</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of values at which the PDF is evaluated; contents
+<dt>grid_out</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of values at which the PDF is evaluated; contents
 are the same as returned by meshgrid</dd>
-<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of marginal posterior probabilities at each point
+<dt>pdf</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of marginal posterior probabilities at each point
 of the output grid, for each input set of photometry; the leading
 dimensions match the leading dimensions produced by
 broadcasting the leading dimensions of photprop and
@@ -654,14 +654,14 @@ the same style as meshgrid.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, ndim), or a list of such arrays</span></dt>
-<dd>array of points retured by make_approx_phot or
+<dt>x</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M, ndim), or a list of such arrays</span><dd>array of points retured by make_approx_phot or
 make_approx_phys</dd>
-<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M) or a list of such arrays</span></dt>
-<dd>array of weights returned by make_approx_phot or
+<dt>wgts</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (M) or a list of such arrays</span><dd>array of weights returned by make_approx_phot or
 make_approx_phys</dd>
-<dt>dims <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;phys&#8217; | &#8216;phot&#8217; | arraylike of ints</span></dt>
-<dd>dimensions covered by x and wgts; the strings &#8216;phys&#8217; or
+<dt>dims</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;phys&#8217; | &#8216;phot&#8217; | arraylike of ints</span><dd>dimensions covered by x and wgts; the strings &#8216;phys&#8217; or
 &#8216;phot&#8217; indicate that they cover all physical or
 photometric dimensions, and correspond to the defaults
 returned by make_approx_phys and make_approx_phot,
@@ -670,17 +670,17 @@ the dimensions covered by x and wgts, where the
 physical dimensions are numbered 0, 1, ... nphys-1, and
 the photometric ones are nphys, nphys+1,
 ... nphys+nphot-1</dd>
-<dt>dims_return <span class="classifier-delimiter">:</span> <span class="classifier">None or arraylike of ints</span></dt>
-<dd>if None, the output PDF has the same dimensions as
+<dt>dims_return</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">None or arraylike of ints</span><dd>if None, the output PDF has the same dimensions as
 specified in dms; if not, then dimreturn must be a
 subset of dim, and a marginal PDF in certain dimensions
 will be generated</dd>
-<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
-<dd>number of points in each dimension of the output grid;
+<dt>ngrid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span><dd>number of points in each dimension of the output grid;
 if this is an iterable, it must have the same number of
 elements as idx</dd>
-<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217; </span></dt>
-<dd>minimum value in the output grid in each quantity; if
+<dt>qmin</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217; </span><dd>minimum value in the output grid in each quantity; if
 this a float, it is applied to each dimension; if it is
 an iterable, it must contain the same number of elements
 as the number of dimensions being returned, as gives the
@@ -688,23 +688,23 @@ minimum in each dimension; if it is &#8216;zoom&#8217; or &#8216;all&#8217;, the
 minimum is chosen automatically, with &#8216;zoom&#8217; focusing on
 a region encompassing the probability maximum, and &#8216;all&#8217;
 encompassing all the points in the representation</dd>
-<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217;</span></dt>
-<dd>same as qmin, but for the maximum of the output grid</dd>
-<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
-<dd>set of values defining the grid on which the PDF is to
+<dt>qmax</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float | listlike | &#8216;zoom&#8217; | &#8216;all&#8217;</span><dd>same as qmin, but for the maximum of the output grid</dd>
+<dt>grid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span><dd>set of values defining the grid on which the PDF is to
 be evaluated, in the same format used by meshgrid</dd>
-<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, returned pdf&#8217;s will be normalized to integrate
+<dt>norm</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, returned pdf&#8217;s will be normalized to integrate
 to 1</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of values at which the PDF is evaluated; contents
+<dt>grid_out</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of values at which the PDF is evaluated; contents
 are the same as returned by meshgrid</dd>
-<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of marginal posterior probabilities at each point
+<dt>pdf</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of marginal posterior probabilities at each point
 of the output grid, for each input cluster; the leading
 dimensions match the leading dimensions produced by
 broadcasting the leading dimensions of photprop and
@@ -725,52 +725,52 @@ marginal PDF routine provided.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>fixeddim <span class="classifier-delimiter">:</span> <span class="classifier">int | arraylike of ints | None</span></dt>
-<dd>The index or indices of the physical or photometric
+<dt>fixeddim</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int | arraylike of ints | None</span><dd>The index or indices of the physical or photometric
 properties to be held fixed; physical properties are
 numbered 0 ... nphys-1, and phtometric ones are numbered
 nphys ... nphys + nphot - 1. This can also be set to
 None, in which case no properties are held fixed.</dd>
-<dt>fixedprop <span class="classifier-delimiter">:</span> <span class="classifier">array | None</span></dt>
-<dd>The values of the properties being held fixed; the size
+<dt>fixedprop</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array | None</span><dd>The values of the properties being held fixed; the size
 of the final dimension must be equal to the number of
 elements in fixeddim, and if fixeddim is None, this must
 be too</dd>
-<dt>margindim <span class="classifier-delimiter">:</span> <span class="classifier">int | arraylike of ints | None</span></dt>
-<dd>The index or indices of the physical or photometric
+<dt>margindim</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int | arraylike of ints | None</span><dd>The index or indices of the physical or photometric
 properties to be maginalized over, numbered in the same
 way as with fixeddim; if set to None, no marginalization
 is performed</dd>
-<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
-<dd>number of points in each dimension of the output grid;
+<dt>ngrid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span><dd>number of points in each dimension of the output grid;
 if this is an iterable, it must have nphys + nphot -
 len(fixeddim) - len(margindim) elements</dd>
-<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float | arraylike</span></dt>
-<dd>minimum value in the output grid in each quantity; if
+<dt>qmin</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float | arraylike</span><dd>minimum value in the output grid in each quantity; if
 left as None, defaults to the minimum value in the
 library; if this is an iterable, it must contain a
 number of elements equal to nphys + nphot -
 len(fixeddim) - len(margindim)</dd>
-<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float | arraylike</span></dt>
-<dd>maximum value in the output grid in each quantity; if
+<dt>qmax</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float | arraylike</span><dd>maximum value in the output grid in each quantity; if
 left as None, defaults to the maximum value in the
 library; if this is an iterable, it must have the same
 number of elements as qmin</dd>
-<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
-<dd>set of values defining the grid on which the PDF is to
+<dt>grid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span><dd>set of values defining the grid on which the PDF is to
 be evaluated, in the same format used by meshgrid</dd>
-<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, returned pdf&#8217;s will be normalized to integrate
+<dt>norm</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, returned pdf&#8217;s will be normalized to integrate
 to 1</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of values at which the PDF is evaluated; contents
+<dt>grid_out</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of values at which the PDF is evaluated; contents
 are the same as returned by meshgrid</dd>
-<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of marginal posterior probabilities at each point
+<dt>pdf</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of marginal posterior probabilities at each point
 of the output grid, for each input set of properties; the leading
 dimensions match the leading dimensions produced by
 broadcasting the leading dimensions of photprop and
@@ -791,12 +791,12 @@ values, in the same style as meshgrid.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>idx <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
-<dd>index of the photometric quantity whose PDF is to be
+<dt>idx</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span><dd>index of the photometric quantity whose PDF is to be
 computed, starting at 0; if this is an iterable, the
 joint distribution of the indicated quantities is returned</dd>
-<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span></dt>
-<dd>physical properties to be used; if this is an array of
+<dt>physprop</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphys) or (..., nphys)</span><dd>physical properties to be used; if this is an array of
 nphys elements, these give the physical properties; if
 it is a multidimensional array, the operation is
 vectoried over the leading dimensions
@@ -804,35 +804,35 @@ physical properties &#8211; the function must take an array
 of (nphys) elements as an input, and return a floating
 point value representing the PDF evaluated at that set
 of physical properties as an output</dd>
-<dt>ngrid <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span></dt>
-<dd>number of points in each dimension of the output grid;
+<dt>ngrid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">int or listlike containing ints</span><dd>number of points in each dimension of the output grid;
 if this is an iterable, it must have the same number of
 elements as idx</dd>
-<dt>qmin <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
-<dd>minimum value in the output grid in each quantity; if
+<dt>qmin</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span><dd>minimum value in the output grid in each quantity; if
 left as None, defaults to the minimum value in the
 library; if this is an iterable, it must contain the
 same number of elements as idx</dd>
-<dt>qmax <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span></dt>
-<dd>maximum value in the output grid in each quantity; if
+<dt>qmax</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">float or listlike</span><dd>maximum value in the output grid in each quantity; if
 left as None, defaults to the maximum value in the
 library; if this is an iterable, it must contain the
 same number of elements as idx</dd>
-<dt>grid <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span></dt>
-<dd>set of values defining the grid on which the PDF is to
+<dt>grid</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">listlike of arrays</span><dd>set of values defining the grid on which the PDF is to
 be evaluated, in the same format used by meshgrid</dd>
-<dt>norm <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd>if True, returned pdf&#8217;s will be normalized to integrate
+<dt>norm</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>if True, returned pdf&#8217;s will be normalized to integrate
 to 1</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>grid_out <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of values at which the PDF is evaluated; contents
+<dt>grid_out</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of values at which the PDF is evaluated; contents
 are the same as returned by meshgrid</dd>
-<dt>pdf <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
-<dd>array of marginal posterior probabilities at each point
+<dt>pdf</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of marginal posterior probabilities at each point
 of the output grid, for each input set of properties; the leading
 dimensions match the leading dimensions produced by
 broadcasting the leading dimensions of photprop and
@@ -896,16 +896,16 @@ fewer points, using an error tolerance of reltol</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N, ndim)</span></dt>
-<dd>an array of points forming a kernel density
+<dt>x</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N, ndim)</span><dd>an array of points forming a kernel density
 representation; on exit, x will be resized to (M, ndim)
 with M &lt;= N</dd>
-<dt>wgts <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N)</span></dt>
-<dd>an array of weights for the kernel density
+<dt>wgts</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N)</span><dd>an array of weights for the kernel density
 representation; on exit, wgts will be resized to (M),
 with M &lt;= N</dd>
-<dt>dims <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (ndim)</span></dt>
-<dd>array specifying which dimensions in the kernel density
+<dt>dims</dt>
+ <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (ndim)</span><dd>array specifying which dimensions in the kernel density
 representation the coordinates in x correspond to; if
 left as None, they are assumed to correspond to the
 first ndim dimensions in the data set</dd>
@@ -957,14 +957,11 @@ first ndim dimensions in the data set</dd>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -975,7 +972,7 @@ first ndim dimensions in the data set</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
