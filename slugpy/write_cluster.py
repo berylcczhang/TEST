@@ -74,177 +74,68 @@ def write_cluster(data, model_name, fmt):
 
             fp = open(model_name+'_cluster_prop.txt', 'w')
 
-            nvp = 0
-
-            # Write header lines
+            # Figure out which fields we have
+            fields = ['UniqueID', 'Time', 'FormTime',
+                      'Lifetime', 'TargetMass',
+                      'BirthMass', 'LiveMass', 'StellarMass',
+                      'NumStar', 'MaxStarMass']
+            units = ['', '(yr)', '(yr)',
+                     '(yr)', '(Msun)', '(Msun)',
+                     '(Msun)', '(Msun)',
+                     '', '(Msun)']
             if 'A_V' in data._fields:
-                fp.write(("{:<14s}"*11).
-                         format('UniqueID', 'Time', 'FormTime',
-                                'Lifetime', 'TargetMass',
-                                'BirthMass', 'LiveMass', 'StellarMass',
-                                'NumStar', 'MaxStarMass', 'A_V',))
-                                
-                vp_i=0   
-                adding_vcols = True                                     
-                while adding_vcols == True:
-                                            
-                    if 'VP'+`vp_i` in data._fields:            
-                        fp.write(("{:<14s}"*1).format('VP'+`vp_i`,))
-                        vp_i+=1
-                    else:
-                        nvp = vp_i
-                        adding_vcols = False                   
-                        fp.write("\n")
-                                
-                fp.write(("{:<14s}"*11).
-                         format('', '(yr)', '(yr)',
-                                '(yr)', '(Msun)', '(Msun)',
-                                '(Msun)', '(Msun)',
-                                '', '(Msun)', '(mag)',))
-                vp_i=0   
-                adding_vcols = True  
-                while adding_vcols == True:
-                                            
-                    if 'VP'+`vp_i` in data._fields:            
-                        fp.write(("{:<14s}"*1).format('',))
-                        vp_i+=1
-                    else:
-                        adding_vcols = False                   
-                        fp.write("\n")
-                
-                
-                fp.write(("{:<14s}"*11).
-                         format('-----------', '-----------', '-----------',
-                                '-----------', '-----------', '-----------',
-                                '-----------', '-----------',
-                                '-----------', '-----------',
-                                '-----------',))
-                vp_i=0   
-                adding_vcols = True  
-                while adding_vcols == True:
-                                            
-                    if 'VP'+`vp_i` in data._fields:            
-                        fp.write(("{:<14s}"*1).format('-----------',))
-                        vp_i+=1
-                    else:
-                        adding_vcols = False                   
-                        fp.write("\n")
-            else:
-                fp.write(("{:<14s}"*10).
-                         format('UniqueID', 'Time', 'FormTime',
-                                'Lifetime', 'TargetMass',
-                                'BirthMass', 'LiveMass', 'StellarMass',
-                                'NumStar', 'MaxStarMass',))
-                vp_i=0   
-                adding_vcols = True                                     
-                while adding_vcols == True:
-                                            
-                    if 'VP'+`vp_i` in data._fields:            
-                        fp.write(("{:<14s}"*1).format('VP'+`vp_i`,))
-                        vp_i+=1
-                    else:
-                        nvp = vp_i
-                        adding_vcols = False                   
-                        fp.write("\n") 
-                                
-                                
-                fp.write(("{:<14s}"*10).
-                         format('', '(yr)', '(yr)',
-                                '(yr)', '(Msun)', '(Msun)',
-                                '(Msun)', '(Msun)',
-                                '', '(Msun)',))
-                                
-                vp_i=0
-                   
-                adding_vcols = True  
-                while adding_vcols == True:
-                                            
-                    if 'VP'+`vp_i` in data._fields:            
-                        fp.write(("{:<14s}"*1).format('',))
-                        vp_i+=1
-                    else:
-                    
-                        adding_vcols = False                   
-                        fp.write("\n")        
-                                
-                fp.write(("{:<14s}"*10).
-                         format('-----------', '-----------', '-----------',
-                                '-----------', '-----------', '-----------',
-                                '-----------', '-----------',
-                                '-----------', '-----------',))
-                vp_i=0   
-                adding_vcols = True  
-                while adding_vcols == True:
-                                            
-                    if 'VP'+`vp_i` in data._fields:            
-                        fp.write(("{:<14s}"*1).format('-----------',))
-                        vp_i+=1
-                    else:
-                        adding_vcols = False                   
-                        fp.write("\n")
+                fields.append('A_V')
+                units.append('(mag)')
+            if 'A_Vneb' in data._fields:
+                fields.append('A_Vneb')
+                units.append('(mag)')
+            vp_i = 0
+            while 'VP'+`vp_i` in data._fields:
+                fields.append('VP'+`vp_i`)
+                units.append('')
+                vp_i += 1
+
+            # Write headers
+            fp.write(("{:<14s}"*len(fields)).format(*fields))
+            fp.write("\n")
+            fp.write(("{:<14s}"*len(units)).format(*units))
+            fp.write("\n")
+            fp.write(("{:<14s}"*len(fields)).
+                     format(*(['-----------']*len(fields))))
+            fp.write("\n")
 
             # Write data
             for i in range(len(data.id)):
+                # If this is a new trial, write a separator
+                if i != 0:
+                    if data.trial[i] != data.trial[i-1]:
+                        fp.write("-"*(len(fields)*14-3)+"\n")
+                # Write fields that are always present
+                fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
+                         "{:11.5e}   {:11.5e}   {:11.5e}   {:11.5e}   "
+                         "{:11d}   {:11.5e}".format(
+                             data.id[i], data.time[i], 
+                             data.form_time[i], data.lifetime[i],
+                             data.target_mass[i],
+                             data.actual_mass[i],
+                             data.live_mass[i],
+                             data.stellar_mass[i],
+                             data.num_star[i],
+                             data.max_star_mass[i]))
+                # Write optional fields
                 if 'A_V' in data._fields:
-                    # If this is a new trial, write a separator
-                    if i != 0:
-                        if data.trial[i] != data.trial[i-1]:
-                            if nvp == 0:
-                                fp.write("-"*(11*14-3)+"\n")
-                            else:
-                                fp.write("-"*((11+nvp)*14-3)+"\n")
-                    fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
-                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11.5e}   "
-                             "{:11d}   {:11.5e}   {:11.5e}".
-                             format(data.id[i], data.time[i], 
-                                    data.form_time[i], data.lifetime[i],
-                                    data.target_mass[i],
-                                    data.actual_mass[i],
-                                    data.live_mass[i],
-                                    data.stellar_mass[i],
-                                    data.num_star[i],
-                                    data.max_star_mass[i],
-                                    data.A_V[i]))
-                                    
-                    vp_i=0   
-                    adding_vcols = True  
-                    while adding_vcols == True:                                                
-                        if 'VP'+`vp_i` in data._fields:
-                            current_vp=getattr(data, "VP"+`vp_i`)
-                            fp.write("   {:11.5e}".format(current_vp[i]))
-                            vp_i+=1
-                        else:
-                            adding_vcols = False                   
-                            fp.write("\n")
-                            
-                else:
-                    if i != 0:
-                        if data.trial[i] != data.trial[i-1]:
-                            if nvp == 0:
-                                fp.write("-"*(10*14-3)+"\n")
-                            else:
-                                fp.write("-"*((10+nvp)*14-3)+"\n")
-                    fp.write("{:11d}   {:11.5e}   {:11.5e}   {:11.5e}   "
-                             "{:11.5e}   {:11.5e}   {:11.5e}   {:11.5e}   "
-                             "{:11d}   {:11.5e}".
-                             format(data.id[i], data.time[i], 
-                                    data.form_time[i], data.lifetime[i],
-                                    data.target_mass[i],
-                                    data.actual_mass[i],
-                                    data.live_mass[i],
-                                    data.stellar_mass[i],
-                                    data.num_star[i],
-                                    data.max_star_mass[i]))
-                    vp_i=0   
-                    adding_vcols = True  
-                    while adding_vcols == True:                                                
-                        if 'VP'+`vp_i` in data._fields:            
-                            current_vp=getattr(data, "VP"+`vp_i`)
-                            fp.write("   {:11.5e}".format(current_vp[i]))
-                            vp_i+=1
-                        else:
-                            adding_vcols = False                   
-                            fp.write("\n")
+                    fp.write("   {:11.5e}".format(data.A_V[i]))
+                if 'A_Vneb' in data._fields:
+                    fp.write("   {:11.5e}".format(data.A_Vneb[i]))
+                vp_i = 0
+                while 'VP'+`vp_i` in data._fields:
+                    current_vp=getattr(data, "VP"+`vp_i`)
+                    fp.write("   {:11.5e}".format(current_vp[i]))
+                    vp_i+=1
+
+                # End line
+                fp.write("\n")
+
             # Close
             fp.close()
 
@@ -256,8 +147,14 @@ def write_cluster(data, model_name, fmt):
 
             fp = open(model_name+'_cluster_prop.bin', 'wb')
 
-            # Write out a byte indicating extinction or no extinction
+            # Write out a bytes indicating extinction or no
+            # extinction, and nebular extinction or no nebular
+            # extinction
             if 'A_V' in data._fields:
+                fp.write(str(bytearray([1])))
+            else:
+                fp.write(str(bytearray([0])))
+            if 'A_Vneb' in data._fields:
                 fp.write(str(bytearray([1])))
             else:
                 fp.write(str(bytearray([0])))
@@ -267,7 +164,6 @@ def write_cluster(data, model_name, fmt):
             for field in data._fields:
                 if field.startswith("VP"):
                     nvp+=1
-
             fp.write( struct.pack('i', nvp) )   
            
             # Break data into blocks of clusters with the same time
@@ -304,6 +200,8 @@ def write_cluster(data, model_name, fmt):
                     fp.write(data.max_star_mass[k])
                     if 'A_V' in data._fields:
                         fp.write(data.A_V[k])
+                    if 'A_Vneb' in data._fields:
+                        fp.write(data.A_Vneb[k])
                     for field in sorted(data._fields):
                         if field.startswith("VP"):
                             fp.write(getattr(data, field)[k])
@@ -347,24 +245,16 @@ def write_cluster(data, model_name, fmt):
             if 'A_V' in data._fields:
                 cols.append(fits.Column(name="A_V", format="1D",
                                         unit="mag", array=data.A_V))
-
-                                        
-            vp_i=0   
-            adding_vcols = True                                     
-            while adding_vcols == True:
-                                        
-                if 'VP'+`vp_i` in data._fields:
-                    cols.append(fits.Column(name="VP"+`vp_i`, format="1D",
-                                        unit="", array=getattr(data, "VP"+`vp_i`)))
-       
-
-
-                    vp_i+=1
-                else:
-
-                    adding_vcols = False    
-            
-     
+            if 'A_Vneb' in data._fields:
+                cols.append(fits.Column(name="A_Vneb", format="1D",
+                                        unit="mag", array=data.A_Vneb))
+            vp_i = 0
+            while 'VP'+`vp_i` in data._fields:
+                cols.append(fits.Column(name="VP"+`vp_i`, format="1D",
+                                        unit="",
+                                        array=getattr(data,
+                                                      "VP"+`vp_i`)))
+                vp_i += 1
             fitscols = fits.ColDefs(cols)
 
             # Create the binary table HDU
