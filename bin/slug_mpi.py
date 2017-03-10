@@ -55,7 +55,13 @@ parser.add_argument('-nc', '--noconsolidate', action='store_true',
 parser.add_argument('-o', '--outdir', default=None, type=str,
                     help="directory into which to write output; "
                     "defaults to current directory")
-parser.add_argument('-w', '--worker', default=False, action='store_true',
+parser.add_argument('-r', '--restart', default=False,
+                    action='store_true',
+                    help="indicates that this is a restart of a "
+                    "previous run for which some trials have already "
+                    "been completed")
+parser.add_argument('-w', '--worker', default=False,
+                    action='store_true',
                     help="indicates that the script is being run in "
                     "worker mode rather than master mode")
 parser.add_argument('-v', '--verbose', action='store_true',
@@ -156,14 +162,38 @@ for i, line in enumerate(pfile):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
 
-
 # Now we split up depending on whether we are running as the master
 # script or the worker
 if not args.worker:
 
     # We are the master script, and we are going to launch workers
         
-    # Step 4m: set number of processors and batch size
+    # Step 4m: if this is a restart, search for already-existing
+    # output files and see how many completed trials they contain
+    completed_trials = 0
+    task_ctr = 0
+    if args.restart:
+        while True:
+            # Look for a summary file
+            fname = osp.join(out_dir,
+                             model_name+"_{:05d}_summary.txt".
+                             format(task_ctr))
+            if not osp.isfile(fname):
+                break
+
+            # Read number of trials from file
+            fp = open(fname, 'r')
+            for line in fp:
+                linesplit = line.split()
+                if len(linesplit) == 0:
+                    continue
+                if linesplit[0].lower() == 'n_trials':
+                    completed_trials += int(linesplit[1])
+                    break
+            fp.close()
+            task_ctr += 1
+
+    # Step 5m: set number of processors and batch size
     if args.nproc is None:
         # Number of processes not specified, so try to figure it out from
         # environment variables
@@ -184,12 +214,13 @@ if not args.worker:
     else:
         nproc = args.nproc
     if args.batchsize is None:
-        batchsize = int(np.ceil(float(ntrials)/nproc))
+        batchsize = int(np.ceil(float(ntrials-completed_trials)/nproc))
         if batchsize == 0:
             batchsize = 1
     else:
         batchsize = args.batchsize
-    tot_jobs = int(np.ceil(float(ntrials) / batchsize))
+    tot_jobs = task_ctr + \
+               int(np.ceil(float(ntrials-completed_trials) / batchsize))
 
     # Step 5m: make temporary directory into which outputs can be written
     try:
@@ -197,15 +228,16 @@ if not args.worker:
     except OSError: pass           # Probably failed because dir exists
 
     # Step 6m: start MPI, invoking the worker script
-    completed_trials = 0
     assigned_trials = np.zeros(nproc, dtype='int')
-    task_ctr = 0
     if args.verbose:
         print("Starting MPI processing, {:d} workers, {:d} tasks".
               format(nproc, tot_jobs))
-    comm = MPI.COMM_SELF.Spawn(sys.executable,
-                               args=sys.argv[:]+["--worker"],
-                               maxprocs=nproc)
+    if completed_trials < ntrials:
+        comm = MPI.COMM_SELF.Spawn(sys.executable,
+                                   args=sys.argv[:]+["--worker"],
+                                   maxprocs=nproc)
+    else:
+        comm = None
 
     # Step 7m: main loop; in this loop, we send work to the workers,
     # then wait for a "done" message from any of them. When we get
@@ -256,7 +288,8 @@ if not args.worker:
                         comm.Send([job_data, MPI.INT], dest=p, tag=1)
 
     # Step 8m: shut down MPI processing when all jobs are done
-    comm.Disconnect()
+    if comm is not None:
+        comm.Disconnect()
 
     # Step 9m: consolidate if requested
     if args.noconsolidate == False:
