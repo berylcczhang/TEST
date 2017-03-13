@@ -220,7 +220,7 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
   for (offset0 = offset; offset-offset0 < non_stoch_yields.size(); offset++)
     non_stoch_yields[offset-offset0] = buf_vec[offset];
   const slug_stardata *buf_stardata =
-    (const slug_stardata *) buf_vec+offset;
+    (const slug_stardata *) (buf_vec+offset);
   for (offset = 0; offset < stardata.size(); offset++)
     stardata[offset] = buf_stardata[offset];
 }
@@ -411,8 +411,9 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
     buf_dbl[offset] = non_stoch_yields[offset-offset0];
   slug_stardata *buf_stardata =
     (slug_stardata *) (buf_dbl+offset);
-  for (offset = 0; offset < stardata.size(); offset++)
+  for (offset = 0; offset < stardata.size(); offset++) {
     buf_stardata[offset] = stardata[offset];
+  }
 }
 
 void
