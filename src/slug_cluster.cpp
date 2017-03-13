@@ -347,7 +347,7 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
   buf_dbl[22] = last_yield_time;
 
   // Unsigned longs
-  unsigned long *buf_ul = (unsigned long *) (buf_dbl+22);
+  unsigned long *buf_ul = (unsigned long *) (buf_dbl+23);
   buf_ul[0] = id;
   buf_ul[1] = stoch_sn;
 
