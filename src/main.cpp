@@ -27,14 +27,24 @@ namespace std
 #endif
 #include "slug_parmParser.H"
 #include "slug_sim.H"
+#include "slug_MPI.H"
 
 int main(int argc, char *argv[]) {
 
+#ifdef ENABLE_MPI
+  // If we are running an MPI simulation, start MPI here
+  MPI_Init(&argc, &argv);
+#endif
+  
   // Parse the parameter file
   slug_parmParser pp(argc, argv);
 
   // Initialize the main simulation driver
+#ifdef ENABLE_MPI
+  slug_sim sim(pp, MPI_COMM_WORLD);
+#else
   slug_sim sim(pp);
+#endif
 
   // Initialization completed successfully, so write out the parameter
   // summary file
@@ -45,5 +55,10 @@ int main(int argc, char *argv[]) {
     sim.galaxy_sim();
   else
     sim.cluster_sim();
+
+ #ifdef ENABLE_MPI
+  // Finalize MPI
+  MPI_Finalize();
+#endif
 }
   

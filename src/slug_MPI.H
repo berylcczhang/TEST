@@ -27,11 +27,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _slug_MPI_H_
 #define _slug_MPI_H_
 
+#include <iostream>
 #include <vector>
 #include "mpi.h"
 #include "slug.H"
 #include "slug_cluster.H"
-
 
 ////////////////////////////////////////////////////////////////////////
 // Blocking send/receive of single clusters and vectors of clusters

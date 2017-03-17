@@ -4,14 +4,18 @@
 #include <stdexcept>
 #include "slug_MPI.H"
 
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////
+// Routines for exchanging clusters via MPI
+////////////////////////////////////////////////////////////////////////
+
 // Default max chunk size = 4 MB; this is set by a tradeoff of
 // efficiency vs. memory. We want to use big chunks so as to guarantee
 // that we send as few messages as possible, but we need to allocate a
 // minimum memory size of SLUG_MPI_CHUNK_SIZE on each process, so
 // big chunk sizes can be memory expensive.
 #define SLUG_MPI_CHUNK_SIZE 4194304
-
-using namespace std;
 
 // Utility routine for creating a send buffer from a vector of
 // clusters

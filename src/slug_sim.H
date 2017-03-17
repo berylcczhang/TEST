@@ -39,13 +39,20 @@ extern "C" {
 #include "fitsio.h"
 }
 #endif
+#ifdef ENABLE_MPI
+#   include "mpi.h"
+#endif
 
 class slug_sim {
 
 public:
 
   // Constructor
-  slug_sim(const slug_parmParser& pp_);
+  slug_sim(const slug_parmParser& pp_
+#ifdef ENABLE_MPI
+	   , MPI_Comm comm_
+#endif
+	   );
 
   // Destructor
   ~slug_sim();
@@ -113,11 +120,14 @@ private:
   slug_cluster *cluster;      // A single star cluster
   slug_galaxy *galaxy;        // A single galaxy
   outputMode out_mode;        // Output mode
-
-
   bool is_imf_var = false;          //Does the IMF contain variable segments?
   std::vector<double> imf_vpdraws;  //Variable parameter draws from the IMF
-  
+
+#ifdef ENABLE_MPI
+  // Information needed for MPI runs
+  MPI_Comm comm;
+  int rank;
+#endif
 };
 
 #endif

@@ -39,8 +39,16 @@ class slug_yields {
 public:
 
   // Constructor
-  slug_yields(const double metallicity_, const bool no_decay_ = false)
-    : no_decay(no_decay_), metallicity(metallicity_) {};
+  slug_yields(const double metallicity_, const bool no_decay_ = false
+#ifdef ENABLE_MPI
+	      , const int rank_ = 0
+#endif
+	      )
+    : no_decay(no_decay_), metallicity(metallicity_)
+#ifdef ENABLE_MPI
+    , rank(rank_)
+#endif
+  {};
 
   // Destructor
   virtual ~slug_yields() {};
@@ -158,7 +166,11 @@ protected:
   // Null mass range, delared so we can return const pointers to an
   // empty vector
   std::vector<double> null_mass_range;
-  
+
+  // MPI rank
+#ifdef ENABLE_MPI
+  int rank;
+#endif
 };
 
 #endif

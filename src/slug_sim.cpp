@@ -21,6 +21,7 @@ namespace std
     typedef decltype(nullptr) nullptr_t;
 }
 #endif
+#include "slug_MPI.H"
 #include "slug_PDF_powerlaw.H"
 #include "slug_sim.H"
 #include "slug_specsyn_hillier.H"
@@ -46,63 +47,109 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
-slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
+slug_sim::slug_sim(const slug_parmParser& pp_
+#ifdef ENABLE_MPI
+		     , MPI_Comm comm_
+#endif
+		     ) : pp(pp_)
+#ifdef ENABLE_MPI
+		       , comm(comm_)
+#endif
+{
+
+  // If running in MPI mode, record our rank
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) MPI_Comm_rank(comm, &rank);
+  else rank = 0;
+#endif
   
   // Either read a random seed from a file, or generate one
   unsigned int seed;
   if (pp.read_rng_seed()) {
 
-    // Read seed from file
-    std::ifstream seed_file;
-    string seed_file_name = pp.rng_seed_file();
-    if (pp.get_rng_offset() != 0) {
-      stringstream ss;
-      ss << seed_file_name << "_off_" << pp.get_rng_offset();
-      seed_file_name = ss.str();
-    }
-    seed_file.open(seed_file_name.c_str(), ios::in);
-    
-    // Check if the file exists
-    if (!seed_file) 
-    {
-      cerr << "Can't open RNG seed file " << seed_file_name << endl;
-      exit(1);
-    }   
-    seed_file >> seed;
-    seed_file.close();
-	
-  } else {
-
-    // Get a random see from /dev/urandom if possible
-    int fn;
-    bool rand_set = false;
-    fn = open("/dev/urandom", O_RDONLY);
-    if (fn != -1) {
-      rand_set = (read(fn, &seed, 4) == 4); // True if read succeeds
-      close(fn);
-    }
-    if (!rand_set) {
-      // Failed to set from /dev/urandom; seed using system time instead.
-      seed = static_cast<unsigned int>(time(0));
-    }
-    // Add offset if requested; this probably isn't necessary if
-    // /dev/urandom worked, but do it anyway in case it failed.
-    seed += pp.get_rng_offset();
-
-    // Save the rng seed if requested
-    if (pp.save_rng_seed()) {
-      std::ofstream seed_file;
+    // Read seed from file; for MPI runs, only root processor does this
+#ifdef ENABLE_MPI
+    if (rank == 0) {
+#endif
+      std::ifstream seed_file;
       string seed_file_name = pp.rng_seed_file();
       if (pp.get_rng_offset() != 0) {
 	stringstream ss;
 	ss << seed_file_name << "_off_" << pp.get_rng_offset();
 	seed_file_name = ss.str();
       }
-      seed_file.open(seed_file_name.c_str(), ios::out);
-      seed_file << seed;
+      seed_file.open(seed_file_name.c_str(), ios::in);
+    
+      // Check if the file exists
+      if (!seed_file) {
+	cerr << "Can't open RNG seed file " << seed_file_name << endl;
+	exit(1);
+      }
+      seed_file >> seed;
       seed_file.close();
+#ifdef ENABLE_MPI
     }
+
+    // On MPI runs, the root processor broadcasts the seed value to
+    // all other processors, which then add an offset equal to their
+    // rank
+    if (comm != MPI_COMM_NULL)
+      MPI_Bcast(&seed, 1, MPI_UNSIGNED, 0, comm);
+    seed += rank;
+#endif
+      
+  } else {
+
+    // Get a random see from /dev/random if possible; this will give
+    // us good seeds even in MPI mode
+    int fn;
+    bool rand_set = false;
+    fn = open("/dev/random", O_RDONLY);
+    if (fn != -1) {
+      rand_set = (read(fn, &seed, 4) == 4); // True if read succeeds
+      close(fn);
+    }
+    if (!rand_set) {
+      // Failed to set from /dev/random; seed using system time instead.
+      // If we're running in MPI mode, we need to avoid having the
+      // system time be the same for all MPI threads. This code hashes
+      // the sytem time with the process ID; it comes from
+      // https://arxiv.org/pdf/1005.4117
+#ifdef ENABLE_MPI
+      long s = time(0);
+      long pid = getpid();
+      seed = static_cast<unsigned int>
+	(abs(((s*181)*((pid-83)*359))%104729));
+#else
+      seed = static_cast<unsigned int>(time(0));
+#endif
+      
+    }
+    // Add offset if requested; this probably isn't necessary if
+    // /dev/random worked, but do it anyway in case it failed.
+    seed += pp.get_rng_offset();
+
+    // Save the rng seed if requested; only root rank does this on MPI
+    // jobs
+#ifdef ENABLE_MPI
+    if (rank == 0) {
+#endif
+      if (pp.save_rng_seed()) {
+	std::ofstream seed_file;
+	string seed_file_name = pp.rng_seed_file();
+	if (pp.get_rng_offset() != 0) {
+	  stringstream ss;
+	  ss << seed_file_name << "_off_" << pp.get_rng_offset();
+	  seed_file_name = ss.str();
+	}
+	seed_file.open(seed_file_name.c_str(), ios::out);
+	seed_file << seed;
+	seed_file.close();
+      }
+    }
+#ifdef ENABLE_MPI
   }
+#endif
 
   // Set up the random number generator
   rng = new rng_type(seed);
@@ -112,7 +159,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // numbers if we're running in parallel.
   boost::random::uniform_int_distribution<> six_sided_die(1,6);
   for (int i=0; i<1000; i++) six_sided_die(*rng);
-
+  
   // Set up the time stepping
   out_time_pdf = nullptr;
   if (!pp.get_random_output_time() && !pp.get_outTimesList()) {
@@ -133,11 +180,18 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // Set up the photometric filters
   if (pp.get_nPhot() > 0) {
     if (pp.get_verbosity() > 1)
-      std::cout << "slug: reading filters" << std::endl;
+#ifdef ENABLE_MPI
+      if (rank == 0)
+#endif
+	cout << "slug: reading filters" << endl;
     filters = new slug_filter_set(pp.get_photBand(), 
 				  pp.get_filter_dir(), 
 				  pp.get_photMode(),
-				  pp.get_atmos_dir());
+				  pp.get_atmos_dir()
+#ifdef ENABLE_MPI
+				  , rank
+#endif
+				  );
   } else {
     filters = nullptr;
   }
@@ -146,7 +200,11 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   if (pp.get_verbosity() > 1)
     std::cout << "slug: reading tracks" << std::endl;
   tracks = new slug_tracks(pp.get_trackFile(), pp.get_metallicity(),
-			   pp.get_WR_mass(), pp.get_endTime());
+			   pp.get_WR_mass(), pp.get_endTime()
+#ifdef ENABLE_MPI
+			   , rank
+#endif
+			   );
 
   // If we're computing yields, set up yield tables
   if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield()) {
@@ -155,7 +213,11 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
     yields = (slug_yields *)
       new slug_yields_multiple(pp.get_yield_dir(),
 			       pp.get_yieldMode(),
-			       tracks->get_metallicity());
+			       tracks->get_metallicity()
+#ifdef ENABLE_MPI
+			       , rank
+#endif
+			       );
   } else {
     yields = nullptr;
   }
@@ -167,48 +229,59 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   // Compare IMF and tracks, and issue warning if IMF extends outside
   // range of tracks
   if (imf->get_xMin() < tracks->min_mass()*(1.0-1.0e-10)) {
-    cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
-	 << " Msun < minimum evolution track mass " << tracks->min_mass()
-	 << " Msun. Calculation will proceed, but stars with mass "
-	 << imf->get_xMin() << " Msun to " << tracks->min_mass()
-	 << " Msun will be treated as having zero luminosity." << endl;
+#ifdef ENABLE_MPI
+    if (rank == 0)
+#endif
+      cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
+	   << " Msun < minimum evolution track mass " << tracks->min_mass()
+	   << " Msun. Calculation will proceed, but stars with mass "
+	   << imf->get_xMin() << " Msun to " << tracks->min_mass()
+	   << " Msun will be treated as having zero luminosity." << endl;
   }
   if (imf->get_xMax() > tracks->max_mass()*(1.0+1.0e-10)) {
-    cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
-	 << " Msun > maximum evolution track mass " << tracks->max_mass()
-	 << " Msun. Calculation will proceed, but stars with mass "
-	 << tracks->max_mass() << " Msun to " << imf->get_xMax()
-	 << " Msun will be treated as having zero luminosity." << endl;
+#ifdef ENABLE_MPI
+    if (rank == 0)
+#endif
+      cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
+	   << " Msun > maximum evolution track mass " << tracks->max_mass()
+	   << " Msun. Calculation will proceed, but stars with mass "
+	   << tracks->max_mass() << " Msun to " << imf->get_xMax()
+	   << " Msun will be treated as having zero luminosity." << endl;
   }
   
   // Ditto for IMF and yield table
   if (yields) {
     if (imf->get_xMin() < yields->min_mass()*(1.0-1.0e-10)) {
-      cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
-	   << " Msun < minimum yield table mass " << yields->min_mass()
-	   << " Msun. Calculation will proceed, but stars with mass "
-	   << imf->get_xMin() << " Msun to " << yields->min_mass()
-	   << " Msun will be treated as having zero yield." << endl;
+#ifdef ENABLE_MPI
+      if (rank == 0)
+#endif
+	cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
+	     << " Msun < minimum yield table mass " << yields->min_mass()
+	     << " Msun. Calculation will proceed, but stars with mass "
+	     << imf->get_xMin() << " Msun to " << yields->min_mass()
+	     << " Msun will be treated as having zero yield." << endl;
     }
     if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10)) {
-      cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
-	   << " Msun > maximum yield table mass " << yields->max_mass()
-	   << " Msun. Calculation will proceed, but stars with mass "
-	   << yields->max_mass() << " Msun to " << imf->get_xMax()
-	   << " Msun will be treated as having zero yield." << endl;
+#ifdef ENABLE_MPI
+      if (rank == 0)
+#endif
+	cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
+	     << " Msun > maximum yield table mass " << yields->max_mass()
+	     << " Msun. Calculation will proceed, but stars with mass "
+	     << yields->max_mass() << " Msun to " << imf->get_xMax()
+	     << " Msun will be treated as having zero yield." << endl;
     }
   }
   
-  //Check for variable segments & initialise them
+  // Check for variable segments & initialise them
   is_imf_var = imf->init_vsegs();	
 	
-  //Check for variable segments & have a first draw
-  if (is_imf_var == true)
-  {
-    //Draw new values for variable parameters
-    //Update IMF segments and recompute weights 
+  // Check for variable segments & have a first draw
+  if (is_imf_var == true) {
+    // Draw new values for variable parameters
+    // Update IMF segments and recompute weights 
     imf_vpdraws = imf->vseg_draw();
-    //Reset range restrictions
+    // Reset range restrictions
     imf->set_stoch_lim(pp.get_min_stoch_mass());
   }
 
@@ -250,7 +323,11 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
   }
 
   // Initialize the spectral synthesizer
-  if (pp.get_verbosity() > 1)
+  if (pp.get_verbosity() > 1
+#ifdef ENABLE_MPI
+      && rank == 0
+#endif
+      )
     std::cout << "slug: reading atmospheres" << std::endl;
   if (pp.get_specsynMode() == PLANCK) {
     specsyn = static_cast<slug_specsyn *>
@@ -351,10 +428,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_) : pp(pp_) {
 ////////////////////////////////////////////////////////////////////////
 slug_sim::~slug_sim() {
 
-
   // Clean up variable parameter storage
   imf_vpdraws.clear();
-
 
   // Delete the various objects we created
   if (galaxy != nullptr) delete galaxy;
@@ -412,14 +487,60 @@ slug_sim::~slug_sim() {
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::galaxy_sim() {
 
-  // Loop over number of trials
-  for (unsigned long i=0; i<pp.get_nTrials(); i++) {
+  // Prepare to count trials; in serial mode this is trivial, while in
+  // MPI mode we need to set up a remote access window so that we can
+  // synchronize trial counts across processes
+  unsigned long trials_to_do = pp.get_nTrials();
+  unsigned long trial_ctr = 0;     // Counts trials on all processors
+  unsigned long trial_ctr_loc = 0; // Counts trials on this processor
+#ifdef ENABLE_MPI
+  unsigned long trial_ctr_buf = 0; // Buffer to hold global trial counter
+  MPI_Win win;
+  if (comm != MPI_COMM_NULL) {
+    if (rank == 0) {
+      // Root process holds the accumulated number of trials
+      MPI_Win_create(&trial_ctr_buf, sizeof(trial_ctr_buf),
+		     sizeof(trial_ctr_buf), MPI_INFO_NULL, comm, &win);
+    } else {
+      // All other processes don't need a remote access window
+      MPI_Win_create(NULL, 0, sizeof(int), MPI_INFO_NULL, comm, &win);
+    }
+  }
+#endif
+
+  while (true) {
+
+    // Increment the trial counters; under MPI, the global counter
+    // update is done as a Fetch_and_op operation. Note that
+    // Fetch_and_op returns the value of the buffer before the
+    // addition is done, so we still need to increment the trial
+    // counter
+#ifdef ENABLE_MPI
+    if (comm != MPI_COMM_NULL) {
+      MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
+      unsigned long i=1;
+      MPI_Fetch_and_op(&i, &trial_ctr, MPI_UNSIGNED_LONG, 0, 0,
+		       MPI_SUM, win);
+      MPI_Win_unlock(0, win);
+    }
+#endif
+    trial_ctr++;
+    trial_ctr_loc++;
+
+    // If global trial counter exceeds number of trials we're supposed
+    // to do, exit the loop
+    if (trial_ctr > trials_to_do) break;
 
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
-      std::cout << "slug: starting trial " << i+1 << " of "
-		<< pp.get_nTrials() << std::endl;
-
+ #ifdef ENABLE_MPI
+      cout << "slug: process " << rank+1
+	   << " starting trial " << trial_ctr << " of "
+	   << trials_to_do << endl;
+#else
+      cout << "slug: starting trial " << trial_ctr << " of "
+	   << trials_to_do << endl;
+#endif
 
     // Check for variable segments
     if (is_imf_var == true) {
@@ -435,11 +556,14 @@ void slug_sim::galaxy_sim() {
 
     // Write trial separator to ASCII files if operating in ASCII
     // mode
-    if ((out_mode == ASCII) && (i != 0))
-    {
-     
-      if (pp.get_writeIntegratedProp())
-      { 
+    if ((out_mode == ASCII) &&
+#ifdef ENABLE_MPI
+	(trial_ctr_loc != 1)
+#else
+	(trial_ctr != 1)
+#endif
+	) {
+      if (pp.get_writeIntegratedProp()) { 
         // Write separators
         int ncol = 9*14-3;      
 	      if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
@@ -449,12 +573,11 @@ void slug_sim::galaxy_sim() {
       unsigned int extrafields = 0;       //Store IMFs in prop file
       unsigned int nfield = 1;
       if (nebular != nullptr) nfield++;
-      if (extinct != nullptr) 
-      {
-	      nfield++;
-	      extrafields++;
-	      if (nebular != nullptr) nfield++;
-      } 
+      if (extinct != nullptr) {
+	nfield++;
+	extrafields++;
+	if (nebular != nullptr) nfield++;
+      }
       // Add on IMF fields
       if (is_imf_var==true) extrafields += (imf_vpdraws.size());
       if (pp.get_writeIntegratedSpec()) 
@@ -495,10 +618,17 @@ void slug_sim::galaxy_sim() {
 	(!pp.get_writeClusterYield());
 
       // If sufficiently verbose, print status
-      if (pp.get_verbosity() > 1)
-	std::cout << "  trial " << i+1 << ", advance to time " 
-	  	  << outTimes[j] << endl;
-
+      if (pp.get_verbosity() > 1) {
+#ifdef ENABLE_MPI
+	cout << "  process " << rank+1
+	     << ": trial " << trial_ctr << ", advance to time " 
+	     << outTimes[j] << endl;
+#else
+	cout << "  trial " << trial_ctr << ", advance to time " 
+	     << outTimes[j] << endl;
+#endif
+      }
+      
       // Advance to next time
       galaxy->advance(outTimes[j]);
 
@@ -507,10 +637,12 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_prop(int_prop_file, out_mode, i, imf_vpdraws);
+	  galaxy->write_integrated_prop(int_prop_file, out_mode,
+					trial_ctr_loc, imf_vpdraws);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_integrated_prop(int_prop_fits, i, imf_vpdraws);
+	  galaxy->write_integrated_prop(int_prop_fits, trial_ctr_loc,
+					imf_vpdraws);
 	}
 #endif
       }
@@ -518,10 +650,12 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_prop(cluster_prop_file, out_mode, i, imf_vpdraws);
+	  galaxy->write_cluster_prop(cluster_prop_file, out_mode,
+				     trial_ctr_loc, imf_vpdraws);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_cluster_prop(cluster_prop_fits, i, imf_vpdraws);
+	  galaxy->write_cluster_prop(cluster_prop_fits,
+				     trial_ctr_loc, imf_vpdraws);
 	}
 #endif
       }
@@ -531,12 +665,12 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_yield(int_yield_file, out_mode, i,
-					del_cluster);
+	  galaxy->write_integrated_yield(int_yield_file, out_mode,
+					 trial_ctr_loc, del_cluster);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_integrated_yield(int_yield_fits, i,
-					 del_cluster);
+	  galaxy->write_integrated_yield(int_yield_fits,
+					 trial_ctr_loc, del_cluster);
 	}
 #endif
       }
@@ -544,10 +678,11 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_yield(cluster_yield_file, out_mode, i);
+	  galaxy->write_cluster_yield(cluster_yield_file, out_mode,
+				      trial_ctr_loc);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_cluster_yield(cluster_yield_fits, i);
+	  galaxy->write_cluster_yield(cluster_yield_fits, trial_ctr_loc);
 	}
 #endif
       }	
@@ -557,11 +692,12 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_spec(int_spec_file, out_mode, i,
-					del_cluster);
+	  galaxy->write_integrated_spec(int_spec_file, out_mode,
+					trial_ctr_loc, del_cluster);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_integrated_spec(int_spec_fits, i, del_cluster);
+	  galaxy->write_integrated_spec(int_spec_fits, trial_ctr_loc,
+					del_cluster);
 	}
 #endif
       }
@@ -569,10 +705,11 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_spec(cluster_spec_file, out_mode, i);
+	  galaxy->write_cluster_spec(cluster_spec_file, out_mode,
+				     trial_ctr_loc);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_cluster_spec(cluster_spec_fits, i);
+	  galaxy->write_cluster_spec(cluster_spec_fits, trial_ctr_loc);
 	}
 #endif
       }
@@ -582,12 +719,12 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_integrated_phot(int_phot_file, out_mode, i,
-					del_cluster);
+	  galaxy->write_integrated_phot(int_phot_file, out_mode,
+					trial_ctr_loc, del_cluster);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_integrated_phot(int_phot_fits, i,
-					del_cluster);
+	  galaxy->write_integrated_phot(int_phot_fits,
+					trial_ctr_loc, del_cluster);
 	}
 #endif
       }
@@ -595,19 +732,24 @@ void slug_sim::galaxy_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  galaxy->write_cluster_phot(cluster_phot_file, out_mode, i);
+	  galaxy->write_cluster_phot(cluster_phot_file, out_mode,
+				     trial_ctr_loc);
 #ifdef ENABLE_FITS
 	} else {
-	  galaxy->write_cluster_phot(cluster_phot_fits, i);
+	  galaxy->write_cluster_phot(cluster_phot_fits, trial_ctr_loc);
 	}
 #endif
       }
     }
   }
-    
-  //Clean up vector of variable pdfs
-  if (is_imf_var == true)
-  {
+  
+  // Free MPI window
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) MPI_Win_free(&win);
+#endif
+  
+  // Clean up vector of variable pdfs
+  if (is_imf_var == true) {
     imf->cleanup();
   }
 }
@@ -618,14 +760,63 @@ void slug_sim::galaxy_sim() {
 ////////////////////////////////////////////////////////////////////////
 void slug_sim::cluster_sim() {
 
-  // Loop over number of trials
-  for (unsigned long i=0; i<pp.get_nTrials(); i++) {
+  // Prepare to count trials; in serial mode this is trivial, while in
+  // MPI mode we need to set up a remote access window so that we can
+  // synchronize trial counts across processes
+  unsigned long trials_to_do = pp.get_nTrials();
+  unsigned long trial_ctr = 0;     // Counts trials on all processors
+  unsigned long trial_ctr_loc = 0; // Counts trials on this processor
+#ifdef ENABLE_MPI
+  unsigned long trial_ctr_buf = 0; // Buffer to hold global trial counter
+  MPI_Win win;
+  if (comm != MPI_COMM_NULL) {
+    if (rank == 0) {
+      // Root process holds the accumulated number of trials
+      MPI_Win_create(&trial_ctr_buf, sizeof(trial_ctr_buf),
+		     sizeof(trial_ctr_buf), MPI_INFO_NULL, comm, &win);
+    } else {
+      // All other processes don't need a remote access window
+      MPI_Win_create(NULL, 0, sizeof(int), MPI_INFO_NULL, comm, &win);
+    }
+  }
+#endif
+
+  // Loop over trials
+  while (true) {
+
+    // Increment the trial counters; under MPI, the global counter
+    // update is done as a Fetch_and_op operation. Note that
+    // Fetch_and_op returns the value of the buffer before the
+    // addition is done, so we still need to increment the trial
+    // counter
+#ifdef ENABLE_MPI
+    if (comm != MPI_COMM_NULL) {
+      MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
+      unsigned long i=1;
+      MPI_Fetch_and_op(&i, &trial_ctr, MPI_UNSIGNED_LONG, 0, 0,
+		       MPI_SUM, win);
+      MPI_Win_unlock(0, win);
+    }
+#endif
+    trial_ctr++;
+    trial_ctr_loc++;
+
+    // If global trial counter exceeds number of trials we're supposed
+    // to do, exit the loop
+    if (trial_ctr > trials_to_do) break;
 
     // If sufficiently verbose, print status
-    if (pp.get_verbosity() > 0)
-      std::cout << "slug: starting trial " << i+1 << " of "
-		<< pp.get_nTrials() << endl;
-
+    if (pp.get_verbosity() > 0) {
+#ifdef ENABLE_MPI
+      cout << "slug: process " << rank+1
+	   << " starting trial " << trial_ctr << " of "
+	   << trials_to_do << endl;
+#else
+      cout << "slug: starting trial " << trial_ctr << " of "
+	   << trials_to_do << endl;
+#endif
+    }
+    
     // If the output time is randomly changing, draw a new output time
     // for this trial
     if (pp.get_random_output_time()) {
@@ -633,13 +824,12 @@ void slug_sim::cluster_sim() {
       outTimes.push_back(out_time_pdf->draw());
     }
 
-    //Check for variable segments
-    if (is_imf_var == true)
-    {
-      //Draw new values for variable parameters
-      //Update IMF segments and recompute weights 
+    // Check for variable segments
+    if (is_imf_var == true) {
+      // Draw new values for variable parameters
+      // Update IMF segments and recompute weights 
       imf_vpdraws = imf->vseg_draw();
-      //Reset range restrictions
+      // Reset range restrictions
       imf->set_stoch_lim(pp.get_min_stoch_mass());
     }
     
@@ -657,7 +847,13 @@ void slug_sim::cluster_sim() {
 
     // Write trial separator to ASCII files if operating in ASCII
     // mode
-    if ((out_mode == ASCII) && (i != 0)) {
+    if ((out_mode == ASCII) &&
+#ifdef ENABLE_MPI
+	(trial_ctr_loc != 1)
+#else
+	(trial_ctr != 1)
+#endif
+	) {
       if (pp.get_writeClusterProp()) {
 	int ncol = 10*14-3;
 	if (pp.get_use_extinct()) ncol += 14;
@@ -677,18 +873,32 @@ void slug_sim::cluster_sim() {
     for (unsigned int j=0; j<outTimes.size(); j++) {
 
       // If sufficiently verbose, print status
-      if (pp.get_verbosity() > 1)
-	std::cout << "  trial " << i+1 << ", advance to time " 
-	  	  << outTimes[j] << endl;
-
+      if (pp.get_verbosity() > 1) {
+#ifdef ENABLE_MPI
+	cout << "  process " << rank+1
+	     << ": trial " << trial_ctr << ", advance to time " 
+	     << outTimes[j] << endl;
+#else
+	cout << "  trial " << trial_ctr << ", advance to time " 
+	     << outTimes[j] << endl;
+#endif
+      }
+      
       // Advance to next time
       cluster->advance(outTimes[j]);
 
       // See if cluster has disrupted; if so, terminate this iteration
       if (cluster->disrupted()) {
-	if (pp.get_verbosity() > 1)
-	  std::cout << "  cluster disrupted, terminating trial"
-		    << std::endl;
+	if (pp.get_verbosity() > 1) {
+#ifdef ENABLE_MPI
+	  cout << "  rank " << rank+1
+	       << ": cluster disrupted, terminating trial"
+	       << endl;
+#else
+	  cout << "  cluster disrupted, terminating trial"
+	       << endl;
+#endif
+	}
 	break;
       }
 
@@ -697,10 +907,13 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_prop(cluster_prop_file, out_mode, i, true, imf_vpdraws);
+	  cluster->write_prop(cluster_prop_file, out_mode,
+			      trial_ctr_loc, true,
+			      imf_vpdraws);
 #ifdef ENABLE_FITS
 	} else {
-	  cluster->write_prop(cluster_prop_fits, i, imf_vpdraws);
+	  cluster->write_prop(cluster_prop_fits, trial_ctr_loc,
+			      imf_vpdraws);
 	}
 #endif
       }
@@ -710,10 +923,11 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_spectrum(cluster_spec_file, out_mode, i, true);
+	  cluster->write_spectrum(cluster_spec_file, out_mode,
+				  trial_ctr_loc, true);
 #ifdef ENABLE_FITS
 	} else {
-	  cluster->write_spectrum(cluster_spec_fits, i);
+	  cluster->write_spectrum(cluster_spec_fits, trial_ctr_loc);
 	}
 #endif
       }
@@ -723,10 +937,11 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_photometry(cluster_phot_file, out_mode, i, true);
+	  cluster->write_photometry(cluster_phot_file, out_mode,
+				    trial_ctr_loc, true);
 #ifdef ENABLE_FITS
 	} else {
-	  cluster->write_photometry(cluster_phot_fits, i);
+	  cluster->write_photometry(cluster_phot_fits, trial_ctr_loc);
 	}
 #endif
       }
@@ -736,19 +951,24 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	if (out_mode != FITS) {
 #endif
-	  cluster->write_yield(cluster_yield_file, out_mode, i, true);
+	  cluster->write_yield(cluster_yield_file, out_mode,
+			       trial_ctr_loc, true);
 #ifdef ENABLE_FITS
 	} else {
-	  cluster->write_yield(cluster_yield_fits, i);
+	  cluster->write_yield(cluster_yield_fits, trial_ctr_loc);
 	}
 #endif
       }      
     }
   }
+
+  // Free MPI window
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) MPI_Win_free(&win);
+#endif
   
   // Clean up vector of variable pdfs
-  if (is_imf_var == true)
-  {
+  if (is_imf_var == true) {
     imf->cleanup();
   }
 }
@@ -761,6 +981,13 @@ void slug_sim::open_integrated_prop() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_integrated_prop";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -923,6 +1150,13 @@ void slug_sim::open_cluster_prop() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_cluster_prop";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1159,6 +1393,13 @@ void slug_sim::open_integrated_spec() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_integrated_spec";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1399,6 +1640,13 @@ void slug_sim::open_cluster_spec() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_cluster_spec";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1642,6 +1890,13 @@ void slug_sim::open_integrated_phot() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_integrated_phot";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1823,6 +2078,13 @@ void slug_sim::open_cluster_phot() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_cluster_phot";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -2008,6 +2270,13 @@ void slug_sim::open_integrated_yield() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_integrated_yield";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -2179,6 +2448,13 @@ void slug_sim::open_cluster_yield() {
 
   // Construct file name and path
   string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
   fname += "_cluster_yield";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {

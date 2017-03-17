@@ -45,7 +45,11 @@ public:
   slug_filter_set(const std::vector<std::string>& filter_names,
 		  const char *filter_dir, 
 		  const photMode phot_mode_,
-		  const char *atmos_dir = NULL);
+		  const char *atmos_dir = NULL
+#ifdef ENABLE_MPI
+		  , const int rank_ = 0
+#endif
+		  );
 
   // The desctructor
   ~slug_filter_set();
@@ -81,6 +85,11 @@ private:
   std::vector<const slug_filter *> filters;
   std::vector<double> lambda_vega, F_lambda_vega, vega_mag;
   photMode phot_mode;
+
+  // MPI info
+#ifdef ENABLE_MPI
+  int rank;
+#endif
 };
 
 #endif

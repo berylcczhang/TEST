@@ -31,7 +31,9 @@ namespace std
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 #include "slug_tracks.H"
+#include "slug_MPI.H"
 #include "constants.H"
+
 
 using namespace std;
 using namespace boost;
@@ -70,16 +72,31 @@ namespace tracks {
 // compatibility with SB99.
 
 slug_tracks::slug_tracks(const char *fname, double my_metallicity,
-			 double my_WR_mass, double max_time) :
-  metallicity(my_metallicity), WR_mass(my_WR_mass) {
+			 double my_WR_mass, double max_time
+#ifdef ENABLE_MPI
+			 , int rank_
+#endif
+			 ) :
+  metallicity(my_metallicity), WR_mass(my_WR_mass)
+#ifdef ENABLE_MPI
+  , rank(rank_)
+#endif
+{
 
   // Try to open file
   std::ifstream trackfile;
   trackfile.open(fname);
   if (!trackfile.is_open()) {
     // Couldn't open file, so bail out
+#ifdef ENABLE_MPI
+    cerr << "slug rank " << rank
+	 << ": error: unable to open track file " 
+	 << fname << endl;
+    MPI_Finalize();
+#else
     cerr << "slug: error: unable to open track file " 
 	 << fname << endl;
+#endif
     exit(1);
   }
 
@@ -108,8 +125,15 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       ntime = lexical_cast<unsigned int>(tokens[1]) + 1;  // Add a dummy entry at time = 0
     } catch (const bad_lexical_cast& ia) {
       (void) ia;  // No-op to suppress compiler warning
+#ifdef ENABLE_MPI
+      cerr << "slug rank " << rank
+	   << ": error: badly formatted track file " 
+	   << trackfileName << endl;
+      MPI_Finalize();
+#else
       cerr << "slug: error: badly formatted track file " 
 	   << trackfileName << endl;
+#endif
       exit(1);
     }
 
@@ -143,8 +167,15 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	logmass[i] = log(lexical_cast<double>(tokens[0]));
       } catch (const bad_lexical_cast& ia) {
 	(void) ia;  // No-op to suppress compiler warning
+#ifdef ENABLE_MPI
+	cerr << "slug rank " << rank
+	     << ": error: badly formatted track file " 
+	     << trackfileName << endl;
+	MPI_Finalize();
+#else
 	cerr << "slug: error: badly formatted track file " 
 	     << trackfileName << endl;
+#endif
 	exit(1);
       }
       if (tokens.size() > 1)
@@ -258,16 +289,30 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	  }
 	} catch (const bad_lexical_cast& ia) {
 	  (void) ia;  // No-op to suppress compiler warning
+#ifdef ENABLE_MPI
+	  cerr << "slug rank " << rank
+	       << ": error: badly formatted track file " 
+	       << trackfileName << endl;
+	  MPI_Finalize();
+#else
 	  cerr << "slug: error: badly formatted track file " 
 	       << trackfileName << endl;
+#endif
 	  exit(1);
 	}
       }
     }
   } catch(std::ifstream::failure e) {
     (void) e;  // No-op to suppress compiler warning
+#ifdef ENABLE_MPI
+    cerr << "slug rank " << rank
+	 << ": error: badly formatted track file " 
+	 << trackfileName << endl;
+    MPI_Finalize();
+#else
     cerr << "slug: error: badly formatted track file " 
 	 << trackfileName << endl;
+#endif
     exit(1);
   }
 
@@ -296,28 +341,34 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     vector<double> logt_tmp(ntime);
     for (unsigned int j=0; j<ntime; j++) logt_tmp[j] = logtimes[i][j];
     if (!(is_sorted(logt_tmp.begin(), logt_tmp.end()))) {
-
+      
       // Find where monotonicity is violated and print out a warning
       // message
       double logt_max = logtimes[i][0];
-	  streamsize prec = cerr.precision();
-      cerr << "slug: warning: tracks have non-monotonic time at mass "
-	   << exp(logmass[i]) << " Msun, entries:";
-      bool flag_tmp = false;
-      for (unsigned int j=1; j<ntime; j++) {
-	if (logtimes[i][j] < logt_max) {
-	  if (flag_tmp == false) flag_tmp = true;
-	  else cerr << ",";
-	  cerr << " " << j << ", t = "
-	       << setprecision(20)
-	       << exp(logtimes[i][j]);
-	} else {
-	  logt_max = logtimes[i][j];
+      streamsize prec = cerr.precision();
+#ifdef ENABLE_MPI
+      if (rank == 0) {
+#endif
+	cerr << "slug: warning: tracks have non-monotonic time at mass "
+	     << exp(logmass[i]) << " Msun, entries:";
+	bool flag_tmp = false;
+	for (unsigned int j=1; j<ntime; j++) {
+	  if (logtimes[i][j] < logt_max) {
+	    if (flag_tmp == false) flag_tmp = true;
+	    else cerr << ",";
+	    cerr << " " << j << ", t = "
+		 << setprecision(20)
+		 << exp(logtimes[i][j]);
+	  } else {
+	    logt_max = logtimes[i][j];
+	  }
 	}
+	cerr << "; entries will be sorted, and computation will continue"
+	     << endl;
+	cerr.precision(prec);
+#ifdef ENABLE_MPI
       }
-      cerr << "; entries will be sorted, and computation will continue"
-	   << endl;
-      cerr.precision(prec);
+#endif
 
       // Now sort the tracks
       vector<tracks::track_data> trackdat(ntime);
@@ -613,10 +664,17 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 			    name_match, pattern4, match_posix)) {
       metallicity = 1.0/7.0;
     } else {
-      cerr << "slug: error: could not guess metallicity from file name "
-	   << trackfileName << "; "
-	   << "please set manually in parameter file"
-	   << endl;
+#ifdef ENABLE_MPI
+      if (rank == 0) {
+#endif
+	cerr << "slug: error: could not guess metallicity from file name "
+	     << trackfileName << "; "
+	     << "please set manually in parameter file"
+	     << endl;
+#ifdef ENABLE_MPI
+      }
+      MPI_Finalize();
+#endif
       exit(1);
     }
   }
@@ -662,10 +720,17 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     }
     // Make sure we found a match
     if (WR_mass < 0) {
-      cerr << "slug: error: could not guess WR mass from file name "
-	   << trackfileName << "; "
-	   << "please set manually in parameter file"
-	   << endl;
+#ifdef ENABLE_MPI
+      if (rank == 0) {
+#endif
+	cerr << "slug: error: could not guess WR mass from file name "
+	     << trackfileName << "; "
+	     << "please set manually in parameter file"
+	     << endl;
+#ifdef ENABLE_MPI
+      }
+      MPI_Finalize();
+#endif
       exit(1);
     }
   }
@@ -737,8 +802,15 @@ slug_tracks::death_mass(const double time) const {
 
   // Make sure the tracks are monotonic; if not, bail out
   if (!monotonic) {
+#ifdef ENABLE_MPI
+    cerr << "slug rank " << rank
+	 << ": slug_tracks::death_mass called on non-monotonic tracks!"
+	 << endl;
+    MPI_Finalize();
+#else
     cerr << "slug_tracks::death_mass called on non-monotonic tracks!"
 	 << endl;
+#endif
     exit(1);
   }
 
@@ -1051,6 +1123,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
 	       << ", mass pointer " << ntrack-1 << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
       }
       gsl_errstat = 
@@ -1064,6 +1139,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
 	       << ", mass pointer " << ntrack-1 << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
       }
       gsl_errstat = 
@@ -1077,6 +1155,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
 	       << ", mass pointer " << ntrack-1 << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
       }
       gsl_errstat =
@@ -1090,6 +1171,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
 	       << ", mass pointer " << ntrack-1 << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
       }
       gsl_errstat = 
@@ -1103,6 +1187,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
 	       << ", mass pointer " << ntrack-1 << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
       }
       gsl_errstat =
@@ -1116,6 +1203,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
 	       << ", mass pointer " << ntrack-1 << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
       }
     } else {
@@ -1167,6 +1257,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[trackptr])
 	       << ", mass pointer " << trackptr << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
 	}
 	logL_tmp.
@@ -1241,6 +1334,9 @@ slug_tracks::compute_isochrone(const double logt,
 	     << ", max dist = " << setprecision(20) 
 	     << trackdist[trackptr][0]
 	     << endl;
+#ifdef ENABLE_MPI
+	MPI_Finalize();
+#endif
 	exit(1);
       }
       logL_tmp.
@@ -1319,6 +1415,9 @@ slug_tracks::compute_isochrone(const double logt,
 	       << "at time " << setprecision(20) << exp(logt)
 	       << ", mass " << setprecision(20) << exp(logmass[trackptr])
 	       << ", mass pointer " << trackptr << endl;
+#ifdef ENABLE_MPI
+	  MPI_Finalize();
+#endif
 	  exit(1);
 	}
 	logL_tmp.
@@ -1397,6 +1496,9 @@ slug_tracks::compute_isochrone(const double logt,
 	cerr << "   Distance along track " << setprecision(20) << dist 
 	     << ", max dist = " << trackdist[trackptr][0]
 	     << endl;
+#ifdef ENABLE_MPI
+	MPI_Finalize();
+#endif
 	exit(1);
       }
       logL_tmp.
@@ -1454,6 +1556,9 @@ slug_tracks::compute_isochrone(const double logt,
 	     << ", max dist = " << setprecision(20) 
 	     << trackdist[trackptr][0]
 	     << endl;
+#ifdef ENABLE_MPI
+	MPI_Finalize();
+#endif
 	exit(1);
       }
       logL_tmp.
@@ -1537,6 +1642,9 @@ slug_tracks::compute_isochrone(const double logt,
 	   << ") and (" << i+1 << ", " 
 	   << setprecision(20) << logm_tmp[i+1] << ")"
 	   << endl;
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
     exit(1);
   }
   isochrone_logL 
@@ -1667,6 +1775,9 @@ get_isochrone(const double t, const vector<double> &m) const {
 	   << setprecision(20) << exp(isochrone_logm_lim[0])
 	   << " - " 
 	   << setprecision(20) << exp(isochrone_logm_lim[1]) << endl;
+#ifdef ENABLE_MPI
+      MPI_Finalize();
+#endif
       exit(1);
     }
 

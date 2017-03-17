@@ -23,6 +23,7 @@ namespace std
 #endif
 #include "constants.H"
 #include "slug_filter_set.H"
+#include "slug_MPI.H"
 #include <cmath>
 #include <iostream>
 #include <fstream>
@@ -41,10 +42,19 @@ using namespace boost::filesystem;
 slug_filter_set::
 slug_filter_set(const std::vector<std::string>& filter_names_,
 		const char *filter_dir, const photMode phot_mode_,
-		const char *atmos_dir) : 
+		const char *atmos_dir
+#ifdef ENABLE_MPI
+		, const int rank_
+#endif
+		) : 
   filter_names(filter_names_.size()), 
   filter_units(filter_names_.size()),
-  filters(filter_names_.size()), phot_mode(phot_mode_) {
+  filters(filter_names_.size()),
+  phot_mode(phot_mode_)
+#ifdef ENABLE_MPI
+  , rank(rank_)
+#endif
+{
 
   // Try to open the FILTER_LIST file
   string fname = "FILTER_LIST";
@@ -54,8 +64,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
   filter_file.open(filter_path.c_str());
   if (!filter_file.is_open()) {
     // Couldn't open file, so bail out
+#ifdef ENABLE_MPI
+    cerr << "slug rank " << rank
+	 <<": error: unable to open filter file " 
+	 << filter_path.string() << endl;
+    MPI_Finalize();
+#else
     cerr << "slug: error: unable to open filter file " 
 	 << filter_path.string() << endl;
+#endif
     exit(1);
   }
 
@@ -128,8 +145,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
 	}
       }
       if (j == avail_filters.size()) {
+#ifdef ENABLE_MPI
+	cerr << "slug rank " << rank
+	     << ": error: couldn't find filter "
+	     << filter_names_[i] << endl;
+	MPI_Finalize();
+#else
 	cerr << "slug: error: couldn't find filter "
 	     << filter_names_[i] << endl;
+#endif
 	exit(1);
       }
     }
@@ -141,8 +165,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
   filter_file.open(filter_path.c_str());
   if (!filter_file.is_open()) {
     // Couldn't open file, so bail out
+#ifdef ENABLE_MPI
+    cerr << "slug rank " << rank
+	 << ": error: unable to open filter file " 
+	 << filter_path.string() << endl;
+    MPI_Finalize();
+#else
     cerr << "slug: error: unable to open filter file " 
 	 << filter_path.string() << endl;
+#endif
     exit(1);
   }
 
@@ -261,8 +292,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     vegafile.open(vega_path.c_str());
     if (!vegafile.is_open()) {
       // Couldn't open file, so bail out
+#ifdef ENABLE_MPI
+      cerr << "slug rank " << rank
+	   << ": error: unable to open Vega spectrum file "
+	   << vega_path.string() << endl;
+      MPI_Finalize();
+#else
       cerr << "slug: error: unable to open Vega spectrum file "
 	   << vega_path.string() << endl;
+#endif
       exit(1);
     }
 
@@ -310,8 +348,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
 
     // Bail out if no V filter is available
     if (i == avail_filters.size()) {
+#ifdef ENABLE_MPI
+      cerr << "slug rank " << rank
+	   << ": error: cannot use Vega magnitudes if filter "
+	   << "list does not contain a Johnson_V filter" << endl;
+      MPI_Finalize();
+#else
       cerr << "slug: error: cannot use Vega magnitudes if filter "
 	   << "list does not contain a Johnson_V filter" << endl;
+#endif
       exit(1);
     }
 
@@ -319,8 +364,15 @@ slug_filter_set(const std::vector<std::string>& filter_names_,
     filter_file.open(filter_path.c_str());
     if (!filter_file.is_open()) {
       // Couldn't open file, so bail out
+#ifdef ENABLE_MPI
+      cerr << "slug rank " << rank
+	   << ": error: unable to open filter file " 
+	   << filter_path.string() << endl;
+      MPI_Finalize();
+#else
       cerr << "slug: error: unable to open filter file " 
 	   << filter_path.string() << endl;
+#endif
       exit(1);
     }
 
