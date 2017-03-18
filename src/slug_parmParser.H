@@ -26,16 +26,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/filesystem.hpp>
 #include "slug.H"
+#include "slug_MPI.H"
 
 class slug_parmParser {
 
 public:
-  slug_parmParser(int argc, char **argv); // The constructor
+  slug_parmParser(int argc, char **argv
+#ifdef ENABLE_MPI
+		  MPI_Comm comm_
+#endif
+		  ); // The constructor
   ~slug_parmParser();                     // The desctructor
 
   // Functions that return values from parameter file
   unsigned int get_verbosity() const;     // Level of verbosity
   unsigned int get_nTrials() const;       // How many trials to run
+  unsigned int get_checkpoint_interval() const;  // Checkpoint interval
+  unsigned int get_checkpoint_ctr() const; // Get starting checkpoint counter
+  unsigned int get_checkpoint_trials() const; // Trials in restart files
+  bool get_restart() const;               // Is this a restart?
   double get_timeStep() const;            // Size of timestep
   double get_startTime() const;           // Starting time
   double get_endTime() const;             // Final time
@@ -109,9 +118,25 @@ public:
   void writeParams() const;
 
 private:
+  
+  // Internal functions
+  void printUsage();                      // Print a usage message
+  void checkParams();                     // Ensure valid parameter values
+  void parseFile(std::ifstream &paramFile); // File parsing function
+  void setDefaults();                     // Set parameters to default values
+  void restartSetup();                    // Set up restart runs
+
+  // Error and warning routines
+  [[noreturn]] void parseError(std::string line); 
+  [[noreturn]] void valueError(std::string line);
+  void valueWarning(std::string line);
+
   // Storage for parameter file values
   unsigned int verbosity;                 // Level of verbosity
   unsigned int nTrials;                   // How many trials to run
+  unsigned int checkpointInterval;        // Checkpoint interval
+  unsigned int checkpointCtr;             // Checkpoint file counter
+  unsigned int checkpointTrials;          // Trials in checkpoint files
   unsigned int rng_offset;                // Offset to rng
   outputMode out_mode;                    // Output mode
   specsynMode specsyn_mode;               // Spectral synthesis mode
@@ -135,6 +160,7 @@ private:
   double nebular_temp;                    // Temp for nebular calculation
   double nebular_phi;                     // phi for nebular calc
   double nebular_logU;                    // log U for nebular calculation
+  bool restart;                           // Is this run a restart?
   bool constantSFR;                       // Is SFR constant?
   bool randomSFR;                         // Is SFR drawn randomly?
   bool constantAV;                        // Is A_V constant?
@@ -176,13 +202,11 @@ private:
   std::vector<double> outTimes;           // Exact output times
   std::string seed_file;                  // rng seed file name
 
-  // Internal functions
-  void printUsage();                      // Print a usage message
-  [[noreturn ]] void parseError(std::string line); 
-  // Throw a parsing error message
-  void checkParams();                     // Ensure valid parameter values
-  void parseFile(std::ifstream &paramFile); // File parsing function
-  void setDefaults();                     // Set parameters to default values
+#ifdef ENABLE_MPI
+  // Information needed for MPI runs
+  MPI_Comm comm;
+  int rank;
+#endif
 };
 
 #endif

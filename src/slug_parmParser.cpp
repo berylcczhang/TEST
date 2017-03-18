@@ -22,12 +22,19 @@ namespace std
 }
 #endif
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include "constants.H"
 #include "slug_parmParser.H"
+#include "slug_MPI.H"
+#ifdef ENABLE_FITS
+extern "C" {
+#include "fitsio.h"
+}
+#endif
 
 using namespace std;
 using namespace boost;
@@ -38,22 +45,87 @@ using namespace boost::filesystem;
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 
-slug_parmParser::slug_parmParser(int argc, char **argv) {
+slug_parmParser::slug_parmParser(int argc, char **argv
+#ifdef ENABLE_MPI
+				 MPI_Comm comm_
+#endif
+				 )
+#ifdef ENABLE_MPI
+  : comm(comm_)
+#endif
+{
 
+  // If running in MPI mode, record our rank
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) MPI_Comm_rank(comm, &rank);
+  else rank = 0;
+#endif
+  
   // First make sure we have the right number of arguments; if not,
   // print error and exit with error
-  if (argc != 2) {
-    cerr << "slug: error: expected exactly 1 argument" << endl;
-    printUsage();
+  if (argc == 1 || argc > 3) {
+#ifdef ENABLE_MPI
+    if (rank == 0) {
+#endif
+      cerr << "slug: error: expected 1 or 2 arguments" << endl;
+      printUsage();
+#ifdef ENABLE_MPI
+    }
+    MPI_Finalize();
+#endif
     exit(1);
   }
 
-  // If the argument we got was "-h" or "--help", print usage message
-  // and then exit normally
-  string paramFileName(argv[1]);
-  if (!paramFileName.compare("-h") || !paramFileName.compare("--help")) {
-    printUsage();
+  // Grab arguments
+  string arg1(argv[1]);
+  string arg2;
+  if (argc == 3) arg2 = argv[2];
+  
+  // If we got "-h" or "--help", print usage message and then exit
+  // normally
+  if (!arg1.compare("-h") || !arg1.compare("--help") ||
+      !arg2.compare("-h") || !arg2.compare("--help")) {
+#ifdef ENABLE_MPI
+    if (rank == 0) {
+#endif
+      printUsage();
+#ifdef ENABLE_MPI
+    }
+    MPI_Finalize();
+#endif
     exit(0);
+  }
+
+  // See if either of our arguments was "-r" or "--restart",
+  // indicating that this is a restart
+  bool restart;
+  if (!arg1.compare("-r") || !arg1.compare("--restart") ||
+      !arg2.compare("-r") || !arg2.compare("--restart")) {
+    restart = true;
+  } else {
+    restart = false;
+  }
+
+  // Get parameter file name
+  string paramFileName;
+  if (argc == 2) paramFileName = arg1;
+  else {
+    if (!arg1.compare("-r") || !arg1.compare("--restart")) {
+      paramFileName = arg2;
+    } else if (!arg2.compare("-r") || !arg2.compare("--restart")) {
+      paramFileName = arg1;
+    } else {
+#ifdef ENABLE_MPI
+      if (rank == 0) {
+#endif
+	cerr << "slug: error: unable to parse command line" << endl;
+	printUsage();
+#ifdef ENABLE_MPI
+      }
+      MPI_Finalize();
+#endif
+      exit(1);
+    }
   }
 
   // Start by setting all parameters to their default values
@@ -64,8 +136,15 @@ slug_parmParser::slug_parmParser(int argc, char **argv) {
   std::ifstream paramFile;
   paramFile.open(paramFileName.c_str(), ios::in);
   if (!paramFile.is_open()) {
+#ifdef ENABLE_MPI
+    cerr << "slug rank " << rank
+	 << ": error: unable to open file " 
+	 << paramFileName << endl;
+    MPI_Finalize();
+#else
     cerr << "slug: error: unable to open file " 
-	      << paramFileName << endl;
+	 << paramFileName << endl;
+#endif
     exit(1);
   }
 
@@ -77,6 +156,11 @@ slug_parmParser::slug_parmParser(int argc, char **argv) {
 
   // Check that all parameters are set to valid values
   checkParams();
+
+  // If this is a restart, parse the restart files to figure out how
+  // many completed trials they contain, and to set the checkpoint
+  // counter
+  if (restart) restartSetup();
 }
 
 
@@ -94,6 +178,7 @@ slug_parmParser::~slug_parmParser() { }
 void
 slug_parmParser::printUsage() {
   cerr << "Usage: slug slug.param" << endl;
+  cerr << "       slug [-r or --restart] slug.param" << endl;
   cerr << "       slug [-h or --help]" << endl;
 }
 
@@ -113,6 +198,9 @@ slug_parmParser::setDefaults() {
   // Control flow parameters
   run_galaxy_sim = true;
   nTrials = 1;
+  checkpointInterval = 0;
+  checkpointCtr = 0;
+  checkpointTrials = 0;
   rng_offset = 0;
   logTime = false;
   outTimesList = false;
@@ -230,6 +318,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	}
       } else if (!(tokens[0].compare("n_trials"))) {
 	nTrials = lexical_cast<unsigned int>(tokens[1]);
+      } else if (!(tokens[0].compare("checkpoint_interval"))) {
+	checkpointInterval = lexical_cast<unsigned int>(tokens[1]);
       } else if (!(tokens[0].compare("start_time"))) {
 	startTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("time_step"))) {
@@ -501,15 +591,48 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Method to throw a parsing error and exit
+// Methods to throw error and exit
 ////////////////////////////////////////////////////////////////////////
 
 [[noreturn]]
 void
 slug_parmParser::parseError(string line) {
-  cerr << "slug: error: unable to parse line:" << endl;
-  cerr << line << endl;
+#ifdef ENABLE_MPI
+  if (rank == 0) {
+#endif
+    cerr << "slug: error: unable to parse line:" << endl;
+    cerr << line << endl;
+#ifdef ENABLE_MPI
+  }
+  MPI_Finalize();
+#endif
   exit(1);
+}
+
+[[noreturn]]
+void
+slug_parmParser::valueError(string line) {
+#ifdef ENABLE_MPI
+  if (rank == 0) {
+#endif
+    cerr << "slug: error: bad parameter value:"
+	 << line << endl;
+#ifdef ENABLE_MPI
+  }
+  MPI_Finalize();
+#endif
+  exit(1);
+}
+
+void
+slug_parmParser::valueWarning(string line) {
+#ifdef ENABLE_MPI
+  if (rank == 0) {
+#endif
+    cerr << "slug: warning: " << line << endl;
+#ifdef ENABLE_MPI
+  }
+#endif
 }
 
 
@@ -522,92 +645,60 @@ void
 slug_parmParser::checkParams() {
 
   // Make sure parameters have acceptable values
-  if (verbosity > 2) {
-    cerr << "slug: error: verbosity must be 0, 1, or 2" 
-	      << endl;
-    exit(1);
-  }
-  if (nTrials < 1) {
-    cerr << "slug: error: n_trials must be >= 1" << endl;
-    exit(1);
-  }
+  if (verbosity > 2) valueError("verbosity must be 0, 1, or 2");
+  if (nTrials < 1) valueError("n_trials must be >= 1");
   if (startTime == -constants::big) {
     if (!logTime)
       startTime = timeStep;   // Default start time = time step if
 			      // time is not logarithmic
-    else if (!outTimesList) {
-      cerr << "slug: error: start_time must be set" << endl;
-      exit(1);
-    }
-  } else if (startTime <= 0.0) {
-    cerr << "slug: error: start_time must be > 0" << endl;
-    exit(1);
-  }
+    else if (!outTimesList) valueError("start_time must be set");
+  } else if (startTime <= 0.0) valueError("start_time must be > 0");
   if ((timeStep <= 0) && !randomOutputTime && !outTimesList) {
-    if (timeStep == -constants::big) {
-      cerr << "slug: error: parameter time_step or output_times must be set" 
-		<< endl;
-    } else {
-      cerr << "slug: error: time_step must a PDF file name or be > 0" << endl;
-    }
-    exit(1);
+    if (timeStep == -constants::big)
+      valueError("parameter time_step or output_times must be set");
+    else
+      valueError("time_step must a PDF file name or be > 0");
   }
   if (endTime <= 0 && !outTimesList) {
     if (endTime == -constants::big) {
-      cerr << "slug: error: parameter end_time or output_times must be set" 
-		<< endl;
+      valueError("parameter end_time or output_times must be set");
     } else {
-      cerr << "slug: error: end_time must be > 0" << endl;
+      valueError("end_time must be > 0");
     }
-    exit(1);
   }
   if (outTimesList && outTimes.size() == 0) {
-    cerr << " slug: error: must set at least one time in output_times"
-	 << endl;
-    exit(1);
+    valueError("must set at least one time in output_times");
   }
   if (outTimesList) {
     for (vector<double>::size_type i=0; i<outTimes.size()-1; i++) {
       if ((outTimes[i] >= outTimes[i+1]) || (outTimes[i] <= 0.0)) {
-	cerr << "slug: error: output_times must be > 0 and strictly increasing"
-	     << endl;
-	exit(1);
+	valueError("output_times must be > 0 and strictly increasing");
       }
     }
   }
   if (!constantSFR && !randomSFR && run_galaxy_sim) {
     if (sfh.length() == 0) {
-      cerr << "slug: error: SFH requested, but no SFH file specified" 
-		<< endl;
-      exit(1);
+      valueError("SFH requested, but no SFH file specified");
     }    
   }
   if (!run_galaxy_sim && cluster_mass < 0 && !randomClusterMass) {
-    cerr << "slug: error: cluster_mass must be either cmf or a number > 0 for cluster sim"
-	 << endl;
-    exit(1);
+    valueError("cluster_mass must be either cmf or a number > 0 for cluster sim");
   }
   if ((fClust < 0 || fClust > 1) && run_galaxy_sim) {
-    cerr << "slug: error: clust_frac must be in the range [0,1]"
-	 << endl;
-    exit(1);
+    valueError("clust_frac must be in the range [0,1]");
   }
   if (nebular_phi < 0 || nebular_phi > 1) {
-    cerr << "slug: error: nebular_phi must be in the range [0,1]"
-	 << endl;
-    exit(1);
+    valueError("nebular_phi must be in the range [0,1]");
   }
   if (!writeClusterProp && !writeClusterPhot 
-      && !writeClusterSpec && !writeIntegratedPhot
-      && !writeIntegratedSpec && !writeIntegratedProp) {
-    cerr << "slug: error: nothing to be written!" << endl;
-    exit(1);
+      && !writeClusterSpec && !writeClusterYield
+      && !writeIntegratedPhot && !writeIntegratedSpec
+      && !writeIntegratedProp && !writeIntegratedYield) {
+    valueError("nothing to be written!");
   }
   if ((writeClusterPhot || writeIntegratedPhot) && 
       (photBand.size() == 0)) {
-    cerr << "slug: error: photometry requested, "
-	 << "but no photometric bands specified" << endl;
-    exit(1);
+    valueError("photometry requested, but no photometric bands specified");
   }
 
   // Make sure filter names are unique; if not, eliminate duplicates
@@ -620,8 +711,9 @@ slug_parmParser::checkParams() {
     rit = duplicates.rbegin();
   for ( ; rit != duplicates.rend(); ++rit) {
     vector<double>::size_type i = *rit;
-    cerr << "slug: warning: ignoring duplicate photometric band "
-	 << photBand[i] << endl;
+    ostringstream ss;
+    ss << "ignoring duplicate photometric band " << photBand[i];
+    valueWarning(ss.str());
     photBand.erase(photBand.begin() + i);
   }
 
@@ -675,6 +767,194 @@ slug_parmParser::checkParams() {
     out_time_dist = (slug_path / out_time_path).string();
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Method to parse restarts
+////////////////////////////////////////////////////////////////////////
+void slug_parmParser::restartSetup() {
+
+  // Get list of output file types
+  vector<string> outtypes;
+  if (writeIntegratedProp && run_galaxy_sim)
+    outtypes.push_back("_integrated_prop");
+  if (writeIntegratedSpec && run_galaxy_sim)
+    outtypes.push_back("_integrated_spec");
+  if (writeIntegratedPhot && run_galaxy_sim)
+    outtypes.push_back("_integrated_phot");
+  if (writeIntegratedYield && run_galaxy_sim)
+    outtypes.push_back("_integrated_yield");
+  if (writeClusterProp)
+    outtypes.push_back("_cluster_prop");
+  if (writeClusterSpec)
+    outtypes.push_back("_cluster_prop");
+  if (writeClusterPhot)
+    outtypes.push_back("_cluster_prop");
+  if (writeClusterYield)
+    outtypes.push_back("_cluster_prop");
+
+  // Get parallel rank indicator
+  string par_str;
+#ifdef ENABLE_MPI
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    par_str = ss.str();
+  }
+#endif
+
+  // Get extension
+  string ext;
+  if (out_mode == ASCII) ext = ".txt";
+  else if (out_mode == BINARY) ext = ".bin";
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) ext = ".fits";
+#endif
+
+  // Now loop through checkpoints, seeing which ones exist, and
+  // counting the trials they contain
+  vector<unsigned int> trials_ctr(outtypes.size());
+  while (true) {
+
+    // Loop over file types
+    bool checkpoint_valid = true;
+    for (vector<int>::size_type i=0; i<outtypes.size(); i++) {
+
+      // Construct checkpoint file name
+      ostringstream ss;
+      ss << "_chk" << setfill('0') << setw(4) << checkpointCtr;
+      string fname = model + par_str + ss.str() + outtypes[i] + ext;
+      path full_path = outDir / fname;
+
+      // Try to open file and read number of trials from it; bail if
+      // any of this fails
+      if (out_mode == ASCII) {
+	
+	// Try to open
+	std::ifstream checkpoint_file;
+	checkpoint_file.open(full_path.c_str(), ios::in);
+	if (!checkpoint_file.is_open()) {
+	  checkpoint_valid = false;
+	  break;
+	}
+	
+	// Try to read a line
+	if (checkpoint_file.eof()) {
+	  checkpoint_valid = false;
+	  checkpoint_file.close();
+	  break;
+	}
+	string line;
+	getline(checkpoint_file, line);
+
+	// Parse the line to get number of trials in file
+	vector<string> tokens;
+	split(tokens, line, is_any_of("="), token_compress_on);
+	if (tokens.size() != 2) {
+	  checkpoint_valid = false;
+	  break;
+	}
+	trim(tokens[0]);
+	if (tokens[0].compare("N_Trials") != 0) {
+	  checkpoint_valid = false;
+	  break;
+	}
+	trim(tokens[1]);
+	trials_ctr[i] = lexical_cast<unsigned int>(tokens[1]);
+
+	// Close
+	checkpoint_file.close();
+	
+      } else if (out_mode == BINARY) {
+	
+	// Try to open
+	std::ifstream checkpoint_file;
+	checkpoint_file.open(full_path.c_str(), ios::in | ios::binary);
+	if (!checkpoint_file.is_open()) {
+	  checkpoint_valid = false;
+	  break;
+	}
+	
+	// Try to read an unsigned int from file
+	if (checkpoint_file.eof()) {
+	  checkpoint_valid = false;
+	  break;
+	}
+	unsigned int trials_in_file;
+	checkpoint_file.read((char *) &trials_in_file,
+			     sizeof trials_in_file);
+	if (!(checkpoint_file.good())) {
+	  checkpoint_valid = false;
+	  checkpoint_file.close();
+	  break;
+	}
+	trials_ctr[i] = trials_in_file;
+
+	// Close
+	checkpoint_file.close();
+
+      }
+#ifdef ENABLE_FITS
+      else if (out_mode == FITS) {
+
+	// Try to open file
+	fitsfile *checkpoint_file;
+	int fits_status = 0;
+	fits_open_table(&checkpoint_file, full_path.c_str(),
+			READONLY, &fits_status);
+	if (fits_status != 0) {
+	  checkpoint_valid = false;
+	  break;
+	}
+
+	// Read the number of trials
+	unsigned int trials_in_file;
+	char comment[100];
+	fits_read_key(checkpoint_file, TUINT, "N_Trials",
+		      &trials_in_file, comment, &fits_status);
+	if (fits_status != 0) {
+	  checkpoint_valid = false;
+	  fits_close_file(checkpoint_file, &fits_status);
+	  break;
+	}
+        trials_ctr[i] = trials_in_file;
+
+	// Close
+	fits_close_file(checkpoint_file, &fits_status);
+      }
+    }
+
+    // If we failed at any point, bail out
+    if (!checkpoint_valid) break;
+
+    // Check to make sure that all checkpoint files say they have the
+    // same number of trials
+    for (vector<int>::size_type i=1; i<trials_ctr.size(); i++) {
+      if (trials_ctr[i] != trials_ctr[0]) {
+	checkpoint_valid = false;
+	break;
+      }
+    }
+
+    // If we made it to here, this is a valid checkpoint. Add the
+    // number of trials it contains to our running count, and
+    // increment the checkpoint counter
+    checkpointCtr++;
+    checkpointTrials += trials_ctr[0];
+  }
+#endif
+
+  // Print if verbose
+  if (verbosity > 0) {
+#ifdef ENABLE_MPI
+    cout << "slug: processor " << rank
+#else
+      cout << "slug"
+#endif
+	 << ": found " << checkpointCtr << " checkpoint "
+	 << "files containing " << checkpointTrials << " trials"
+	 << endl;
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Method to write parameters to a file
@@ -820,6 +1100,12 @@ slug_parmParser::writeParams() const {
 
 unsigned int slug_parmParser::get_verbosity() const { return verbosity; }
 unsigned int slug_parmParser::get_nTrials() const { return nTrials; }
+unsigned int slug_parmParser::get_checkpoint_interval() const
+{ return checkpointInterval; }
+unsigned int slug_parmParser::get_checkpoint_ctr() const
+{ return checkpointCtr; }
+unsigned int slug_parmParser::get_checkpoint_trials() const
+{ return checkpointTrials; }
 double slug_parmParser::get_startTime() const { return startTime; }
 double slug_parmParser::get_timeStep() const { return timeStep; }
 double slug_parmParser::get_endTime() const { return endTime; }

@@ -37,8 +37,12 @@ int main(int argc, char *argv[]) {
 #endif
   
   // Parse the parameter file
+#ifdef ENABLE_MPI
+  slug_parmParser pp(argc, argv, MPI_COMM_WORLD);
+#else
   slug_parmParser pp(argc, argv);
-
+#endif
+  
   // Initialize the main simulation driver
 #ifdef ENABLE_MPI
   slug_sim sim(pp, MPI_COMM_WORLD);

@@ -67,14 +67,16 @@ private:
 
   // Functions to open output files and write headers of the various
   // output files
-  void open_integrated_prop();  
-  void open_cluster_prop();
-  void open_integrated_spec();
-  void open_cluster_spec();
-  void open_integrated_phot();
-  void open_cluster_phot();
-  void open_integrated_yield();
-  void open_cluster_yield();
+  void open_output(int chknum = -1);
+  void close_output(int chknum = -1, unsigned int ntrials = 0);
+  void open_integrated_prop(int chknum = -1);
+  void open_cluster_prop(int chknum = -1);
+  void open_integrated_spec(int chknum = -1);
+  void open_cluster_spec(int chknum = -1);
+  void open_integrated_phot(int chknum = -1);
+  void open_cluster_phot(int chknum = -1);
+  void open_integrated_yield(int chknum = -1);
+  void open_cluster_yield(int chknum = -1);
 
   // Function to write separators between trials to files
   void write_separator(std::ofstream& file, 
@@ -120,6 +122,7 @@ private:
   slug_cluster *cluster;      // A single star cluster
   slug_galaxy *galaxy;        // A single galaxy
   outputMode out_mode;        // Output mode
+  int checkpoint_ctr;         // Checkpoint counter
   bool is_imf_var = false;          //Does the IMF contain variable segments?
   std::vector<double> imf_vpdraws;  //Variable parameter draws from the IMF
 

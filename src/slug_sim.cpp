@@ -406,20 +406,18 @@ slug_sim::slug_sim(const slug_parmParser& pp_
 #endif
 
   // Open the output files we'll need and write their headers
-  if (pp.get_verbosity() > 1)
+  if ((pp.get_verbosity() > 1)
+#ifdef ENABLE_MPI
+      && rank == 0
+#endif
+      ) {
     std::cout << "slug: opening output files" << std::endl;
-  if (pp.galaxy_sim() && pp.get_writeIntegratedProp()) 
-    open_integrated_prop();
-  if (pp.get_writeClusterProp()) open_cluster_prop();
-  if (pp.galaxy_sim() && pp.get_writeIntegratedSpec()) 
-    open_integrated_spec();
-  if (pp.get_writeClusterSpec()) open_cluster_spec();
-  if (pp.galaxy_sim() && pp.get_writeIntegratedPhot()) 
-    open_integrated_phot();
-  if (pp.get_writeClusterPhot()) open_cluster_phot();
-  if (pp.galaxy_sim() && pp.get_writeIntegratedYield())
-    open_integrated_yield();
-  if (pp.get_writeClusterYield()) open_cluster_yield();
+  }
+  if (pp.get_checkpoint_interval() > 0)
+    checkpoint_ctr = pp.get_checkpoint_ctr();
+  else
+    checkpoint_ctr = -1;
+  open_output(checkpoint_ctr);
 }
 
 
@@ -430,6 +428,9 @@ slug_sim::~slug_sim() {
 
   // Clean up variable parameter storage
   imf_vpdraws.clear();
+
+  // Close outputs
+  close_output();
 
   // Delete the various objects we created
   if (galaxy != nullptr) delete galaxy;
@@ -446,6 +447,99 @@ slug_sim::~slug_sim() {
   if (sfr_pdf != nullptr) delete sfr_pdf;
   if (extinct != nullptr) delete extinct;
   if (nebular != nullptr) delete nebular;
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Methods to open and close output files
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_output(int chknum) {
+  if (pp.galaxy_sim() && pp.get_writeIntegratedProp()) 
+    open_integrated_prop(chknum);
+  if (pp.get_writeClusterProp())
+    open_cluster_prop(chknum);
+  if (pp.galaxy_sim() && pp.get_writeIntegratedSpec()) 
+    open_integrated_spec(chknum);
+  if (pp.get_writeClusterSpec())
+    open_cluster_spec(chknum);
+  if (pp.galaxy_sim() && pp.get_writeIntegratedPhot()) 
+    open_integrated_phot(chknum);
+  if (pp.get_writeClusterPhot())
+    open_cluster_phot(chknum);
+  if (pp.galaxy_sim() && pp.get_writeIntegratedYield())
+    open_integrated_yield(chknum);
+  if (pp.get_writeClusterYield())
+    open_cluster_yield(chknum);
+}
+
+void slug_sim::close_output(int checkpoint_ctr, unsigned int ntrials) {
+
+  // If we are closing a checkpoint, edit the number of trials it
+  // contains
+  vector<string> files_to_delete;
+  if (checkpoint_ctr >= 0) {
+
+    // Figure out which files are open
+    vector<ofstream *> open_files;
+    if (int_prop_file.is_open()) open_files.push_back(&int_prop_file);
+    if (int_spec_file.is_open()) open_files.push_back(&int_spec_file);
+    if (int_phot_file.is_open()) open_files.push_back(&int_phot_file);
+    if (int_yield_file.is_open()) open_files.push_back(&int_yield_file);
+    if (cluster_prop_file.is_open()) open_files.push_back(&cluster_prop_file);
+    if (cluster_spec_file.is_open()) open_files.push_back(&cluster_spec_file);
+    if (cluster_phot_file.is_open()) open_files.push_back(&cluster_phot_file);
+    if (cluster_yield_file.is_open()) open_files.push_back(&cluster_yield_file);
+
+    // Fix number of trials in file
+    for (vector<ifstream>::size_type i=0; i<open_files.size(); i++) {
+      open_files[i]->seekp(ios_base::beg);
+      if (out_mode == ASCII) {
+	// ASCII mode; replace the first line
+	(*open_files[i]) << "N_Trials = " << setfill('0')
+			 << setw(14) << ntrials << endl;
+      } else if (out_mode == BINARY) {
+	// Binary mode; replace the first uint in file
+	open_files[i]->write((char *) &ntrials, sizeof ntrials);
+      }
+    }
+
+    // Flag files containing zero trials for deletion
+    if (ntrials == 0) {
+      string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+      if (comm != MPI_COMM_NULL) {
+	ostringstream ss;
+	ss << "_" << setfill('0') << setw(4) << rank;
+	fname += ss.str();
+      }
+#endif
+      ostringstream ss;
+      ss << "_chk" << setfill('0') << setw(4) << checkpoint_ctr;
+      fname += ss.str();
+      string ext;
+      switch (out_mode) {
+      case ASCII: { ext = ".txt"; break; }
+      case BINARY: { ext = ".bin"; break; }
+      case FITS: { ext = ".fits"; break; }
+      }
+      if (int_prop_file.is_open())
+	files_to_delete.push_back(fname + "_integrated_prop" + ext);
+      if (int_spec_file.is_open())
+	files_to_delete.push_back(fname + "_integrated_spec" + ext);
+      if (int_phot_file.is_open())
+	files_to_delete.push_back(fname + "_integrated_phot" + ext);
+      if (int_yield_file.is_open())
+	files_to_delete.push_back(fname + "_integrated_yield" + ext);
+      if (cluster_prop_file.is_open())
+	files_to_delete.push_back(fname + "_cluster_prop" + ext);
+      if (cluster_spec_file.is_open())
+	files_to_delete.push_back(fname + "_cluster_spec" + ext);
+      if (cluster_phot_file.is_open())
+	files_to_delete.push_back(fname + "_cluster_phot" + ext);
+      if (cluster_yield_file.is_open())
+	files_to_delete.push_back(fname + "_cluster_yield" + ext);
+    }
+  }
 
   // Close open files
   if (int_prop_file.is_open()) int_prop_file.close();
@@ -456,8 +550,77 @@ slug_sim::~slug_sim() {
   if (cluster_phot_file.is_open()) cluster_phot_file.close();
   if (int_yield_file.is_open()) int_yield_file.close();
   if (cluster_yield_file.is_open()) cluster_yield_file.close();
-
+  
 #ifdef ENABLE_FITS
+  // Reset number of trials for FITS files
+  if (checkpoint_ctr >= 0) {
+
+    // Figure out which files are open
+    vector<fitsfile *> open_files;
+    if (int_prop_fits != nullptr)
+      open_files.push_back(int_prop_fits);
+    if (int_spec_fits != nullptr)
+      open_files.push_back(int_spec_fits);
+    if (int_phot_fits != nullptr)
+      open_files.push_back(int_phot_fits);
+    if (int_yield_fits != nullptr)
+      open_files.push_back(int_yield_fits);
+    if (cluster_prop_fits != nullptr)
+      open_files.push_back(cluster_prop_fits);
+    if (cluster_spec_fits != nullptr)
+      open_files.push_back(cluster_spec_fits);
+    if (cluster_phot_fits != nullptr)
+      open_files.push_back(cluster_phot_fits);
+    if (cluster_yield_fits != nullptr)
+      open_files.push_back(cluster_yield_fits);
+
+    // Fix number of trials in file
+    for (vector<ifstream>::size_type i=0; i<open_files.size(); i++) {
+      int fits_status = 0;
+      fits_movabs_hdu(open_files[i], 2, NULL, &fits_status);
+      fits_update_key(open_files[i], TUINT, "N_Trials", 
+		      &ntrials, "Number of trials in file",
+		      &fits_status);
+    }
+
+    // Flag files containing zero trials for deletion
+    if (ntrials == 0) {
+      string fname(pp.get_modelName());
+#ifdef ENABLE_MPI
+      if (comm != MPI_COMM_NULL) {
+	ostringstream ss;
+	ss << "_" << setfill('0') << setw(4) << rank;
+	fname += ss.str();
+      }
+#endif
+      ostringstream ss;
+      ss << "_chk" << setfill('0') << setw(4) << checkpoint_ctr;
+      fname += ss.str();
+      string ext;
+      switch (out_mode) {
+      case ASCII: { ext = ".txt"; break; }
+      case BINARY: { ext = ".bin"; break; }
+      case FITS: { ext = ".fits"; break; }
+      }
+      if (int_prop_fits != nullptr)
+	files_to_delete.push_back(fname + "_integrated_prop" + ext);
+      if (int_spec_fits != nullptr)
+	files_to_delete.push_back(fname + "_integrated_spec" + ext);
+      if (int_phot_fits != nullptr)
+	files_to_delete.push_back(fname + "_integrated_phot" + ext);
+      if (int_yield_fits != nullptr)
+	files_to_delete.push_back(fname + "_integrated_yield" + ext);
+      if (cluster_prop_fits != nullptr)
+	files_to_delete.push_back(fname + "_cluster_prop" + ext);
+      if (cluster_spec_fits != nullptr)
+	files_to_delete.push_back(fname + "_cluster_spec" + ext);
+      if (cluster_phot_fits != nullptr)
+	files_to_delete.push_back(fname + "_cluster_phot" + ext);
+      if (cluster_yield_fits != nullptr)
+	files_to_delete.push_back(fname + "_cluster_yield" + ext);
+    }
+  }
+  
   // Close FITS files
   int fits_status = 0;
   if (out_mode == FITS) {
@@ -477,10 +640,17 @@ slug_sim::~slug_sim() {
       fits_close_file(int_yield_fits, &fits_status);
     if (cluster_yield_fits != nullptr)
       fits_close_file(cluster_yield_fits, &fits_status);
+    int_prop_fits = cluster_prop_fits = int_spec_fits
+      = cluster_spec_fits = int_phot_fits = cluster_phot_fits
+      = int_yield_fits = cluster_yield_fits = nullptr;
   }
 #endif
-}
 
+  // Delete files flagged for deletion
+  path full_path(pp.get_outDir());
+  for (vector<string>::size_type i=0; i<files_to_delete.size(); i++)
+    remove((full_path / files_to_delete[i]).c_str());
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Method to run a galaxy simulation
@@ -491,8 +661,9 @@ void slug_sim::galaxy_sim() {
   // MPI mode we need to set up a remote access window so that we can
   // synchronize trial counts across processes
   unsigned long trials_to_do = pp.get_nTrials();
-  unsigned long trial_ctr = 0;     // Counts trials on all processors
+  unsigned long trial_ctr = pp.get_checkpoint_trials();
   unsigned long trial_ctr_loc = 0; // Counts trials on this processor
+  unsigned long trial_ctr_last = 1; // Trial counter at last write
 #ifdef ENABLE_MPI
   unsigned long trial_ctr_buf = 0; // Buffer to hold global trial counter
   MPI_Win win;
@@ -508,6 +679,8 @@ void slug_sim::galaxy_sim() {
   }
 #endif
 
+  // Main loop
+  bool new_checkpoint_file = true;
   while (true) {
 
     // Increment the trial counters; under MPI, the global counter
@@ -530,6 +703,32 @@ void slug_sim::galaxy_sim() {
     // If global trial counter exceeds number of trials we're supposed
     // to do, exit the loop
     if (trial_ctr > trials_to_do) break;
+
+    // If we are using checkpointing, see if we need to start a new
+    // checkpoint file
+    if (pp.get_checkpoint_interval() > 0) {
+      if (((trial_ctr_loc-1) % pp.get_checkpoint_interval() == 0) &&
+	  (trial_ctr_loc != 1)) {
+	// If sufficiently verbose, print status
+	if (pp.get_verbosity() > 0) {
+#ifdef ENABLE_MPI
+	  cout << "slug: process " << rank+1
+	       << " writing checkpoint " << checkpoint_ctr+1 << endl;
+#else
+	  cout << "slug: writing checkpoint " << checkpoint_ctr+1 << endl;
+#endif
+	}
+	// Close old checkpoints
+	close_output(checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
+	// Increment checkpoint counter, and update number of trials
+	// written counter
+	checkpoint_ctr++;
+	trial_ctr_last = trial_ctr_loc;
+	// Open new checkpoint files
+	open_output(checkpoint_ctr);
+	new_checkpoint_file = true;
+      }
+    }
 
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
@@ -556,18 +755,20 @@ void slug_sim::galaxy_sim() {
 
     // Write trial separator to ASCII files if operating in ASCII
     // mode
-    if ((out_mode == ASCII) &&
-#ifdef ENABLE_MPI
-	(trial_ctr_loc != 1)
-#else
-	(trial_ctr != 1)
-#endif
-	) {
+    if ((out_mode == ASCII) && !new_checkpoint_file) {
+	
+      // Skip if we just opened new files
+      if (pp.get_checkpoint_interval() > 0) {
+	if (((trial_ctr_loc-1) % pp.get_checkpoint_interval() == 0) &&
+	    (trial_ctr_loc != 1))
+	  break;
+      }
+      
       if (pp.get_writeIntegratedProp()) { 
         // Write separators
         int ncol = 9*14-3;      
-	      if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
-	      write_separator(int_prop_file, ncol);
+	if (is_imf_var==true) ncol += (imf_vpdraws.size())*14;
+	write_separator(int_prop_file, ncol);
       }
 
       unsigned int extrafields = 0;       //Store IMFs in prop file
@@ -595,6 +796,7 @@ void slug_sim::galaxy_sim() {
       if (pp.get_writeClusterYield())
 	write_separator(cluster_yield_file, 14*6-3);
     }
+    new_checkpoint_file = false;
 
     // If the output time is randomly changing, draw a new output time
     // for this trial
@@ -743,6 +945,17 @@ void slug_sim::galaxy_sim() {
     }
   }
   
+  // Close last output file
+  if ((pp.get_verbosity() > 0) && (trial_ctr_loc - trial_ctr_last > 0)) {
+#ifdef ENABLE_MPI
+    cout << "slug: process " << rank+1
+	 << " writing checkpoint " << checkpoint_ctr+1 << endl;
+#else
+    cout << "slug: writing checkpoint " << checkpoint_ctr+1 << endl;
+#endif
+  }
+  close_output(checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
+  
   // Free MPI window
 #ifdef ENABLE_MPI
   if (comm != MPI_COMM_NULL) MPI_Win_free(&win);
@@ -764,8 +977,9 @@ void slug_sim::cluster_sim() {
   // MPI mode we need to set up a remote access window so that we can
   // synchronize trial counts across processes
   unsigned long trials_to_do = pp.get_nTrials();
-  unsigned long trial_ctr = 0;     // Counts trials on all processors
+  unsigned long trial_ctr = pp.get_checkpoint_trials();
   unsigned long trial_ctr_loc = 0; // Counts trials on this processor
+  unsigned long trial_ctr_last = 1; // Trial counter at last write
 #ifdef ENABLE_MPI
   unsigned long trial_ctr_buf = 0; // Buffer to hold global trial counter
   MPI_Win win;
@@ -782,6 +996,7 @@ void slug_sim::cluster_sim() {
 #endif
 
   // Loop over trials
+  bool new_checkpoint_file = true;
   while (true) {
 
     // Increment the trial counters; under MPI, the global counter
@@ -804,6 +1019,32 @@ void slug_sim::cluster_sim() {
     // If global trial counter exceeds number of trials we're supposed
     // to do, exit the loop
     if (trial_ctr > trials_to_do) break;
+
+    // If we are using checkpointing, see if we need to start a new
+    // checkpoint file
+    if (pp.get_checkpoint_interval() > 0) {
+      if (((trial_ctr_loc-1) % pp.get_checkpoint_interval() == 0) &&
+	  (trial_ctr_loc != 1)) {
+	// If sufficiently verbose, print status
+	if (pp.get_verbosity() > 0) {
+#ifdef ENABLE_MPI
+	  cout << "slug: process " << rank+1
+	       << " writing checkpoint " << checkpoint_ctr+1 << endl;
+#else
+	  cout << "slug: writing checkpoint " << checkpoint_ctr+1 << endl;
+#endif
+	}
+	// Close old checkpoints
+	close_output(checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
+	// Increment checkpoint counter, and update number of trials
+	// written counter
+	checkpoint_ctr++;
+	trial_ctr_last = trial_ctr_loc;
+	// Open new checkpoint files
+	open_output(checkpoint_ctr);
+	new_checkpoint_file = true;
+      }
+    }
 
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0) {
@@ -847,13 +1088,7 @@ void slug_sim::cluster_sim() {
 
     // Write trial separator to ASCII files if operating in ASCII
     // mode
-    if ((out_mode == ASCII) &&
-#ifdef ENABLE_MPI
-	(trial_ctr_loc != 1)
-#else
-	(trial_ctr != 1)
-#endif
-	) {
+    if ((out_mode == ASCII) && !new_checkpoint_file) {
       if (pp.get_writeClusterProp()) {
 	int ncol = 10*14-3;
 	if (pp.get_use_extinct()) ncol += 14;
@@ -868,6 +1103,7 @@ void slug_sim::cluster_sim() {
       if (pp.get_writeClusterYield())
 	write_separator(cluster_yield_file, 5*14-3);
     }
+    new_checkpoint_file = false;
 
     // Loop over time steps
     for (unsigned int j=0; j<outTimes.size(); j++) {
@@ -962,6 +1198,17 @@ void slug_sim::cluster_sim() {
     }
   }
 
+  // Close last output file
+  if ((pp.get_verbosity() > 0) && (trial_ctr_loc - trial_ctr_last > 0)) {
+#ifdef ENABLE_MPI
+    cout << "slug: process " << rank+1
+	 << " writing checkpoint " << checkpoint_ctr+1 << endl;
+#else
+    cout << "slug: writing checkpoint " << checkpoint_ctr+1 << endl;
+#endif
+  }
+  close_output(checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
+
   // Free MPI window
 #ifdef ENABLE_MPI
   if (comm != MPI_COMM_NULL) MPI_Win_free(&win);
@@ -977,7 +1224,7 @@ void slug_sim::cluster_sim() {
 ////////////////////////////////////////////////////////////////////////
 // Open integrated properties file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_prop() {
+void slug_sim::open_integrated_prop(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -988,6 +1235,11 @@ void slug_sim::open_integrated_prop() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_integrated_prop";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1032,6 +1284,9 @@ void slug_sim::open_integrated_prop() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      int_prop_file << "N_Trials = " << setfill('0')
+		    << setw(14) << 0 << setfill(' ') << endl;
     int_prop_file << setw(14) << left << "Time"
 		  << setw(14) << left << "TargetMass"
 		  << setw(14) << left << "ActualMass"
@@ -1089,6 +1344,12 @@ void slug_sim::open_integrated_prop() {
   
   } else if (out_mode == BINARY) {
 
+    // State number of trials expected to be in this file
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      int_prop_file.write((char *) &ntrial, sizeof ntrial);
+    }
+
     // File starts with an integer for the number of variable parameters
     if (is_imf_var == true) {
         int nvps = imf_vpdraws.size();
@@ -1124,7 +1385,7 @@ void slug_sim::open_integrated_prop() {
         tunit_str.push_back("");
         ncol++; 
       }
-    } 
+    }
 
     // Make things we can pass to c
     char *ttype[ncol], *tform[ncol], *tunit[ncol];
@@ -1137,7 +1398,16 @@ void slug_sim::open_integrated_prop() {
     // Create FITS table
     int fits_status = 0;
     fits_create_tbl(int_prop_fits, BINARY_TBL, 0, ncol,
-		    ttype, tform, tunit, nullptr, &fits_status);    
+		    ttype, tform, tunit, nullptr, &fits_status);
+
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(int_prop_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
   }
 #endif
 }
@@ -1146,7 +1416,7 @@ void slug_sim::open_integrated_prop() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster properties file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_prop() {
+void slug_sim::open_cluster_prop(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1157,6 +1427,11 @@ void slug_sim::open_cluster_prop() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_cluster_prop";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1201,6 +1476,9 @@ void slug_sim::open_cluster_prop() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      cluster_prop_file << "N_Trials = " << setfill('0')
+			<< setw(14) << 0 << setfill(' ') << endl;
     cluster_prop_file << setw(14) << left << "UniqueID"
 		      << setw(14) << left << "Time"
 		      << setw(14) << left << "FormTime"
@@ -1292,6 +1570,13 @@ void slug_sim::open_cluster_prop() {
       
     cluster_prop_file << endl;
   } else if (out_mode == BINARY) {
+
+    // State number of trials in this file
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      cluster_prop_file.write((char *) &ntrial, sizeof ntrial);
+    }
+
     // File starts with a bit indicating whether we're using extinction
     bool use_extinct = (extinct != nullptr);
     cluster_prop_file.write((char *) &use_extinct, sizeof use_extinct);
@@ -1381,6 +1666,15 @@ void slug_sim::open_cluster_prop() {
     delete [] ttype;
     delete [] tform;
     delete [] tunit;
+
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(cluster_prop_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
   }
 #endif
 }
@@ -1389,7 +1683,7 @@ void slug_sim::open_cluster_prop() {
 ////////////////////////////////////////////////////////////////////////
 // Open integrated spectra file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_spec() {
+void slug_sim::open_integrated_spec(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1400,6 +1694,11 @@ void slug_sim::open_integrated_spec() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_integrated_spec";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1444,6 +1743,9 @@ void slug_sim::open_integrated_spec() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      int_spec_file << "N_Trials = " << setfill('0')
+		    << setw(14) << 0 << setfill(' ') << endl;
     int_spec_file << setw(14) << left << "Time"
 		  << setw(14) << left << "Wavelength"
 		  << setw(14) << left << "L_lambda";
@@ -1478,6 +1780,11 @@ void slug_sim::open_integrated_spec() {
     }
     int_spec_file << endl;
   } else if (out_mode == BINARY) {
+    // State number of trials contained in checkpoints
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      int_spec_file.write((char *) &ntrial, sizeof ntrial);
+    }
     // File starts with two bits indicating whether we're using
     // nebular emission and extinction
     bool use_nebular = (nebular != nullptr);
@@ -1570,6 +1877,15 @@ void slug_sim::open_integrated_spec() {
     delete [] tform;
     delete [] tunit;
 
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(int_spec_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
+    
     // Write wavelength data to table
     fits_write_col(int_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
@@ -1636,7 +1952,7 @@ void slug_sim::open_integrated_spec() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster spectra file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_spec() {
+void slug_sim::open_cluster_spec(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1647,6 +1963,11 @@ void slug_sim::open_cluster_spec() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_cluster_spec";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1691,6 +2012,9 @@ void slug_sim::open_cluster_spec() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      cluster_spec_file << "N_Trials = " << setfill('0')
+		    << setw(14) << 0 << setfill(' ') << endl;
     cluster_spec_file << setw(14) << left << "UniqueID"
 		      << setw(14) << left << "Time"
 		      << setw(14) << left << "Wavelength"
@@ -1728,6 +2052,11 @@ void slug_sim::open_cluster_spec() {
     }
     cluster_spec_file << endl;
   } else if (out_mode == BINARY) {
+    // State number of trials contained in checkpoints
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      cluster_spec_file.write((char *) &ntrial, sizeof ntrial);
+    }
     // File starts with two bits indicating whether we're using
     // nebular emission and extinction
     bool use_nebular = (nebular != nullptr);
@@ -1819,6 +2148,15 @@ void slug_sim::open_cluster_spec() {
     delete [] tform;
     delete [] tunit;
 
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(cluster_spec_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
+    
     // Write wavelength data to table
     fits_write_col(cluster_spec_fits, TDOUBLE, 1, 1, 1, nl,
 		   lambda.data(), &fits_status);
@@ -1886,7 +2224,7 @@ void slug_sim::open_cluster_spec() {
 ////////////////////////////////////////////////////////////////////////
 // Open integrated photometry file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_phot() {
+void slug_sim::open_integrated_phot(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -1897,6 +2235,11 @@ void slug_sim::open_integrated_phot() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_integrated_phot";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -1945,6 +2288,9 @@ void slug_sim::open_integrated_phot() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      int_phot_file << "N_Trials = " << setfill('0')
+		    << setw(14) << 0 << setfill(' ') << endl;
     int_phot_file << setw(21) << left << "Time";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
       int_phot_file << setw(21) << left << filter_names[i];
@@ -1996,6 +2342,11 @@ void slug_sim::open_integrated_phot() {
     }
     int_phot_file << endl;
   } else if (out_mode == BINARY) {
+    // State number of trials contained in checkpoints
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      int_phot_file.write((char *) &ntrial, sizeof ntrial);
+    }
     // File starts with the number of filters and then the list
     // of filters names and units in ASCII; rest is binary
     int_phot_file << filter_names.size() << endl;
@@ -2066,6 +2417,15 @@ void slug_sim::open_integrated_phot() {
     fits_create_tbl(int_phot_fits, BINARY_TBL, 0, ncol,
 		    ttype.data(), tform.data(), tunit.data(), nullptr, 
 		    &fits_status);
+    
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(int_phot_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
   }
 #endif
 }
@@ -2074,7 +2434,7 @@ void slug_sim::open_integrated_phot() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster photometry file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_phot() {
+void slug_sim::open_cluster_phot(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -2085,6 +2445,11 @@ void slug_sim::open_cluster_phot() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_cluster_phot";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -2133,6 +2498,9 @@ void slug_sim::open_cluster_phot() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      cluster_phot_file << "N_Trials = " << setfill('0')
+		    << setw(14) << 0 << setfill(' ') << endl;
     cluster_phot_file << setw(21) << left << "UniqueID"
 		      << setw(21) << left << "Time";
     for (vector<string>::size_type i=0; i<filter_names.size(); i++)
@@ -2189,6 +2557,11 @@ void slug_sim::open_cluster_phot() {
     }
     cluster_phot_file << endl;
   } else if (out_mode == BINARY) {
+    // State number of trials contained in checkpoints
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      cluster_phot_file.write((char *) &ntrial, sizeof ntrial);
+    }
     // File starts with the number of filters and then the list
     // of filters names and units in ASCII; rest is binary
     cluster_phot_file << filter_names.size() << endl;
@@ -2258,6 +2631,15 @@ void slug_sim::open_cluster_phot() {
     fits_create_tbl(cluster_phot_fits, BINARY_TBL, 0, ncol,
 		    ttype.data(), tform.data(), tunit.data(), nullptr, 
 		    &fits_status);
+    
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(cluster_phot_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
   }
 #endif
 }
@@ -2266,7 +2648,7 @@ void slug_sim::open_cluster_phot() {
 ////////////////////////////////////////////////////////////////////////
 // Open integrated yield file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_integrated_yield() {
+void slug_sim::open_integrated_yield(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -2277,6 +2659,11 @@ void slug_sim::open_integrated_yield() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_integrated_yield";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -2312,7 +2699,7 @@ void slug_sim::open_integrated_yield() {
 #endif
     if (!int_yield_file.is_open()) {
       cerr << "slug error: unable to open integrated yield file " 
-     << full_path.string() << endl;
+	   << full_path.string() << endl;
       exit(1);
     }
 #ifdef ENABLE_FITS
@@ -2321,6 +2708,9 @@ void slug_sim::open_integrated_yield() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      int_yield_file << "N_Trials = " << setfill('0')
+		     << setw(14) << 0 << setfill(' ') << endl;
     int_yield_file << setw(14) << left << "Time"
           << setw(14) << left << "Symbol"
           << setw(14) << left << "Z"
@@ -2340,6 +2730,12 @@ void slug_sim::open_integrated_yield() {
           << setw(14) << left << "-----------";
     int_yield_file << endl;
   } else if (out_mode == BINARY) {
+
+    // State number of trials contained in checkpoints
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      int_yield_file.write((char *) &ntrial, sizeof ntrial);
+    }
 
     // In binary mode, we begin the file by writing out the number of
     // isotopes, then for each isotope writing out its symbol as 4
@@ -2399,6 +2795,15 @@ void slug_sim::open_integrated_yield() {
     delete [] tform;
     delete [] tunit;
 
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(int_yield_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
+
     // Write isotope data to table
     fits_write_col(int_yield_fits, TSTRING, 1, 1, 1, isotopes.size(),
        isotope_names, &fits_status);
@@ -2444,7 +2849,7 @@ void slug_sim::open_integrated_yield() {
 ////////////////////////////////////////////////////////////////////////
 // Open cluster yield file and write its header
 ////////////////////////////////////////////////////////////////////////
-void slug_sim::open_cluster_yield() {
+void slug_sim::open_cluster_yield(int chknum) {
 
   // Construct file name and path
   string fname(pp.get_modelName());
@@ -2455,6 +2860,11 @@ void slug_sim::open_cluster_yield() {
     fname += ss.str();
   }
 #endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
   fname += "_cluster_yield";
   path full_path(pp.get_outDir());
   if (out_mode == ASCII) {
@@ -2499,6 +2909,9 @@ void slug_sim::open_cluster_yield() {
 
   // Write header
   if (out_mode == ASCII) {
+    if (chknum >= 0)
+      cluster_yield_file << "N_Trials = " << setfill('0')
+			 << setw(14) << 0 << setfill(' ') << endl;
     cluster_yield_file << setw(14) << left << "UniqueID"
           << setw(14) << left << "Time"
           << setw(14) << left << "Symbol"
@@ -2522,6 +2935,12 @@ void slug_sim::open_cluster_yield() {
     cluster_yield_file << endl;
   } else if (out_mode == BINARY) {
 
+    // State number of trials contained in checkpoints
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      cluster_yield_file.write((char *) &ntrial, sizeof ntrial);
+    }
+    
     // In binary mode, we begin the file by writing out the number of
     // isotopes, then for each isotope writing out its symbol as 4
     // characters (to maintain alignment), then writing out its atomic
@@ -2580,6 +2999,15 @@ void slug_sim::open_cluster_yield() {
     delete [] tform;
     delete [] tunit;
 
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(cluster_yield_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
+    
     // Write isotope data to table
     fits_write_col(cluster_yield_fits, TSTRING, 1, 1, 1, isotopes.size(),
        isotope_names, &fits_status);
