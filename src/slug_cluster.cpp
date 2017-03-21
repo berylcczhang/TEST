@@ -1182,7 +1182,7 @@ void
 slug_cluster::write_prop(ofstream& outfile, const outputMode out_mode,
 			 const unsigned long trial,
 			 bool cluster_only, const std::vector<double>& imfvp) const {
-			 
+
   if (out_mode == ASCII) {
     outfile << setprecision(5) << scientific
 	    << setw(11) << right << id << "   "

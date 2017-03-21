@@ -174,7 +174,9 @@ slug_PDF_schechter::draw(double a, double b) {
     }
 
     // Accept or reject? Acceptance probability = exp(-val/segStar).
-    if (exp(-val/segStar) > (*unidist)()) break;
+    double acceptval;
+    acceptval = (*unidist)();
+    if (exp(-val/segStar) > acceptval) break;
   }
 
   return val;

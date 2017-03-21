@@ -831,7 +831,7 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
     // Output any variable parameters  
     if (imfvp.size()>0) {
       // Loop over the variable parameters and output
-      for (int p = 0; p<imfvp.size();p++) {
+      for (vector<double>::size_type p = 0; p<imfvp.size();p++) {
         int_prop_file << "   " << setw(11) << right << imfvp[p];
       }
     }
@@ -859,7 +859,7 @@ slug_galaxy::write_integrated_prop(ofstream& int_prop_file,
     // Write out variable parameter values
     if (imfvp.size()>0) {
       // Loop over the variable parameters
-      for (int p = 0; p<imfvp.size();p++) {
+      for (vector<double>::size_type p = 0; p<imfvp.size();p++) {
         int_prop_file.write((char *) &imfvp[p], sizeof imfvp[p]);
       }  
     }
@@ -909,8 +909,7 @@ slug_galaxy::write_integrated_prop(fitsfile* int_prop_fits,
   if (imfvp.size()>0) {
     // Loop over the variable parameters
     int colnum=10;  //Current column number
-    for (int p = 0; p<imfvp.size();p++)
-    {
+    for (vector<double>::size_type p = 0; p<imfvp.size(); p++) {
       colnum++;
       double vp_p=imfvp[p];
       fits_write_col(int_prop_fits, TDOUBLE, colnum, nrows+1, 1, 1, &vp_p,

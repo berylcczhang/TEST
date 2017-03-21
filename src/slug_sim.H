@@ -43,6 +43,33 @@ extern "C" {
 #   include "mpi.h"
 #endif
 
+// A struct to hold pointers to the output files; created just for the
+// convenience of passing this around instead of a bunch of individual
+// file pointers
+typedef struct slug_output_files_struct {
+  bool is_open;                     // Are files open
+  std::ofstream int_prop_file;      // Integrated properties file
+  std::ofstream cluster_prop_file;  // Cluster properties file
+  std::ofstream int_spec_file;      // Integrated spectra file
+  std::ofstream cluster_spec_file;  // Cluster spectra file
+  std::ofstream int_phot_file;      // Integrated photometry file
+  std::ofstream cluster_phot_file;  // Cluster photometry file
+  std::ofstream int_yield_file;     // Integrated yield file
+  std::ofstream cluster_yield_file; // Cluster yield file
+#ifdef ENABLE_FITS
+  // FITS file versions of the above
+  fitsfile *int_prop_fits;
+  fitsfile *cluster_prop_fits;
+  fitsfile *int_spec_fits;
+  fitsfile *cluster_spec_fits;
+  fitsfile *int_phot_fits;
+  fitsfile *cluster_phot_fits;
+  fitsfile *int_yield_fits;
+  fitsfile *cluster_yield_fits;
+#endif
+} slug_output_files;
+
+
 class slug_sim {
 
 public:
@@ -67,42 +94,23 @@ private:
 
   // Functions to open output files and write headers of the various
   // output files
-  void open_output(int chknum = -1);
-  void close_output(int chknum = -1, unsigned int ntrials = 0);
-  void open_integrated_prop(int chknum = -1);
-  void open_cluster_prop(int chknum = -1);
-  void open_integrated_spec(int chknum = -1);
-  void open_cluster_spec(int chknum = -1);
-  void open_integrated_phot(int chknum = -1);
-  void open_cluster_phot(int chknum = -1);
-  void open_integrated_yield(int chknum = -1);
-  void open_cluster_yield(int chknum = -1);
+  void open_output(slug_output_files &outfiles, int chknum = -1);
+  void close_output(slug_output_files &outfiles, int chknum = -1,
+		    unsigned int ntrials = 0);
+  void open_integrated_prop(slug_output_files &outfiles, int chknum = -1);
+  void open_cluster_prop(slug_output_files &outfiles, int chknum = -1);
+  void open_integrated_spec(slug_output_files &outfiles, int chknum = -1);
+  void open_cluster_spec(slug_output_files &outfiles, int chknum = -1);
+  void open_integrated_phot(slug_output_files &outfiles, int chknum = -1);
+  void open_cluster_phot(slug_output_files &outfiles, int chknum = -1);
+  void open_integrated_yield(slug_output_files &outfiles, int chknum = -1);
+  void open_cluster_yield(slug_output_files &outfiles, int chknum = -1);
 
   // Function to write separators between trials to files
   void write_separator(std::ofstream& file, 
 		       const unsigned int width = 80);
 
   // Output information
-  std::vector<double> outTimes;     // Output times
-  std::ofstream int_prop_file;      // Integrated properties file
-  std::ofstream cluster_prop_file;  // Cluster properties file
-  std::ofstream int_spec_file;      // Integrated spectra file
-  std::ofstream cluster_spec_file;  // Cluster spectra file
-  std::ofstream int_phot_file;      // Integrated photometry file
-  std::ofstream cluster_phot_file;  // Cluster photometry file
-  std::ofstream int_yield_file;     // Integrated yield file
-  std::ofstream cluster_yield_file; // Cluster yield file
-#ifdef ENABLE_FITS
-  // FITS file versions of the above
-  fitsfile *int_prop_fits;
-  fitsfile *cluster_prop_fits;
-  fitsfile *int_spec_fits;
-  fitsfile *cluster_spec_fits;
-  fitsfile *int_phot_fits;
-  fitsfile *cluster_phot_fits;
-  fitsfile *int_yield_fits;
-  fitsfile *cluster_yield_fits;
-#endif
 
   // Private data to be used in the simulations
   const slug_parmParser &pp;  // Parameter parser
@@ -124,6 +132,7 @@ private:
   outputMode out_mode;        // Output mode
   int checkpoint_ctr;         // Checkpoint counter
   bool is_imf_var = false;          //Does the IMF contain variable segments?
+  std::vector<double> outTimes;     // Output times
   std::vector<double> imf_vpdraws;  //Variable parameter draws from the IMF
 
 #ifdef ENABLE_MPI
@@ -132,6 +141,6 @@ private:
   int rank;
 #endif
 };
-
+  
 #endif
 // _slug_sim_H_
