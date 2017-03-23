@@ -77,6 +77,9 @@ public:
   const slug_filter_set* filter_set(const std::string& filter_set_name);
   const slug_yields* yields(const std::string& yields_name);
   
+  // IO handler
+  slug_ostreams ostreams;
+
 private:
 
   // Utility routines
@@ -86,9 +89,6 @@ private:
   const slug_tracks *build_tracks(const std::string& trackname);
   const slug_filter_set
   *build_filter_set(const std::string& filter_set_name);
-
-  // IO handler
-  slug_ostreams ostreams;
 
   // Private data
   rng_type *rng;
