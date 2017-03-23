@@ -26,8 +26,9 @@ using namespace boost::random;
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_lognormal::
 slug_PDF_lognormal(double sMin_, double sMax_, double sMean_, 
-		   double sDisp_, rng_type *rng_)
-  : slug_PDF_segment(sMin_, sMax_, rng_) 
+		   double sDisp_, rng_type *rng_,
+		   slug_ostreams& ostreams_)
+  : slug_PDF_segment(sMin_, sMax_, rng_, ostreams_) 
 {
   std::vector<double> tokenVals(2);
   tokenVals[0] = sMean_;

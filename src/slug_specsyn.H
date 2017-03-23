@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include "slug_tracks.H"
 #include "slug_PDF.H"
+#include "slug_IO.H"
 #include "slug_imf_integrator.H"
 
 ////////////////////////////////////////////////////////////////////////
@@ -67,7 +68,8 @@ public:
 
   // Constructor
   slug_specsyn(const slug_tracks *my_tracks, const slug_PDF *my_imf, 
-	       const slug_PDF *my_sfh, const double z_in = 0.0);
+	       const slug_PDF *my_sfh, slug_ostreams& ostreams_,
+	       const double z_in = 0.0);
 
   // Virtual destructor
   virtual ~slug_specsyn();
@@ -129,6 +131,9 @@ public:
 
 
 protected:
+
+  // IO handler
+  slug_ostreams& ostreams;
 
   // Private data
   std::vector<double> lambda_rest; // Rest wavelengths, in A

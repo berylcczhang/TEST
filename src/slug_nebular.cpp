@@ -23,6 +23,7 @@ namespace std
 #endif
 #include "constants.H"
 #include "slug_nebular.H"
+#include "slug_MPI.H"
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -49,12 +50,13 @@ slug_nebular::
 slug_nebular(const char *atomic_dir,
 	     const std::vector<double>& lambda_in,
 	     const char *trackname,
+	     slug_ostreams &ostreams_,
 	     double n_in, double T_in,
 	     const double logU,
 	     const double phi_in,
 	     const double z,
 	     const bool no_metals) :
-  lambda_star(lambda_in) {
+  ostreams(ostreams_), lambda_star(lambda_in) {
 
   // Set up the filter object we'll use to extract ionizing fluxes
   // from input spectra
@@ -68,18 +70,20 @@ slug_nebular(const char *atomic_dir,
     if ((T_in < Tmin) || (T_in > Tmax)) {
       double Tnew;
       if (T_in < Tmin) Tnew = Tmin; else Tnew = Tmax;
-      cerr << "slug: warning: nebular temperature set to " << T_in
-	   << "; allowed range is " << Tmin << " - " << Tmax
-	   << "; setting temperature to " << Tnew << endl;
+      ostreams.slug_warn_one
+	<< "nebular temperature set to " << T_in
+	<< "; allowed range is " << Tmin << " - " << Tmax
+	<< "; setting temperature to " << Tnew << endl;
       T_in = Tnew;
     }
   }
   if ((den < nMin) || (den >= nMax)) {
     double nNew;
     if (den < nMin) nNew = nMin; else nNew = nMax;
-    cerr << "slug: warning: nebular density set to " << den
-	 << "; allowed range is " << nMin << " - " << nMax
-	 << "; setting density to " << nNew << endl;
+    ostreams.slug_warn_one
+      << "nebular density set to " << den
+      << "; allowed range is " << nMin << " - " << nMax
+      << "; setting density to " << nNew << endl;
     den = nNew;
   }
 
@@ -94,9 +98,10 @@ slug_nebular(const char *atomic_dir,
   HIbf_file.open(HIbf_path.c_str());
   if (!HIbf_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open H data file " 
-	 << HIbf_path.string() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open H data file " 
+      << HIbf_path.string() << endl;
+    bailout(1);
   }
 
   // Read until we find a non-comment, non-blank line
@@ -142,9 +147,10 @@ slug_nebular(const char *atomic_dir,
   HeIbf_file.open(HeIbf_path.c_str());
   if (!HeIbf_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open He data file " 
-	 << HeIbf_path.string() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open He data file " 
+      << HeIbf_path.string() << endl;
+    bailout(1);
   }
 
   // Read until we find a non-comment, non-blank line
@@ -191,8 +197,9 @@ slug_nebular(const char *atomic_dir,
   Halpha2s_file.open(Halpha2s_path.c_str());
   if (!Halpha2s_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open H data file " 
-	 << Halpha2s_path.string() << endl;
+    ostreams.slug_err_one
+      << "unable to open H data file " 
+      << Halpha2s_path.string() << endl;
     exit(1);
   }
 
@@ -244,9 +251,10 @@ slug_nebular(const char *atomic_dir,
   Hlines_file.open(Hlines_path.c_str());
   if (!Hlines_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open H data file " 
-	 << Hlines_path.string() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open H data file " 
+      << Hlines_path.string() << endl;
+    bailout(1);
   }
 
   // Read until we find a non-comment, non-blank line
@@ -322,9 +330,10 @@ slug_nebular(const char *atomic_dir,
     cloudytab_file.open(cloudytab_path.c_str());
     if (!cloudytab_file.is_open()) {
       // Couldn't open file, so bail out
-      cerr << "slug: error: unable to open cloudy tabulation data file " 
-	   << cloudytab_path.string() << endl;
-      exit(1);
+      ostreams.slug_err_one
+	<< "unable to open cloudy tabulation data file " 
+	<< cloudytab_path.string() << endl;
+      bailout(1);
     }
 
     // Read until we find a non-comment, non-blank line
@@ -359,10 +368,11 @@ slug_nebular(const char *atomic_dir,
       }
     }
     if (logU_diff > 0) {
-      cerr << "slug: warning: requested ionization parameter log U = "
-	   << logU << ", closest match in cloudy table is log U = "
-	   << logU_match << "; calculation will proceed"
-	   << endl;
+      ostreams.slug_warn_one
+	<< "requested ionization parameter log U = "
+	<< logU << ", closest match in cloudy table is log U = "
+	<< logU_match << "; calculation will proceed"
+	<< endl;
     }
 
     // Now loop through the blocks
@@ -372,12 +382,13 @@ slug_nebular(const char *atomic_dir,
       // Check for EOF; if we reach EOF, we've failed to find the
       // tracks we were looking for
       if (cloudytab_file.eof()) {
-	cerr << "slug: error: could not find track set " 
-	     << trackfile << " in cloudy_tab.txt; try "
-	     << "running with compute_nebular = 0 or "
-	     << "(nebular_metals = 0 and nebular_temp > 0)"
-	     << endl;
-	exit(1);
+	ostreams.slug_err_one
+	  << "could not find track set " 
+	  << trackfile << " in cloudy_tab.txt; try "
+	  << "running with compute_nebular = 0 or "
+	  << "(nebular_metals = 0 and nebular_temp > 0)"
+	  << endl;
+	bailout(1);
       }
 
       // Parse the header for this block

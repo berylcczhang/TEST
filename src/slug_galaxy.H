@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_nebular.H"
 #include "slug_specsyn.H"
 #include "slug_yields.H"
+#include "slug_IO.H"
 #include <list>
 #include <iostream>
 #include <fstream>
@@ -54,7 +55,8 @@ public:
 	      const slug_filter_set* filters_,
 	      const slug_extinction* extinct_,
 	      const slug_nebular *nebular_,
-	      const slug_yields *yields_);
+	      const slug_yields *yields_,
+	      slug_ostreams& ostreams_);
   ~slug_galaxy();
 
   // Set galaxy back to its initial state
@@ -130,6 +132,10 @@ public:
 			      const bool del_cluster = false);
   void write_cluster_yield(fitsfile* cluster_yield_fits, unsigned long trial);
 #endif
+
+protected:
+  // IO handler
+  slug_ostreams &ostreams;
 
 private:
 

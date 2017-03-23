@@ -35,6 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_specsyn.H"
 #include "slug_tracks.H"
 #include "slug_yields.H"
+#include "slug_IO.H"
 #include <iostream>
 #include <fstream>
 #ifdef ENABLE_FITS
@@ -62,6 +63,7 @@ public:
 	       const slug_extinction *extinct_,
 	       const slug_nebular *nebular_,
 	       const slug_yields *yields_,
+	       slug_ostreams &ostreams_,
 	       const slug_PDF *clf_=NULL);
 
   // Constructor to reconstruct a slug_cluster object from a
@@ -74,6 +76,7 @@ public:
 	       const slug_extinction *extinct_,
 	       const slug_nebular *nebular_,
 	       const slug_yields *yields_,
+	       slug_ostreams &ostreams_,
 	       const slug_PDF *clf_=NULL);
 
   // Copy constructor
@@ -227,6 +230,8 @@ public:
   void write_yield(fitsfile *out_fits, unsigned long trial);
 #endif
 
+protected:
+  slug_ostreams &ostreams;
 
 private:
 

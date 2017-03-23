@@ -23,6 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _slug_H_
 #define _slug_H_
 
+#ifdef ENABLE_MPI
+#   include "mpi.h"
+#endif
+
 #include <boost/random/mersenne_twister.hpp>
 
 // Declare all slug classes here

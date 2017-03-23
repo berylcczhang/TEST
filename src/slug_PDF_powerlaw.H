@@ -32,16 +32,18 @@ class slug_PDF_powerlaw : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_powerlaw(rng_type* rng_) : slug_PDF_segment(rng_) {}
+  slug_PDF_powerlaw(rng_type* rng_, slug_ostreams& ostreams_) :
+    slug_PDF_segment(rng_, ostreams_) {}
 
   // Construct a segment with just min and max values
-  slug_PDF_powerlaw(double sMin_, double sMax_, rng_type *rng_) : 
-    slug_PDF_segment(sMin_, sMax_, rng_) {}
+  slug_PDF_powerlaw(double sMin_, double sMax_, rng_type *rng_,
+		    slug_ostreams& ostreams_) : 
+    slug_PDF_segment(sMin_, sMax_, rng_, ostreams_) {}
 
   // Construct a segment with a specified min and max range, and a
   // specfied slope
   slug_PDF_powerlaw(double sMin_, double sMax_, double sSlope_,
-		    rng_type *rng_);
+		    rng_type *rng_, slug_ostreams& ostreams_);
 
   // Destructor
   ~slug_PDF_powerlaw();

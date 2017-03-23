@@ -32,17 +32,20 @@ class slug_PDF_lognormal : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_lognormal(rng_type* rng_) : slug_PDF_segment(rng_) {}
+  slug_PDF_lognormal(rng_type* rng_, slug_ostreams& ostreams_) :
+    slug_PDF_segment(rng_, ostreams_) {}
 
   // Construct a segment with just min and max values
-  slug_PDF_lognormal(double sMin_, double sMax_, rng_type *rng_) : 
-    slug_PDF_segment(sMin_, sMax_, rng_) {}
+  slug_PDF_lognormal(double sMin_, double sMax_, rng_type *rng_,
+		     slug_ostreams& ostreams_) : 
+    slug_PDF_segment(sMin_, sMax_, rng_, ostreams_) {}
 
   // Construct a segment with a specified min and max range, and a
   // specfied center and dispersion; note that sMean is the mean mass,
   // not the mean log mass.
   slug_PDF_lognormal(double sMin_, double sMax_, double sMean_, 
-		     double sDisp_, rng_type *rng_);
+		     double sDisp_, rng_type *rng_,
+		     slug_ostreams& ostreams_);
 
   // Destructor
   ~slug_PDF_lognormal();

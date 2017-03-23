@@ -149,7 +149,7 @@ void slug_predefined::build_rng() {
 ////////////////////////////////////////////////////////////////////////
 inline const slug_PDF* slug_predefined::build_PDF(const string& fname) {
   build_rng();
-  return new slug_PDF(fname.c_str(), rng);
+  return new slug_PDF(fname.c_str(), rng, ostreams);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -165,7 +165,7 @@ inline const slug_tracks*
 slug_predefined::build_tracks(const string&trackname) {
   path p(trackname);
   build_rng();
-  return new slug_tracks((track_dir / p).string().c_str());
+  return new slug_tracks((track_dir / p).string().c_str(), ostreams);
 }
 
 inline const slug_filter_set*
@@ -178,7 +178,7 @@ slug_predefined::build_filter_set(const string& filter_set_name) {
     filter_names.push_back(*it);
   }
   return new slug_filter_set(filter_names, filter_dir.string().c_str(),
-			     L_NU, nullptr);
+			     L_NU, ostreams, nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -213,27 +213,27 @@ slug_predefined::specsyn(const string& specsyn_name) {
     if (!known_specsyn[specsyn_name]) {
       if (specsyn_name == "planck") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
-	  (new slug_specsyn_planck(nullptr, nullptr, nullptr));
+	  (new slug_specsyn_planck(nullptr, nullptr, nullptr, ostreams));
       } else if (specsyn_name == "kurucz") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_kurucz(atmos_dir.string().c_str(),
 				   tracks("Z0140v00.txt"), nullptr,
-				   nullptr));
+				   nullptr, ostreams));
       } else if (specsyn_name == "kurucz_hillier") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_hillier(atmos_dir.string().c_str(),
 				    tracks("Z0140v00.txt"), nullptr,
-				    nullptr));
+				    nullptr, ostreams));
       } else if (specsyn_name == "kurucz_pauldrach") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_pauldrach(atmos_dir.string().c_str(),
 				      tracks("Z0140v00.txt"), nullptr,
-				      nullptr));
+				      nullptr, ostreams));
       } else if (specsyn_name == "sb99") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_sb99(atmos_dir.string().c_str(),
 				 tracks("Z0140v00.txt"), nullptr,
-				 nullptr));
+				 nullptr, ostreams));
       }
     }
     return known_specsyn[specsyn_name];
@@ -261,11 +261,12 @@ const slug_yields *slug_predefined::yields(const string& yields_name) {
       if (yields_name == "SNII_Sukhbold16") {
 	known_yields[yields_name] = (slug_yields *)
 	  new slug_yields_multiple(yield_dir.string().c_str(),
-				   SNII_SUKHBOLD16, 1.0);
+				   SNII_SUKHBOLD16, 1.0, ostreams);
       } else if (yields_name == "SNII_Sukhbold16_nodecay") {
 	known_yields[yields_name] = (slug_yields *)
 	  new slug_yields_multiple(yield_dir.string().c_str(),
-				   SNII_SUKHBOLD16, 1.0, true);
+				   SNII_SUKHBOLD16, 1.0, ostreams,
+				   true);
       }
     }
     return known_yields[yields_name];

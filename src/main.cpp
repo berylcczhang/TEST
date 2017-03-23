@@ -28,6 +28,7 @@ namespace std
 #include "slug_parmParser.H"
 #include "slug_sim.H"
 #include "slug_MPI.H"
+#include "slug_IO.H"
 
 int main(int argc, char *argv[]) {
 
@@ -35,20 +36,30 @@ int main(int argc, char *argv[]) {
   // If we are running an MPI simulation, start MPI here
   MPI_Init(&argc, &argv);
 #endif
+
+  // Set up our output handlers; note that we create these with new so
+  // that we can explicitly delete them before MPI finalization; this
+  // forces communications to complete
+  slug_ostreams *ostreams
+    = new slug_ostreams(
+#ifdef ENABLE_MPI
+			MPI_COMM_WORLD
+#endif
+			);
   
   // Parse the parameter file
+  slug_parmParser pp(argc, argv, *ostreams
 #ifdef ENABLE_MPI
-  slug_parmParser pp(argc, argv, MPI_COMM_WORLD);
-#else
-  slug_parmParser pp(argc, argv);
+		     , MPI_COMM_WORLD
 #endif
+		     );
   
   // Initialize the main simulation driver
+  slug_sim sim(pp, *ostreams
 #ifdef ENABLE_MPI
-  slug_sim sim(pp, MPI_COMM_WORLD);
-#else
-  slug_sim sim(pp);
+	       , MPI_COMM_WORLD
 #endif
+	       );
 
   // Initialization completed successfully, so write out the parameter
   // summary file
@@ -60,6 +71,9 @@ int main(int argc, char *argv[]) {
   else
     sim.cluster_sim();
 
+  // Delete output handlers
+  delete ostreams;
+  
  #ifdef ENABLE_MPI
   // Finalize MPI
   MPI_Finalize();

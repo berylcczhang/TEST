@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <boost/multi_array.hpp>
 #include "slug.H"
 #include "slug_filter.H"
+#include "slug_IO.H"
 #include <iostream>
 
 typedef boost::multi_array<double, 2> array2d;
@@ -51,6 +52,7 @@ public:
   slug_nebular(const char *atomic_dir,
 	       const std::vector<double>& lambda_in,
 	       const char *trackname,
+	       slug_ostreams &ostreams_,
 	       double n_in = 1.0e2,
 	       double T_in = 1.0e4, 
 	       const double logU = -3.0, 
@@ -114,6 +116,10 @@ public:
   std::vector<double> get_Hrecomb(const double T);
   std::vector<double> get_metlines(const int ageidx);
 
+protected:
+  // IO handler
+  slug_ostreams &ostreams;
+  
 private:
 
   // Minimum and maximum allowed temperatures and densities given the

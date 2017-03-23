@@ -32,16 +32,18 @@ class slug_PDF_exponential : public slug_PDF_segment {
 
 public:
   // Uninitialized constructor
-  slug_PDF_exponential(rng_type *rng_) : slug_PDF_segment(rng_) { }
+  slug_PDF_exponential(rng_type *rng_, slug_ostreams& ostreams_) :
+    slug_PDF_segment(rng_, ostreams_) { }
 
   // Constructor with just min and max values
-  slug_PDF_exponential(double sMin_, double sMax_, rng_type *rng_) : 
-    slug_PDF_segment(sMin_, sMax_, rng_) { }
+  slug_PDF_exponential(double sMin_, double sMax_,
+		       rng_type *rng_, slug_ostreams& ostreams_) : 
+    slug_PDF_segment(sMin_, sMax_, rng_, ostreams_) { }
 
   // Construct a segment with a specified min and max range, and a
   // specfied exponential scale value
   slug_PDF_exponential(double sMin_, double sMax_, double sScale,
-		       rng_type *rng_);
+		       rng_type *rng_, slug_ostreams& ostreams_);
 
   // Destructor
   ~slug_PDF_exponential();

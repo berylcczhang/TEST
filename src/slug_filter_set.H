@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "slug.H"
 #include "slug_filter.H"
+#include "slug_IO.H"
 #include <vector>
 #include <string>
 
@@ -45,11 +46,8 @@ public:
   slug_filter_set(const std::vector<std::string>& filter_names,
 		  const char *filter_dir, 
 		  const photMode phot_mode_,
-		  const char *atmos_dir = NULL
-#ifdef ENABLE_MPI
-		  , const int rank_ = 0
-#endif
-		  );
+		  slug_ostreams& ostreams_,
+		  const char *atmos_dir = nullptr);
 
   // The desctructor
   ~slug_filter_set();
@@ -77,6 +75,10 @@ public:
   const slug_filter *get_filter(unsigned int i) const
   { return filters[i]; }
 
+protected:
+  // Classes to handle I/O
+  slug_ostreams &ostreams;
+
 private:
 
   // Data
@@ -85,11 +87,6 @@ private:
   std::vector<const slug_filter *> filters;
   std::vector<double> lambda_vega, F_lambda_vega, vega_mag;
   photMode phot_mode;
-
-  // MPI info
-#ifdef ENABLE_MPI
-  int rank;
-#endif
 };
 
 #endif

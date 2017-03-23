@@ -23,6 +23,7 @@ namespace std
 #endif
 #include "constants.H"
 #include "slug_specsyn_kurucz.H"
+#include "slug_MPI.H"
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
@@ -59,8 +60,9 @@ namespace kurucz {
 slug_specsyn_kurucz::
 slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks, 
 		    const slug_PDF *my_imf, const slug_PDF *my_sfh,
-		    const double z_in, const bool check_data_in) :
-  slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
+		    slug_ostreams& ostreams_, const double z_in,
+		    const bool check_data_in) :
+  slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in),
   check_data(check_data_in)
 {
 
@@ -81,11 +83,12 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
 
   // Print warning if this is a big extrapolation in metallicity
   if (zdiff > 0.1) {
-    cerr << "Warning: stellar track metallicity is [Z/H] = "
-	 << log10(my_tracks->get_metallicity())
-	 << ", closest Kurucz atmosphere metallicity available is [Z/H] = "
-	 << zrel[idx]
-	 << "; calculation will proceed" << endl;
+    ostreams.slug_warn_one
+      << "stellar track metallicity is [Z/H] = "
+      << log10(my_tracks->get_metallicity())
+      << ", closest Kurucz atmosphere metallicity available is [Z/H] = "
+      << zrel[idx]
+      << "; calculation will proceed" << endl;
   }
 
   // Construct the file name and try to open the file
@@ -96,9 +99,10 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
   atmos_file.open(atmos_path.c_str());
   if (!atmos_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open atmosphere file " 
-	 << atmos_path.string() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open atmosphere file " 
+      << atmos_path.string() << endl;
+    bailout(1);
   }
 
   // Save file name
@@ -124,9 +128,10 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
       logg = lexical_cast<double>(tokens[2]);
     } catch (const bad_lexical_cast& ia) {
       (void) ia;  // No-op to suppress compiler warning
-      cerr << "slug: error: badly formatted Kurucz atmospheres file " 
-	   << atmos_path.string() << endl;
-      exit(1);
+      ostreams.slug_err_one
+	<< "badly formatted Kurucz atmospheres file " 
+	<< atmos_path.string() << endl;
+      bailout(1);
     }
 
     // Is this a new temperature, so that we need to start a new row?
@@ -190,7 +195,8 @@ slug_specsyn_kurucz(const char *dirname, const slug_tracks *my_tracks,
   // If we're checking the data and using Planck as a backup, set it
   // up now
   if (check_data) {
-    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh,
+				     ostreams_, z);
   } else {
     planck = NULL;
   }
@@ -214,7 +220,8 @@ slug_specsyn_kurucz::~slug_specsyn_kurucz() {
 void
 slug_specsyn_kurucz::set_check_data(bool val) {
   if ((planck == NULL) && (val == true)) 
-    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh,
+				     ostreams, z);
   check_data = val;
 }
 

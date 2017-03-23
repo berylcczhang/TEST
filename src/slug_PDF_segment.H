@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include <vector>
 #include "slug.H"
+#include "slug_IO.H"
 
 enum parseStatus { OK, PARSE_ERROR, EOF_ERROR };
 
@@ -47,11 +48,13 @@ class slug_PDF_segment {
 public:
 
   // Construct a segment with a specified min and max range
-  slug_PDF_segment(double sMin_, double sMax_, rng_type *rng_) :
-    segMin(sMin_), segMax(sMax_), rng(rng_) { }
+  slug_PDF_segment(double sMin_, double sMax_, rng_type *rng_,
+		   slug_ostreams &ostreams_) :
+    ostreams(ostreams_), segMin(sMin_), segMax(sMax_), rng(rng_) { }
 
   // Construct an empty segment
-  slug_PDF_segment(rng_type* rng_) : rng(rng_) { }
+  slug_PDF_segment(rng_type* rng_, slug_ostreams &ostreams_) :
+    ostreams(ostreams_), rng(rng_) { }
 
   // Destructor
   virtual ~slug_PDF_segment() { }
@@ -131,6 +134,9 @@ protected:
 
   // An empty string to return by default
   const std::vector<std::string> _empty_string;
+
+  // IO object
+  slug_ostreams &ostreams;
 
   // Data
   double segMin, segMax;  // Lower and upper limits of segment

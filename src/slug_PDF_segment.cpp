@@ -25,6 +25,7 @@ namespace std
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include "slug_PDF.H"
+#include "slug_MPI.H"
 
 using namespace std;
 using namespace boost;
@@ -220,9 +221,12 @@ void slug_PDF_segment::update(const std::vector<double>& drawn_vals)
   //Make sure everything is the correct size
   if (variable_tok.size() != drawn_vals.size())
   {
-    cerr << "slug: Different number of variable tokens to drawn values" << endl;
-    cerr << "slug: VT.size: " << variable_tok.size() << "  DV.size: " << drawn_vals.size() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "Different number of variable tokens to drawn values" << endl;
+    ostreams.slug_err_one
+      << "slug: VT.size: " << variable_tok.size()
+      << "  DV.size: " << drawn_vals.size() << endl;
+    bailout(1);
   }
 
   //Loop over list of indices and modify the appropriate values

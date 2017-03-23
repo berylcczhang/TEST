@@ -26,17 +26,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <boost/filesystem.hpp>
 #include "slug.H"
+#include "slug_IO.H"
 #include "slug_MPI.H"
 
 class slug_parmParser {
 
 public:
-  slug_parmParser(int argc, char **argv
+  slug_parmParser(int argc, char **argv, slug_ostreams &ostreams_
 #ifdef ENABLE_MPI
-		  MPI_Comm comm_
+		  , MPI_Comm comm
 #endif
 		  ); // The constructor
-  ~slug_parmParser();                     // The desctructor
+  ~slug_parmParser();                     // The destructor
 
   // Functions that return values from parameter file
   unsigned int get_verbosity() const;     // Level of verbosity
@@ -126,11 +127,13 @@ private:
   void setDefaults();                     // Set parameters to default values
   void restartSetup();                    // Set up restart runs
 
-  // Error and warning routines
+  // Error routines
   [[noreturn]] void parseError(std::string line); 
   [[noreturn]] void valueError(std::string line);
-  void valueWarning(std::string line);
 
+  // Buffer classes to handle I/O
+  slug_ostreams &ostreams;
+  
   // Storage for parameter file values
   unsigned int verbosity;                 // Level of verbosity
   unsigned int nTrials;                   // How many trials to run
@@ -203,7 +206,7 @@ private:
   std::string seed_file;                  // rng seed file name
 
 #ifdef ENABLE_MPI
-  // Information needed for MPI runs
+  // MPI stuff
   MPI_Comm comm;
   int rank;
 #endif

@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 // slug_sim class
 //
-// This defined the slug_sim class, which is the main driver class for
+// This defines the slug_sim class, which is the main driver class for
 // running simulations. It is responsible for initializing
 // simulations, running them, and managing the output.
 ////////////////////////////////////////////////////////////////////////
@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_sim_H_
 
 #include "slug.H"
+#include "slug_IO.H"
 #include "slug_cluster.H"
 #include "slug_galaxy.H"
 #include "slug_nebular.H"
@@ -36,46 +37,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #ifdef ENABLE_FITS
 extern "C" {
-#include "fitsio.h"
+#   include "fitsio.h"
 }
 #endif
 #ifdef ENABLE_MPI
 #   include "mpi.h"
 #endif
 
-// A struct to hold pointers to the output files; created just for the
-// convenience of passing this around instead of a bunch of individual
-// file pointers
-typedef struct slug_output_files_struct {
-  bool is_open;                     // Are files open
-  std::ofstream int_prop_file;      // Integrated properties file
-  std::ofstream cluster_prop_file;  // Cluster properties file
-  std::ofstream int_spec_file;      // Integrated spectra file
-  std::ofstream cluster_spec_file;  // Cluster spectra file
-  std::ofstream int_phot_file;      // Integrated photometry file
-  std::ofstream cluster_phot_file;  // Cluster photometry file
-  std::ofstream int_yield_file;     // Integrated yield file
-  std::ofstream cluster_yield_file; // Cluster yield file
-#ifdef ENABLE_FITS
-  // FITS file versions of the above
-  fitsfile *int_prop_fits;
-  fitsfile *cluster_prop_fits;
-  fitsfile *int_spec_fits;
-  fitsfile *cluster_spec_fits;
-  fitsfile *int_phot_fits;
-  fitsfile *cluster_phot_fits;
-  fitsfile *int_yield_fits;
-  fitsfile *cluster_yield_fits;
-#endif
-} slug_output_files;
-
-
 class slug_sim {
 
 public:
 
   // Constructor
-  slug_sim(const slug_parmParser& pp_
+  slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
 #ifdef ENABLE_MPI
 	   , MPI_Comm comm_
 #endif
@@ -110,8 +84,6 @@ private:
   void write_separator(std::ofstream& file, 
 		       const unsigned int width = 80);
 
-  // Output information
-
   // Private data to be used in the simulations
   const slug_parmParser &pp;  // Parameter parser
   rng_type *rng;              // Random number generator
@@ -134,6 +106,9 @@ private:
   bool is_imf_var = false;          //Does the IMF contain variable segments?
   std::vector<double> outTimes;     // Output times
   std::vector<double> imf_vpdraws;  //Variable parameter draws from the IMF
+
+  // Classes to handle I/O
+  slug_ostreams &ostreams;
 
 #ifdef ENABLE_MPI
   // Information needed for MPI runs

@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_yields_H_
 
 #include "slug.H"
+#include "slug_IO.H"
 #include "slug_isotopes.H"
 #include <map>
 #include <utility>
@@ -39,15 +40,9 @@ class slug_yields {
 public:
 
   // Constructor
-  slug_yields(const double metallicity_, const bool no_decay_ = false
-#ifdef ENABLE_MPI
-	      , const int rank_ = 0
-#endif
-	      )
-    : no_decay(no_decay_), metallicity(metallicity_)
-#ifdef ENABLE_MPI
-    , rank(rank_)
-#endif
+  slug_yields(const double metallicity_, slug_ostreams &ostreams_,
+	      const bool no_decay_ = false)
+    : no_decay(no_decay_), ostreams(ostreams_), metallicity(metallicity_)
   {};
 
   // Destructor
@@ -141,6 +136,9 @@ public:
 
 protected:
 
+  // IO handler
+  slug_ostreams &ostreams;
+
   // Data on isotopes; these are to be initialized by the derived class
   std::vector<double>::size_type niso;      // Number of isotopes
   std::vector<double>::size_type nstable;   // Number of stable isotopes
@@ -166,11 +164,6 @@ protected:
   // Null mass range, delared so we can return const pointers to an
   // empty vector
   std::vector<double> null_mass_range;
-
-  // MPI rank
-#ifdef ENABLE_MPI
-  int rank;
-#endif
 };
 
 #endif

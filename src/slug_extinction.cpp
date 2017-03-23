@@ -44,7 +44,8 @@ using namespace boost::algorithm;
 slug_extinction::
 slug_extinction(const slug_parmParser& pp, 
 		const vector<double> &lambda_in,
-		rng_type *rng) {
+		rng_type *rng, slug_ostreams &ostreams_) :
+  ostreams(ostreams_) {
   // Call the initialization routine
   gsl_spline *kappa_spline;
   gsl_interp_accel *kappa_acc;
@@ -63,7 +64,8 @@ slug_extinction::
 slug_extinction(const slug_parmParser& pp, 
 		const vector<double> &lambda_in,
 		const vector<double> &lambda_neb_in,
-		rng_type *rng) {
+		rng_type *rng, slug_ostreams &ostreams_) :
+  ostreams(ostreams_) {
 
   // Initialize as for the case without a nebular grid
   gsl_spline *kappa_spline;
@@ -74,9 +76,10 @@ slug_extinction(const slug_parmParser& pp,
   // curve grid
   if ((lambda_neb_in.back() < lambda_tab.front()) ||
       (lambda_neb_in.front() > lambda_tab.back())) {
-    cerr << "slug: error: input extinction curve does not overlap "
-	 << "stellar atmosphere model wavelength range!" << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "input extinction curve does not overlap "
+      << "stellar atmosphere model wavelength range!" << endl;
+    bailout(1);
   }
   offset_neb = 0;
   while (lambda_neb_in[offset_neb] < lambda_tab.front())
@@ -113,11 +116,11 @@ void slug_extinction::init(const slug_parmParser& pp,
   // Set up the A_V distribution
   if (pp.get_constantAV()) {
     // Constant A_V, so make the A_V a delta distribution
-    slug_PDF_delta *AV_seg = new slug_PDF_delta(pp.get_AV(), rng);
-    AVdist = new slug_PDF(AV_seg, rng);
+    slug_PDF_delta *AV_seg = new slug_PDF_delta(pp.get_AV(), rng, ostreams);
+    AVdist = new slug_PDF(AV_seg, rng, ostreams);
   } else {
     // Non-constant A_V, so read from PDF file
-    AVdist = new slug_PDF(pp.get_AV_dist(), rng);
+    AVdist = new slug_PDF(pp.get_AV_dist(), rng, ostreams);
   }
 
   // See if we are using differential nebular / stellar extinction. If
@@ -128,11 +131,12 @@ void slug_extinction::init(const slug_parmParser& pp,
     // up as a delta function
     if (pp.get_constant_neb_extinct_fac()) {
       slug_PDF_delta *delta_func
-	= new slug_PDF_delta(pp.get_neb_extinct_fac(), rng);
-      neb_extinct_fac = new slug_PDF(delta_func, rng);
+	= new slug_PDF_delta(pp.get_neb_extinct_fac(), rng, ostreams);
+      neb_extinct_fac = new slug_PDF(delta_func, rng, ostreams);
     } else {
     // Non-constant excess nebular A_V, so read from PDF file
-      neb_extinct_fac = new slug_PDF(pp.get_neb_extinct_fac_dist(), rng);
+      neb_extinct_fac = new slug_PDF(pp.get_neb_extinct_fac_dist(), rng,
+				     ostreams);
     }
   } else {
     neb_extinct_fac = nullptr;
@@ -143,9 +147,10 @@ void slug_extinction::init(const slug_parmParser& pp,
   exfile.open(pp.get_extinct_curve());
   if (!exfile.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open extinction curve file "
-	 << pp.get_extinct_curve() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open extinction curve file "
+      << pp.get_extinct_curve() << endl;
+    bailout(1);
   }
   
   // Read the extinction curve file
@@ -164,9 +169,10 @@ void slug_extinction::init(const slug_parmParser& pp,
 
     // Extract data
     if (tokens.size() < 2) {
-      cerr << "slug: error: bad line in " << pp.get_extinct_curve()
-	   << ": " << line << endl;
-      exit(1);
+      ostreams.slug_err_one
+	<< "bad line in " << pp.get_extinct_curve()
+	<< ": " << line << endl;
+      bailout(1);
     }
     lambda_tab.push_back(lexical_cast<double>(tokens[0]));
     kappa_tab.push_back(lexical_cast<double>(tokens[1]));
@@ -182,7 +188,7 @@ void slug_extinction::init(const slug_parmParser& pp,
   // Read the filter response function for the Johnson V filter; need
   // this so that we can normalize the extinction curve
   vector<string> filter_names = { "Johnson_V" };
-  slug_filter_set v_filter(filter_names, pp.get_filter_dir(), L_NU);
+  slug_filter_set v_filter(filter_names, pp.get_filter_dir(), L_NU, ostreams);
   vector<double> filter_lambda = v_filter.get_filter(0)->get_wavelength();
   vector<double> filter_response = v_filter.get_filter(0)->get_response();
   vector<double> filter_nu;
@@ -213,9 +219,10 @@ void slug_extinction::init(const slug_parmParser& pp,
   // extinction curve onto them
   if ((lambda_in.back() < lambda_tab.front()) ||
       (lambda_in.front() > lambda_tab.back())) {
-    cerr << "slug: error: input extinction curve does not overlap "
-	 << "stellar atmosphere model wavelength range!" << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "input extinction curve does not overlap "
+      << "stellar atmosphere model wavelength range!" << endl;
+    bailout(1);
   }
   offset = 0;
   while (lambda_in[offset] < lambda_tab.front()) offset++;

@@ -49,6 +49,7 @@ public:
   // Construct a set of yield tables from files containing them
   slug_yields_sukhbold16(const char *yield_dir,
 			 const double metallicity_,
+			 slug_ostreams &ostreams_,
 			 const bool no_decay_ = false);
 
   // Destructor

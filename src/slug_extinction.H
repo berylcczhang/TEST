@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include "slug.H"
+#include "slug_IO.H"
 #include "slug_PDF.H"
 extern "C" {
 #   include <gsl/gsl_interp.h>
@@ -42,11 +43,11 @@ public:
   // one
   slug_extinction(const slug_parmParser& pp, 
 		  const std::vector<double> &lambda_in,
-		  rng_type *rng);
+		  rng_type *rng, slug_ostreams &ostreams_);
   slug_extinction(const slug_parmParser& pp, 
 		  const std::vector<double> &lambda_in,
 		  const std::vector<double> &lambda_neb_in,
-		  rng_type *rng);
+		  rng_type *rng, slug_ostreams &ostreams_);
 
   // Destructor
   ~slug_extinction();
@@ -107,6 +108,11 @@ public:
   { return lambda_neb_grd.size(); }
   std::vector<double>::size_type off_neb() const 
   { return offset_neb; }
+
+protected:
+
+  // IO handlers
+  slug_ostreams &ostreams;
 
 private:
 

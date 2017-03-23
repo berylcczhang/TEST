@@ -1,10 +1,21 @@
 
-#ifdef ENABLE_MPI
-
+#include <cstdlib>
 #include <stdexcept>
 #include "slug_MPI.H"
 
 using namespace std;
+
+////////////////////////////////////////////////////////////////////////
+// An abort routine
+////////////////////////////////////////////////////////////////////////
+[[noreturn]] void bailout(int exit_val) {
+#ifdef ENABLE_MPI
+  MPI_Abort(MPI_COMM_WORLD, exit_val);
+#endif
+  exit(exit_val);
+}
+
+#ifdef ENABLE_MPI
 
 ////////////////////////////////////////////////////////////////////////
 // Routines for exchanging clusters via MPI

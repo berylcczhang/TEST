@@ -73,6 +73,7 @@ extern "C" {
 #   include <gsl/gsl_spline.h>
 }
 #include "slug.H"
+#include "slug_IO.H"
 
 typedef boost::multi_array<double, 2> array2d;
 typedef std::vector<gsl_spline *> spl_arr;
@@ -82,12 +83,10 @@ class slug_tracks {
 
 public:
   // Construct a set of tracks from a file containing them
-  slug_tracks(const char *fname, double my_metallicity = -1.0,
-	      double my_WR_mass = -1.0, double max_time = -1.0
-#ifdef ENABLE_MPI
-	      , const int rank_ = 0
-#endif
-	      );
+  slug_tracks(const char *fname,
+	      slug_ostreams& ostreams_,
+	      double my_metallicity = -1.0,
+	      double my_WR_mass = -1.0, double max_time = -1.0);
 
   // Destructor
   ~slug_tracks();
@@ -135,6 +134,10 @@ public:
   std::vector<slug_stardata>
   get_isochrone(const double t, const std::vector<double> &m) const;
 
+protected:
+  // IO handler
+  slug_ostreams& ostreams;
+  
 private:
 
   // Computes the live mass range and also returns the index of the
@@ -220,11 +223,6 @@ private:
   acc_arr h_surf_t_acc;         // Surface abundance of H
   acc_arr c_surf_t_acc;         // Surface abundance of C
   acc_arr n_surf_t_acc;         // Surface abundance of N
-
-  // MPI rank
-#ifdef ENABLE_MPI
-  int rank;
-#endif
 };
 
 #endif

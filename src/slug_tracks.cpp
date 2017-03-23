@@ -71,16 +71,10 @@ namespace tracks {
 // do without making an entirely new file format and breaking
 // compatibility with SB99.
 
-slug_tracks::slug_tracks(const char *fname, double my_metallicity,
-			 double my_WR_mass, double max_time
-#ifdef ENABLE_MPI
-			 , int rank_
-#endif
-			 ) :
-  metallicity(my_metallicity), WR_mass(my_WR_mass)
-#ifdef ENABLE_MPI
-  , rank(rank_)
-#endif
+slug_tracks::slug_tracks(const char *fname, slug_ostreams& ostreams_,
+			 double my_metallicity,
+			 double my_WR_mass, double max_time) :
+  ostreams(ostreams_), metallicity(my_metallicity), WR_mass(my_WR_mass)
 {
 
   // Try to open file
@@ -88,16 +82,10 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
   trackfile.open(fname);
   if (!trackfile.is_open()) {
     // Couldn't open file, so bail out
-#ifdef ENABLE_MPI
-    cerr << "slug rank " << rank
-	 << ": error: unable to open track file " 
-	 << fname << endl;
-    MPI_Finalize();
-#else
-    cerr << "slug: error: unable to open track file " 
-	 << fname << endl;
-#endif
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open track file " 
+      << fname << endl;
+    bailout(1);
   }
 
   // Save file name
@@ -125,16 +113,9 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       ntime = lexical_cast<unsigned int>(tokens[1]) + 1;  // Add a dummy entry at time = 0
     } catch (const bad_lexical_cast& ia) {
       (void) ia;  // No-op to suppress compiler warning
-#ifdef ENABLE_MPI
-      cerr << "slug rank " << rank
-	   << ": error: badly formatted track file " 
+      ostreams.slug_err_one << "badly formatted track file " 
 	   << trackfileName << endl;
-      MPI_Finalize();
-#else
-      cerr << "slug: error: badly formatted track file " 
-	   << trackfileName << endl;
-#endif
-      exit(1);
+      bailout(1);
     }
 
     // Allocate memory
@@ -167,16 +148,9 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	logmass[i] = log(lexical_cast<double>(tokens[0]));
       } catch (const bad_lexical_cast& ia) {
 	(void) ia;  // No-op to suppress compiler warning
-#ifdef ENABLE_MPI
-	cerr << "slug rank " << rank
-	     << ": error: badly formatted track file " 
-	     << trackfileName << endl;
-	MPI_Finalize();
-#else
-	cerr << "slug: error: badly formatted track file " 
-	     << trackfileName << endl;
-#endif
-	exit(1);
+	ostreams.slug_err_one << "badly formatted track file " 
+			      << trackfileName << endl;
+	bailout(1);
       }
       if (tokens.size() > 1)
 	tracktype.push_back(tokens[1]);
@@ -289,31 +263,17 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 	  }
 	} catch (const bad_lexical_cast& ia) {
 	  (void) ia;  // No-op to suppress compiler warning
-#ifdef ENABLE_MPI
-	  cerr << "slug rank " << rank
-	       << ": error: badly formatted track file " 
-	       << trackfileName << endl;
-	  MPI_Finalize();
-#else
-	  cerr << "slug: error: badly formatted track file " 
-	       << trackfileName << endl;
-#endif
-	  exit(1);
+	  ostreams.slug_err_one << "badly formatted track file " 
+				<< trackfileName << endl;
+	  bailout(1);
 	}
       }
     }
   } catch(std::ifstream::failure e) {
     (void) e;  // No-op to suppress compiler warning
-#ifdef ENABLE_MPI
-    cerr << "slug rank " << rank
-	 << ": error: badly formatted track file " 
-	 << trackfileName << endl;
-    MPI_Finalize();
-#else
-    cerr << "slug: error: badly formatted track file " 
-	 << trackfileName << endl;
-#endif
-    exit(1);
+    ostreams.slug_err_one << "badly formatted track file " 
+			  << trackfileName << endl;
+    bailout(1);
   }
 
   // Close file
@@ -345,30 +305,26 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
       // Find where monotonicity is violated and print out a warning
       // message
       double logt_max = logtimes[i][0];
-      streamsize prec = cerr.precision();
-#ifdef ENABLE_MPI
-      if (rank == 0) {
-#endif
-	cerr << "slug: warning: tracks have non-monotonic time at mass "
-	     << exp(logmass[i]) << " Msun, entries:";
-	bool flag_tmp = false;
-	for (unsigned int j=1; j<ntime; j++) {
-	  if (logtimes[i][j] < logt_max) {
-	    if (flag_tmp == false) flag_tmp = true;
-	    else cerr << ",";
-	    cerr << " " << j << ", t = "
-		 << setprecision(20)
-		 << exp(logtimes[i][j]);
-	  } else {
-	    logt_max = logtimes[i][j];
-	  }
+      streamsize prec = ostreams.slug_warn_one.precision();
+      ostreams.slug_warn_one
+	<< "slug: warning: tracks have non-monotonic time at mass "
+	<< exp(logmass[i]) << " Msun, entries:";
+      bool flag_tmp = false;
+      for (unsigned int j=1; j<ntime; j++) {
+	if (logtimes[i][j] < logt_max) {
+	  if (flag_tmp == false) flag_tmp = true;
+	  else ostreams.slug_warn_one << ",";
+	  ostreams.slug_warn_one << " " << j << ", t = "
+				 << setprecision(20)
+				 << exp(logtimes[i][j]);
+	} else {
+	  logt_max = logtimes[i][j];
 	}
-	cerr << "; entries will be sorted, and computation will continue"
-	     << endl;
-	cerr.precision(prec);
-#ifdef ENABLE_MPI
       }
-#endif
+      ostreams.slug_warn_one
+	<< "; entries will be sorted, and computation will continue"
+	<< endl;
+      ostreams.slug_warn_one.precision(prec);
 
       // Now sort the tracks
       vector<tracks::track_data> trackdat(ntime);
@@ -664,18 +620,12 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
 			    name_match, pattern4, match_posix)) {
       metallicity = 1.0/7.0;
     } else {
-#ifdef ENABLE_MPI
-      if (rank == 0) {
-#endif
-	cerr << "slug: error: could not guess metallicity from file name "
-	     << trackfileName << "; "
-	     << "please set manually in parameter file"
-	     << endl;
-#ifdef ENABLE_MPI
-      }
-      MPI_Finalize();
-#endif
-      exit(1);
+      ostreams.slug_err_one
+	<< "could not guess metallicity from file name "
+	<< trackfileName << "; "
+	<< "please set manually in parameter file"
+	<< endl;
+      bailout(1);
     }
   }
 
@@ -720,18 +670,11 @@ slug_tracks::slug_tracks(const char *fname, double my_metallicity,
     }
     // Make sure we found a match
     if (WR_mass < 0) {
-#ifdef ENABLE_MPI
-      if (rank == 0) {
-#endif
-	cerr << "slug: error: could not guess WR mass from file name "
-	     << trackfileName << "; "
-	     << "please set manually in parameter file"
-	     << endl;
-#ifdef ENABLE_MPI
-      }
-      MPI_Finalize();
-#endif
-      exit(1);
+      ostreams.slug_err_one << "could not guess WR mass from file name "
+			    << trackfileName << "; "
+			    << "please set manually in parameter file"
+			    << endl;
+      bailout(1);
     }
   }
 }
@@ -801,18 +744,7 @@ double
 slug_tracks::death_mass(const double time) const {
 
   // Make sure the tracks are monotonic; if not, bail out
-  if (!monotonic) {
-#ifdef ENABLE_MPI
-    cerr << "slug rank " << rank
-	 << ": slug_tracks::death_mass called on non-monotonic tracks!"
-	 << endl;
-    MPI_Finalize();
-#else
-    cerr << "slug_tracks::death_mass called on non-monotonic tracks!"
-	 << endl;
-#endif
-    exit(1);
-  }
+  assert(monotonic);
 
   // Work with log of time
   double logt;
@@ -1118,15 +1050,14 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	logcur_mass_tmp.push_back(tmp);
       else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate at first point in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
-	       << ", mass pointer " << ntrack-1 << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate at first point in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	    << ", mass pointer " << ntrack-1 << endl;
+	  bailout(1);
       }
       gsl_errstat = 
 	gsl_spline_eval_e(logL_m_interp[ntrack-1],
@@ -1134,15 +1065,14 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	logL_tmp.push_back(tmp);
       else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate at first point in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
-	       << ", mass pointer " << ntrack-1 << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate at first point in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	    << ", mass pointer " << ntrack-1 << endl;
+	  bailout(1);
       }
       gsl_errstat = 
 	gsl_spline_eval_e(logTeff_m_interp[ntrack-1],
@@ -1150,15 +1080,14 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	logTeff_tmp.push_back(tmp);
       else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate at first point in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
-	       << ", mass pointer " << ntrack-1 << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate at first point in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	    << ", mass pointer " << ntrack-1 << endl;
+	  bailout(1);
       }
       gsl_errstat =
 	gsl_spline_eval_e(h_surf_m_interp[ntrack-1],
@@ -1166,15 +1095,14 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	h_surf_tmp.push_back(tmp);
       else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate at first point in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
-	       << ", mass pointer " << ntrack-1 << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate at first point in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	    << ", mass pointer " << ntrack-1 << endl;
+	  bailout(1);
       }
       gsl_errstat = 
 	gsl_spline_eval_e(c_surf_m_interp[ntrack-1],
@@ -1182,15 +1110,14 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	c_surf_tmp.push_back(tmp);
       else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate at first point in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
-	       << ", mass pointer " << ntrack-1 << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate at first point in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	    << ", mass pointer " << ntrack-1 << endl;
+	  bailout(1);
       }
       gsl_errstat =
 	gsl_spline_eval_e(n_surf_m_interp[ntrack-1],
@@ -1198,15 +1125,14 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	n_surf_tmp.push_back(tmp);
       else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate at first point in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
-	       << ", mass pointer " << ntrack-1 << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate at first point in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[ntrack-1])
+	    << ", mass pointer " << ntrack-1 << endl;
+	  bailout(1);
       }
     } else {
       // Handle the case where input time is smaller than smallest time
@@ -1252,15 +1178,14 @@ slug_tracks::compute_isochrone(const double logt,
 	if (gsl_errstat != GSL_EDOM)
 	  logcur_mass_tmp.push_back(tmp);
 	else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate at first point in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[trackptr])
-	       << ", mass pointer " << trackptr << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate at first point in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[trackptr])
+	    << ", mass pointer " << trackptr << endl;
+	  bailout(1);
 	}
 	logL_tmp.
 	  push_back(gsl_spline_eval(logL_m_interp[trackptr],
@@ -1326,18 +1251,18 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	logcur_mass_tmp.push_back(tmp);
       else {
-	cerr << "GSL interpolation error building isochrone!" << endl;
-	cerr << "   Failed to interpolate at first point in time direction "
-	     << "at time " << setprecision(20) << exp(logt)
-	     << ", time pointer " << timeptr << endl;
-	cerr << "   Distance along track " << setprecision(20) << dist 
-	     << ", max dist = " << setprecision(20) 
-	     << trackdist[trackptr][0]
-	     << endl;
-#ifdef ENABLE_MPI
-	MPI_Finalize();
-#endif
-	exit(1);
+	ostreams.slug_err
+	  << "GSL interpolation error building isochrone!" << endl;
+	ostreams.slug_err
+	  << "   Failed to interpolate at first point in time direction "
+	  << "at time " << setprecision(20) << exp(logt)
+	  << ", time pointer " << timeptr << endl;
+	ostreams.slug_err
+	  << "   Distance along track " << setprecision(20) << dist 
+	  << ", max dist = " << setprecision(20) 
+	  << trackdist[trackptr][0]
+	  << endl;
+	bailout(1);
       }
       logL_tmp.
 	push_back(gsl_spline_eval(logL_t_interp[timeptr],
@@ -1410,15 +1335,14 @@ slug_tracks::compute_isochrone(const double logt,
 	if (gsl_errstat != GSL_EDOM)
 	  logcur_mass_tmp.push_back(tmp);
 	else {
-	  cerr << "GSL interpolation error building isochrone!" << endl;
-	  cerr << "   Failed to interpolate in mass direction "
-	       << "at time " << setprecision(20) << exp(logt)
-	       << ", mass " << setprecision(20) << exp(logmass[trackptr])
-	       << ", mass pointer " << trackptr << endl;
-#ifdef ENABLE_MPI
-	  MPI_Finalize();
-#endif
-	  exit(1);
+	  ostreams.slug_err
+	    << "GSL interpolation error building isochrone!" << endl;
+	  ostreams.slug_err
+	    << "   Failed to interpolate in mass direction "
+	    << "at time " << setprecision(20) << exp(logt)
+	    << ", mass " << setprecision(20) << exp(logmass[trackptr])
+	    << ", mass pointer " << trackptr << endl;
+	  bailout(1);
 	}
 	logL_tmp.
 	  push_back(gsl_spline_eval(logL_m_interp[trackptr],
@@ -1489,17 +1413,17 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	logcur_mass_tmp.push_back(tmp);
       else {
-	cerr << "GSL interpolation error building isochrone!" << endl;
-	cerr << "   Failed to interpolate while moving right in time direction "
-	     << "at time " << setprecision(20) << exp(logt)
-	     << ", time pointer " << setprecision(20) << timeptr << endl;
-	cerr << "   Distance along track " << setprecision(20) << dist 
-	     << ", max dist = " << trackdist[trackptr][0]
-	     << endl;
-#ifdef ENABLE_MPI
-	MPI_Finalize();
-#endif
-	exit(1);
+	ostreams.slug_err
+	  << "GSL interpolation error building isochrone!" << endl;
+	ostreams.slug_err
+	  << "   Failed to interpolate while moving right in time direction "
+	  << "at time " << setprecision(20) << exp(logt)
+	  << ", time pointer " << setprecision(20) << timeptr << endl;
+	ostreams.slug_err
+	  << "   Distance along track " << setprecision(20) << dist 
+	  << ", max dist = " << trackdist[trackptr][0]
+	  << endl;
+	bailout(1);
       }
       logL_tmp.
 	push_back(gsl_spline_eval(logL_t_interp[timeptr],
@@ -1548,18 +1472,18 @@ slug_tracks::compute_isochrone(const double logt,
       if (gsl_errstat != GSL_EDOM)
 	logcur_mass_tmp.push_back(tmp);
       else {
-	cerr << "GSL interpolation error building isochrone!" << endl;
-	cerr << "   Failed to interpolate while moving left in time direction "
-	     << "at time " << setprecision(20) << exp(logt)
-	     << ", time pointer " << timeptr << endl;
-	cerr << "   Distance along track " << setprecision(20) << dist 
-	     << ", max dist = " << setprecision(20) 
-	     << trackdist[trackptr][0]
-	     << endl;
-#ifdef ENABLE_MPI
-	MPI_Finalize();
-#endif
-	exit(1);
+	ostreams.slug_err
+	  << "GSL interpolation error building isochrone!" << endl;
+	ostreams.slug_err
+	  << "   Failed to interpolate while moving left in time direction "
+	  << "at time " << setprecision(20) << exp(logt)
+	  << ", time pointer " << timeptr << endl;
+	ostreams.slug_err
+	  << "   Distance along track " << setprecision(20) << dist 
+	  << ", max dist = " << setprecision(20) 
+	  << trackdist[trackptr][0]
+	  << endl;
+	bailout(1);
       }
       logL_tmp.
 	push_back(gsl_spline_eval(logL_t_interp[timeptr],
@@ -1621,15 +1545,17 @@ slug_tracks::compute_isochrone(const double logt,
     gsl_spline_init(isochrone_logcur_mass, logm_tmp.data(),
 		    logcur_mass_tmp.data(), logm_tmp.size());
   if (gsl_errstat != 0) {
-    cerr << "GSL interpolation error building isochrone!" << endl;
-    cerr << "   Could not build an isochrone at time "
-	 << setprecision(20) << exp(logt) << " from data:" << endl;
-    cerr << "   i            log m         log m_cur" << endl;
+    ostreams.slug_err
+      << "GSL interpolation error building isochrone!" << endl;
+    ostreams.slug_err
+      << "   Could not build an isochrone at time "
+      << setprecision(20) << exp(logt) << " from data:" << endl;
+    ostreams.slug_err << "   i            log m         log m_cur" << endl;
     for (unsigned int i=0; i<logm_tmp.size(); i++) {
-      cerr << "   " << i
-	   << "   " << setprecision(20) << logm_tmp[i] 
-	   << "   " << setprecision(20) << logcur_mass_tmp[i]
-	   << endl;
+      ostreams.slug_err << "   " << i
+			<< "   " << setprecision(20) << logm_tmp[i] 
+			<< "   " << setprecision(20) << logcur_mass_tmp[i]
+			<< endl;
     }
     unsigned int i=0;
     while (logm_tmp[i+1] > logm_tmp[i]) {
@@ -1637,15 +1563,12 @@ slug_tracks::compute_isochrone(const double logt,
       i++;
     }
     if (i != logm_tmp.size()-1)
-      cerr << "logm non-monotonic: (" << i << ", "
-	   << setprecision(20) << logm_tmp[i]
-	   << ") and (" << i+1 << ", " 
-	   << setprecision(20) << logm_tmp[i+1] << ")"
-	   << endl;
-#ifdef ENABLE_MPI
-    MPI_Finalize();
-#endif
-    exit(1);
+      ostreams.slug_err << "logm non-monotonic: (" << i << ", "
+			<< setprecision(20) << logm_tmp[i]
+			<< ") and (" << i+1 << ", " 
+			<< setprecision(20) << logm_tmp[i+1] << ")"
+			<< endl;
+    bailout(1);
   }
   isochrone_logL 
     = gsl_spline_alloc(interp_type, logm_tmp.size());
@@ -1753,32 +1676,34 @@ get_isochrone(const double t, const vector<double> &m) const {
     if (gsl_errstat != GSL_EDOM)
       stars[starptr].logL = tmp;
     else {
-      cerr << "GSL interpolation error evaluating luminosity!" << endl;
-      cerr << "   Problem at time " 
-	   << setprecision(20) << exp(logt) << ", mass = "
-	   << setprecision(20) << exp(logm) << endl;
-      cerr << "   At this time, living mass intervals are: ";
+      ostreams.slug_err
+	<< "GSL interpolation error evaluating luminosity!" << endl;
+      ostreams.slug_err
+	<< "   Problem at time " 
+	<< setprecision(20) << exp(logt) << ", mass = "
+	<< setprecision(20) << exp(logm) << endl;
+      ostreams.slug_err << "   At this time, living mass intervals are: ";
       if (monotonic) {
-	cerr << "0 - " << setprecision(20) 
+	ostreams.slug_err << "0 - " << setprecision(20) 
 	     << death_mass(exp(logt)) << " (monotonic tracks)"
 	     << endl;
       } else {
 	for (unsigned int j=0; j<mass_cut.size()/2; j++) {
-	  if (j != 0) cerr << ", ";
-	  cerr << setprecision(20) << mass_cut[2*j] << " - " 
-	       << setprecision(20) << mass_cut[2*j+1];
+	  if (j != 0) ostreams.slug_err << ", ";
+	  ostreams.slug_err
+	    << setprecision(20) << mass_cut[2*j] << " - " 
+	    << setprecision(20) << mass_cut[2*j+1];
 	}
-	cerr << ", isochrone_idx = " << isochrone_idx
-	     << endl;
+	ostreams.slug_err
+	  << ", isochrone_idx = " << isochrone_idx
+	  << endl;
       }
-      cerr << "   Isochrone mass limits = " 
-	   << setprecision(20) << exp(isochrone_logm_lim[0])
-	   << " - " 
-	   << setprecision(20) << exp(isochrone_logm_lim[1]) << endl;
-#ifdef ENABLE_MPI
-      MPI_Finalize();
-#endif
-      exit(1);
+      ostreams.slug_err
+	<< "   Isochrone mass limits = " 
+	<< setprecision(20) << exp(isochrone_logm_lim[0])
+	<< " - " 
+	<< setprecision(20) << exp(isochrone_logm_lim[1]) << endl;
+      bailout(1);
     }
 
     // Teff

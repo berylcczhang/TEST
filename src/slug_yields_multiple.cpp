@@ -32,8 +32,9 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 slug_yields_multiple::
 slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
-		     const double metallicity_, const bool no_decay_) :
-  slug_yields(metallicity_, no_decay_) {
+		     const double metallicity_,
+		     slug_ostreams &ostreams_, const bool no_decay_) :
+  slug_yields(metallicity_, ostreams_, no_decay_) {
 
   // Initialize SNII yields
   path yield_dirname(yield_dir);
@@ -42,7 +43,7 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
     path snii_path = yield_dirname / path("SNII_Sukhbold16");
     yields_snii = (slug_yields_snii *)
       new slug_yields_sukhbold16(snii_path.c_str(), metallicity_,
-				 no_decay_);
+				 ostreams, no_decay_);
   } else {
     yields_snii = nullptr;
   }

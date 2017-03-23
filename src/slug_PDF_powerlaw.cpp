@@ -26,8 +26,8 @@ using namespace boost::random;
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_powerlaw::
 slug_PDF_powerlaw(double sMin_, double sMax_, double sSlope_, 
-		  rng_type *rng_)
-  : slug_PDF_segment(sMin_, sMax_, rng_) 
+		  rng_type *rng_, slug_ostreams& ostreams_)
+  : slug_PDF_segment(sMin_, sMax_, rng_, ostreams_) 
 {
   std::vector<double> tokenVals(1, sSlope_);
   initialize(tokenVals);

@@ -44,12 +44,13 @@ public:
 		    const slug_tracks *my_tracks, 
 		    const slug_PDF *my_imf,
 		    slug_PDF *my_sfh,
+		    slug_ostreams& ostreams_,
 		    const double z_in = 0.0) :
-    slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
-    hillier(dirname, my_tracks, my_imf, my_sfh, z_in, false),
-    kurucz(dirname, my_tracks, my_imf, my_sfh, z_in, false),
-    pauldrach(dirname, my_tracks, my_imf, my_sfh, z_in, false),
-    planck(kurucz.lambda(), my_tracks, my_imf, my_sfh, z_in)
+    slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in),
+    hillier(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
+    kurucz(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
+    pauldrach(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
+    planck(kurucz.lambda(), my_tracks, my_imf, my_sfh, ostreams_, z_in)
   {
     lambda_obs = kurucz.lambda();
     lambda_rest = kurucz.lambda(true);

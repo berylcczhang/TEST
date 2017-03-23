@@ -36,8 +36,10 @@ using namespace std;
 slug_specsyn_planck::
 slug_specsyn_planck(const slug_tracks *my_tracks, 
 		    const slug_PDF *my_imf,
-		    const slug_PDF *my_sfh, const double z_in) : 
-  slug_specsyn(my_tracks, my_imf, my_sfh, z_in)
+		    const slug_PDF *my_sfh,
+		    slug_ostreams& ostreams_,
+		    const double z_in) : 
+  slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in)
 {
   for (unsigned int i=0; i<1001; i++) {
     lambda_rest.push_back(91.0 * 
@@ -56,8 +58,9 @@ slug_specsyn_planck(const double lambda_min, const double lambda_max,
 		    const unsigned int nlambda, 
 		    const slug_tracks *my_tracks, 
 		    const slug_PDF *my_imf, const slug_PDF *my_sfh,
+		    slug_ostreams& ostreams_,
 		    const double z_in, const bool rest) : 
-  slug_specsyn(my_tracks, my_imf, my_sfh, z_in) {
+  slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in) {
   if (rest) {
     for (unsigned int i=0; i<nlambda; i++) {
       lambda_rest.push_back(lambda_min * 
@@ -82,9 +85,11 @@ slug_specsyn_planck::
 slug_specsyn_planck(const vector<double>& lambda_in,
 		    const slug_tracks *my_tracks, 
 		    const slug_PDF *my_imf, 
-		    const slug_PDF *my_sfh, const double z_in, 
+		    const slug_PDF *my_sfh,
+		    slug_ostreams& ostreams_,
+		    const double z_in, 
 		    const bool rest) :
-  slug_specsyn(my_tracks, my_imf, my_sfh, z_in) {
+  slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in) {
   if (rest) {
     lambda_rest = lambda_in;
     lambda_obs.resize(lambda_rest.size());

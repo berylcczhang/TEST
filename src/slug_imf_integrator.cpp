@@ -15,6 +15,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "slug_imf_integrator.H"
+#include "slug_MPI.H"
 
 using namespace std;
 using namespace gkdata;
@@ -369,9 +370,9 @@ integrate_sfh(const double t,
     // Update the iteration counter, and check against maximum
     itCounter++;
     if (itCounter > gk_max_iter) {
-      cerr << "Error: non-convergence in SFH integration!" 
-	   << endl;
-      exit(1);
+      ostreams.slug_err << "non-convergence in SFH integration!" 
+			<< endl;
+      bailout(1);
     }
   }
 
@@ -468,9 +469,9 @@ integrate_range(const double m_tot, const double age,
       // Update the iteration counter, and check against maximum
       itCounter++;
       if (itCounter > gk_max_iter) {
-	cerr << "Error: non-convergence in IMF integration!" 
-	     << endl;
-	exit(1);
+	ostreams.slug_err << "non-convergence in IMF integration!" 
+			  << endl;
+	bailout(1);
       }
     }
   }

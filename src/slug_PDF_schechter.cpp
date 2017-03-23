@@ -37,8 +37,9 @@ using namespace boost::random;
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_schechter::
 slug_PDF_schechter(double sMin_, double sMax_, double sSlope_, 
-		   double sStar_, rng_type *rng_)
-  : slug_PDF_segment(sMin_, sMax_, rng_) 
+		   double sStar_, rng_type *rng_,
+		   slug_ostreams& ostreams_)
+  : slug_PDF_segment(sMin_, sMax_, rng_, ostreams_) 
 {
   std::vector<double> tokenVals(2);
   tokenVals[0] = sSlope_;

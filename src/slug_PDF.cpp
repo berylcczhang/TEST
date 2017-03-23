@@ -31,6 +31,7 @@ namespace std
 #include "slug_PDF_normal.H"
 #include "slug_PDF_powerlaw.H"
 #include "slug_PDF_schechter.H"
+#include "slug_MPI.H"
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -47,8 +48,8 @@ using namespace boost::random;
 // Constructor from a single segment
 ////////////////////////////////////////////////////////////////////////
 slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
-		   double normalization) :
-  disc(NULL), disc_restricted(NULL) {
+		   slug_ostreams &ostreams_, double normalization) :
+  ostreams(ostreams_), disc(nullptr), disc_restricted(nullptr) {
 
   // Set pointer to the rng
   rng = my_rng;
@@ -79,16 +80,16 @@ slug_PDF::slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
   // Store the segment
   segments.push_back(new_seg);
 
-  // We won't need the random coin, so set it to NULL
-  coin = NULL;
+  // We won't need the random coin, so set it to nullptr
+  coin = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor from file
 ////////////////////////////////////////////////////////////////////////
 slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
-		   bool is_normalized) :
-  disc(NULL), disc_restricted(NULL) {
+		   slug_ostreams &ostreams_, bool is_normalized) :
+  ostreams(ostreams_), disc(nullptr), disc_restricted(nullptr) {
 
   // Set pointer to the rng
   rng = my_rng;
@@ -104,9 +105,9 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
   PDFFile.open(PDF);
   if (!PDFFile.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open PDF file " 
-	 << PDF << endl;
-    exit(1);
+    ostreams.slug_err_one << "unable to open PDF file " 
+			  << PDF << endl;
+    bailout(1);
   }
 
   // Save name of PDF file
@@ -160,7 +161,7 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
     disc = new variate_generator<rng_type&,
       boost::random::discrete_distribution <> >(*rng, dist);
   } else {
-    disc = NULL;
+    disc = nullptr;
   }
 
   // Set up the 50-50 generator
@@ -197,11 +198,11 @@ slug_PDF::slug_PDF(const char *PDF, rng_type *my_rng,
 slug_PDF::~slug_PDF() { 
   for (unsigned int i=0; i<segments.size(); i++)
     delete segments[i];
-  if (disc_restricted != NULL)
+  if (disc_restricted != nullptr)
     delete disc_restricted;
-  if (disc != NULL)
+  if (disc != nullptr)
     delete disc;
-  if (coin != NULL)
+  if (coin != nullptr)
     delete coin;
 }
 
@@ -235,36 +236,42 @@ slug_PDF::add_segment(double x_min, double x_max, double wgt,
 
   // Safety check: make sure wgt >= 0
   if (wgt < 0.0) {
-    cerr << "slug: error: wgt must be >= 0 in slug_PDF::add_segment" 
-	 << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "wgt must be >= 0 in slug_PDF::add_segment" 
+      << endl;
+    bailout(1);
   }
 
   // Decide which type of segment to add
-  slug_PDF_segment *seg = NULL;
+  slug_PDF_segment *seg = nullptr;
   if (type_name.compare("delta")==0) {
-    slug_PDF_delta *new_seg = new slug_PDF_delta(x_min, x_max, rng);
+    slug_PDF_delta *new_seg = new slug_PDF_delta(x_min, x_max, rng, ostreams);
     seg = (slug_PDF_segment *) new_seg;
   } else if (type_name.compare("exponential")==0) {
     slug_PDF_exponential *new_seg = 
-      new slug_PDF_exponential(x_min, x_max, rng);
+      new slug_PDF_exponential(x_min, x_max, rng, ostreams);
     seg = (slug_PDF_segment *) new_seg;
   } else if (type_name.compare("lognormal")==0) {
-    slug_PDF_lognormal *new_seg = new slug_PDF_lognormal(x_min, x_max, rng);
+    slug_PDF_lognormal *new_seg =
+      new slug_PDF_lognormal(x_min, x_max, rng, ostreams);
     seg = (slug_PDF_segment *) new_seg;
   } else if (type_name.compare("normal")==0) {
-    slug_PDF_normal *new_seg = new slug_PDF_normal(x_min, x_max, rng);
+    slug_PDF_normal *new_seg =
+      new slug_PDF_normal(x_min, x_max, rng, ostreams);
     seg = (slug_PDF_segment *) new_seg;
   } else if (type_name.compare("powerlaw")==0) {
-    slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw(x_min, x_max, rng);
+    slug_PDF_powerlaw *new_seg =
+      new slug_PDF_powerlaw(x_min, x_max, rng, ostreams);
     seg = (slug_PDF_segment *) new_seg;
   } else if (type_name.compare("schechter")==0) {
-    slug_PDF_schechter *new_seg = new slug_PDF_schechter(x_min, x_max, rng);
+    slug_PDF_schechter *new_seg =
+      new slug_PDF_schechter(x_min, x_max, rng, ostreams);
     seg = (slug_PDF_segment *) new_seg;
   } else {
-    cerr << "slug: error: unknown segment type " << type_name 
-	 << " in slug_PDF::add_segment" << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unknown segment type " << type_name 
+      << " in slug_PDF::add_segment" << endl;
+    bailout(1);
   }
 
   // Remove any range restrictions if they exist
@@ -418,7 +425,7 @@ slug_PDF::set_stoch_lim(double x_stoch_min, double x_stoch_max) {
       variate_generator<rng_type&,
       boost::random::discrete_distribution <> >(*rng, dist);
   } else {
-    disc_restricted = NULL;
+    disc_restricted = nullptr;
   }
 
   // Step 6: get the integral and expection value for the resticted
@@ -444,7 +451,7 @@ slug_PDF::remove_stoch_lim() {
     seg_restricted.resize(0);
     weights_restricted.resize(0);
     delete disc_restricted;
-    disc_restricted = NULL;
+    disc_restricted = nullptr;
     xStochMin = xMin;
     xStochMax = xMax;
     PDFintegral_restrict = PDFintegral;
@@ -794,30 +801,36 @@ slug_PDF::parseBasic(std::ifstream& PDFFile, vector<string> firstline,
 
       // Read the segment type, and call the appropriate constructor
       to_lower(tokens[1]);
-      slug_PDF_segment *seg = NULL;
+      slug_PDF_segment *seg = nullptr;
       if (tokens[1].compare("delta")==0) {
 	slug_PDF_delta *new_seg = 
-	  new slug_PDF_delta(breakpoints[bptr], breakpoints[bptr+1], rng);
+	  new slug_PDF_delta(breakpoints[bptr], breakpoints[bptr+1],
+			     rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("exponential")==0) {
 	slug_PDF_exponential *new_seg = 
-	  new slug_PDF_exponential(breakpoints[bptr], breakpoints[bptr+1], rng);
+	  new slug_PDF_exponential(breakpoints[bptr], breakpoints[bptr+1],
+				   rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("lognormal")==0) {
 	slug_PDF_lognormal *new_seg = 
-	  new slug_PDF_lognormal(breakpoints[bptr], breakpoints[bptr+1], rng);
+	  new slug_PDF_lognormal(breakpoints[bptr], breakpoints[bptr+1],
+				 rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("normal")==0) {
 	slug_PDF_normal *new_seg = 
-	  new slug_PDF_normal(breakpoints[bptr], breakpoints[bptr+1], rng);
+	  new slug_PDF_normal(breakpoints[bptr], breakpoints[bptr+1],
+			      rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("powerlaw")==0) {
 	slug_PDF_powerlaw *new_seg = 
-	  new slug_PDF_powerlaw(breakpoints[bptr], breakpoints[bptr+1], rng);
+	  new slug_PDF_powerlaw(breakpoints[bptr], breakpoints[bptr+1],
+				rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("schechter")==0) {
 	slug_PDF_schechter *new_seg = 
-	  new slug_PDF_schechter(breakpoints[bptr], breakpoints[bptr+1], rng);
+	  new slug_PDF_schechter(breakpoints[bptr], breakpoints[bptr+1],
+				 rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else {
 	string errStr("Unknown segment type ");
@@ -990,24 +1003,24 @@ slug_PDF::parseAdvanced(std::ifstream& PDFFile, int& lineCount) {
 
       // Read the segment type, and call the appropriate constructor
       to_lower(tokens[1]);
-      slug_PDF_segment *seg = NULL;
+      slug_PDF_segment *seg = nullptr;
       if (tokens[1].compare("delta")==0) {
-	slug_PDF_delta *new_seg = new slug_PDF_delta(rng);
+	slug_PDF_delta *new_seg = new slug_PDF_delta(rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("exponential")==0) {
-	slug_PDF_exponential *new_seg = new slug_PDF_exponential(rng);
+	slug_PDF_exponential *new_seg = new slug_PDF_exponential(rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("lognormal")==0) {
-	slug_PDF_lognormal *new_seg = new slug_PDF_lognormal(rng);
+	slug_PDF_lognormal *new_seg = new slug_PDF_lognormal(rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("normal")==0) {
-	slug_PDF_normal *new_seg = new slug_PDF_normal(rng);
+	slug_PDF_normal *new_seg = new slug_PDF_normal(rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("powerlaw")==0) {
-	slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw(rng);
+	slug_PDF_powerlaw *new_seg = new slug_PDF_powerlaw(rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else if (tokens[1].compare("schechter")==0) {
-	slug_PDF_schechter *new_seg = new slug_PDF_schechter(rng);
+	slug_PDF_schechter *new_seg = new slug_PDF_schechter(rng, ostreams);
 	seg = (slug_PDF_segment *) new_seg;
       } else {
 	string errStr("Unknown segment type ");
@@ -1101,17 +1114,19 @@ slug_PDF::parseAdvanced(std::ifstream& PDFFile, int& lineCount) {
   //Variable segments are not currently supported in advanced mode.
 
   //Loop over the segments of the pdf
-  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin();
+       s!=segments.end(); ++s)
   {
     //Test if segment is variable. Give an error and exit if it is.
     if ((*s)->is_seg_var() == true)
     {
-      cerr << "slug: error: variable segments unsupported for advanced mode pdfs at this time" << endl;
-      exit(1);
+      ostreams.slug_err_one
+	<< "variable segments unsupported for advanced mode pdfs at this time"
+	<< endl;
+      bailout(1);
     }
   }  
   
-
   // Normalize segment weights if this is a normalized PDF; store
   // integrated value if not
   double cumWeight = weights[0];
@@ -1133,16 +1148,17 @@ slug_PDF::parseAdvanced(std::ifstream& PDFFile, int& lineCount) {
 ////////////////////////////////////////////////////////////////////////
 [[noreturn]] void
 slug_PDF::parseError(int lineCount, string line, string message) {
-  cerr << "slug: error: parsing error in file " 
-       << PDFFileName 
-       << " on line " << lineCount;
+  ostreams.slug_err_one
+    << "slug: error: parsing error in file " 
+    << PDFFileName 
+    << " on line " << lineCount;
   if (line.length() > 0) 
-    cerr << ": " << endl << line << endl;
+    ostreams.slug_err_one << ": " << line << endl;
   else
-    cerr << endl;
+    ostreams.slug_err_one << endl;
   if (message.length() > 0)
-    cerr << message << endl;
-  exit(1);
+    ostreams.slug_err_one << message << endl;
+  bailout(1);
 }
 
 
@@ -1151,11 +1167,12 @@ slug_PDF::parseError(int lineCount, string line, string message) {
 ////////////////////////////////////////////////////////////////////////
 [[noreturn]] void
 slug_PDF::eofError(string message) {
-  cerr << "slug: error: unxepctedly reached end of PDF file "
-       << PDFFileName << endl;
+  ostreams.slug_err_one
+    << "unxepctedly reached end of PDF file "
+    << PDFFileName << endl;
   if (message.length() > 0)
-    cerr << message << endl;
-  exit(1);
+    ostreams.slug_err_one << message << endl;
+  bailout(1);
 }
 
 
@@ -1168,7 +1185,8 @@ bool slug_PDF::init_vsegs()
   //Loop over vector of segments and check for variable segments. 
   //If segment is variable - initialise the PDFs for any variable parameters it has.
 
-  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin();
+       s!=segments.end(); ++s)
   {
 
     //Test if segment is variable and note if it is
@@ -1184,7 +1202,8 @@ bool slug_PDF::init_vsegs()
 
       //Loop over vector of paths for the various variable parameters in
       //this segment
-      for (vector<string>::const_iterator pdfpath=pathnames.begin(); pdfpath!=pathnames.end(); ++pdfpath)
+      for (vector<string>::const_iterator pdfpath=pathnames.begin();
+	   pdfpath!=pathnames.end(); ++pdfpath)
       {
 
         //Path to the PDF
@@ -1192,8 +1211,8 @@ bool slug_PDF::init_vsegs()
         const char *pdfpath_cstr = pdfpath_str.c_str();
 
         //Initialise the pdf for this parameter to draw values from
-        slug_PDF *param_pdf = NULL;		
-        slug_PDF *new_param_pdf = new slug_PDF(pdfpath_cstr,rng);				
+        slug_PDF *param_pdf = nullptr;		
+        slug_PDF *new_param_pdf = new slug_PDF(pdfpath_cstr,rng,ostreams);
         param_pdf = (slug_PDF *)new_param_pdf;
 
         //Add this pdf to the vector for this segment
@@ -1218,7 +1237,8 @@ vector<double> slug_PDF::vseg_draw()
   vector<double> all_newvals;			
 
   //Loop over the segments of the pdf
-  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin();
+       s!=segments.end(); ++s)
   {
     //Test if segment is variable, go in and draw new parameters if it is
     if ((*s)->is_seg_var() == true)
@@ -1230,7 +1250,8 @@ vector<double> slug_PDF::vseg_draw()
       vector<slug_PDF *> vpdfs = (*s)->v_pdfs();
 
       //Here we loop over the parameters that vary, drawing new values for each
-      for (vector<slug_PDF *>::const_iterator pdf=vpdfs.begin(); pdf!=vpdfs.end(); ++pdf)
+      for (vector<slug_PDF *>::const_iterator pdf=vpdfs.begin();
+	   pdf!=vpdfs.end(); ++pdf)
       {
 
         //Draw the new value and store it
@@ -1248,9 +1269,6 @@ vector<double> slug_PDF::vseg_draw()
   }
 
   //Update the weights
-  
-  //  cout << "slug: Recalculating weights" << endl;
-  //  cout << "Previous weights[0]: " << weights[0] << "  Old pdfintegral: " << PDFintegral << endl;
 
   //Reset all the weights for each segment to 1.0
   std::fill(weights.begin(), weights.end(), 1.0);
@@ -1259,7 +1277,8 @@ vector<double> slug_PDF::vseg_draw()
 
   for (unsigned int i=1; i<segments.size(); i++) 
   {
-    weights[i] = weights[i-1] * segments[i-1]->sMaxVal() / segments[i]->sMinVal();
+    weights[i] = weights[i-1] * segments[i-1]->sMaxVal() /
+      segments[i]->sMinVal();
     cumWeight += weights[i];
   }
 
@@ -1278,13 +1297,8 @@ vector<double> slug_PDF::vseg_draw()
     PDFintegral = cumWeight;
   }
 
-  //  cout << "New weights[0]: " << weights[0] << "  New pdfintegral: " << PDFintegral << endl;
-
-
   //With the weights for each segment updated, now 
   //update the expectation values for the whole pdf
-
-  //  cout << "Old expectval: " << expectVal << endl;
 
   expectVal = 0.0;
   for (unsigned int i=0; i<segments.size(); i++)
@@ -1293,12 +1307,8 @@ vector<double> slug_PDF::vseg_draw()
   }
   expectVal = expectVal / PDFintegral;
 
-  //  cout << "New expectval: " << expectVal << endl;
-
-
   // Set up the discrete distribution picker
-  
-  if (disc!=NULL)
+  if (disc!=nullptr)
   {
     delete disc; //Delete previous picker
   }
@@ -1308,24 +1318,16 @@ vector<double> slug_PDF::vseg_draw()
     disc = new variate_generator<rng_type&,
       boost::random::discrete_distribution <> >(*rng, dist);
   } else {
-    disc = NULL;
+    disc = nullptr;
   }
-
-
 
   //Initialize range restriction parameters with total, but 
   //we will update in slug_sim after this returns if needed
   expectVal_restrict = expectVal;
   PDFintegral_restrict = PDFintegral;
 
-
-
-
-
   //The PDF is now ready to have its range restricted if required.
-
   return all_newvals;         //Return the drawn values for testing
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1335,17 +1337,14 @@ void slug_PDF::cleanup()
 {
 
   //Loop over the segments of the pdf
-  for (vector<slug_PDF_segment *>::iterator s=segments.begin(); s!=segments.end(); ++s)
+  for (vector<slug_PDF_segment *>::iterator s=segments.begin();
+       s!=segments.end(); ++s)
   {
     //Test if segment is variable, go in and clean up the pdf vectors
     if ((*s)->is_seg_var() == true)
     {
-
       (*s)->delete_v_pdfs();
-
     }
-
   }
-  
 }
 

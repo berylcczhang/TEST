@@ -22,10 +22,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 ////////////////////////////////////////////////////////////////////////
 
-#ifdef ENABLE_MPI
-
 #ifndef _slug_MPI_H_
 #define _slug_MPI_H_
+
+////////////////////////////////////////////////////////////////////////
+// An abort routine
+////////////////////////////////////////////////////////////////////////
+[[noreturn]] void bailout(int exit_val);
+
+#ifdef ENABLE_MPI
 
 #include <iostream>
 #include <vector>
@@ -164,8 +169,8 @@ MPI_exchange_slug_cluster(const std::vector<slug_cluster *> &clusters,
 			  const slug_PDF *clf_=NULL);
 
 #endif
-// _slug_MPI_H_
+// ENABLE_MPI
 
 #endif
-// ENABLE_MPI
+// _slug_MPI_H_
 

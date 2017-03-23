@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "slug_IO.H"
 #include "slug_PDF_segment.H"
 
 // Enum for sampling methods
@@ -41,10 +42,12 @@ public:
   // Create from PDF descriptor file and using specified random number
   // generator. The optional parameter normalized specifies whether
   // this PDF is normalized to have an integral of unity or not.
-  slug_PDF(const char *fname, rng_type *my_rng, bool is_normalized=true);
+  slug_PDF(const char *fname, rng_type *my_rng, slug_ostreams& ostreams_,
+	   bool is_normalized=true);
 
   // Create a PDF that wraps a single segment
   slug_PDF(slug_PDF_segment *new_seg, rng_type *my_rng,
+	   slug_ostreams& ostreams_,
 	   double normalization = 1.0);
 
   // Destructor
@@ -127,7 +130,9 @@ public:
   
   //Clean up variable segments
   void cleanup();   
-	
+
+protected:
+  slug_ostreams& ostreams;
 	
 private:
   // Functions to parse basic and advanced mode PDF files

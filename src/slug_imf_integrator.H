@@ -62,6 +62,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_tracks.H"
 #include "slug_PDF.H"
 #include "constants.H"
+#include "slug_IO.H"
 
 ////////////////////////////////////////////////////////////////////////
 // Data for Gauss-Kronrod quadratures. These are copied directly from
@@ -267,11 +268,12 @@ public:
   slug_imf_integrator(const slug_tracks *tracks_, 
 		      const slug_PDF *imf_,
 		      const slug_PDF *sfh_,
+		      slug_ostreams &ostreams_,
 		      typename std::vector<T>::size_type nvec_ = 0,
 		      const double tol_ = 1.0e-3,
 		      const bool include_stoch_ = false) :
-    tracks(tracks_), imf(imf_), sfh(sfh_), help(), nvec(nvec_), 
-    tol(tol_), include_stoch(include_stoch_) { }
+    ostreams(ostreams_), tracks(tracks_), imf(imf_), sfh(sfh_),
+    help(), nvec(nvec_), tol(tol_), include_stoch(include_stoch_) { }
 
   // Destructor
   ~slug_imf_integrator() { }
@@ -343,6 +345,10 @@ public:
   T integrate_sfh_nt(const double t,
 		     boost::function<T(const double &, const double &)> 
 		     func_) const;
+
+protected:
+  // IO handler
+  slug_ostreams& ostreams;
 
 private:
 

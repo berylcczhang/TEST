@@ -45,6 +45,7 @@ namespace std
 }
 #endif
 #include "slug.H"
+#include "slug_IO.H"
 #include "slug_PDF.H"
 #include "slug_filter_set.H"
 #include "slug_specsyn.H"
@@ -85,6 +86,9 @@ private:
   const slug_tracks *build_tracks(const std::string& trackname);
   const slug_filter_set
   *build_filter_set(const std::string& filter_set_name);
+
+  // IO handler
+  slug_ostreams ostreams;
 
   // Private data
   rng_type *rng;

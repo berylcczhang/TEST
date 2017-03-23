@@ -33,16 +33,18 @@ class slug_PDF_delta : public slug_PDF_segment {
 
 public:
   // Construct a segment with no initialization
-  slug_PDF_delta(rng_type* rng_) : slug_PDF_segment(rng_) {}
+  slug_PDF_delta(rng_type* rng_, slug_ostreams& ostreams_) :
+    slug_PDF_segment(rng_, ostreams_) {}
 
   // Construct a segment representing a delta function at a particular
   // point
-  slug_PDF_delta(double x, rng_type* rng_) : 
-    slug_PDF_segment(x, x, rng_) {}
+  slug_PDF_delta(double x, rng_type* rng_, slug_ostreams& ostreams_) : 
+    slug_PDF_segment(x, x, rng_, ostreams_) {}
 
   // Construct a segment taking a min and max. We will make sure they
   // are the same, or bail out with an error.
-  slug_PDF_delta(double segMin_, double segMax_, rng_type* rng_);
+  slug_PDF_delta(double segMin_, double segMax_, rng_type* rng_,
+		 slug_ostreams& ostreams_);
 
   // Destructor
   ~slug_PDF_delta() {}

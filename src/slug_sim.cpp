@@ -22,6 +22,7 @@ namespace std
 }
 #endif
 #include "slug_MPI.H"
+#include "slug_IO.H"
 #include "slug_PDF_powerlaw.H"
 #include "slug_sim.H"
 #include "slug_specsyn_hillier.H"
@@ -47,11 +48,12 @@ using namespace boost::filesystem;
 ////////////////////////////////////////////////////////////////////////
 // The constructor
 ////////////////////////////////////////////////////////////////////////
-slug_sim::slug_sim(const slug_parmParser& pp_
+slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
 #ifdef ENABLE_MPI
-		     , MPI_Comm comm_
+		   , MPI_Comm comm_
 #endif
-		     ) : pp(pp_)
+		   ) : pp(pp_),
+		       ostreams(ostreams_)
 #ifdef ENABLE_MPI
 		       , comm(comm_)
 #endif
@@ -82,7 +84,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_
     
       // Check if the file exists
       if (!seed_file) {
-	cerr << "Can't open RNG seed file " << seed_file_name << endl;
+	ostreams.slug_err_one << "can't open RNG seed file "
+			      << seed_file_name << endl;
 	exit(1);
       }
       seed_file >> seed;
@@ -172,7 +175,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_
 	t *= pow(10.0, pp.get_timeStep());
     }
   } else if (pp.get_random_output_time()) {
-    out_time_pdf = new slug_PDF(pp.get_outtime_dist(), rng);
+    out_time_pdf = new slug_PDF(pp.get_outtime_dist(), rng, ostreams);
   } else {
     outTimes = pp.get_outTimes();
   }
@@ -180,97 +183,73 @@ slug_sim::slug_sim(const slug_parmParser& pp_
   // Set up the photometric filters
   if (pp.get_nPhot() > 0) {
     if (pp.get_verbosity() > 1)
-#ifdef ENABLE_MPI
-      if (rank == 0)
-#endif
-	cout << "slug: reading filters" << endl;
+      ostreams.slug_out_one << "reading filters" << std::endl;
     filters = new slug_filter_set(pp.get_photBand(), 
 				  pp.get_filter_dir(), 
 				  pp.get_photMode(),
-				  pp.get_atmos_dir()
-#ifdef ENABLE_MPI
-				  , rank
-#endif
-				  );
+				  ostreams,
+				  pp.get_atmos_dir());
   } else {
     filters = nullptr;
   }
 
   // Read the tracks
   if (pp.get_verbosity() > 1)
-    std::cout << "slug: reading tracks" << std::endl;
-  tracks = new slug_tracks(pp.get_trackFile(), pp.get_metallicity(),
-			   pp.get_WR_mass(), pp.get_endTime()
-#ifdef ENABLE_MPI
-			   , rank
-#endif
-			   );
+    ostreams.slug_out_one << "reading tracks" << std::endl;
+  tracks = new slug_tracks(pp.get_trackFile(), ostreams,
+			   pp.get_metallicity(),
+			   pp.get_WR_mass(), pp.get_endTime());
 
   // If we're computing yields, set up yield tables
   if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield()) {
     if (pp.get_verbosity() > 1)
-      std::cout << "slug: reading yield tables" << std::endl;
+      ostreams.slug_out_one << "reading yield tables" << std::endl;
     yields = (slug_yields *)
       new slug_yields_multiple(pp.get_yield_dir(),
 			       pp.get_yieldMode(),
-			       tracks->get_metallicity()
-#ifdef ENABLE_MPI
-			       , rank
-#endif
-			       );
+			       tracks->get_metallicity(),
+			       ostreams);
   } else {
     yields = nullptr;
   }
 
   // Set up the IMF, including the limts on its stochasticity
-  imf = new slug_PDF(pp.get_IMF(), rng);
+  imf = new slug_PDF(pp.get_IMF(), rng, ostreams);
   imf->set_stoch_lim(pp.get_min_stoch_mass());
 
   // Compare IMF and tracks, and issue warning if IMF extends outside
   // range of tracks
-  if (imf->get_xMin() < tracks->min_mass()*(1.0-1.0e-10)) {
-#ifdef ENABLE_MPI
-    if (rank == 0)
-#endif
-      cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
-	   << " Msun < minimum evolution track mass " << tracks->min_mass()
-	   << " Msun. Calculation will proceed, but stars with mass "
-	   << imf->get_xMin() << " Msun to " << tracks->min_mass()
-	   << " Msun will be treated as having zero luminosity." << endl;
-  }
-  if (imf->get_xMax() > tracks->max_mass()*(1.0+1.0e-10)) {
-#ifdef ENABLE_MPI
-    if (rank == 0)
-#endif
-      cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
-	   << " Msun > maximum evolution track mass " << tracks->max_mass()
-	   << " Msun. Calculation will proceed, but stars with mass "
-	   << tracks->max_mass() << " Msun to " << imf->get_xMax()
-	   << " Msun will be treated as having zero luminosity." << endl;
-  }
+  if (imf->get_xMin() < tracks->min_mass()*(1.0-1.0e-10))
+    ostreams.slug_warn_one
+      << "minimum IMF mass " << imf->get_xMin() 
+      << " Msun < minimum evolution track mass " << tracks->min_mass()
+      << " Msun. Calculation will proceed, but stars with mass "
+      << imf->get_xMin() << " Msun to " << tracks->min_mass()
+      << " Msun will be treated as having zero luminosity." << endl;
+  if (imf->get_xMax() > tracks->max_mass()*(1.0+1.0e-10))
+    ostreams.slug_warn_one
+      << "maximum IMF mass " << imf->get_xMax() 
+      << " Msun > maximum evolution track mass " << tracks->max_mass()
+      << " Msun. Calculation will proceed, but stars with mass "
+      << tracks->max_mass() << " Msun to " << imf->get_xMax()
+      << " Msun will be treated as having zero luminosity." << endl;
   
   // Ditto for IMF and yield table
   if (yields) {
-    if (imf->get_xMin() < yields->min_mass()*(1.0-1.0e-10)) {
-#ifdef ENABLE_MPI
-      if (rank == 0)
-#endif
-	cerr << "slug: warning: Minimum IMF mass " << imf->get_xMin() 
-	     << " Msun < minimum yield table mass " << yields->min_mass()
-	     << " Msun. Calculation will proceed, but stars with mass "
-	     << imf->get_xMin() << " Msun to " << yields->min_mass()
-	     << " Msun will be treated as having zero yield." << endl;
-    }
-    if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10)) {
-#ifdef ENABLE_MPI
-      if (rank == 0)
-#endif
-	cerr << "slug: warning: Maximum IMF mass " << imf->get_xMax() 
-	     << " Msun > maximum yield table mass " << yields->max_mass()
-	     << " Msun. Calculation will proceed, but stars with mass "
-	     << yields->max_mass() << " Msun to " << imf->get_xMax()
-	     << " Msun will be treated as having zero yield." << endl;
-    }
+    if (imf->get_xMin() < yields->min_mass()*(1.0-1.0e-10))
+      ostreams.slug_warn_one
+	<< "minimum IMF mass " << imf->get_xMin() 
+	<< " Msun < minimum yield table mass " << yields->min_mass()
+	<< " Msun. Calculation will proceed, but stars with mass "
+	<< imf->get_xMin() << " Msun to " << yields->min_mass()
+	<< " Msun will be treated as having zero yield." << endl;
+    if (imf->get_xMax() > yields->max_mass()*(1.0+1.0e-10))
+      ostreams.slug_warn_one
+	<< "maximum IMF mass " << imf->get_xMax() 
+	<< " Msun > maximum yield table mass " << yields->max_mass()
+	<< " Msun. Calculation will proceed, but stars with mass "
+	<< yields->max_mass() << " Msun to " << imf->get_xMax()
+	<< " Msun will be treated as having zero yield." << endl;
   }
   
   // Check for variable segments & initialise them
@@ -286,11 +265,11 @@ slug_sim::slug_sim(const slug_parmParser& pp_
   }
 
   // Set the cluster lifetime function
-  clf = new slug_PDF(pp.get_CLF(), rng);
+  clf = new slug_PDF(pp.get_CLF(), rng, ostreams);
 
   // Set the cluster mass function
   if (pp.galaxy_sim() || pp.get_random_cluster_mass())
-    cmf = new slug_PDF(pp.get_CMF(), rng);
+    cmf = new slug_PDF(pp.get_CMF(), rng, ostreams);
   else
     cmf = nullptr;
 
@@ -303,51 +282,47 @@ slug_sim::slug_sim(const slug_parmParser& pp_
       // SFR is constant, so create a powerlaw segment of slope 0 with
       // the correct normalization
       slug_PDF_powerlaw *sfh_segment = 
-	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng);
-      sfh = new slug_PDF(sfh_segment, rng, 
+	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng, ostreams);
+      sfh = new slug_PDF(sfh_segment, rng, ostreams,
 			 outTimes.back()*pp.get_SFR());
       sfr_pdf = nullptr;
     } else if (pp.get_randomSFR()) {
       // SFR is to be drawn from a PDF, so read the PDF, and
       // initialize the SFH from it
-      sfr_pdf = new slug_PDF(pp.get_SFR_file(), rng, false);
+      sfr_pdf = new slug_PDF(pp.get_SFR_file(), rng, ostreams, false);
       slug_PDF_powerlaw *sfh_segment = 
-	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng);
-      sfh = new slug_PDF(sfh_segment, rng, 
+	new slug_PDF_powerlaw(0.0, outTimes.back(), 0.0, rng, ostreams);
+      sfh = new slug_PDF(sfh_segment, rng, ostreams,
 			 outTimes.back()*sfr_pdf->draw());
     } else {
       // SFR is not constant, so read SFH from file
-      sfh = new slug_PDF(pp.get_SFH(), rng, false);
+      sfh = new slug_PDF(pp.get_SFH(), rng, ostreams, false);
       sfr_pdf = nullptr;
     }
   }
 
   // Initialize the spectral synthesizer
-  if (pp.get_verbosity() > 1
-#ifdef ENABLE_MPI
-      && rank == 0
-#endif
-      )
-    std::cout << "slug: reading atmospheres" << std::endl;
+  if (pp.get_verbosity() > 1)
+    ostreams.slug_out_one << "reading atmospheres" << std::endl;
   if (pp.get_specsynMode() == PLANCK) {
     specsyn = static_cast<slug_specsyn *>
-      (new slug_specsyn_planck(tracks, imf, sfh, pp.get_z()));
+      (new slug_specsyn_planck(tracks, imf, sfh, ostreams, pp.get_z()));
   } else if (pp.get_specsynMode() == KURUCZ) {
     specsyn = static_cast<slug_specsyn *>
       (new slug_specsyn_kurucz(pp.get_atmos_dir(), tracks, 
-			       imf, sfh, pp.get_z()));
+			       imf, sfh, ostreams, pp.get_z()));
   } else if (pp.get_specsynMode() == KURUCZ_HILLIER) {
     specsyn = static_cast<slug_specsyn *>
       (new slug_specsyn_hillier(pp.get_atmos_dir(), tracks, 
-				imf, sfh, pp.get_z()));
+				imf, sfh, ostreams, pp.get_z()));
   } else if (pp.get_specsynMode() == KURUCZ_PAULDRACH) {
     specsyn = static_cast<slug_specsyn *>
       (new slug_specsyn_pauldrach(pp.get_atmos_dir(), tracks, 
-				  imf, sfh, pp.get_z()));
+				  imf, sfh, ostreams, pp.get_z()));
   } else if (pp.get_specsynMode() == SB99) {
     specsyn = static_cast<slug_specsyn *> 
       (new slug_specsyn_sb99(pp.get_atmos_dir(), tracks,
-			     imf, sfh, pp.get_z()));
+			     imf, sfh, ostreams, pp.get_z()));
   }
 
   // If using nebular emission, initialize the computation of that
@@ -355,6 +330,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_
     nebular = new slug_nebular(pp.get_atomic_dir(),
 			       specsyn->lambda(true),
 			       pp.get_trackFile(),
+			       ostreams,
 			       pp.get_nebular_den(),
 			       pp.get_nebular_temp(),
 			       pp.get_nebular_logU(),
@@ -369,9 +345,10 @@ slug_sim::slug_sim(const slug_parmParser& pp_
   if (pp.get_use_extinct()) {
     if (nebular != nullptr)
       extinct = new slug_extinction(pp, specsyn->lambda(true),
-				    nebular->lambda(), rng);
+				    nebular->lambda(), rng, ostreams);
     else
-      extinct = new slug_extinction(pp, specsyn->lambda(true), rng);
+      extinct = new slug_extinction(pp, specsyn->lambda(true), rng,
+				    ostreams);
   } else {
     extinct = nullptr;
   }
@@ -381,7 +358,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_
   if (pp.galaxy_sim()) {
     galaxy = new slug_galaxy(pp, imf, cmf, clf, sfh, tracks, 
 			     specsyn, filters, extinct, nebular, 
-			     yields);
+			     yields, ostreams);
     cluster = nullptr;
   } else {
     double cluster_mass;
@@ -391,7 +368,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_
       cluster_mass = pp.get_cluster_mass();
     cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
     			       tracks, specsyn, filters,
-    			       extinct, nebular, yields, clf);
+    			       extinct, nebular, yields, ostreams, clf);
     galaxy = nullptr;
   }
 
@@ -599,13 +576,6 @@ void slug_sim::galaxy_sim() {
 
   // Initialize output file information
   slug_output_files outfiles;
-  outfiles.is_open = false;
-#ifdef ENABLE_FITS
-  outfiles.int_prop_fits = outfiles.int_spec_fits = outfiles.int_phot_fits
-    = outfiles.int_yield_fits = outfiles.cluster_prop_fits
-    = outfiles.cluster_spec_fits = outfiles.cluster_phot_fits
-    = outfiles.cluster_yield_fits = nullptr;
-#endif
   
   // Main loop
   while (true) {
@@ -647,15 +617,11 @@ void slug_sim::galaxy_sim() {
     // If we are opening new outputs, do so now
     if (open_new_output) {
       // Write status message
-      if (pp.get_verbosity() > 0 && checkpoint_ctr > 0 &&
-	  trial_ctr_loc != 1) {
-#ifdef ENABLE_MPI
-	cout << "slug: process " << rank+1
-	     << " finalizing checkpoint " << checkpoint_ctr << endl;
-#else
-	cout << "slug: finalizing checkpoint " << checkpoint_ctr << endl;
-#endif
-      }
+      if (pp.get_verbosity() > 0 &&
+	  checkpoint_ctr > 0 &&
+	  trial_ctr_loc != 1)
+	ostreams.slug_out << "finalizing checkpoint "
+			  << checkpoint_ctr << std::endl;
       // Close old output if it is open
       if (outfiles.is_open)
 	close_output(outfiles, checkpoint_ctr-1,
@@ -673,12 +639,11 @@ void slug_sim::galaxy_sim() {
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
  #ifdef ENABLE_MPI
-      cout << "slug: process " << rank+1
-	   << " starting trial " << trial_ctr << " of "
-	   << trials_to_do << endl;
+      ostreams.slug_out << " starting trial " << trial_ctr << " of "
+			<< trials_to_do << endl;
 #else
-      cout << "slug: starting trial " << trial_ctr << " of "
-	   << trials_to_do << endl;
+      ostreams.slug_out << "starting trial " << trial_ctr << " of "
+			<< trials_to_do << endl;
 #endif
 
     // Check for variable segments
@@ -761,16 +726,9 @@ void slug_sim::galaxy_sim() {
 	(!pp.get_writeClusterYield());
 
       // If sufficiently verbose, print status
-      if (pp.get_verbosity() > 1) {
-#ifdef ENABLE_MPI
-	cout << "  process " << rank+1
-	     << ": trial " << trial_ctr << ", advance to time " 
-	     << outTimes[j] << endl;
-#else
-	cout << "  trial " << trial_ctr << ", advance to time " 
-	     << outTimes[j] << endl;
-#endif
-      }
+      if (pp.get_verbosity() > 1)
+	ostreams.slug_out << "  trial " << trial_ctr << ", advance to time " 
+			  << outTimes[j] << std::endl;
       
       // Advance to next time
       galaxy->advance(outTimes[j]);
@@ -891,14 +849,9 @@ void slug_sim::galaxy_sim() {
   
   // Close last output file
   if ((pp.get_verbosity() > 0) && (trial_ctr_loc - trial_ctr_last > 0) &&
-      (checkpoint_ctr > 0)) {
-#ifdef ENABLE_MPI
-    cout << "slug: process " << rank+1
-	 << " finalizing checkpoint " << checkpoint_ctr << endl;
-#else
-    cout << "slug: finalizing checkpoint " << checkpoint_ctr << endl;
-#endif
-  }
+      (checkpoint_ctr > 0))
+    ostreams.slug_out << "finalizing checkpoint "
+		      << checkpoint_ctr << std::endl;
   close_output(outfiles, checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
   
   // Free MPI window
@@ -990,14 +943,9 @@ void slug_sim::cluster_sim() {
     if (open_new_output) {
       // Write status message
       if (pp.get_verbosity() > 0 && checkpoint_ctr > 0 &&
-	  trial_ctr_loc != 1) {
-#ifdef ENABLE_MPI
-	cout << "slug: process " << rank+1
-	     << " finalizing checkpoint " << checkpoint_ctr << endl;
-#else
-	cout << "slug: finalizing checkpoint " << checkpoint_ctr << endl;
-#endif
-      }
+	  trial_ctr_loc != 1)
+	ostreams.slug_out << "finalizing checkpoint "
+			  << checkpoint_ctr << std::endl;
       // Close old output if it is open
       if (outfiles.is_open) {
 	close_output(outfiles, checkpoint_ctr-1,
@@ -1014,16 +962,9 @@ void slug_sim::cluster_sim() {
     }
 	
     // If sufficiently verbose, print status
-    if (pp.get_verbosity() > 0) {
-#ifdef ENABLE_MPI
-      cout << "slug: process " << rank+1
-	   << " starting trial " << trial_ctr << " of "
-	   << trials_to_do << endl;
-#else
-      cout << "slug: starting trial " << trial_ctr << " of "
-	   << trials_to_do << endl;
-#endif
-    }
+    if (pp.get_verbosity() > 0)
+      ostreams.slug_out << "starting trial " << trial_ctr << " of "
+			<< trials_to_do << std::endl;
     
     // If the output time is randomly changing, draw a new output time
     // for this trial
@@ -1048,7 +989,7 @@ void slug_sim::cluster_sim() {
       delete cluster;
       cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
 				 tracks, specsyn, filters,
-				 extinct, nebular, yields, clf);
+				 extinct, nebular, yields, ostreams, clf);
     } else {
       cluster->reset();
     }
@@ -1075,32 +1016,19 @@ void slug_sim::cluster_sim() {
     for (unsigned int j=0; j<outTimes.size(); j++) {
 
       // If sufficiently verbose, print status
-      if (pp.get_verbosity() > 1) {
-#ifdef ENABLE_MPI
-	cout << "  process " << rank+1
-	     << ": trial " << trial_ctr << ", advance to time " 
-	     << outTimes[j] << endl;
-#else
-	cout << "  trial " << trial_ctr << ", advance to time " 
-	     << outTimes[j] << endl;
-#endif
-      }
+      if (pp.get_verbosity() > 1)
+	ostreams.slug_out << "  trial " << trial_ctr
+			  << ", advance to time " 
+			  << outTimes[j] << std::endl;
       
       // Advance to next time
       cluster->advance(outTimes[j]);
 
       // See if cluster has disrupted; if so, terminate this iteration
       if (cluster->disrupted()) {
-	if (pp.get_verbosity() > 1) {
-#ifdef ENABLE_MPI
-	  cout << "  rank " << rank+1
-	       << ": cluster disrupted, terminating trial"
-	       << endl;
-#else
-	  cout << "  cluster disrupted, terminating trial"
-	       << endl;
-#endif
-	}
+	if (pp.get_verbosity() > 1)
+	  ostreams.slug_out << "  cluster disrupted, terminating trial"
+			    << std::endl;
 	break;
       }
 
@@ -1166,14 +1094,9 @@ void slug_sim::cluster_sim() {
 
   // Close last output file
   if ((pp.get_verbosity() > 0) && (trial_ctr_loc - trial_ctr_last > 0) &&
-      (checkpoint_ctr > 0)) {
-#ifdef ENABLE_MPI
-    cout << "slug: process " << rank+1
-	 << " finalizing checkpoint " << checkpoint_ctr << endl;
-#else
-    cout << "slug: finalizing checkpoint " << checkpoint_ctr << endl;
-#endif
-  }
+      (checkpoint_ctr > 0))
+    ostreams.slug_out << "finalizing checkpoint "
+		      << checkpoint_ctr << std::endl;
   close_output(outfiles, checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
 
   // Free MPI window
@@ -1229,9 +1152,10 @@ void slug_sim::open_integrated_prop(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open integrated properties file "
-	   << full_path.string()
-	   << "; cfitsio says: " << err_txt << endl;
+      ostreams.slug_err
+	<< "unable to open integrated properties file "
+	<< full_path.string()
+	<< "; cfitsio says: " << err_txt << endl;
       exit(1);
     }
   }
@@ -1242,8 +1166,8 @@ void slug_sim::open_integrated_prop(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.int_prop_file.is_open()) {
-      cerr << "slug error: unable to open intergrated properties file " 
-	   << full_path.string() << endl;
+      ostreams.slug_err << "unable to open intergrated properties file " 
+			<< full_path.string() << endl;
       exit(1);
     }
 #ifdef ENABLE_FITS
@@ -1422,10 +1346,11 @@ void slug_sim::open_cluster_prop(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open cluster properties file "
-	   << full_path.string()
-	   << "; cfitsio says: " << err_txt << endl;
-      exit(1);
+      ostreams.slug_err
+	<< "unable to open cluster properties file "
+	<< full_path.string()
+	<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
     }
   }
 #endif
@@ -1435,9 +1360,9 @@ void slug_sim::open_cluster_prop(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.cluster_prop_file.is_open()) {
-      cerr << "slug error: unable to open cluster properties file " 
-	   << full_path.string() << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open cluster properties file " 
+			<< full_path.string() << endl;
+      bailout(1);
     }
 #ifdef ENABLE_FITS
   }
@@ -1689,10 +1614,10 @@ void slug_sim::open_integrated_spec(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open integrated spectrum file "
-	   << full_path.string()
-	   << "; cfitsio says: " << err_txt << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open integrated spectrum file "
+			<< full_path.string()
+			<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
     }
   }
 #endif
@@ -1702,9 +1627,9 @@ void slug_sim::open_integrated_spec(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.int_spec_file.is_open()) {
-      cerr << "slug error: unable to open intergrated spectrum file " 
-	   << full_path.string() << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open intergrated spectrum file " 
+			<< full_path.string() << endl;
+      bailout(1);
     }
 #ifdef ENABLE_FITS
   }
@@ -1959,10 +1884,10 @@ void slug_sim::open_cluster_spec(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open cluster spectrum file "
-	   << full_path.string()
-	   << "; cfitsio says: " << err_txt << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open cluster spectrum file "
+			<< full_path.string()
+			<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
     }
   }
 #endif
@@ -1972,9 +1897,9 @@ void slug_sim::open_cluster_spec(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.cluster_spec_file.is_open()) {
-      cerr << "slug error: unable to open cluster spectrum file " 
-	   << full_path.string() << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open cluster spectrum file " 
+			<< full_path.string() << endl;
+      bailout(1);
     }
 #ifdef ENABLE_FITS
   }
@@ -2232,10 +2157,10 @@ void slug_sim::open_integrated_phot(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open integrated photometry file "
-	   << full_path.string()
-	   << "; cfitsio says: " << err_txt << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open integrated photometry file "
+			<< full_path.string()
+			<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
     }
   }
 #endif
@@ -2245,9 +2170,9 @@ void slug_sim::open_integrated_phot(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.int_phot_file.is_open()) {
-      cerr << "slug error: unable to open intergrated photometry file " 
-	   << full_path.string() << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open intergrated photometry file " 
+			<< full_path.string() << endl;
+      bailout(1);
     }
 #ifdef ENABLE_FITS
   }
@@ -2443,10 +2368,10 @@ void slug_sim::open_cluster_phot(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open cluster photometry file "
-	   << full_path.string()
-	   << "; cfitsio says: " << err_txt << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open cluster photometry file "
+			<< full_path.string()
+			<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
     }
   }
 #endif
@@ -2456,9 +2381,9 @@ void slug_sim::open_cluster_phot(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.cluster_phot_file.is_open()) {
-      cerr << "slug error: unable to open cluster photometry file " 
-	   << full_path.string() << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open cluster photometry file " 
+			<< full_path.string() << endl;
+      bailout(1);
     }
 #ifdef ENABLE_FITS
   }
@@ -2658,10 +2583,10 @@ void slug_sim::open_integrated_yield(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open integrated yield file "
-     << full_path.string()
-     << "; cfitsio says: " << err_txt << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open integrated yield file "
+			<< full_path.string()
+			<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
     }
   }
 #endif
@@ -2671,9 +2596,9 @@ void slug_sim::open_integrated_yield(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.int_yield_file.is_open()) {
-      cerr << "slug error: unable to open integrated yield file " 
-	   << full_path.string() << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open integrated yield file " 
+			<< full_path.string() << endl;
+      bailout(1);
     }
 #ifdef ENABLE_FITS
   }
@@ -2860,10 +2785,10 @@ void slug_sim::open_cluster_yield(slug_output_files &outfiles,
     if (fits_status) {
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
-      cerr << "slug error: unable to open integrated yield file "
-     << full_path.string()
-     << "; cfitsio says: " << err_txt << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open integrated yield file "
+			<< full_path.string()
+			<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
     }
   }
 #endif
@@ -2873,9 +2798,9 @@ void slug_sim::open_cluster_yield(slug_output_files &outfiles,
   if (out_mode != FITS) {
 #endif
     if (!outfiles.cluster_yield_file.is_open()) {
-      cerr << "slug error: unable to open cluster yield file " 
-     << full_path.string() << endl;
-      exit(1);
+      ostreams.slug_err << "unable to open cluster yield file " 
+			<< full_path.string() << endl;
+      bailout(1);
     }
 #ifdef ENABLE_FITS
   }

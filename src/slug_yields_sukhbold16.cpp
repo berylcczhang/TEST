@@ -57,19 +57,17 @@ namespace yields {
 ////////////////////////////////////////////////////////////////////////
 slug_yields_sukhbold16::
 slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
-		       bool no_decay_) :
-  slug_yields_snii(metallicity_, no_decay_) {
+		       slug_ostreams &ostreams_, bool no_decay_) :
+  slug_yields_snii(metallicity_, ostreams_, no_decay_) {
 
   // Issue warning if metallicity is not Solar
   if (metallicity_ != 1.0) {
-#ifdef ENABLE_MPI
-    if (rank == 0)
-#endif
-      cerr << "slug: warning: Solar-normalized metallicity is "
-	   << metallicity_
-	   << ", but SN type II yield model is sukhbold16, which was "
-	   << "computed for Z = Zsun. Computation will continue."
-	   << endl;
+    ostreams.slug_warn_one
+      << "Solar-normalized metallicity is "
+      << metallicity_
+      << ", but SN type II yield model is sukhbold16, which was "
+      << "computed for Z = Zsun. Computation will continue."
+      << endl;
   }
   
   // Read filenames from directory. Assumes all filenames have the format
@@ -100,16 +98,10 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
   // Save number of masses and mass list
   nmass = yield_files.size();
   if (nmass == 0) {
-#ifdef ENABLE_MPI
-    cerr << "slug rank " << rank
-	 << ": error: unable to find any .yield_table files in "
-	 << yield_dir << endl;
-    MPI_Finalize();
-#else
-    cerr << "slug: error: unable to find any .yield_table files in "
-	 << yield_dir << endl;
-#endif
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to find any .yield_table files in "
+      << yield_dir << endl;
+    bailout(1);
   }
   mass.resize(nmass);
   for (vector<double>::size_type i=0; i<nmass; i++) 
@@ -135,16 +127,9 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
     yf_stream.open(yield_path.c_str());
     if (!yf_stream.is_open()) {
       // Couldn't open file, so bail out
-#ifdef ENABLE_MPI
-      cerr << "slug rank " << rank
-	   << ": error: unable to open yield file " 
-	         << yield_path.string() << endl;
-      MPI_Finalize();
-#else
-      cerr << "slug: error: unable to open yield file " 
-	         << yield_path.string() << endl;
-#endif
-      exit(1);
+     ostreams.slug_err_one << "unable to open yield file " 
+			   << yield_path.string() << endl;
+     bailout(1);
     }
 
     // Toss out header line
@@ -194,13 +179,11 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
 	  }
 	}
 	if (j==atomic_data::unstable_isotopes.size()) {
-#ifdef ENABLE_MPI
-	  if (rank == 0)
-#endif
-	    cerr << "slug: warning: unknown half life for isotope "
-		 << isoname << isowgt 
-		 << "; calculation will not include decay "
-		 << "for this isotope"<< endl;
+	  ostreams.slug_warn_one
+	    << "unknown half life for isotope "
+	    << isoname << isowgt 
+	    << "; calculation will not include decay "
+	    << "for this isotope"<< endl;
 	}
       }
 
@@ -256,16 +239,10 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
     yf_stream.open(yield_path.c_str());
     if (!yf_stream.is_open()) {
       // Couldn't open file, so bail out
-#ifdef ENABLE_MPI
-      cerr << "slug rank " << rank
-	   << ": error: unable to open yield file " 
-	   << yield_path.string() << endl;
-      MPI_Finalize();
-#else
-      cerr << "slug: error: unable to open yield file " 
-	   << yield_path.string() << endl;
-#endif
-      exit(1);
+      ostreams.slug_err_one
+	<< "unable to open yield file " 
+	<< yield_path.string() << endl;
+      bailout(1);
     }
 
     // Read header line
@@ -279,15 +256,10 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
     if (tokens.size() == 2) has_sn = false;
     else if (tokens.size() == 3) has_sn = true;
     else {
-#ifdef ENABLE_MPI
-      if (rank == 0)
-#endif
-	cerr << "slug: error: badly formated yield file for sukhbold16 yields: "
-	     << yield_path.string() << endl;
-#ifdef ENABLE_MPI
-      MPI_Finalize();
-#endif
-      exit(1);
+      ostreams.slug_err_one
+	<< "badly formated yield file for sukhbold16 yields: "
+	<< yield_path.string() << endl;
+      bailout(1);
     }
 
     // Record sn mass range if needed

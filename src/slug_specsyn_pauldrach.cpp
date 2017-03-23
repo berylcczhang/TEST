@@ -24,6 +24,7 @@ namespace std
 #include "constants.H"
 #include "int_tabulated.H"
 #include "slug_specsyn_pauldrach.H"
+#include "slug_MPI.H"
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -58,8 +59,9 @@ namespace pauldrach {
 slug_specsyn_pauldrach::
 slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks, 
 		       const slug_PDF *my_imf, const slug_PDF *my_sfh,
-		       const double z_in, const bool check_data_in) :
-  slug_specsyn(my_tracks, my_imf, my_sfh, z_in),
+		       slug_ostreams& ostreams_, const double z_in,
+		       const bool check_data_in) :
+  slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in),
   logT_mod(11), logT_break(10), check_data(check_data_in)
 {
 
@@ -80,11 +82,12 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
 
   // Print warning if this is a big extrapolation in metallicity
   if (zdiff > 0.1) {
-    cerr << "Warning: stellar track metallicity is [Z/H] = "
-	 << log10(my_tracks->get_metallicity())
-	 << ", closest Pauldrach atmosphere metallicity available is [Z/H] = "
-	 << log10(zrel[idx])
-	 << "; calculation will proceed" << endl;
+    ostreams.slug_warn_one
+      << "stellar track metallicity is [Z/H] = "
+      << log10(my_tracks->get_metallicity())
+      << ", closest Pauldrach atmosphere metallicity available is [Z/H] = "
+      << log10(zrel[idx])
+      << "; calculation will proceed" << endl;
   }
 
   // Construct the file name and try to open the file
@@ -95,9 +98,10 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
   atmos_file.open(atmos_path.c_str());
   if (!atmos_file.is_open()) {
     // Couldn't open file, so bail out
-    cerr << "slug: error: unable to open atmosphere file " 
-	 << atmos_path.string() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open atmosphere file " 
+      << atmos_path.string() << endl;
+    bailout(1);
   }
 
   // Save file name
@@ -173,9 +177,11 @@ slug_specsyn_pauldrach(const char *dirname, const slug_tracks *my_tracks,
   // If using data range checking, set up the Kurucz and Planck
   // synthesizers to fall back on
   if (check_data) {
-    kurucz = new slug_specsyn_kurucz(dirname, tracks, imf, sfh, z, 
+    kurucz = new slug_specsyn_kurucz(dirname, tracks, imf, sfh,
+				     ostreams, z, 
 				     false);
-    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh,
+				     ostreams, z);
   } else {
     kurucz = NULL;
     planck = NULL;
@@ -202,12 +208,13 @@ slug_specsyn_pauldrach::~slug_specsyn_pauldrach() {
 void
 slug_specsyn_pauldrach::set_check_data(bool val) {
   if ((planck == NULL) && (val == true)) 
-    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh, z);
+    planck = new slug_specsyn_planck(lambda_obs, tracks, imf, sfh,
+				     ostreams, z);
   if ((kurucz == NULL) && (val == true)) {
     path filename(file_name);
     path dirname = filename.parent_path();
     kurucz = new slug_specsyn_kurucz(dirname.string().c_str(), 
-				     tracks, imf, sfh, z, false);
+				     tracks, imf, sfh, ostreams, z, false);
   }
   check_data = val;
 }

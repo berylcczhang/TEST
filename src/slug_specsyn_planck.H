@@ -38,17 +38,22 @@ public:
   // rest or observed frame wavelength. Default is observed.
   slug_specsyn_planck(const slug_tracks *my_tracks, 
 		      const slug_PDF *my_imf,
-		      const slug_PDF *my_sfh, const double z_in = 0);
+		      const slug_PDF *my_sfh,
+		      slug_ostreams& ostreams_,
+		      const double z_in = 0);
   slug_specsyn_planck(const double lambda_min, const double lambda_max, 
 		      const unsigned int nlambda, 
 		      const slug_tracks *my_tracks,
 		      const slug_PDF *my_imf, const slug_PDF *my_sfh,
+		      slug_ostreams& ostreams_,
 		      const double z_in = 0,
 		      const bool rest = false);
   slug_specsyn_planck(const std::vector<double>& labmda_in, 
 		      const slug_tracks *my_tracks, 
 		      const slug_PDF *my_imf,
-		      const slug_PDF *my_sfh, const double z_in = 0,
+		      const slug_PDF *my_sfh,
+		      slug_ostreams& ostreams_,
+		      const double z_in = 0,
 		      const bool rest = false);
 
   // The destructor; this is a no-op, since the member vector will

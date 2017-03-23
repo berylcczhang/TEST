@@ -43,6 +43,7 @@ public:
 			 const slug_tracks *my_tracks, 
 			 const slug_PDF *my_imf,
 			 const slug_PDF *my_sfh,
+			 slug_ostreams& ostreams_,
 			 const double z_in = 0.0, 
 			 const bool check_data_in = true);
 

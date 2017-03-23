@@ -15,19 +15,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
 #include "slug_PDF_delta.H"
+#include "slug_MPI.H"
 #include <cassert>
 
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_delta::
-slug_PDF_delta(double segMin_, double segMax_, rng_type* rng_) :
-  slug_PDF_segment(segMin_, segMax_, rng_) {
+slug_PDF_delta(double segMin_, double segMax_, rng_type* rng_,
+	       slug_ostreams& ostreams_) :
+  slug_PDF_segment(segMin_, segMax_, rng_, ostreams_) {
   if (segMin != segMax) {
-    std::cerr << 
-      "slug error: delta function segments must have min == max!"
-	       << std::endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "delta function segments must have min == max!"
+      << std::endl;
+    bailout(1);
   }
 }
 
@@ -40,10 +42,10 @@ void
 slug_PDF_delta::initialize(const std::vector<double>& tokenVals) {
   assert(tokenVals.size() == 0);
   if (segMin != segMax) {
-    std::cerr << 
-      "slug error: delta function segments must have min == max!"
-	       << std::endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "delta function segments must have min == max!"
+      << std::endl;
+    bailout(1);
   }
 }
 
@@ -82,19 +84,19 @@ slug_PDF_delta::draw(double a, double b) {
 double
 slug_PDF_delta::operator() (double x) {
   (void) x; // No-op to suppress compiler warning
-  std::cerr << "slug error: cannot evaluate delta(x)!" << std::endl;
-  exit(1);
+  ostreams.slug_err_one << "cannot evaluate delta(x)!" << std::endl;
+  bailout(1);
 }
 
 double
 slug_PDF_delta::sMinVal() {
-  std::cerr << "slug error: cannot evaluate delta(x)!" << std::endl;
-  exit(1);
+  ostreams.slug_err_one << "cannot evaluate delta(x)!" << std::endl;
+  bailout(1);
 }
 
 double
 slug_PDF_delta::sMaxVal() {
-  std::cerr << "slug error: cannot evaluate delta(x)!" << std::endl;
-  exit(1);
+  ostreams.slug_err_one << "cannot evaluate delta(x)!" << std::endl;
+  bailout(1);
 }
 

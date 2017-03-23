@@ -29,7 +29,7 @@ namespace std
 #include <boost/lexical_cast.hpp>
 #include "constants.H"
 #include "slug_parmParser.H"
-#include "slug_MPI.H"
+#include "slug_IO.H"
 #ifdef ENABLE_FITS
 extern "C" {
 #include "fitsio.h"
@@ -45,34 +45,27 @@ using namespace boost::filesystem;
 // The constructor
 ////////////////////////////////////////////////////////////////////////
 
-slug_parmParser::slug_parmParser(int argc, char **argv
+slug_parmParser::slug_parmParser(int argc, char **argv,
+				 slug_ostreams &ostreams_
 #ifdef ENABLE_MPI
-				 MPI_Comm comm_
+				 , MPI_Comm comm_
 #endif
-				 )
+				 ) :
+  ostreams(ostreams_)
 #ifdef ENABLE_MPI
-  : comm(comm_)
+  , comm(comm_)
 #endif
 {
-
-  // If running in MPI mode, record our rank
 #ifdef ENABLE_MPI
+  // Get rank if working in MPI mode
   if (comm != MPI_COMM_NULL) MPI_Comm_rank(comm, &rank);
-  else rank = 0;
 #endif
-  
+
   // First make sure we have the right number of arguments; if not,
   // print error and exit with error
   if (argc == 1 || argc > 3) {
-#ifdef ENABLE_MPI
-    if (rank == 0) {
-#endif
-      cerr << "slug: error: expected 1 or 2 arguments" << endl;
-      printUsage();
-#ifdef ENABLE_MPI
-    }
-    MPI_Finalize();
-#endif
+    ostreams.slug_err_one << "expected 1 or 2 arguments" << std::endl;
+    printUsage();
     exit(1);
   }
 
@@ -85,14 +78,7 @@ slug_parmParser::slug_parmParser(int argc, char **argv
   // normally
   if (!arg1.compare("-h") || !arg1.compare("--help") ||
       !arg2.compare("-h") || !arg2.compare("--help")) {
-#ifdef ENABLE_MPI
-    if (rank == 0) {
-#endif
-      printUsage();
-#ifdef ENABLE_MPI
-    }
-    MPI_Finalize();
-#endif
+    printUsage();
     exit(0);
   }
 
@@ -115,15 +101,9 @@ slug_parmParser::slug_parmParser(int argc, char **argv
     } else if (!arg2.compare("-r") || !arg2.compare("--restart")) {
       paramFileName = arg1;
     } else {
-#ifdef ENABLE_MPI
-      if (rank == 0) {
-#endif
-	cerr << "slug: error: unable to parse command line" << endl;
-	printUsage();
-#ifdef ENABLE_MPI
-      }
-      MPI_Finalize();
-#endif
+      ostreams.slug_err_one
+	<< "unable to parse command line" << std::endl;
+      printUsage();
       exit(1);
     }
   }
@@ -136,15 +116,8 @@ slug_parmParser::slug_parmParser(int argc, char **argv
   std::ifstream paramFile;
   paramFile.open(paramFileName.c_str(), ios::in);
   if (!paramFile.is_open()) {
-#ifdef ENABLE_MPI
-    cerr << "slug rank " << rank
-	 << ": error: unable to open file " 
-	 << paramFileName << endl;
-    MPI_Finalize();
-#else
-    cerr << "slug: error: unable to open file " 
-	 << paramFileName << endl;
-#endif
+    ostreams.slug_err_one << "unable to open file " 
+			  << paramFileName << endl;
     exit(1);
   }
 
@@ -177,9 +150,10 @@ slug_parmParser::~slug_parmParser() { }
 
 void
 slug_parmParser::printUsage() {
-  cerr << "Usage: slug slug.param" << endl;
-  cerr << "       slug [-r or --restart] slug.param" << endl;
-  cerr << "       slug [-h or --help]" << endl;
+  ostreams.slug_out_one << "Usage: slug slug.param" << std::endl;
+  ostreams.slug_out_one << "       slug [-r or --restart] slug.param"
+			<< std::endl;
+  ostreams.slug_out_one << "       slug [-h or --help]" << std::endl;
 }
 
 
@@ -312,9 +286,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	else if (tokens[1].compare("galaxy") == 0)
 	  run_galaxy_sim = true;
 	else {
-	  cerr << "slug error: unknown sim_type: " << endl
-	       << line << endl;
-	  exit(1);
+	  ostreams.slug_err_one << "unknown sim_type: " << line << std::endl;
+	  bailout(1);
 	}
       } else if (!(tokens[0].compare("n_trials"))) {
 	nTrials = lexical_cast<unsigned int>(tokens[1]);
@@ -462,9 +435,9 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  out_mode = FITS;
 #endif
 	else {
-	  cerr << "slug error: unknown output_mode: " << endl
-	       << line << endl;
-	  exit(1);
+	  ostreams.slug_err_one << "unknown output_mode: "
+				<< line << std::endl;
+	  bailout(1);
 	}
       } else if (!(tokens[0].compare("specsyn_mode"))) {
 	to_lower(tokens[1]);
@@ -479,9 +452,9 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	else if (tokens[1].compare("sb99") == 0)
 	  specsyn_mode = SB99;
 	else {
-	  cerr << "slug error: unknown output_mode: " << endl
-	       << line << endl;
-	  exit(1);
+	  ostreams.slug_err_one << "unknown output_mode: "
+				<< line << std::endl;
+	  bailout(1);
 	}
       } else if (!(tokens[0].compare("phot_mode"))) {
 	to_lower(tokens[1]);
@@ -496,9 +469,9 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	else if (tokens[1].compare("vega") == 0)
 	  phot_mode = VEGA;
 	else {
-	  cerr << "slug error: unknown output_mode: " << endl
-	       << line << endl;
-	  exit(1);
+	  ostreams.slug_err_one << "unknown output_mode: "
+				<< line << std::endl;
+	  bailout(1);
 	}
       } else if (!(tokens[0].compare("yield_mode"))) {
 	to_lower(tokens[1]);
@@ -509,9 +482,9 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	else if (tokens[1].compare("sukhbold16+karakas16") == 0)
 	  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16;
 	else {
-	  cerr << "slug error: unknown yield_mode: " << endl
-	       << line << endl;
-	  exit(1);
+	  ostreams.slug_err_one << "unknown yield_mode: "
+				<< line << std::endl;
+	  bailout(1);
 	}
       } else if (!(tokens[0].compare("output_times"))) {
 
@@ -570,10 +543,11 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 
       } else {
 	// Unknown token
-	cerr << "slug error: unknown parameter " << tokens[0]
-	     << " on line: " << endl
-	     << line << endl;
-	exit(1);
+	ostreams.slug_err_one << "unknown parameter "
+			      << tokens[0]
+			      << " on line: "
+			      << line << std::endl;
+	bailout(1);
       }
     } catch (const bad_lexical_cast& ia) {
       // If we're here, a type conversion failed
@@ -597,42 +571,17 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 [[noreturn]]
 void
 slug_parmParser::parseError(string line) {
-#ifdef ENABLE_MPI
-  if (rank == 0) {
-#endif
-    cerr << "slug: error: unable to parse line:" << endl;
-    cerr << line << endl;
-#ifdef ENABLE_MPI
-  }
-  MPI_Finalize();
-#endif
-  exit(1);
+  ostreams.slug_err_one << "unable to parse line: "
+			<< line << std::endl;
+  bailout(1);
 }
 
 [[noreturn]]
 void
 slug_parmParser::valueError(string line) {
-#ifdef ENABLE_MPI
-  if (rank == 0) {
-#endif
-    cerr << "slug: error: bad parameter value:"
-	 << line << endl;
-#ifdef ENABLE_MPI
-  }
-  MPI_Finalize();
-#endif
+  ostreams.slug_err_one << "bad parameter value: "
+			<< line << std::endl;
   exit(1);
-}
-
-void
-slug_parmParser::valueWarning(string line) {
-#ifdef ENABLE_MPI
-  if (rank == 0) {
-#endif
-    cerr << "slug: warning: " << line << endl;
-#ifdef ENABLE_MPI
-  }
-#endif
 }
 
 
@@ -713,7 +662,7 @@ slug_parmParser::checkParams() {
     vector<double>::size_type i = *rit;
     ostringstream ss;
     ss << "ignoring duplicate photometric band " << photBand[i];
-    valueWarning(ss.str());
+    ostreams.slug_warn_one << ss.str() << std::endl;
     photBand.erase(photBand.begin() + i);
   }
 
@@ -945,14 +894,10 @@ void slug_parmParser::restartSetup() {
 
   // Print if verbose
   if (verbosity > 0) {
-#ifdef ENABLE_MPI
-    cout << "slug: processor " << rank
-#else
-      cout << "slug"
-#endif
-	 << ": found " << checkpointCtr << " checkpoint "
-	 << "files containing " << checkpointTrials << " trials"
-	 << endl;
+    ostreams.slug_out_one
+      << "found " << checkpointCtr << " checkpoint "
+      << "files containing " << checkpointTrials << " trials"
+      << std::endl;
   }
 }
 
@@ -963,6 +908,10 @@ void slug_parmParser::restartSetup() {
 void
 slug_parmParser::writeParams() const {
 
+#ifdef ENABLE_MPI
+  if (rank != 0) return;
+#endif
+
   // Form output file name
   string fname(model + "_summary.txt");
   path full_path(outDir);
@@ -972,9 +921,10 @@ slug_parmParser::writeParams() const {
   std::ofstream paramFile;
   paramFile.open(full_path.c_str(), ios::out);
   if (!paramFile.is_open()) {
-    cerr << "slug error: unable to open parameter summmary file " 
-	 << full_path.string() << endl;
-    exit(1);
+    ostreams.slug_err_one
+      << "unable to open parameter summmary file " 
+      << full_path.string() << std::endl;
+    bailout(1);
   }
 
   // Write parameters to file

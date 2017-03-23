@@ -77,7 +77,9 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
 			 const slug_filter_set* filters_,
 			 const slug_extinction* extinct_,
 			 const slug_nebular* nebular_,
-			 const slug_yields* yields_) :
+			 const slug_yields* yields_,
+			 slug_ostreams& ostreams_) :
+  ostreams(ostreams_),
   imf(imf_), 
   cmf(cmf_), 
   clf(clf_),
@@ -88,8 +90,8 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   extinct(extinct_),
   nebular(nebular_),
   yields(yields_),
-  integ(tracks_, imf_, sfh_),
-  v_integ(tracks_, imf_, sfh_)
+  integ(tracks_, imf_, sfh_, ostreams_),
+  v_integ(tracks_, imf_, sfh_, ostreams_)
  {
 
   // Initialize mass and time
@@ -210,7 +212,7 @@ slug_galaxy::advance(double time) {
 	slug_cluster *new_cluster = 
 	  new slug_cluster(cluster_id++, new_cluster_masses[i],
 			   birth_times[i], imf, tracks, specsyn, filters,
-			   extinct, nebular, yields, clf);
+			   extinct, nebular, yields, ostreams, clf);
 	clusters.push_back(new_cluster);
 	mass += new_cluster->get_birth_mass();
 	clusterMass += new_cluster->get_birth_mass();

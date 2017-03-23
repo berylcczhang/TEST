@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef _slug_yields_multiple_H_
 #define _slug_yields_multiple_H_
 
-#include "slug.H"
+#include "slug_IO.H"
 #include "slug_yields.H"
 #include "slug_yields_snii.H"
 #include "slug_yields_agb.H"
@@ -43,6 +43,7 @@ public:
   slug_yields_multiple(const char *yield_dir,
 		       const yieldMode yield_mode,
 		       const double metallicity_,
+		       slug_ostreams &ostreams,
 		       const bool no_decay_ = false);
 
   // Destructor

@@ -29,6 +29,7 @@ namespace std
 #include <boost/bind.hpp>
 #include "constants.H"
 #include "slug_specsyn.H"
+#include "slug_MPI.H"
 
 using namespace std;
 
@@ -58,10 +59,12 @@ static const double *wgk = gkdata::wgk;
 ////////////////////////////////////////////////////////////////////////
 slug_specsyn::slug_specsyn(const slug_tracks *my_tracks, 
 			   const slug_PDF *my_imf,
-			   const slug_PDF *my_sfh, const double z_in) :
-  z(z_in), tracks(my_tracks), imf(my_imf), sfh(my_sfh),
-  integ(my_tracks, my_imf, my_sfh), 
-  v_integ(my_tracks, my_imf, my_sfh)
+			   const slug_PDF *my_sfh,
+			   slug_ostreams& ostreams_,
+			   const double z_in) :
+  ostreams(ostreams_), z(z_in), tracks(my_tracks), imf(my_imf), sfh(my_sfh),
+  integ(my_tracks, my_imf, my_sfh, ostreams_), 
+  v_integ(my_tracks, my_imf, my_sfh, ostreams_)
 { }
 
 
@@ -250,9 +253,10 @@ get_spectrum_cts_sfh(const double t, vector<double>& L_lambda,
       // Update the iteration counter, and check against maximum
       itCounter++;
       if (itCounter > gk_max_iter) {
-	cerr << "Error: non-convergence in non-stochastic "
-	     << "spectral integration for SFH!" << endl;
-	exit(1);
+	ostreams.slug_err_one
+	  << "non-convergence in non-stochastic "
+	  << "spectral integration for SFH!" << endl;
+	bailout(1);
       }
     }
   }
@@ -332,9 +336,10 @@ get_Lbol_cts_sfh(const double t, const double tol) const {
       // Update the iteration counter, and check against maximum
       itCounter++;
       if (itCounter > gk_max_iter) {
-	cerr << "Error: non-convergence in non-stochastic "
-	     << "spectral integration!" << endl;
-	exit(1);
+	ostreams.slug_err_one
+	  << "non-convergence in non-stochastic "
+	  << "spectral integration!" << endl;
+	bailout(1);
       }
     }
   }

@@ -57,10 +57,12 @@ slug_cluster::slug_cluster(const unsigned long id_,
 			   const slug_extinction *extinct_,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
+			   slug_ostreams& ostreams_,
 			   const slug_PDF *clf_) :
+  ostreams(ostreams_),
   targetMass(mass_), imf(imf_), clf(clf_), tracks(tracks_), 
   specsyn(specsyn_), filters(filters_), extinct(extinct_),
-  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr),
+  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr, ostreams_),
   id(id_), formationTime(time), curTime(time), last_yield_time(time)
 {
 
@@ -125,10 +127,12 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
 			   const slug_extinction *extinct_,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
+			   slug_ostreams& ostreams_,
 			   const slug_PDF *clf_) :
+  ostreams(ostreams_),
   targetMass(((double *) buf)[0]), imf(imf_), clf(clf_), tracks(tracks_), 
   specsyn(specsyn_), filters(filters_), extinct(extinct_),
-  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr)
+  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr, ostreams_)
 {
   // Pull out the basic data first
   // Doubles
@@ -230,6 +234,7 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
 ////////////////////////////////////////////////////////////////////////
 slug_cluster::slug_cluster(const slug_cluster &obj,
 			   const unsigned long id_) :
+  ostreams(obj.ostreams),
   targetMass(obj.targetMass), imf(obj.imf), clf(obj.clf),
   tracks(obj.tracks), specsyn(obj.specsyn), filters(obj.filters),
   extinct(obj.extinct), nebular(obj.nebular), yields(obj.yields),
