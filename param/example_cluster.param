@@ -49,7 +49,7 @@ model_name        SLUG_CLUSTER_EXAMPLE
 # -- 1 (some basic output)
 # -- 2 (lots of output)
 # Default: 1
-verbosity        1
+verbosity        2
 
 
 ##################################################################
@@ -66,6 +66,10 @@ sim_type  	  cluster
 # Number of model galaxies to run
 # Default: 1
 n_trials          1000
+
+# Number of trials after which to write a checkpoint
+# Default: no checkpointing
+#checkpoint_interval   100
 
 # Logarithmic time stepping? Allowed values:
 # -- 0 (no)

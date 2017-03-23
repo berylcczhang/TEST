@@ -66,6 +66,10 @@ sim_type  	  galaxy
 # Default: 1
 n_trials          500
 
+# Number of trials after which to write a checkpoint
+# Default: no checkpointing
+#checkpoint_interval   100
+
 # Logarithmic time stepping? Allowed values:
 # -- 0 (no)
 # -- 1 (yes)
@@ -79,10 +83,10 @@ time_step    	  2.0e7
 # Starting time (in yr)
 # Default: start_time = time_step, only if log_time = 0; otherwise
 # must be set
-#start_time        2.0e7
+#start_time        1.0e6
 
 # Maximum evolution time, in yr.
-end_time	  4.0e7
+end_time	  1.0e8
 
 # Star formation rate in case where sim_type = galaxy, in Msun/yr; can
 # be omitted, and will be ignored, if sim_type = cluster. If, instead
@@ -186,7 +190,7 @@ out_integrated_yield  1
 # -- ascii
 # -- fits
 # Default: ascii
-output_mode      fits
+output_mode      binary
 
 
 #####################################################################
