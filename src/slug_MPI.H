@@ -59,6 +59,7 @@ MPI_recv_slug_cluster(int source, int tag, MPI_Comm comm,
 		      const slug_extinction *extinct_,
 		      const slug_nebular *nebular_,
 		      const slug_yields *yields_,
+		      slug_ostreams &ostreams_,
 		      const slug_PDF *clf_=NULL);
 
 // Sender passes in a vector of pointers to slug_cluster, which are
@@ -78,6 +79,7 @@ MPI_recv_slug_cluster_vec(int source, int tag, MPI_Comm comm,
 			  const slug_extinction *extinct_,
 			  const slug_nebular *nebular_,
 			  const slug_yields *yields_,
+			  slug_ostreams &ostreams_,
 			  const slug_PDF *clf_=NULL);
 
 
@@ -102,6 +104,7 @@ MPI_bcast_slug_cluster(slug_cluster *cluster, int root,
 		       const slug_extinction *extinct_,
 		       const slug_nebular *nebular_,
 		       const slug_yields *yields_,
+		       slug_ostreams &ostreams_,
 		       const slug_PDF *clf_=NULL);
 
 // The broadcasting processor passes in a vector of pointers to
@@ -121,6 +124,7 @@ MPI_bcast_slug_cluster_vec(std::vector<slug_cluster *> &clusters,
 			   const slug_extinction *extinct_,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
+			   slug_ostreams &ostreams_,
 			   const slug_PDF *clf_=NULL);
 
 
@@ -166,6 +170,7 @@ MPI_exchange_slug_cluster(const std::vector<slug_cluster *> &clusters,
 			  const slug_extinction *extinct_,
 			  const slug_nebular *nebular_,
 			  const slug_yields *yields_,
+			  slug_ostreams &ostreams_,
 			  const slug_PDF *clf_=NULL);
 
 #endif

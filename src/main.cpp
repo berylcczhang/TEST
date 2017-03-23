@@ -40,22 +40,21 @@ int main(int argc, char *argv[]) {
   // Set up our output handlers; note that we create these with new so
   // that we can explicitly delete them before MPI finalization; this
   // forces communications to complete
-  slug_ostreams *ostreams
-    = new slug_ostreams(
 #ifdef ENABLE_MPI
-			MPI_COMM_WORLD
+  slug_ostreams ostreams(MPI_COMM_WORLD);
+#else
+  slug_ostreams ostreams;
 #endif
-			);
   
   // Parse the parameter file
-  slug_parmParser pp(argc, argv, *ostreams
+  slug_parmParser pp(argc, argv, ostreams
 #ifdef ENABLE_MPI
 		     , MPI_COMM_WORLD
 #endif
 		     );
   
   // Initialize the main simulation driver
-  slug_sim sim(pp, *ostreams
+  slug_sim sim(pp, ostreams
 #ifdef ENABLE_MPI
 	       , MPI_COMM_WORLD
 #endif
@@ -71,10 +70,10 @@ int main(int argc, char *argv[]) {
   else
     sim.cluster_sim();
 
-  // Delete output handlers
-  delete ostreams;
-  
  #ifdef ENABLE_MPI
+  // Force all MPI communication to complete
+  ostreams.flush_communication();
+
   // Finalize MPI
   MPI_Finalize();
 #endif

@@ -136,7 +136,13 @@ public:
                      MPI_Comm comm_ = MPI_COMM_NULL,
                      bool only_one_proc_ = false,
                      int tag_ = 0);
-  ~slug_oprefixstream() { flush_communication(); }
+  ~slug_oprefixstream() {
+    int finalized;
+    MPI_Finalized(&finalized);
+    if (!finalized) flush_communication();
+  }
+  // This routine forces all communications to finish, and blocks
+  // until they do
   void flush_communication();
 private:
   virtual int overflow(int c);
@@ -234,6 +240,17 @@ public:
     delete slug_warn_one_ptr;
 #endif
   }
+
+#ifdef ENABLE_MPI
+  void flush_communication() {
+    static_cast<slug_oprefixstream *>(slug_out_ptr)->flush_communication();
+    static_cast<slug_oprefixstream *>(slug_err_ptr)->flush_communication();
+    static_cast<slug_oprefixstream *>(slug_warn_ptr)->flush_communication();
+    static_cast<slug_oprefixstream *>(slug_out_one_ptr)->flush_communication();
+    static_cast<slug_oprefixstream *>(slug_err_one_ptr)->flush_communication();
+    static_cast<slug_oprefixstream *>(slug_warn_one_ptr)->flush_communication();
+  }
+#endif
 };
 
 #endif
