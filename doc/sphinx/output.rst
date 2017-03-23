@@ -440,4 +440,18 @@ There is one such record for each output time, with different trials
 ordered sequentially, so that all the times for one trial are output
 before the first time for the next trial.
 
+.. _ssec-checkpoint-files:
 
+Checkpoint Files
+----------------
+
+Checkpoint files are identical to regular output files, except that
+they begin with a statement of the number of trials they contain. For
+ASCII files, this is indicated by a first line of the form ``N_Trials =
+N``. For binary files, the file begins with an unsigned integer that
+gives the number of trials. For FITS files, the file has a keyword
+``N_Trials`` in the first binary table HDU that gives the number of
+trials.
+
+The slugpy library can read checkpoint files as well as regular output
+files (see :ref:`sec-slugpy`).

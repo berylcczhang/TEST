@@ -31,7 +31,7 @@
 
 
 \title{slug Documentation}
-\date{Mar 10, 2017}
+\date{Mar 24, 2017}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -384,7 +384,7 @@ In addition, the following are required for some functionality, but not for the 
 The \href{http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html}{cfitsio library} (required for FITS capabilities)
 
 \item {} 
-An implementation of \href{http://mpi-forum.org/}{MPI} (required for MPI support -- see {\hyperref[library:ssec\string-mpi\string-support]{\crossref{\DUrole{std,std-ref}{Support for MPI Parallelism}}}})
+An implementation of \href{http://mpi-forum.org/}{MPI} (required for MPI support)
 
 \end{itemize}
 
@@ -414,7 +414,7 @@ This is only required performing cloudy runs, and is not required for any other 
 
 
 \section{Compiling}
-\label{compiling:compiling}
+\label{compiling:ssec-compiling}\label{compiling:compiling}
 If you have Boost in your \code{CXX\_INCLUDE\_PATH}, GSL in your \code{C\_INCLUDE\_PATH}, and (if you're using it) cfitsio in your \code{C\_INCLUDE\_PATH}, and the compiled libraries for each of these in your \code{LIBRARY\_PATH} environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:
 
 \begin{Verbatim}[commandchars=\\\{\}]
@@ -431,13 +431,19 @@ make debug
 
 instead.
 
+To enable MPI support, do:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+make MPI=ENABLE\PYGZus{}MPI
+\end{Verbatim}
+
 If you are compiling using GSL version 1.x or without cfitsio, you must specify these options when compiling. If you are using version 1.x of the GSL, do:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 make GSLVERSION=1
 \end{Verbatim}
 
-To compile without cfitsio, do:
+To compile without FITS support, do:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 make FITS=DISABLE\PYGZus{}FITS
@@ -518,29 +524,30 @@ This called a python script that automatically divides up the Monte Carlo trials
 
 \section{MPI-Based Parallelism}
 \label{running:mpi-based-parallelism}
-SLUG can also run in parallel on distributed-memory architectures using MPI. To start an MPI-parallel computation, do:
+SLUG can also run in parallel on distributed-memory architectures using MPI. To use MPI, you must first compile the code with MPI support -- see {\hyperref[compiling:ssec\string-compiling]{\crossref{\DUrole{std,std-ref}{Compiling}}}}. Then to start an MPI-parallel computation, do:
 
 \begin{Verbatim}[commandchars=\\\{\}]
-mpirun \PYGZhy{}np 1 python ./bin/slug\PYGZus{}mpi.py param/filename.param
+mpirun \PYGZhy{}np N bin/slug param/filename.param
 \end{Verbatim}
 
-Note that, even if you want to use more than one MPI process (which you probably do), it is important that you call \code{mpirun} (or \code{mpiexec}) with only a single process. In most parallel environments, the \code{slug\_mpi.py} script will automatically launch the correct number of MPI tasks on its own.
+where \titleref{N} is the number of parallel processes to run. In this mode each MPI process will write its own output files, which will be named as \titleref{MODELNAME\_XXXX\_FILETYPE.EXT} where \titleref{MODELNAME} is the model name specified in the parameter file (see {\hyperref[parameters:sec\string-parameters]{\crossref{\DUrole{std,std-ref}{Parameter Specification}}}}), \titleref{XXXX} is the process number of the process that wrote the file, \titleref{FILETYPE} is the type of output file (see {\hyperref[output:sec\string-output]{\crossref{\DUrole{std,std-ref}{Output Files and Format}}}}), and \titleref{EXT} is the extension specifying the file format (see {\hyperref[output:sec\string-output]{\crossref{\DUrole{std,std-ref}{Output Files and Format}}}}).
 
-The script accepts the following command line arguments (not an exhaustive list -- do \code{python ./bin/slug\_mpi.py -{-}help} for the full list):
-\begin{itemize}
-\item {} 
-\code{-n NPROC, -{-}nproc NPROC}: this parameter specifies the number of MPI processes to run. If the parallel script is being run through PBS, Torque, Slurm, or LoadLeveler, this can be determined automatically and need not be set; for other environments it must be specified manually.
+If it is desirable to do so, the output files produced by an MPI run can be combined into a single output file using the \code{consolidate.py} script in the \code{tools} subdirectory.
 
-\item {} 
-\code{-b BATCHSIZE, -{-}batchsize BATCHSIZE}: this specifies how to many trials to do per SLUG process. It defaults to the total number of trials requested divided by the total number of processes, rounded up, so that only one SLUG process is run per processor. \emph{Rationale}: The default behavior is optimal from the standpoint of minimizing the overhead associated with reading data from disk, etc. However, if you are doing a very large number of runs that are going to require hours, days, or weeks to complete, and you probably want the code to checkpoint along the way. In that case it is probably wise to set this to a value smaller than the default in order to force output to be dumped periodically.
 
-\item {} 
-\code{-r, -{-}restart}: indicates that this run is a restart of an earlier run; the script will automatically locate any previous outputs that share the model name being used for this run, count how many trials have been completed, and reduce the number of trials to be run appropriately. \emph{Rationale}: this option is to support runs that are large enough that they cannot be completed entirely within the wall clock time limits on a cluster. This option automates the process of restarting, allowing seamless checkpointing and restarting from checkpoints.
+\section{Checkpointing and Restarting}
+\label{running:checkpointing-and-restarting}
+When running a large number of trials, it is often desirable to checkpoint the calculation, i.e., to write intermediate outputs rather than waiting until the entire calculation is done to write. SLUG can checkpoint after a specified number of trials; this number is controlled by the \titleref{checkpoint\_interval} parameter (see {\hyperref[parameters:sec\string-parameters]{\crossref{\DUrole{std,std-ref}{Parameter Specification}}}}). Checkpoint files are are named as \titleref{MODELNAME\_chkYYYY\_FILETYPE.EXT} (or \titleref{MODELNAME\_XXXX\_chkYYYY\_FILETYPE.EXT} for MPI runs) where \titleref{YYYY} is the number of the checkpoint, starting at 0. Checkpoints are valid output files with some added information -- see {\hyperref[output:ssec\string-checkpoint\string-files]{\crossref{\DUrole{std,std-ref}{Checkpoint Files}}}} for details.
 
-\item {} 
-\code{-nc, -{-}noconsolidate}: by default the \code{slug\_mpi.py} script will take all the outputs produced by the parallel runs and consolidate them into single output files, matching what would have been produced had the code been run in serial mode. If set, this flag suppresses that behavior, and instead leaves the output as a series of files whose root names match the model name given in the parameter file, plus the extension \code{\_NNNNN}, where the the digits \code{NNNNN} indicate the order in which the run was exectued. \emph{Rationale}: normally consolidation is convenient. However, if the output is very large, this may produce undesirably bulky files.
+To restart a run from checkpoints, just give the command line option \titleref{--restart}, for example:
 
-\end{itemize}
+\begin{Verbatim}[commandchars=\\\{\}]
+mpirun \PYGZhy{}np N bin/slug param/filename.param \PYGZhy{}\PYGZhy{}restart
+\end{Verbatim}
+
+SLUG will automatically search for checkpoint files (using the file names specified in \titleref{filename.param}), determine how many trials they contain, and resume the run to complete any remaining trials neede to reach the target number specified in the parameter file.
+
+As with MPI runs, the output checkpoint files run can be combined into a single output file using the \code{consolidate.py} script in the \code{tools} subdirectory.
 
 
 \chapter{Parameter Specification}
@@ -2070,6 +2077,20 @@ This is followed by \code{NCluster} entries of the following form:
 There is one such record for each output time, with different trials
 ordered sequentially, so that all the times for one trial are output
 before the first time for the next trial.
+
+
+\section{Checkpoint Files}
+\label{output:ssec-checkpoint-files}\label{output:checkpoint-files}
+Checkpoint files are identical to regular output files, except that
+they begin with a statement of the number of trials they contain. For
+ASCII files, this is indicated by a first line of the form \code{N\_Trials =
+N}. For binary files, the file begins with an unsigned integer that
+gives the number of trials. For FITS files, the file has a keyword
+\code{N\_Trials} in the first binary table HDU that gives the number of
+trials.
+
+The slugpy library can read checkpoint files as well as regular output
+files (see {\hyperref[slugpy:sec\string-slugpy]{\crossref{\DUrole{std,std-ref}{slugpy -- The Python Helper Library}}}}).
 
 
 \chapter{Filters and Filter Data}

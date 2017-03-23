@@ -73,18 +73,22 @@
 </div>
 <div class="section" id="mpi-based-parallelism">
 <h2>MPI-Based Parallelism<a class="headerlink" href="#mpi-based-parallelism" title="Permalink to this headline">¶</a></h2>
-<p>SLUG can also run in parallel on distributed-memory architectures using MPI. To start an MPI-parallel computation, do:</p>
-<div class="highlight-rest"><div class="highlight"><pre><span></span>mpirun -np 1 python ./bin/slug_mpi.py param/filename.param
+<p>SLUG can also run in parallel on distributed-memory architectures using MPI. To use MPI, you must first compile the code with MPI support &#8211; see <a class="reference internal" href="compiling.html#ssec-compiling"><span class="std std-ref">Compiling</span></a>. Then to start an MPI-parallel computation, do:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>mpirun -np N bin/slug param/filename.param
 </pre></div>
 </div>
-<p>Note that, even if you want to use more than one MPI process (which you probably do), it is important that you call <code class="docutils literal"><span class="pre">mpirun</span></code> (or <code class="docutils literal"><span class="pre">mpiexec</span></code>) with only a single process. In most parallel environments, the <code class="docutils literal"><span class="pre">slug_mpi.py</span></code> script will automatically launch the correct number of MPI tasks on its own.</p>
-<p>The script accepts the following command line arguments (not an exhaustive list &#8211; do <code class="docutils literal"><span class="pre">python</span> <span class="pre">./bin/slug_mpi.py</span> <span class="pre">--help</span></code> for the full list):</p>
-<ul class="simple">
-<li><code class="docutils literal"><span class="pre">-n</span> <span class="pre">NPROC,</span> <span class="pre">--nproc</span> <span class="pre">NPROC</span></code>: this parameter specifies the number of MPI processes to run. If the parallel script is being run through PBS, Torque, Slurm, or LoadLeveler, this can be determined automatically and need not be set; for other environments it must be specified manually.</li>
-<li><code class="docutils literal"><span class="pre">-b</span> <span class="pre">BATCHSIZE,</span> <span class="pre">--batchsize</span> <span class="pre">BATCHSIZE</span></code>: this specifies how to many trials to do per SLUG process. It defaults to the total number of trials requested divided by the total number of processes, rounded up, so that only one SLUG process is run per processor. <em>Rationale</em>: The default behavior is optimal from the standpoint of minimizing the overhead associated with reading data from disk, etc. However, if you are doing a very large number of runs that are going to require hours, days, or weeks to complete, and you probably want the code to checkpoint along the way. In that case it is probably wise to set this to a value smaller than the default in order to force output to be dumped periodically.</li>
-<li><code class="docutils literal"><span class="pre">-r,</span> <span class="pre">--restart</span></code>: indicates that this run is a restart of an earlier run; the script will automatically locate any previous outputs that share the model name being used for this run, count how many trials have been completed, and reduce the number of trials to be run appropriately. <em>Rationale</em>: this option is to support runs that are large enough that they cannot be completed entirely within the wall clock time limits on a cluster. This option automates the process of restarting, allowing seamless checkpointing and restarting from checkpoints.</li>
-<li><code class="docutils literal"><span class="pre">-nc,</span> <span class="pre">--noconsolidate</span></code>: by default the <code class="docutils literal"><span class="pre">slug_mpi.py</span></code> script will take all the outputs produced by the parallel runs and consolidate them into single output files, matching what would have been produced had the code been run in serial mode. If set, this flag suppresses that behavior, and instead leaves the output as a series of files whose root names match the model name given in the parameter file, plus the extension <code class="docutils literal"><span class="pre">_NNNNN</span></code>, where the the digits <code class="docutils literal"><span class="pre">NNNNN</span></code> indicate the order in which the run was exectued. <em>Rationale</em>: normally consolidation is convenient. However, if the output is very large, this may produce undesirably bulky files.</li>
-</ul>
+<p>where <cite>N</cite> is the number of parallel processes to run. In this mode each MPI process will write its own output files, which will be named as <cite>MODELNAME_XXXX_FILETYPE.EXT</cite> where <cite>MODELNAME</cite> is the model name specified in the parameter file (see <a class="reference internal" href="parameters.html#sec-parameters"><span class="std std-ref">Parameter Specification</span></a>), <cite>XXXX</cite> is the process number of the process that wrote the file, <cite>FILETYPE</cite> is the type of output file (see <a class="reference internal" href="output.html#sec-output"><span class="std std-ref">Output Files and Format</span></a>), and <cite>EXT</cite> is the extension specifying the file format (see <a class="reference internal" href="output.html#sec-output"><span class="std std-ref">Output Files and Format</span></a>).</p>
+<p>If it is desirable to do so, the output files produced by an MPI run can be combined into a single output file using the <code class="docutils literal"><span class="pre">consolidate.py</span></code> script in the <code class="docutils literal"><span class="pre">tools</span></code> subdirectory.</p>
+</div>
+<div class="section" id="checkpointing-and-restarting">
+<h2>Checkpointing and Restarting<a class="headerlink" href="#checkpointing-and-restarting" title="Permalink to this headline">¶</a></h2>
+<p>When running a large number of trials, it is often desirable to checkpoint the calculation, i.e., to write intermediate outputs rather than waiting until the entire calculation is done to write. SLUG can checkpoint after a specified number of trials; this number is controlled by the <cite>checkpoint_interval</cite> parameter (see <a class="reference internal" href="parameters.html#sec-parameters"><span class="std std-ref">Parameter Specification</span></a>). Checkpoint files are are named as <cite>MODELNAME_chkYYYY_FILETYPE.EXT</cite> (or <cite>MODELNAME_XXXX_chkYYYY_FILETYPE.EXT</cite> for MPI runs) where <cite>YYYY</cite> is the number of the checkpoint, starting at 0. Checkpoints are valid output files with some added information &#8211; see <a class="reference internal" href="output.html#ssec-checkpoint-files"><span class="std std-ref">Checkpoint Files</span></a> for details.</p>
+<p>To restart a run from checkpoints, just give the command line option <cite>&#8211;restart</cite>, for example:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>mpirun -np N bin/slug param/filename.param --restart
+</pre></div>
+</div>
+<p>SLUG will automatically search for checkpoint files (using the file names specified in <cite>filename.param</cite>), determine how many trials they contain, and resume the run to complete any remaining trials neede to reach the target number specified in the parameter file.</p>
+<p>As with MPI runs, the output checkpoint files run can be combined into a single output file using the <code class="docutils literal"><span class="pre">consolidate.py</span></code> script in the <code class="docutils literal"><span class="pre">tools</span></code> subdirectory.</p>
 </div>
 </div>
 
@@ -100,6 +104,7 @@
 <li><a class="reference internal" href="#basic-serial-runs">Basic Serial Runs</a></li>
 <li><a class="reference internal" href="#thread-based-parallelism">Thread-Based Parallelism</a></li>
 <li><a class="reference internal" href="#mpi-based-parallelism">MPI-Based Parallelism</a></li>
+<li><a class="reference internal" href="#checkpointing-and-restarting">Checkpointing and Restarting</a></li>
 </ul>
 </li>
 </ul>
