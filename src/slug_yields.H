@@ -43,7 +43,7 @@ public:
   slug_yields(const double metallicity_, slug_ostreams &ostreams_,
 	      const bool no_decay_ = false)
     : no_decay(no_decay_), ostreams(ostreams_), metallicity(metallicity_)
-  {};
+  { };
 
   // Destructor
   virtual ~slug_yields() {};

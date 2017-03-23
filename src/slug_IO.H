@@ -180,31 +180,31 @@ public:
 class slug_ostreams {
 
 private:
-  std::ostream *slug_out_ptr, *slug_err_ptr, *slug_warn_ptr;
+  slug_oprefixstream *slug_out_ptr, *slug_err_ptr, *slug_warn_ptr;
 #ifdef ENABLE_MPI
-  std::ostream *slug_out_one_ptr, *slug_err_one_ptr,
+  slug_oprefixstream *slug_out_one_ptr, *slug_err_one_ptr,
     *slug_warn_one_ptr;
 #endif
 
 public:
-  std::ostream &slug_out, &slug_err, &slug_warn,
+  slug_oprefixstream &slug_out, &slug_err, &slug_warn,
     &slug_out_one, &slug_err_one, &slug_warn_one;
 
 #ifdef ENABLE_MPI
   // Constructor version where we provide the MPI communicator
   slug_ostreams(MPI_Comm comm) :
-    slug_out_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: ", std::cout, comm, false, 101))),
-    slug_err_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: error: ", std::cerr, comm, false, 102))),
-    slug_warn_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: warning: ", std::cerr, comm, false, 103))),
-    slug_out_one_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: ", std::cout, comm, true))),
-    slug_err_one_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: error: ", std::cerr, comm, true))),
-    slug_warn_one_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: warning: ", std::cerr, comm, true))),
+    slug_out_ptr(new
+      slug_oprefixstream("slug: ", std::cout, comm, false, 101)),
+    slug_err_ptr(new
+      slug_oprefixstream("slug: error: ", std::cerr, comm, false, 102)),
+    slug_warn_ptr(new
+      slug_oprefixstream("slug: warning: ", std::cerr, comm, false, 103)),
+    slug_out_one_ptr(new
+      slug_oprefixstream("slug: ", std::cout, comm, true)),
+    slug_err_one_ptr(new
+      slug_oprefixstream("slug: error: ", std::cerr, comm, true)),
+    slug_warn_one_ptr(new
+      slug_oprefixstream("slug: warning: ", std::cerr, comm, true)),
     slug_out(*slug_out_ptr),
     slug_err(*slug_err_ptr),
     slug_warn(*slug_warn_ptr),
@@ -216,12 +216,12 @@ public:
   
   // Non-MPI version
   slug_ostreams() :
-    slug_out_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: ", std::cout))),
-    slug_err_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: error: ", std::cerr))),
-    slug_warn_ptr(static_cast<std::ostream *>(new
-      slug_oprefixstream("slug: warning: ", std::cerr))),
+    slug_out_ptr(new
+      slug_oprefixstream("slug: ", std::cout)),
+    slug_err_ptr(new
+      slug_oprefixstream("slug: error: ", std::cerr)),
+    slug_warn_ptr(new
+      slug_oprefixstream("slug: warning: ", std::cerr)),
     slug_out(*slug_out_ptr),
     slug_err(*slug_err_ptr),
     slug_warn(*slug_warn_ptr),
@@ -230,6 +230,10 @@ public:
     slug_warn_one(*slug_warn_ptr)
   { }
 
+  // Explicitly disallow the copy constructor; this object should
+  // only ever be passed by reference
+  slug_ostreams(const slug_ostreams& ostreams_) = delete;
+    
   ~slug_ostreams() {
     delete slug_out_ptr;
     delete slug_err_ptr;
@@ -243,12 +247,12 @@ public:
 
 #ifdef ENABLE_MPI
   void flush_communication() {
-    static_cast<slug_oprefixstream *>(slug_out_ptr)->flush_communication();
-    static_cast<slug_oprefixstream *>(slug_err_ptr)->flush_communication();
-    static_cast<slug_oprefixstream *>(slug_warn_ptr)->flush_communication();
-    static_cast<slug_oprefixstream *>(slug_out_one_ptr)->flush_communication();
-    static_cast<slug_oprefixstream *>(slug_err_one_ptr)->flush_communication();
-    static_cast<slug_oprefixstream *>(slug_warn_one_ptr)->flush_communication();
+    slug_out_ptr->flush_communication();
+    slug_err_ptr->flush_communication();
+    slug_warn_ptr->flush_communication();
+    slug_out_one_ptr->flush_communication();
+    slug_err_one_ptr->flush_communication();
+    slug_warn_one_ptr->flush_communication();
   }
 #endif
 };
