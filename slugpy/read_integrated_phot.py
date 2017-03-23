@@ -6,6 +6,7 @@ import numpy as np
 from collections import namedtuple
 from copy import deepcopy
 import struct
+import re
 from photometry_convert import photometry_convert
 from read_filter import read_filter
 from slug_open import slug_open
@@ -120,6 +121,12 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
                           output_dir=output_dir,
                           fmt=fmt)
 
+    # See if this file is a checkpoint file
+    if len(re.findall('_chk\d\d\d\d', model_name)) != 0:
+        checkpoint = True
+    else:
+        checkpoint = False
+        
     # Print status
     if verbose:
         print("Reading integrated photometry for model "+model_name)
@@ -132,6 +139,12 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         # ASCII mode
         if read_info is not None:
             read_info['format'] = 'ascii'
+
+        # If this is a checkpoint file, skip the line stating how many
+        # trials it contains; this line is not guaranteed to be
+        # accurate, and is intended for the C++ code, not for us
+        if checkpoint:
+            fp.readline()
 
         # Read the list of filters
         line = fp.readline()
@@ -294,6 +307,12 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'binary'
 
+        # If this is a checkpoint, skip the bytes specifying how many
+        # trials we have; this is inteded for the C++ code, not for
+        # us, since we will determine that on our own
+        if checkpoint:
+            data = fp.read(struct.calcsize('i'))
+        
         # Read number of filters
         nfilter = int(fp.readline())
 

@@ -5,6 +5,7 @@ Function to read a SLUG2 cluster_spec file.
 import numpy as np
 from collections import namedtuple
 import struct
+import re
 from slug_open import slug_open
 
 def read_cluster_spec(model_name, output_dir=None, fmt=None, 
@@ -83,6 +84,12 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
                           output_dir=output_dir,
                           fmt=fmt)
 
+    # See if this file is a checkpoint file
+    if len(re.findall('_chk\d\d\d\d', model_name)) != 0:
+        checkpoint = True
+    else:
+        checkpoint = False
+        
     # Print status
     if verbose:
         print("Reading cluster spectra for model "+model_name)
@@ -103,6 +110,12 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'ascii'
 
+        # If this is a checkpoint file, skip the line stating how many
+        # trials it contains; this line is not guaranteed to be
+        # accurate, and is intended for the C++ code, not for us
+        if checkpoint:
+            fp.readline()
+        
         # Read the first header line
         hdr = fp.readline()
 
@@ -233,7 +246,13 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'binary'
 
-        # Read a two characters to see if nebular emission and/or
+        # If this is a checkpoint, skip the bytes specifying how many
+        # trials we have; this is inteded for the C++ code, not for
+        # us, since we will determine that on our own
+        if checkpoint:
+            data = fp.read(struct.calcsize('i'))
+        
+        # Read two characters to see if nebular emission and/or
         # extinction is included in this file or not
         data = fp.read(struct.calcsize('b'))
         nebular = struct.unpack('b', data)[0] != 0

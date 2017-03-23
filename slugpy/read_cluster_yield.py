@@ -5,6 +5,7 @@ Function to read a SLUG2 cluster_yield file.
 import numpy as np
 from collections import namedtuple
 import struct
+import re
 from slug_open import slug_open
 
 def read_cluster_yield(model_name, output_dir=None, fmt=None, 
@@ -60,6 +61,12 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
                           output_dir=output_dir,
                           fmt=fmt)
 
+    # See if this file is a checkpoint file
+    if len(re.findall('_chk\d\d\d\d', model_name)) != 0:
+        checkpoint = True
+    else:
+        checkpoint = False
+        
     # Print status
     if verbose:
         print("Reading cluster yield for model "+model_name)
@@ -73,6 +80,12 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'ascii'
 
+        # If this is a checkpoint file, skip the line stating how many
+        # trials it contains; this line is not guaranteed to be
+        # accurate, and is intended for the C++ code, not for us
+        if checkpoint:
+            fp.readline()
+            
         # Burn 3 header lines
         hdr = fp.readline()
         hdr = fp.readline()
@@ -181,6 +194,12 @@ def read_cluster_yield(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['format'] = 'binary'
 
+        # If this is a checkpoint, skip the bytes specifying how many
+        # trials we have; this is inteded for the C++ code, not for
+        # us, since we will determine that on our own
+        if checkpoint:
+            data = fp.read(struct.calcsize('i'))
+        
         # Read number of isotopes
         niso = struct.unpack('L', fp.read(struct.calcsize('L')))[0]
 
