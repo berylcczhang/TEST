@@ -561,7 +561,7 @@ void slug_sim::galaxy_sim() {
   unsigned long trial_ctr_loc = 0; // Counts trials on this processor
   unsigned long trial_ctr_last = 1; // Trial counter at last write
 #ifdef ENABLE_MPI
-  unsigned long trial_ctr_buf = 0; // Buffer to hold global trial counter
+  unsigned long trial_ctr_buf = trial_ctr; // Buffer to hold global trial counter
   MPI_Win win;
   if (comm != MPI_COMM_NULL) {
     if (rank == 0) {
@@ -880,7 +880,7 @@ void slug_sim::cluster_sim() {
   unsigned long trial_ctr_loc = 0; // Counts trials on this processor
   unsigned long trial_ctr_last = 1; // Trial counter at last write
 #ifdef ENABLE_MPI
-  unsigned long trial_ctr_buf = 0; // Buffer to hold global trial counter
+  unsigned long trial_ctr_buf = trial_ctr; // Buffer to hold global trial counter
   MPI_Win win;
   if (comm != MPI_COMM_NULL) {
     if (rank == 0) {

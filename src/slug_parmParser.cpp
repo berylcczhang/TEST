@@ -735,11 +735,11 @@ void slug_parmParser::restartSetup() {
   if (writeClusterProp)
     outtypes.push_back("_cluster_prop");
   if (writeClusterSpec)
-    outtypes.push_back("_cluster_prop");
+    outtypes.push_back("_cluster_spec");
   if (writeClusterPhot)
-    outtypes.push_back("_cluster_prop");
+    outtypes.push_back("_cluster_phot");
   if (writeClusterYield)
-    outtypes.push_back("_cluster_prop");
+    outtypes.push_back("_cluster_yield");
 
   // Get parallel rank indicator
   string par_str;
@@ -760,7 +760,8 @@ void slug_parmParser::restartSetup() {
 #endif
 
   // Now loop through checkpoints, seeing which ones exist, and
-  // counting the trials they contain
+  // counting the trials they contain; if this is an MPI calculation,
+  // we need to loop over processor numbers
   vector<unsigned int> trials_ctr(outtypes.size());
   while (true) {
 
@@ -892,10 +893,27 @@ void slug_parmParser::restartSetup() {
   }
 #endif
 
+  // If we are in MPI mode, we need to sum the number of completed
+  // trials and files over all processors
+#ifdef ENABLE_MPI
+  unsigned int global_files, global_trials;
+  MPI_Allreduce(&checkpointCtr, &global_files, 1, MPI_UNSIGNED_LONG,
+		MPI_SUM, comm);
+  MPI_Allreduce(&checkpointTrials, &global_trials, 1, MPI_UNSIGNED_LONG,
+		MPI_SUM, comm);
+  checkpointTrials = global_trials;
+#endif
+
   // Print if verbose
   if (verbosity > 0) {
     ostreams.slug_out_one
-      << "found " << checkpointCtr << " checkpoint "
+      << "found "
+#ifdef ENABLE_MPI
+      << global_files
+#else
+      << checkpointCtr
+#endif
+      << " checkpoint "
       << "files containing " << checkpointTrials << " trials"
       << std::endl;
   }
