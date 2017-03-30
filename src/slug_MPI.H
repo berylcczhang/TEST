@@ -32,6 +32,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef ENABLE_MPI
 
+////////////////////////////////////////////////////////////////////////
+// If we are trying to use an old version of MPI that doesn't allow
+// all functionality, emit a compiler warning.
+////////////////////////////////////////////////////////////////////////
+#if (MPI_VERSION == 1) || (MPI_VERSION == 2)
+#   ifndef _MPI_WARNING_PRINTED_
+#      define _MPI_WARNING_PRINTED_
+#      warning "Warning: you appear to be using an older MPI that does not support RMA functionality. SLUG will operate without problems as a library under this MPI version, but parallel functionality of the slug executable will be disabled."
+#   endif
+#endif
+
+
+
 #include <iostream>
 #include <vector>
 #include "mpi.h"

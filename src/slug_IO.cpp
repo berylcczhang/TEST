@@ -258,14 +258,37 @@ int slug_oprefixstream::overflow(int c) {
 
 	// Character is a carriage return; mark this and add to our buffer
 	need_prefix = true;
+
+	// Now we do a little hack; pre-MPI 3.0, the C bindings for
+	// MPI didn't declare the buffer argument to MPI_Isend as
+	// const, even though it was, because you were expected to use
+	// the C++ bindings, where it was declared as const. This was
+	// changed in MPI 3.0, when the C++ bindings were deprecated,
+	// but the net effect is that you have to be careful when
+	// writing code that will function under either MPI
+	// standard. The hack we use to solve this problem is that we
+	// use the C bindings, since these work under any version of
+	// MPI, but rather than using our string's buffer directly as
+	// the argument to the send, which won't work under MPI 2.x
+	// because the .c_str() method to string returns a const
+	// buffer, we explicitly break const'ness by casting a pointer
+	// to the buffer from const to non-const. This is safe,
+	// because the function we then pass it to does in fact
+	// respect const'ness, even if it doesn't say so in the
+	// interface declaration under older versions of the MPI C
+	// bindings... that was a lot of explanation for a one-line
+	// statement...
+	char *outgoing_buf_tmp 
+	  = const_cast<char *>(outgoing_buf.c_str() + outgoing_ptr);
 	
 	// Now start a transfer
+	unsigned int chars_to_transfer = outgoing_buf.size() - outgoing_ptr;
 	req.push_back(MPI_REQUEST_NULL);
-	msg_size.push_back(outgoing_buf.size()-outgoing_ptr);
-	MPI_Isend(outgoing_buf.c_str()+outgoing_ptr,
-		  msg_size.back(), MPI_CHAR, 0, tag,
+	msg_size.push_back(chars_to_transfer);
+	MPI_Isend(outgoing_buf_tmp, chars_to_transfer, MPI_CHAR, 0, tag,
 		  comm, &(req.back()));
 	outgoing_ptr = outgoing_buf.size();
+
       }
       
       // Return 0 so that we don't print anything

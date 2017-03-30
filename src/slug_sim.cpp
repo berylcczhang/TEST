@@ -560,7 +560,7 @@ void slug_sim::galaxy_sim() {
   unsigned long trial_ctr = pp.get_checkpoint_trials();
   unsigned long trial_ctr_loc = 0; // Counts trials on this processor
   unsigned long trial_ctr_last = 1; // Trial counter at last write
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   unsigned long trial_ctr_buf = trial_ctr; // Buffer to hold global trial counter
   MPI_Win win;
   if (comm != MPI_COMM_NULL) {
@@ -586,7 +586,7 @@ void slug_sim::galaxy_sim() {
     // Fetch_and_op returns the value of the buffer before the
     // addition is done, so we still need to increment the trial
     // counter
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
     if (comm != MPI_COMM_NULL) {
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
       unsigned long i=1;
@@ -639,7 +639,7 @@ void slug_sim::galaxy_sim() {
 
     // If sufficiently verbose, print status
     if (pp.get_verbosity() > 0)
- #ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
       ostreams.slug_out << " starting trial " << trial_ctr << " of "
 			<< trials_to_do << endl;
 #else
@@ -856,7 +856,7 @@ void slug_sim::galaxy_sim() {
   close_output(outfiles, checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
   
   // Free MPI window
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) MPI_Win_free(&win);
 #endif
   
@@ -879,7 +879,7 @@ void slug_sim::cluster_sim() {
   unsigned long trial_ctr = pp.get_checkpoint_trials();
   unsigned long trial_ctr_loc = 0; // Counts trials on this processor
   unsigned long trial_ctr_last = 1; // Trial counter at last write
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   unsigned long trial_ctr_buf = trial_ctr; // Buffer to hold global trial counter
   MPI_Win win;
   if (comm != MPI_COMM_NULL) {
@@ -908,7 +908,7 @@ void slug_sim::cluster_sim() {
   while (true) {
 
     // Increment the global trial counter
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
     // Method for MPI: add 1 to the global RMA variable trial_ctr
     if (comm != MPI_COMM_NULL) {
       MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
@@ -1101,7 +1101,7 @@ void slug_sim::cluster_sim() {
   close_output(outfiles, checkpoint_ctr, trial_ctr_loc - trial_ctr_last);
 
   // Free MPI window
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) MPI_Win_free(&win);
 #endif
 
@@ -1120,7 +1120,7 @@ void slug_sim::open_integrated_prop(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
@@ -1314,7 +1314,7 @@ void slug_sim::open_cluster_prop(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
@@ -1582,7 +1582,7 @@ void slug_sim::open_integrated_spec(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
@@ -1852,7 +1852,7 @@ void slug_sim::open_cluster_spec(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
@@ -2125,7 +2125,7 @@ void slug_sim::open_integrated_phot(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
@@ -2336,7 +2336,7 @@ void slug_sim::open_cluster_phot(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
@@ -2551,7 +2551,7 @@ void slug_sim::open_integrated_yield(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
@@ -2753,7 +2753,7 @@ void slug_sim::open_cluster_yield(slug_output_files &outfiles,
 
   // Construct file name and path
   string fname(pp.get_modelName());
-#ifdef ENABLE_MPI
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
   if (comm != MPI_COMM_NULL) {
     ostringstream ss;
     ss << "_" << setfill('0') << setw(4) << rank;
