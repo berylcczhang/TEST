@@ -31,7 +31,7 @@
 
 
 \title{slug Documentation}
-\date{Mar 24, 2017}
+\date{Mar 30, 2017}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{}
@@ -384,11 +384,11 @@ In addition, the following are required for some functionality, but not for the 
 The \href{http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html}{cfitsio library} (required for FITS capabilities)
 
 \item {} 
-An implementation of \href{http://mpi-forum.org/}{MPI} (required for MPI support)
+An implementation of \href{http://mpi-forum.org/}{MPI} (required for MPI support; for full functionality, the implementation must support the MPI 3.0 or later standard)
 
 \end{itemize}
 
-Compilation will be easiest if you install the required libraries such that the header files are included in your \code{CXX\_INCLUDE\_PATH} (for Boost) and \code{C\_INCLUDE\_PATH} (for GSL, cfitsio, and MPI) and the compiled object files are in your \code{LIBRARY\_PATH}. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag \code{FITS=DISABLE\_FITS} when calling \code{make} (see below). The MPI libraries are required only for MPI capability, which is not enabled by default; see {\hyperref[library:ssec\string-mpi\string-support]{\crossref{\DUrole{std,std-ref}{Support for MPI Parallelism}}}} for an explanation of these capabilities and how to enable them. Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
+Compilation will be easiest if you install the required libraries such that the header files are included in your \code{CXX\_INCLUDE\_PATH} (for Boost) and \code{C\_INCLUDE\_PATH} (for GSL, cfitsio, and MPI) and the compiled object files are in your \code{LIBRARY\_PATH}. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag \code{FITS=DISABLE\_FITS} when calling \code{make} (see below). The MPI libraries are required only for MPI capability, which is not enabled by default; see {\hyperref[library:ssec\string-mpi\string-support]{\crossref{\DUrole{std,std-ref}{Using SLUG as a Library with MPI-Enabled Codes}}}} for an explanation of these capabilities and how to enable them. Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
 
 In addition to the core dependencies, slugpy, the python helper library requires:
 \begin{itemize}
@@ -437,7 +437,16 @@ To enable MPI support, do:
 make MPI=ENABLE\PYGZus{}MPI
 \end{Verbatim}
 
-If you are compiling using GSL version 1.x or without cfitsio, you must specify these options when compiling. If you are using version 1.x of the GSL, do:
+In addition, you may need to specify the names of your preferred MPI
+C++ compiler by setting the variable \code{MACH\_MPICXX} in your
+machine-specific makefile -- see {\hyperref[compiling:ssec\string-machine\string-makefiles]{\crossref{\DUrole{std,std-ref}{Machine-Specific Makefiles}}}}. The
+Makefiles contain reasonable guesses, but since MPI compiler names are
+much less standardized than general compiler names, you may need to
+supply yours rather than relying on the default.
+
+If you are compiling using GSL version 1.x or without cfitsio, you
+must specify these options when compiling. If you are using version
+1.x of the GSL, do:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 make GSLVERSION=1
@@ -533,6 +542,8 @@ mpirun \PYGZhy{}np N bin/slug param/filename.param
 where \titleref{N} is the number of parallel processes to run. In this mode each MPI process will write its own output files, which will be named as \titleref{MODELNAME\_XXXX\_FILETYPE.EXT} where \titleref{MODELNAME} is the model name specified in the parameter file (see {\hyperref[parameters:sec\string-parameters]{\crossref{\DUrole{std,std-ref}{Parameter Specification}}}}), \titleref{XXXX} is the process number of the process that wrote the file, \titleref{FILETYPE} is the type of output file (see {\hyperref[output:sec\string-output]{\crossref{\DUrole{std,std-ref}{Output Files and Format}}}}), and \titleref{EXT} is the extension specifying the file format (see {\hyperref[output:sec\string-output]{\crossref{\DUrole{std,std-ref}{Output Files and Format}}}}).
 
 If it is desirable to do so, the output files produced by an MPI run can be combined into a single output file using the \code{consolidate.py} script in the \code{tools} subdirectory.
+
+Note that full parallel computation is only available under MPI implementations that support the MPI 3.0 standard or later. Earlier versions of MPI allow MPI functionality for SLUG in library mode (see {\hyperref[library:sec\string-library\string-mode]{\crossref{\DUrole{std,std-ref}{Using SLUG as a Library}}}}), but do not allow MPI parallel runs of the slug executable.
 
 
 \section{Checkpointing and Restarting}
@@ -9810,7 +9821,7 @@ the stochasticity in the optical due to a simple shift of wavelengths.
 
 
 \chapter{Using SLUG as a Library}
-\label{library::doc}\label{library:using-slug-as-a-library}
+\label{library:sec-library-mode}\label{library::doc}\label{library:using-slug-as-a-library}
 In addition to running as a standalone program, SLUG can be
 compiled as a library that can be called by external programs. This is
 useful for including stellar population synthesis calculations within
@@ -9847,6 +9858,14 @@ In addition to \code{lib} and \code{libstatic}, the makefile supports
 compile the same libraries, but with optimization disabled and
 debugging symbols enabled.
 
+Finally, if you want MPI functionality, you can compile with:
+
+\begin{Verbatim}[commandchars=\\\{\}]
+make lib MPI=ENABLE\PYGZus{}MPI
+\end{Verbatim}
+
+See {\hyperref[compiling:ssec\string-compiling]{\crossref{\DUrole{std,std-ref}{Compiling}}}} for more on compiling with MPI enabled.
+
 
 \section{Predefined Objects}
 \label{library:ssec-predefined-objects}\label{library:predefined-objects}
@@ -9882,8 +9901,8 @@ slug\PYGZus{}cluster *cluster =
 \end{Verbatim}
 
 
-\section{Support for MPI Parallelism}
-\label{library:support-for-mpi-parallelism}\label{library:ssec-mpi-support}
+\section{Using SLUG as a Library with MPI-Enabled Codes}
+\label{library:using-slug-as-a-library-with-mpi-enabled-codes}\label{library:ssec-mpi-support}
 In large codes where one might wish to use slug for subgrid stellar
 models, it is often necessary to pass information between processors
 using MPI. Since slug's representation of stellar populations is
@@ -9896,22 +9915,9 @@ To facilitate parallel implementations, slug provides routines that
 wrap the base MPI routines and allow seamless and efficient exchange
 of the slug\_cluster class (which slug uses to represent simple stellar
 populations) between processors. The prototypes for these functions
-are found in the \code{src/slug\_MPI.H} header file.
-
-By default MPI support is not included in the library. To enable MPI
-support, compile the library as follows:
-
-\begin{Verbatim}[commandchars=\\\{\}]
-make lib MPI=ENABLE\PYGZus{}MPI
-\end{Verbatim}
-
-This will enable MPI support. In addition, you may need to specify the
-names of your preferred MPI C++ compiler by setting the variable
-\code{MACH\_MPICXX} in your machine-specific makefile -- see
-{\hyperref[compiling:ssec\string-machine\string-makefiles]{\crossref{\DUrole{std,std-ref}{Machine-Specific Makefiles}}}}. The Makefiles contain reasonable
-guesses, but since MPI compiler names are much less standardized than
-general compiler names, you may need to supply yours rather than
-relying on the default.
+are found in the \code{src/slug\_MPI.H} header file, and the functions are
+available if the library was compiled with MPI support enabled (see
+{\hyperref[library:ssec\string-library\string-mode]{\crossref{\DUrole{std,std-ref}{Compiling in Library Mode}}}}).
 
 Here is an example of MPI usage, in which one processor creates a
 cluster and then sends it to another one:

@@ -1,4 +1,6 @@
 .. highlight:: rest
+	       
+.. _sec-library-mode:
 
 Using SLUG as a Library
 =======================
@@ -37,6 +39,12 @@ In addition to ``lib`` and ``libstatic``, the makefile supports
 compile the same libraries, but with optimization disabled and
 debugging symbols enabled.
 
+Finally, if you want MPI functionality, you can compile with::
+
+  make lib MPI=ENABLE_MPI
+
+See :ref:`ssec-compiling` for more on compiling with MPI enabled.
+
 
 .. _ssec-predefined-objects:
 
@@ -74,8 +82,8 @@ default nuclear yields::
 
 .. _ssec-mpi-support:
 
-Support for MPI Parallelism
----------------------------
+Using SLUG as a Library with MPI-Enabled Codes
+----------------------------------------------
 
 In large codes where one might wish to use slug for subgrid stellar
 models, it is often necessary to pass information between processors
@@ -89,20 +97,9 @@ To facilitate parallel implementations, slug provides routines that
 wrap the base MPI routines and allow seamless and efficient exchange
 of the slug_cluster class (which slug uses to represent simple stellar
 populations) between processors. The prototypes for these functions
-are found in the ``src/slug_MPI.H`` header file.
-
-By default MPI support is not included in the library. To enable MPI
-support, compile the library as follows::
-
-  make lib MPI=ENABLE_MPI
-
-This will enable MPI support. In addition, you may need to specify the
-names of your preferred MPI C++ compiler by setting the variable
-``MACH_MPICXX`` in your machine-specific makefile -- see
-:ref:`ssec-machine-makefiles`. The Makefiles contain reasonable
-guesses, but since MPI compiler names are much less standardized than
-general compiler names, you may need to supply yours rather than
-relying on the default.
+are found in the ``src/slug_MPI.H`` header file, and the functions are
+available if the library was compiled with MPI support enabled (see
+:ref:`ssec-library-mode`).
 
 Here is an example of MPI usage, in which one processor creates a
 cluster and then sends it to another one::

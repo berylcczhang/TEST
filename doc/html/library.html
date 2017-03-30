@@ -40,7 +40,7 @@
           <div class="body" role="main">
             
   <div class="section" id="using-slug-as-a-library">
-<h1>Using SLUG as a Library<a class="headerlink" href="#using-slug-as-a-library" title="Permalink to this headline">¶</a></h1>
+<span id="sec-library-mode"></span><h1>Using SLUG as a Library<a class="headerlink" href="#using-slug-as-a-library" title="Permalink to this headline">¶</a></h1>
 <p>In addition to running as a standalone program, SLUG can be
 compiled as a library that can be called by external programs. This is
 useful for including stellar population synthesis calculations within
@@ -68,6 +68,11 @@ your system (generally <code class="docutils literal"><span class="pre">.a</span
 <code class="docutils literal"><span class="pre">lib-debug</span></code> and <code class="docutils literal"><span class="pre">libstatic-debug</span></code> as targets as well. These
 compile the same libraries, but with optimization disabled and
 debugging symbols enabled.</p>
+<p>Finally, if you want MPI functionality, you can compile with:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>make lib MPI=ENABLE_MPI
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="compiling.html#ssec-compiling"><span class="std std-ref">Compiling</span></a> for more on compiling with MPI enabled.</p>
 </div>
 <div class="section" id="predefined-objects">
 <span id="ssec-predefined-objects"></span><h2>Predefined Objects<a class="headerlink" href="#predefined-objects" title="Permalink to this headline">¶</a></h2>
@@ -100,8 +105,8 @@ slug_cluster *cluster =
 </pre></div>
 </div>
 </div>
-<div class="section" id="support-for-mpi-parallelism">
-<span id="ssec-mpi-support"></span><h2>Support for MPI Parallelism<a class="headerlink" href="#support-for-mpi-parallelism" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="using-slug-as-a-library-with-mpi-enabled-codes">
+<span id="ssec-mpi-support"></span><h2>Using SLUG as a Library with MPI-Enabled Codes<a class="headerlink" href="#using-slug-as-a-library-with-mpi-enabled-codes" title="Permalink to this headline">¶</a></h2>
 <p>In large codes where one might wish to use slug for subgrid stellar
 models, it is often necessary to pass information between processors
 using MPI. Since slug&#8217;s representation of stellar populations is
@@ -113,19 +118,9 @@ non-trivial.</p>
 wrap the base MPI routines and allow seamless and efficient exchange
 of the slug_cluster class (which slug uses to represent simple stellar
 populations) between processors. The prototypes for these functions
-are found in the <code class="docutils literal"><span class="pre">src/slug_MPI.H</span></code> header file.</p>
-<p>By default MPI support is not included in the library. To enable MPI
-support, compile the library as follows:</p>
-<div class="highlight-rest"><div class="highlight"><pre><span></span>make lib MPI=ENABLE_MPI
-</pre></div>
-</div>
-<p>This will enable MPI support. In addition, you may need to specify the
-names of your preferred MPI C++ compiler by setting the variable
-<code class="docutils literal"><span class="pre">MACH_MPICXX</span></code> in your machine-specific makefile &#8211; see
-<a class="reference internal" href="compiling.html#ssec-machine-makefiles"><span class="std std-ref">Machine-Specific Makefiles</span></a>. The Makefiles contain reasonable
-guesses, but since MPI compiler names are much less standardized than
-general compiler names, you may need to supply yours rather than
-relying on the default.</p>
+are found in the <code class="docutils literal"><span class="pre">src/slug_MPI.H</span></code> header file, and the functions are
+available if the library was compiled with MPI support enabled (see
+<a class="reference internal" href="#ssec-library-mode"><span class="std std-ref">Compiling in Library Mode</span></a>).</p>
 <p>Here is an example of MPI usage, in which one processor creates a
 cluster and then sends it to another one:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>#include &quot;slug_cluster.H&quot;
@@ -198,7 +193,7 @@ int main(int argc, char *argv[]) {
 <li><a class="reference internal" href="#">Using SLUG as a Library</a><ul>
 <li><a class="reference internal" href="#compiling-in-library-mode">Compiling in Library Mode</a></li>
 <li><a class="reference internal" href="#predefined-objects">Predefined Objects</a></li>
-<li><a class="reference internal" href="#support-for-mpi-parallelism">Support for MPI Parallelism</a></li>
+<li><a class="reference internal" href="#using-slug-as-a-library-with-mpi-enabled-codes">Using SLUG as a Library with MPI-Enabled Codes</a></li>
 </ul>
 </li>
 </ul>

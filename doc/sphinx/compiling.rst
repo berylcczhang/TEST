@@ -14,7 +14,7 @@ The core SLUG program requires
 In addition, the following are required for some functionality, but not for the core code:
   
 * The `cfitsio library <http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html>`_ (required for FITS capabilities)
-* An implementation of `MPI <http://mpi-forum.org/>`_ (required for MPI support)
+* An implementation of `MPI <http://mpi-forum.org/>`_ (required for MPI support; for full functionality, the implementation must support the MPI 3.0 or later standard)
 
 Compilation will be easiest if you install the required libraries such that the header files are included in your ``CXX_INCLUDE_PATH`` (for Boost) and ``C_INCLUDE_PATH`` (for GSL, cfitsio, and MPI) and the compiled object files are in your ``LIBRARY_PATH``. Alternately, you can manually specify the locations of these files by editing the Makefiles -- see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag ``FITS=DISABLE_FITS`` when calling ``make`` (see below). The MPI libraries are required only for MPI capability, which is not enabled by default; see :ref:`ssec-mpi-support` for an explanation of these capabilities and how to enable them. Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).
 
@@ -51,7 +51,16 @@ To enable MPI support, do::
 
   make MPI=ENABLE_MPI
 
-If you are compiling using GSL version 1.x or without cfitsio, you must specify these options when compiling. If you are using version 1.x of the GSL, do::
+In addition, you may need to specify the names of your preferred MPI
+C++ compiler by setting the variable ``MACH_MPICXX`` in your
+machine-specific makefile -- see :ref:`ssec-machine-makefiles`. The
+Makefiles contain reasonable guesses, but since MPI compiler names are
+much less standardized than general compiler names, you may need to
+supply yours rather than relying on the default.
+
+If you are compiling using GSL version 1.x or without cfitsio, you
+must specify these options when compiling. If you are using version
+1.x of the GSL, do::
 
   make GSLVERSION=1
 

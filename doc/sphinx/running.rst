@@ -46,6 +46,8 @@ where `N` is the number of parallel processes to run. In this mode each MPI proc
 
 If it is desirable to do so, the output files produced by an MPI run can be combined into a single output file using the ``consolidate.py`` script in the ``tools`` subdirectory.
 
+Note that full parallel computation is only available under MPI implementations that support the MPI 3.0 standard or later. Earlier versions of MPI allow MPI functionality for SLUG in library mode (see :ref:`sec-library-mode`), but do not allow MPI parallel runs of the slug executable.
+
 
 Checkpointing and Restarting
 ----------------------------
