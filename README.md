@@ -12,7 +12,7 @@ This repository contains SLUG v2. SLUG v1 is available at <http://www.slugsps.co
 
 * The ability to predict full spectra as well as photometry
 * A vastly larger array of photometric filters, with the ability to add more without needing to alter the source code; there is also wide range of choices for photometric system
-* Fully automated parallelism for computations in multi-processor environments
+* Full support for both thread-based or MPI-based parallelism
 * Predictions of element yields as well as light output
 * The ability to handle a very wide range of functional forms for the initial mass function, cluster mass function, cluster lifetime function, and star formation history
 * Many sampling methods available for mass-limited sampling
@@ -32,7 +32,7 @@ SLUG v1 will no longer be maintained, so all users are encouraged to migrate to 
 
 The SLUG repository contains several subdirectories, whose contents are as follows:
 
-* *bin*: this contains the slug source code when it is compiled, as well as the parallel wrapper python script
+* *bin*: this contains the slug source code when it is compiled, as well as the parallel wrapper python scripts
 * *cloudy_slug*: code for the interface to [cloudy](http://nublado.org)
 * *cluster_slug*: example code and data for cluster_slug
 * *doc*: documentation for the code
@@ -80,11 +80,15 @@ The core SLUG c++ code requires:
 * The [BOOST C++ libraries](http://www.boost.org/)
 * The [cfitsio libary](http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html) (optional, only required for FITS output capability)
 
-The slugPy python routines require:
+The slugpy python routines require:
 
 * [numpy](http://www.numpy.org/)
 * [scipy](http://www.scipy.org/)
 * [astropy](http://www.astropy.org/) (optional, only required for FITS handling capability)
+
+Support for MPI-based parallelism requires:
+
+* [MPI](http://mpi-forum.org/) (an MPI implementation that supports the MPI 3 standard required for full functionality; limited functionality with earlier versions)
 
 The interface to cloudy (obviously) requires:
 
@@ -92,7 +96,7 @@ The interface to cloudy (obviously) requires:
 
 #### Compiling ####
 
-SLUG comes with a Makefile in the main directory, and it should be possible to build the code in most environments simply by typing "make". Compliation requires that the GSL and BOOST header files be included in the include path, and that their shared object libraries be included in the link path. If FITS capability is desired, the cfitsio library and header must be included as well.
+SLUG comes with a Makefile in the main directory, and it should be possible to build the code in most environments simply by typing "make". Compliation requires that the GSL and BOOST header files be included in the include path, and that their shared object libraries be included in the link path. If FITS capability is desired, the cfitsio library and header must be included as well. If MPI capability is desired, and an MPI library is installed, type "make MPI=ENABLE_MPI".
 
 #### Running ####
 
@@ -100,7 +104,7 @@ Once the code is compiled, running a SLUG simulation is fairly straightforward. 
 
 1. Set the environment variable SLUG_DIR to the directory where you have installed SLUG. This is not strictly necessary, but it avoids the need to specify manually the locations of all the data files that SLUG needs. If you plan to use the [cloudy](http://nublado.org) interface, you should also set the environment variable CLOUDY_DIR to the directory where the cloudy executable is located.
 2. Create a parameter file to set up the desired simulation. The files *param/example.param* and *param/example_cluster.param* can provide useful starting points for creating your own parameter files. Alternately, you can use the menu-driven parameter file generator script to create a parameter file for you by doing `python ./tools/write_param.py`.
-3. Run the simulation with the command line `./bin/slug param/mysimulation.param`. Alternately, you can run the simulation in parallel by doing `python ./bin/slug.py param/mysimulation.param`.
+3. Run the simulation with the command line `./bin/slug param/mysimulation.param`. Alternately, you can run the simulation in parallel by doing `python ./bin/slug.py param/mysimulation.param` (for thread-based parallelism) or `mpirun -np 1 python ./bin/slug_mpi.py param/mysimulation.param` (for MPI-based parallelism).
 4. Once the simulation is done, you can examine the output by eye (if you chose to write the output in ASCII format) or, more likely, read the data using the provided python routines. The two basic output reading routines can be invoked by doing the following in a python program of the command prompt of an interactive session:
 
 `from slugpy import *`
