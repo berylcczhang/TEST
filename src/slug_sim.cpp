@@ -399,6 +399,7 @@ slug_sim::~slug_sim() {
   if (cmf != nullptr) delete cmf;
   if (imf != nullptr) delete imf;
   if (tracks != nullptr) delete tracks;
+  if (yields != nullptr) delete yields;
   if (rng != nullptr) delete rng;
   if (filters != nullptr) delete filters;
   if (out_time_pdf != nullptr) delete out_time_pdf;

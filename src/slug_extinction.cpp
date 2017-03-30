@@ -115,7 +115,9 @@ void slug_extinction::init(const slug_parmParser& pp,
 			   gsl_interp_accel **kappa_acc) {
   // Set up the A_V distribution
   if (pp.get_constantAV()) {
-    // Constant A_V, so make the A_V a delta distribution
+    // Constant A_V, so make the A_V a delta distribution; note that
+    // we do not need to delte the segment we great; it will be
+    // de-allocated automatically when AVdist gets deleted
     slug_PDF_delta *AV_seg = new slug_PDF_delta(pp.get_AV(), rng, ostreams);
     AVdist = new slug_PDF(AV_seg, rng, ostreams);
   } else {
@@ -245,6 +247,7 @@ void slug_extinction::init(const slug_parmParser& pp,
 slug_extinction::
 ~slug_extinction() {
   delete AVdist;
+  if (neb_extinct_fac) delete neb_extinct_fac;
 }
 
 
