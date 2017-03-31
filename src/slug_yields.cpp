@@ -29,19 +29,19 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////
 // Methods to return lists of only stable or only unstable isotopes
 ////////////////////////////////////////////////////////////////////////
-inline const vector<isotope_data>
+inline const vector<const isotope_data *>
 slug_yields::get_stable_isotopes() const {
-  vector<isotope_data> stable_isotopes;
-  for (vector<isotope_data>::size_type i=0; i<isotopes.size(); i++)
-    if (isotopes[i].stable()) stable_isotopes.push_back(isotopes[i]);
+  vector<const isotope_data *> stable_isotopes;
+  for (vector<int>::size_type i=0; i<isotopes.size(); i++)
+    if (isotopes[i]->stable()) stable_isotopes.push_back(isotopes[i]);
   return stable_isotopes;
 }
 
-inline const vector<isotope_data>
+inline const vector<const isotope_data *>
 slug_yields::get_unstable_isotopes() const {
-  vector<isotope_data> unstable_isotopes;
-  for (vector<isotope_data>::size_type i=0; i<isotopes.size(); i++)
-    if (!isotopes[i].stable()) unstable_isotopes.push_back(isotopes[i]);
+  vector<const isotope_data *> unstable_isotopes;
+  for (vector<int>::size_type i=0; i<isotopes.size(); i++)
+    if (!isotopes[i]->stable()) unstable_isotopes.push_back(isotopes[i]);
   return unstable_isotopes;
 }
 
@@ -67,8 +67,8 @@ slug_yields::yield(const double m,
   // Apply radioactive decay
   if (t_decay > 0 && !no_decay) {
     for (vector<double>::size_type i=0; i<niso; i++) {
-      if (!isotopes[i].stable())
-	yld[i] *= exp(-t_decay/isotopes[i].ltime());
+      if (!isotopes[i]->stable())
+	yld[i] *= exp(-t_decay/isotopes[i]->ltime());
     }
   }
   return yld;
@@ -113,8 +113,8 @@ double slug_yields::yield(const double m,
   double yld = get_yield(m, i);
 
   // Apply radioactive decay
-  if (t_decay > 0 && !no_decay && !isotopes[i].stable())
-    yld *= exp(-t_decay/isotopes[i].ltime());
+  if (t_decay > 0 && !no_decay && !isotopes[i]->stable())
+    yld *= exp(-t_decay/isotopes[i]->ltime());
 
   // Return
   return yld;

@@ -85,6 +85,7 @@ public:
   const char *get_filter_dir() const;     // Directory w/filter library
   const char *get_atomic_dir() const;     // Directory w/atomic data
   const char *get_yield_dir() const;      // Directory w/yield data
+  const char *get_iso_dir() const;        // Directory w/isotopic data
   const char *get_modelName() const;      // Name of this model
   const char *get_outDir() const;         // Dir into which to dump output
   const char *get_outtime_dist() const;   // Distribution of output times
@@ -199,6 +200,7 @@ private:
   std::string AV_dist;                    // A_V distribution file name
   std::string neb_extinct_fac_dist;       // File for A_V,neb/A_V,star distrib.
   std::string yield_dir;                  // Directory w/yield data
+  std::string iso_dir;                    // Directory w/isotopic data
   std::string model;                      // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   std::vector<std::string> photBand;      // Names of photometric bands

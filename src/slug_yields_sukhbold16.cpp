@@ -36,7 +36,7 @@ using namespace boost::algorithm;
 using namespace boost::filesystem;
 
 ////////////////////////////////////////////////////////////////////////
-// A little utility typedef to facilitate sorting yield files by mass
+// Little utilities to facilitate sorting
 ////////////////////////////////////////////////////////////////////////
 namespace yields {
 
@@ -47,7 +47,7 @@ namespace yields {
     double mass;
     friend bool operator<(const yield_file_data& f1, 
 			  const yield_file_data& f2) {
-    return f1.mass < f2.mass;
+      return f1.mass < f2.mass;
     }
   };
 }
@@ -56,9 +56,10 @@ namespace yields {
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_yields_sukhbold16::
-slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
+slug_yields_sukhbold16(const char *yield_dir, const char *iso_data_dir,
+		       const double metallicity_,
 		       slug_ostreams &ostreams_, bool no_decay_) :
-  slug_yields_snii(metallicity_, ostreams_, no_decay_) {
+  slug_yields_snii(metallicity_, iso_data_dir, ostreams_, no_decay_) {
 
   // Issue warning if metallicity is not Solar
   if (metallicity_ != 1.0) {
@@ -109,13 +110,6 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
   mmin = mass.front();
   mmax = mass.back();
 
-  // Prepare to read the yield files by constructing a mapping between
-  // element symbols and atomic numbers
-  map<string, unsigned int> element_map;
-  for (vector<string>::size_type i=0;
-       i<atomic_data::periodic_table.size(); i++)
-    element_map[atomic_data::periodic_table[i]] = i+1;
-
   // First pass through all files just to find the full list of all
   // isotopes present in any file
   for (vector<double>::size_type i=0; i<nmass; i++) {
@@ -127,15 +121,14 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
     yf_stream.open(yield_path.c_str());
     if (!yf_stream.is_open()) {
       // Couldn't open file, so bail out
-     ostreams.slug_err_one << "unable to open yield file " 
-			   << yield_path.string() << endl;
-     bailout(1);
+      ostreams.slug_err_one << "unable to open yield file " 
+			    << yield_path.string() << endl;
+      bailout(1);
     }
 
     // Toss out header line
     vector<string> tokens;
     string line;
-    bool stable = true;  // Files start with stable isotopes
     getline(yf_stream, line);
 
     // Loop over entries
@@ -144,51 +137,27 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
       // Extract isotope name
       trim(line);
       split(tokens, line, is_any_of("\t "), token_compress_on);
-    
-      // Is this isotope C14? That's the first unstable entry, so, if
-      // it is, flip the flag for stability.
-      if (!(tokens[0].compare("c14"))) stable = false;
-    
-      // Turn the string we just read into an isotope_data object
-      string isoname = trim_right_copy_if(tokens[0], is_digit());
-      to_lower(isoname);
-      unsigned int isonum = element_map[isoname];
-      unsigned int isowgt = 
-	lexical_cast<unsigned int>(trim_left_copy_if(tokens[0], is_alpha()));
-      isotope_data iso(isoname, isonum, isowgt);
 
+      // Grab the isotope data for this isotope from the data table
+      const isotope_data *iso;
+      try {
+	iso = iso_table.data(tokens[0]);
+      } catch (const out_of_range& oor) {
+	ostreams.slug_err_one
+	  << "unrecognized isotope " << tokens[0]
+	  << " in " << yield_files[i].fname
+	  << endl;
+	bailout(1);
+      }
+    
       // Is this isotope name already in our list? If so, skip it and
-      // do nothing.
-      bool new_iso = true;
-      for (vector<double>::size_type j=0; j<isotopes.size(); j++) {
-	if (iso == isotopes[j]) {
-	  new_iso = false;
+      // do nothing. Otherwise push it onto our isotope list.
+      vector<double>::size_type j;
+      for (j=0; j<isotopes.size(); j++) {
+	if (iso == isotopes[j])
 	  break;
-	}
       }
-      if (!new_iso) continue;
-
-      // If this isotope is unstable, set its lifetime
-      if (!stable) {
-	vector<double>::size_type j;
-	for (j=0; j<atomic_data::unstable_isotopes.size(); j++) {
-	  if ((atomic_data::unstable_isotopes[j]->num() == isonum) &&
-	      (atomic_data::unstable_isotopes[j]->wgt() == isowgt)) {
-	    iso.set_lifetime(atomic_data::unstable_isotopes[j]->ltime());
-	    break;
-	  }
-	}
-	if (j==atomic_data::unstable_isotopes.size()) {
-	  ostreams.slug_warn_one
-	    << "unknown half life for isotope "
-	    << isoname << isowgt 
-	    << "; calculation will not include decay "
-	    << "for this isotope"<< endl;
-	}
-      }
-
-      // This is a new isotope, so push it onto the list
-      isotopes.push_back(iso);
+      if (j == isotopes.size()) isotopes.push_back(iso);
     }
 
     // Close file
@@ -197,11 +166,11 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
 
   // We now have a list of all isotopes present in any file. Next we
   // sort them by atomic number and weight.
-  sort(isotopes.begin(), isotopes.end());
+  sort(isotopes.begin(), isotopes.end(), slug_isotopes::isotope_sort);
   niso = isotopes.size();
   nstable = 0;
   for (vector<double>::size_type i=0; i<niso; i++)
-    if (isotopes[i].stable()) nstable++;
+    if (isotopes[i]->stable()) nstable++;
   nunstable = niso - nstable;
 
   // Allocate memory to hold yield tables, and initialize all yields
@@ -221,10 +190,10 @@ slug_yields_sukhbold16(const char *yield_dir, const double metallicity_,
   map<string, vector<double>::size_type> iso_map;
   for (vector<double>::size_type i=0; i<niso; i++) {
     stringstream ss;
-    ss << isotopes[i].symbol() << isotopes[i].wgt();
+    ss << isotopes[i]->symbol() << isotopes[i]->wgt();
     iso_map[ss.str()] = i;
     isotope_map[isotopes[i]] = i;
-    isotope_map_za[make_pair(isotopes[i].num(), isotopes[i].wgt())] = i;
+    isotope_map_za[make_pair(isotopes[i]->num(), isotopes[i]->wgt())] = i;
   }
 
   // Now pass through files again, this time reading yields, and

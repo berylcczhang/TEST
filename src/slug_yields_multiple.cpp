@@ -34,7 +34,7 @@ slug_yields_multiple::
 slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
 		     const double metallicity_,
 		     slug_ostreams &ostreams_, const bool no_decay_) :
-  slug_yields(metallicity_, ostreams_, no_decay_) {
+  slug_yields(metallicity_, yield_dir, ostreams_, no_decay_) {
 
   // Initialize SNII yields
   path yield_dirname(yield_dir);
@@ -42,22 +42,26 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
       yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
     path snii_path = yield_dirname / path("SNII_Sukhbold16");
     yields_snii = (slug_yields_snii *)
-      new slug_yields_sukhbold16(snii_path.c_str(), metallicity_,
+      new slug_yields_sukhbold16(snii_path.c_str(), yield_dir,
+				 metallicity_,
 				 ostreams, no_decay_);
   } else {
     yields_snii = nullptr;
   }
 
   // Initialize AGB yields
+#if 0
   if (yield_mode == AGB_KARAKAS16 ||
       yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
-    //path agb_path = yield_dirname / path("AGB_Karakas16");
-    //yields_agb = (slug_yields_agb *)
-    //  new slug_yields_karakas(agb_path.c_str(), metallicity_);
-    yields_agb = nullptr;
+    path agb_path = yield_dirname / path("AGB_Karakas16");
+    yields_agb = (slug_yields_agb *)
+      new slug_yields_karakas16(agb_path.c_str(), metallicity_);
   } else {
     yields_agb = nullptr;
   }
+#else
+  yields_agb = nullptr;
+#endif
 
   // Get minimum and maximum mass from both sources
   mmin = numeric_limits<double>::max();
@@ -72,8 +76,8 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
   }
 
   // Construct combined list of isotopes included in all yield data
-  vector<isotope_data> iso_snii, iso_agb;
-  set<isotope_data> isotope_set;
+  vector<const isotope_data *> iso_snii, iso_agb;
+  set<const isotope_data *> isotope_set;
   if (yields_snii) {
     iso_snii = yields_snii->get_isotopes();
     for (vector<isotope_data>::size_type i = 0; i < iso_snii.size(); i++)
@@ -87,20 +91,20 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
   isotopes.assign(isotope_set.begin(), isotope_set.end());
 
   // Sort isotope list by atomic number and weight
-  sort(isotopes.begin(), isotopes.end());
+  sort(isotopes.begin(), isotopes.end(), slug_isotopes::isotope_sort);
 
   // Record number of isotopes, and number of stable and unstable
   // isotopes
   niso = isotopes.size();
   nstable = nunstable = 0;
   for (vector<isotope_data>::size_type i=0; i<niso; i++) {
-    if (isotopes[i].stable()) nstable++; else nunstable++;
+    if (isotopes[i]->stable()) nstable++; else nunstable++;
   }
 
   // Create map between isotope data and index in our yield table
   for (vector<double>::size_type i=0; i<isotopes.size(); i++) {
     isotope_map[isotopes[i]] = i;
-    isotope_map_za[make_pair(isotopes[i].num(), isotopes[i].wgt())] = i;
+    isotope_map_za[make_pair(isotopes[i]->num(), isotopes[i]->wgt())] = i;
   }
 
   // Store mapping between index in our list of isotopes and the lists
@@ -108,7 +112,7 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
   for (vector<isotope_data>::size_type i=0; i<isotopes.size(); i++) {
     if (yields_snii) {
       // Get index of this isotope in the SNII table
-      map<isotope_data, vector<double>::size_type>::iterator it =
+      map<const isotope_data *, vector<double>::size_type>::iterator it =
 	yields_snii->isotope_map.find(isotopes[i]);
       if (it != yields_snii->isotope_map.end()) {
 	// This isotope is in the SNII yield table, so store the
@@ -125,7 +129,7 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
     }
     if (yields_agb) {
       // Get index of this isotope in the SNII table
-      map<isotope_data, vector<double>::size_type>::iterator it =
+      map<const isotope_data *, vector<double>::size_type>::iterator it =
 	yields_agb->isotope_map.find(isotopes[i]);
       if (it != yields_agb->isotope_map.end()) {
 	// This isotope is in the SNII yield table, so store the

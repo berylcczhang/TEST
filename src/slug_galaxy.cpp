@@ -747,11 +747,11 @@ slug_galaxy::set_yield(const bool del_cluster) {
   // Make unstable isotopes produced by field stars decay; the cluster
   // update will have already taken care of this for the clusters
   if (!yields->no_decay) {
-    const vector<isotope_data>& isotopes = yields->get_isotopes();
+    const vector<const isotope_data *>& isotopes = yields->get_isotopes();
     for (vector<double>::size_type i=0; i<stoch_field_yields.size(); i++) {
-      if (!isotopes[i].stable()) {
+      if (!isotopes[i]->stable()) {
 	stoch_field_yields[i] *=
-	  exp(-(curTime-last_yield_time)/isotopes[i].ltime());
+	  exp(-(curTime-last_yield_time)/isotopes[i]->ltime());
       }
     }
     last_yield_time = curTime;
@@ -1240,13 +1240,13 @@ slug_galaxy::write_integrated_yield(std::ofstream& outfile,
 
   // Write
   if (out_mode == ASCII) {
-    const vector<isotope_data>& isodata = yields->get_isotopes();
+    const vector<const isotope_data *>& isodata = yields->get_isotopes();
     for (vector<double>::size_type i=0; i<all_yields.size(); i++) {
       outfile << setprecision(5) << scientific
 	      << setw(11) << right << curTime << "   "
-	      << setw(11) << right << isodata[i].symbol() << "   "
-	      << setw(11) << right << isodata[i].num() << "   "
-	      << setw(11) << right << isodata[i].wgt() << "   "
+	      << setw(11) << right << isodata[i]->symbol() << "   "
+	      << setw(11) << right << isodata[i]->num() << "   "
+	      << setw(11) << right << isodata[i]->wgt() << "   "
 	      << setw(11) << right << all_yields[i] << endl;
     }
   } else if (out_mode == BINARY) {

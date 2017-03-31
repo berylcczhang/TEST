@@ -40,9 +40,10 @@ public:
 
   // Constructor
   slug_yields_agb(const double metallicity_,
+		  const char *iso_data_dir,
 		  slug_ostreams& ostreams_,
 		  const bool no_decay_ = false) :
-    slug_yields(metallicity_, ostreams_, no_decay_) {}
+    slug_yields(metallicity_, iso_data_dir, ostreams_, no_decay_) {}
 
   // Destructor
   virtual ~slug_yields_agb() {};

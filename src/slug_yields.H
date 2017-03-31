@@ -40,19 +40,25 @@ class slug_yields {
 public:
 
   // Constructor
-  slug_yields(const double metallicity_, slug_ostreams &ostreams_,
+  slug_yields(const double metallicity_,
+	      const char *iso_data_dir,
+	      slug_ostreams &ostreams_,
 	      const bool no_decay_ = false)
-    : no_decay(no_decay_), ostreams(ostreams_), metallicity(metallicity_)
+    : no_decay(no_decay_),
+      ostreams(ostreams_),
+      iso_table(iso_data_dir, ostreams_),
+      metallicity(metallicity_)
   { };
 
   // Destructor
   virtual ~slug_yields() {};
 
   // Methods to access data on the isotopes we know about
-  std::vector<isotope_data>::size_type get_niso() const { return niso; }
-  const std::vector<isotope_data>& get_isotopes() const { return isotopes; }
-  const std::vector<isotope_data> get_stable_isotopes() const;
-  const std::vector<isotope_data> get_unstable_isotopes() const;
+  std::vector<int>::size_type get_niso() const { return niso; }
+  const std::vector<const isotope_data *> get_isotopes() const
+  { return isotopes; }
+  const std::vector<const isotope_data *> get_stable_isotopes() const;
+  const std::vector<const isotope_data *> get_unstable_isotopes() const;
 
   // Return mass range from which yields are available
   double min_mass() const { return mmin; }
@@ -80,7 +86,7 @@ public:
   // the yield function where users can provide either isotope_data or
   // an atomic number and weight to specify the isotope whose yield
   // they want. These just wrap the yield functions above.
-  double yield(const double m, const isotope_data& iso,
+  double yield(const double m, const isotope_data *iso,
 	       const double t_decay = 0.0) const {
     return yield(m, isotope_map.at(iso), t_decay);
   }
@@ -90,7 +96,7 @@ public:
     return yield(m, isotope_map_za.at(std::make_pair(num, wgt)), t_decay);
   }
   double yield(const std::vector<double>& m,
-	       const isotope_data& iso,
+	       const isotope_data *iso,
 	       const std::vector<double>& t_decay
 	       = std::vector<double>()) const {
     return yield(m, isotope_map.at(iso), t_decay);
@@ -106,7 +112,7 @@ public:
   // mapping between atomic number/weight and index, or between
   // isotope_data and index
   std::vector<double>::size_type
-  isotope_index(const isotope_data& iso) const {
+  isotope_index(const isotope_data *iso) const {
     return isotope_map.at(iso);
   }
   std::vector<double>::size_type
@@ -139,18 +145,21 @@ protected:
   // IO handler
   slug_ostreams &ostreams;
 
+  // A table of isotope properties
+  const isotope_table iso_table;
+
   // Data on isotopes; these are to be initialized by the derived class
   std::vector<double>::size_type niso;      // Number of isotopes
   std::vector<double>::size_type nstable;   // Number of stable isotopes
   std::vector<double>::size_type nunstable; // Number of unstable isotopes
-  std::vector<isotope_data> isotopes;       // List of isotopes
+  std::vector<const isotope_data *> isotopes; // List of isotopes
 
   // Mappings between isotope data, or between atomic number and
   // weight, and index in the isotope table. Again, these are to be
   // instantiated by the derived class. They are declared as mutable
   // so that we can use the [] operator on them even if they are
   // attached to a const instance of the derived class.
-  std::map<isotope_data, 
+  std::map<const isotope_data *, 
 	   std::vector<double>::size_type> isotope_map;
   std::map<std::pair<unsigned int, unsigned int>,
 	   std::vector<double>::size_type> isotope_map_za;
