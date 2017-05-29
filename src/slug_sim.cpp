@@ -436,7 +436,7 @@ void slug_sim::close_output(slug_output_files &outfiles,
   if (checkpoint_ctr >= 0) {
 
     // Figure out which files are open
-    vector<ofstream *> open_files;
+    vector<std::ofstream *> open_files;
     if (outfiles.int_prop_file.is_open())
       open_files.push_back(&(outfiles.int_prop_file));
     if (outfiles.int_spec_file.is_open())
@@ -455,7 +455,7 @@ void slug_sim::close_output(slug_output_files &outfiles,
       open_files.push_back(&(outfiles.cluster_yield_file));
 
     // Fix number of trials in file
-    for (vector<ifstream>::size_type i=0; i<open_files.size(); i++) {
+    for (vector<std::ifstream>::size_type i=0; i<open_files.size(); i++) {
       open_files[i]->seekp(ios_base::beg);
       if (out_mode == ASCII) {
 	// ASCII mode; replace the first line
@@ -510,7 +510,7 @@ void slug_sim::close_output(slug_output_files &outfiles,
       open_files.push_back(outfiles.cluster_yield_fits);
 
     // Fix number of trials in file
-    for (vector<ifstream>::size_type i=0; i<open_files.size(); i++) {
+    for (vector<std::ifstream>::size_type i=0; i<open_files.size(); i++) {
       int fits_status = 0;
       fits_movabs_hdu(open_files[i], 2, NULL, &fits_status);
       fits_update_key(open_files[i], TUINT, "N_Trials", 
