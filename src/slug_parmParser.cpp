@@ -871,6 +871,7 @@ void slug_parmParser::restartSetup() {
 	// Close
 	fits_close_file(checkpoint_file, &fits_status);
       }
+#endif
     }
 
     // If we failed at any point, bail out
@@ -891,7 +892,6 @@ void slug_parmParser::restartSetup() {
     checkpointCtr++;
     checkpointTrials += trials_ctr[0];
   }
-#endif
 
   // If we are in MPI mode, we need to sum the number of completed
   // trials and files over all processors
