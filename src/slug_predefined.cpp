@@ -9,10 +9,12 @@
 #include <cstdlib>
 #include <ctime>
 #include <string>
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/tokenizer.hpp>
 
 using namespace std;
 using namespace boost;
+using namespace boost::algorithm;
 using namespace boost::filesystem;
 
 ////////////////////////////////////////////////////////////////////////
@@ -41,7 +43,7 @@ slug_predefined::slug_predefined() : rng(nullptr)
     "chabrier", "chabrier03", "kroupa", "kroupa_T100", "kroupa_T50",
     "kroupa_T80", "kroupa_sb99", "salpeter", "wk06" };
   for (vector<string>::size_type i=0; i<predefined_imfs.size(); i++)
-    known_imfs[predefined_imfs[i]] = nullptr;    
+    known_imfs[predefined_imfs[i]] = nullptr;
 
   // Load tracks
   vector<string> predefined_tracks = {
@@ -147,18 +149,23 @@ void slug_predefined::build_rng() {
 ////////////////////////////////////////////////////////////////////////
 // Method to construct slug_PDF objects
 ////////////////////////////////////////////////////////////////////////
-inline const slug_PDF* slug_predefined::build_PDF(const string& fname) {
+inline const slug_PDF*
+slug_predefined::build_PDF(const string& fname,
+			   const double min_stoch_mass) {
   build_rng();
-  return new slug_PDF(fname.c_str(), rng, ostreams);
+  slug_PDF *pdf = new slug_PDF(fname.c_str(), rng, ostreams);
+  if (min_stoch_mass > 0.0) pdf->set_stoch_lim(min_stoch_mass);
+  return pdf;
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Method to construct IMFs, tracks, filter sets
 ////////////////////////////////////////////////////////////////////////
 inline const slug_PDF*
-slug_predefined::build_IMF(const string& imfname) {
+slug_predefined::build_IMF(const string& imfname,
+			   const double min_stoch_mass) {
   path p(imfname);
-  return build_PDF((imf_dir / p).string() + ".imf");
+  return build_PDF((imf_dir / p).string() + ".imf", min_stoch_mass);
 }
 
 inline const slug_tracks*
@@ -184,11 +191,15 @@ slug_predefined::build_filter_set(const string& filter_set_name) {
 ////////////////////////////////////////////////////////////////////////
 // Methods to fetch IMFs, tracks, specsyn, yields
 ////////////////////////////////////////////////////////////////////////
-const slug_PDF* slug_predefined::imf(const string& imfname) {
+const slug_PDF* slug_predefined::imf(const string& imfname,
+				     const double min_stoch_mass) {
   map<const string, const slug_PDF*>::iterator it
     = known_imfs.find(imfname);
   if (it != known_imfs.end()) {
-    if (!known_imfs[imfname]) known_imfs[imfname] = build_IMF(imfname);
+    if (!known_imfs[imfname])
+      known_imfs[imfname] = build_IMF(imfname, min_stoch_mass);
+    else
+      assert(known_imfs[imfname]->get_xStochMin() == min_stoch_mass);
     return known_imfs[imfname];
   }
   else return nullptr;
