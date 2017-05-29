@@ -72,7 +72,8 @@ public:
   // Method to produce predefined IMFs, tracks, spectral synthesizers,
   // filter sets, and yields
   const slug_PDF* imf(const std::string& imfname,
-		      const double min_stoch_mass = 0.0);
+		      const double min_stoch_mass = 0.0,
+		      const samplingMethod method = NO_METHOD);
   const slug_tracks* tracks(const std::string& trackname);
   const slug_specsyn* specsyn(const std::string& specsyn_name);
   const slug_filter_set* filter_set(const std::string& filter_set_name);
@@ -86,9 +87,11 @@ private:
   // Utility routines
   void build_rng();
   const slug_PDF *build_PDF(const std::string& fname,
-			    const double min_stoch_mass = 0.0);
+			    const double min_stoch_mass = 0.0,
+			    const samplingMethod method = NO_METHOD);
   const slug_PDF *build_IMF(const std::string& imfname,
-			    const double min_stoch_mass = 0.0);
+			    const double min_stoch_mass = 0.0,
+			    const samplingMethod method = NO_METHOD);
   const slug_tracks *build_tracks(const std::string& trackname);
   const slug_filter_set
   *build_filter_set(const std::string& filter_set_name);

@@ -614,7 +614,7 @@ slug_PDF::draw(double a, double b, unsigned long n) const {
 // Draw population function
 ////////////////////////////////////////////////////////////////////////
 double
-slug_PDF::drawPopulation(double target, vector<double>& pop) const {
+slug_PDF::drawPopulation(double target_mass, vector<double>& pop) const {
 
   // Initialize
   double sum = 0.0;
@@ -623,10 +623,10 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
   // If we're only using stochasticity over a limited range, reduce
   // the target value by the fraction of the PDF that is being treated
   // stochastically
-  if (range_restrict) target *= mass_frac_restrict();
+  if (range_restrict) target_mass *= mass_frac_restrict();
 
   // Special case: if target is zero or negative, just return
-  if (target <= 0.0) return 0.0;
+  if (target_mass <= 0.0) return 0.0;
 
   // Procedure depends on sampling method
   if ((method == STOP_NEAREST) || (method == STOP_BEFORE) ||
@@ -635,7 +635,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
     // Sampling methods based on mass instead of number
 
     // Draw until we exceed target
-    while (sum < target) {
+    while (sum < target_mass) {
       pop.push_back(draw_restricted());
       sum += pop[pop.size()-1];
     }
@@ -651,7 +651,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
 
       // Stop nearest: drop last element if that reduces the error
       double sum_minus = sum - pop.back();
-      if (sum - target > target - sum_minus) {
+      if (sum - target_mass > target_mass - sum_minus) {
 	pop.pop_back();
 	sum = sum_minus;
       }
@@ -673,7 +673,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
     if (method == NUMBER) {
 
       // Draw exactly the expected number of stars
-      int nExpect = (int) round(target/expectVal);
+      int nExpect = (int) round(target_mass/expectVal_restrict);
       for (int i=0; i<nExpect; i++) {
 	pop.push_back(draw_restricted());
 	sum += pop[pop.size()-1];
@@ -682,7 +682,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
     } else if (method == POISSON) {
 
       // Draw from a Poisson distribution to get number of stars
-      double nExpect = target/expectVal;
+      double nExpect = target_mass/expectVal_restrict;
       boost::random::poisson_distribution<> pdist(nExpect);
       variate_generator<rng_type&,
 	boost::random::poisson_distribution <> > poisson(*rng, pdist);
@@ -696,8 +696,8 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
 
       // Step 1: draw expected number of stars repeatedly until target
       // mass is exceeded
-      while (sum < target) {
-	int nExpect = (int) round((target-sum)/expectVal);
+      while (sum < target_mass) {
+	int nExpect = (int) round((target_mass-sum)/expectVal_restrict);
 	if (nExpect == 0) nExpect = 1;
 	for (int i=0; i<nExpect; i++) {
 	  pop.push_back(draw_restricted());
@@ -709,7 +709,7 @@ slug_PDF::drawPopulation(double target, vector<double>& pop) const {
       // policy
       sort(pop.begin(), pop.end());
       double sum_minus = sum - pop.back();
-      if (sum - target > target - sum_minus) {
+      if (sum - target_mass > target_mass - sum_minus) {
 	pop.pop_back();
 	sum = sum_minus;
       }

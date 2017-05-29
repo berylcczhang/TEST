@@ -151,10 +151,12 @@ void slug_predefined::build_rng() {
 ////////////////////////////////////////////////////////////////////////
 inline const slug_PDF*
 slug_predefined::build_PDF(const string& fname,
-			   const double min_stoch_mass) {
+			   const double min_stoch_mass,
+			   const samplingMethod method) {
   build_rng();
   slug_PDF *pdf = new slug_PDF(fname.c_str(), rng, ostreams);
   if (min_stoch_mass > 0.0) pdf->set_stoch_lim(min_stoch_mass);
+  if (method != NO_METHOD) pdf->setMethod(method);
   return pdf;
 }
 
@@ -163,9 +165,11 @@ slug_predefined::build_PDF(const string& fname,
 ////////////////////////////////////////////////////////////////////////
 inline const slug_PDF*
 slug_predefined::build_IMF(const string& imfname,
-			   const double min_stoch_mass) {
+			   const double min_stoch_mass,
+			   const samplingMethod method) {
   path p(imfname);
-  return build_PDF((imf_dir / p).string() + ".imf", min_stoch_mass);
+  return build_PDF((imf_dir / p).string() + ".imf",
+		   min_stoch_mass, method);
 }
 
 inline const slug_tracks*
@@ -192,14 +196,18 @@ slug_predefined::build_filter_set(const string& filter_set_name) {
 // Methods to fetch IMFs, tracks, specsyn, yields
 ////////////////////////////////////////////////////////////////////////
 const slug_PDF* slug_predefined::imf(const string& imfname,
-				     const double min_stoch_mass) {
+				     const double min_stoch_mass,
+				     const samplingMethod method) {
   map<const string, const slug_PDF*>::iterator it
     = known_imfs.find(imfname);
   if (it != known_imfs.end()) {
     if (!known_imfs[imfname])
-      known_imfs[imfname] = build_IMF(imfname, min_stoch_mass);
-    else
+      known_imfs[imfname] = build_IMF(imfname, min_stoch_mass, method);
+    else {
       assert(known_imfs[imfname]->get_xStochMin() == min_stoch_mass);
+      if (method != NO_METHOD)
+	assert(known_imfs[imfname]->getMethod() == method);
+    }
     return known_imfs[imfname];
   }
   else return nullptr;

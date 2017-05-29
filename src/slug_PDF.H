@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_PDF_segment.H"
 
 // Enum for sampling methods
-enum samplingMethod { STOP_NEAREST, STOP_BEFORE, STOP_AFTER, 
+enum samplingMethod { NO_METHOD, STOP_NEAREST, STOP_BEFORE, STOP_AFTER, 
 		      STOP_50, NUMBER, POISSON, SORTED_SAMPLING };
 
 class slug_PDF {
@@ -59,8 +59,9 @@ public:
   double get_xStochMin() const { return xStochMin; }
   double get_xStochMax() const { return xStochMax; }
 
-  // Change sampling method
-  void setMethod(samplingMethod new_method) { method = new_method; }
+  // Get and change sampling method
+  void setMethod(const samplingMethod new_method) { method = new_method; }
+  const samplingMethod& getMethod() const { return method; }
 
   // Change the normalization
   void setNorm(double new_norm);
