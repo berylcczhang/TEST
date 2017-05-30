@@ -64,7 +64,8 @@ public:
 	       const slug_nebular *nebular_,
 	       const slug_yields *yields_,
 	       slug_ostreams &ostreams_,
-	       const slug_PDF *clf_=NULL);
+	       const slug_PDF *clf_ = nullptr,
+	       const bool stoch_contrib_only_ = false);
 
   // Constructor to reconstruct a slug_cluster object from a
   // serialized buffer
@@ -77,7 +78,8 @@ public:
 	       const slug_nebular *nebular_,
 	       const slug_yields *yields_,
 	       slug_ostreams &ostreams_,
-	       const slug_PDF *clf_=NULL);
+	       const slug_PDF *clf_ = nullptr,
+	       const bool stoch_contrib_only_ = false);
 
   // Copy constructor
   slug_cluster(const slug_cluster &obj, const unsigned long id_ = 0);
@@ -295,6 +297,8 @@ private:
   std::vector<double> non_stoch_yields; // Yields from non-stochastic stars
   bool is_disrupted;                  // Is this cluster disrupted?
   bool data_set, Lbol_set, spec_set, phot_set, yield_set;  // Status indicators
+  bool stoch_contrib_only;            // Only include the stochastic
+                                      // contribution to yields and spectra
 };
 
 #endif

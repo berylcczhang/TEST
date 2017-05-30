@@ -75,7 +75,9 @@ public:
 		      const double min_stoch_mass = 0.0,
 		      const samplingMethod method = NO_METHOD);
   const slug_tracks* tracks(const std::string& trackname);
-  const slug_specsyn* specsyn(const std::string& specsyn_name);
+  const slug_specsyn* specsyn(const std::string& specsyn_name,
+			      const slug_tracks* tracks_,
+			      const slug_PDF* imf_ = nullptr);
   const slug_filter_set* filter_set(const std::string& filter_set_name);
   const slug_yields* yields(const std::string& yields_name);
   

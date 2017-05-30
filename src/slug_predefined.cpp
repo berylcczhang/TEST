@@ -225,33 +225,35 @@ const slug_tracks* slug_predefined::tracks(const string& trackname) {
 }
 
 const slug_specsyn*
-slug_predefined::specsyn(const string& specsyn_name) {
+slug_predefined::specsyn(const string& specsyn_name,
+			 const slug_tracks* tracks_,
+			 const slug_PDF* imf_) {
   map<const string, const slug_specsyn*>::iterator it
     = known_specsyn.find(specsyn_name);
   if (it != known_specsyn.end()) {
     if (!known_specsyn[specsyn_name]) {
       if (specsyn_name == "planck") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
-	  (new slug_specsyn_planck(nullptr, nullptr, nullptr, ostreams));
+	  (new slug_specsyn_planck(tracks_, imf_, nullptr, ostreams));
       } else if (specsyn_name == "kurucz") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_kurucz(atmos_dir.string().c_str(),
-				   tracks("Z0140v00.txt"), nullptr,
+				   tracks_, imf_,
 				   nullptr, ostreams));
       } else if (specsyn_name == "kurucz_hillier") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_hillier(atmos_dir.string().c_str(),
-				    tracks("Z0140v00.txt"), nullptr,
+				    tracks_, imf_,
 				    nullptr, ostreams));
       } else if (specsyn_name == "kurucz_pauldrach") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_pauldrach(atmos_dir.string().c_str(),
-				      tracks("Z0140v00.txt"), nullptr,
+				      tracks_, imf_,
 				      nullptr, ostreams));
       } else if (specsyn_name == "sb99") {
 	known_specsyn[specsyn_name] = static_cast<slug_specsyn *>
 	  (new slug_specsyn_sb99(atmos_dir.string().c_str(),
-				 tracks("Z0140v00.txt"), nullptr,
+				 tracks_, imf_,
 				 nullptr, ostreams));
       }
     }

@@ -58,12 +58,14 @@ slug_cluster::slug_cluster(const unsigned long id_,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
 			   slug_ostreams& ostreams_,
-			   const slug_PDF *clf_) :
+			   const slug_PDF *clf_,
+			   const bool stoch_contrib_only_) :
   ostreams(ostreams_),
   targetMass(mass_), imf(imf_), clf(clf_), tracks(tracks_), 
   specsyn(specsyn_), filters(filters_), extinct(extinct_),
   nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr, ostreams_),
-  id(id_), formationTime(time), curTime(time), last_yield_time(time)
+  id(id_), formationTime(time), curTime(time), last_yield_time(time),
+  stoch_contrib_only(stoch_contrib_only_)
 {
 
   // Initialize to non-disrupted
@@ -128,11 +130,13 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
 			   slug_ostreams& ostreams_,
-			   const slug_PDF *clf_) :
+			   const slug_PDF *clf_,
+			   const bool stoch_contrib_only_) :
   ostreams(ostreams_),
   targetMass(((double *) buf)[0]), imf(imf_), clf(clf_), tracks(tracks_), 
   specsyn(specsyn_), filters(filters_), extinct(extinct_),
-  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr, ostreams_)
+  nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr, ostreams_),
+  stoch_contrib_only(stoch_contrib_only_)
 {
   // Pull out the basic data first
   // Doubles
@@ -789,7 +793,7 @@ void slug_cluster::set_Lbol() {
   }
 
   // Non-stochastic part
-  if (imf->has_stoch_lim())
+  if (imf->has_stoch_lim() && !stoch_contrib_only)
     Lbol += specsyn->get_Lbol_cts(birthMass, curTime-formationTime);
 
   // If using extinction, to compute Lbol we need to first compute the
@@ -836,7 +840,7 @@ slug_cluster::set_spectrum() {
   }
 
   // Non-stochastic part
-  if (imf->has_stoch_lim()) {
+  if (imf->has_stoch_lim() && !stoch_contrib_only) {
     double Lbol_tmp;
     vector<double> spec;
     specsyn->get_spectrum_cts(birthMass, curTime-formationTime, spec, 
@@ -1013,7 +1017,7 @@ void slug_cluster::set_yield() {
   }
 
   // Do we have non-stochastic stars?
-  if (!imf->has_stoch_lim()) {
+  if (!imf->has_stoch_lim() || stoch_contrib_only) {
 
     // No, so just copy stochastic yields to total yields
     for (vector<double>::size_type i=0; i<all_yields.size(); i++)
