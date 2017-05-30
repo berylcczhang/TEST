@@ -1021,47 +1021,122 @@ void slug_cluster::set_yield() {
     
   } else {
 
-    // We do have stochastic stars
+    // We do have non-stochastic stars
     
     // Reset the non-stochastic yield
     non_stoch_yields.assign(non_stoch_yields.size(), 0.0);
 
-    // Grab the vector the defines the range of stellar masses that
-    // are dead now and that are being treated stochastically
-    vector<double> dead_mass_range;
+    // The next step is to find the intersection between the mass
+    // intervals that have died and mass intervals that are being
+    // treated non-stochastically, so that we can integrate over
+    // them. The variable dead_nonstoch_range will be a vector with an
+    // even number of elements that defines the ranges over which to
+    // integrate.
+    vector<double> dead_nonstoch_range;
+
+    // First step: get the live mass range
+    vector<double> live_mass_range;
     if (tracks->check_monotonic()) {
-      // Case for monotonic tracks
-      dead_mass_range.push_back(stellarDeathMass);
-      dead_mass_range.push_back(imf->get_xStochMax());;
+      live_mass_range.push_back(0.0);
+      live_mass_range.push_back(stellarDeathMass);
     } else {
-      // Case for non-monotonic tracks
-      vector<double> mass_cuts =
-	tracks->live_mass_range(curTime-formationTime);
-      if (mass_cuts[0] > imf->get_xMin())
-	dead_mass_range.push_back(imf->get_xMin());
-      for (vector<double>::size_type i=1; i<mass_cuts.size(); i++) {
-	if (mass_cuts[i] > imf->get_xStochMax()) break;
-	dead_mass_range.push_back(mass_cuts[i]);
+      live_mass_range = tracks->live_mass_range(curTime-formationTime);
+    }
+
+    // Second step: get the non-stochastic mass range
+    vector<double> non_stoch_range;
+    if (imf->get_xMin() != imf->get_xStochMin()) {
+      non_stoch_range.push_back(imf->get_xMin());
+      non_stoch_range.push_back(imf->get_xStochMin());
+    }
+    if (imf->get_xMax() != imf->get_xStochMax()) {
+      non_stoch_range.push_back(imf->get_xStochMax());
+      non_stoch_range.push_back(imf->get_xMax());
+    }
+
+    // Third step: construct the intervals that result from the
+    // intersection of the inverse of the first set (the live mass
+    // range) and the second set (the non-stochastic range)
+    vector<double>::size_type live_ptr, ns_ptr;
+    bool alive, non_stoch;
+    if (live_mass_range[0] == non_stoch_range[0]) {
+      alive = true;
+      non_stoch = true;
+      live_ptr = ns_ptr = 1;
+    } else if (live_mass_range[0] > non_stoch_range[0]) {
+      alive = false;
+      non_stoch = true;
+      dead_nonstoch_range.push_back(non_stoch_range[0]);
+      live_ptr = 0;
+      ns_ptr = 1;
+    } else {
+      alive = true;
+      non_stoch = false;
+      live_ptr = 1;
+      ns_ptr = 0;
+    }
+    while (ns_ptr != non_stoch_range.size()) {
+      // Figure out which pointer to advance
+      if (live_ptr == live_mass_range.size()) {
+	// live_ptr is at end of list, so advance ns_ptr; if we are
+	// inside an interval of dead, non-stochastic mass, end the
+	// interval; flip the stochasticity bit; if we are at the
+	// start of a dead, non-stochastic interval, start it
+	if (!alive)
+	  dead_nonstoch_range.push_back(non_stoch_range[ns_ptr]);
+	ns_ptr++;
+	non_stoch = !non_stoch;
+      } else if (ns_ptr == non_stoch_range.size()) {
+	// ns_ptr is at end of list, so advance live_ptr; if we are
+	// inside an interval of dead, non-stochastic mass, end the
+	// interval; flip the alive bit
+	if (non_stoch)
+	  dead_nonstoch_range.push_back(live_mass_range[live_ptr]);
+	live_ptr++;
+	alive = !alive;
+      } else if (live_mass_range[live_ptr] == non_stoch_range[ns_ptr]) {
+	// Neither point is at end of list, and the next points are
+	// identical; advance both pointers, flip both bits, and, if we are
+	// inside an interval of dead, non-stochastic mass, end the
+	// interval
+	if (alive != non_stoch)
+	  dead_nonstoch_range.push_back(live_mass_range[live_ptr]);
+	live_ptr++;
+	ns_ptr++;
+	alive = !alive;
+	non_stoch = !non_stoch;
+      } else if (live_mass_range[live_ptr] < non_stoch_range[ns_ptr]) {
+	// Neither pointer is at end of list, but the next mass point
+	// we hit is a transition from alive to not alive; advance the
+	// alive pointer, flip the alive bit, and start and end
+	// intervals
+	if (non_stoch)
+	  dead_nonstoch_range.push_back(live_mass_range[live_ptr]);
+	live_ptr++;
+	alive = !alive;
+      } else {
+	// The next mass point we hit is a transition from
+	// non-stochastic to stochastic
+	if (!alive)
+	  dead_nonstoch_range.push_back(non_stoch_range[ns_ptr]);
+	ns_ptr++;
+	non_stoch = !non_stoch;
       }
-      if (dead_mass_range.size() % 2)
-	dead_mass_range.push_back(imf->get_xStochMax());
     }
 
     // Now integrate the IMF-weighted yield over the non-stochastic
     // dead star mass range. Note that this doesn't quite treat decay
     // of unstable isotopes correctly. To be fixed later!
-    if (dead_mass_range[0] < dead_mass_range[1]) {
-      for (vector<double>::size_type i=0;
-	   i<dead_mass_range.size(); i+=2) {
-	for (vector<double>::size_type j=0;
-	     j<non_stoch_yields.size(); j++) {
-	  non_stoch_yields[j] +=
-	    integ.integrate_nt_lim(targetMass,
-				   dead_mass_range[i],
-				   dead_mass_range[i+1],
-				   boost::bind(cluster::yield, _1,
-					       yields, j));
-	}
+    for (vector<double>::size_type i=0;
+	 i<dead_nonstoch_range.size(); i+=2) {
+      for (vector<double>::size_type j=0;
+	   j<non_stoch_yields.size(); j++) {
+	non_stoch_yields[j] +=
+	  integ.integrate_nt_lim(targetMass,
+				 dead_nonstoch_range[i],
+				 dead_nonstoch_range[i+1],
+				 boost::bind(cluster::yield, _1,
+					     yields, j));
       }
     }
 
