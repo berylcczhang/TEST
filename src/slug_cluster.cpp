@@ -687,14 +687,13 @@ slug_cluster::advance(double time) {
   // Recompute the number of non-stochastic supernovae and thus total
   // supernovae; only do this if we have yields, because this is where
   // the information on SN production is stored
-  if (yields) {
+  if (yields && !stoch_contrib_only) {
     tot_sn = stoch_sn;
     if (imf->has_stoch_lim()) {
 
       // Some stuff we'll need
       const vector<double>& sn_mass_range = yields->sn_mass_range();
       double mbar = imf->expectationVal();
-      double m_stop = min(imf->get_xStochMax(), sn_mass_range.back());
 
       if (tracks->check_monotonic()) {
 
@@ -702,9 +701,10 @@ slug_cluster::advance(double time) {
 	// of the IMF over the range of masses that has supernovae and
 	// is above the larger of the stellar death mass and below the
 	// maximum non-stochastic mass
+	double m_stop = min(imf->get_xStochMin(), sn_mass_range.back());
 	double m = stellarDeathMass;
 	bool has_sn = yields->produces_sn(m);
-	double m_next = min(imf->get_xStochMax(), sn_mass_range.front());
+	double m_next = min(imf->get_xStochMin(), sn_mass_range.front());
 	vector<double>::size_type ptr = 0;
 	while (m < m_stop) {
 	  if (has_sn) tot_sn += targetMass * imf->integral(m, m_next) / mbar;
@@ -716,36 +716,156 @@ slug_cluster::advance(double time) {
 
       } else {
 
-	// Death masses are non-monotonic, so we need to figure out the
-	// total number of stars in the mass ranges where (1) stars have
-	// died, (2) stars in that mass range produce SNe, and (3) stars
-	// in that mass range are being treated non-stochastically.
-	vector<double> mass_cuts = tracks->live_mass_range(clusterAge);
-	double m = mass_cuts[0];
-	double m_next;
-	bool has_sn = yields->produces_sn(m);
-	bool is_alive = true;
-	vector<double>::size_type cut_ptr = 1, sn_ptr = 0;
-	while (m < m_stop) {
-	  if ((imf->get_xStochMax() < mass_cuts[cut_ptr]) &&
-	      (imf->get_xStochMax() < sn_mass_range[sn_ptr])) {
-	    m_next = imf->get_xStochMax();
-	    if (has_sn && !is_alive) 
-	      tot_sn += targetMass * imf->integral(m, m_next) / mbar;
-	  } else if (mass_cuts[cut_ptr] < sn_mass_range[sn_ptr]) {
-	    m_next = mass_cuts[cut_ptr];
-	    cut_ptr++;
-	    if (has_sn && !is_alive) 
-	      tot_sn += targetMass * imf->integral(m, m_next) / mbar;
-	    is_alive = !is_alive;
+	// Non-monotonic tracks; we need to find the intersection
+	// between the mass intervals that have died, the mass
+	// intervals that have supernovae, and mass intervals that are
+	// being treated non-stochastically, so that we can integrate
+	// over them. The variable sn_nonstoch_range will be a vector
+	// with an even number of elements that defines the ranges
+	// over which to integrate.
+	vector<double> sn_nonstoch_range;
+
+	// First step: get the live mass range
+	vector<double> live_mass_range;
+	live_mass_range = tracks->live_mass_range(curTime-formationTime);
+
+	// Second step: get the non-stochastic mass range
+	vector<double> non_stoch_range;
+	if (imf->get_xMin() != imf->get_xStochMin()) {
+	  non_stoch_range.push_back(imf->get_xMin());
+	  non_stoch_range.push_back(imf->get_xStochMin());
+	}
+	if (imf->get_xMax() != imf->get_xStochMax()) {
+	  non_stoch_range.push_back(imf->get_xStochMax());
+	  non_stoch_range.push_back(imf->get_xMax());
+	}
+
+	// Third step: construct the intervals that result from the
+	// intersection of the inverse of the live mass range, the SN
+	// mass range, and the non-stochastic range
+	vector<double>::size_type live_ptr, ns_ptr, sn_ptr;
+	bool alive, has_sn, non_stoch;
+	if (live_mass_range[0] < non_stoch_range[0]) {
+	  if (live_mass_range[0] < sn_mass_range[0]) {
+	    alive = true;
+	    non_stoch = false;
+	    has_sn = false;
+	    live_ptr = 1;
+	    ns_ptr = sn_ptr = 0;
 	  } else {
-	    m_next = sn_mass_range[sn_ptr];
-	    sn_ptr++;
-	    if (has_sn && !is_alive) 
-	      tot_sn += targetMass * imf->integral(m, m_next) / mbar;
-	    has_sn = !has_sn;
+	    alive = false;
+	    non_stoch = false;
+	    has_sn = true;
+	    sn_ptr = 1;
+	    live_ptr = ns_ptr = 0;
 	  }
-	  m = m_next;
+	} else {
+	  if (non_stoch_range[0] < sn_mass_range[0]) {
+	    alive = false;
+	    non_stoch = true;
+	    has_sn = false;
+	    ns_ptr = 1;
+	    live_ptr = sn_ptr = 0;
+	  } else {
+	    alive = false;
+	    non_stoch = false;
+	    has_sn = true;
+	    sn_ptr = 1;
+	    live_ptr = ns_ptr = 0;
+	  }
+	}
+	while (ns_ptr != non_stoch_range.size()) {
+	  // Figure out which pointer to advance
+	  if (live_ptr == live_mass_range.size()) {
+	    // live_ptr is at end of list
+	    if (sn_ptr == sn_mass_range.size()) {
+	      // sn_ptr is at end of list
+	      
+	      // advance ns_ptr; if we are inside an interval of dead,
+	      // sn-producing, non-stochastic mass, end the
+	      // interval; flip the stochasticity bit; if we are at the
+	      // start of a dead, sn-producing, non-stochastic interval,
+	      // start it
+	      if (!alive && has_sn)
+		sn_nonstoch_range.push_back(non_stoch_range[ns_ptr]);
+	      ns_ptr++;
+	      non_stoch = !non_stoch;
+	    } else {
+	      // decide if we should advance sn_ptr or ns_ptr
+	      if (sn_mass_range[sn_ptr] < non_stoch_range[ns_ptr]) {
+		// advance sn_ptr
+		if (!alive && non_stoch)
+		  sn_nonstoch_range.push_back(sn_mass_range[sn_ptr]);
+		sn_ptr++;
+		has_sn = !has_sn;
+	      } else {
+		// advance ns_ptr
+		if (!alive && has_sn)
+		  sn_nonstoch_range.push_back(non_stoch_range[ns_ptr]);
+		ns_ptr++;
+		non_stoch = !non_stoch;
+	      }
+	    }
+	  } else {
+	    // live_ptr is not at end of list
+	    if (sn_ptr == sn_mass_range.size()) {
+	      // sn_ptr is at end of list; decie if we should advance
+	      // live_ptr or ns_ptr
+	      if (live_mass_range[live_ptr] < non_stoch_range[ns_ptr]) {
+		// advance live_ptr
+		if (non_stoch && has_sn)
+		  sn_nonstoch_range.push_back(live_mass_range[live_ptr]);
+		live_ptr++;
+		alive = !alive;
+	      } else {
+		// advance ns_ptr
+		if (!alive && has_sn)
+		  sn_nonstoch_range.push_back(non_stoch_range[ns_ptr]);
+		ns_ptr++;
+		non_stoch = !non_stoch;
+	      }
+	    } else {
+	      // no pointers are at end of list, so compare all three
+	      if (live_mass_range[live_ptr] < non_stoch_range[ns_ptr]) {
+		if (live_mass_range[live_ptr] < sn_mass_range[sn_ptr]) {
+		  // live_ptr is next to advance
+		  if (non_stoch && has_sn)
+		    sn_nonstoch_range.push_back(live_mass_range[live_ptr]);
+		  live_ptr++;
+		  alive = !alive;
+		} else {
+		  // sn_ptr is next to advance
+		  if (!alive && non_stoch)
+		    sn_nonstoch_range.push_back(sn_mass_range[sn_ptr]);
+		  sn_ptr++;
+		  has_sn = !has_sn;
+		}
+	      } else {
+		if (non_stoch_range[ns_ptr] < sn_mass_range[sn_ptr]) {
+		  // ns_ptr is next to advance
+		  if (!alive && has_sn)
+		    sn_nonstoch_range.push_back(non_stoch_range[ns_ptr]);
+		  ns_ptr++;
+		  non_stoch = !non_stoch;
+		} else {
+		  // sn_ptr is next to advance
+		  if (!alive && non_stoch)
+		    sn_nonstoch_range.push_back(sn_mass_range[sn_ptr]);
+		  sn_ptr++;
+		  has_sn = !has_sn;
+		}
+	      }
+	    }
+	  }
+	}
+
+	// Fourth step: integrate over the mass intervals we have found
+	// to decide how many non-stochastic supernovae there are
+	for (vector<double>::size_type i=0;
+	     i<sn_nonstoch_range.size(); i+=2) {
+	  tot_sn += targetMass *
+	    imf->integral(sn_nonstoch_range[i],
+			  sn_nonstoch_range[i+1]) / mbar;
 	}
       }
     }
