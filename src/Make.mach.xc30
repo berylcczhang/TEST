@@ -1,0 +1,42 @@
+# Machine-specific settings for cray-xc30 at NAOJ
+# based on Make.mach.linux-gnu
+
+# Default is g++ / gcc compiler
+MACH_CXX          = CC
+MACH_CC		  = cc
+
+# For MPI compilation
+MACH_MPICXX	  = CC
+MACH_MPICC 	  = cc
+
+# Flag needed to specify c++11 standard
+MACH_C11FLAG      = -std=c++11
+
+# Flag needed to link off the correct std c++ library
+MACH_CXXLIB       = -lstdc++
+
+# Optimization flags; note that we omit -Wall because
+# g++ issues a ton of warnings about boost when -Wall is enabled
+MACH_CXXOPTFLAGS  = -O3
+MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
+MACH_LDOPTFLAGS   = -O3
+
+# Debug flags
+MACH_CXXDEBFLAGS  = -Og
+MACH_CDEBFLAGS	  = $(MACH_CXXDEBFLAGS)
+MACH_LDDEBFLAGS   = -Og
+
+# Flags to compile shared libaries
+LIB_EXTENSION	   = .so
+LIBSTAT_EXTENSION  = .a
+CLIBFLAGS	   = -fPIC
+DYNLIBFLAG	   = -shared
+
+# Locations of BOOST and GSL library files
+BOOST_HDR_PATH	  = /home/fujimtys/boost/include/
+BOOST_LIB_PATH	  = /home/fujimtys/boost/lib/
+GSL_HDR_PATH	  = /home/fujimtys/gsl/include/
+GSL_LIB_PATH	  = /home/fujimtys/gsl/lib/
+
+# Boost library names do not have tags
+MACH_BOOST_TAG    =
