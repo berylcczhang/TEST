@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <cmath>
 #include "slug_IO.H"
+#include <boost/random/mersenne_twister.hpp>
 
 ////////////////////////////////////////////////////////////////////////
 // The periodic table
