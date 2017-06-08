@@ -27,8 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #   include "mpi.h"
 #endif
 
-#include <boost/random/mersenne_twister.hpp>
-
 // Declare all slug classes here
 class slug_PDF;
 class slug_PDF_delta;
@@ -93,9 +91,6 @@ typedef struct {
   double logg;       // Log_10 g in cm/s^2
   WRtype WR;         // Type of WR star
 } slug_stardata;
-
-// Random number generator type
-typedef boost::random::mt19937 rng_type;
 
 #endif
 // _slug_H_

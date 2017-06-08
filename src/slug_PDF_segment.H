@@ -40,6 +40,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include "slug.H"
 #include "slug_IO.H"
+#include <boost/random/mersenne_twister.hpp>
+
+// Random number generator type
+typedef boost::random::mt19937 rng_type;
 
 enum parseStatus { OK, PARSE_ERROR, EOF_ERROR };
 
