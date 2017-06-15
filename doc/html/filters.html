@@ -1,12 +1,12 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Filters and Filter Data &mdash; slug 2.0 documentation</title>
+    <title>Filters and Filter Data &#8212; slug 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,14 +17,16 @@
         VERSION:     '2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="slugpy – The Python Helper Library" href="slugpy.html" />
     <link rel="prev" title="Output Files and Format" href="output.html" />
    
@@ -32,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -42,7 +44,7 @@
   <div class="section" id="filters-and-filter-data">
 <span id="sec-filters"></span><h1>Filters and Filter Data<a class="headerlink" href="#filters-and-filter-data" title="Permalink to this headline">¶</a></h1>
 <p>SLUG comes with a fairly extensive list of filters, adapted from the list maintained by Charlie Conroy as part of <a class="reference external" href="https://code.google.com/p/fsps/">fsps</a>. However, users may wish to add additional filters, and so the format of the filter list is documented here for convenience.</p>
-<p>Filter data is stored in two ASCII text files, <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> and <code class="docutils literal"><span class="pre">allfilters.dat</span></code>, which are stored in the <code class="docutils literal"><span class="pre">lib/filters</span></code> directory. The <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the <code class="docutils literal"><span class="pre">phot_bands</span></code> keyword (see <a class="reference internal" href="parameters.html#ssec-phot-keywords"><span class="std std-ref">Photometric Filter Keywords</span></a>) to request photometry in that filter. The third and fourth columns the value of <span class="math">\(\beta\)</span> and <span class="math">\(\lambda_c\)</span> (the central wavelength) for that filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a> for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.</p>
+<p>Filter data is stored in two ASCII text files, <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> and <code class="docutils literal"><span class="pre">allfilters.dat</span></code>, which are stored in the <code class="docutils literal"><span class="pre">lib/filters</span></code> directory. The <code class="docutils literal"><span class="pre">FILTER_LIST</span></code> file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the <code class="docutils literal"><span class="pre">phot_bands</span></code> keyword (see <a class="reference internal" href="parameters.html#ssec-phot-keywords"><span class="std std-ref">Photometric Filter Keywords</span></a>) to request photometry in that filter. The third and fourth columns the value of <span class="math">\(\beta\)</span> and <span class="math">\(\lambda_c\)</span> (the central wavelength) for that filter – see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a> for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.</p>
 <p>The <code class="docutils literal"><span class="pre">allfilters.dat</span></code> file contains the filter responses. The file contains a series of entires for different filters, each delineated by a header line that begins with <code class="docutils literal"><span class="pre">#</span></code>. The order in which filters appear in this file matches that in which they appear in the <code class="docutils literal"><span class="pre">FILTER_LIST</span></code>. After the header line, are a series of lines each containing two numbers. The first is the wavelength in Angstrom, and the second is the filter response function at that wavelength.</p>
 </div>
 
@@ -56,14 +58,14 @@
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="output.html" title="previous chapter">Output Files and Format</a></li>
-      <li>Next: <a href="slugpy.html" title="next chapter">slugpy &#8211; The Python Helper Library</a></li>
+      <li>Next: <a href="slugpy.html" title="next chapter">slugpy – The Python Helper Library</a></li>
   </ul></li>
 </ul>
 </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/filters.txt"
+      <li><a href="_sources/filters.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -85,11 +87,11 @@
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/filters.txt"
+      <a href="_sources/filters.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

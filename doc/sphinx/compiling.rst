@@ -92,3 +92,37 @@ compilation flag you want by editing the file
 ``src/Make.config.override``.
 
 
+Note on Boost Naming and Linking Issues
+---------------------------------------
+
+The `Boost <http://www.boost.org/>`_ libraries have a somewhat complex
+history of naming conventions (see this `stackoverflow discussion thread
+<https://stackoverflow.com/questions/2293962/boost-libraries-in-multithreading-aware-mode>`_). As
+a result, depending on your platform and where you got your Boost
+libraries and how you compiled them, the libraries names may or may
+not have names that end in ``-mt`` (indicating multithreading
+support). There is unfortunately no easy way to guess whether this tag
+will be present or not in the Boost installation on any particular
+system, so the ``slug`` makefiles contain defaults that are guesses
+based on some of the most common boost installations (e.g., the
+macports version of Boost has the ``-mt`` tag, so the default on
+Darwin is to include it). If you find that your attempted compilation
+fails at the linking stage with an error like::
+
+  ld: library not found for -lboost_system-mt
+
+or::
+
+  ld: library not found for -lboost_system
+    
+but you are confident that you have boost installed and the path
+correctly set, you can try adding or removing the ``-mt`` flag. To do
+so, edit the file ``src/Make.config.override`` and add the line::
+
+  MACH_BOOST_TAG 	  = -mt
+
+(to turn the ``-mt`` tag on) or::
+
+  MACH_BOOST_TAG 	  =
+
+(to turn the ``-mt`` tag off). Then try compiling again.

@@ -1,12 +1,12 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Compiling and Installing SLUG &mdash; slug 2.0 documentation</title>
+    <title>Compiling and Installing SLUG &#8212; slug 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,14 +17,16 @@
         VERSION:     '2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Running a SLUG simulation" href="running.html" />
     <link rel="prev" title="Introduction to SLUG" href="intro.html" />
    
@@ -32,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -46,14 +48,14 @@
 <p>The core SLUG program requires</p>
 <ul class="simple">
 <li>The <a class="reference external" href="http://www.boost.org/">Boost C++ libraries</a></li>
-<li>The <a class="reference external" href="http://www.gnu.org/software/gsl/">GNU scientific library</a> (version 2.x preferred, code can be compiled with version 1.x &#8211; see below)</li>
+<li>The <a class="reference external" href="http://www.gnu.org/software/gsl/">GNU scientific library</a> (version 2.x preferred, code can be compiled with version 1.x – see below)</li>
 </ul>
 <p>In addition, the following are required for some functionality, but not for the core code:</p>
 <ul class="simple">
 <li>The <a class="reference external" href="http://heasarc.gsfc.nasa.gov/fitsio/fitsio.html">cfitsio library</a> (required for FITS capabilities)</li>
 <li>An implementation of <a class="reference external" href="http://mpi-forum.org/">MPI</a> (required for MPI support; for full functionality, the implementation must support the MPI 3.0 or later standard)</li>
 </ul>
-<p>Compilation will be easiest if you install the required libraries such that the header files are included in your <code class="docutils literal"><span class="pre">CXX_INCLUDE_PATH</span></code> (for Boost) and <code class="docutils literal"><span class="pre">C_INCLUDE_PATH</span></code> (for GSL, cfitsio, and MPI) and the compiled object files are in your <code class="docutils literal"><span class="pre">LIBRARY_PATH</span></code>. Alternately, you can manually specify the locations of these files by editing the Makefiles &#8211; see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag <code class="docutils literal"><span class="pre">FITS=DISABLE_FITS</span></code> when calling <code class="docutils literal"><span class="pre">make</span></code> (see below). The MPI libraries are required only for MPI capability, which is not enabled by default; see <a class="reference internal" href="library.html#ssec-mpi-support"><span class="std std-ref">Using SLUG as a Library with MPI-Enabled Codes</span></a> for an explanation of these capabilities and how to enable them. Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).</p>
+<p>Compilation will be easiest if you install the required libraries such that the header files are included in your <code class="docutils literal"><span class="pre">CXX_INCLUDE_PATH</span></code> (for Boost) and <code class="docutils literal"><span class="pre">C_INCLUDE_PATH</span></code> (for GSL, cfitsio, and MPI) and the compiled object files are in your <code class="docutils literal"><span class="pre">LIBRARY_PATH</span></code>. Alternately, you can manually specify the locations of these files by editing the Makefiles – see below. The cfitsio library is optional, and is only required if you want the ability to write FITS output. To compile without it, use the flag <code class="docutils literal"><span class="pre">FITS=DISABLE_FITS</span></code> when calling <code class="docutils literal"><span class="pre">make</span></code> (see below). The MPI libraries are required only for MPI capability, which is not enabled by default; see <a class="reference internal" href="library.html#ssec-mpi-support"><span class="std std-ref">Using SLUG as a Library with MPI-Enabled Codes</span></a> for an explanation of these capabilities and how to enable them. Note that SLUG uses some Boost libraries that must be built separately (see the Boost documentation on how to build and install Boost libraries).</p>
 <p>In addition to the core dependencies, slugpy, the python helper library requires:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://www.numpy.org/">numpy</a></li>
@@ -68,7 +70,7 @@
 </div>
 <div class="section" id="compiling">
 <span id="ssec-compiling"></span><h2>Compiling<a class="headerlink" href="#compiling" title="Permalink to this headline">¶</a></h2>
-<p>If you have Boost in your <code class="docutils literal"><span class="pre">CXX_INCLUDE_PATH</span></code>, GSL in your <code class="docutils literal"><span class="pre">C_INCLUDE_PATH</span></code>, and (if you&#8217;re using it) cfitsio in your <code class="docutils literal"><span class="pre">C_INCLUDE_PATH</span></code>, and the compiled libraries for each of these in your <code class="docutils literal"><span class="pre">LIBRARY_PATH</span></code> environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:</p>
+<p>If you have Boost in your <code class="docutils literal"><span class="pre">CXX_INCLUDE_PATH</span></code>, GSL in your <code class="docutils literal"><span class="pre">C_INCLUDE_PATH</span></code>, and (if you’re using it) cfitsio in your <code class="docutils literal"><span class="pre">C_INCLUDE_PATH</span></code>, and the compiled libraries for each of these in your <code class="docutils literal"><span class="pre">LIBRARY_PATH</span></code> environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>make
 </pre></div>
 </div>
@@ -84,7 +86,7 @@
 </div>
 <p>In addition, you may need to specify the names of your preferred MPI
 C++ compiler by setting the variable <code class="docutils literal"><span class="pre">MACH_MPICXX</span></code> in your
-machine-specific makefile &#8211; see <a class="reference internal" href="#ssec-machine-makefiles"><span class="std std-ref">Machine-Specific Makefiles</span></a>. The
+machine-specific makefile – see <a class="reference internal" href="#ssec-machine-makefiles"><span class="std std-ref">Machine-Specific Makefiles</span></a>. The
 Makefiles contain reasonable guesses, but since MPI compiler names are
 much less standardized than general compiler names, you may need to
 supply yours rather than relying on the default.</p>
@@ -117,6 +119,39 @@ included in the repository. You can also override or reset any
 compilation flag you want by editing the file
 <code class="docutils literal"><span class="pre">src/Make.config.override</span></code>.</p>
 </div>
+<div class="section" id="note-on-boost-naming-and-linking-issues">
+<h2>Note on Boost Naming and Linking Issues<a class="headerlink" href="#note-on-boost-naming-and-linking-issues" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference external" href="http://www.boost.org/">Boost</a> libraries have a somewhat complex
+history of naming conventions (see this <a class="reference external" href="https://stackoverflow.com/questions/2293962/boost-libraries-in-multithreading-aware-mode">stackoverflow discussion thread</a>). As
+a result, depending on your platform and where you got your Boost
+libraries and how you compiled them, the libraries names may or may
+not have names that end in <code class="docutils literal"><span class="pre">-mt</span></code> (indicating multithreading
+support). There is unfortunately no easy way to guess whether this tag
+will be present or not in the Boost installation on any particular
+system, so the <code class="docutils literal"><span class="pre">slug</span></code> makefiles contain defaults that are guesses
+based on some of the most common boost installations (e.g., the
+macports version of Boost has the <code class="docutils literal"><span class="pre">-mt</span></code> tag, so the default on
+Darwin is to include it). If you find that your attempted compilation
+fails at the linking stage with an error like:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>ld: library not found for -lboost_system-mt
+</pre></div>
+</div>
+<p>or:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>ld: library not found for -lboost_system
+</pre></div>
+</div>
+<p>but you are confident that you have boost installed and the path
+correctly set, you can try adding or removing the <code class="docutils literal"><span class="pre">-mt</span></code> flag. To do
+so, edit the file <code class="docutils literal"><span class="pre">src/Make.config.override</span></code> and add the line:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>MACH_BOOST_TAG          = -mt
+</pre></div>
+</div>
+<p>(to turn the <code class="docutils literal"><span class="pre">-mt</span></code> tag on) or:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>MACH_BOOST_TAG          =
+</pre></div>
+</div>
+<p>(to turn the <code class="docutils literal"><span class="pre">-mt</span></code> tag off). Then try compiling again.</p>
+</div>
 </div>
 
 
@@ -131,6 +166,7 @@ compilation flag you want by editing the file
 <li><a class="reference internal" href="#dependencies">Dependencies</a></li>
 <li><a class="reference internal" href="#compiling">Compiling</a></li>
 <li><a class="reference internal" href="#machine-specific-makefiles">Machine-Specific Makefiles</a></li>
+<li><a class="reference internal" href="#note-on-boost-naming-and-linking-issues">Note on Boost Naming and Linking Issues</a></li>
 </ul>
 </li>
 </ul>
@@ -146,7 +182,7 @@ compilation flag you want by editing the file
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/compiling.txt"
+      <li><a href="_sources/compiling.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -168,11 +204,11 @@ compilation flag you want by editing the file
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/compiling.txt"
+      <a href="_sources/compiling.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

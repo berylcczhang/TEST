@@ -1,12 +1,12 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Output Files and Format &mdash; slug 2.0 documentation</title>
+    <title>Output Files and Format &#8212; slug 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,14 +17,16 @@
         VERSION:     '2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Filters and Filter Data" href="filters.html" />
     <link rel="prev" title="Probability Distribution Functions" href="pdfs.html" />
    
@@ -32,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -44,7 +46,7 @@
 <p>SLUG can produce 7 output files, though the actual number produced depends on the setting for the <code class="docutils literal"><span class="pre">out_*</span></code> keywords in the parameter file. (Additional output files can be produced by <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><span class="std std-ref">cloudy_slug: An Automated Interface to cloudy</span></a>, and are documented in that section rather than here.)</p>
 <p>The only file that is always produced is the summary file, which is named <code class="docutils literal"><span class="pre">MODEL_NAME_summary.txt</span></code>, where <code class="docutils literal"><span class="pre">MODEL_NAME</span></code> is the value given by the <code class="docutils literal"><span class="pre">model_name</span></code> keyword in the parameter file. This file contains some basic summary information for the run, and is always formatted as ASCII text regardless of the output format requested.</p>
 <p>The other eight output files all have names of the form <code class="docutils literal"><span class="pre">MODEL_NAME_xxx.ext</span></code>, where the extension <code class="docutils literal"><span class="pre">.ext</span></code> is one of <code class="docutils literal"><span class="pre">.txt</span></code>, <code class="docutils literal"><span class="pre">.bin</span></code>, or <code class="docutils literal"><span class="pre">.fits</span></code> depending on the <code class="docutils literal"><span class="pre">output_mode</span></code> specified in the parameter file, and <code class="docutils literal"><span class="pre">xxx</span></code> is <code class="docutils literal"><span class="pre">integrated_prop</span></code>, <code class="docutils literal"><span class="pre">integrated_spec</span></code>, <code class="docutils literal"><span class="pre">integrated_phot</span></code>, <code class="docutils literal"><span class="pre">integrated_yield</span></code>, <code class="docutils literal"><span class="pre">cluster_prop</span></code>, <code class="docutils literal"><span class="pre">cluster_spec</span></code>, <code class="docutils literal"><span class="pre">cluster_phot</span></code>, or <code class="docutils literal"><span class="pre">cluster_yield</span></code>. The production of these output files is controlled by the parameters <code class="docutils literal"><span class="pre">out_integrated</span></code>, <code class="docutils literal"><span class="pre">out_integrated_spec</span></code>, <code class="docutils literal"><span class="pre">out_integrated_phot</span></code>, <code class="docutils literal"><span class="pre">out_integrated_yield</span></code>, <code class="docutils literal"><span class="pre">out_cluster</span></code>, <code class="docutils literal"><span class="pre">out_cluster_spec</span></code>, <code class="docutils literal"><span class="pre">out_cluster_phot</span></code>, and <code class="docutils literal"><span class="pre">out_cluster_yield</span></code> in the parameter file.</p>
-<p>The easiest way to read these output files is with <a class="reference internal" href="slugpy.html#sec-slugpy"><span class="std std-ref">slugpy &#8211; The Python Helper Library</span></a>, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:</p>
+<p>The easiest way to read these output files is with <a class="reference internal" href="slugpy.html#sec-slugpy"><span class="std std-ref">slugpy – The Python Helper Library</span></a>, which can parse them and store the information in python structures. However, for users who wish to write their own parsers or examine the data directly, the format is documented below. The following conventions are used throughout, unless noted otherwise:</p>
 <ul class="simple">
 <li>Masses are in <span class="math">\(M_\odot\)</span></li>
 <li>Times in year</li>
@@ -66,7 +68,7 @@
 <li><code class="docutils literal"><span class="pre">NumClusters</span></code>: number of non-disrupted clusters present in the galaxy at this time</li>
 <li><code class="docutils literal"><span class="pre">NumDisClust</span></code>: number of disrupted clusters present in the galaxy at this time</li>
 <li><code class="docutils literal"><span class="pre">NumFldStars</span></code>: number of field stars present in the galaxy at this time; this count only includes those stars being treated stochastically (see the parameter <code class="docutils literal"><span class="pre">min_stoch_mass</span></code> in <a class="reference internal" href="parameters.html#ssec-stellar-keywords"><span class="std std-ref">Stellar Model Keywords</span></a>)</li>
-<li><code class="docutils literal"><span class="pre">VPx</span></code>: values drawn for variable parameter <code class="docutils literal"><span class="pre">x</span></code> (0,1,2 etc...); present only if SLUG was run with a variable mode IMF</li>
+<li><code class="docutils literal"><span class="pre">VPx</span></code>: values drawn for variable parameter <code class="docutils literal"><span class="pre">x</span></code> (0,1,2 etc…); present only if SLUG was run with a variable mode IMF</li>
 </ul>
 <p>If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">ascii</span></code>, these data are output in a series of columns, with different trials separated by lines of dashes. If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">fits</span></code>, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
 <p>For <code class="docutils literal"><span class="pre">binary</span></code> output, the file consists of a series of records containing the following variables</p>
@@ -259,7 +261,7 @@ before the first time for the next trial.</p>
 <li><code class="docutils literal"><span class="pre">NumStar</span></code>: number of living stars in the cluster at this time; this count only includes those stars being treated stochastically (see the parameter <code class="docutils literal"><span class="pre">min_stoch_mass</span></code> in <a class="reference internal" href="parameters.html#ssec-stellar-keywords"><span class="std std-ref">Stellar Model Keywords</span></a>)</li>
 <li><code class="docutils literal"><span class="pre">MaxStarMass</span></code>: mass of most massive star still living in the cluster; this only includes those stars being treated stochastically (see the parameter <code class="docutils literal"><span class="pre">min_stoch_mass</span></code> in <a class="reference internal" href="parameters.html#ssec-stellar-keywords"><span class="std std-ref">Stellar Model Keywords</span></a>)</li>
 <li><code class="docutils literal"><span class="pre">A_V</span></code>: visual extinction for that cluster, in mag; present only if SLUG was run with extinction enabled</li>
-<li><code class="docutils literal"><span class="pre">VPx</span></code>: values drawn for variable parameter <code class="docutils literal"><span class="pre">x</span></code> (0,1,2 etc...); present only if SLUG was run with a variable mode IMF</li>
+<li><code class="docutils literal"><span class="pre">VPx</span></code>: values drawn for variable parameter <code class="docutils literal"><span class="pre">x</span></code> (0,1,2 etc…); present only if SLUG was run with a variable mode IMF</li>
 </ul>
 <p>If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">ascii</span></code>, these data are output in a series of columns, with different trials separated by lines of dashes. If <code class="docutils literal"><span class="pre">output_mode</span></code> is <code class="docutils literal"><span class="pre">fits</span></code>, the data are stored as a FITS binary table extension, with one column for each of the variables above, plus an additional column giving the trial number for that entry. Both the ASCII- and FITS-formatted output should be fairly self-documenting.</p>
 <p>For <code class="docutils literal"><span class="pre">binary</span></code> output, the first entry in the file is a header containing</p>
@@ -452,7 +454,7 @@ gives the number of trials. For FITS files, the file has a keyword
 <code class="docutils literal"><span class="pre">N_Trials</span></code> in the first binary table HDU that gives the number of
 trials.</p>
 <p>The slugpy library can read checkpoint files as well as regular output
-files (see <a class="reference internal" href="slugpy.html#sec-slugpy"><span class="std std-ref">slugpy &#8211; The Python Helper Library</span></a>).</p>
+files (see <a class="reference internal" href="slugpy.html#sec-slugpy"><span class="std std-ref">slugpy – The Python Helper Library</span></a>).</p>
 </div>
 </div>
 
@@ -489,7 +491,7 @@ files (see <a class="reference internal" href="slugpy.html#sec-slugpy"><span cla
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/output.txt"
+      <li><a href="_sources/output.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -511,11 +513,11 @@ files (see <a class="reference internal" href="slugpy.html#sec-slugpy"><span cla
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/output.txt"
+      <a href="_sources/output.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

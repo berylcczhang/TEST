@@ -1,12 +1,12 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Probability Distribution Functions &mdash; slug 2.0 documentation</title>
+    <title>Probability Distribution Functions &#8212; slug 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,14 +17,16 @@
         VERSION:     '2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Output Files and Format" href="output.html" />
     <link rel="prev" title="Parameter Specification" href="parameters.html" />
    
@@ -32,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -41,7 +43,7 @@
             
   <div class="section" id="probability-distribution-functions">
 <span id="sec-pdfs"></span><h1>Probability Distribution Functions<a class="headerlink" href="#probability-distribution-functions" title="Permalink to this headline">¶</a></h1>
-<p>The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction <span class="math">\(A_V\)</span> as probability distribution functions &#8211; see <a class="reference internal" href="intro.html#ssec-slugpdfs"><span class="std std-ref">Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution</span></a>. The code provides a generic file format through which PDFs can be specified. Examples can be found in the <code class="docutils literal"><span class="pre">lib/imf</span></code>, <code class="docutils literal"><span class="pre">lib/cmf</span></code>, <code class="docutils literal"><span class="pre">lib/clf</span></code>, and <code class="docutils literal"><span class="pre">lib/sfh</span></code> directories of the SLUG distribution.</p>
+<p>The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction <span class="math">\(A_V\)</span> as probability distribution functions – see <a class="reference internal" href="intro.html#ssec-slugpdfs"><span class="std std-ref">Probability Distribution Functions: the IMF, SFH, CMF, CLF, A_V distribution</span></a>. The code provides a generic file format through which PDFs can be specified. Examples can be found in the <code class="docutils literal"><span class="pre">lib/imf</span></code>, <code class="docutils literal"><span class="pre">lib/cmf</span></code>, <code class="docutils literal"><span class="pre">lib/clf</span></code>, and <code class="docutils literal"><span class="pre">lib/sfh</span></code> directories of the SLUG distribution.</p>
 <p>PDFs in SLUG are generically written as functions</p>
 <div class="math">
 \[\frac{dp}{dx} = n_1 f_1(x; x_{1,a}, x_{1,b}) + n_2 f_2(x; x_{2,a}, x_{2,b}) + n_3 f_3(x; x_{3,a}, x_{3,b}) + \cdots,\]</div>
@@ -123,17 +125,17 @@ key1 VAL1
 <tbody valign="top">
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">delta</span></code></td>
 <td><span class="math">\(\delta(x-x_a)\)</span></td>
-<td>&nbsp;</td>
-<td>&nbsp;</td>
-<td>&nbsp;</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
+<td>&#160;</td>
+<td>&#160;</td>
+<td>&#160;</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">exponential</span></code></td>
 <td><span class="math">\(\exp(-x/x_*)\)</span></td>
 <td><code class="docutils literal"><span class="pre">scale</span></code></td>
 <td>Scale length, <span class="math">\(x_*\)</span></td>
-<td>&nbsp;</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
+<td>&#160;</td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal"><span class="pre">lognormal</span></code></td>
 <td><span class="math">\(x^{-1} \exp\{-[\log_{10}(x/x_0)]^2/2\sigma^2\}\)</span></td>
@@ -153,8 +155,8 @@ key1 VAL1
 <td><span class="math">\(x^p\)</span></td>
 <td><code class="docutils literal"><span class="pre">slope</span></code></td>
 <td>Slope, <span class="math">\(p\)</span></td>
-<td>&nbsp;</td>
-<td>&nbsp;</td>
+<td>&#160;</td>
+<td>&#160;</td>
 </tr>
 <tr class="row-odd"><td><code class="docutils literal"><span class="pre">schechter</span></code></td>
 <td><span class="math">\(x^p \exp(-x/x_*)\)</span></td>
@@ -194,7 +196,7 @@ type powerlaw
 slope V lib/imf/slope_pdf.vpar
 </pre></div>
 </div>
-<p>An example of a parameter&#8217;s PDF file is as follows:</p>
+<p>An example of a parameter’s PDF file is as follows:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>###############################################################
 # This is a parameter definition file for SLUG v2.
 <span class="gh"># lib/imf/slope_pdf.vpar</span>
@@ -339,7 +341,7 @@ key1 VAL1
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/pdfs.txt"
+      <li><a href="_sources/pdfs.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -361,11 +363,11 @@ key1 VAL1
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/pdfs.txt"
+      <a href="_sources/pdfs.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

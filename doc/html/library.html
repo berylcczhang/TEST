@@ -1,12 +1,12 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using SLUG as a Library &mdash; slug 2.0 documentation</title>
+    <title>Using SLUG as a Library &#8212; slug 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,14 +17,16 @@
         VERSION:     '2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Contributors and Acknowledgements" href="acknowledgements.html" />
     <link rel="prev" title="Test Problems" href="tests.html" />
    
@@ -32,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -91,7 +93,7 @@ spectral synthesizer, and return an object of that class that can then
 be passed to <code class="docutils literal"><span class="pre">slug_cluster</span></code> to produce a cluster object. For
 example, the following sytax creates a <code class="docutils literal"><span class="pre">slug_cluster</span></code> with ID number
 1, a mass of 100 solar masses, age 0, a Chabrier IMF, Padova solar
-metallicity tracks, starburst99-style spectral synthesis, and slug&#8217;s
+metallicity tracks, starburst99-style spectral synthesis, and slug’s
 default nuclear yields:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>#include &quot;slug_predefined.H&quot;
 #include &quot;slug_cluster.H&quot;
@@ -109,7 +111,7 @@ slug_cluster *cluster =
 <span id="ssec-mpi-support"></span><h2>Using SLUG as a Library with MPI-Enabled Codes<a class="headerlink" href="#using-slug-as-a-library-with-mpi-enabled-codes" title="Permalink to this headline">¶</a></h2>
 <p>In large codes where one might wish to use slug for subgrid stellar
 models, it is often necessary to pass information between processors
-using MPI. Since slug&#8217;s representation of stellar populations is
+using MPI. Since slug’s representation of stellar populations is
 complex, and much information is shared between particles rather than
 specific to individual particles (e.g., tables of yields and
 evolutionary tracks), passing slug information between processors is
@@ -209,7 +211,7 @@ int main(int argc, char *argv[]) {
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/library.txt"
+      <li><a href="_sources/library.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -231,11 +233,11 @@ int main(int argc, char *argv[]) {
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/library.txt"
+      <a href="_sources/library.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

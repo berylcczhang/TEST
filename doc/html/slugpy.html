@@ -1,12 +1,12 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>slugpy – The Python Helper Library &mdash; slug 2.0 documentation</title>
+    <title>slugpy – The Python Helper Library &#8212; slug 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,14 +17,16 @@
         VERSION:     '2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
       };
     </script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="slug 2.0 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="cloudy_slug: An Automated Interface to cloudy" href="cloudy.html" />
     <link rel="prev" title="Filters and Filter Data" href="filters.html" />
    
@@ -32,7 +34,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -40,7 +42,7 @@
           <div class="body" role="main">
             
   <div class="section" id="slugpy-the-python-helper-library">
-<span id="sec-slugpy"></span><h1>slugpy &#8211; The Python Helper Library<a class="headerlink" href="#slugpy-the-python-helper-library" title="Permalink to this headline">¶</a></h1>
+<span id="sec-slugpy"></span><h1>slugpy – The Python Helper Library<a class="headerlink" href="#slugpy-the-python-helper-library" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="installing-slugpy">
 <h2>Installing slugpy<a class="headerlink" href="#installing-slugpy" title="Permalink to this headline">¶</a></h2>
 <p>SLUG comes with the python module slugpy, which contains an extensive set of routines for reading, writing, and manipulating SLUG outputs. You can install slugpy one of two ways.</p>
@@ -82,7 +84,7 @@ idata = read_integrated(&#39;SLUG_MODEL_NAME&#39;)
 cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 </pre></div>
 </div>
-<p>The <code class="docutils literal"><span class="pre">read_integrated</span></code> function reads all the integrated-light data (i.e., the data stored in the <code class="docutils literal"><span class="pre">_integrated_*</span></code> files &#8211; see <a class="reference internal" href="output.html#sec-output"><span class="std std-ref">Output Files and Format</span></a>) for a SLUG output whose name is given as the argument. This is the base name specified by the <code class="docutils literal"><span class="pre">model_name</span></code> keyword (see <a class="reference internal" href="parameters.html#ssec-basic-keywords"><span class="std std-ref">Basic Keywords</span></a>), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a <code class="docutils literal"><span class="pre">namedtuple</span></code> containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><span class="std std-ref">cloudy_slug: An Automated Interface to cloudy</span></a>) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:</p>
+<p>The <code class="docutils literal"><span class="pre">read_integrated</span></code> function reads all the integrated-light data (i.e., the data stored in the <code class="docutils literal"><span class="pre">_integrated_*</span></code> files – see <a class="reference internal" href="output.html#sec-output"><span class="std std-ref">Output Files and Format</span></a>) for a SLUG output whose name is given as the argument. This is the base name specified by the <code class="docutils literal"><span class="pre">model_name</span></code> keyword (see <a class="reference internal" href="parameters.html#ssec-basic-keywords"><span class="std std-ref">Basic Keywords</span></a>), without any extensions; the slugpy library will automatically determine which outputs are available and in what format, and read the appropriate files. It returns a <code class="docutils literal"><span class="pre">namedtuple</span></code> containing all the output data available for that simulation. Note that some of these fields will only be present if the cloudy-slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><span class="std std-ref">cloudy_slug: An Automated Interface to cloudy</span></a>) was used to process the SLUG output through cloudy to predict nebular emission, and some will be present only if extinction was enabled when SLUG was run. The fields returned are as follows:</p>
 <ul class="simple">
 <li>time: output times</li>
 <li>target_mass: target stellar mass at each time</li>
@@ -99,8 +101,8 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <li>filter_wl_eff: effective wavelength for each photometric filter</li>
 <li>filter_wl: list of wavelengths for each filter at which the response function is given (in Angstrom)</li>
 <li>filter_response: photon response function for each filter at each wavelength (dimensionless)</li>
-<li>filter_beta: index <span class="math">\(\beta\)</span> used to set the normalization for each filter &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a></li>
-<li>filter_wl_c: pivot wavelength used to set the normalization for each filter for which <span class="math">\(\beta \neq 0\)</span> &#8211; see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a></li>
+<li>filter_beta: index <span class="math">\(\beta\)</span> used to set the normalization for each filter – see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a></li>
+<li>filter_wl_c: pivot wavelength used to set the normalization for each filter for which <span class="math">\(\beta \neq 0\)</span> – see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a></li>
 <li>phot: photometry of the stars in each filter</li>
 <li>isotope_name: element symbols for the isotopes whose yields are reported</li>
 <li>isotope_Z: atomic numbers for the isotopes whose yields are reported</li>
@@ -128,11 +130,11 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <p>The following fields are present only for runs that have been processed through the cloudy_slug interface (see <a class="reference internal" href="cloudy.html#sec-cloudy-slug"><span class="std std-ref">cloudy_slug: An Automated Interface to cloudy</span></a>):</p>
 <ul class="simple">
 <li>cloudy_wl: wavelengths of the output nebular spectra (in Angstrom)</li>
-<li>cloudy_inc: incident stellar radiation field, expressed as a specific luminosity (erg/s/Angstrom) &#8211; should be the same as spec, but binned onto cloudy&#8217;s wavelength grid; provided mainly as a bug-checking diagnostic</li>
-<li>cloudy_trans: the transmitted stellar radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) &#8211; this is the radiation field of the stars after it has passed through the HII region, and is what one would see in an observational aperture centered on the stars with negligible contribution from the nebula</li>
-<li>cloudy_emit: the emitted nebular radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) &#8211; this is the radiation emitted by the nebula excluding the stars, and is what one would see in an observational aperture that included the nebula but masked out the stars</li>
-<li>cloudy_trans_emit: the sum of the transmitted stellar and emitted nebular radiation, expressed as a specific luminosity (erg/s/Angstrom) &#8211; this is what one would see in an observational aperture covering the both the stars and the nebula</li>
-<li>cloudy_linelabel: list of emitting species for the line luminosities computed by cloudy, following cloudy&#8217;s 4-letter notation</li>
+<li>cloudy_inc: incident stellar radiation field, expressed as a specific luminosity (erg/s/Angstrom) – should be the same as spec, but binned onto cloudy’s wavelength grid; provided mainly as a bug-checking diagnostic</li>
+<li>cloudy_trans: the transmitted stellar radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) – this is the radiation field of the stars after it has passed through the HII region, and is what one would see in an observational aperture centered on the stars with negligible contribution from the nebula</li>
+<li>cloudy_emit: the emitted nebular radiation field computed by cloudy, expressed as a specific luminosity (erg/s/Angstrom) – this is the radiation emitted by the nebula excluding the stars, and is what one would see in an observational aperture that included the nebula but masked out the stars</li>
+<li>cloudy_trans_emit: the sum of the transmitted stellar and emitted nebular radiation, expressed as a specific luminosity (erg/s/Angstrom) – this is what one would see in an observational aperture covering the both the stars and the nebula</li>
+<li>cloudy_linelabel: list of emitting species for the line luminosities computed by cloudy, following cloudy’s 4-letter notation</li>
 <li>cloudy_linewl: wavelengths of all the lines computed by cloudy (in Angstrom)</li>
 <li>cloudy_linelum: luminosities of the lines computed by cloudy (in erg/s)</li>
 <li>cloudy_filter_names, cloudy_filter_units, cloudy_filter_wl_eff, cloudy_filter_wl, cloudy_filter_response, cloudy_filter_beta, cloudy_filter_wl_c: exactly the same as the corresponding fields without the cloudy prefix, but for the photometric filters applied to the cloudy output</li>
@@ -157,7 +159,7 @@ cdata = read_cluster(&#39;SLUG_MODEL_NAME&#39;)
 <p>For all these fields, scalar quantities that are different for each cluster (e.g., actual_mass) will be stored as arrays of shape (N_cluster); vector quantities that are different for each cluster (e.g., spec) will be stored as arrays of shape (N_cluster, N).</p>
 <p>The following fields are present only if SLUG was run with a Variable Mode IMF:</p>
 <ul class="simple">
-<li>VPx: The value drawn for variable parameter x (0,1,2...) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.</li>
+<li>VPx: The value drawn for variable parameter x (0,1,2…) in each trial. The parameters are numbered in the order they are defined in the IMF definition file.</li>
 </ul>
 <p>These fields are present in both the cluster and integrated outputs if a simulation has been run using the variable mode IMF.</p>
 </div>
@@ -173,15 +175,15 @@ duplication between the merged data sets.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>data</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list_like</span><dd>A list containing the cluster data for each run, as
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">list_like</span></dt>
+<dd>A list containing the cluster data for each run, as
 returned by read_cluster</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>combined_data</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span><dd>The combined data, in the same format as each object in data</dd>
+<dt>combined_data <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span></dt>
+<dd>The combined data, in the same format as each object in data</dd>
 </dl>
 </dd>
 </dl>
@@ -195,15 +197,15 @@ treating each input run as a separate set of trials.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>data</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list_like</span><dd>A list containing the integrated data for each run, as
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">list_like</span></dt>
+<dd>A list containing the integrated data for each run, as
 returned by read_integrated</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><dl class="first last docutils">
-<dt>combined_data</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span><dd>The combined data, in the same format as each object in data</dd>
+<dt>combined_data <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span></dt>
+<dd>The combined data, in the same format as each object in data</dd>
 </dl>
 </dd>
 </dl>
@@ -211,47 +213,47 @@ returned by read_integrated</dd>
 
 <dl class="function">
 <dt id="slugpy.compute_photometry">
-<code class="descclassname">slugpy.</code><code class="descname">compute_photometry</code><span class="sig-paren">(</span><em>wl</em>, <em>spec</em>, <em>filtername</em>, <em>photsystem='L_nu'</em>, <em>filter_wl=None</em>, <em>filter_response=None</em>, <em>filter_beta=None</em>, <em>filter_wl_c=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/compute_photometry.html#compute_photometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.compute_photometry" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">compute_photometry</code><span class="sig-paren">(</span><em>wl</em>, <em>spec</em>, <em>filtername</em>, <em>photsystem=’L_nu’</em>, <em>filter_wl=None</em>, <em>filter_response=None</em>, <em>filter_beta=None</em>, <em>filter_wl_c=None</em>, <em>filter_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/compute_photometry.html#compute_photometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.compute_photometry" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function takes an input spectrum and a set of response
 functions for photometric filters, and returns the photometry
 through those filters.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>Wavelength of input spectrum in Angstrom</dd>
-<dt>spec</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>Specific luminosity per unit wavelength for input spectrum, in
+<dt>wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Wavelength of input spectrum in Angstrom</dd>
+<dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Specific luminosity per unit wavelength for input spectrum, in
 erg/s/A</dd>
-<dt>filtername</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable of strings</span><dd>Name or list of names of the filters to be used. Filter names
+<dt>filtername <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable of strings</span></dt>
+<dd>Name or list of names of the filters to be used. Filter names
 can also include the special filters Lbol, QH0, QHe0, and QHe1;
 the values returned for these will be the bolometric luminosity
 (in erg/s) and the photon luminosities (in photons/s) in the H,
 He, and He+ ionizing-continua, respectively.</dd>
-<dt>photsystem</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The photometric system to use for the output. Allowable values
-are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;, &#8216;AB&#8217;, &#8216;STMAG&#8217;, and &#8216;Vega&#8217;,
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The photometric system to use for the output. Allowable values
+are ‘L_nu’, ‘L_lambda’, ‘AB’, ‘STMAG’, and ‘Vega’,
 corresponding to the options defined in the SLUG code.</dd>
-<dt>filter_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array or iterable of arrays</span><dd>Array giving the wavelengths in Angstrom at which the filter is
+<dt>filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">array or iterable of arrays</span></dt>
+<dd>Array giving the wavelengths in Angstrom at which the filter is
 response function is given. If this object is an iterable of
 arrays rather than a single array, it is assumed to represent
 the wavelengths for a set of filters. If this is set,
 no data is read from disk. Default behavior is to read the
 filter information from disk.</dd>
-<dt>filter_response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array or iterable of arrays</span><dd>Array giving the filter response function at each wavelenght
+<dt>filter_response <span class="classifier-delimiter">:</span> <span class="classifier">array or iterable of arrays</span></dt>
+<dd>Array giving the filter response function at each wavelenght
 and for each filter in filter_wl. Must be set if filter_wl is
 set, ignored otherwise.</dd>
-<dt>filter_beta</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">iterable</span><dd>Array-like object containing the index beta for each
+<dt>filter_beta <span class="classifier-delimiter">:</span> <span class="classifier">iterable</span></dt>
+<dd>Array-like object containing the index beta for each
 filter. Must be set if filter_wl is set, ignored otherwise.</dd>
-<dt>filter_wl_c</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">iterable</span><dd>Array-like object containing the pivot wavelength for each
+<dt>filter_wl_c <span class="classifier-delimiter">:</span> <span class="classifier">iterable</span></dt>
+<dd>Array-like object containing the pivot wavelength for each
 filter. Must be set if filter_wl is set, ignored otherwise.</dd>
-<dt>filter_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Directory where the filter data files can be found. If left as
+<dt>filter_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Directory where the filter data files can be found. If left as
 None, filters will be looked for in the $SLUG_DIR/lib/filters
 directory. This parameter is used only if filtername is not
 None.</dd>
@@ -259,14 +261,14 @@ None.</dd>
 </dd>
 <dt>Returns</dt>
 <dd><dl class="first last docutils">
-<dt>phot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>Photometric values in the requested filters. Units depend on
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Photometric values in the requested filters. Units depend on
 the choice of photometric system:
-L_nu &#8211;&gt; erg/s/Hz;
-L_lambda &#8211;&gt; erg/s/A;
-AB &#8211;&gt; absolute AB magnitude;
-STMAG &#8211;&gt; absolute ST magnitude;
-Vega &#8211;&gt; absolute Vega magnitude;</dd>
+L_nu –&gt; erg/s/Hz;
+L_lambda –&gt; erg/s/A;
+AB –&gt; absolute AB magnitude;
+STMAG –&gt; absolute ST magnitude;
+Vega –&gt; absolute Vega magnitude;</dd>
 </dl>
 </dd>
 </dl>
@@ -279,38 +281,38 @@ Vega &#8211;&gt; absolute Vega magnitude;</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>photsystem</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The photometric system to which to convert. Allowable values
-are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;, &#8216;AB&#8217;, &#8216;STMAG&#8217;, and &#8216;Vega&#8217;,
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The photometric system to which to convert. Allowable values
+are ‘L_nu’, ‘L_lambda’, ‘AB’, ‘STMAG’, and ‘Vega’,
 corresponding to the options defined in the SLUG code. If this
 is set and the conversion requested involves a conversion from
 a wavelength-based system to a frequency-based one, wl_cen must
 not be None.</dd>
-<dt>phot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>array of photometric data; if the array has more than one
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>array of photometric data; if the array has more than one
 dimension, the first dimension is assumed to represent the
 different photometric filters (unless filter_last is True,
 in which case the last dimension is represents the array of
 filters)</dd>
-<dt>units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">iterable of strings</span><dd>iterable listing the units of the input photometric data. On
+<dt>units <span class="classifier-delimiter">:</span> <span class="classifier">iterable of strings</span></dt>
+<dd>iterable listing the units of the input photometric data. On
 return, strings will be changed to the units of the new system.</dd>
-<dt>wl_cen</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>central wavelengths of the filters, in Angstrom; can be left as
-None if the requested conversion doesn&#8217;t require going between
+<dt>wl_cen <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>central wavelengths of the filters, in Angstrom; can be left as
+None if the requested conversion doesn’t require going between
 wavelength- and frequency-based systems.</dd>
-<dt>filter_last</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If the input data have more than one dimension, by default it
+<dt>filter_last <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If the input data have more than one dimension, by default it
 is assumed that the first dimension contains values for the
 different photometric filters. If this keyword is set to True,
 it will instead be assumed that the last dimension contains the
 values for the different filters.</dd>
-<dt>filter_names</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">iterable of strings</span><dd>Names of all filters, used to read the filter response
+<dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">iterable of strings</span></dt>
+<dd>Names of all filters, used to read the filter response
 functions from disk; only needed for conversions to and from
 Vega magnitudes, and ignored otherwise</dd>
-<dt>filter_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Directory where the filter data files can be found. If left as
+<dt>filter_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Directory where the filter data files can be found. If left as
 None, filters will be looked for in the $SLUG_DIR/lib/filters
 directory. This parameter is used only for conversions to
 and from Vega magnitudes.</dd>
@@ -331,62 +333,62 @@ requires going between wavelength- and frequency-based systems</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Format for the file to be read. Allowed values are ‘ascii’,
+‘bin’ or ‘binary, and ‘fits’. If one of these is set, the code
 will only attempt to open ASCII-, binary-, or FITS-formatted
 output, ending in .txt., .bin, or .fits, respectively. If set
 to None, the code will try to open ASCII files first, then if
 it fails try binary files, and if it fails again try FITS
 files.</dd>
-<dt>nofilterdata</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, the routine does not attempt to read the filter
+<dt>nofilterdata <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the routine does not attempt to read the filter
 response data from the standard location</dd>
-<dt>photsystem</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span><dd>If photsystem is None, the data will be returned in the same
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span></dt>
+<dd>If photsystem is None, the data will be returned in the same
 photometric system in which they were read. Alternately, if it
 is a string, the data will be converted to the specified
-photometric system. Allowable values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;,
-&#8216;AB&#8217;, &#8216;STMAG&#8217;, and &#8216;Vega&#8217;, corresponding to the options defined
+photometric system. Allowable values are ‘L_nu’, ‘L_lambda’,
+‘AB’, ‘STMAG’, and ‘Vega’, corresponding to the options defined
 in the SLUG code. If this is set and the conversion requested
 involves a conversion from a wavelength-based system to a
 frequency-based one, nofilterdata must be False so that the
 central wavelength of the photometric filters is available.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span><dd>If this is None, photometric data on all filters is
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_filters <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span></dt>
+<dd>If this is None, photometric data on all filters is
 read. Otherwise only filters whose name(s) match the input
 filter names ar read.</dd>
-<dt>read_nebular</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span><dd>If True, only photometric data with the nebular contribution
+<dt>read_nebular <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only photometric data with the nebular contribution
 is read; if False, only data without it is read. Default
 behavior is to read all data.</dd>
-<dt>read_extinct</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span><dd>If True, only photometric data with extinction applied is
+<dt>read_extinct <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only photometric data with extinction applied is
 read; if False, only data without it is read. Default
 behavior is to read all data.</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;prop_name&#8217;,
-&#8216;phot_name&#8217;, &#8216;spec_name&#8217;, &#8216;cloudyspec_name&#8217;, &#8216;cloudylines_name&#8217;
-and &#8216;format&#8217;, giving the names of the files read and the format
-they were in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or
-&#8216;fits&#8217;. If one of the files is not present, the corresponding
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘prop_name’,
+‘phot_name’, ‘spec_name’, ‘cloudyspec_name’, ‘cloudylines_name’
+and ‘format’, giving the names of the files read and the format
+they were in; ‘format’ will be one of ‘ascii’, ‘binary’, or
+‘fits’. If one of the files is not present, the corresponding
 _name key will be omitted from the dict.</dd>
-<dt>no_stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Prior to 7/15, output files did not contain the stellar_mass
+<dt>no_stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 7/15, output files did not contain the stellar_mass
 field; this can be detected automatically for ASCII and FITS
 formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
 stellar_mass field; it has no effect for ASCII or FITS files</dd>
-<dt>no_neb_extinct</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Prior to 2/17, SLUG did not support differential nebular
+<dt>no_neb_extinct <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 2/17, SLUG did not support differential nebular
 extinction, and thus there was no output field for it; this
 is detected and handled automatically for ASCII and FITS
 files; for binary outputs, this flag must be set for pre
@@ -397,72 +399,72 @@ files; for binary outputs, this flag must be set for pre
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <p>(Always present)</p>
 <dl class="docutils">
-<dt>id</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span><dd>unique ID of cluster</dd>
+<dt>id <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span></dt>
+<dd>unique ID of cluster</dd>
 <dt>trial: array, dtype uint</dt>
 <dd>which trial was this cluster part of</dd>
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>time at which cluster&#8217;s properties are being evaluated</dd>
-<dt>A_V</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>A_V value for each cluster, in mag (present only if SLUG was
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>time at which cluster’s properties are being evaluated</dd>
+<dt>A_V <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>A_V value for each cluster, in mag (present only if SLUG was
 run with extinction enabled)</dd>
-<dt>A_Vneb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>value of A_V applied to the nebular light for each cluster
+<dt>A_Vneb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>value of A_V applied to the nebular light for each cluster
 (present only if SLUG was run with both nebular emission and
 extinction enabled)</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_prop file)</p>
 <dl class="docutils">
-<dt>form_time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>time when cluster formed</dd>
-<dt>lifetime</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>time at which cluster will disrupt</dd>
-<dt>target_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>target cluster mass</dd>
-<dt>actual_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>actual mass at formation</dd>
-<dt>live_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of currently living stars</dd>
-<dt>stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of all stars, living and stellar remnants</dd>
-<dt>num_star</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype ulonglong</span><dd>number of living stars in cluster being treated stochastically</dd>
-<dt>max_star_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of most massive living star in cluster</dd>
-<dt>vpn_tuple</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span><dd>tuple containing arrays for any variable parameters we have
-(eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+<dt>form_time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>time when cluster formed</dd>
+<dt>lifetime <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>time at which cluster will disrupt</dd>
+<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>target cluster mass</dd>
+<dt>actual_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>actual mass at formation</dd>
+<dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of currently living stars</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
+<dt>num_star <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype ulonglong</span></dt>
+<dd>number of living stars in cluster being treated stochastically</dd>
+<dt>max_star_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of most massive living star in cluster</dd>
+<dt>vpn_tuple <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
+<dd>tuple containing arrays for any variable parameters we have
+(eg: VP0, VP1,VP2…) in the IMF. Each element of the tuple
 is an array. Present only if variable parameters were
 enables when SLUG was run.</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_spec file)</p>
 <dl class="docutils">
-<dt>wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength, in Angstrom</dd>
-<dt>spec</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity of each cluster at each wavelength, in erg/s/A</dd>
-<dt>wl_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the nebular spectrum, in Angstrom (present
+<dt>wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength, in Angstrom</dd>
+<dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity of each cluster at each wavelength, in erg/s/A</dd>
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
 only if SLUG was run with nebular emission enabled)</dd>
-<dt>spec_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity at each wavelength and each time for each
+<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
 in erg/s/A (present only if SLUG was run with nebular
 emission enabled)</dd>
-<dt>wl_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum, in Angstrom (present
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
 only if SLUG was run with extinction enabled)</dd>
-<dt>spec_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)</dd>
-<dt>wl_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum with nebular emission,
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
 in Angstrom (present only if SLUG was run with both nebular
 emission and extinction enabled)</dd>
-<dt>spec_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial including emission and absorption by the
 HII region, after extinction has been applied, in erg/s/A
 (present only if SLUG was run with nebular emission and
@@ -470,103 +472,103 @@ extinction both enabled)</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_phot file)</p>
 <dl class="docutils">
-<dt>filter_names</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the name for each filter</dd>
-<dt>filter_units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the units for each filter</dd>
-<dt>filter_wl_cen</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>central wavelength of each filter; this is set to None for the
+<dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the name for each filter</dd>
+<dt>filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the units for each filter</dd>
+<dt>filter_wl_cen <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>central wavelength of each filter; this is set to None for the
 filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
-<dt>filter_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the wavelength table for each filter; this is
+<dt>filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the wavelength table for each filter; this is
 None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
 nofilterdata is True</dd>
-<dt>filter_response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the photon response function for each filter;
+<dt>filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the photon response function for each filter;
 this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
 if nofilterdata is True</dd>
-<dt>phot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span><dd>photometric value in each filter for each cluster; units are as
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span></dt>
+<dd>photometric value in each filter for each cluster; units are as
 indicated in the units field</dd>
 </dl>
 <p>If extinction is enabled, phot_ex will contain photometry  
 after extinction has been applied.</p>
 <p>(Present if the run being read contains a cluster_yield file)</p>
 <dl class="docutils">
-<dt>isotope_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of strings</span><dd>Atomic symbols of the isotopes included in the yield table</dd>
-<dt>isotope_Z</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span><dd>Atomic numbers of the isotopes included in the yield table</dd>
-<dt>isotope_A</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span><dd>Atomic mass number of the isotopes included in the yield table</dd>
-<dt>yld</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>Yield of each isotope, defined as the instantaneous amount
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings</span></dt>
+<dd>Atomic symbols of the isotopes included in the yield table</dd>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic numbers of the isotopes included in the yield table</dd>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic mass number of the isotopes included in the yield table</dd>
+<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yield of each isotope, defined as the instantaneous amount
 produced up to that time; for unstable isotopes, this
 includes the effects of decay since production</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_cloudyspec file)</p>
 <dl class="docutils">
-<dt>cloudy_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength, in Angstrom</dd>
-<dt>cloudy_inc</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity of the cluster&#8217;s stellar radiation field at
+<dt>cloudy_wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength, in Angstrom</dd>
+<dt>cloudy_inc <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity of the cluster’s stellar radiation field at
 each wavelength, in erg/s/A</dd>
-<dt>cloudy_trans</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity of the stellar radiation field after it has
+<dt>cloudy_trans <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity of the stellar radiation field after it has
 passed through the HII region, at each wavelength, in erg/s/A</dd>
-<dt>cloudy_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity of the radiation field emitted by the HII
+<dt>cloudy_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity of the radiation field emitted by the HII
 region, at each wavelength, in erg/s/A</dd>
-<dt>cloudy_trans_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>the sum of the emitted and transmitted fields; this is what
+<dt>cloudy_trans_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>the sum of the emitted and transmitted fields; this is what
 would be seen by an observer looking at both the star cluster
 and its nebula</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_cloudylines file)</p>
 <dl class="docutils">
-<dt>cloudy_linelabel</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype=&#8217;S4&#8217;, shape (N_lines)</span><dd>labels for the lines, following cloudy&#8217;s 4 character line label
+<dt>cloudy_linelabel <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype=’S4’, shape (N_lines)</span></dt>
+<dd>labels for the lines, following cloudy’s 4 character line label
 notation</dd>
-<dt>cloudy_linewl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_lines)</span><dd>rest wavelength for each line, in Angstrom</dd>
-<dt>cloudy_linelum</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_lines)</span><dd>luminosity of each line at each time for each trial, in erg/s</dd>
+<dt>cloudy_linewl <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_lines)</span></dt>
+<dd>rest wavelength for each line, in Angstrom</dd>
+<dt>cloudy_linelum <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_lines)</span></dt>
+<dd>luminosity of each line at each time for each trial, in erg/s</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_cloudyphot file)</p>
 <dl class="docutils">
-<dt>cloudy_filter_names</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the name for each filter</dd>
-<dt>cloudy_filter_units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the units for each filter</dd>
-<dt>cloudy_filter_wl_eff</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>effective wavelength of each filter; this is set to None for the
+<dt>cloudy_filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the name for each filter</dd>
+<dt>cloudy_filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the units for each filter</dd>
+<dt>cloudy_filter_wl_eff <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>effective wavelength of each filter; this is set to None for the
 filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
-<dt>cloudy_filter_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the wavelength table for each filter; this is
+<dt>cloudy_filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the wavelength table for each filter; this is
 None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
 nofilterdata is True</dd>
-<dt>cloudy_filter_response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the photon response function for each filter;
+<dt>cloudy_filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the photon response function for each filter;
 this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
 if nofilterdata is True</dd>
-<dt>cloudy_filter_beta</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>powerlaw index beta for each filter; used to normalize the
+<dt>cloudy_filter_beta <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>powerlaw index beta for each filter; used to normalize the
 photometry</dd>
-<dt>cloudy_filter_wl_c</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>pivot wavelength for each filter; used to normalize the photometry</dd>
-<dt>cloudy_phot_trans</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span><dd>photometric value for each cluster in each filter for the
+<dt>cloudy_filter_wl_c <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>pivot wavelength for each filter; used to normalize the photometry</dd>
+<dt>cloudy_phot_trans <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span></dt>
+<dd>photometric value for each cluster in each filter for the
 transmitted light (i.e., the starlight remaining after it has
 passed through the HII region); units are as indicated in
 the units field</dd>
-<dt>cloudy_phot_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span><dd>photometric value for each cluster in each filter for the
+<dt>cloudy_phot_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span></dt>
+<dd>photometric value for each cluster in each filter for the
 emitted light (i.e., the diffuse light emitted by the HII
 region); units are as indicated in the units field</dd>
-<dt>cloudy_phot_trans_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span><dd>photometric value in each filter for each cluster for the
+<dt>cloudy_phot_trans_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span></dt>
+<dd>photometric value in each filter for each cluster for the
 transmitted plus emitted light (i.e., the light coming
 directly from the stars after absorption by the HII region,
 plus the diffuse light emitted by the HII region); units are as
@@ -574,27 +576,27 @@ indicated in the units field</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_cloudyparams file)</p>
 <dl class="last docutils">
-<dt>cloudy_hden</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>number density of H nuclei at the inner edge of the ionized
+<dt>cloudy_hden <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>number density of H nuclei at the inner edge of the ionized
 region simulated by cloudy</dd>
-<dt>cloudy_r0</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>inner radius of the ionized region simulated by cloudy</dd>
-<dt>cloudy_rS</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>outer radius of the ionized region simulated by cloudy (approximate!)</dd>
-<dt>cloudy_QH0</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>ionizing luminosity used in the cloudy computation</dd>
-<dt>cloudy_covFac</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>covering factor assumed in the cloudy computation; only a
+<dt>cloudy_r0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>inner radius of the ionized region simulated by cloudy</dd>
+<dt>cloudy_rS <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>outer radius of the ionized region simulated by cloudy (approximate!)</dd>
+<dt>cloudy_QH0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>ionizing luminosity used in the cloudy computation</dd>
+<dt>cloudy_covFac <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>covering factor assumed in the cloudy computation; only a
 fraction covFac of the ionizing photons are assumed to
 produce emission within the HII region, while the remainder
 are assumed to escape</dd>
-<dt>cloudy_U</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>volume-averaged ionization parameter of the HII region
+<dt>cloudy_U <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>volume-averaged ionization parameter of the HII region
 simulated by cloudy; note that this value is approximate,
 not exact, and the approximation can be very poor if
 radiation pressure effects are significant</dd>
-<dt>cloudy_Omega</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>Yeh &amp; Matzner (2012) wind parameter for the HII region
+<dt>cloudy_Omega <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yeh &amp; Matzner (2012) wind parameter for the HII region
 simulated by cloudy; as with U, this value is approximate,
 and the approximation is valid only if radiation pressure
 effects are small</dd>
@@ -613,58 +615,58 @@ ValueError, if photsystem is set to an unknown values</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>nofilterdata</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, the routine does not attempt to read the filter
+<dt>nofilterdata <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the routine does not attempt to read the filter
 response data from the standard location</dd>
-<dt>photsystem</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span><dd>If photsystem is None, the data will be returned in the same
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span></dt>
+<dd>If photsystem is None, the data will be returned in the same
 photometric system in which they were read. Alternately, if it
 is a string, the data will be converted to the specified
-photometric system. Allowable values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;,
-&#8216;AB&#8217;, &#8216;STMAG&#8217;, and &#8216;Vega&#8217;, corresponding to the options defined
+photometric system. Allowable values are ‘L_nu’, ‘L_lambda’,
+‘AB’, ‘STMAG’, and ‘Vega’, corresponding to the options defined
 in the SLUG code. If this is set and the conversion requested
 involves a conversion from a wavelength-based system to a
 frequency-based one, nofilterdata must be False so that the
 central wavelength of the photometric filters is available.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
-<dt>filters_only</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, the code only reads the data on the filters, not
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
+<dt>filters_only <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the code only reads the data on the filters, not
 any of the actual photometry. If combined with nofilterdata,
 this can be used to return the list of available filters
 and nothing else.</dd>
-<dt>read_filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span><dd>If this is None, data on all filters is read. Otherwise only
+<dt>read_filters <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span></dt>
+<dd>If this is None, data on all filters is read. Otherwise only
 filters whose name(s) match the input filter names ar
 read.</dd>
-<dt>read_nebular</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span><dd>If True, only data with the nebular contribution is read; if
+<dt>read_nebular <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with the nebular contribution is read; if
 False, only data without it is read. Default behavior is to
 read all data.</dd>
-<dt>read_extinct</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span><dd>If True, only data with extinction applied is read; if
+<dt>read_extinct <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with extinction applied is read; if
 False, only data without it is read. Default behavior is to
 read all data.</dd>
-<dt>phot_only</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If true, id, trial, time, and filter information are not
+<dt>phot_only <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If true, id, trial, time, and filter information are not
 read, only photometry</dd>
 </dl>
 </dd>
@@ -673,41 +675,41 @@ read, only photometry</dd>
 on the input options, and depending on which fields are present
 in the file being read:</p>
 <dl class="last docutils">
-<dt>id</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span><dd>unique ID of cluster</dd>
+<dt>id <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span></dt>
+<dd>unique ID of cluster</dd>
 <dt>trial: array, dtype uint</dt>
 <dd>which trial was this cluster part of</dd>
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>times at which cluster spectra are output, in yr</dd>
-<dt>filter_names</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the name for each filter</dd>
-<dt>filter_units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the units for each filter</dd>
-<dt>filter_wl_eff</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>effective wavelength of each filter; this is set to None for the
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>times at which cluster spectra are output, in yr</dd>
+<dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the name for each filter</dd>
+<dt>filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the units for each filter</dd>
+<dt>filter_wl_eff <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>effective wavelength of each filter; this is set to None for the
 filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
-<dt>filter_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the wavelength table for each filter; this is
+<dt>filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the wavelength table for each filter; this is
 None for the filters Lbol, QH0, QHe0, and QHe1</dd>
-<dt>filter_response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the photon response function for each filter;
+<dt>filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the photon response function for each filter;
 this is None for the filters Lbol, QH0, QHe0, and QHe1</dd>
-<dt>filter_beta</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>powerlaw index beta for each filter; used to normalize the
+<dt>filter_beta <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>powerlaw index beta for each filter; used to normalize the
 photometry</dd>
-<dt>filter_wl_c</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>pivot wavelength for each filter; used to normalize the photometry</dd>
-<dt>phot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span><dd>photometric value in each filter for each cluster; units are as
+<dt>filter_wl_c <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>pivot wavelength for each filter; used to normalize the photometry</dd>
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_filter)</span></dt>
+<dd>photometric value in each filter for each cluster; units are as
 indicated in the units field</dd>
-<dt>phot_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>same as phot, but for the light after it has passed through
+<dt>phot_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but for the light after it has passed through
 the HII region</dd>
-<dt>phot_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>same as phot, but after extinction has been applied</dd>
-<dt>phot_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>same as phot, but for the light after it has passed through
+<dt>phot_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but after extinction has been applied</dd>
+<dt>phot_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but for the light after it has passed through
 the HII region and then had extinction applied</dd>
 </dl>
 </dd>
@@ -724,34 +726,34 @@ ValueError, if photsystem is set to an unknown value</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
-<dt>no_stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Prior to 7/15, output files did not contain the stellar_mass
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
+<dt>no_stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 7/15, output files did not contain the stellar_mass
 field; this can be detected automatically for ASCII and FITS
 formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
 stellar_mass field; it has no effect for ASCII or FITS files</dd>
-<dt>no_neb_extinct</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Prior to 2/17, SLUG did not support differential nebular
+<dt>no_neb_extinct <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 2/17, SLUG did not support differential nebular
 extinction, and thus there was no output field for it; this
 is detected and handled automatically for ASCII and FITS
 files; for binary outputs, this flag must be set for pre
@@ -761,38 +763,38 @@ files; for binary outputs, this flag must be set for pre
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>id</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span><dd>unique ID of cluster</dd>
+<dt>id <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span></dt>
+<dd>unique ID of cluster</dd>
 <dt>trial: array, dtype uint</dt>
 <dd>which trial was this cluster part of</dd>
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>time at which cluster&#8217;s properties are being evaluated</dd>
-<dt>form_time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>time when cluster formed</dd>
-<dt>lifetime</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>time at which cluster will disrupt</dd>
-<dt>target_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>target cluster mass</dd>
-<dt>actual_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>actual mass at formation</dd>
-<dt>live_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of currently living stars</dd>
-<dt>stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of all stars, living and stellar remnants</dd>
-<dt>num_star</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype ulonglong</span><dd>number of living stars in cluster being treated stochastically</dd>
-<dt>max_star_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of most massive living star in cluster</dd>
-<dt>A_V</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>A_V value for each cluster, in mag (present only if SLUG was
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>time at which cluster’s properties are being evaluated</dd>
+<dt>form_time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>time when cluster formed</dd>
+<dt>lifetime <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>time at which cluster will disrupt</dd>
+<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>target cluster mass</dd>
+<dt>actual_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>actual mass at formation</dd>
+<dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of currently living stars</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
+<dt>num_star <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype ulonglong</span></dt>
+<dd>number of living stars in cluster being treated stochastically</dd>
+<dt>max_star_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of most massive living star in cluster</dd>
+<dt>A_V <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>A_V value for each cluster, in mag (present only if SLUG was
 run with extinction enabled)</dd>
-<dt>A_Vneb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>value of A_V applied to the nebular light for each cluster
+<dt>A_Vneb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>value of A_V applied to the nebular light for each cluster
 (present only if SLUG was run with both nebular emission and
 extinction enabled)</dd>
-<dt>vpn_tuple</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span><dd>tuple containing arrays for any variable parameters we have
-(eg: VP0, VP1,VP2...) in the IMF. Each element of the tuple
+<dt>vpn_tuple <span class="classifier-delimiter">:</span> <span class="classifier">tuple</span></dt>
+<dd>tuple containing arrays for any variable parameters we have
+(eg: VP0, VP1,VP2…) in the IMF. Each element of the tuple
 is an array. Present only if variable parameters were
 enables when SLUG was run.</dd>
 </dl>
@@ -807,63 +809,63 @@ enables when SLUG was run.</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>id</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span><dd>unique ID of cluster</dd>
+<dt>id <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span></dt>
+<dd>unique ID of cluster</dd>
 <dt>trial: array, dtype uint</dt>
 <dd>which trial was this cluster part of</dd>
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>times at which cluster spectra are output, in yr</dd>
-<dt>wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength, in Angstrom</dd>
-<dt>spec</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity of each cluster at each wavelength, in erg/s/A</dd>
-<dt>wl_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the nebular spectrum, in Angstrom (present
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>times at which cluster spectra are output, in yr</dd>
+<dt>wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength, in Angstrom</dd>
+<dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity of each cluster at each wavelength, in erg/s/A</dd>
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
 only if SLUG was run with nebular emission enabled)</dd>
-<dt>spec_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity at each wavelength and each time for each
+<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
 in erg/s/A (present only if SLUG was run with nebular
 emission enabled)</dd>
-<dt>wl_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum, in Angstrom (present
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
 only if SLUG was run with extinction enabled)</dd>
-<dt>spec_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)</dd>
-<dt>wl_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum with nebular emission,
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
 in Angstrom (present only if SLUG was run with both nebular
 emission and extinction enabled)</dd>
-<dt>spec_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_wavelength)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial including emission and absorption by the
 HII region, after extinction has been applied, in erg/s/A
 (present only if SLUG was run with nebular emission and
@@ -882,45 +884,45 @@ extinction both enabled)</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>isotope_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span><dd>Atomic symbols of the isotopes included in the yield table</dd>
-<dt>isotope_Z</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span><dd>Atomic numbers of the isotopes included in the yield table</dd>
-<dt>isotope_A</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span><dd>Atomic mass number of the isotopes included in the yield table</dd>
-<dt>id</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span><dd>unique ID of cluster</dd>
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span></dt>
+<dd>Atomic symbols of the isotopes included in the yield table</dd>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dd>Atomic numbers of the isotopes included in the yield table</dd>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dd>Atomic mass number of the isotopes included in the yield table</dd>
+<dt>id <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype uint</span></dt>
+<dd>unique ID of cluster</dd>
 <dt>trial: array, dtype uint</dt>
 <dd>which trial was this cluster part of</dd>
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>times at which cluster spectra are output, in yr</dd>
-<dt>yld</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_iso)</span><dd>Yield of each isotope, defined as the instantaneous amount
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>times at which cluster spectra are output, in yr</dd>
+<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_iso)</span></dt>
+<dd>Yield of each isotope, defined as the instantaneous amount
 produced up to that time; for unstable isotopes, this
 includes the effects of decay since production</dd>
 </dl>
@@ -938,27 +940,27 @@ filter_dir keyword.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>filtername</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable containing strings</span><dd>Name or names of filters to be read; for the special filters
+<dt>filtername <span class="classifier-delimiter">:</span> <span class="classifier">string or iterable containing strings</span></dt>
+<dd>Name or names of filters to be read; for the special filters
 Lbol, QH0, QHe0, and QHe1, the return value will be None</dd>
-<dt>filter_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Directory where the filter data files can be found</dd>
+<dt>filter_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Directory where the filter data files can be found</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>wl_eff</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span><dd>Central wavelength of the filter, defined by 
+<dt>wl_eff <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span></dt>
+<dd>Central wavelength of the filter, defined by 
 wl_eff = exp(int R ln lambda dln lambda / int R dln lambda)</dd>
-<dt>wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array or list of arrays</span><dd>Wavelength table for each filter, in Ang</dd>
-<dt>response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array or list of arrays</span><dd>Response function per photon for each filter</dd>
-<dt>beta</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span><dd>Index beta for the filter</dd>
-<dt>wl_c</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span><dd>Pivot wavelength for the filter; used when beta != 0 to
+<dt>wl <span class="classifier-delimiter">:</span> <span class="classifier">array or list of arrays</span></dt>
+<dd>Wavelength table for each filter, in Ang</dd>
+<dt>response <span class="classifier-delimiter">:</span> <span class="classifier">array or list of arrays</span></dt>
+<dd>Response function per photon for each filter</dd>
+<dt>beta <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span></dt>
+<dd>Index beta for the filter</dd>
+<dt>wl_c <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span></dt>
+<dd>Pivot wavelength for the filter; used when beta != 0 to
 normalize the photometry</dd>
 </dl>
 </dd>
@@ -975,44 +977,44 @@ requested filter cannot be found</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Format for the file to be read. Allowed values are &#8216;ascii&#8217;,
-&#8216;bin&#8217; or &#8216;binary, and &#8216;fits&#8217;. If one of these is set, the code
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Format for the file to be read. Allowed values are ‘ascii’,
+‘bin’ or ‘binary, and ‘fits’. If one of these is set, the code
 will only attempt to open ASCII-, binary-, or FITS-formatted
 output, ending in .txt., .bin, or .fits, respectively. If set
 to None, the code will try to open ASCII files first, then if
 it fails try binary files, and if it fails again try FITS
 files.</dd>
-<dt>nofilterdata</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, the routine does not attempt to read the filter
+<dt>nofilterdata <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the routine does not attempt to read the filter
 response data from the standard location</dd>
-<dt>photsystem</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span><dd>If photsystem is None, the data will be returned in the same
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span></dt>
+<dd>If photsystem is None, the data will be returned in the same
 photometric system in which they were read. Alternately, if it
 is a string, the data will be converted to the specified
-photometric system. Allowable values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;,
-&#8216;AB&#8217;, &#8216;STMAG&#8217;, and &#8216;Vega&#8217;, corresponding to the options defined
+photometric system. Allowable values are ‘L_nu’, ‘L_lambda’,
+‘AB’, ‘STMAG’, and ‘Vega’, corresponding to the options defined
 in the SLUG code. If this is set and the conversion requested
 involves a conversion from a wavelength-based system to a
 frequency-based one, nofilterdata must be False so that the
 central wavelength of the photometric filters is available.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;prop_name&#8217;,
-&#8216;phot_name&#8217;, &#8216;spec_name&#8217;, &#8216;cloudyspec_name&#8217;, &#8216;cloudylines_name&#8217;
-and &#8216;format&#8217;, giving the names of the files read and the format
-they were in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or
-&#8216;fits&#8217;. If one of the files is not present, the corresponding
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘prop_name’,
+‘phot_name’, ‘spec_name’, ‘cloudyspec_name’, ‘cloudylines_name’
+and ‘format’, giving the names of the files read and the format
+they were in; ‘format’ will be one of ‘ascii’, ‘binary’, or
+‘fits’. If one of the files is not present, the corresponding
 _name key will be omitted from the dict.</dd>
-<dt>no_stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Prior to 7/15, output files did not contain the stellar_mass
+<dt>no_stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 7/15, output files did not contain the stellar_mass
 field; this can be detected automatically for ASCII and FITS
 formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
@@ -1028,56 +1030,56 @@ stellar_mass field; it has no effect for ASCII or FITS files</dd>
 </dl>
 <p>(Only present if an integrated_prop file is found)</p>
 <dl class="docutils">
-<dt>target_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Target stellar mass at each time in each trial</dd>
-<dt>actual_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Actual mass of stars created up to each time in each trial</dd>
-<dt>live_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Mass of currently-alive stars at each time in each trial</dd>
-<dt>stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of all stars, living and stellar remnants</dd>
-<dt>cluster_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Mass of living stars in non-disrupted clusters at each time in
+<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Target stellar mass at each time in each trial</dd>
+<dt>actual_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Actual mass of stars created up to each time in each trial</dd>
+<dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Mass of currently-alive stars at each time in each trial</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
+<dt>cluster_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Mass of living stars in non-disrupted clusters at each time in
 each trial</dd>
-<dt>num_clusters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span><dd>Number of non-disrupted clusters present at each time in each
+<dt>num_clusters <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span></dt>
+<dd>Number of non-disrupted clusters present at each time in each
 trial</dd>
-<dt>num_dis_clusters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span><dd>Number of disrupted clusters present at each time in each trial</dd>
-<dt>num_fld_stars</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span><dd>Number of living field stars (excluding those in disrupted 
+<dt>num_dis_clusters <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span></dt>
+<dd>Number of disrupted clusters present at each time in each trial</dd>
+<dt>num_fld_stars <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span></dt>
+<dd>Number of living field stars (excluding those in disrupted 
 clusters and those being treated non-stochastically) present at
 each time in each trial</dd>
 </dl>
 <p>(Only present if an integrated_spec file is found)</p>
 <dl class="docutils">
-<dt>wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelengths, in Angstrom</dd>
-<dt>spec</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength and each time for each
+<dt>wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelengths, in Angstrom</dd>
+<dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
 trial, in erg/s/A</dd>
-<dt>wl_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the nebular spectrum, in Angstrom (present
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
 only if SLUG was run with nebular emission enabled)</dd>
-<dt>spec_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength and each time for each
+<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
 in erg/s/A (present only if SLUG was run with nebular
 emission enabled)</dd>
-<dt>wl_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum, in Angstrom (present
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
 only if SLUG was run with extinction enabled)</dd>
-<dt>spec_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)</dd>
-<dt>wl_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum with nebular emission,
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
 in Angstrom (present only if SLUG was run with both nebular
 emission and extinction enabled)</dd>
-<dt>spec_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial including emission and absorption by the
 HII region, after extinction has been applied, in erg/s/A
 (present only if SLUG was run with nebular emission and
@@ -1085,104 +1087,104 @@ extinction both enabled)</dd>
 </dl>
 <p>(Only present if an integrated_phot file is found)</p>
 <dl class="docutils">
-<dt>filter_names</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the name for each filter</dd>
-<dt>filter_units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the units for each filter</dd>
-<dt>filter_wl_cen</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>central wavelength of each filter; this is set to None for the
+<dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the name for each filter</dd>
+<dt>filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the units for each filter</dd>
+<dt>filter_wl_cen <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>central wavelength of each filter; this is set to None for the
 filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
-<dt>filter_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the wavelength table for each filter; this is
+<dt>filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the wavelength table for each filter; this is
 None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
 nofilterdata is True</dd>
-<dt>filter_response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the photon response function for each filter;
+<dt>filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the photon response function for each filter;
 this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
 if nofilterdata is True</dd>
-<dt>phot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>photometric value in each filter at each time in each trial;
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>photometric value in each filter at each time in each trial;
 units are as indicated in the units field</dd>
 </dl>
 <p>If extinction is enabled, phot_ex will contain photometry  
 after extinction has been applied.</p>
 <p>(Only present if an integrate_yield file is found)</p>
 <dl class="docutils">
-<dt>isotope_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of strings</span><dd>Atomic symbols of the isotopes included in the yield table</dd>
-<dt>isotope_Z</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span><dd>Atomic numbers of the isotopes included in the yield table</dd>
-<dt>isotope_A</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span><dd>Atomic mass number of the isotopes included in the yield table</dd>
-<dt>yld</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>Yield of each isotope, defined as the instantaneous amount
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings</span></dt>
+<dd>Atomic symbols of the isotopes included in the yield table</dd>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic numbers of the isotopes included in the yield table</dd>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int</span></dt>
+<dd>Atomic mass number of the isotopes included in the yield table</dd>
+<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yield of each isotope, defined as the instantaneous amount
 produced up to that time; for unstable isotopes, this
 includes the effects of decay since production</dd>
 </dl>
 <p>(Only present if an integrated_cloudyspec file is found)</p>
 <dl class="docutils">
-<dt>cloudy_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength, in Angstrom</dd>
-<dt>cloudy_inc</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity of the stellar radiation field at each
+<dt>cloudy_wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength, in Angstrom</dd>
+<dt>cloudy_inc <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity of the stellar radiation field at each
 wavelength and each time for each trial, in erg/s/A</dd>
-<dt>cloudy_trans</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity of the stellar radiation field after it has
+<dt>cloudy_trans <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity of the stellar radiation field after it has
 passed through the HII region, at each wavelength and each time
 for each trial, in erg/s/A</dd>
-<dt>cloudy_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity of the radiation field emitted by the HII
+<dt>cloudy_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity of the radiation field emitted by the HII
 region, at each wavelength and each time for each trial, in
 erg/s/A</dd>
-<dt>cloudy_trans_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>the sum of emitted and transmitted; this is what would be seen
+<dt>cloudy_trans_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>the sum of emitted and transmitted; this is what would be seen
 by an observer looking at both the star cluster and its nebula</dd>
 </dl>
 <p>(Only present if an integrated_cloudylines file is found)</p>
 <dl class="docutils">
-<dt>cloudy_linelabel</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype=&#8217;S4&#8217;, shape (N_lines)</span><dd>labels for the lines, following cloudy&#8217;s 4 character line label
+<dt>cloudy_linelabel <span class="classifier-delimiter">:</span> <span class="classifier">array, dtype=’S4’, shape (N_lines)</span></dt>
+<dd>labels for the lines, following cloudy’s 4 character line label
 notation</dd>
-<dt>cloudy_linewl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_lines)</span><dd>rest wavelength for each line, in Angstrom</dd>
-<dt>cloudy_linelum</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_lines, N_times, N_trials)</span><dd>luminosity of each line at each time for each trial, in erg/s</dd>
+<dt>cloudy_linewl <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_lines)</span></dt>
+<dd>rest wavelength for each line, in Angstrom</dd>
+<dt>cloudy_linelum <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_lines, N_times, N_trials)</span></dt>
+<dd>luminosity of each line at each time for each trial, in erg/s</dd>
 </dl>
 <p>(Only present if an integrated_cloudyphot file is found)</p>
 <dl class="docutils">
-<dt>cloudy_filter_names</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the name for each filter</dd>
-<dt>cloudy_filter_units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the units for each filter</dd>
-<dt>cloudy_filter_wl_eff</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>effective wavelength of each filter; this is set to None for the
+<dt>cloudy_filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the name for each filter</dd>
+<dt>cloudy_filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the units for each filter</dd>
+<dt>cloudy_filter_wl_eff <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>effective wavelength of each filter; this is set to None for the
 filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
-<dt>cloudy_filter_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the wavelength table for each filter; this is
+<dt>cloudy_filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the wavelength table for each filter; this is
 None for the filters Lbol, QH0, QHe0, and QHe1; omitted if
 nofilterdata is True</dd>
-<dt>cloudy_filter_response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the photon response function for each filter;
+<dt>cloudy_filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the photon response function for each filter;
 this is None for the filters Lbol, QH0, QHe0, and QHe1; omitted
 if nofilterdata is True</dd>
-<dt>cloudy_filter_beta</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>powerlaw index beta for each filter; used to normalize the
+<dt>cloudy_filter_beta <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>powerlaw index beta for each filter; used to normalize the
 photometry</dd>
-<dt>cloudy_filter_wl_c</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>pivot wavelength for each filter; used to normalize the photometry</dd>
-<dt>cloudy_phot_trans</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>photometric value in each filter at each time in each trial for
+<dt>cloudy_filter_wl_c <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>pivot wavelength for each filter; used to normalize the photometry</dd>
+<dt>cloudy_phot_trans <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>photometric value in each filter at each time in each trial for
 the transmitted light (i.e., the starlight remaining after it
 has passed through the HII region); units are as indicated in
 the units field</dd>
-<dt>cloudy_phot_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>photometric value in each filter at each time in each trial for
+<dt>cloudy_phot_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>photometric value in each filter at each time in each trial for
 the emitted light (i.e., the diffuse light emitted by the HII
 region); units are as indicated in the units field</dd>
-<dt>cloudy_phot_trans_emit</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>photometric value in each filter at each time in each trial for
+<dt>cloudy_phot_trans_emit <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>photometric value in each filter at each time in each trial for
 the transmitted plus emitted light (i.e., the light coming
 directly from the stars after absorption by the HII region,
 plus the diffuse light emitted by the HII region); units are as
@@ -1190,27 +1192,27 @@ indicated in the units field</dd>
 </dl>
 <p>(Only present if an integrated_cloudyparams file is found)</p>
 <dl class="last docutils">
-<dt>cloudy_hden</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>number density of H nuclei at the inner edge of the ionized
+<dt>cloudy_hden <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>number density of H nuclei at the inner edge of the ionized
 region simulated by cloudy</dd>
-<dt>cloudy_r0</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>inner radius of the ionized region simulated by cloudy</dd>
-<dt>cloudy_rS</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>outer radius of the ionized region simulated by cloudy (approximate!)</dd>
-<dt>cloudy_QH0</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>ionizing luminosity used in the cloudy computation</dd>
-<dt>cloudy_covFac</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>covering factor assumed in the cloudy computation; only a
+<dt>cloudy_r0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>inner radius of the ionized region simulated by cloudy</dd>
+<dt>cloudy_rS <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>outer radius of the ionized region simulated by cloudy (approximate!)</dd>
+<dt>cloudy_QH0 <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>ionizing luminosity used in the cloudy computation</dd>
+<dt>cloudy_covFac <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>covering factor assumed in the cloudy computation; only a
 fraction covFac of the ionizing photons are assumed to
 produce emission within the HII region, while the remainder
 are assumed to escape</dd>
-<dt>cloudy_U</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>volume-averaged ionization parameter of the HII region
+<dt>cloudy_U <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>volume-averaged ionization parameter of the HII region
 simulated by cloudy; note that this value is approximate,
 not exact, and the approximation can be very poor if
 radiation pressure effects are significant</dd>
-<dt>cloudy_Omega</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>Yeh &amp; Matzner (2012) wind parameter for the HII region
+<dt>cloudy_Omega <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>Yeh &amp; Matzner (2012) wind parameter for the HII region
 simulated by cloudy; as with U, this value is approximate,
 and the approximation is valid only if radiation pressure
 effects are small</dd>
@@ -1226,54 +1228,54 @@ effects are small</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>nofilterdata</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, the routine does not attempt to read the filter
+<dt>nofilterdata <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the routine does not attempt to read the filter
 response data from the standard location</dd>
-<dt>photsystem</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span><dd>If photsystem is None, the data will be returned in the same
+<dt>photsystem <span class="classifier-delimiter">:</span> <span class="classifier">None or string</span></dt>
+<dd>If photsystem is None, the data will be returned in the same
 photometric system in which they were read. Alternately, if it
 is a string, the data will be converted to the specified
-photometric system. Allowable values are &#8216;L_nu&#8217;, &#8216;L_lambda&#8217;,
-&#8216;AB&#8217;, &#8216;STMAG&#8217;, and &#8216;Vega&#8217;, corresponding to the options defined
+photometric system. Allowable values are ‘L_nu’, ‘L_lambda’,
+‘AB’, ‘STMAG’, and ‘Vega’, corresponding to the options defined
 in the SLUG code. If this is set and the conversion requested
 involves a conversion from a wavelength-based system to a
 frequency-based one, nofilterdata must be False so that the
 central wavelength of the photometric filters is available.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
-<dt>filters_only</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, the code only reads the data on the filters, not
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
+<dt>filters_only <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, the code only reads the data on the filters, not
 any of the actual photometry. If combined with nofilterdata,
 this can be used to return the list of available filters
 and nothing else.</dd>
-<dt>read_filters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span><dd>If this is None, data on all filters is read. Otherwise only
+<dt>read_filters <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span></dt>
+<dd>If this is None, data on all filters is read. Otherwise only
 filters whose name(s) match the input filter names ar
 read.</dd>
-<dt>read_nebular</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span><dd>If True, only data with the nebular contribution is read; if
+<dt>read_nebular <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with the nebular contribution is read; if
 False, only data without it is read. Default behavior is to
 read all data.</dd>
-<dt>read_extinct</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span><dd>If True, only data with extinction applied is read; if
+<dt>read_extinct <span class="classifier-delimiter">:</span> <span class="classifier">None | bool</span></dt>
+<dd>If True, only data with extinction applied is read; if
 False, only data without it is read. Default behavior is to
 read all data.</dd>
 </dl>
@@ -1283,39 +1285,39 @@ read all data.</dd>
 on the input options, and depending on which fields are present
 in the file being read:</p>
 <dl class="last docutils">
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span><dd>Times at which data are output; shape is either N_times (if
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
 the run was done with fixed output times) or N_trials (if
 the run was done with random output times)</dd>
-<dt>filter_names</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the name for each filter</dd>
-<dt>filter_units</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span><dd>a list giving the units for each filter</dd>
-<dt>filter_wl_eff</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>effective wavelength of each filter; this is set to None for the
+<dt>filter_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the name for each filter</dd>
+<dt>filter_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the units for each filter</dd>
+<dt>filter_wl_eff <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>effective wavelength of each filter; this is set to None for the
 filters Lbol, QH0, QHe0, and QHe1; omitted if nofilterdata is
 True</dd>
-<dt>filter_wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the wavelength table for each filter; this is
+<dt>filter_wl <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the wavelength table for each filter; this is
 None for the filters Lbol, QH0, QHe0, and QHe1</dd>
-<dt>filter_response</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span><dd>a list giving the photon response function for each filter;
+<dt>filter_response <span class="classifier-delimiter">:</span> <span class="classifier">list of arrays</span></dt>
+<dd>a list giving the photon response function for each filter;
 this is None for the filters Lbol, QH0, QHe0, and QHe1</dd>
-<dt>filter_beta</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>powerlaw index beta for each filter; used to normalize the
+<dt>filter_beta <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>powerlaw index beta for each filter; used to normalize the
 photometry</dd>
-<dt>filter_wl_c</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">list</span><dd>pivot wavelength for each filter; used to normalize the photometry</dd>
-<dt>phot</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>photometric value in each filter at each time in each trial;
+<dt>filter_wl_c <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
+<dd>pivot wavelength for each filter; used to normalize the photometry</dd>
+<dt>phot <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>photometric value in each filter at each time in each trial;
 units are as indicated in the units field</dd>
-<dt>phot_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>same as phot, but for the light after it has passed through
+<dt>phot_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but for the light after it has passed through
 the HII region</dd>
-<dt>phot_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>same as phot, but after extinction has been applied</dd>
-<dt>phot_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span><dd>same as phot, but for the light after it has passed through
+<dt>phot_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but after extinction has been applied</dd>
+<dt>phot_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_filter, N_times, N_trials)</span></dt>
+<dd>same as phot, but for the light after it has passed through
 the HII region and then had extinction applied</dd>
 </dl>
 </dd>
@@ -1332,28 +1334,28 @@ ValueError, if photsystem is set to an unknown value</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
-<dt>no_stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>Prior to 7/15, output files did not contain the stellar_mass
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
+<dt>no_stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>Prior to 7/15, output files did not contain the stellar_mass
 field; this can be detected automatically for ASCII and FITS
 formats, but not for binary format; if True, this specifies
 that the binary file being read does not contain a
@@ -1363,28 +1365,28 @@ stellar_mass field; it has no effect for ASCII or FITS files</dd>
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span><dd>Times at which data are output; shape is either N_times (if
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
 the run was done with fixed output times) or N_trials (if
 the run was done with random output times)</dd>
-<dt>target_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Target stellar mass at each time</dd>
-<dt>actual_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Actual mass of stars created up to each time in each trial</dd>
-<dt>live_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Mass of currently-alive stars at each time in each trial</dd>
-<dt>stellar_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>mass of all stars, living and stellar remnants</dd>
-<dt>cluster_mass</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span><dd>Stellar mass in non-disrupted clusters at each time in each
+<dt>target_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Target stellar mass at each time</dd>
+<dt>actual_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Actual mass of stars created up to each time in each trial</dd>
+<dt>live_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Mass of currently-alive stars at each time in each trial</dd>
+<dt>stellar_mass <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>mass of all stars, living and stellar remnants</dd>
+<dt>cluster_mass <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials)</span></dt>
+<dd>Stellar mass in non-disrupted clusters at each time in each
 trial</dd>
-<dt>num_clusters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span><dd>Number of non-disrupted clusters present at each time in each
+<dt>num_clusters <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span></dt>
+<dd>Number of non-disrupted clusters present at each time in each
 trial</dd>
-<dt>num_dis_clusters</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span><dd>Number of disrupted clusters present at each time in each trial</dd>
-<dt>num_fld_stars</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span><dd>Number of living field stars (excluding those in disrupted 
+<dt>num_dis_clusters <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span></dt>
+<dd>Number of disrupted clusters present at each time in each trial</dd>
+<dt>num_fld_stars <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times, N_trials), dtype ulonglong</span></dt>
+<dd>Number of living field stars (excluding those in disrupted 
 clusters and those being treated non-stochastically) present at
 each time in each trial</dd>
 </dl>
@@ -1399,62 +1401,62 @@ each time in each trial</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span><dd>Times at which data are output; shape is either N_times (if
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
 the run was done with fixed output times) or N_trials (if
 the run was done with random output times)</dd>
-<dt>wl</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength, in Angstrom</dd>
-<dt>spec</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength and each time for each
+<dt>wl <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength, in Angstrom</dd>
+<dt>spec <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
 trial, in erg/s/A</dd>
-<dt>wl_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the nebular spectrum, in Angstrom (present
+<dt>wl_neb <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the nebular spectrum, in Angstrom (present
 only if SLUG was run with nebular emission enabled)</dd>
-<dt>spec_neb</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength and each time for each
+<dt>spec_neb <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength and each time for each
 trial, including emission and absorption by the HII region,
 in erg/s/A (present only if SLUG was run with nebular
 emission enabled)</dd>
-<dt>wl_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum, in Angstrom (present
+<dt>wl_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum, in Angstrom (present
 only if SLUG was run with extinction enabled)</dd>
-<dt>spec_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial after extinction has been applied, in
 erg/s/A (present only if SLUG was run with extinction
 enabled)</dd>
-<dt>wl_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array</span><dd>wavelength for the extincted spectrum with nebular emission,
+<dt>wl_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
+<dd>wavelength for the extincted spectrum with nebular emission,
 in Angstrom (present only if SLUG was run with both nebular
 emission and extinction enabled)</dd>
-<dt>spec_neb_ex</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span><dd>specific luminosity at each wavelength in wl_ex and each
+<dt>spec_neb_ex <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_wavelength, N_times, N_trials)</span></dt>
+<dd>specific luminosity at each wavelength in wl_ex and each
 time for each trial including emission and absorption by the
 HII region, after extinction has been applied, in erg/s/A
 (present only if SLUG was run with nebular emission and
@@ -1471,43 +1473,43 @@ extinction both enabled)</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
 it fails again try FITS files.</dd>
-<dt>verbose</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">bool</span><dd>If True, verbose output is printed as code runs</dd>
-<dt>read_info</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>On return, this dict will contain the keys &#8216;fname&#8217; and
-&#8216;format&#8217;, giving the name of the file read and the format it
-was in; &#8216;format&#8217; will be one of &#8216;ascii&#8217;, &#8216;binary&#8217;, or &#8216;fits&#8217;</dd>
+<dt>verbose <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>If True, verbose output is printed as code runs</dd>
+<dt>read_info <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>On return, this dict will contain the keys ‘fname’ and
+‘format’, giving the name of the file read and the format it
+was in; ‘format’ will be one of ‘ascii’, ‘binary’, or ‘fits’</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><p class="first">A namedtuple containing the following fields:</p>
 <dl class="last docutils">
-<dt>time</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span><dd>Times at which data are output; shape is either N_times (if
+<dt>time <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_times) or shape (N_trials)</span></dt>
+<dd>Times at which data are output; shape is either N_times (if
 the run was done with fixed output times) or N_trials (if
 the run was done with random output times)</dd>
-<dt>isotope_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span><dd>Atomic symbols of the isotopes included in the yield table</dd>
-<dt>isotope_Z</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span><dd>Atomic numbers of the isotopes included in the yield table</dd>
-<dt>isotope_A</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span><dd>Atomic mass number of the isotopes included in the yield table</dd>
-<dt>yld</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_iso, N_times) or (N_iso, N_trials)</span><dd>Yield of each isotope, defined as the instantaneous amount
+<dt>isotope_name <span class="classifier-delimiter">:</span> <span class="classifier">array of strings, shape (N_iso)</span></dt>
+<dd>Atomic symbols of the isotopes included in the yield table</dd>
+<dt>isotope_Z <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dd>Atomic numbers of the isotopes included in the yield table</dd>
+<dt>isotope_A <span class="classifier-delimiter">:</span> <span class="classifier">array of int, shape (N_iso)</span></dt>
+<dd>Atomic mass number of the isotopes included in the yield table</dd>
+<dt>yld <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_iso, N_times) or (N_iso, N_trials)</span></dt>
+<dd>Yield of each isotope, defined as the instantaneous amount
 produced up to that time; for unstable isotopes, this
 includes the effects of decay since production</dd>
 </dl>
@@ -1522,18 +1524,18 @@ includes the effects of decay since production</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The name of the model to be read</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The name of the model to be read</dd>
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the SLUG_DIR
 directory if that environment variable is set</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
 <dd><dl class="first last docutils">
-<dt>summary</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">dict</span><dd>A dict containing all the keywords stored in the output file</dd>
+<dt>summary <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd>A dict containing all the keywords stored in the output file</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
@@ -1548,18 +1550,18 @@ directory if that environment variable is set</dd>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>filename</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Name of the file to open, without any extension. The following
+<dt>filename <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Name of the file to open, without any extension. The following
 extensions are tried, in order: .txt, .bin, .fits</dd>
-<dt>output_dir</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>The directory where the SLUG2 output is located; if set to None,
+<dt>output_dir <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>The directory where the SLUG2 output is located; if set to None,
 the current directory is searched, followed by the
 SLUG_DIR/output directory if the SLUG_DIR environment variable
 is set</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the file to be read. If one of these is set, the
-function will only attempt to open ASCII-(&#8216;txt&#8217; or &#8216;ascii&#8217;), 
-binary (&#8216;bin&#8217; or &#8216;binary&#8217;), or FITS (&#8216;fits&#8217; or &#8216;fits2&#8217;)
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the file to be read. If one of these is set, the
+function will only attempt to open ASCII-(‘txt’ or ‘ascii’), 
+binary (‘bin’ or ‘binary’), or FITS (‘fits’ or ‘fits2’)
 formatted output, ending in .txt., .bin, or .fits,
 respectively. If set to None, the code will try to open
 ASCII files first, then if it fails try binary files, and if
@@ -1568,10 +1570,10 @@ it fails again try FITS files.</dd>
 </dd>
 <dt>Returns</dt>
 <dd><dl class="first last docutils">
-<dt>fp</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">file or astropy.io.fits.hdu.hdulist.HDUList</span><dd>A file object pointing the file that has been opened</dd>
-<dt>fname</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Name of the file that was opened</dd>
+<dt>fp <span class="classifier-delimiter">:</span> <span class="classifier">file or astropy.io.fits.hdu.hdulist.HDUList</span></dt>
+<dd>A file object pointing the file that has been opened</dd>
+<dt>fname <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Name of the file that was opened</dd>
 </dl>
 </dd>
 <dt>Raises</dt>
@@ -1595,15 +1597,15 @@ identical.</p>
 <dl class="docutils">
 <dt>Parameters:</dt>
 <dd><dl class="first last docutils">
-<dt>d0, d1, ..., dn</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span><dd>Dimensions of the returned array; if left unspecified, a
+<dt>d0, d1, …, dn <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd>Dimensions of the returned array; if left unspecified, a
 single python float is returned</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
 <dd><dl class="first last docutils">
-<dt>x</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span><dd>One or more numbers drawn from the PDF</dd>
+<dt>x <span class="classifier-delimiter">:</span> <span class="classifier">float or array</span></dt>
+<dd>One or more numbers drawn from the PDF</dd>
 </dl>
 </dd>
 </dl>
@@ -1619,16 +1621,16 @@ starting from a cluster data set as returned by read_cluster.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>data</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span><dd>Cluster data to be written, in the namedtuple format returned
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span></dt>
+<dd>Cluster data to be written, in the namedtuple format returned
 by read_cluster</dd>
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Base file name to give the model to be written. Can include a
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Base file name to give the model to be written. Can include a
 directory specification if desired.</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">&#8216;txt&#8217; | &#8216;ascii&#8217; | &#8216;bin&#8217; | &#8216;binary&#8217; | &#8216;fits&#8217; | &#8216;fits2&#8217;</span><dd>Format for the output file; &#8216;txt&#8217; and &#8216;ascii&#8217; produce ASCII
-text files, &#8216;bin&#8217; or &#8216;binary&#8217; produce binary files, and
-&#8216;fits&#8217; or &#8216;fits2&#8217; product FITS files; &#8216;fits2&#8217; uses an
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">‘txt’ | ‘ascii’ | ‘bin’ | ‘binary’ | ‘fits’ | ‘fits2’</span></dt>
+<dd>Format for the output file; ‘txt’ and ‘ascii’ produce ASCII
+text files, ‘bin’ or ‘binary’ produce binary files, and
+‘fits’ or ‘fits2’ product FITS files; ‘fits2’ uses an
 ordering that allows for more efficient querying of outputs
 too large to fit in memory</dd>
 </dl>
@@ -1647,15 +1649,15 @@ read_integrated.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
 <dd><dl class="first last docutils">
-<dt>data</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span><dd>Integrated data to be written, in the namedtuple format returned
+<dt>data <span class="classifier-delimiter">:</span> <span class="classifier">namedtuple</span></dt>
+<dd>Integrated data to be written, in the namedtuple format returned
 by read_integrated</dd>
-<dt>model_name</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Base file name to give the model to be written. Can include a
+<dt>model_name <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Base file name to give the model to be written. Can include a
 directory specification if desired.</dd>
-<dt>fmt</dt>
- <span class="classifier-delimiter">:</span> <span class="classifier">string</span><dd>Format for the output file. Allowed values are &#8216;ascii&#8217;, &#8216;bin&#8217;
-or &#8216;binary, and &#8216;fits&#8217;.</dd>
+<dt>fmt <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd>Format for the output file. Allowed values are ‘ascii’, ‘bin’
+or ‘binary, and ‘fits’.</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -1674,7 +1676,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">slugpy &#8211; The Python Helper Library</a><ul>
+<li><a class="reference internal" href="#">slugpy – The Python Helper Library</a><ul>
 <li><a class="reference internal" href="#installing-slugpy">Installing slugpy</a></li>
 <li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
 <li><a class="reference internal" href="#module-slugpy">Full Documentation of slugpy</a></li>
@@ -1693,7 +1695,7 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/slugpy.txt"
+      <li><a href="_sources/slugpy.rst.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -1715,11 +1717,11 @@ or &#8216;binary, and &#8216;fits&#8217;.</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/slugpy.txt"
+      <a href="_sources/slugpy.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 
