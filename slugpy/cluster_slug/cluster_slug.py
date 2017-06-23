@@ -92,7 +92,7 @@ class cluster_slug(object):
     ##################################################################
     def __init__(self, libname=None, filters=None, photsystem=None,
                  lib=None, bw_phys=0.1, bw_phot=None, ktype='gaussian', 
-                 priors=None, sample_density=None, reltol=1.0e-2,
+                 priors=None, sample_density=None, pobs=None, reltol=1.0e-2,
                  abstol=1.0e-8, leafsize=16, use_nebular=True,
                  use_extinction=True, thread_safe=True, vp_list=[]):
         """
@@ -427,14 +427,17 @@ class cluster_slug(object):
         if filter_name == 'QH0' or filter_name == 'QHe0' or \
            filter_name == 'QHe1':
             if self.__lib is None:
-                phdata = read_cluster_phot(self.__libname, 
+                phot = read_cluster_phot(self.__libname, 
                                            read_filters=filter_name,
                                            read_nebular=False,
                                            read_extinct=False,
                                            phot_only=True)
+                phdata = np.squeeze(phot.phot)
             else:
-                phdata = np.copy(self.__lib.phot
-                                 [:,self.__allfilters.index(filter_name)])
+                phot = self.__lib
+                phdata = np.squeeze(
+                    np.copy(self.__lib.phot
+                            [:,self.__allfilters.index(filter_name)]))
         else:
 
             # Load data; first try reading the requested combination
@@ -1341,6 +1344,13 @@ class cluster_slug(object):
               array giving the photometric values; for a
               multidimensional array, the operation is vectorized over
               the leading dimensions
+           photerr : arraylike, shape (nfilter) or (..., nfilter)
+              array giving photometric errors, which must have the
+              same shape as phot; if this is not None,
+              then distances will be measured in units of the
+              photometric error if bandwidth_units is False, or in
+              units of the bandwidth added in quadrature with the
+              errors if it is True
            nmatch : int
               number of matches to return; returned matches will be
               ordered by distance from the input
