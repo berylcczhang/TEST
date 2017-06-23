@@ -148,6 +148,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 neb_extinct = False
         else:
             extinct = False
+            neb_extinct = False
 
         # Check for variable imf parameters
         if 'VP0' not in hdrsplit:
