@@ -374,7 +374,14 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
                 L_lambda_neb_ex = fp[2].data.field('L_lambda_neb_ex')
         else:
             extinct = False
-
+        # Handle rectified spectra
+        if 'Wavelength_Rectified' in fp[1].data.columns.names:
+            rectified=True
+            wl_r = fp[1].data.field('Wavelength_Rectified')
+            wl_r = wl_r.flatten()
+            L_rectified = fp[2].data.field('Rectified_Spec')
+        else:
+            rectified= False
         # Handle extincted neblar data
         if nebular and extinct:
             wl_neb_ex = fp[1].data.field('Wavelength_neb_ex')
@@ -403,7 +410,11 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
             L_lambda_neb_ex = np.array(L_lambda_neb_ex)
             L_lambda_neb_ex = np.reshape(L_lambda_neb_ex, 
                                          (len(time), len(wl_neb_ex)))
-
+    if rectified:
+        wl_r = np.array(wl_r)
+        L_rectified = np.array(L_rectified)
+        L_rectified = np.reshape(L_rectified,
+                                  (len(time),len(wl_r)))
     # Build namedtuple to hold output
     fieldnames = ['id', 'trial', 'time', 'wl', 'spec']
     fields = [cluster_id, trial, time, wavelength, L_lambda]
@@ -416,6 +427,9 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
         if nebular:
             fieldnames = fieldnames + ['wl_neb_ex', 'spec_neb_ex']
             fields = fields + [wl_neb_ex, L_lambda_neb_ex]
+    if rectified:
+        fieldnames = fieldnames + ['wl_r','spec_rec']
+        fields = fields + [wl_r,L_rectified]            
     out_type = namedtuple('integrated_spec', fieldnames)
     out = out_type(*fields)
 

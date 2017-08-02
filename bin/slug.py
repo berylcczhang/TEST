@@ -419,7 +419,9 @@ else:
         fname = f+'_cluster_yield'+extension
         if osp.isfile(fname):
             os.rename(fname, osp.join(out_dir, osp.basename(fname)))
-
+        fname = f+'_cluster_ew'+extension
+        if osp.isfile(fname):
+            os.rename(fname, osp.join(out_dir, osp.basename(fname)))
 
 # Step 8: clean up remaining temporary files
 if verbosity > 0:
@@ -463,6 +465,9 @@ for f in out_names:
         if osp.isfile(fname):
             os.remove(fname)
         fname = f+'_cluster_yield'+extension
+        if osp.isfile(fname):
+            os.remove(fname)
+        fname = f+'_cluster_ew'+extension
         if osp.isfile(fname):
             os.remove(fname)
     except OSError:

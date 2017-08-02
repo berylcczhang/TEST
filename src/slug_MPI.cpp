@@ -66,6 +66,7 @@ unpack_slug_clusters(const vector<size_t>::size_type ncluster,
 		     const slug_extinction *extinct_,
 		     const slug_nebular *nebular_,
 		     const slug_yields *yields_,
+		     const slug_line_list *lines_,
 		     slug_ostreams &ostreams_,
 		     const slug_PDF *clf_) {
   vector<slug_cluster *> clusters(ncluster);
@@ -75,7 +76,7 @@ unpack_slug_clusters(const vector<size_t>::size_type ncluster,
       ((char *) buf + ptr);
     clusters[i] = new slug_cluster(bufptr, imf_, tracks_, specsyn_,
 				   filters_, extinct_, nebular_,
-				   yields_, ostreams_, clf_);
+				   yields_, lines_, ostreams_, clf_);
     ptr += sizes[i];
   }
   return clusters;
@@ -248,6 +249,7 @@ MPI_recv_slug_cluster(int source, int tag, MPI_Comm comm,
 		      const slug_extinction *extinct_,
 		      const slug_nebular *nebular_,
 		      const slug_yields *yields_,
+		      const slug_line_list *lines_,
 		      slug_ostreams &ostreams_,
 		      const slug_PDF *clf_) {
 
@@ -266,7 +268,7 @@ MPI_recv_slug_cluster(int source, int tag, MPI_Comm comm,
   // Build a new slug_cluster object from the buffer
   slug_cluster *cluster
     = new slug_cluster(buf, imf_, tracks_, specsyn_, filters_,
-		       extinct_, nebular_, yields_, ostreams_, clf_);
+		       extinct_, nebular_, yields_, lines_, ostreams_, clf_);
 
   // Free the buffer
   free(buf);
@@ -310,6 +312,7 @@ MPI_recv_slug_cluster_vec(int source, int tag, MPI_Comm comm,
 			  const slug_extinction *extinct_,
 			  const slug_nebular *nebular_,
 			  const slug_yields *yields_,
+			  const slug_line_list *lines_,
 			  slug_ostreams &ostreams_,
 			  const slug_PDF *clf_) {
 
@@ -335,7 +338,7 @@ MPI_recv_slug_cluster_vec(int source, int tag, MPI_Comm comm,
   // Unpack data
   vector<slug_cluster *> clusters =
     unpack_slug_clusters(ncluster, sizes, buf, imf_, tracks_, specsyn_,
-			 filters_, extinct_, nebular_, yields_,
+			 filters_, extinct_, nebular_, yields_,lines_,
 			 ostreams_, clf_);
 
   // Free buffers
@@ -357,6 +360,7 @@ MPI_bcast_slug_cluster(slug_cluster *cluster, int root,
 		       const slug_extinction *extinct_,
 		       const slug_nebular *nebular_,
 		       const slug_yields *yields_,
+		       const slug_line_list *lines_,
 		       slug_ostreams &ostreams_,
 		       const slug_PDF *clf_) {
 
@@ -397,7 +401,7 @@ MPI_bcast_slug_cluster(slug_cluster *cluster, int root,
     // Construct the new slug_cluster object
     slug_cluster *new_cluster =
       new slug_cluster(buf, imf_, tracks_, specsyn_, filters_,
-		       extinct_, nebular_, yields_, ostreams_, clf_);
+		       extinct_, nebular_, yields_,lines_, ostreams_, clf_);
 
     // Free the buffer
     free(buf);
@@ -418,6 +422,7 @@ MPI_bcast_slug_cluster_vec(std::vector<slug_cluster *> &clusters,
 			   const slug_extinction *extinct_,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
+			   const slug_line_list *lines_,
 			   slug_ostreams &ostreams_,
 			   const slug_PDF *clf_) {
 
@@ -472,7 +477,7 @@ MPI_bcast_slug_cluster_vec(std::vector<slug_cluster *> &clusters,
     // Unpack data
     vector<slug_cluster *> clusters =
       unpack_slug_clusters(ncluster, sizes, buf, imf_, tracks_, specsyn_,
-			   filters_, extinct_, nebular_, yields_,
+			   filters_, extinct_, nebular_, yields_, lines_,
 			   ostreams_, clf_);
 
     // Free buffers
@@ -501,6 +506,7 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 			  const slug_extinction *extinct_,
 			  const slug_nebular *nebular_,
 			  const slug_yields *yields_,
+			  const slug_line_list *lines_,
 			  slug_ostreams &ostreams_,
 			  const slug_PDF *clf_) {
 
@@ -671,7 +677,7 @@ MPI_exchange_slug_cluster(const vector<slug_cluster *> &clusters,
 		  new slug_cluster((slug_cluster_buffer *) bufptr,
 				   imf_, tracks_, specsyn_,
 				   filters_, extinct_, nebular_,
-				   yields_, ostreams_, clf_);
+				   yields_, lines_, ostreams_, clf_);
 		bufptr += sizes[k-start];
 	      }
 

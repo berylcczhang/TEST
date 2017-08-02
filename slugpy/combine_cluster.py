@@ -46,7 +46,7 @@ def combine_cluster(data):
                      'cloudy_wl', 'cloudy_filter_names',
                      'cloudy_filter_units', 'cloudy_filter_wl_eff',
                      'cloudy_filter_wl', 'cloudy_filter_response',
-                     'cloudy_filter_beta', 'cloudy_filter_wl_c']
+                     'cloudy_filter_beta', 'cloudy_filter_wl_c','line_names']
 
     # Combine fields
     new_fields = []

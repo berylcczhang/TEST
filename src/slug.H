@@ -41,14 +41,18 @@ class slug_extinction;
 class slug_filter;
 class slug_filter_set;
 class slug_galaxy;
+class slug_line;
+class slug_line_list;
 class slug_parmParser;
 class slug_sim;
 class slug_specsyn;
 class slug_specsyn_hillier;
+class slug_specsyn_powr;
 class slug_specsyn_kurucz;
 class slug_specsyn_pauldrach;
 class slug_specsyn_planck;
 class slug_specsyn_sb99;
+class slug_specsyn_sb99hruv;
 class slug_tracks;
 class slug_yields;
 class slug_yields_agb;
@@ -66,7 +70,7 @@ enum outputMode { ASCII, BINARY
 };
 
 // Enum for spectral synthesis modes
-enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH, SB99 };
+enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH, SB99 , SB99_HRUV };
 
 // Enum for type of photometry -- this describes what will be returned
 enum photMode { L_NU, L_LAMBDA, AB, STMAG, VEGA };

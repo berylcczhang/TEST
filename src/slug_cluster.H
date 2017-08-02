@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug.H"
 #include "slug_extinction.H"
 #include "slug_filter_set.H"
+#include "slug_line_list.H"
 #include "slug_galaxy.H"
 #include "slug_imf_integrator.H"
 #include "slug_PDF.H"
@@ -63,6 +64,7 @@ public:
 	       const slug_extinction *extinct_,
 	       const slug_nebular *nebular_,
 	       const slug_yields *yields_,
+	       const slug_line_list *lines_,
 	       slug_ostreams &ostreams_,
 	       const slug_PDF *clf_ = nullptr,
 	       const bool stoch_contrib_only_ = false);
@@ -77,6 +79,7 @@ public:
 	       const slug_extinction *extinct_,
 	       const slug_nebular *nebular_,
 	       const slug_yields *yields_,
+	       const slug_line_list *lines_,
 	       slug_ostreams &ostreams_,
 	       const slug_PDF *clf_ = nullptr,
 	       const bool stoch_contrib_only_ = false);
@@ -199,10 +202,13 @@ public:
   // Method to get the yields
   const std::vector<double> &get_yield();
 
+  // Method to get equivalent widths & line names
+  const std::vector<double> &get_ew();
+  
   // Method to clear the spectrum and photometry
   void clear_spectrum();
 
-  // Output routines. The optional arguemnt cluster_only is used to
+  // Output routines. The optional argument cluster_only is used to
   // flag that only this cluster is being written, rather than a
   // collection of them, and that this cluster should therefore write
   // out its time and the number 1, indicating that it is the only
@@ -230,6 +236,7 @@ public:
   void write_spectrum(fitsfile *out_fits, unsigned long trial);
   void write_photometry(fitsfile *out_fits, unsigned long trial);
   void write_yield(fitsfile *out_fits, unsigned long trial);
+  void write_ew(fitsfile *out_fits, unsigned long trial);
 #endif
 
 protected:
@@ -299,6 +306,14 @@ private:
   bool data_set, Lbol_set, spec_set, phot_set, yield_set;  // Status indicators
   bool stoch_contrib_only;            // Only include the stochastic
                                       // contribution to yields and spectra
+  std::vector<double> recspec_wl;     //WL for rectified spectrum
+  std::vector<double> recspec;        //Rectified spectrum
+  
+  // Items related to the equivalent width calculation
+  const slug_line_list  *lines;       // Line list  
+  std::vector<double>   ew;           // Equivalent widths
+  bool                  ew_set;       // Status indicator
+  void                  set_ew();     // Routine to calculate EW
 };
 
 #endif

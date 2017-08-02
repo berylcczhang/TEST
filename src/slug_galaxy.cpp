@@ -212,7 +212,7 @@ slug_galaxy::advance(double time) {
 	slug_cluster *new_cluster = 
 	  new slug_cluster(cluster_id++, new_cluster_masses[i],
 			   birth_times[i], imf, tracks, specsyn, filters,
-			   extinct, nebular, yields, ostreams, clf);
+			   extinct, nebular, yields, lines, ostreams, clf);
 	clusters.push_back(new_cluster);
 	mass += new_cluster->get_birth_mass();
 	clusterMass += new_cluster->get_birth_mass();

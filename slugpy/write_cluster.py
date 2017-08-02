@@ -256,7 +256,9 @@ def write_cluster(data, model_name, fmt):
                                                       "VP"+`vp_i`)))
                 vp_i += 1
             fitscols = fits.ColDefs(cols)
-
+            
+            
+            
             # Create the binary table HDU
             tbhdu = fits.BinTableHDU.from_columns(fitscols)
 
@@ -495,6 +497,16 @@ def write_cluster(data, model_name, fmt):
                                 format=fmtstring_neb_ex,
                                 unit="Angstrom", 
                                 array=data.wl_neb_ex.reshape(1,nl_neb_ex)))
+
+            if 'spec_rec' in data._fields:
+                nl_rec = data.wl_r.shape[0]
+                fmtstring_rec = str(nl_rec)+"D"
+                wlcols.append(
+                    fits.Column(name="Wavelength_Rectified",
+                                format=fmtstring_rec,
+                                unit="Angstrom",
+                                array=data.wl_r.reshape(1,nl_rec)))
+                                
             wlfits = fits.ColDefs(wlcols)
             wlhdu = fits.BinTableHDU.from_columns(wlcols)
 
@@ -526,6 +538,12 @@ def write_cluster(data, model_name, fmt):
                                             format=fmtstring_neb_ex,
                                             unit="erg/s/A",
                                             array=data.spec_neb_ex))
+                                            
+            if 'spec_rec' in data._fields:
+                speccols.append(fits.Column(name="Rectified_Spec",
+                                            format=fmtstring_rec,
+                                            unit="",
+                                            array=data.spec_rec))
             specfits = fits.ColDefs(speccols)
             spechdu = fits.BinTableHDU.from_columns(specfits)
 
@@ -615,6 +633,7 @@ def write_cluster(data, model_name, fmt):
 
             # Close
             fp.close()
+
 
         elif fmt == 'bin' or fmt == 'binary':
 
@@ -809,6 +828,116 @@ def write_cluster(data, model_name, fmt):
             hdulist = fits.HDUList(hdulist)
             hdulist.writeto(model_name+'_cluster_phot.fits',
                             clobber=True)
+
+
+
+
+    ################################################################
+    # Write equivalent width file if we have the data for it
+    ################################################################
+    if 'ew' in data._fields:
+
+        if fmt == 'ascii' or fmt == 'txt':
+
+            ########################################################
+            # ASCII mode
+            ########################################################
+            
+            print "ERROR: EW available for fits format output only"
+
+
+        elif fmt == 'bin' or fmt == 'binary':
+
+            ########################################################
+            # Binary mode
+            ########################################################
+
+            print "ERROR: EW available for fits format output only"
+            
+        elif fmt == 'fits':
+
+            ########################################################
+            # FITS mode
+            ########################################################
+
+            # Convert data to FITS columns
+            cols = []
+            cols.append(fits.Column(name="Trial", format="1K",
+                                    unit="", array=data.trial))
+            cols.append(fits.Column(name="UniqueID", format="1K",
+                                    unit="", array=data.id))
+            cols.append(fits.Column(name="Time", format="1D",
+                                    unit="yr", array=data.time))
+            for i in range(len(data.line_names)):
+                print data.line_names
+                cols.append(fits.Column(name=data.line_names[i],
+                                        unit=data.line_units[i],
+                                        format="1D",
+                                        array=data.ew[:,i]))
+            
+            fitscols = fits.ColDefs(cols)
+
+            # Create the binary table HDU
+            tbhdu = fits.BinTableHDU.from_columns(fitscols)
+
+            # Create dummy primary HDU
+            prihdu = fits.PrimaryHDU()
+
+            # Create HDU list and write to file
+            hdulist = fits.HDUList([prihdu, tbhdu])
+            hdulist.writeto(model_name+'_cluster_ew.fits',
+                            clobber=True)
+
+        elif fmt == 'fits2':
+
+            ########################################################
+            # FITS2 mode
+            ########################################################
+
+            # Create dummy primary HDU
+            prihdu = fits.PrimaryHDU()
+
+            # Convert trial, time, unique ID to FITS columns
+            hdu1cols = []
+            hdu1cols.append(fits.Column(name="Trial", format="1K",
+                                        unit="", array=data.trial))
+            hdu1cols.append(fits.Column(name="UniqueID", format="1K",
+                                        unit="", array=data.id))
+            hdu1cols.append(fits.Column(name="Time", format="1D",
+                                        unit="yr", array=data.time))
+
+            # Make HDU containing trial, time, unique ID
+            hdu1fitscol = fits.ColDefs(hdu1cols)
+            hdu1 = fits.BinTableHDU.from_columns(hdu1fitscol)
+
+            # Create master HDU list
+            hdulist = [prihdu, hdu1]
+
+            # Now loop over lines; each will be stored as a single
+            # column in its own HDU
+            for i in range(len(data.line_names)):
+
+                # Create column
+                col = [fits.Column(name=data.line_names[i],
+                                    unit=data.line_units[i],
+                                    format="1D",
+                                    array=data.ew[:,i])]
+                # Create HDU from column
+                hdu = fits.BinTableHDU.from_columns(
+                    fits.ColDefs(col))
+
+                # Add to master HDU list
+                hdulist.append(hdu)
+
+           
+
+            # Create final HDU list and write to file
+            hdulist = fits.HDUList(hdulist)
+            hdulist.writeto(model_name+'_cluster_ew.fits',
+                            clobber=True)
+
+
+
 
     ################################################################
     # Write the yield file if we have the data for it

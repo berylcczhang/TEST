@@ -205,6 +205,7 @@ private:
   bool field_data_set;                // Is the field star data current?
   bool phot_set;                      // Is photometry current
   bool yield_set;                     // Are the yields current?
+  const slug_line_list *lines = nullptr;        // Line list
 };
 
 #endif

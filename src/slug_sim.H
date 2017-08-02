@@ -80,6 +80,7 @@ private:
   void open_integrated_yield(slug_output_files &outfiles, int chknum = -1);
   void open_cluster_yield(slug_output_files &outfiles, int chknum = -1);
 
+  void open_cluster_ew(slug_output_files &outfiles, int chknum = -1);
   // Function to write separators between trials to files
   void write_separator(std::ofstream& file, 
 		       const unsigned int width = 80);
@@ -96,6 +97,7 @@ private:
   slug_PDF *out_time_pdf;     // PDF of output times
   slug_specsyn *specsyn;      // Spectral synthesizer
   slug_filter_set *filters;   // Photometric filters
+  slug_line_list *lines;      // Line list
   slug_extinction *extinct;   // Extinction class
   slug_nebular *nebular;      // Nebular emission class
   slug_yields *yields;        // Class for calculating stellar yields
