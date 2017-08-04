@@ -187,7 +187,7 @@ MPI_exchange_slug_cluster(const std::vector<slug_cluster *> &clusters,
 			  const slug_extinction *extinct_,
 			  const slug_nebular *nebular_,
 			  const slug_yields *yields_,
-			  const slug_line_list *lines_
+			  const slug_line_list *lines_,
 			  slug_ostreams &ostreams_,
 			  const slug_PDF *clf_=NULL);
 

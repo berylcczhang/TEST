@@ -40,14 +40,15 @@ using namespace boost::filesystem;
 
 slug_specsyn_sb99hruv::
 slug_specsyn_sb99hruv(const char *dirname, const slug_tracks *my_tracks, 
-		    const slug_PDF *my_imf, slug_PDF *my_sfh, slug_ostreams& ostreams_,	
-		    const double z_in) :
-    slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in),
-    powr(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),    
-    hillier(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
-    kurucz(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
-    pauldrach(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
-    planck(kurucz.lambda(), my_tracks, my_imf, my_sfh, ostreams_, z_in)
+                      const slug_PDF *my_imf, slug_PDF *my_sfh, 
+                      slug_ostreams& ostreams_,	
+                      const double z_in) :
+                      slug_specsyn(my_tracks, my_imf, my_sfh, ostreams_, z_in),
+                      powr(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),    
+                      hillier(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
+                      kurucz(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
+                      pauldrach(dirname, my_tracks, my_imf, my_sfh, ostreams_, z_in, false),
+                      planck(kurucz.lambda(), my_tracks, my_imf, my_sfh, ostreams_, z_in)
 {
   
   // LOAD IFA ATMOSPHERES
@@ -74,10 +75,10 @@ slug_specsyn_sb99hruv(const char *dirname, const slug_tracks *my_tracks,
   if (zdiff > 0.1) 
   {
     ostreams.slug_warn_one << "stellar track metallicity is [Z/H] = "
-	 << log10(my_tracks->get_metallicity())
-	 << ", closest IFA atmosphere metallicity available is [Z/H] = "
-	 << log10(zrel[idx])
-	 << "; calculation will proceed" << endl;
+                           << log10(my_tracks->get_metallicity())
+                           << ", closest IFA atmosphere metallicity available is [Z/H] = "
+                           << log10(zrel[idx])
+                           << "; calculation will proceed" << endl;
   }
 
   // -----------------------------------------------------------------------
@@ -95,7 +96,7 @@ slug_specsyn_sb99hruv(const char *dirname, const slug_tracks *my_tracks,
   {
     // Couldn't open file, so bail out
     ostreams.slug_err_one << "unable to open ifa line atmosphere file " 
-	    << atmos_path_l.string() << endl;
+                          << atmos_path_l.string() << endl;
     exit(1);
   }
 
@@ -112,7 +113,7 @@ slug_specsyn_sb99hruv(const char *dirname, const slug_tracks *my_tracks,
   {
     // Couldn't open file, so bail out
     ostreams.slug_err_one << "unable to open ifa continuum atmosphere file " 
-	    << atmos_path_c.string() << endl;
+                          << atmos_path_c.string() << endl;
     exit(1);
   }
 
@@ -130,7 +131,7 @@ slug_specsyn_sb99hruv(const char *dirname, const slug_tracks *my_tracks,
   {
     // Couldn't open file, so bail out
     ostreams.slug_err_one << "unable to open ifa wavelength file " 
-	    << wave_path.string() << endl;
+                          << wave_path.string() << endl;
     exit(1);
   }
 
@@ -345,16 +346,16 @@ get_spectrum(vector<slug_stardata>& stars, vector<double>& recspec) const {
       stars_WR.push_back(stars[i]);
     }
     else if ((stars[i].logTeff > kurucz.get_logTeff_max()) ||
-	       (stars[i].logTeff < kurucz.get_logTeff_min())) 
-	  {
+             (stars[i].logTeff < kurucz.get_logTeff_min())) 
+    {
       // Stars with temperature that are too high or low for the
       // models get treated as black bodies
       stars_pl.push_back(stars[i]);
     }
     else if ((stars[i].logTeff > pauldrach.get_logTeff_min()) &&
-	       (stars[i].logg >= pauldrach.get_logg_min()) &&
-	       (stars[i].logg <= pauldrach.get_logg_max(stars[i].logTeff))) 
-	  {
+              (stars[i].logg >= pauldrach.get_logg_min()) &&
+              (stars[i].logg <= pauldrach.get_logg_max(stars[i].logTeff))) 
+    {
       // Stars in the right temperature and log g range get treated as
       // OB stars
       stars_OB.push_back(stars[i]);
@@ -370,8 +371,7 @@ get_spectrum(vector<slug_stardata>& stars, vector<double>& recspec) const {
   // Planck
   if (stars_pl.size() > 0) 
   {
-    const vector<double> & L_lambda_tmp = 
-      planck.get_spectrum(stars_pl);
+    const vector<double> & L_lambda_tmp = planck.get_spectrum(stars_pl);
     for (unsigned int i=0; i<L_lambda_lr.size(); i++)
     {
       L_lambda_lr[i] += L_lambda_tmp[i];
@@ -382,8 +382,7 @@ get_spectrum(vector<slug_stardata>& stars, vector<double>& recspec) const {
   // Kurucz
   if (stars_ku.size() > 0) 
   {
-    const vector<double> & L_lambda_tmp = 
-      kurucz.get_spectrum(stars_ku);
+    const vector<double> & L_lambda_tmp = kurucz.get_spectrum(stars_ku);
     for (unsigned int i=0; i<L_lambda_lr.size(); i++)
     {
       L_lambda_lr[i] += L_lambda_tmp[i];
@@ -394,8 +393,7 @@ get_spectrum(vector<slug_stardata>& stars, vector<double>& recspec) const {
   // Pauldrach / OB stars
   if (stars_OB.size() > 0) 
   {
-    const vector<double> & L_lambda_tmp = 
-      pauldrach.get_spectrum(stars_OB);
+    const vector<double> & L_lambda_tmp = pauldrach.get_spectrum(stars_OB);
     for (unsigned int i=0; i<L_lambda_lr.size(); i++)
     {
 
@@ -407,8 +405,7 @@ get_spectrum(vector<slug_stardata>& stars, vector<double>& recspec) const {
   // Hillier / WR stars
   if (stars_WR.size() > 0) 
   {
-    const vector<double> & L_lambda_tmp = 
-      hillier.get_spectrum(stars_WR);
+    const vector<double> & L_lambda_tmp = hillier.get_spectrum(stars_WR);
     for (unsigned int i=0; i<L_lambda_lr.size(); i++)
     {
       L_lambda_lr[i] += L_lambda_tmp[i];
@@ -429,32 +426,32 @@ get_spectrum(vector<slug_stardata>& stars, vector<double>& recspec) const {
   {
     if (stars[i].WR != NONE) 
     {
-	    // WR stars are tagged as such
-	    stars_WR_hr.push_back(stars[i]);
+      // WR stars are tagged as such
+      stars_WR_hr.push_back(stars[i]);
     }
     else if ((stars[i].logTeff > kurucz.get_logTeff_max()) ||
-	     (stars[i].logTeff < kurucz.get_logTeff_min()))
+             (stars[i].logTeff < kurucz.get_logTeff_min()))
     {
-	    // Stars with temperature that are too high or low for the
-	    // models get treated as black bodies
-	    stars_pl_hr.push_back(stars[i]);
+      // Stars with temperature that are too high or low for the
+      // models get treated as black bodies
+      stars_pl_hr.push_back(stars[i]);
     }
     else if ((stars[i].logM > log10(10.0))
              && ( stars[i].logTeff < log10(22000.0)))
     {
-	    // First kurucz section in sb99
-	    stars_ku_hr_1.push_back(stars[i]);
+      // First kurucz section in sb99
+      stars_ku_hr_1.push_back(stars[i]);
     } 
     else if ( (stars[i].logM < log10(5.0)) || ((stars[i].logM >= log10(5.0))
-					       && ( stars[i].logTeff < log10(17000.0)))) 
+             && ( stars[i].logTeff < log10(17000.0)))) 
     {
-	    // Second kurucz section in sb99
-	    stars_ku_hr_2.push_back(stars[i]);
+      // Second kurucz section in sb99
+      stars_ku_hr_2.push_back(stars[i]);
     }
     else
     {
-	    // Otherwise use HRUV model
-	    stars_ifa_hr.push_back(stars[i]);
+      // Otherwise use HRUV model
+      stars_ifa_hr.push_back(stars[i]);
     }
   }  
 
@@ -511,37 +508,37 @@ get_spectrum(vector<slug_stardata>& stars, vector<double>& recspec) const {
   // IFA HR Stars
   if (stars_ifa_hr.size() > 0) 
   {
-      int modelpick = 0;                    // Nearest neighbour model
-      double dimin;                         // Minimum difference
-      double di;                            // Current difference
+    int modelpick = 0;                    // Nearest neighbour model
+    double dimin;                         // Minimum difference
+    double di;                            // Current difference
       
     for (unsigned int i=0; i < stars_ifa_hr.size(); i++)
-	  {
-	    
-	    dimin = 1.0e20;
-	    for (unsigned int m=0; m < 86; m++)
-	    {
-	        
-        di = 1.0 * pow( ( stars_ifa_hr[i].logTeff - log10(teff_vector[m]) ),2.0)
-	           + 5.0 * pow( (stars_ifa_hr[i].logg - log_g_vector[m]),2.0);
-	      
-        if (di < dimin)
-	      {
-	        dimin=di;
-	        modelpick=m;
-	      }
-	        
-	    }
+    {
 
-	    for (unsigned int wl=0; wl<lambda_rest_hr.size(); wl++)
-	    {
-	        double star_rad;      // Star radius
-	        star_rad = pow(10,stars_ifa_hr[i].logR) * constants::Rsun;
-	        L_lambda_hr[wl] += 4.0*M_PI*star_rad *star_rad* (mflx_l_hr[modelpick][wl]);
-	        L_lambda_hr_c[wl] += 4.0*M_PI*star_rad *star_rad* (mflx_c_hr[modelpick][wl]);
-	        
-	    }
-	  }
+      dimin = 1.0e20;
+      for (unsigned int m=0; m < 86; m++)
+      {
+
+        di = 1.0 * pow( ( stars_ifa_hr[i].logTeff - log10(teff_vector[m]) ),2.0)
+        + 5.0 * pow( (stars_ifa_hr[i].logg - log_g_vector[m]),2.0);
+
+        if (di < dimin)
+        {
+          dimin=di;
+          modelpick=m;
+        }
+
+      }
+
+      for (unsigned int wl=0; wl<lambda_rest_hr.size(); wl++)
+      {
+        double star_rad;      // Star radius
+        star_rad = pow(10,stars_ifa_hr[i].logR) * constants::Rsun;
+        L_lambda_hr[wl] += 4.0*M_PI*star_rad *star_rad* (mflx_l_hr[modelpick][wl]);
+        L_lambda_hr_c[wl] += 4.0*M_PI*star_rad *star_rad* (mflx_c_hr[modelpick][wl]);
+
+      }
+    }
   }  
   
   // Now we interpolate the low res spectra to high res and combine 
@@ -715,7 +712,7 @@ get_spectrum(const slug_stardata& stardata) const
     is_lr = true;
   } 
   else if ( (stardata.logM < log10(5.0)) || ((stardata.logM >= log10(5.0))
-				       && ( stardata.logTeff < log10(17000.0)))) 
+           && ( stardata.logTeff < log10(17000.0)))) 
   {
     // Second kurucz section in sb99
     L_lambda_intpl = kurucz.get_spectrum(stardata);

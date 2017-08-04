@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_specsyn_H_
 
 #include <vector>
-#include "slug_MPI.H"
+//#include "slug_MPI.H"
 #include "slug_tracks.H"
 #include "slug_PDF.H"
 #include "slug_IO.H"
@@ -45,9 +45,9 @@ public:
 
   // Constructor; just allocates vectors
   qag_wksp(std::vector<double>::size_type n, 
-	   std::vector<double>::size_type gknum) : 
-    x_k(gknum), gaussQuad(n), L_tmp1(n), L_tmp2(n), L_out1(n), 
-    L_out2(n), errsum(n), err1(n), err2(n)
+           std::vector<double>::size_type gknum) : 
+           x_k(gknum), gaussQuad(n), L_tmp1(n), L_tmp2(n), L_out1(n), 
+           L_out2(n), errsum(n), err1(n), err2(n)
   { }
 
   // Destructor
@@ -151,10 +151,10 @@ public:
   get_spectrum(std::vector<slug_stardata> &stardata, std::vector<double> &recspec) const
   
   {
-      std::vector<double> L_lambda;
-      slug_specsyn::ostreams.slug_err_one << "Implemented only for sb99hruv synthesiser. Exiting..." << std::endl;
-      exit(1);
-      return L_lambda;
+    std::vector<double> L_lambda;
+    slug_specsyn::ostreams.slug_err_one << "Implemented only for sb99hruv synthesiser. Exiting..." << std::endl;
+    exit(1);
+    return L_lambda;
   }
 
 protected:

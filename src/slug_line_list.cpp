@@ -60,7 +60,7 @@ slug_line_list(const std::vector<std::string>& line_names_,
   {
     // Couldn't open file, so bail out
     ostreams.slug_err_one << "unable to open line file " 
-			  << line_path.string() << endl;
+                          << line_path.string() << endl;
     bailout(1);
   }
   
@@ -95,11 +95,11 @@ slug_line_list(const std::vector<std::string>& line_names_,
     unsigned int j;
     for (j = 0; j < avail_lines.size(); j++)
     {
-	    string temp_name1 = avail_lines[j];
-	    to_lower(temp_name1);
-	    if (temp_name.compare(temp_name1) == 0) 
-	    {
-	      line_names[i] = avail_lines[j];
+      string temp_name1 = avail_lines[j];
+      to_lower(temp_name1);
+      if (temp_name.compare(temp_name1) == 0) 
+      {
+        line_names[i] = avail_lines[j];
         vector<double> int_reg;                   // Integration region
         int_reg.push_back(line_ir_lower[j]);      // Lower limit
         int_reg.push_back(line_ir_upper[j]);      // Upper limit
@@ -108,14 +108,14 @@ slug_line_list(const std::vector<std::string>& line_names_,
                                                   // Create the line
                                                   
 
-	      break;
-	    }
+        break;
+      }
     }
     if (j == avail_lines.size())
     {
-	    ostreams.slug_err_one << "couldn't find line "
-	    << line_names_[i] << endl;
-	    bailout(1);
+      ostreams.slug_err_one << "couldn't find line "
+      << line_names_[i] << endl;
+      bailout(1);
     }
   }
 
@@ -138,7 +138,7 @@ slug_line_list::
 ////////////////////////////////////////////////////////////////////////
 std::vector<double> 
 slug_line_list::compute_ew(const std::vector<double>& lambda_,
-	                         const std::vector<double>& L_lambda_) const
+                           const std::vector<double>& L_lambda_) const
 {
   std::vector<double> ew;
   // Loop over the lines, calculating equivalent width for each

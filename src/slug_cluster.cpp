@@ -1416,7 +1416,8 @@ void slug_cluster::set_ew()
   {
     ostreams.slug_err_one << "Rectified spectrum missing. Bailing out."
                           << endl;
-    bailout(1);                          
+    //bailout(1);  
+    exit(1);                        
   }
   
   // Compute equivalent widths
