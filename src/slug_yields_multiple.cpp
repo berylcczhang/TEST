@@ -15,10 +15,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
+#include "constants.H"
 #include "slug_yields_multiple.H"
 #include "slug_yields_agb.H"
 #include "slug_yields_snii.H"
+#include "slug_yields_karakas16_doherty14.H"
 #include "slug_yields_sukhbold16.H"
+#include <algorithm>
 #include <set>
 #include <boost/filesystem.hpp>
 #include <boost/range/algorithm/sort.hpp>
@@ -27,41 +30,46 @@ using namespace std;
 using namespace boost;
 using namespace boost::filesystem;
 
+
 ////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_yields_multiple::
-slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
+slug_yields_multiple(const char *yield_dir,
+		     const yieldMode yield_mode,
 		     const double metallicity_,
-		     slug_ostreams &ostreams_, const bool no_decay_) :
+		     slug_ostreams &ostreams_, const bool no_decay_,
+		     const bool include_all) :
   slug_yields(metallicity_, yield_dir, ostreams_, no_decay_) {
 
   // Initialize SNII yields
   path yield_dirname(yield_dir);
   if (yield_mode == SNII_SUKHBOLD16 ||
-      yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
+      yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14) {
     path snii_path = yield_dirname / path("SNII_Sukhbold16");
     yields_snii = (slug_yields_snii *)
-      new slug_yields_sukhbold16(snii_path.c_str(), yield_dir,
-				 metallicity_,
-				 ostreams, no_decay_);
+      new slug_yields_sukhbold16(snii_path.c_str(),
+				 iso_table,
+				 metallicity,
+				 ostreams, no_decay);
   } else {
     yields_snii = nullptr;
   }
 
   // Initialize AGB yields
-#if 0
-  if (yield_mode == AGB_KARAKAS16 ||
-      yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
-    path agb_path = yield_dirname / path("AGB_Karakas16");
+  if (yield_mode == AGB_KARAKAS16_DOHERTY14 ||
+      yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14) {
+    path agb_path = yield_dirname;
     yields_agb = (slug_yields_agb *)
-      new slug_yields_karakas16(agb_path.c_str(), metallicity_);
+      new slug_yields_karakas16_doherty14(agb_path.c_str(),
+					  iso_table,
+					  metallicity,
+					  ostreams,
+					  no_decay,
+					  include_all);
   } else {
     yields_agb = nullptr;
   }
-#else
-  yields_agb = nullptr;
-#endif
 
   // Get minimum and maximum mass from both sources
   mmin = numeric_limits<double>::max();
@@ -75,74 +83,90 @@ slug_yields_multiple(const char *yield_dir, const yieldMode yield_mode,
     mmax = max(mmax, yields_agb->mmax);
   }
 
-  // Construct combined list of isotopes included in all yield data
-  vector<const isotope_data *> iso_snii, iso_agb;
-  set<const isotope_data *> isotope_set;
-  if (yields_snii) {
-    iso_snii = yields_snii->get_isotopes();
-    for (vector<isotope_data>::size_type i = 0; i < iso_snii.size(); i++)
-      isotope_set.insert(iso_snii[i]);
-  }
-  if (yields_agb) {
-    iso_agb = yields_agb->get_isotopes();
-    for (vector<isotope_data>::size_type i = 0; i < iso_agb.size(); i++)
-      isotope_set.insert(iso_agb[i]);
-  }
-  isotopes.assign(isotope_set.begin(), isotope_set.end());
-
-  // Sort isotope list by atomic number and weight
-  sort(isotopes.begin(), isotopes.end(), slug_isotopes::isotope_sort);
-
-  // Record number of isotopes, and number of stable and unstable
-  // isotopes
-  niso = isotopes.size();
-  nstable = nunstable = 0;
-  for (vector<isotope_data>::size_type i=0; i<niso; i++) {
-    if (isotopes[i]->stable()) nstable++; else nunstable++;
-  }
-
-  // Create map between isotope data and index in our yield table
-  for (vector<double>::size_type i=0; i<isotopes.size(); i++) {
-    isotope_map[isotopes[i]] = i;
-    isotope_map_za[make_pair(isotopes[i]->num(), isotopes[i]->wgt())] = i;
-  }
-
-  // Store mapping between index in our list of isotopes and the lists
-  // maintained by the child yield objects
-  for (vector<isotope_data>::size_type i=0; i<isotopes.size(); i++) {
-    if (yields_snii) {
-      // Get index of this isotope in the SNII table
-      map<const isotope_data *, vector<double>::size_type>::iterator it =
-	yields_snii->isotope_map.find(isotopes[i]);
-      if (it != yields_snii->isotope_map.end()) {
-	// This isotope is in the SNII yield table, so store the
-	// mapping from the index in the SNII table to the index in
-	// our table
-	snii_to_iso[yields_snii->isotope_map.at(isotopes[i])] = i;
-	iso_to_snii[i] = yields_snii->isotope_map.at(isotopes[i]);
-      } else {
-	// This isotope is in our yield table, but not in the SNII
-	// yield table, so record that by setting the index to a flag
-	// value
-	iso_to_snii[i] = numeric_limits<vector<double>::size_type>::max();
+  // Construct global isotope list from lists of isotopes from each
+  // yield type
+  vector<const vector<const isotope_data *> > iso_lists;
+  if (yields_snii) iso_lists.push_back(yields_snii->get_isotopes());
+  if (yields_agb) iso_lists.push_back(yields_agb->get_isotopes());
+  if (iso_lists.size() == 1) {
+    // Only one yield type
+    isotopes.assign(iso_lists[0].begin(), iso_lists[0].end());
+  } else if (include_all) {
+    // Multiple yield types; form their union
+    set<const isotope_data *> isotope_set;
+    for (vector<int>::size_type i = 0; i < iso_lists.size(); i++) {
+      for (vector<int>::size_type j = 0; j < iso_lists[i].size(); j++) {
+	isotope_set.insert(iso_lists[i][j]);
       }
     }
-    if (yields_agb) {
-      // Get index of this isotope in the SNII table
-      map<const isotope_data *, vector<double>::size_type>::iterator it =
-	yields_agb->isotope_map.find(isotopes[i]);
-      if (it != yields_agb->isotope_map.end()) {
-	// This isotope is in the SNII yield table, so store the
-	// mapping from the index in the SNII table to the index in
-	// our table
-	agb_to_iso[yields_agb->isotope_map.at(isotopes[i])] = i;
-	iso_to_agb[i] = yields_agb->isotope_map.at(isotopes[i]);
-      } else {
-	// This isotope is in our yield table, but not in the AGB
-	// yield table, so record that by setting the index to a flag
-	// value
-	iso_to_agb[i] = numeric_limits<vector<double>::size_type>::max();
+    isotopes.assign(isotope_set.begin(), isotope_set.end());
+
+    // Issue warning if necessary
+    stringstream ss;
+    for (vector<int>::size_type i = 0; i < isotopes.size(); i++) {
+      for (vector<int>::size_type j = 0; j < iso_lists.size(); j++) {
+	if (find(iso_lists[j].begin(), iso_lists[j].end(), isotopes[i]) ==
+	    iso_lists[j].end()) {
+	  ss << " " << isotopes[i]->symbol() << isotopes[i]->wgt();
+	  break;
+	}
       }
+    }
+    if (ss.str().size() > 0)
+      ostreams.slug_warn_one
+	<< "the following isotopes are present in some yield tables "
+	<< "but not others; yields of these isotopes will be set to "
+	<< "zero for yield tables that do not include them:"
+	<< ss.str()
+	<< endl;
+    
+  } else {
+    // Multiple yield types; form their intersection
+    isotopes = iso_lists[0];
+    for (vector<int>::size_type i = 1; i < iso_lists.size(); i++) {
+      vector<const isotope_data *> iso_tmp;
+      set_intersection(isotopes.begin(), isotopes.end(),
+		       iso_lists[i].begin(), iso_lists[i].end(),
+		       back_inserter(iso_tmp));
+      isotopes = iso_tmp;
+    }
+  }
+
+  // Finish initializing our isotope list
+  isotope_init();
+
+  // Store mapping between indices in our isotope list and in the
+  // lists of our child objects
+  if (yields_snii) {
+    for (vector<int>::size_type i=0; i<isotopes.size(); i++) {
+      if (yields_snii->isotope_map_ptr.count(isotopes[i]))
+	iso_to_snii[i] = yields_snii->isotope_map_ptr.at(isotopes[i]);
+      else
+	iso_to_snii[i] = constants::sentinel;
+    }
+    const vector<const isotope_data *>& iso_snii
+      = yields_snii->get_isotopes();
+    for (vector<int>::size_type i=0; i<iso_snii.size(); i++) {
+      if (isotope_map_ptr.count(iso_snii[i]))
+	snii_to_iso[i] = isotope_map_ptr.at(iso_snii[i]);
+      else
+	snii_to_iso[i] = constants::sentinel;
+    }
+  }
+  if (yields_agb) {
+    for (vector<int>::size_type i=0; i<isotopes.size(); i++) {
+      if (yields_agb->isotope_map_ptr.count(isotopes[i]))
+	iso_to_agb[i] = yields_agb->isotope_map_ptr.at(isotopes[i]);
+      else
+	iso_to_agb[i] = constants::sentinel;
+    }
+    const vector<const isotope_data *>& iso_agb
+      = yields_agb->get_isotopes();
+    for (vector<int>::size_type i=0; i<iso_agb.size(); i++) {
+      if (isotope_map_ptr.count(iso_agb[i]))
+	agb_to_iso[i] = isotope_map_ptr.at(iso_agb[i]);
+      else
+	agb_to_iso[i] = constants::sentinel;
     }
   }
 }
@@ -168,18 +192,26 @@ slug_yields_multiple::get_yield(const double m) const {
 
   // Get contribution from SNII
   if (yields_snii) {
-    vector<double> yld_snii = yields_snii->yield(m);
-    for (vector<double>::size_type i=0; i<yld_snii.size(); i++)
-      yld[snii_to_iso.at(i)] += yld_snii[i];
+    if (yields_snii->produces_yield(m)) {
+      vector<double> yld_snii = yields_snii->yield(m);
+      for (vector<double>::size_type i=0; i<yld_snii.size(); i++) {
+	if (snii_to_iso.at(i) != constants::sentinel)
+	  yld[snii_to_iso.at(i)] += yld_snii[i];
+      }
+    }
   }
 
   // Get contribution from AGB
   if (yields_agb) {
-    vector<double> yld_agb = yields_agb->yield(m);
-    for (vector<double>::size_type i=0; i<yld_agb.size(); i++)
-      yld[agb_to_iso.at(i)] += yld_agb[i];
+    if (yields_agb->produces_yield(m)) {
+      vector<double> yld_agb = yields_agb->yield(m);
+      for (vector<double>::size_type i=0; i<yld_agb.size(); i++) {
+	if (agb_to_iso.at(i) != constants::sentinel)
+	  yld[agb_to_iso.at(i)] += yld_agb[i];
+      }
+    }
   }
-
+  
   // Reteurn
   return yld;
 }
@@ -196,15 +228,13 @@ slug_yields_multiple::get_yield(const double m,
 
   // Get contribution from SNII
   if (yields_snii) {
-    if (iso_to_snii.at(i) !=
-	numeric_limits<vector<double>::size_type>::max())
+    if (iso_to_snii.at(i) != constants::sentinel)
       yld += yields_snii->yield(m, iso_to_snii.at(i));
   }
 
   // Get contribution from AGB
   if (yields_agb) {
-    if (iso_to_agb.at(i) !=
-	numeric_limits<vector<double>::size_type>::max())
+    if (iso_to_agb.at(i) != constants::sentinel)
       yld += yields_agb->yield(m, iso_to_agb.at(i));
   }
   // Return

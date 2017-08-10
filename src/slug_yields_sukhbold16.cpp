@@ -42,30 +42,26 @@ namespace yields {
 
   // A data type for holding names of yield files and their
   // corresponding masses, and for sorting them by mass
-  struct yield_file_data {
+  struct sukhbold16_file_data {
     string fname;
     double mass;
-    friend bool operator<(const yield_file_data& f1, 
-			  const yield_file_data& f2) {
+    friend bool operator<(const sukhbold16_file_data& f1, 
+			  const sukhbold16_file_data& f2) {
       return f1.mass < f2.mass;
     }
   };
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Constructor
+// Initialization method
 ////////////////////////////////////////////////////////////////////////
-slug_yields_sukhbold16::
-slug_yields_sukhbold16(const char *yield_dir, const char *iso_data_dir,
-		       const double metallicity_,
-		       slug_ostreams &ostreams_, bool no_decay_) :
-  slug_yields_snii(metallicity_, iso_data_dir, ostreams_, no_decay_) {
-
+void slug_yields_sukhbold16::read_tables(const char *yield_dir) {
+  
   // Issue warning if metallicity is not Solar
-  if (metallicity_ != 1.0) {
+  if (metallicity != 1.0) {
     ostreams.slug_warn_one
       << "Solar-normalized metallicity is "
-      << metallicity_
+      << metallicity
       << ", but SN type II yield model is sukhbold16, which was "
       << "computed for Z = Zsun. Computation will continue."
       << endl;
@@ -74,10 +70,10 @@ slug_yields_sukhbold16(const char *yield_dir, const char *iso_data_dir,
   // Read filenames from directory. Assumes all filenames have the format
   // "sI.I.yield_table" where I is an integer (I.I is yield table
   // mass).
-  vector<yields::yield_file_data> yield_files;
+  vector<yields::sukhbold16_file_data> yield_files;
   if (is_directory(yield_dir)) {
     for (directory_iterator itr(yield_dir); itr!=directory_iterator(); ++itr) {
-      yields::yield_file_data fdat;
+      yields::sukhbold16_file_data fdat;
       fdat.fname = itr->path().filename().string();
       // Make sure name ends in .yield_table; if not, skip
       vector<string> tokens;
@@ -141,7 +137,7 @@ slug_yields_sukhbold16(const char *yield_dir, const char *iso_data_dir,
       // Grab the isotope data for this isotope from the data table
       const isotope_data *iso;
       try {
-	iso = iso_table.data(tokens[0]);
+	iso = iso_table->data(tokens[0]);
       } catch (const out_of_range& oor) {
 	ostreams.slug_err_one
 	  << "unrecognized isotope " << tokens[0]
@@ -164,14 +160,8 @@ slug_yields_sukhbold16(const char *yield_dir, const char *iso_data_dir,
     yf_stream.close();    
   }
 
-  // We now have a list of all isotopes present in any file. Next we
-  // sort them by atomic number and weight.
-  sort(isotopes.begin(), isotopes.end(), slug_isotopes::isotope_sort);
-  niso = isotopes.size();
-  nstable = 0;
-  for (vector<double>::size_type i=0; i<niso; i++)
-    if (isotopes[i]->stable()) nstable++;
-  nunstable = niso - nstable;
+  // Finish initializing the isotope list
+  isotope_init();
 
   // Allocate memory to hold yield tables, and initialize all yields
   // to zero
@@ -183,17 +173,6 @@ slug_yields_sukhbold16(const char *yield_dir, const char *iso_data_dir,
       sn_yield_tab[i][j] = 0.0;
       wind_yield_tab[i][j] = 0.0;
     }
-  }
-
-  // Create a map between isotope names and data, and the index in the
-  // table
-  map<string, vector<double>::size_type> iso_map;
-  for (vector<double>::size_type i=0; i<niso; i++) {
-    stringstream ss;
-    ss << isotopes[i]->symbol() << isotopes[i]->wgt();
-    iso_map[ss.str()] = i;
-    isotope_map[isotopes[i]] = i;
-    isotope_map_za[make_pair(isotopes[i]->num(), isotopes[i]->wgt())] = i;
   }
 
   // Now pass through files again, this time reading yields, and
@@ -247,12 +226,12 @@ slug_yields_sukhbold16(const char *yield_dir, const char *iso_data_dir,
 
       // Add to table
       if (has_sn) {
-	sn_yield_tab[iso_map[tokens[0]]][i] = 
+	sn_yield_tab[isotope_map_str[tokens[0]]][i] = 
 	  lexical_cast<double>(tokens[1]);
-	wind_yield_tab[iso_map[tokens[0]]][i] = 
+	wind_yield_tab[isotope_map_str[tokens[0]]][i] = 
 	  lexical_cast<double>(tokens[2]);
       } else {
-	wind_yield_tab[iso_map[tokens[0]]][i] = 
+	wind_yield_tab[isotope_map_str[tokens[0]]][i] = 
 	  lexical_cast<double>(tokens[1]);
       }
     }

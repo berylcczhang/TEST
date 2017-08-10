@@ -38,15 +38,20 @@ class slug_yields_snii : public slug_yields {
 
 public:
 
-  // Constructor
+  // Constructors
   slug_yields_snii(const double metallicity_,
 		   const char *iso_data_dir,
 		   slug_ostreams& ostreams_,
 		   const bool no_decay_ = false) :
     slug_yields(metallicity_, iso_data_dir, ostreams_, no_decay_) { }
+  slug_yields_snii(const double metallicity_,
+		   const isotope_table *iso_table_,
+		   slug_ostreams& ostreams_,
+		   const bool no_decay_ = false) :
+    slug_yields(metallicity_, iso_table_, ostreams_, no_decay_) { }
   
   // Destructor
-  virtual ~slug_yields_snii() {};
+  virtual ~slug_yields_snii() {}
 
   // Return the range of masses that produce type II SNe; this is
   // produced in the form of a vector of masses giving the lower and

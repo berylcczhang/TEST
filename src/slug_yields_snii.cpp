@@ -1,5 +1,5 @@
 /*********************************************************************
-Copyright (C) 2014-6 Robert da Silva, Michele Fumagalli, Mark
+Copyright (C) 2014-7 Robert da Silva, Michele Fumagalli, Mark
 Krumholz, Evan Demers
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

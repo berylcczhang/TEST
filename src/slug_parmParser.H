@@ -61,6 +61,8 @@ public:
   bool get_random_cluster_mass() const;   // Is cluster mass randomly drawn?
   bool get_use_nebular() const;           // Compute nebular emission or not?
   bool nebular_no_metals() const;         // No metals in nebular emission
+  bool output_all_isotopes() const;       // Output all isotopes?
+  bool no_decay_isotopes() const;         // Disable radioactive decay?
   double get_SFR() const;                 // SFR value for constant SFR
   double get_AV() const;                  // A_V value for constant A_V
   double get_neb_extinct_fac() const;     // Ratio of nebular to stellar A_V
@@ -186,6 +188,8 @@ private:
   bool run_galaxy_sim;                    // Galaxy sim or cluster sim?
   bool save_seed;                         // Save the rng seed?
   bool read_seed;                         // Read the rng seed?
+  bool all_isotopes;                      // Include all isotopes?
+  bool no_decay;                          // Disable isotopic decay?
   std::string sfr_file;                   // SFR file for random SFRs
   std::string sfh;                        // SF history file name
   std::string imf;                        // IMF file name

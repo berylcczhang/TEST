@@ -38,24 +38,30 @@ class slug_yields_agb : public slug_yields {
 
 public:
 
-  // Constructor
+  // Constructors
   slug_yields_agb(const double metallicity_,
 		  const char *iso_data_dir,
 		  slug_ostreams& ostreams_,
 		  const bool no_decay_ = false) :
     slug_yields(metallicity_, iso_data_dir, ostreams_, no_decay_) {}
+  slug_yields_agb(const double metallicity_,
+		  const isotope_table *iso_table_,
+		  slug_ostreams& ostreams_,
+		  const bool no_decay_ = false) :
+    slug_yields(metallicity_, iso_table_, ostreams_, no_decay_) {}
 
   // Destructor
-  virtual ~slug_yields_agb() {};
+  virtual ~slug_yields_agb() {}
 
-  // Return the range of masses that produce type II SNe; this is
+  // Return the range of masses that produce type AGB stars; this is
   // produced in the form of a vector of masses giving the lower and
-  // upper limits of mass ranges that produce SNe
+  // upper limits of mass ranges that produce AGB stars
   const std::vector<double>& agb_mass_range() const { return agb_mass; }
 
   // Function to determine if a given mass star produes a type II SN
   // when it dies
-  bool produces_agb(const double m) const;
+  bool produces_agb(const double m) const
+  { return (m >= agb_mass[0] && m <= agb_mass[1]); }
 
 protected:
 

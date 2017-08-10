@@ -46,12 +46,21 @@ class slug_yields_sukhbold16 : public slug_yields_snii {
   friend class slug_yields_multiple;
 
 public:
-  // Construct a set of yield tables from files containing them
+  // Constructors
   slug_yields_sukhbold16(const char *yield_dir,
 			 const char *iso_data_dir,
 			 const double metallicity_,
 			 slug_ostreams &ostreams_,
-			 const bool no_decay_ = false);
+			 const bool no_decay_ = false) :
+    slug_yields_snii(metallicity_, iso_data_dir, ostreams_, no_decay_)
+  { read_tables(yield_dir); }    
+  slug_yields_sukhbold16(const char *yield_dir,
+			 const isotope_table *iso_table_,
+			 const double metallicity_,
+			 slug_ostreams &ostreams_,
+			 const bool no_decay_ = false) :
+    slug_yields_snii(metallicity_, iso_table_, ostreams_, no_decay_)
+  { read_tables(yield_dir); }
 
   // Destructor
   ~slug_yields_sukhbold16();
@@ -62,6 +71,9 @@ public:
 			   const std::vector<double>::size_type i) const;
    
 private:
+
+  // Method to read the data tables; invoked by the constructors
+  void read_tables(const char *yield_dir);
 
   // Data
   std::vector<double>::size_type nmass;  // Number of masses in yield table

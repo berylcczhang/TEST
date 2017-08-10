@@ -212,10 +212,7 @@ slug_parmParser::setDefaults() {
   extinct_curve = (lib_path / extinct_path / extinct_file).string();
   path atomic_path("atomic");
   atomic_dir = (lib_path / atomic_path).string();
-  path yield_path("yields");
-  yield_dir = (lib_path / yield_path).string();
   specsyn_mode = SB99;
-  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16;
   fClust = 1.0;
   min_stoch_mass = 0.0;
   metallicity = -1.0;    // Flag for not set
@@ -237,6 +234,12 @@ slug_parmParser::setDefaults() {
     writeClusterSpec = writeIntegratedSpec = writeClusterYield =
     writeIntegratedYield = true;
   out_mode = ASCII;
+
+  // Yield parameters
+  path yield_path("yields");
+  yield_dir = (lib_path / yield_path).string();
+  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14;
+  all_isotopes = no_decay = false;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -274,9 +277,18 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
     unsigned int nTokExpected = 2;
     to_lower(tokens[0]);
     try {
-      if (!(tokens[0].compare("verbosity"))) {
+
+      // Basic parameters
+      if (!(tokens[0].compare("model_name"))) {
+	model = tokens[1];
+      } else if (!(tokens[0].compare("out_dir"))) {
+	outDir = tokens[1];
+      } else if (!(tokens[0].compare("verbosity"))) {
 	verbosity = lexical_cast<unsigned int>(tokens[1]);
-      } else if (!(tokens[0].compare("sim_type"))) {
+      }
+      
+      // Simulation control parameters
+      else if (!(tokens[0].compare("sim_type"))) {
 	to_lower(tokens[1]);
 	if (tokens[1].compare("cluster") == 0) {
 	  run_galaxy_sim = false;
@@ -293,8 +305,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	nTrials = lexical_cast<unsigned int>(tokens[1]);
       } else if (!(tokens[0].compare("checkpoint_interval"))) {
 	checkpointInterval = lexical_cast<unsigned int>(tokens[1]);
-      } else if (!(tokens[0].compare("start_time"))) {
-	startTime = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("log_time"))) {
+	logTime = (lexical_cast<double>(tokens[1]) == 1);
       } else if (!(tokens[0].compare("time_step"))) {
 	// See if timeStep is a number, indicating definite output times
 	try {
@@ -303,189 +315,10 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  out_time_dist = tokens[1];
 	  randomOutputTime = true;
 	}
+      } else if (!(tokens[0].compare("start_time"))) {
+	startTime = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("end_time"))) {
 	endTime = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("log_time"))) {
-	logTime = (lexical_cast<double>(tokens[1]) == 1);
-      } else if (!(tokens[0].compare("sfr"))) {
-	string tmp = tokens[1];
-	to_lower(tmp);
-	if (tmp.compare("sfh") == 0)
-	  constantSFR = false;
-	else {
-	  try {
-	    // See if the SFR is a number, indicating a constant SFR
-	    sfr = lexical_cast<double>(tokens[1]);
-	    constantSFR = true;
-	  } catch (const bad_lexical_cast& ia) {
-	    // SFR is neither a number nor "sfh", so interpret this as
-	    // giving the name of a PDF file that will be used to draw
-	    // a SFR
-	    randomSFR = true;
-	    sfr_file = tokens[1];
-	  }
-	}
-      } else if (!(tokens[0].compare("cluster_mass"))) {
-	string tmp = tokens[1];
-	to_lower(tmp);
-	if (tmp.compare("cmf") == 0)
-	  randomClusterMass = true;
-	else
-	  cluster_mass = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("sfh"))) {
-	sfh = tokens[1];
-      } else if (!(tokens[0].compare("imf"))) {
-	imf = tokens[1];
-      } else if (!(tokens[0].compare("cmf"))) {
-	cmf = tokens[1];
-      } else if (!(tokens[0].compare("clf"))) {
-	clf = tokens[1];
-      } else if (!(tokens[0].compare("tracks"))) {
-	track = tokens[1];
-      } else if (!(tokens[0].compare("atmospheres"))) {
-	atmos_dir = tokens[1];
-      } else if (!(tokens[0].compare("filters"))) {
-	filter_dir = tokens[1];
-      } else if (!(tokens[0].compare("yield_dir"))) {
-	yield_dir = tokens[1];
-      } else if (!(tokens[0].compare("a_v"))) {
-	use_extinct = true;
-	try {
-	  // See if the A_V is a number, indicating a constant A_V
-	  A_V = lexical_cast<double>(tokens[1]);
-	  constantAV = true;
-	} catch (const bad_lexical_cast& ia) {
-	  // A_V is not a number, so assume it is a distribution file name
-	  AV_dist = tokens[1];
-	  constantAV = false;
-	}
-      } else if (!(tokens[0].compare("extinction_curve"))) {
-	extinct_curve = tokens[1];
-      } else if (!(tokens[0].compare("nebular_extinction_factor"))) {
-	use_neb_extinct = true;
-	try {
-	  // See if A_V,neb/A_V,star is a number
-	  neb_extinct_fac = lexical_cast<double>(tokens[1]);
-	  constant_neb_extinct_fac = true;
-	} catch (const bad_lexical_cast& ia) {
-	  // Not a number, so assume it is a distribution file name
-	  neb_extinct_fac_dist = tokens[1];
-	  constant_neb_extinct_fac = false;
-	}
-      } else if (!(tokens[0].compare("atomic_data"))) {
-	atomic_dir = tokens[1];
-      } else if (!(tokens[0].compare("compute_nebular"))) {
-	use_nebular = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("nebular_no_metals"))) {
-	neb_no_metals = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("nebular_den"))) {
-	nebular_den = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("nebular_temp"))) {
-	nebular_temp = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("nebular_phi"))) {
-	nebular_phi = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("nebular_logu"))) {
-	nebular_logU = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("rng_seed_file"))) {
-	seed_file = tokens[1];
-      } else if (!(tokens[0].compare("min_stoch_mass"))) {
-	min_stoch_mass = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("model_name"))) {
-	model = tokens[1];
-      } else if (!(tokens[0].compare("out_dir"))) {
-	outDir = tokens[1];
-      } else if (!(tokens[0].compare("redshift"))) {
-	z = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("metallicity"))) {
-	metallicity = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("WR_mass"))) {
-	WR_mass = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("clust_frac"))) {
-	fClust = lexical_cast<double>(tokens[1]);
-      } else if (!(tokens[0].compare("rng_offset"))) {
-	rng_offset = lexical_cast<unsigned int>(tokens[1]);
-      } else if (!(tokens[0].compare("out_cluster"))) {
-	writeClusterProp = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_cluster_phot"))) {
-	writeClusterPhot = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_cluster_spec"))) {
-	writeClusterSpec = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_cluster_yield"))) {
-	writeClusterYield = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_integrated"))) {
-	writeIntegratedProp = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_integrated_phot"))) {
-	writeIntegratedPhot = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_integrated_spec"))) {
-	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("out_integrated_yield"))) {
-	writeIntegratedYield = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("save_rng_seed"))) {
-	save_seed = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("read_rng_seed"))) {
-	read_seed = lexical_cast<int>(tokens[1]) != 0;
-      } else if (!(tokens[0].compare("output_mode"))) {
-	to_lower(tokens[1]);
-	if (tokens[1].compare("ascii") == 0)
-	  out_mode = ASCII;
-	else if (tokens[1].compare("binary") == 0)
-	  out_mode = BINARY;
-#ifdef ENABLE_FITS
-	else if (tokens[1].compare("fits") == 0)
-	  out_mode = FITS;
-#endif
-	else {
-	  ostreams.slug_err_one << "unknown output_mode: "
-				<< line << std::endl;
-	  bailout(1);
-	}
-      } else if (!(tokens[0].compare("specsyn_mode"))) {
-	to_lower(tokens[1]);
-	if (tokens[1].compare("planck") == 0)
-	  specsyn_mode = PLANCK;
-	else if (tokens[1].compare("kurucz") == 0)
-	  specsyn_mode = KURUCZ;
-	else if (tokens[1].compare("kurucz+hillier") == 0)
-	  specsyn_mode = KURUCZ_HILLIER;
-	else if (tokens[1].compare("kurucz+pauldrach") == 0)
-	  specsyn_mode = KURUCZ_PAULDRACH;
-	else if (tokens[1].compare("sb99") == 0)
-	  specsyn_mode = SB99;
-	else {
-	  ostreams.slug_err_one << "unknown output_mode: "
-				<< line << std::endl;
-	  bailout(1);
-	}
-      } else if (!(tokens[0].compare("phot_mode"))) {
-	to_lower(tokens[1]);
-	if (tokens[1].compare("l_nu") == 0)
-	  phot_mode = L_NU;
-	else if (tokens[1].compare("l_lambda") == 0)
-	  phot_mode = L_LAMBDA;
-	else if (tokens[1].compare("ab") == 0)
-	  phot_mode = AB;
-	else if (tokens[1].compare("stmag") == 0)
-	  phot_mode = STMAG;
-	else if (tokens[1].compare("vega") == 0)
-	  phot_mode = VEGA;
-	else {
-	  ostreams.slug_err_one << "unknown output_mode: "
-				<< line << std::endl;
-	  bailout(1);
-	}
-      } else if (!(tokens[0].compare("yield_mode"))) {
-	to_lower(tokens[1]);
-	if (tokens[1].compare("sukhbold16") == 0)
-	  yield_mode = SNII_SUKHBOLD16;
-	else if (tokens[1].compare("karakas16") == 0)
-	  yield_mode = AGB_KARAKAS16;
-	else if (tokens[1].compare("sukhbold16+karakas16") == 0)
-	  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16;
-	else {
-	  ostreams.slug_err_one << "unknown yield_mode: "
-				<< line << std::endl;
-	  bailout(1);
-	}
       } else if (!(tokens[0].compare("output_times"))) {
 
 	// Flag that we have an output time list
@@ -514,7 +347,164 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	    outTimes.push_back(lexical_cast<double>(outTimesTmp[i]));
 	  }
 	}
+      } else if (!(tokens[0].compare("sfr"))) {
+	string tmp = tokens[1];
+	to_lower(tmp);
+	if (tmp.compare("sfh") == 0)
+	  constantSFR = false;
+	else {
+	  try {
+	    // See if the SFR is a number, indicating a constant SFR
+	    sfr = lexical_cast<double>(tokens[1]);
+	    constantSFR = true;
+	  } catch (const bad_lexical_cast& ia) {
+	    // SFR is neither a number nor "sfh", so interpret this as
+	    // giving the name of a PDF file that will be used to draw
+	    // a SFR
+	    randomSFR = true;
+	    sfr_file = tokens[1];
+	  }
+	}
+      } else if (!(tokens[0].compare("sfh"))) {
+	sfh = tokens[1];
+      } else if (!(tokens[0].compare("cluster_mass"))) {
+	string tmp = tokens[1];
+	to_lower(tmp);
+	if (tmp.compare("cmf") == 0)
+	  randomClusterMass = true;
+	else
+	  cluster_mass = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("redshift"))) {
+	z = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("rng_offset"))) {
+	rng_offset = lexical_cast<unsigned int>(tokens[1]);
+      } else if (!(tokens[0].compare("save_rng_seed"))) {
+	save_seed = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("read_rng_seed"))) {
+	read_seed = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("rng_seed_file"))) {
+	seed_file = tokens[1];
+      }
 
+      // Output control keywords
+      else if (!(tokens[0].compare("out_cluster"))) {
+	writeClusterProp = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_cluster_phot"))) {
+	writeClusterPhot = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_cluster_spec"))) {
+	writeClusterSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_cluster_yield"))) {
+	writeClusterYield = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_integrated"))) {
+	writeIntegratedProp = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_integrated_phot"))) {
+	writeIntegratedPhot = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_integrated_spec"))) {
+	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_integrated_yield"))) {
+	writeIntegratedYield = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("output_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("ascii") == 0)
+	  out_mode = ASCII;
+	else if (tokens[1].compare("binary") == 0)
+	  out_mode = BINARY;
+#ifdef ENABLE_FITS
+	else if (tokens[1].compare("fits") == 0)
+	  out_mode = FITS;
+#endif
+	else {
+	  ostreams.slug_err_one << "unknown output_mode: "
+				<< line << std::endl;
+	  bailout(1);
+	}	
+      }
+
+      // Stellar model keywords
+      else if (!(tokens[0].compare("imf"))) {
+	imf = tokens[1];
+      } else if (!(tokens[0].compare("cmf"))) {
+	cmf = tokens[1];
+      } else if (!(tokens[0].compare("clf"))) {
+	clf = tokens[1];
+      } else if (!(tokens[0].compare("tracks"))) {
+	track = tokens[1];
+      } else if (!(tokens[0].compare("atmospheres"))) {
+	atmos_dir = tokens[1];
+      } else if (!(tokens[0].compare("specsyn_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("planck") == 0)
+	  specsyn_mode = PLANCK;
+	else if (tokens[1].compare("kurucz") == 0)
+	  specsyn_mode = KURUCZ;
+	else if (tokens[1].compare("kurucz+hillier") == 0)
+	  specsyn_mode = KURUCZ_HILLIER;
+	else if (tokens[1].compare("kurucz+pauldrach") == 0)
+	  specsyn_mode = KURUCZ_PAULDRACH;
+	else if (tokens[1].compare("sb99") == 0)
+	  specsyn_mode = SB99;
+	else {
+	  ostreams.slug_err_one << "unknown output_mode: "
+				<< line << std::endl;
+	  bailout(1);
+	}
+      } else if (!(tokens[0].compare("clust_frac"))) {
+	fClust = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("min_stoch_mass"))) {
+	min_stoch_mass = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("metallicity"))) {
+	metallicity = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("WR_mass"))) {
+	WR_mass = lexical_cast<double>(tokens[1]);
+      }
+
+      // Extinction keywords
+      else if (!(tokens[0].compare("a_v"))) {
+	use_extinct = true;
+	try {
+	  // See if the A_V is a number, indicating a constant A_V
+	  A_V = lexical_cast<double>(tokens[1]);
+	  constantAV = true;
+	} catch (const bad_lexical_cast& ia) {
+	  // A_V is not a number, so assume it is a distribution file name
+	  AV_dist = tokens[1];
+	  constantAV = false;
+	}
+      } else if (!(tokens[0].compare("extinction_curve"))) {
+	extinct_curve = tokens[1];
+      } else if (!(tokens[0].compare("nebular_extinction_factor"))) {
+	use_neb_extinct = true;
+	try {
+	  // See if A_V,neb/A_V,star is a number
+	  neb_extinct_fac = lexical_cast<double>(tokens[1]);
+	  constant_neb_extinct_fac = true;
+	} catch (const bad_lexical_cast& ia) {
+	  // Not a number, so assume it is a distribution file name
+	  neb_extinct_fac_dist = tokens[1];
+	  constant_neb_extinct_fac = false;
+	}
+      }
+
+      // Nebular keywords
+      else if (!(tokens[0].compare("compute_nebular"))) {
+	use_nebular = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("atomic_data"))) {
+	atomic_dir = tokens[1];
+      } else if (!(tokens[0].compare("nebular_no_metals"))) {
+	neb_no_metals = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("nebular_den"))) {
+	nebular_den = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_temp"))) {
+	nebular_temp = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_phi"))) {
+	nebular_phi = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_logu"))) {
+	nebular_logU = lexical_cast<double>(tokens[1]);
+      }
+
+      // Photometry keywords
+      else if (!(tokens[0].compare("filters"))) {
+	filter_dir = tokens[1];
       } else if (!(tokens[0].compare("phot_bands"))) {
 
 	// Count tokens
@@ -540,15 +530,65 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	    photBand.push_back(photBandTmp[i]);
 	  }
 	}
+      } else if (!(tokens[0].compare("phot_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("l_nu") == 0)
+	  phot_mode = L_NU;
+	else if (tokens[1].compare("l_lambda") == 0)
+	  phot_mode = L_LAMBDA;
+	else if (tokens[1].compare("ab") == 0)
+	  phot_mode = AB;
+	else if (tokens[1].compare("stmag") == 0)
+	  phot_mode = STMAG;
+	else if (tokens[1].compare("vega") == 0)
+	  phot_mode = VEGA;
+	else {
+	  ostreams.slug_err_one << "unknown output_mode: "
+				<< line << std::endl;
+	  bailout(1);
+	}
+      }
 
-      } else {
-	// Unknown token
+      // Yields keywords
+      else if (!(tokens[0].compare("yield_dir"))) {
+	yield_dir = tokens[1];
+      } else if (!(tokens[0].compare("yield_mode"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("sukhbold16") == 0)
+	  yield_mode = SNII_SUKHBOLD16;
+	else if (tokens[1].compare("karakas16+doherty14") == 0)
+	  yield_mode = AGB_KARAKAS16_DOHERTY14;
+	else if (tokens[1].compare("sukhbold16+karakas16+doherty14") == 0)
+	  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14;
+	else {
+	  ostreams.slug_err_one << "unknown yield_mode: "
+				<< line << std::endl;
+	  bailout(1);
+	}
+      } else if (!(tokens[0].compare("no_decay_isotopes"))) {
+	no_decay = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("isotopes_included"))) {
+	to_lower(tokens[1]);
+	if (tokens[1].compare("union") == 0)
+	  all_isotopes = true;
+	else if (tokens[1].compare("intersection") == 0)
+	  all_isotopes = false;
+	else {
+	  ostreams.slug_err_one << "unknown isotopes_included value: "
+				<< line << std::endl;
+	  bailout(1);
+	}
+      }
+
+      // Unknown token
+      else {
 	ostreams.slug_err_one << "unknown parameter "
 			      << tokens[0]
 			      << " on line: "
 			      << line << std::endl;
 	bailout(1);
       }
+      
     } catch (const bad_lexical_cast& ia) {
       // If we're here, a type conversion failed
       (void) ia; // No-op to suppress compiler warning
@@ -997,10 +1037,10 @@ slug_parmParser::writeParams() const {
   paramFile << "yield_mode           ";
   if (yield_mode == SNII_SUKHBOLD16) {
     paramFile << "SNII: Sukhbold+16; AGB: none" << endl;
-  } else if (yield_mode == AGB_KARAKAS16) {
-    paramFile << "SNII: none; AGB: Karakas & Lugaro 2016" << endl;
-  } else if (yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16) {
-    paramFile << "SNII: Sukhbold+16; AGB: Karakas & Lugaro 2016" << endl;
+  } else if (yield_mode == AGB_KARAKAS16_DOHERTY14) {
+    paramFile << "SNII: none; AGB: Karakas & Lugaro 2016 + Doherty+ 2014" << endl;
+  } else if (yield_mode == SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14) {
+    paramFile << "SNII: Sukhbold+16; AGB: Karakas & Lugaro 2016 + Doherty+ 2014" << endl;
   }
   if (use_extinct) {
     paramFile << "extinction           " << "yes" << endl;
@@ -1163,3 +1203,5 @@ double slug_parmParser::get_nebular_phi() const { return nebular_phi; }
 double slug_parmParser::get_nebular_logU() const { return nebular_logU; }
 bool slug_parmParser::get_outTimesList() const { return outTimesList; }
 const vector<double>& slug_parmParser::get_outTimes() const { return outTimes; }
+bool slug_parmParser::output_all_isotopes() const { return all_isotopes; }
+bool slug_parmParser::no_decay_isotopes() const { return no_decay; }

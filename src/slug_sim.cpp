@@ -208,7 +208,9 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
       new slug_yields_multiple(pp.get_yield_dir(),
 			       pp.get_yieldMode(),
 			       tracks->get_metallicity(),
-			       ostreams);
+			       ostreams,
+			       pp.no_decay_isotopes(),
+			       pp.output_all_isotopes());
   } else {
     yields = nullptr;
   }

@@ -44,7 +44,8 @@ public:
 		       const yieldMode yield_mode,
 		       const double metallicity_,
 		       slug_ostreams &ostreams,
-		       const bool no_decay_ = false);
+		       const bool no_decay_ = false,
+		       const bool include_all = false);
 
   // Destructor
   ~slug_yields_multiple();
