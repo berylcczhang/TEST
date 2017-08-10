@@ -72,8 +72,8 @@ enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH, SB99 };
 enum photMode { L_NU, L_LAMBDA, AB, STMAG, VEGA };
 
 // Enum of yield models
-enum yieldMode { SNII_SUKHBOLD16, AGB_KARAKAS16,
-		 SNII_SUKHBOLD16__AGB_KARAKAS16 };
+enum yieldMode { SNII_SUKHBOLD16, AGB_KARAKAS16_DOHERTY14,
+		 SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14 };
 
 // Struct to represent basic data on stars
 typedef struct { 

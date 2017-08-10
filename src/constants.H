@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _constants_H_
 
 #include <limits>
+#include <vector>
 
 namespace constants {
 
@@ -54,6 +55,7 @@ namespace constants {
   const double Angstrom = 1.0e-8;
   const double pc = 3.0856775814671918e18;
   const double kpc = 3.0856775814671918e21;
+  const double yr = 31557600.0;
 
   // Log base 10 of constants and conversions
   const double logsigmaSB = -4.2463884;
@@ -65,9 +67,11 @@ namespace constants {
   // Log base 10 of e
   const double loge = 0.43429448190325182;
 
-  // Numeric limits
+  // Numeric limits and sentinels
   const double big = std::numeric_limits<double>::max();
   const double small = std::numeric_limits<double>::min();
+  const std::vector<int>::size_type sentinel =
+    std::numeric_limits<std::vector<int>::size_type>::max();
 }
 
 #endif
