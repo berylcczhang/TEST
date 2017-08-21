@@ -273,9 +273,10 @@ def read_cluster_ew(model_name, output_dir=None, fmt=None,
                 ptr1 = 0
                 ptr2 = 2
                 for i in range(len(lines)):
-                    ew[:,ptr1] \
-                        = fp[ptr2].data.field(lines[i])
-                    ptr1 = ptr1 + 1
+                    if lread[i]:
+                        ew[:,ptr1] \
+                            = fp[ptr2].data.field(lines[i])
+                        ptr1 = ptr1 + 1
                     ptr2 = ptr2+1
                 ptr1 = 0
                 
