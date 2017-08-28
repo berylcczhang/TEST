@@ -151,10 +151,12 @@ isotope_table::isotope_table(const char *data_dir,
   for (auto it = unstable_isotopes_.begin(); it != unstable_isotopes_.end();
        ++ it) {
     // Loop over daughters
-    for (vector<unsigned int>::size_type i=0; i<(*it)->daughters.size(); it++)
+    for (vector<unsigned int>::size_type i=0; i<(*it)->daughters.size(); i++) {
       (*it)->daughters[i] =
-	isotope_map_za[make_pair((*it)->daughters_Z[i],
-				 (*it)->daughters_A[i])];
+	isotope_map_za.at(make_pair((*it)->daughters_Z[i],
+				    (*it)->daughters_A[i]));
+      assert((*it)->daughters[i] != nullptr);
+    }
   }
 }
 
@@ -167,4 +169,4 @@ isotope_table::~isotope_table() {
     delete *it;
   }
 }
-	
+
