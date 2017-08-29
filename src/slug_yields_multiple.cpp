@@ -85,7 +85,7 @@ slug_yields_multiple(const char *yield_dir,
 
   // Construct global isotope list from lists of isotopes from each
   // yield type
-  vector<const vector<const isotope_data *> > iso_lists;
+  vector<vector<const isotope_data *> > iso_lists;
   if (yields_snii) iso_lists.push_back(yields_snii->get_isotopes());
   if (yields_agb) iso_lists.push_back(yields_agb->get_isotopes());
   if (iso_lists.size() == 1) {
