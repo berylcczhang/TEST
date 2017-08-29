@@ -21,9 +21,9 @@ MACH_COPTFLAGS	  = $(MACH_CXXOPTFLAGS)
 MACH_LDOPTFLAGS   = -O3
 
 # Debug flags
-MACH_CXXDEBFLAGS  = -Og
+MACH_CXXDEBFLAGS  = -g
 MACH_CDEBFLAGS	  = $(MACH_CXXDEBFLAGS)
-MACH_LDDEBFLAGS   = -Og
+MACH_LDDEBFLAGS   = -g
 
 # Flags to compile as a shared or static library
 LIB_EXTENSION	   = .so
