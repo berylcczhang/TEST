@@ -47,7 +47,7 @@ namespace periodic_table {
     "eu", "gd", "tb", "dy", "ho", "er", "tm", "yb", "lu", "hf", "ta", "w",
     "re", "os", "ir", "pt", "au", "hg", "tl", "pb", "bi", "po", "at", "rn",
     "fr", "ra", "ac", "th", "pa", "u", "np", "pu", "am", "cm", "bk", "cf",
-    "es", "fm", "md", "no", "lr", "rf" "db", "sg", "bh", "hs", "mt", "ds",
+    "es", "fm", "md", "no", "lr", "rf", "db", "sg", "bh", "hs", "mt", "ds",
     "rg", "cn", "uut", "fl", "uup", "lv", "uus", "uuo" };
 }
 
