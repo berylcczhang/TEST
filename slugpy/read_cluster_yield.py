@@ -6,7 +6,7 @@ import numpy as np
 from collections import namedtuple
 import struct
 import re
-from slug_open import slug_open
+from .slug_open import slug_open
 
 def read_cluster_yield(model_name, output_dir=None, fmt=None, 
                       verbose=False, read_info=None):

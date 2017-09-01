@@ -7,9 +7,9 @@ from collections import namedtuple
 from copy import deepcopy
 import struct
 import re
-from photometry_convert import photometry_convert
-from read_filter import read_filter
-from slug_open import slug_open
+from .photometry_convert import photometry_convert
+from .read_filter import read_filter
+from .slug_open import slug_open
 
 def read_cluster_phot(model_name, output_dir=None, fmt=None, 
                       nofilterdata=False, photsystem=None,

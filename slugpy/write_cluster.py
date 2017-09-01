@@ -15,10 +15,10 @@ else:
     # Dummy interp1d function for RTD
     def interp1d(dummy1, dummy2, axis=None):
         pass
-from cloudy import write_cluster_cloudyparams
-from cloudy import write_cluster_cloudyphot
-from cloudy import write_cluster_cloudylines
-from cloudy import write_cluster_cloudyspec
+from .cloudy import write_cluster_cloudyparams
+from .cloudy import write_cluster_cloudyphot
+from .cloudy import write_cluster_cloudylines
+from .cloudy import write_cluster_cloudyspec
 try:
     import astropy.io.fits as fits
 except ImportError:
@@ -90,8 +90,8 @@ def write_cluster(data, model_name, fmt):
                 fields.append('A_Vneb')
                 units.append('(mag)')
             vp_i = 0
-            while 'VP'+`vp_i` in data._fields:
-                fields.append('VP'+`vp_i`)
+            while 'VP'+repr(vp_i) in data._fields:
+                fields.append('VP'+repr(vp_i))
                 units.append('')
                 vp_i += 1
 
@@ -128,8 +128,8 @@ def write_cluster(data, model_name, fmt):
                 if 'A_Vneb' in data._fields:
                     fp.write("   {:11.5e}".format(data.A_Vneb[i]))
                 vp_i = 0
-                while 'VP'+`vp_i` in data._fields:
-                    current_vp=getattr(data, "VP"+`vp_i`)
+                while 'VP'+repr(vp_i) in data._fields:
+                    current_vp=getattr(data, "VP"+repr(vp_i))
                     fp.write("   {:11.5e}".format(current_vp[i]))
                     vp_i+=1
 
@@ -249,11 +249,11 @@ def write_cluster(data, model_name, fmt):
                 cols.append(fits.Column(name="A_Vneb", format="1D",
                                         unit="mag", array=data.A_Vneb))
             vp_i = 0
-            while 'VP'+`vp_i` in data._fields:
-                cols.append(fits.Column(name="VP"+`vp_i`, format="1D",
+            while 'VP'+repr(vp_i) in data._fields:
+                cols.append(fits.Column(name="VP"+repr(vp_i), format="1D",
                                         unit="",
                                         array=getattr(data,
-                                                      "VP"+`vp_i`)))
+                                                      "VP"+repr(vp_i))))
                 vp_i += 1
             fitscols = fits.ColDefs(cols)
 

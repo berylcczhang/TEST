@@ -7,9 +7,9 @@ import os
 import os.path as osp
 import numpy as np
 import scipy.constants as physcons
-from int_tabulated import int_tabulated
-from int_tabulated import int_tabulated2
-from read_filter import read_filter
+from .int_tabulated import int_tabulated
+from .int_tabulated import int_tabulated2
+from .read_filter import read_filter
 
 # Constants and units conversions to cm
 try:

@@ -83,8 +83,8 @@ def write_integrated(data, model_name, fmt):
             adding_vcols = True                                     
             while adding_vcols == True:
                                         
-                if 'VP'+`vp_i` in data._fields:            
-                    fp.write(("{:<14s}"*1).format('VP'+`vp_i`,))
+                if 'VP'+repr(vp_i) in data._fields:            
+                    fp.write(("{:<14s}"*1).format('VP'+repr(vp_i),))
                     vp_i+=1
                 else:
                     nvp = vp_i
@@ -98,7 +98,7 @@ def write_integrated(data, model_name, fmt):
             adding_vcols = True  
             while adding_vcols == True:
                                         
-                if 'VP'+`vp_i` in data._fields:            
+                if 'VP'+repr(vp_i) in data._fields:            
                     fp.write(("{:<14s}"*1).format('',))
                     vp_i+=1
                 else:
@@ -116,7 +116,7 @@ def write_integrated(data, model_name, fmt):
             adding_vcols = True  
             while adding_vcols == True:
                                         
-                if 'VP'+`vp_i` in data._fields:            
+                if 'VP'+repr(vp_i) in data._fields:            
                     fp.write(("{:<14s}"*1).format('-----------',))
                     vp_i+=1
                 else:
@@ -157,8 +157,8 @@ def write_integrated(data, model_name, fmt):
                     vp_i=0   
                     adding_vcols = True  
                     while adding_vcols == True:                                                
-                        if 'VP'+`vp_i` in data._fields:
-                            current_vp=getattr(data, "VP"+`vp_i`)
+                        if 'VP'+repr(vp_i) in data._fields:
+                            current_vp=getattr(data, "VP"+repr(vp_i))
                             fp.write("   {:11.5e}".format(current_vp[j,i]))
                             vp_i+=1
                         else:
@@ -282,9 +282,9 @@ def write_integrated(data, model_name, fmt):
             adding_vcols = True                                     
             while adding_vcols == True:
                                         
-                if 'VP'+`vp_i` in data._fields:
-                    cols.append(fits.Column(name="VP"+`vp_i`, format="1D",
-                                        unit="", array=np.transpose(getattr(data, "VP"+`vp_i`) ).flatten() ))
+                if 'VP'+repr(vp_i) in data._fields:
+                    cols.append(fits.Column(name="VP"+repr(vp_i), format="1D",
+                                        unit="", array=np.transpose(getattr(data, "VP"+repr(vp_i)) ).flatten() ))
                     vp_i+=1
                 else:
 

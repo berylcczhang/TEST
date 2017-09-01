@@ -7,7 +7,7 @@ from collections import namedtuple
 from collections import defaultdict
 import struct
 import re
-from slug_open import slug_open
+from .slug_open import slug_open
 
 def read_integrated_prop(model_name, output_dir=None, fmt=None, 
                          verbose=False, read_info=None,
@@ -137,7 +137,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             p = 0;
             while (checking_for_var == True):
                 
-                if 'VP'+`p` in hdrsplit:
+                if 'VP'+repr(p) in hdrsplit:
                     vplist.append(p)
                     p=p+1
                     vp_dict = defaultdict(list)
@@ -185,7 +185,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             if imf_is_var:
                 for i in vplist:
                     datanumber += 1
-                    vp_dict['VP'+`i`].append(float(data[datanumber]))
+                    vp_dict['VP'+repr(i)].append(float(data[datanumber]))
 
     elif fname.endswith('.bin'):
 
@@ -252,7 +252,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             currentvp = 0
             while currentvp < nvps:  
                           
-                vp_dict['VP'+`currentvp`].extend(data_list[lastindex+currentvp+1::nfield])
+                vp_dict['VP'+repr(currentvp)].extend(data_list[lastindex+currentvp+1::nfield])
                 currentvp += 1            
         
 
@@ -290,9 +290,9 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             p = 0
             vp_dict = defaultdict(list)
             while (checking_for_var == True):
-                if 'VP'+`p` in fp[1].data.columns.names:
+                if 'VP'+repr(p) in fp[1].data.columns.names:
                     
-                    vp_dict['VP'+`p`].append(fp[1].data.field('VP'+`p`))         
+                    vp_dict['VP'+repr(p)].append(fp[1].data.field('VP'+repr(p)))         
 
                     p=p+1
 

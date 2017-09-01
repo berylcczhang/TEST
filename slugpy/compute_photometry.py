@@ -7,9 +7,9 @@ filters.
 import os
 import os.path as osp
 import numpy as np
-from int_tabulated import int_tabulated
-from int_tabulated import int_tabulated2
-from read_filter import read_filter
+from .int_tabulated import int_tabulated
+from .int_tabulated import int_tabulated2
+from .read_filter import read_filter
 import scipy.constants as physcons
 
 # Units and constants
