@@ -98,7 +98,6 @@ These specify the physical models to be used for stellar evolution, atmospheres,
    * ``modpXXX.dat``: Padova tracks with thermally pulsing AGB stars; metallicities use the same scale as ``modcXXX.dat`` files (i.e., ``020`` is Solar).
    * ``modsXXX.dat``: same as ``modpXXX.dat``, but without thermally pulsing AGB stars
 * ``atmospheres`` (default: ``lib/atmospheres``): directory where the stellar atmosphere library is located. Note that file names are hard-coded, so if you want to use different atmosphere models with a different format, you will have to write new source code to do so.
-* ``yields`` (default: ``lib/yields``): directory where the stellar yield tables are located. Note that the file name and format is hardcoded, so if you want to use a different format, you will have to write source code to do so.
 * ``specsyn_mode`` (default: ``sb99``): spectral synthesis mode. Allowed values are:
    * ``planck``: treat all stars as black bodies
    * ``Kurucz``: use Kurucz atmospheres, as compiled by `Lejeune et al. (1997, A&AS, 125, 229) <http://adsabs.harvard.edu/abs/1997A%26AS..125..229L>`_, for all stars
@@ -157,5 +156,39 @@ These describe the photometry to be computed. Note that none of these keywords h
    * ``AB``: report AB magnitude
    * ``STMAG``: report ST magnitude
    * ``VEGA``: report Vega magnitude
+
+.. _ssec-yield-keywords:
+
+Yield Keywords
+--------------
+
+These keywords control the calculation of chemical yields. See
+:ref:`ssec-yields` for explanations of the physical models
+corresponding to these choices.
+
+* ``yield_dir`` (default: ``lib/yields``): directory where the
+  stellar yield tables are located. Note that the file name and
+  format is hardcoded, so if you want to use a different format,
+  you will have to write source code to do so.
+* ``yield_mode`` (default: ``sukhbold16+karakas16+doherty14``):
+  sources for yields information. Valid options are:
+  
+  * ``sukhbold16+karakas16+doherty14``: core collapse supernova yields
+    from Sukhbold et al. (2016) plus AGB star yields from Karakas &
+    Lugaro (2016) plus Doherty et al. (2014)
+  * ``karakas16+doherty14``: AGB star yields as in the first option,
+    no core collapse supernova yields
+  * ``sukhbold16``: core collapse superonva yields as in the first
+    option, no AGB star yields
+     
+* ``no_decay_isotopes`` (default: ``0``): if set to a non-zero value,
+  this option disables radioactive decay of unstable isotopes
+* ``isotopes_included`` (default: ``intersection``): controls how to
+  handle isotopes that are present in some yield tables but not
+  others. Valid options are:
+  
+  * ``intersection``: only include isotopes present in all yield
+    tables
+  * ``union``: include all isotopes found in any of the yield tables
 
 

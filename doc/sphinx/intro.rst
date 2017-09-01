@@ -156,8 +156,82 @@ where :math:`L_{\lambda}` is the unextincted stellar spectrum, and :math:`f_{\ma
 Chemical Yields
 ---------------
 
-In addition to computing the light output by a stellar population, SLUG can also predict the yield of isotopes. At present SLUG includes yields for core collapse supernovae only. These are based on the yield tables provided by `Sukhbold et al. (2016) <http://adsabs.harvard.edu/abs/2016ApJ...821...38S>`_, which provide a finely-spaced set of yields for progenitors of mass 9 - 120 :math:`M_\odot`. Yields from other stellar types will be added in later work.
+In addition to computing the light output by a stellar population,
+SLUG can also predict the yield of isotopes. SLUG includes yields for
+core collapse supernovale and AGB stars. The core collapse supernova
+yields at present are for Solar metallicity only, and come from the
+yield tables provided by `Sukhbold et al. (2016)
+<http://adsabs.harvard.edu/abs/2016ApJ...821...38S>`_, which provide a
+finely-spaced set of yields for progenitors of mass 9 - 120
+:math:`M_\odot`. The AGB star yields come from `Karakas &
+Lugaro (2016) <http://adsabs.harvard.edu/abs/2016ApJ...825...26K>`_ or
+`Doherty et al. (2014)
+<http://adsabs.harvard.edu/abs/2014MNRAS.437..195D>`_, depending
+on the progenitor mass; these yields are available at a range of
+metallicities. AGB and core collapse supernova yields can be
+turned on and off independently. 
 
-SLUG operates by separately tracking the isotopes produced by stars winds and by their end-of-life explosions, as a function of progenitor mass. To obtain the yield of any star, SLUG interpolates on the wind and explosive yields using `Steffen interpolation <http://adsabs.harvard.edu/abs/1990A%26A...239..443S>`_ to guarantee that no artifical extrema are produced. The code reports production of 302 distinct isotopes, including many stable species and select unstable ones; for unstable species, radioactive decay over the course of the simulation is properly handled.
+The yield tables are all slightly different with regard to what
+isotopes they include: the tables from Doherty et al. only include 37
+stable isotopes up to the iron peak, the core collapse yield tables
+from Sukhbold et al. contain 302 isotopes, mostly stable but with some
+selected long-lived unstable ones, and the Karakas tables include an
+even larger number of stable and unstable isotopes with a wide range
+of lifetimes from seconds to Myr. It is up to the user how to handle
+combining the tables; they can be combined additively, so all isotopes
+are reported and yields are taken to be zero for isotopes that are
+missing from a given table, or disjunctively, so that only isotopes
+present in all yield tables are output. See :ref:`sec-parameters` for
+details.
 
-At present there is a slight inconsistency in that the evolutionary tracks used by Sukhbold et al. do not precisely match those available for the purposes of omputing spectra and photometr. The death times of stars are computed using the tracks used output the photometric quantities, and thus are slightly inconsistent with the tracks used for the yields. This inconsistency also means that it is not possible to accurately place the wind yields in time; SLUG simply assumes that all yields due to winds are released when the stars end their lives, just as for the explosive yields.
+For unstable isotopes, the code correctly handles radioactive decay,
+i.e., if a certain amount of an unstable isotope with lifetime
+:math:`\lambda` is produced at time :math:`t` and none is produced
+thereafter, the amount reported at time :math:`t+\Delta t` will be
+smaller by a factor of :math:`e^{-\Delta t/\lambda}`, and the mass of
+the daughter isotopes will have been increased accordingly. If
+desirable this behavior can be disabled, so that the yields
+reported are the total amounts produced, with no decay taken
+into account. See :ref:`sec-parameters`.
+
+There are a few caveats and limitations to the current approach, which
+may or may not be important depending the application:
+
+  * No yields from type Ia supernovae are presently included.
+  * The evolutionary tracks used to compute spectra and photometry do
+    not precisely match the stellar evolution calculations used for
+    the yields, so things like stellar lifetimes do not match up
+    precisely.
+  * Because of the aforementioned issue, it is not possible to track
+    the injection of yields properly in time over the course of a
+    star's lifetime. Instead, SLUG simply assumes that all yields are
+    produced instantaneously at the time when a star dies, with the
+    lifetime taken from the tracks used for light output rather than
+    from the yield calculations. The error is generally small, since
+    the vast majority of the mass loss occurs in the last few
+    centuries of a star's lifetime.
+  * When the star formation history is being treated
+    non-stochastically (i.e., when the parameter ``clust_frac`` is
+    less than 1.0, radioactive decay is not properly handled within
+    integration time steps, so yields of unstable isotopes will be
+    slightly off. The error can be minimized by writing more frequent
+    outputs.
+  * The Doherty tables have use a different "Solar" metallicity
+    scale than the later Karakas and Sukhbold ones. Solar metallicity
+    corresponds to Z = 0.014 for the latter two, and Z = 0.02 for the
+    former.
+  * When combining yields from multiple sources, neither the option of
+    including all isotopes found in any table nor the option of
+    including only the isotopes common to all tables gives precisely
+    the correct answer. The former option (called ``union`` in the
+    :ref:`ssec-yield-keywords`) misses the contributions to some
+    isotopes from some stars; for example, the yields of S process
+    nuclei will be missing the contribution from stars from 8 - 9
+    :math:`M_\odot` (at Solar metallicity), because the Doherty tables
+    do not include S process yields. The latter option (called
+    ``intersection`` in the :ref:`ssec-yield-keywords`) misses the
+    mass contributed to longer-lived species by the decay of
+    shorter-lived ones that are omitted because they are not in all
+    tables.
+
+

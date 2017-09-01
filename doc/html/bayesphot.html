@@ -5,12 +5,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>bayesphot: Bayesian Inference for Stochastic Stellar Populations &#8212; slug 2.0 documentation</title>
-    
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
@@ -24,7 +21,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="cluster_slug: Bayesian Inference of Star Cluster Properties" href="cluster_slug.html" />
@@ -194,7 +191,7 @@ quantities from a set of input photometry in various bands, together
 with a training data set.</p>
 <dl class="class">
 <dt id="slugpy.bayesphot.bp.bp">
-<em class="property">class </em><code class="descclassname">slugpy.bayesphot.bp.</code><code class="descname">bp</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth=’auto’</em>, <em>ktype=’gaussian’</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.bayesphot.bp.</code><code class="descname">bp</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.</p>
@@ -237,7 +234,7 @@ dimensions</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth=’auto’</em>, <em>ktype=’gaussian’</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a bp object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -648,7 +645,7 @@ the dimensions of the output grid</dd>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.mpdf_approx">
-<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims=’phys’</em>, <em>dims_return=None</em>, <em>ngrid=64</em>, <em>qmin=’all’</em>, <em>qmax=’all’</em>, <em>grid=None</em>, <em>norm=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.mpdf_approx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mpdf_approx" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mpdf_approx</code><span class="sig-paren">(</span><em>x</em>, <em>wgts</em>, <em>dims='phys'</em>, <em>dims_return=None</em>, <em>ngrid=64</em>, <em>qmin='all'</em>, <em>qmax='all'</em>, <em>grid=None</em>, <em>norm=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.mpdf_approx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.mpdf_approx" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the marginal posterior PDF computed from a kernel
 density approximation returned by make_approx_phys or
 make_approx_phot. Outputs are computed on a grid of values, in
@@ -974,7 +971,7 @@ first ndim dimensions in the data set</dd>
       &copy;2014, Mark Krumholz, Michele Fumagalli, et al..
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
