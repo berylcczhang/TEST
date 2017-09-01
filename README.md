@@ -4,7 +4,7 @@ SLUG is the Stochastically Lighting Up Galaxies Code. SLUG is a stellar populati
 
 ### Full documenation ###
 
-Full documentation of SLUG is available at <http://slug2.readthedocs.org/en/latest/>. Documentation is also available in the source repository; see *doc/html/index.html* for the html version, and *doc/latex/slug.pdf* for a PDF version.
+Full documentation of SLUG is available at <http://slug2.readthedocs.io/en/latest/>. Documentation is also available in the source repository; see *doc/html/index.html* for the html version, and *doc/latex/slug.pdf* for a PDF version.
 
 ### Version history ###
 
@@ -119,7 +119,7 @@ If you have questions about SLUG, have discovered any bugs, or want to contribut
 
 ### Acknowledgements ###
 
-SLUG was the product of many people's work. Version 1 was written by Robert da Silva and Michele Fumagalli, with contributions and improvements from Jonathan Parra. Version 2 of SLUG, as well as slugpy, were written by primarily by Mark Krumholz, with contributions from Michele Fumagalli, Teddy Rendahl, Evan Demers, and Greg Ashworth. SLUG benefitted enormously from the methods and library of track and atmosphere models curated by Claus Leitherer as part of [starburst99](http://www.stsci.edu/science/starburst99/docs/default.htm). The extensive set of filters available started with the compilation provided by Charlie Conroy, who maintains a filter list as part of [FSPS](https://code.google.com/p/fsps/), though it has grown considerably since then. Most of the predefined extinction curves are courtesy of Daniela Calzetti. The type II supernova yield tables were provided by Tuguldur Sukhbold, and the AGB yield tables by Amanda Karakas and Carolyn Doherty.
+SLUG was the product of many people's work. Version 1 was written by Robert da Silva and Michele Fumagalli, with contributions and improvements from Jonathan Parra. Version 2 of SLUG, as well as slugpy, were written by primarily by Mark Krumholz, with contributions from Michele Fumagalli, Teddy Rendahl, Evan Demers, and Greg Ashworth. See the [documentation](http://slug2.readthedocs.io/en/latest/) for a full list of contributors, including both those who wrote parts of the code and who provided tabulated data.
 
 ### License ###
 
