@@ -9,7 +9,12 @@ import copy
 import os
 import os.path as osp
 import warnings
-import urllib2
+try:
+    # Python 3
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib2 import urlopen
 
 # Import the data reading and Bayesian inference stuff we need
 from ..bayesphot import bp
@@ -186,7 +191,7 @@ class sfr_slug(object):
             # If we're here, download the files
             print("Fetching SFR_SLUG_integrated_prop.fits " +
                   "(this may take a while)...")
-            url = urllib2.urlopen(
+            url = urlopen(
                 'https://dl.dropboxusercontent.com/s/7la1b5h986rdz29/SFR_SLUG_integrated_prop.fits')
             rawdata = url.read()
             url.close()
@@ -196,7 +201,7 @@ class sfr_slug(object):
             fp.close()
             print("Fetching SFR_SLUG_integrated_phot.fits " +
                   "(this make take a while)...")
-            url = urllib2.urlopen(
+            url = urlopen(
                 'https://dl.dropboxusercontent.com/s/ra8qf5raqutcf50/SFR_SLUG_integrated_phot.fits')
             rawdata = url.read()
             url.close()

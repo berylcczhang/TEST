@@ -990,7 +990,7 @@ class bp(object):
 
     @nphys.setter
     def nphys(self, val):
-        raise ValueError, "can't set bayesphot.nphys!"
+        raise ValueError("can't set bayesphot.nphys!")
     
     @property
     def nphot(self):
@@ -1002,7 +1002,7 @@ class bp(object):
 
     @nphys.setter
     def nphot(self, val):
-        raise ValueError, "can't set bayesphot.nphot!"
+        raise ValueError("can't set bayesphot.nphot!")
 
     @property
     def ndim(self):
@@ -1014,7 +1014,7 @@ class bp(object):
 
     @nphys.setter
     def ndim(self, val):
-        raise ValueError, "can't set bayesphot.ndim!"
+        raise ValueError("can't set bayesphot.ndim!")
 
     ##################################################################
     # Utility methods to set a new bandwidth to account for

@@ -9,8 +9,13 @@ import copy
 import os
 import os.path as osp
 import warnings
-import urllib2
 from copy import deepcopy
+try:
+    # Python 3
+    from urllib.request import urlopen
+except ImportError:
+    # Python 2
+    from urllib2 import urlopen
 
 # Import the data reading and Bayesian inference stuff we need
 from ..bayesphot import bp
@@ -311,8 +316,9 @@ class cluster_slug(object):
         nvp_total = np.size(vp_list)
         nvp = np.size(np.where(vp_list))
         if nvp_total > 0:
-            print "Total Number of Variable Parameters in data: ",nvp_total
-            print "Number of Variable Parameters to use: ",nvp
+            print("Total Number of Variable Parameters in data: "
+                  +str(nvp_total))
+            print("Number of Variable Parameters to use: "+str(nvp))
 
         # Set number of physical properties
         if use_extinction:
@@ -332,7 +338,7 @@ class cluster_slug(object):
         # Grab the variable parameters we want to use
         for vpi in range (0,nvp_total,1):
             if vp_list[vpi] is True:
-                self.__ds_phys[:,pnum+(vpi+1)] = getattr(prop, "VP"+`vpi`)
+                self.__ds_phys[:,pnum+(vpi+1)] = getattr(prop, "VP"+repr(vpi))
 
         # Record available filters
         if self.__lib is None:
