@@ -203,7 +203,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
 
         # If we have nebular emission or extinction, reshape filter
         # and units lists
-        nuniq = nfilter / ((1+nebular)*(1+extinct))
+        nuniq = nfilter // ((1+nebular)*(1+extinct))
         nfilter = nuniq
         filters = filters[:nfilter]
         units = units[:nfilter]
@@ -584,7 +584,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
 
             # If we have nebular emission or extinction, reshape
             # filter and units lists
-            nuniq = nfilter / ((1+nebular)*(1+extinct))
+            nuniq = nfilter // ((1+nebular)*(1+extinct))
             nfilter = nuniq
             filters = filters[:nfilter]
             units = units[:nfilter]
@@ -712,7 +712,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
 
             # If we have nebular emission or extinction, reshape
             # filter and units lists
-            nuniq = nfilter / ((1+nebular)*(1+extinct))
+            nuniq = nfilter // ((1+nebular)*(1+extinct))
             nfilter = nuniq
             filters = filters[:nfilter]
             units = units[:nfilter]
@@ -834,26 +834,26 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
         if read_nebular is not True and \
            read_extinct is not True:
             phot = np.array(phot, dtype='float')
-            phot = np.reshape(phot, (phot.size/len(filters), 
+            phot = np.reshape(phot, (phot.size//len(filters), 
                                      len(filters)))
         if nebular and \
            read_nebular is not False and \
            read_extinct is not True:
             phot_neb = np.array(phot_neb, dtype='float')
-            phot_neb = np.reshape(phot_neb, (phot_neb.size/len(filters),
+            phot_neb = np.reshape(phot_neb, (phot_neb.size//len(filters),
                                              len(filters)))
         if extinct and \
            read_nebular is not True and \
            read_extinct is not False:
             phot_ex = np.array(phot_ex, dtype='float')
-            phot_ex = np.reshape(phot_ex, (phot_ex.size/len(filters), 
+            phot_ex = np.reshape(phot_ex, (phot_ex.size//len(filters), 
                                            len(filters)))
         if nebular and extinct and \
            read_nebular is not False and \
            read_extinct is not False:
             phot_neb_ex = np.array(phot_neb_ex, dtype='float')
             phot_neb_ex = np.reshape(phot_neb_ex, 
-                                     (phot_neb_ex.size/len(filters), 
+                                     (phot_neb_ex.size//len(filters), 
                                       len(filters)))
 
     # Read filter data if requested

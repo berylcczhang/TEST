@@ -183,7 +183,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
 
         # If we have nebular emission or extinction, reshape filter
         # and units lists
-        nuniq = nfilter / ((1+nebular)*(1+extinct))
+        nuniq = nfilter // ((1+nebular)*(1+extinct))
         nfilter = nuniq
         filters = filters[:nfilter]
         units = units[:nfilter]
@@ -344,7 +344,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
 
                 # Unpack the data
                 chunkstr = 'L'+(nftot+1)*'d'
-                nchunk = len(data)/struct.calcsize(chunkstr)
+                nchunk = len(data)//struct.calcsize(chunkstr)
                 data_list = struct.unpack(nchunk*chunkstr, data)
 
                 # Parse into arrays
@@ -533,7 +533,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
 
         # If we have nebular emission or extinction, reshape filter
         # and units lists
-        nuniq = nfilter / ((1+nebular)*(1+extinct))
+        nuniq = nfilter // ((1+nebular)*(1+extinct))
         nfilter = nuniq
         filters = filters[:nfilter]
         units = units[:nfilter]
@@ -623,7 +623,7 @@ def read_integrated_phot(model_name, output_dir=None, fmt=None,
     # Reshape time and photometry arrays
     if not filters_only:
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if ntime != len(time):
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]

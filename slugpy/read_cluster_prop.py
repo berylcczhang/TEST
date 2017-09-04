@@ -310,7 +310,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             live_mass.extend(data_list[5::nfield])
             field_ptr = 6
             if no_stellar_mass:
-                stellar_mass.extend([np.nan]*(len(data_list)/nfield))
+                stellar_mass.extend([np.nan]*(len(data_list)//nfield))
             else:
                 stellar_mass.extend(data_list[field_ptr::nfield])
                 field_ptr = field_ptr+1

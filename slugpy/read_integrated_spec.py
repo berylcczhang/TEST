@@ -196,7 +196,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
         # Figure out how many trials there are and reshape the time
         # array appropriately
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if ntime != len(time):
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]
@@ -271,7 +271,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
 
         # Now read the rest of the file and convert to correct type
         data = fp.read()
-        nchunk = len(data) / \
+        nchunk = len(data) // \
                  (struct.calcsize('L') + 
                   (nl + nl_neb + nl_ex + nl_neb_ex + 1)
                   *struct.calcsize('d'))
@@ -284,7 +284,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
                          dtype='uint')
         time = np.array(data_list[1::nl+nl_neb+nl_ex+nl_neb_ex+2])
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if ntime != len(time):
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]
@@ -335,7 +335,7 @@ def read_integrated_spec(model_name, output_dir=None, fmt=None,
 
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if ntime != len(time):
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]

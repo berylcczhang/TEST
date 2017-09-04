@@ -223,7 +223,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             nfield = len(datstr)
         
             
-        nentry = len(data)/struct.calcsize(datstr)
+        nentry = len(data)//struct.calcsize(datstr)
         data_list = struct.unpack(datstr*nentry, data)
 
         # Stick data into correctly-named lists
@@ -327,7 +327,7 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     # indicating fixed output times, or if each trial has random times;
     # reshape time array appropriately
     ntrial = len(np.unique(trial))
-    ntime = len(time)/ntrial
+    ntime = len(time)//ntrial
     if ntime != len(time):
         if np.amin(time[:ntime] == time[ntime:2*ntime]):
             time = time[:ntime]

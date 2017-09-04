@@ -136,7 +136,7 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
 
         # If times are repeats, truncate
         if time.size > len(yld):
-            ntime = time.size/len(yld)
+            ntime = time.size//len(yld)
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]
 
@@ -175,7 +175,7 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
 
         # Parse
         blockstr = 'Ld'+niso*'d'
-        nout = len(buf) / struct.calcsize(blockstr)
+        nout = len(buf) // struct.calcsize(blockstr)
         data_list = struct.unpack(blockstr*nout, buf)
         trial = np.array(data_list[::2+niso], dtype=int)
         time = np.array(data_list[1::2+niso], dtype=float)
@@ -188,7 +188,7 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
         if idx > 1:
             if np.amin(time[:idx] == time[idx:2*idx]):
                 time = time[:idx]
-            yld = yld.reshape((len(trial)/idx, time.size,
+            yld = yld.reshape((len(trial)//idx, time.size,
                                isotope_name.size))
 
     elif fname.endswith('.fits'):
@@ -208,7 +208,7 @@ def read_integrated_yield(model_name, output_dir=None, fmt=None,
 
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if ntime != len(time):
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]
