@@ -84,7 +84,7 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
         target_units = 'Vega mag'
     else:
         raise ValueError('Unknown photometric system ' +
-                         photsystem)
+                         repr(photsystem))
 
     # If Vega magnitudes is either the current unit or the desination
     # unit, compute the magnitude of Vega in each of our filters
@@ -111,7 +111,7 @@ def photometry_convert(photsystem, phot, units, wl_cen=None,
             try:
                 vegadata = ascii.read('A0V_KURUCZ_92.SED', 'r')
             except IOError:
-                raise IOError("could not find Vega spectrum "+
+                raise IOError(1, "could not find Vega spectrum "+
                               "file A0V_KURUCZ_92.SED in "+
                               "SLUG_DIR/lib/atmospheres or "+
                               "in current directory")

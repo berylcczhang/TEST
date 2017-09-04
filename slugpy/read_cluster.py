@@ -332,11 +332,11 @@ def read_cluster(model_name, output_dir=None, fmt=None,
             read_info['phot_name'] = read_info['fname']
             del read_info['fname']
     except IOError as e:
-        if str(e.message)[:16] == 'requested filter' and \
-           str(e.message)[-14:] == 'not available!':
+        if e.strerror[:16] == 'requested filter' and \
+           e.strerror[-14:] == 'not available!':
             # If the IO error is that we didn't have the requested
             # filter, re-raise the error
-            raise IOError(e.message)
+            raise IOError(e.errno, e.strerror)
         else:
             phot = None
 
@@ -417,7 +417,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     elif cloudyparams is not None:
         out_data = [cloudyparams.id, cloudyparams.trial, cloudyparams.time]
     else:
-        raise IOError("unable to open any cluster files for run " +
+        raise IOError(1,
+                      "unable to open any cluster files for run " +
                       model_name)
     if prop is not None:
         out_fields = out_fields + list(prop._fields[3:])

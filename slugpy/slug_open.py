@@ -129,7 +129,7 @@ def slug_open(filename, output_dir=None, fmt=None):
     # If we're here and fp is None, all attempt to open the file have
     # failed, so throw an IOError
     if fp is None:
-        raise IOError("unable to open file with base name "+fname)
+        raise IOError(1, "unable to open file with base name "+fname)
 
     # Return the handle to the new file
     return fp, fname

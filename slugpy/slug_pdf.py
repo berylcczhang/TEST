@@ -72,13 +72,13 @@ class slug_pdf(object):
             elif line.strip() == 'advanced':
                 basic = False
             else:
-                raise IOError("slug_pdf: expected 'breakpoints' "+
+                raise IOError(1, "slug_pdf: expected 'breakpoints' "+
                               "or 'advanced', found '"+line+"'")
 
             # If we are in basic mode, extract the breakpoints
             if basic:
                 if len(line.split()) < 3:
-                    raise IOError(
+                    raise IOError(1, 
                         "slug_pdf: need at least 2 breakpoints")
                 self.bkpts = np.array(line.split()[1:], dtype='d')
 
@@ -87,7 +87,7 @@ class slug_pdf(object):
 
         # Make sure we haven't reached EOF with setting a mode
         if basic is None:
-            raise IOError("slug_pdf: didn't find 'breakpoints' "+
+            raise IOError(1, "slug_pdf: didn't find 'breakpoints' "+
                           "or 'advanced' in file "+pdffile)
         
         # Now parse the rest of the file
@@ -131,7 +131,7 @@ class slug_pdf(object):
                 if not in_segment:
                     in_segment = True
                 else:
-                    raise IOError("slug_pdf: expected 'type "+
+                    raise IOError(1, "slug_pdf: expected 'type "+
                                   "TYPENAME', found"+
                                   " '"+line+"'")
 
@@ -140,12 +140,12 @@ class slug_pdf(object):
                 # We're being given a segment type; make sure we're in
                 # a segment
                 if not in_segment:
-                    raise IOError("slug_pdf: expected 'segment',"+
+                    raise IOError(1, "slug_pdf: expected 'segment',"+
                                   " found '"+line+"'")
 
                 # Make sure we have a valid segment type
                 if len(line.split()) != 2:
-                    raise IOError("slug_pdf: expected 'type "+
+                    raise IOError(1, "slug_pdf: expected 'type "+
                                   "TYPENAME', found"+
                                   " '"+line+"'")
 
@@ -155,7 +155,7 @@ class slug_pdf(object):
                 # Grab breakpoints for this segment
                 ptr = len(self.segments)
                 if ptr > len(self.bkpts)-1:
-                    raise IOError(
+                    raise IOError(1, 
                         "slug_pdf: expected {:d}".len(self.bkpts-1)+
                         " segments, found too many")
                 a = self.bkpts[ptr]
@@ -164,7 +164,7 @@ class slug_pdf(object):
                 # Call parsing routine for this segment
                 if segtype == 'delta':
                     if a != b:
-                        raise IOError("slug_pdf: delta segments "+
+                        raise IOError(1, "slug_pdf: delta segments "+
                                       "must have a == b")
                     self.segments.append(slug_pdf_delta(a))
                 elif segtype == 'exponential':
@@ -189,7 +189,7 @@ class slug_pdf(object):
 
         # Make sure we got enough segments
         if len(self.segments) != len(self.bkpts)-1:
-            raise IOError(
+            raise IOError(1, 
                 "slug_pdf: expected {:d} segments, found {:d}".
                 format(len(self.bkpts)-1, len(self.segments)))
 
@@ -216,7 +216,7 @@ class slug_pdf(object):
     # Method to parse advanced PDF files
     ##################################################################
     def parse_advance(self, fp):
-        raise NotImplementedError(
+        raise NotImplementedError( 
             "slug_pdf: advanced mode files not yet supported")
 
     ##################################################################

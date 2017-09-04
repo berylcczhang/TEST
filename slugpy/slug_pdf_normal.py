@@ -47,7 +47,7 @@ class slug_pdf_normal(slug_pdf_segment):
         # See if we were given a file or explicit values
         if fp is None:
             if mean is None or disp is None:
-                raise ValueError(
+                raise ValueError( 
                     "slug_pdf_normal.__init__: "+
                     "must set either fp or both mean and disp")
             else:
@@ -75,13 +75,13 @@ class slug_pdf_normal(slug_pdf_segment):
                 spl = line.split()
                 if spl[0] == 'mean':
                     if len(spl) != 2:
-                        raise IOError(
+                        raise IOError(1, 
                             "slug_pdf_lognormal: expected "+
                             "'mean MEAN', found "+line)
                     self._mean = float(spl[1])
                 elif spl[0] == 'disp':
                     if len(spl) != 2:
-                        raise IOError(
+                        raise IOError(1, 
                             "slug_pdf_lognormal: expected "+
                             "'disp DISP', found "+line)
                     self._disp = float(spl[1])

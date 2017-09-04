@@ -36,7 +36,7 @@ class slug_pdf_powerlaw(slug_pdf_segment):
         # See if we were given a file or an explicit slope
         if fp is None:
             if alpha is None:
-                raise ValueError(
+                raise ValueError( 
                     "slug_pdf_powerlaw.__init__: "+
                     "must set fp or alpha")
             else:
@@ -59,7 +59,7 @@ class slug_pdf_powerlaw(slug_pdf_segment):
 
                 # Make sure this is a properly formatted slope specified
                 if len(line.split()) != 2 or line.split()[0] != 'slope':
-                    raise IOError(
+                    raise IOError(1, 
                         "slug_pdf_powerlaw: expected 'slope SLOPE', "+
                         "found '"+line+"'")
 

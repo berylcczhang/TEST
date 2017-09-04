@@ -42,16 +42,16 @@ class slug_pdf_segment(object):
             self._rnd = RandomState()
 
     def draw(self, *d):
-        raise NotImplementedError(
+        raise NotImplementedError(1, 
             "slug_pdf_segment.draw() should never be invoked directly!")
 
     def expectation(self):
-        raise NotImplementedError(
+        raise NotImplementedError(1, 
             "slug_pdf_segment.expectation() should never be invoked"
             "directly!")
 
     def __call__(self):
-        raise NotImplementedError(
+        raise NotImplementedError(1, 
             "slug_pdf_segment() should never be invoked directly!")
 
     @property

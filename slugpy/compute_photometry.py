@@ -226,7 +226,7 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
             try:
                 vegadata = ascii.read('A0V_KURUCZ_92.SED', 'r')
             except IOError:
-                raise IOError("could not find Vega spectrum "+
+                raise IOError(1, "could not find Vega spectrum "+
                               "file A0V_KURUCZ_92.SED in "+
                               "SLUG_DIR/lib/atmospheres or "+
                               "in current directory")

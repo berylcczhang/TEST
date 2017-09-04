@@ -36,7 +36,7 @@ class slug_pdf_exponential(slug_pdf_segment):
         # See if we were given a file or explicit values
         if fp is None:
             if scale is None:
-                raise ValueError(
+                raise ValueError( 
                     "slug_pdf_exponential.__init__: "+
                     "must set either fp or scale")
             else:
@@ -62,7 +62,7 @@ class slug_pdf_exponential(slug_pdf_segment):
                 spl = line.split()
                 if spl[0] == 'scale':
                     if len(spl) != 2:
-                        raise IOError(
+                        raise IOError(1, 
                             "slug_pdf_exponential: expected "+
                             "'scale SCALE', found "+line)
                     self.scale = float(spl[1])

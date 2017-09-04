@@ -380,7 +380,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     elif cloudyparams is not None:
         out_data = [cloudyparams.time]
     else:
-        raise IOError("unable to open any integrated files for run " +
+        raise IOError(1,
+                      "unable to open any integrated files for run " +
                       model_name)
     if prop is not None:
         out_fields = out_fields + list(prop._fields[1:])
