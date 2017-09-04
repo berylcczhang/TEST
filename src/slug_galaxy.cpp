@@ -361,9 +361,11 @@ slug_galaxy::advance(double time) {
     nonStochRemnantMass = 
       integ.integrate_sfh_nt(time, 
 			     boost::bind(static_cast<double (slug_tracks::*)
-					 (const double, const double) const> 
+					 (const double, const double,
+					  const double) const> 
 					 (&slug_tracks::remnant_mass), 
-					 tracks, _1, _2));
+					 tracks, _1, _2,
+					 tracks::null_metallicity));
 
   // Recompute the alive mass and stellar mass
   aliveMass = nonStochAliveMass + clusterAliveMass + fieldAliveMass;

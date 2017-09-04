@@ -680,9 +680,10 @@ slug_cluster::advance(double time) {
     integ.integrate_nt(targetMass, 
 		       curTime-formationTime,
 		       boost::bind(static_cast<double (slug_tracks::*)
-				   (const double, const double) const> 
+				   (const double, const double,
+				    const double) const> 
 				   (&slug_tracks::remnant_mass), 
-				   tracks, _1, _2));
+				   tracks, _1, _2, tracks::null_metallicity));
 
   // Recompute the number of non-stochastic supernovae and thus total
   // supernovae; only do this if we have yields, because this is where

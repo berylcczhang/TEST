@@ -30,6 +30,7 @@ namespace std
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 #include "slug_specsyn_sb99.H"
+#include "slug_tracks_sb99.H"
 #include "slug_yields_multiple.H"
 #include <cmath>
 #include <ctime>
@@ -196,9 +197,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
   // Read the tracks
   if (pp.get_verbosity() > 1)
     ostreams.slug_out_one << "reading tracks" << std::endl;
-  tracks = new slug_tracks(pp.get_trackFile(), ostreams,
-			   pp.get_metallicity(),
-			   pp.get_WR_mass(), pp.get_endTime());
+  tracks = (slug_tracks *)
+    new slug_tracks_sb99(pp.get_trackFile(), ostreams);
 
   // If we're computing yields, set up yield tables
   if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield()) {
@@ -207,7 +207,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
     yields = (slug_yields *)
       new slug_yields_multiple(pp.get_yield_dir(),
 			       pp.get_yieldMode(),
-			       tracks->get_metallicity(),
+			       ((slug_tracks_2d *) tracks)->get_metallicity(),
 			       ostreams,
 			       pp.no_decay_isotopes(),
 			       pp.output_all_isotopes());

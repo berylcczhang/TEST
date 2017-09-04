@@ -4,6 +4,7 @@
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 #include "slug_specsyn_sb99.H"
+#include "slug_tracks_sb99.H"
 #include "slug_yields_multiple.H"
 #include "fcntl.h"
 #include <cstdlib>
@@ -176,7 +177,8 @@ inline const slug_tracks*
 slug_predefined::build_tracks(const string&trackname) {
   path p(trackname);
   build_rng();
-  return new slug_tracks((track_dir / p).string().c_str(), ostreams);
+  return (slug_tracks *)
+    new slug_tracks_sb99((track_dir / p).string().c_str(), ostreams);
 }
 
 inline const slug_filter_set*
