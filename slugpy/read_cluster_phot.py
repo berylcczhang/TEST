@@ -341,8 +341,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
         units = []
         for i in range(nfilter):
             line = fp.readline()
-            filters.append(line.split()[0])
-            units.append(line.split()[1])
+            filters.append(line.split()[0].decode("utf-8"))
+            units.append(line.split()[1].decode("utf-8"))
 
         # If given a list of filters to read, make sure that we
         # haven't been given ones that are not available; if we have,
