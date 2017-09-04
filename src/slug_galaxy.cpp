@@ -107,6 +107,7 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
   if (yields) {
     stoch_field_yields.assign(yields->get_niso(), 0.0);
     all_yields.assign(yields->get_niso(), 0.0);
+    v_integ.set_nvec(yields->get_niso());
   }
 
   // Get fc

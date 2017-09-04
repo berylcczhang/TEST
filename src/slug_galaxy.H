@@ -158,9 +158,12 @@ private:
   const slug_extinction *extinct;     // Extinction object
   const slug_nebular *nebular;        // Nebular object
   const slug_yields *yields;          // Stellar yields
-  const slug_imf_integrator<double> integ; // Integration helper class
-  const slug_imf_integrator
-  <std::vector<double> > v_integ;     // Integration helper class for vectors
+
+  // Integration helper classes, used to do integral over the IMF or
+  // over time to handle non-stochastic stars
+  const slug_imf_integrator<double> integ; // Scalar version
+  slug_imf_integrator
+  <std::vector<double> > v_integ;     // Vector version (used for yields)
 
   // Simulation data
   double curTime;                     // Current time
