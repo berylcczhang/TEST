@@ -266,7 +266,7 @@ class cluster_slug(object):
                               "Try downloading it from " +
                               "https://sites.google.com/site/runslug/data")
 
-            # If we're here, we don't have hte library file, but we
+            # If we're here, we don't have the library file, but we
             # are in interactive mode. Thus offer the user an option
             # to go download the file now.
             usr_response \
@@ -589,6 +589,24 @@ class cluster_slug(object):
                     warn_extinct = True
                     nebular = False
                     extinct = False
+            elif self.__use_extinction is False and self.__use_nebular is False:
+                # Didn't get it; go to no nebular or extinction
+                if self.__lib is None:
+                    phot = read_cluster_phot(
+                        self.__libname, 
+                        read_filters=filter_name,
+                        read_nebular=False,
+                        read_extinct=False,
+                        phot_only=True,
+                        photsystem=self.__photsystem)
+                    phdata = np.squeeze(phot.phot)
+                else:
+                    phdata = np.copy(phot.phot
+                                     [:,self.__allfilters.index(filter_name)])
+                warn_nebular = False
+                warn_extinct = False
+                nebular = False
+                extinct = False
 
             # Make sure data aren't NaN's. If they are, that means we
             # don't have extinction for this filter, so we need to use
