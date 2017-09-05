@@ -195,10 +195,10 @@ slug_tracks_2d::get_star(const double m, const double t,
 
   // Use interpolator to interpolate to requested values
   slug_stardata star;
-  star.logM = constants::loge * (*interp)(logm, logt,
+  star.logM = constants::loge * (*interp)(logt, logm,
 					  tracks::log_cur_mass);
-  star.logL = (*interp)(logm, logt, tracks::log_L);
-  star.logTeff = (*interp)(logm, logt, tracks::log_Teff);
+  star.logL = (*interp)(logt, logm, tracks::log_L);
+  star.logTeff = (*interp)(logt, logm, tracks::log_Teff);
   star.logR = 0.5*(star.logL+constants::logLsun) 
     - 0.5*log10(4.0*M_PI) 
     - 0.5*constants::logsigmaSB - 2.0*star.logTeff

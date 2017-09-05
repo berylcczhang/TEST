@@ -699,7 +699,7 @@ set_WR_type(const double m, const double t, slug_stardata& star) const {
   // If passes mass and Teff cut, check surface H fraction
   double logm = log(m);
   double logt = log(t);
-  double H_frac = (*interp)(logm, logt, tracks::h_surf);
+  double H_frac = (*interp)(logt, logm, tracks::h_surf);
   if (H_frac > 0.4) {
     // H fraction too high to be a WR star
     star.WR = NONE;
@@ -716,8 +716,8 @@ set_WR_type(const double m, const double t, slug_stardata& star) const {
   }
 
   // Check C/N ratio
-  double C_frac = (*interp)(logm, logt, tracks::c_surf);
-  double N_frac = (*interp)(logm, logt, tracks::n_surf);
+  double C_frac = (*interp)(logt, logm, tracks::c_surf);
+  double N_frac = (*interp)(logt, logm, tracks::n_surf);
   if (C_frac/(N_frac+constants::small) < 10.0) {
     star.WR = WN;
   } else {

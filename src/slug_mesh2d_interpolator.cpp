@@ -812,12 +812,11 @@ operator()(const double x, const double y, const size_type f_idx,
       gsl_spline *spl;
       gsl_interp_accel *acc;
       if (edge[i] == 0) {
+	spl = spl_s[idx[i]][f_idx];
+	acc = acc_s[idx[i]][f_idx];	
+      } else {
 	spl = spl_x[idx[i]][f_idx];
 	acc = acc_x[idx[i]][f_idx];
-	
-      } else {
-	spl = spl_s[idx[i]][f_idx];
-	acc = acc_s[idx[i]][f_idx];
       }
       gsl_errstat =
 	gsl_spline_eval_e(spl, pos[i], acc, &f_eval);

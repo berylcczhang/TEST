@@ -1559,6 +1559,19 @@ intercept_const_x_n(const double x_, const double y_,
       i_down = i_cache;
       j_down = j_cache;
     }
+
+    // Safety check: make sure the point we found is actually distinct
+    // from the previous one at > machine precision. If not, discard
+    // it and grap another point.
+    if (int_y_down.size() > 1) {
+      if (int_y_down[int_y_down.size()-1] ==
+	  int_y_down[int_y_down.size()-2]) {
+	int_y_down.pop_back();
+	int_pos_down.pop_back();
+	int_idx_down.pop_back();
+	int_edge_down.pop_back();
+      }
+    }
     
     // Check if we have all the points we need
     if (int_pos_up.size() + int_pos_down.size() == npt) break;
@@ -1575,6 +1588,17 @@ intercept_const_x_n(const double x_, const double y_,
 			      int_idx_up, int_edge_up);
       i_up = i_cache;
       j_up = j_cache;
+    }
+
+    // Safety check as above, for the upward search
+    if (int_y_up.size() > 1) {
+      if (int_y_up[int_y_up.size()-1] ==
+	  int_y_up[int_y_up.size()-2]) {
+	int_y_up.pop_back();
+	int_pos_up.pop_back();
+	int_idx_up.pop_back();
+	int_edge_up.pop_back();
+      }
     }
   }
 

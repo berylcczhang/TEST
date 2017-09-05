@@ -386,11 +386,25 @@ slug_galaxy::set_field_data() {
   field_data.resize(0);
 
   // Get field star data
-  for (unsigned int i=0; i<field_stars.size(); i++) {
-    vector<double> m(1, field_stars[i].mass);
-    const vector<slug_stardata> &stardata = 
-      tracks->get_isochrone(curTime - field_stars[i].birth_time, m);
-    if (stardata.size() > 0) field_data.push_back(stardata[0]);
+  for (vector<int>::size_type i=0; i<field_stars.size(); i++) {
+    if (field_stars[i].mass >= tracks->min_mass() &&
+	field_stars[i].mass <= tracks->max_mass()) {
+      field_data.
+      push_back(tracks->get_star(field_stars[i].mass,
+      				   curTime - field_stars[i].birth_time));
+#ifndef NDBEUG
+      if (!isfinite(field_data.back().logTeff) ||
+	  !isfinite(field_data.back().logL) ||
+	  !isfinite(field_data.back().logg) ||
+	  !isfinite(field_data.back().logM)) {
+	cout << setprecision(20)
+	     << "bad star: m = "
+	     << field_stars[i].mass
+	     << ", age = " << curTime - field_stars[i].birth_time
+	     << endl;
+      }
+#endif
+    }
   }
 
   // Set status flag
