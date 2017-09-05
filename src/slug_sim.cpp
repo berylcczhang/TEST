@@ -31,6 +31,7 @@ namespace std
 #include "slug_specsyn_planck.H"
 #include "slug_specsyn_sb99.H"
 #include "slug_tracks_sb99.H"
+#include "slug_specsyn_sb99hruv.H"
 #include "slug_yields_multiple.H"
 #include <cmath>
 #include <ctime>
@@ -327,6 +328,42 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
       (new slug_specsyn_sb99(pp.get_atmos_dir(), tracks,
 			     imf, sfh, ostreams, pp.get_z()));
   }
+  else if  (pp.get_specsynMode() == SB99_HRUV)
+  {
+    if (pp.galaxy_sim() || pp.get_outputMode()!=FITS )
+    {
+      // HRUV mode does not yet have a galaxy mode or binary output 
+      // implementation and so we abort
+      ostreams.slug_err_one << "HRUV implemented for cluster mode using fits output only." << std::endl;
+      bailout(1);
+    }
+    specsyn = static_cast<slug_specsyn *> 
+      (new slug_specsyn_sb99hruv(pp.get_atmos_dir(), tracks,
+			     imf, sfh, ostreams, pp.get_z()));   
+  }
+  // Load line list
+  if (pp.get_writeEquivalentWidth())
+  {
+    if (pp.get_specsynMode() != SB99_HRUV)
+    {
+      ostreams.slug_err_one << "Equivalent width calculation implemented for HRUV atmospheres only." << std::endl;
+      bailout(1);
+    }  
+    else
+    { 
+      if (pp.get_verbosity() > 1)
+      {
+        ostreams.slug_out_one << "reading line list" << std::endl;
+      }
+    
+      lines = new slug_line_list(pp.get_linepicks(),
+                                 pp.get_line_dir(),ostreams);
+    }
+  }    
+  else 
+  {
+    lines = nullptr;
+  }
 
   // If using nebular emission, initialize the computation of that
   if (pp.get_use_nebular()) {
@@ -371,7 +408,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
       cluster_mass = pp.get_cluster_mass();
     cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
     			       tracks, specsyn, filters,
-    			       extinct, nebular, yields, ostreams, clf);
+    			       extinct, nebular, yields, lines, ostreams, clf);
     galaxy = nullptr;
   }
 
@@ -408,6 +445,7 @@ slug_sim::~slug_sim() {
   if (sfr_pdf != nullptr) delete sfr_pdf;
   if (extinct != nullptr) delete extinct;
   if (nebular != nullptr) delete nebular;
+  if (lines != nullptr) delete lines;
 }
 
 
@@ -427,6 +465,7 @@ void slug_sim::open_output(slug_output_files &outfiles, int chknum) {
   if (pp.get_writeClusterPhot()) open_cluster_phot(outfiles, chknum);
   if (pp.get_writeClusterSpec()) open_cluster_spec(outfiles, chknum);
   if (pp.get_writeClusterYield()) open_cluster_yield(outfiles, chknum);
+  if (pp.get_writeEquivalentWidth()) open_cluster_ew(outfiles, chknum);
   outfiles.is_open = true;
 }
 
@@ -510,6 +549,8 @@ void slug_sim::close_output(slug_output_files &outfiles,
       open_files.push_back(outfiles.cluster_phot_fits);
     if (outfiles.cluster_yield_fits != nullptr)
       open_files.push_back(outfiles.cluster_yield_fits);
+    if (outfiles.cluster_ew_fits != nullptr)
+      open_files.push_back(outfiles.cluster_ew_fits);
 
     // Fix number of trials in file
     for (vector<std::ifstream>::size_type i=0; i<open_files.size(); i++) {
@@ -540,10 +581,13 @@ void slug_sim::close_output(slug_output_files &outfiles,
       fits_close_file(outfiles.int_yield_fits, &fits_status);
     if (outfiles.cluster_yield_fits != nullptr)
       fits_close_file(outfiles.cluster_yield_fits, &fits_status);
+    if (outfiles.cluster_ew_fits != nullptr)
+      fits_close_file(outfiles.cluster_ew_fits, &fits_status);
     outfiles.int_prop_fits = outfiles.cluster_prop_fits
       = outfiles.int_spec_fits = outfiles.cluster_spec_fits
       = outfiles.int_phot_fits = outfiles.cluster_phot_fits
-      = outfiles.int_yield_fits = outfiles.cluster_yield_fits = nullptr;
+      = outfiles.int_yield_fits = outfiles.cluster_yield_fits 
+      = outfiles.cluster_ew_fits = nullptr;
   }
 #endif
 
@@ -904,7 +948,7 @@ void slug_sim::cluster_sim() {
   outfiles.int_prop_fits = outfiles.int_spec_fits = outfiles.int_phot_fits
     = outfiles.int_yield_fits = outfiles.cluster_prop_fits
     = outfiles.cluster_spec_fits = outfiles.cluster_phot_fits
-    = outfiles.cluster_yield_fits = nullptr;
+    = outfiles.cluster_yield_fits = outfiles.cluster_ew_fits= nullptr;
 #endif
   
   // Loop over trials
@@ -993,7 +1037,7 @@ void slug_sim::cluster_sim() {
       delete cluster;
       cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
 				 tracks, specsyn, filters,
-				 extinct, nebular, yields, ostreams, clf);
+				 extinct, nebular, yields, lines, ostreams, clf);
     } else {
       cluster->reset();
     }
@@ -1065,6 +1109,13 @@ void slug_sim::cluster_sim() {
 	}
 #endif
       }
+#ifdef ENABLE_FITS    
+    // Write equivalent width if requested
+    if (pp.get_writeEquivalentWidth())
+    {     
+      cluster->write_ew(outfiles.cluster_ew_fits,trial_ctr_loc);
+    }
+#endif
 
       // Write photometry if requested
       if (pp.get_writeClusterPhot()) {
@@ -1284,8 +1335,18 @@ void slug_sim::open_integrated_prop(slug_output_files &outfiles,
     }
 
     // Make things we can pass to c
+    /*
     char *ttype[ncol], *tform[ncol], *tunit[ncol];
     for (int i=0; i<ncol; i++)  {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
+    */
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
       ttype[i] = const_cast<char*>(ttype_str[i].c_str());
       tform[i] = const_cast<char*>(tform_str[i].c_str());
       tunit[i] = const_cast<char*>(tunit_str[i].c_str());
@@ -1295,6 +1356,9 @@ void slug_sim::open_integrated_prop(slug_output_files &outfiles,
     int fits_status = 0;
     fits_create_tbl(outfiles.int_prop_fits, BINARY_TBL, 0, ncol,
 		    ttype, tform, tunit, nullptr, &fits_status);
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
 
     // Add a keyword stating the expected number of trials if this is
     // a checkpoint file
@@ -1710,7 +1774,7 @@ void slug_sim::open_integrated_spec(slug_output_files &outfiles,
       outfiles.int_spec_file.write((char *) &(lambda_ext[0]),
 			  nl_ext*sizeof(double));
     }
-    // Write list of nebular and extincted wavelenghts if using both
+    // Write list of nebular and extincted wavelengths if using both
     // nebular emission and extinction
     if (use_nebular && use_extinct) {
       vector<double> lambda_neb_ext = extinct->lambda_neb();
@@ -2004,6 +2068,11 @@ void slug_sim::open_cluster_spec(slug_output_files &outfiles,
     vector<string> tform_str;
     tform_str.push_back(lexical_cast<string>(nl) + "D");
     vector<string> tunit_str = { "Angstrom" };
+    
+    //For rectified spectrum
+    vector<double> lambda_rs;
+    vector<double>::size_type nl_rs = 0;
+    
     int ncol=1;
     if (nebular != nullptr) {
       lambda_neb = nebular->lambda();
@@ -2029,6 +2098,17 @@ void slug_sim::open_cluster_spec(slug_output_files &outfiles,
       tunit_str.push_back("Angstrom");
       ncol++;
     }
+    // If there is a rectified spectrum present, make space for this
+    if (specsyn->get_rectify())
+    {
+      lambda_rs = specsyn->get_recspec_wl();
+      nl_rs = lambda_rs.size();
+      ttype_str.push_back("Wavelength_Rectified");
+      tform_str.push_back(lexical_cast<string>(nl_rs) + "D");
+      tunit_str.push_back("Angstrom");
+      ncol++;      
+    }
+    
     char **ttype = new char *[ncol];
     char **tform = new char *[ncol];
     char **tunit = new char *[ncol];
@@ -2076,6 +2156,14 @@ void slug_sim::open_cluster_spec(slug_output_files &outfiles,
       col++;
     }
 
+    if (specsyn->get_rectify())
+    {
+      fits_write_col(outfiles.cluster_spec_fits, TDOUBLE, col, 1, 1, nl_rs,
+		     lambda_rs.data(), &fits_status);
+      col++;
+    }
+
+
     // Create a new table to hold the computed spectra
     char spec_name[] = "Spectra";
     vector<string> ttype2_str = 
@@ -2102,6 +2190,16 @@ void slug_sim::open_cluster_spec(slug_output_files &outfiles,
 	ncol++;
       }
     }
+    
+    //If there is a rectified spectrum present, make space for this
+    if (specsyn->get_rectify())
+    {
+      ttype2_str.push_back("Rectified_Spec");
+      tform2_str.push_back(lexical_cast<string>(nl_rs) + "D");
+      tunit2_str.push_back(" ");
+      ncol++;     
+    }
+
     char **ttype2 = new char *[ncol];
     char **tform2 = new char *[ncol];
     char **tunit2 = new char *[ncol];
@@ -2530,6 +2628,100 @@ void slug_sim::open_cluster_phot(slug_output_files &outfiles,
     // Create table
     int fits_status = 0;
     fits_create_tbl(outfiles.cluster_phot_fits, BINARY_TBL, 0, ncol,
+		    ttype.data(), tform.data(), tunit.data(), nullptr, 
+		    &fits_status);
+    
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(outfiles.cluster_phot_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
+  }
+#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open cluster equivalent width file and write its header
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_cluster_ew(slug_output_files &outfiles,
+				 int chknum) 
+{
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
+  if (comm != MPI_COMM_NULL) 
+  {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
+  if (chknum >= 0) 
+  {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
+  fname += "_cluster_ew";
+  path full_path(pp.get_outDir());
+  
+#ifdef ENABLE_FITS
+  if (out_mode == FITS) 
+  {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&outfiles.cluster_ew_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) 
+    {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      ostreams.slug_err << "unable to open cluster equivalent width file "
+			                  << full_path.string()
+			                  << "; cfitsio says: " << err_txt << endl;
+      bailout(1);
+    }
+  }
+#endif
+
+
+  // Grab the names of the lines
+  const vector<string> line_names = lines->get_line_names();
+
+
+  // Write header
+#ifdef ENABLE_FITS
+  if (out_mode == FITS) 
+  {
+    vector<char *> ttype, tform, tunit;
+    // Columns are trial, uniqueID, time
+    vector<string> ttype_str = { "Trial", "UniqueID", "Time" };
+    vector<string> form_str = { "1K", "1K", "1D" };
+    vector<string> unit_str = { "", "", "yr" };
+    string ew_unit = "Angstrom";
+    for (int i=0; i<3; i++) {
+      ttype.push_back(const_cast<char*>(ttype_str[i].c_str()));
+      tform.push_back(const_cast<char*>(form_str[i].c_str()));
+      tunit.push_back(const_cast<char*>(unit_str[i].c_str()));
+    }
+    // Next n columns are lines
+    for (vector<string>::size_type i=0; i<line_names.size(); i++) 
+    {
+      ttype.push_back(const_cast<char*>(line_names[i].c_str()));
+      tform.push_back(const_cast<char*>(form_str[2].c_str()));
+      tunit.push_back(const_cast<char*>(ew_unit.c_str()));
+    }
+    int ncol = 3+line_names.size();
+    
+    // Create table
+    int fits_status = 0;
+    fits_create_tbl(outfiles.cluster_ew_fits, BINARY_TBL, 0, ncol,
 		    ttype.data(), tform.data(), tunit.data(), nullptr, 
 		    &fits_status);
     

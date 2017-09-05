@@ -212,7 +212,10 @@ slug_parmParser::setDefaults() {
   extinct_curve = (lib_path / extinct_path / extinct_file).string();
   path atomic_path("atomic");
   atomic_dir = (lib_path / atomic_path).string();
+  path yield_path("yields");
+  yield_dir = (lib_path / yield_path).string();
   specsyn_mode = SB99;
+  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16;
   fClust = 1.0;
   min_stoch_mass = 0.0;
   metallicity = -1.0;    // Flag for not set
@@ -227,12 +230,18 @@ slug_parmParser::setDefaults() {
   filter_dir = (lib_path / filter_path).string();
   phot_mode = L_NU;
 
+  // Line parameters
+  path line_path("lines");
+  line_dir = (lib_path / line_path).string();
+  
+
   // Output parameters
   z = 0.0;
   writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
     writeClusterSpec = writeIntegratedSpec = writeClusterYield =
     writeIntegratedYield = true;
+  writeEquivalentWidth= false;
   out_mode = ASCII;
 
   // Yield parameters
@@ -374,6 +383,70 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  randomClusterMass = true;
 	else
 	  cluster_mass = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("sfh"))) {
+	sfh = tokens[1];
+      } else if (!(tokens[0].compare("imf"))) {
+	imf = tokens[1];
+      } else if (!(tokens[0].compare("cmf"))) {
+	cmf = tokens[1];
+      } else if (!(tokens[0].compare("clf"))) {
+	clf = tokens[1];
+      } else if (!(tokens[0].compare("tracks"))) {
+	track = tokens[1];
+      } else if (!(tokens[0].compare("atmospheres"))) {
+	atmos_dir = tokens[1];
+      } else if (!(tokens[0].compare("filters"))) {
+	filter_dir = tokens[1];
+      } else if (!(tokens[0].compare("lines"))) {
+        line_dir = tokens[1];
+      } else if (!(tokens[0].compare("yield_dir"))) {
+	yield_dir = tokens[1];
+      } else if (!(tokens[0].compare("a_v"))) {
+	use_extinct = true;
+	try {
+	  // See if the A_V is a number, indicating a constant A_V
+	  A_V = lexical_cast<double>(tokens[1]);
+	  constantAV = true;
+	} catch (const bad_lexical_cast& ia) {
+	  // A_V is not a number, so assume it is a distribution file name
+	  AV_dist = tokens[1];
+	  constantAV = false;
+	}
+      } else if (!(tokens[0].compare("extinction_curve"))) {
+	extinct_curve = tokens[1];
+      } else if (!(tokens[0].compare("nebular_extinction_factor"))) {
+	use_neb_extinct = true;
+	try {
+	  // See if A_V,neb/A_V,star is a number
+	  neb_extinct_fac = lexical_cast<double>(tokens[1]);
+	  constant_neb_extinct_fac = true;
+	} catch (const bad_lexical_cast& ia) {
+	  // Not a number, so assume it is a distribution file name
+	  neb_extinct_fac_dist = tokens[1];
+	  constant_neb_extinct_fac = false;
+	}
+      } else if (!(tokens[0].compare("atomic_data"))) {
+	atomic_dir = tokens[1];
+      } else if (!(tokens[0].compare("compute_nebular"))) {
+	use_nebular = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("nebular_no_metals"))) {
+	neb_no_metals = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("nebular_den"))) {
+	nebular_den = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_temp"))) {
+	nebular_temp = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_phi"))) {
+	nebular_phi = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("nebular_logu"))) {
+	nebular_logU = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("rng_seed_file"))) {
+	seed_file = tokens[1];
+      } else if (!(tokens[0].compare("min_stoch_mass"))) {
+	min_stoch_mass = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("model_name"))) {
+	model = tokens[1];
+      } else if (!(tokens[0].compare("out_dir"))) {
+	outDir = tokens[1];
       } else if (!(tokens[0].compare("redshift"))) {
 	z = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("rng_offset"))) {
@@ -403,6 +476,12 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_yield"))) {
 	writeIntegratedYield = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_equivalent_width"))) {
+        writeEquivalentWidth = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("save_rng_seed"))) {
+	save_seed = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("read_rng_seed"))) {
+	read_seed = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("output_mode"))) {
 	to_lower(tokens[1]);
 	if (tokens[1].compare("ascii") == 0)
@@ -443,6 +522,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  specsyn_mode = KURUCZ_PAULDRACH;
 	else if (tokens[1].compare("sb99") == 0)
 	  specsyn_mode = SB99;
+	else if (tokens[1].compare("sb99hruv") == 0)
+	  specsyn_mode = SB99_HRUV;
 	else {
 	  ostreams.slug_err_one << "unknown output_mode: "
 				<< line << std::endl;
@@ -706,6 +787,33 @@ slug_parmParser::checkParams() {
     photBand.erase(photBand.begin() + i);
   }
 
+  if (writeEquivalentWidth && linepicks.size()==0)
+  {
+    valueError("Equivalent widths requested but no lines specified");
+  }
+  // Make sure lines are unique; if not, eliminate duplicates
+  // and spit out a warning
+  duplicates.clear();
+  for (vector<double>::size_type i=0; i<linepicks.size(); i++)
+  {
+    for (vector<double>::size_type j=i+1; j<linepicks.size(); j++)
+    {
+      if (linepicks[i] == linepicks[j]) 
+      {
+        duplicates.push_back(j);
+      }
+    }
+    rit = duplicates.rbegin();
+  }
+  for ( ; rit != duplicates.rend(); ++rit) 
+  {
+    vector<double>::size_type i = *rit;
+    ostringstream ss;
+    ss << "ignoring duplicate spectral line " << linepicks[i];
+    ostreams.slug_warn_one << ss.str() << std::endl;
+    linepicks.erase(linepicks.begin() + i);
+  }  
+
   // See if the SLUG_DIR environment variable is set, for use in
   // setting up default paths. If not, set it to current working
   // directory.
@@ -726,6 +834,7 @@ slug_parmParser::checkParams() {
   path atmos_path(atmos_dir);
   path atomic_path(atomic_dir);
   path filter_path(filter_dir);
+  path line_path(line_dir);
   path extinct_path(extinct_curve);
   path AV_path(AV_dist);
   path out_time_path(out_time_dist);
@@ -744,6 +853,8 @@ slug_parmParser::checkParams() {
     atmos_dir = (slug_path / atmos_path).string();
   if (!filter_path.is_absolute()) 
     filter_dir = (slug_path / filter_path).string();
+  if (!line_path.is_absolute())
+    line_dir = (slug_path / line_path).string();
   if (!extinct_path.is_absolute())
     extinct_curve = (slug_path / extinct_path).string();
   if (!atomic_path.is_absolute())
@@ -780,6 +891,8 @@ void slug_parmParser::restartSetup() {
     outtypes.push_back("_cluster_phot");
   if (writeClusterYield)
     outtypes.push_back("_cluster_yield");
+  if (writeEquivalentWidth)
+    outtypes.push_back("_equivalent_width");
 
   // Get parallel rank indicator
   string par_str;
@@ -1034,6 +1147,10 @@ slug_parmParser::writeParams() const {
   } else if (specsyn_mode == SB99) {
     paramFile << "sb99" << endl;
   }
+  else if (specsyn_mode == SB99_HRUV)
+  {    
+    paramFile << "sb99hruv" << endl; 
+  }  
   paramFile << "yield_mode           ";
   if (yield_mode == SNII_SUKHBOLD16) {
     paramFile << "SNII: Sukhbold+16; AGB: none" << endl;
@@ -1080,6 +1197,7 @@ slug_parmParser::writeParams() const {
   paramFile << "out_cluster          " << writeClusterProp << endl;
   paramFile << "out_cluster_phot     " << writeClusterPhot << endl;
   paramFile << "out_cluster_spec     " << writeClusterSpec << endl;
+  paramFile << "out_equivalent_width " << writeEquivalentWidth << endl;
   if (run_galaxy_sim) {
     paramFile << "out_integrated       " << writeIntegratedProp << endl;
     paramFile << "out_integrated_phot  " << writeIntegratedPhot << endl;
@@ -1092,6 +1210,18 @@ slug_parmParser::writeParams() const {
       if (i < photBand.size()-1) paramFile << ", ";
     }
     paramFile << endl;
+  }
+  if (linepicks.size() > 0)
+  {
+    paramFile << "spectral_lines        ";
+    for (unsigned int i=0; i<linepicks.size(); i++)
+    {
+      paramFile << linepicks[i];
+      if (i < linepicks.size()-1)
+      {
+        paramFile << ", ";
+      }
+    }
   }
   if (out_mode == BINARY)
     paramFile << "output_mode          binary" << endl;
@@ -1153,6 +1283,8 @@ const char *slug_parmParser::get_outtime_dist() const
 { return out_time_dist.c_str(); }
 const char *slug_parmParser::get_filter_dir() const 
 { return filter_dir.c_str(); }
+const char *slug_parmParser::get_line_dir() const
+{ return line_dir.c_str(); }
 const char *slug_parmParser::get_modelName() const { return model.c_str(); }
 const char *slug_parmParser::get_outDir() 
 const { return outDir.string().c_str(); }
@@ -1161,6 +1293,14 @@ vector<string>::size_type slug_parmParser::get_nPhot()
 const { return photBand.size(); }
 const char *slug_parmParser::get_photBand(unsigned int n)
 const { return photBand[n].c_str(); }
+
+vector<string>::size_type slug_parmParser::get_nLines()
+const { return linepicks.size();}
+const char *slug_parmParser::get_linepicks(unsigned int n)
+const { return linepicks[n].c_str(); }
+const vector<string>& slug_parmParser::get_linepicks() const
+{ return linepicks; }
+
 bool slug_parmParser::get_writeClusterProp()
 const { return writeClusterProp; }
 bool slug_parmParser::get_writeClusterPhot()
@@ -1177,6 +1317,8 @@ bool slug_parmParser::get_writeIntegratedSpec()
 const { return writeIntegratedSpec; }
 bool slug_parmParser::get_writeIntegratedYield()
 const { return writeIntegratedYield; }
+bool slug_parmParser::get_writeEquivalentWidth()
+const { return writeEquivalentWidth; }
 outputMode slug_parmParser::get_outputMode() const { return out_mode; }
 specsynMode slug_parmParser::get_specsynMode() const { return specsyn_mode; }
 photMode slug_parmParser::get_photMode() const { return phot_mode; }

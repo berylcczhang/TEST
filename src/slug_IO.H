@@ -64,6 +64,7 @@ public:
     , int_spec_fits(nullptr), cluster_spec_fits(nullptr)
     , int_phot_fits(nullptr), cluster_phot_fits(nullptr)
     , int_yield_fits(nullptr), cluster_yield_fits(nullptr)
+                             , cluster_ew_fits(nullptr)
 #endif
   { }
 
@@ -86,6 +87,7 @@ public:
   fitsfile *cluster_phot_fits;
   fitsfile *int_yield_fits;
   fitsfile *cluster_yield_fits;
+  fitsfile *cluster_ew_fits;
 #endif
 };
 

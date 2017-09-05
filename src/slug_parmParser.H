@@ -121,6 +121,15 @@ public:
   // Function to write out the parameters being used to a file
   void writeParams() const;
 
+  // Functions concerning equivalent width
+  const char  *get_line_dir() const;       // Directory w/line list
+  bool   get_writeEquivalentWidth() const; // Write EW?
+  std::vector<std::string>::size_type get_nLines() const;
+  // Return number of lines
+  const char *get_linepicks(unsigned int n) const;  
+  // Name of nth line
+  const std::vector<std::string>& get_linepicks() const;
+  // Reference to vector of lines                
 private:
   
   // Internal functions
@@ -211,6 +220,10 @@ private:
   std::vector<double> outTimes;           // Exact output times
   std::string seed_file;                  // rng seed file name
 
+  // Equivalent width modifications
+  bool writeEquivalentWidth;              // Write out EW?
+  std::string line_dir;                   // Directory w/line list
+  std::vector<std::string> linepicks;     // Names of lines picked
 #ifdef ENABLE_MPI
   // MPI stuff
   MPI_Comm comm;

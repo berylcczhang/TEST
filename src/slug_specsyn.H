@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_specsyn_H_
 
 #include <vector>
+//#include "slug_MPI.H"
 #include "slug_tracks.H"
 #include "slug_PDF.H"
 #include "slug_IO.H"
@@ -44,9 +45,9 @@ public:
 
   // Constructor; just allocates vectors
   qag_wksp(std::vector<double>::size_type n, 
-	   std::vector<double>::size_type gknum) : 
-    x_k(gknum), gaussQuad(n), L_tmp1(n), L_tmp2(n), L_out1(n), 
-    L_out2(n), errsum(n), err1(n), err2(n)
+           std::vector<double>::size_type gknum) : 
+           x_k(gknum), gaussQuad(n), L_tmp1(n), L_tmp2(n), L_out1(n), 
+           L_out2(n), errsum(n), err1(n), err2(n)
   { }
 
   // Destructor
@@ -129,6 +130,32 @@ public:
   double get_Lbol_cts_sfh(const double t, 
 			  const double tol = 1e-2) const;
 
+  // Functions related to processing and returning the rectified spectrum
+  bool get_rectify() const
+  {
+    return rectify;               // Return status of rectification
+  }
+  int change_rectify(bool rec)
+  {
+    rectify=rec;  
+    return 0;
+  }
+  std::vector<double>  get_recspec_wl() const
+  {
+    return recspec_lambda;        // Return wavelengths for rectified spectrum
+  }
+
+
+  // Version to calculate rectified spectrum (HRUV)
+  virtual std::vector<double> 
+  get_spectrum(std::vector<slug_stardata> &stardata, std::vector<double> &recspec) const
+  
+  {
+    std::vector<double> L_lambda;
+    slug_specsyn::ostreams.slug_err_one << "Implemented only for sb99hruv synthesiser. Exiting..." << std::endl;
+    exit(1);
+    return L_lambda;
+  }
 
 protected:
 
@@ -147,6 +174,9 @@ protected:
   slug_imf_integrator<double> integ; 
   slug_imf_integrator<std::vector<double> > v_integ;
 
+  // Data for rectifying spectrum in HRUV
+  bool rectify = false;
+  std::vector<double> recspec_lambda;  
 private:
 
   // Helper function that returns the spectrum and Lbol packed into a

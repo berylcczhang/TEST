@@ -57,6 +57,7 @@ slug_cluster::slug_cluster(const unsigned long id_,
 			   const slug_extinction *extinct_,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
+			   const slug_line_list *lines_,			   
 			   slug_ostreams& ostreams_,
 			   const slug_PDF *clf_,
 			   const bool stoch_contrib_only_) :
@@ -65,7 +66,7 @@ slug_cluster::slug_cluster(const unsigned long id_,
   specsyn(specsyn_), filters(filters_), extinct(extinct_),
   nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr, ostreams_),
   id(id_), formationTime(time), curTime(time), last_yield_time(time),
-  stoch_contrib_only(stoch_contrib_only_)
+  stoch_contrib_only(stoch_contrib_only_),lines(lines_)
 {
 
   // Initialize to non-disrupted
@@ -115,7 +116,7 @@ slug_cluster::slug_cluster(const unsigned long id_,
   }
 
   // Initialize status flags for what data has been stored
-  spec_set = Lbol_set = data_set = phot_set = yield_set = false;
+  spec_set = Lbol_set = data_set = phot_set = yield_set = ew_set = false;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -129,6 +130,7 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
 			   const slug_extinction *extinct_,
 			   const slug_nebular *nebular_,
 			   const slug_yields *yields_,
+			   const slug_line_list *lines_,
 			   slug_ostreams& ostreams_,
 			   const slug_PDF *clf_,
 			   const bool stoch_contrib_only_) :
@@ -136,7 +138,7 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
   targetMass(((double *) buf)[0]), imf(imf_), clf(clf_), tracks(tracks_), 
   specsyn(specsyn_), filters(filters_), extinct(extinct_),
   nebular(nebular_), yields(yields_), integ(tracks_, imf_, nullptr, ostreams_),
-  stoch_contrib_only(stoch_contrib_only_)
+  stoch_contrib_only(stoch_contrib_only_), lines(lines_)
 {
   // Pull out the basic data first
   // Doubles
@@ -179,10 +181,11 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
   spec_set = buf_bool[3];
   phot_set = buf_bool[4];
   yield_set = buf_bool[5];
+  ew_set = buf_bool[6];
 
   // Sizes of various vectors
   const vector<double>::size_type *buf_sz =
-    (const vector<double>::size_type *) (buf_bool+6);
+    (const vector<double>::size_type *) (buf_bool+7);
   stars.resize(buf_sz[0]);
   dead_stars.resize(buf_sz[1]);
   L_lambda.resize(buf_sz[2]);
@@ -197,9 +200,10 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
   stoch_yields.resize(buf_sz[11]);
   non_stoch_yields.resize(buf_sz[12]);
   stardata.resize(buf_sz[13]);
+  ew.resize(buf_sz[14]);
 
   // Contents of the vectors
-  const double *buf_vec = (const double *) (buf_sz+14);
+  const double *buf_vec = (const double *) (buf_sz+15);
   vector<double>::size_type offset, offset0;
   for (offset = 0; offset < stars.size(); offset++)
     stars[offset] = buf_vec[offset];
@@ -231,6 +235,10 @@ slug_cluster::slug_cluster(const slug_cluster_buffer *buf,
     (const slug_stardata *) (buf_vec+offset);
   for (offset = 0; offset < stardata.size(); offset++)
     stardata[offset] = buf_stardata[offset];
+  for (offset =0; offset < ew.size(); offset++)
+  {
+    ew[offset] = buf_vec[offset];
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -242,7 +250,7 @@ slug_cluster::slug_cluster(const slug_cluster &obj,
   targetMass(obj.targetMass), imf(obj.imf), clf(obj.clf),
   tracks(obj.tracks), specsyn(obj.specsyn), filters(obj.filters),
   extinct(obj.extinct), nebular(obj.nebular), yields(obj.yields),
-  integ(obj.integ)
+  integ(obj.integ),lines(obj.lines)
 {
 
   // Copy ID or set new one
@@ -276,6 +284,7 @@ slug_cluster::slug_cluster(const slug_cluster &obj,
   spec_set = obj.spec_set;
   phot_set = obj.phot_set;
   yield_set = obj.yield_set;
+  ew_set = obj.ew_set;
 
   // Copy vectors
   stars = obj.stars;
@@ -292,6 +301,7 @@ slug_cluster::slug_cluster(const slug_cluster &obj,
   stoch_yields = obj.stoch_yields;
   non_stoch_yields = obj.non_stoch_yields;
   stardata = obj.stardata;
+  ew = obj.ew;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -301,7 +311,7 @@ size_t
 slug_cluster::buffer_size() const {
   // Add up the storage needed for the buffer
   size_t bufsize = 23*sizeof(double) + 2*sizeof(unsigned long) +
-    6*sizeof(bool) + 14*sizeof(vector<double>::size_type) +
+    7*sizeof(bool) + 15*sizeof(vector<double>::size_type) +
     sizeof(double) * (stars.size() + dead_stars.size() +
 		      L_lambda.size() + phot.size() +
 		      L_lambda_ext.size() + phot_ext.size() +
@@ -370,10 +380,11 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
   buf_bool[3] = spec_set;
   buf_bool[4] = phot_set;
   buf_bool[5] = yield_set;
+  buf_bool[6] = ew_set;
 
   // Sizes of the various vectors
   vector<double>::size_type *buf_sz =
-    (vector<double>::size_type *) (buf_bool+6);
+    (vector<double>::size_type *) (buf_bool+7);
   buf_sz[0] = stars.size();
   buf_sz[1] = dead_stars.size();
   buf_sz[2] = L_lambda.size();
@@ -388,9 +399,10 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
   buf_sz[11] = stoch_yields.size();
   buf_sz[12] = non_stoch_yields.size();
   buf_sz[13] = stardata.size();
+  buf_sz[14] = ew.size();
 
   // Data in the vectors
-  buf_dbl = (double *) (buf_sz+14);
+  buf_dbl = (double *) (buf_sz+15);
   vector<double>::size_type offset, offset0;
   for (offset = 0; offset < stars.size(); offset++)
     buf_dbl[offset] = stars[offset];
@@ -423,6 +435,11 @@ slug_cluster::pack_buffer(slug_cluster_buffer *buf) const {
   for (offset = 0; offset < stardata.size(); offset++) {
     buf_stardata[offset] = stardata[offset];
   }
+  
+  for (offset = 0; offset < ew.size(); offset++)
+  {
+    buf_dbl[offset] = ew[offset-offset0]; //Check
+  }
 }
 
 void
@@ -443,7 +460,7 @@ slug_cluster::reset(bool keep_id) {
   // Reset the time, the disruption state, and all flags
   curTime = last_yield_time = 0.0;
   is_disrupted = false;
-  data_set = Lbol_set = spec_set = phot_set = yield_set = false;
+  data_set = Lbol_set = spec_set = phot_set = yield_set = ew_set =  false;
 
   // Delete current stellar masses and data
   stars.resize(0);
@@ -641,7 +658,7 @@ slug_cluster::advance(double time) {
   curTime = time;
 
   // Mark that data are not current
-  data_set = spec_set = Lbol_set = phot_set = yield_set = false;
+  data_set = spec_set = Lbol_set = phot_set = yield_set = ew_set = false;
 
   // Update all the stellar data to the new isochrone
   set_isochrone();
@@ -953,8 +970,24 @@ slug_cluster::set_spectrum() {
     set_isochrone();
 
     // Get spectrum for stochastic stars
-    L_lambda = specsyn->get_spectrum(stardata);
+    // Obtain rectified spectrum as well if it is present
+    if (specsyn->get_rectify())
+    {
+      // Get wavelengths for rectified spectrum
+      recspec_wl = specsyn->get_recspec_wl();
+      
+      // Resize recspec to wl size to store the spectrum
+      recspec.resize(recspec_wl.size());
+      // Return the spectrum
+      L_lambda = specsyn->get_spectrum(stardata,recspec);         
 
+      
+      
+    }
+    else
+    {
+      L_lambda = specsyn->get_spectrum(stardata);
+    }
     // Add bolometric luminosity from stochastic stars
     for (unsigned int i=0; i<stardata.size(); i++)
       Lbol += pow(10.0, stardata[i].logL);
@@ -1365,6 +1398,44 @@ const vector<double> &slug_cluster::get_yield() {
 }
 
 ////////////////////////////////////////////////////////////////////////
+// Routine to set the equivalent widths
+////////////////////////////////////////////////////////////////////////
+void slug_cluster::set_ew()
+{
+  // Do nothing if already set
+  if (ew_set) 
+  {
+    return;
+  }
+  
+  // Set spectrum
+  set_spectrum();
+  
+  // Safety check - if we have no rectified spectrum to operate
+  // on, kill slug
+  if (recspec.size() == 0)
+  {
+    ostreams.slug_err_one << "Rectified spectrum missing. Bailing out."
+                          << endl;
+    //bailout(1);  
+    exit(1);                        
+  }
+  
+  // Compute equivalent widths
+  ew = lines->compute_ew(recspec_wl, recspec);  
+  
+  // Set the flag to say we have calculated the equivalent widths
+  ew_set = true;
+}
+////////////////////////////////////////////////////////////////////////
+// Routine to get the equivalent widths
+////////////////////////////////////////////////////////////////////////
+const vector<double> &slug_cluster::get_ew()
+{
+  set_ew();
+  return ew;
+}
+////////////////////////////////////////////////////////////////////////
 // Routines to clear data
 ////////////////////////////////////////////////////////////////////////
 void slug_cluster::clear_spectrum() {
@@ -1378,6 +1449,10 @@ void slug_cluster::clear_spectrum() {
   phot_neb_ext.resize(0);
   spec_set = false;
   phot_set = false;
+  ew_set = false;
+  ew.resize(0); 
+  recspec.resize(0);
+  recspec_wl.resize(0);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1649,10 +1724,55 @@ write_spectrum(fitsfile *out_fits, unsigned long trial) {
       colnum++;
     }
   }
+  //Output rectified spectrum if it is present
+  if (specsyn->get_rectify())
+  {
+    fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 
+		     recspec.size(), recspec.data(), 
+		     &fits_status);
+    colnum++;
+  }
 }
 #endif
 
+////////////////////////////////////////////////////////////////////////
+// Output equivalent in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_cluster::
+write_ew(fitsfile *out_fits, unsigned long trial) 
+{
 
+  // Make sure information is current
+  if (!ew_set) set_ew();
+  
+  
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(out_fits, &nrows, &fits_status);
+
+
+  // Write data
+  fits_write_col(out_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
+		             &fits_status);
+  fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id, 
+		             &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 3, nrows+1, 1, 1, &curTime, 
+		             &fits_status);
+  unsigned int colnum = 4;
+  
+  
+  for (unsigned int i=0; i<ew.size(); i++) 
+  {
+    fits_write_col(out_fits, TDOUBLE, colnum, nrows+1, 1, 1,
+		               &(ew[i]), &fits_status);
+    colnum++;
+  }
+ 
+}
+#endif
 ////////////////////////////////////////////////////////////////////////
 // Output photometry
 ////////////////////////////////////////////////////////////////////////

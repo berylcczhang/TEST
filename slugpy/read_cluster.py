@@ -7,6 +7,7 @@ from .read_cluster_prop import read_cluster_prop
 from .read_cluster_phot import read_cluster_phot
 from .read_cluster_spec import read_cluster_spec
 from .read_cluster_yield import read_cluster_yield
+from .read_cluster_ew import read_cluster_ew
 from .cloudy.read_cluster_cloudyparams import read_cluster_cloudyparams
 from .cloudy.read_cluster_cloudyphot import read_cluster_cloudyphot
 from .cloudy.read_cluster_cloudylines import read_cluster_cloudylines
@@ -15,7 +16,7 @@ from .cloudy.read_cluster_cloudyspec import read_cluster_cloudyspec
 def read_cluster(model_name, output_dir=None, fmt=None,
                  nofilterdata=False, photsystem=None, verbose=False,
                  read_filters=None, read_nebular=None, 
-                 read_extinct=None, read_info=None,
+                 read_extinct=None, read_info=None, read_lines=None,
                  no_stellar_mass=False):
     """
     Function to read all cluster data for a SLUG2 run.
@@ -81,7 +82,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           is detected and handled automatically for ASCII and FITS
           files; for binary outputs, this flag must be set for pre
           2/17 output files to be read correctly
-
+        read_lines : None | string | listlike containing strings
+          If this is None, data for all the available lines will be 
+          read. Default is to read all data.
     Returns
        A namedtuple containing the following fields:
 
@@ -289,8 +292,16 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           simulated by cloudy; as with U, this value is approximate,
           and the approximation is valid only if radiation pressure
           effects are small
-
-
+       (Present if the run being read contains a cluster_ew file)
+       
+       line_names : list of string
+          a list giving the name for each line
+       line_units : list of string
+          a list giving the units for the equivalent width of each line
+       ew : array, shape (N_cluster, N_lines)
+          equivalent width value of each line for each cluster; 
+          units are as indicated in the units field
+       
     Raises
        IOError, if no photometry file can be opened
        ValueError, if photsystem is set to an unknown values
@@ -398,6 +409,24 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     except IOError:
         cloudyparams = None
     
+    # Read equivalent widths
+    try:
+        ew = read_cluster_ew(model_name, output_dir, fmt=fmt, 
+                                 verbose=verbose,
+                                 read_lines=read_lines,
+                                 read_info=read_info)
+        if read_info is not None:
+            read_info['line_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError, e:
+        if str(e.message)[:16] == 'requested line' and \
+           str(e.message)[-14:] == 'not available!':
+            # If the IO error is that we didn't have the requested
+            # line, re-raise the error
+            raise IOError(e.message)
+        else:
+            ew = None
+    
     # Build the output
     out_fields = ['id', 'trial', 'time']
     if prop is not None:
@@ -416,6 +445,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         out_data = [cloudyphot.id, cloudyphot.trial, cloudyphot.time]
     elif cloudyparams is not None:
         out_data = [cloudyparams.id, cloudyparams.trial, cloudyparams.time]
+    elif ew is not None:
+        out_data = [ew.id,ew.trial,ew.time]
     else:
         raise IOError(1,
                       "unable to open any cluster files for run " +
@@ -444,6 +475,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     if cloudyparams is not None:
         out_fields = out_fields + list(cloudyparams._fields[3:])
         out_data = out_data + list(cloudyparams[3:])
+    if ew is not None:
+        out_fields = out_fields + list(ew._fields[3:])
+        out_data = out_data + list(ew[3:])
     out_type = namedtuple('cluster_data', out_fields)
     out = out_type._make(out_data)
 
