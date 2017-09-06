@@ -212,10 +212,7 @@ slug_parmParser::setDefaults() {
   extinct_curve = (lib_path / extinct_path / extinct_file).string();
   path atomic_path("atomic");
   atomic_dir = (lib_path / atomic_path).string();
-  path yield_path("yields");
-  yield_dir = (lib_path / yield_path).string();
   specsyn_mode = SB99;
-  yield_mode = SNII_SUKHBOLD16__AGB_KARAKAS16;
   fClust = 1.0;
   min_stoch_mass = 0.0;
   metallicity = -1.0;    // Flag for not set
@@ -234,7 +231,6 @@ slug_parmParser::setDefaults() {
   path line_path("lines");
   line_dir = (lib_path / line_path).string();
   
-
   // Output parameters
   z = 0.0;
   writeClusterProp = writeClusterPhot = 

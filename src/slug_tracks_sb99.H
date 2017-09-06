@@ -66,12 +66,12 @@ private:
   // and ntime, and returns file's metallicity and minimum WR mass; it
   // also returns the stream set to a point where the tracks can be
   // read next, or the file can be closed
-  std::ifstream
-  read_trackfile_header(const char *fname,
-			double& metallicity_,
-			double& WR_mass_,
-			boost::multi_array_types::size_type& ntrack,
-			boost::multi_array_types::size_type& ntime);
+  void read_trackfile_header(const char *fname,
+			     double& metallicity_,
+			     double& WR_mass_,
+			     boost::multi_array_types::size_type& ntrack,
+			     boost::multi_array_types::size_type& ntime,
+			     std::ifstream& trackfile);
   
   // Method to ingest the tracks in a sb99 track file, and store them
   // in the specified arrays; we implement this as a template function

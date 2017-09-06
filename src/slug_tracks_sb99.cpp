@@ -67,8 +67,9 @@ slug_tracks_sb99(const char *fname, slug_ostreams& ostreams_) :
   // Read the file header to get the number of tracks and times it
   // contains, as well as the metallicity and minimum WR mass
   size_type ntrack, ntime;
-  std::ifstream trackfile
-    = read_trackfile_header(fname, metallicity, WR_mass, ntrack, ntime);
+  std::ifstream trackfile;
+  read_trackfile_header(fname, metallicity, WR_mass, ntrack, ntime,
+                        trackfile);
 
   // Allocate memory to hold track data
   array1d logm;
@@ -221,9 +222,9 @@ slug_tracks_sb99(const trackSet tr_set,
     // Read file header
     size_type ntrack, ntime;
     double Z_file;
-    std::ifstream trackfile
-      = read_trackfile_header(filenames[idx].c_str(), Z_file, WR_mass,
-			      ntrack, ntime);
+    std::ifstream trackfile;
+    read_trackfile_header(filenames[idx].c_str(), Z_file, WR_mass,
+			  ntrack, ntime, trackfile);
     
     // Allocate memory to hold track data
     array1d logm;
@@ -248,9 +249,9 @@ slug_tracks_sb99(const trackSet tr_set,
     // Read the header of the first file
     size_type ntrack, ntime;
     double Z_file;
-    std::ifstream trackfile
-      = read_trackfile_header(filenames[idx].c_str(), Z_file,
-			      WR_mass, ntrack, ntime);
+    std::ifstream trackfile;
+    read_trackfile_header(filenames[idx].c_str(), Z_file,
+			  WR_mass, ntrack, ntime, trackfile);
 
     // Allocate memory to hold track data
     array1d logm;
@@ -273,9 +274,8 @@ slug_tracks_sb99(const trackSet tr_set,
 			  ntrack, ntime);
 
     // Read second file  
-    trackfile =
-      read_trackfile_header(filenames[idx+1].c_str(), Z_file, WR_mass,
-			    ntrack, ntime);
+    read_trackfile_header(filenames[idx+1].c_str(), Z_file, WR_mass,
+			  ntrack, ntime, trackfile);
     logt_sub = logt_Z[indices[1][range_t(0,ntime+1)][range_t(0,ntrack)]];
     trackdata_sub
       = trackdata_Z[indices[1][range_t(0,ntrack)][range_t(0,ntime+1)]
@@ -309,12 +309,13 @@ slug_tracks_sb99(const trackSet tr_set,
 // formation isn't actually recorded in the data files, and is instead
 // stuck in the source code. Ditto for the metallacity.
 ////////////////////////////////////////////////////////////////////////
-std::ifstream
+void
 slug_tracks_sb99::read_trackfile_header(const char *fname,
 					double& metallicity_,
 					double& WR_mass_,
 					size_type& ntrack,
-					size_type& ntime) {
+					size_type& ntime,
+					std::ifstream& trackfile) {
   
   // Get the metallicity from the file name
   path trackpath(fname);
@@ -406,7 +407,6 @@ slug_tracks_sb99::read_trackfile_header(const char *fname,
   }
 
   // Now try to open file
-  std::ifstream trackfile;
   trackfile.open(fname);
   if (!trackfile.is_open()) {
     // Couldn't open file, so bail out
@@ -450,9 +450,6 @@ slug_tracks_sb99::read_trackfile_header(const char *fname,
 			  << fname << endl;
     bailout(1);
   }
-
-  // Return pointer to file
-  return trackfile;
 }
 
 
