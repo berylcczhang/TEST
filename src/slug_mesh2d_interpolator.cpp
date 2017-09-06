@@ -236,14 +236,16 @@ operator()(const double x, const double y,
     vector<double> f_tmp(pos.size());
     for (vector<double>::size_type i=0; i<pos.size(); i++) {
       int gsl_errstat;
-      double f_eval;
-      if (edge[i] == 0)
-	gsl_errstat =
-	  gsl_spline_eval_e(spl_s[idx[i]], pos[i], acc_s[idx[i]], &f_eval);
-      else
-	gsl_errstat =
-	  gsl_spline_eval_e(spl_x[idx[i]], pos[i], acc_x[idx[i]], &f_eval);
-      f_tmp[i] = f_eval;
+      gsl_spline *spl;
+      gsl_interp_accel *acc;
+      if (edge[i] == 0) {
+        spl = spl_s[idx[i]];
+        acc = acc_s[idx[i]];
+      } else {
+        spl = spl_x[idx[i]];
+        acc = acc_x[idx[i]];
+      }
+      gsl_errstat = gsl_spline_eval_e(spl, pos[i], acc, f_tmp.data()+i);
       if (gsl_errstat) {
 	stringstream ss;
 	ss << "slug_mesh2d_interpolator::build_interp_const_x_n: "
@@ -251,7 +253,12 @@ operator()(const double x, const double y,
 	   << setprecision(20) << x << ", pos = "
 	   << setprecision(20) << pos[i]
 	   << ", interpolation direction = " << edge[i]
-	   << "; gsl says: "
+	   << "; spline range limits are "
+           << spl->x[0] << " to "
+           << spl->x[spl->size-1]
+           << "; input (x, y) are ("
+           << x << ", " << y << ")"
+           << "; gsl says: "
 	   << gsl_strerror(gsl_errstat);
 	throw runtime_error(ss.str());
       }
@@ -376,14 +383,16 @@ build_interp_const_x(const double x,
   vector<double> f_tmp(pos.size());
   for (vector<double>::size_type i=0; i<pos.size(); i++) {
     int gsl_errstat;
-    double f_eval;
-    if (edge[i] == 0)
-      gsl_errstat =
-	gsl_spline_eval_e(spl_s[idx[i]], pos[i], acc_s[idx[i]], &f_eval);
-    else
-      gsl_errstat =
-	gsl_spline_eval_e(spl_x[idx[i]], pos[i], acc_x[idx[i]], &f_eval);
-    f_tmp[i] = f_eval;
+    gsl_spline *spl;
+    gsl_interp_accel *acc;
+    if (edge[i] == 0) {
+      spl = spl_s[idx[i]];
+      acc = acc_s[idx[i]];
+    } else {
+      spl = spl_x[idx[i]];
+      acc = acc_x[idx[i]];
+    }
+    gsl_errstat = gsl_spline_eval_e(spl, pos[i], acc, f_tmp.data()+i);
     if (gsl_errstat) {
       stringstream ss;
       ss << "slug_mesh2d_interpolator::build_interp_const_x: "
@@ -391,7 +400,13 @@ build_interp_const_x(const double x,
 	 << setprecision(20) << x << ", pos = "
 	 << setprecision(20) << pos[i]
 	 << ", interpolation direction = " << edge[i]
-	 << "; gsl says: "
+         << "; spline range limits are "
+         << spl->x[0] << " to "
+         << spl->x[spl->size-1]
+         << "; input x is "
+         << x << ", full lits of y values is:";
+      for (vector<int>::size_type j=0; j<y.size(); j++) ss << "  " << y[j];
+      ss << "; gsl says: "
 	 << gsl_strerror(gsl_errstat);
       throw runtime_error(ss.str());
     }
@@ -1030,25 +1045,33 @@ build_interp_const_x(const double x,
     vector<double> f_tmp(pos.size());
     for (vector<double>::size_type i=0; i<pos.size(); i++) {
       int gsl_errstat;
-      double f_eval;
-      if (edge[i] == 0)
-	gsl_errstat =
-	  gsl_spline_eval_e(spl_s[idx[i]][n], pos[i], acc_s[idx[i]][n],
-			    &f_eval);
-      else
-	gsl_errstat =
-	  gsl_spline_eval_e(spl_x[idx[i]][n], pos[i], acc_x[idx[i]][n],
-			    &f_eval);
-      f_tmp[i] = f_eval;
+      gsl_spline *spl;
+      gsl_interp_accel *acc;
+      if (edge[i] == 0) {
+        spl = spl_s[idx[i]][n];
+        acc = acc_s[idx[i]][n];
+      } else {
+        spl = spl_x[idx[i]][n];
+        acc = acc_x[idx[i]][n];
+      }
+      gsl_errstat = gsl_spline_eval_e(spl, pos[i], acc, f_tmp.data()+i);
       if (gsl_errstat) {
-	stringstream ss;
-	ss << "slug_mesh2d_interpolator_vec::build_interp_const_x: "
-	   << "bad interpolation evaluation at x = "
-	   << setprecision(20) << x << ", pos = "
-	   << setprecision(20) << pos[i]
-	   << ", interpolation direction = " << edge[i]
-	   << "; gsl says: "
-	   << gsl_strerror(gsl_errstat);
+        stringstream ss;
+        ss << "slug_mesh2d_interpolator_vec::build_interp_const_x: "
+           << "bad interpolation evaluation at x = "
+           << setprecision(20) << x 
+           << ", pos = " << pos[i]
+           << ", y = " << y[i]
+           << ", interpolation direction = " << edge[i]
+           << "; spline range limits are "
+           << spl->x[0] << " to "
+           << spl->x[spl->size-1]
+           << "; input x is "
+           << x << ", full list of (y, pos, edge) values is:" << endl;
+        for (vector<int>::size_type j=0; j<y.size(); j++) 
+           ss << y[j] << "   " << pos[j] << "   " << edge[i] << endl;
+        ss << "gsl says: "
+           << gsl_strerror(gsl_errstat);
 	throw runtime_error(ss.str());
       }
     }
