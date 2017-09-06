@@ -836,12 +836,14 @@ intercept_const_x_seg(const double x_,
       // careful to handle degenerate edge tracks correctly
       if (i_cache == 0) {
 	while (x[i_cache][j_cache] == x[i_cache+1][j_cache] &&
+	       x[i_cache][j_cache+1] == x[i_cache+1][j_cache+1] &&
 	       m[i_cache][j_cache] < 0) i_cache++;
 	last_intersect_left = false;
 	last_intersect_right = true;
       } else {
 	i_cache--;
 	while (x[i_cache][j_cache] == x[i_cache+1][j_cache] &&
+	       x[i_cache][j_cache+1] == x[i_cache+1][j_cache+1] &&
 	       m[i_cache][j_cache] > 0) i_cache--;
 	last_intersect_left = true;
 	last_intersect_right = false;
