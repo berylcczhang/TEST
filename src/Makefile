@@ -14,6 +14,8 @@ else
           include Make.mach.ucsc-hyades
      else ifeq ($(UNAMEN), cosma-e)
           include Make.mach.icc-cosma4
+     else ifeq ($(UNAMEN), avatar)
+          include Make.mach.avatar
      else ifeq ($(UNAMEN), mosura)
           include Make.mach.coala
      else ifneq (,$(findstring raijin, $(UNAMEN)))
