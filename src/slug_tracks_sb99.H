@@ -44,8 +44,9 @@ public:
 
   // Construct a set of tracks from a specified track set
   slug_tracks_sb99(const trackSet tr_set,
+		   const double metallicity_,
+		   const char *track_dir,
 		   slug_ostreams& ostreams_,
-		   const double metallicity_ = tracks::null_metallicity,
 		   const ZInterpMethod Z_int_meth = Z_LINEAR);
 
   // Destructor

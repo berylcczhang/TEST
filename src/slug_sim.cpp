@@ -198,8 +198,15 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
   // Read the tracks
   if (pp.get_verbosity() > 1)
     ostreams.slug_out_one << "reading tracks" << std::endl;
-  tracks = (slug_tracks *)
-    new slug_tracks_sb99(pp.get_trackFile(), ostreams);
+  if (pp.get_trackSet() == NO_TRACK_SET) {
+    // User has manually specified the file name
+    tracks = (slug_tracks *)
+      new slug_tracks_sb99(pp.get_trackFile(), ostreams);
+  } else {
+    tracks = (slug_tracks *)
+      new slug_tracks_sb99(pp.get_trackSet(), pp.get_metallicity(),
+			   pp.get_track_dir(), ostreams);
+  }
 
   // If we're computing yields, set up yield tables
   if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield()) {
@@ -328,43 +335,24 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
       (new slug_specsyn_sb99(pp.get_atmos_dir(), tracks,
 			     imf, sfh, ostreams, pp.get_z()));
   }
-  else if  (pp.get_specsynMode() == SB99_HRUV)
-  {
-    if (pp.galaxy_sim() || pp.get_outputMode()!=FITS )
-    {
-      // HRUV mode does not yet have a galaxy mode or binary output 
-      // implementation and so we abort
-      ostreams.slug_err_one << "HRUV implemented for cluster mode using fits output only." << std::endl;
-      bailout(1);
-    }
+  else if  (pp.get_specsynMode() == SB99_HRUV) {
     specsyn = static_cast<slug_specsyn *> 
       (new slug_specsyn_sb99hruv(pp.get_atmos_dir(), tracks,
-			     imf, sfh, ostreams, pp.get_z()));   
-  }
-  // Load line list
-  if (pp.get_writeEquivalentWidth())
-  {
-    if (pp.get_specsynMode() != SB99_HRUV)
-    {
-      ostreams.slug_err_one << "Equivalent width calculation implemented for HRUV atmospheres only." << std::endl;
-      bailout(1);
-    }  
-    else
-    { 
-      if (pp.get_verbosity() > 1)
-      {
-        ostreams.slug_out_one << "reading line list" << std::endl;
-      }
-    
-      lines = new slug_line_list(pp.get_linepicks(),
-                                 pp.get_line_dir(),ostreams);
-    }
-  }    
-  else 
-  {
-    lines = nullptr;
+				 imf, sfh, ostreams, pp.get_z()));   
   }
 
+  // Load line list for equivalent width calculations
+  if (pp.get_writeClusterEW()) {
+    if (pp.get_verbosity() > 1) {
+      ostreams.slug_out_one << "reading line list" << std::endl;
+    }    
+    lines = new slug_line_list(pp.get_linepicks(),
+			       pp.get_line_dir(),
+			       ostreams);
+  } else {
+    lines = nullptr;
+  }
+  
   // If using nebular emission, initialize the computation of that
   if (pp.get_use_nebular()) {
     nebular = new slug_nebular(pp.get_atomic_dir(),
@@ -408,7 +396,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
       cluster_mass = pp.get_cluster_mass();
     cluster = new slug_cluster(0, cluster_mass, 0.0, imf,
     			       tracks, specsyn, filters,
-    			       extinct, nebular, yields, lines, ostreams, clf);
+    			       extinct, nebular, yields,
+			       lines, ostreams, clf);
     galaxy = nullptr;
   }
 
@@ -465,7 +454,7 @@ void slug_sim::open_output(slug_output_files &outfiles, int chknum) {
   if (pp.get_writeClusterPhot()) open_cluster_phot(outfiles, chknum);
   if (pp.get_writeClusterSpec()) open_cluster_spec(outfiles, chknum);
   if (pp.get_writeClusterYield()) open_cluster_yield(outfiles, chknum);
-  if (pp.get_writeEquivalentWidth()) open_cluster_ew(outfiles, chknum);
+  if (pp.get_writeClusterEW()) open_cluster_ew(outfiles, chknum);
   outfiles.is_open = true;
 }
 
@@ -1111,9 +1100,8 @@ void slug_sim::cluster_sim() {
       }
 #ifdef ENABLE_FITS    
     // Write equivalent width if requested
-    if (pp.get_writeEquivalentWidth())
-    {     
-      cluster->write_ew(outfiles.cluster_ew_fits,trial_ctr_loc);
+    if (pp.get_writeClusterEW()) {
+      cluster->write_ew(outfiles.cluster_ew_fits, trial_ctr_loc);
     }
 #endif
 
@@ -2683,8 +2671,8 @@ void slug_sim::open_cluster_ew(slug_output_files &outfiles,
       char err_txt[80] = "";
       fits_read_errmsg(err_txt);
       ostreams.slug_err << "unable to open cluster equivalent width file "
-			                  << full_path.string()
-			                  << "; cfitsio says: " << err_txt << endl;
+			<< full_path.string()
+			<< "; cfitsio says: " << err_txt << endl;
       bailout(1);
     }
   }

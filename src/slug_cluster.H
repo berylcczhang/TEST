@@ -244,12 +244,14 @@ protected:
 
 private:
 
-  // Routines to compute stellar data, bolometric luminosity, spectrum
+  // Routines to compute stellar data, bolometric luminosity, spectrum,
+  // equivalent widths
   void set_isochrone();
   void set_Lbol();
   void set_spectrum();
   void set_photometry();
   void set_yield();
+  void set_ew();
 
   // Invariant data
   const double targetMass;            // Target mass
@@ -261,6 +263,7 @@ private:
   const slug_extinction *extinct;     // Extinction
   const slug_nebular *nebular;        // Nebular
   const slug_yields *yields;          // Yields
+  const slug_line_list  *lines;       // Line list  
   const slug_imf_integrator<double> integ; // Integration helper class
 
   // Malleable data
@@ -302,18 +305,14 @@ private:
   std::vector<double> all_yields;     // Yield of all elements up to this point
   std::vector<double> stoch_yields;   // Yields from stochastic stars
   std::vector<double> non_stoch_yields; // Yields from non-stochastic stars
+  std::vector<double> ew;             // Equivalent widths
   bool is_disrupted;                  // Is this cluster disrupted?
-  bool data_set, Lbol_set, spec_set, phot_set, yield_set;  // Status indicators
+  bool data_set, Lbol_set, spec_set,
+    phot_set, yield_set, ew_set;      // Status indicators
   bool stoch_contrib_only;            // Only include the stochastic
                                       // contribution to yields and spectra
-  std::vector<double> recspec_wl;     //WL for rectified spectrum
-  std::vector<double> recspec;        //Rectified spectrum
-  
-  // Items related to the equivalent width calculation
-  const slug_line_list  *lines;       // Line list  
-  std::vector<double>   ew;           // Equivalent widths
-  bool                  ew_set;       // Status indicator
-  void                  set_ew();     // Routine to calculate EW
+  std::vector<double> recspec_wl;     // WL for rectified spectrum
+  std::vector<double> recspec;        // Rectified spectrum
 };
 
 #endif

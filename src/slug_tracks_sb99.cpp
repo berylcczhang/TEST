@@ -102,8 +102,9 @@ slug_tracks_sb99(const char *fname, slug_ostreams& ostreams_) :
 ////////////////////////////////////////////////////////////////////////
 slug_tracks_sb99::
 slug_tracks_sb99(const trackSet tr_set,
-		 slug_ostreams& ostreams_,
 		 const double metallicity_,
+		 const char *track_dir,
+		 slug_ostreams& ostreams_,
 		 const ZInterpMethod Z_int_meth) :
   slug_tracks_2d(ostreams_, metallicity_) {
 
@@ -115,7 +116,7 @@ slug_tracks_sb99(const trackSet tr_set,
   // Set the file names and metallicities based on the track set
   vector<string> filenames;
   vector<double> Z;
-  switch(tr_set) {
+  switch (tr_set) {
   case GENEVA_2013_VVCRIT_00: {
     filenames.push_back("Z0020v00.txt");
     filenames.push_back("Z0140v00.txt");
@@ -182,6 +183,12 @@ slug_tracks_sb99(const trackSet tr_set,
     Z.push_back(2.5);
     break;
   }
+  default: {
+    ostreams.slug_err_one
+      << "slug_tracks_sb99 constructor invoked with "
+      << "non-starburst99 track set!" << endl;
+    bailout(1);
+  }
   }
 
   // Make sure metallicity is in the range covered by the tracks; if
@@ -223,7 +230,10 @@ slug_tracks_sb99(const trackSet tr_set,
     size_type ntrack, ntime;
     double Z_file;
     std::ifstream trackfile;
-    read_trackfile_header(filenames[idx].c_str(), Z_file, WR_mass,
+    path track_path(track_dir);
+    path file_path(filenames[idx]);
+    path track_full_path = track_path / file_path;
+    read_trackfile_header(track_full_path.c_str(), Z_file, WR_mass,
 			  ntrack, ntime, trackfile);
     
     // Allocate memory to hold track data
@@ -250,7 +260,10 @@ slug_tracks_sb99(const trackSet tr_set,
     size_type ntrack, ntime;
     double Z_file;
     std::ifstream trackfile;
-    read_trackfile_header(filenames[idx].c_str(), Z_file,
+    path track_path(track_dir);
+    path file_path(filenames[idx]);
+    path track_full_path = track_path / file_path;
+    read_trackfile_header(track_full_path.c_str(), Z_file,
 			  WR_mass, ntrack, ntime, trackfile);
 
     // Allocate memory to hold track data

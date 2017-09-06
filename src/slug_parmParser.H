@@ -68,7 +68,6 @@ public:
   double get_neb_extinct_fac() const;     // Ratio of nebular to stellar A_V
   double get_z() const;                   // Return the redshift
   double get_metallicity() const;         // Metallicity
-  double get_WR_mass() const;             // Mass at which WR stars appear
   double get_min_stoch_mass() const;      // Min mass to treat stochstically
   double get_nebular_den() const;         // Density for nebular calculation
   double get_nebular_temp() const;        // Temperature for nebular calc
@@ -83,25 +82,34 @@ public:
   const char *get_extinct_curve() const;  // Extinction curve file name
   const char *get_AV_dist() const;        // A_V distribution file
   const char *get_neb_extinct_fac_dist() const; // Nebular excess factor file
+  const char *get_track_dir() const;      // Directory w/track library
   const char *get_atmos_dir() const;      // Directory w/atmospehre library
   const char *get_filter_dir() const;     // Directory w/filter library
   const char *get_atomic_dir() const;     // Directory w/atomic data
   const char *get_yield_dir() const;      // Directory w/yield data
   const char *get_iso_dir() const;        // Directory w/isotopic data
+  const char *get_line_dir() const;       // Directory w/line list
   const char *get_modelName() const;      // Name of this model
   const char *get_outDir() const;         // Dir into which to dump output
   const char *get_outtime_dist() const;   // Distribution of output times
   double get_fClust() const;              // Frac stars formed in clusters
-  std::vector<std::string>::size_type get_nPhot() const;
-  // Number of photometric bands
-  const char *get_photBand(unsigned int n) const;  
-  // Name of nth photometric band
-  const std::vector<std::string>& get_photBand() const;
-  // Reference to vector of photometric bands
+  std::vector<std::string>::size_type
+  get_nPhot() const;                      // Number of photometric bands
+  const char *
+  get_photBand(unsigned int n) const;     // Name of nth photometric band
+  const std::vector<std::string>&
+  get_photBand() const;                   // Reference to photometric bands
+  std::vector<std::string>::size_type
+  get_nLines() const;                     // Number of lines
+  const char *
+  get_linepicks(unsigned int n) const;    // Name of nth line
+  const std::vector<std::string>&
+  get_linepicks() const;                  // Reference to names of lines
   bool get_writeClusterProp() const;      // Write cluster phys properties?
   bool get_writeClusterPhot() const;      // Write cluster photometry?
   bool get_writeClusterSpec() const;      // Write cluster spectra?
   bool get_writeClusterYield() const;     // Write cluster yields?
+  bool get_writeClusterEW() const;        // Write cluster EW?
   bool get_writeIntegratedProp() const;   // Write integrated phys properties?
   bool get_writeIntegratedPhot() const;   // Write integrated photometry?
   bool get_writeIntegratedSpec() const;   // Write integrated spectra?
@@ -111,6 +119,7 @@ public:
   outputMode get_outputMode() const;      // Output mode
   specsynMode get_specsynMode() const;    // Spectral synthesis mode
   yieldMode get_yieldMode() const;        // Yield mode
+  trackSet get_trackSet() const;          // Track set
   bool galaxy_sim() const;                // Galaxy sim or cluster sim?
   double get_cluster_mass() const;        // Cluster mass for cluster sims
   unsigned int get_rng_offset() const;    // Offset for rng
@@ -121,15 +130,6 @@ public:
   // Function to write out the parameters being used to a file
   void writeParams() const;
 
-  // Functions concerning equivalent width
-  const char  *get_line_dir() const;       // Directory w/line list
-  bool   get_writeEquivalentWidth() const; // Write EW?
-  std::vector<std::string>::size_type get_nLines() const;
-  // Return number of lines
-  const char *get_linepicks(unsigned int n) const;  
-  // Name of nth line
-  const std::vector<std::string>& get_linepicks() const;
-  // Reference to vector of lines                
 private:
   
   // Internal functions
@@ -157,6 +157,7 @@ private:
   specsynMode specsyn_mode;               // Spectral synthesis mode
   photMode phot_mode;                     // Photometry mode
   yieldMode yield_mode;                   // Yield mode
+  trackSet track_set;                     // Stellar track set
   double startTime;                       // Time of first output
   double timeStep;                        // Size of timestep
   double endTime;                         // Final time
@@ -167,7 +168,6 @@ private:
   double neb_extinct_fac;                 // A_V,neb / A_V,stars
   double z;                               // Redshift
   double metallicity;                     // Metallicity
-  double WR_mass;                         // Mass at which WR stars appear
   double min_stoch_mass;                  // Min mass to treat stochastically
   double fClust;                          // Frac stars formed in clusters
   double cluster_mass;                    // Cluster mass for cluster sims
@@ -188,6 +188,7 @@ private:
   bool writeClusterPhot;                  // Write out cluster photometry?
   bool writeClusterSpec;                  // Write out cluster spectra?
   bool writeClusterYield;                 // Write out cluster yields?
+  bool writeClusterEW;                    // Write out cluster EW?
   bool writeIntegratedProp;               // Write out integrated properties?
   bool writeIntegratedPhot;               // Write out integrated photometry?
   bool writeIntegratedSpec;               // Write out integrated spectra?
@@ -206,6 +207,7 @@ private:
   std::string clf;                        // CLF file name
   std::string out_time_dist;              // Distribution of output times
   std::string track;                      // File containing stellar tracks
+  std::string track_dir;                  // Directory w/track library
   std::string atmos_dir;                  // Directory w/atmosphere library
   std::string filter_dir;                 // Directory w/filter library
   std::string atomic_dir;                 // Directory w/atomic data
@@ -213,17 +215,15 @@ private:
   std::string AV_dist;                    // A_V distribution file name
   std::string neb_extinct_fac_dist;       // File for A_V,neb/A_V,star distrib.
   std::string yield_dir;                  // Directory w/yield data
+  std::string line_dir;                   // Directory w/line list
   std::string iso_dir;                    // Directory w/isotopic data
   std::string model;                      // Name of this model
   boost::filesystem::path outDir;         // Dir into which to dump output
   std::vector<std::string> photBand;      // Names of photometric bands
+  std::vector<std::string> linepicks;     // Names of lines picked
   std::vector<double> outTimes;           // Exact output times
   std::string seed_file;                  // rng seed file name
 
-  // Equivalent width modifications
-  bool writeEquivalentWidth;              // Write out EW?
-  std::string line_dir;                   // Directory w/line list
-  std::vector<std::string> linepicks;     // Names of lines picked
 #ifdef ENABLE_MPI
   // MPI stuff
   MPI_Comm comm;
