@@ -720,6 +720,13 @@ slug_parmParser::checkParams() {
   if (metallicity < 0 && metallicity != -constants::big) {
     valueError("metallicity must be >= 0");
   }
+  if (track_set == NO_TRACK_SET && metallicity != -constants::big) {
+    ostreams.slug_warn_one << "metallicity set but tracks specified "
+			   << "by file name; metallicity will be set "
+			   << "to value corresponding to track file, and "
+			   << "input metallicity will be ignored"
+			   << std::endl;
+  }
   if (nebular_phi < 0 || nebular_phi > 1) {
     valueError("nebular_phi must be in the range [0,1]");
   }
