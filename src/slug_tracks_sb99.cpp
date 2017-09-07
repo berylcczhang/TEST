@@ -259,12 +259,12 @@ slug_tracks_sb99(const trackSet tr_set,
     // Read the header of the first file
     size_type ntrack, ntime;
     double Z_file;
-    std::ifstream trackfile;
+    std::ifstream trackfile1, trackfile2;
     path track_path(track_dir);
     path file_path(filenames[idx]);
     path track_full_path = track_path / file_path;
     read_trackfile_header(track_full_path.c_str(), Z_file,
-			  WR_mass, ntrack, ntime, trackfile);
+			  WR_mass, ntrack, ntime, trackfile1);
 
     // Allocate memory to hold track data
     array1d logm;
@@ -279,28 +279,30 @@ slug_tracks_sb99(const trackSet tr_set,
     trackdata.resize(boost::extents[ntime+1][ntrack][tracks::nprop_sb99]);
 
     // Read first file
-    view2d logt_sub = logt_Z[indices[0][range_t(0,ntime+1)][range_t(0,ntrack)]];
-    view3d trackdata_sub
+    view2d logt1 = logt_Z[indices[0][range_t(0,ntime+1)][range_t(0,ntrack)]];
+    view3d trackdata1
       = trackdata_Z[indices[0][range_t(0,ntime+1)][range_t(0,ntrack)]
 		    [range_t(0,tracks::nprop_sb99)]];
-    read_trackfile_tracks(trackfile, logm, logt_sub, trackdata_sub,
+    read_trackfile_tracks(trackfile1, logm, logt1, trackdata1,
 			  ntrack, ntime);
 
-    // Read second file  
-    read_trackfile_header(filenames[idx+1].c_str(), Z_file, WR_mass,
-			  ntrack, ntime, trackfile);
-    logt_sub = logt_Z[indices[1][range_t(0,ntime+1)][range_t(0,ntrack)]];
-    trackdata_sub
-      = trackdata_Z[indices[1][range_t(0,ntrack)][range_t(0,ntime+1)]
+    // Read second file
+    file_path = filenames[idx+1];
+    track_full_path = track_path / file_path;
+    read_trackfile_header(track_full_path.c_str(), Z_file, WR_mass,
+			  ntrack, ntime, trackfile2);
+    view2d logt2 = logt_Z[indices[1][range_t(0,ntime+1)][range_t(0,ntrack)]];
+    view3d trackdata2
+      = trackdata_Z[indices[1][range_t(0,ntime+1)][range_t(0,ntrack)]
 		    [range_t(0,tracks::nprop_sb99)]];
-    read_trackfile_tracks(trackfile, logm, logt_sub, trackdata_sub,
+    read_trackfile_tracks(trackfile2, logm, logt2, trackdata2,
 			  ntrack, ntime);
 
     // Compute weighted average
     for (size_type i=0; i<ntime+1; i++) {
       for (size_type j=0; j<ntrack; j++) {
 	logt[i][j] = wgt*logt_Z[0][i][j] + (1.0-wgt)*logt_Z[1][i][j];
-	for (size_type k=0; k>tracks::nprop_sb99; k++) {
+	for (size_type k=0; k<tracks::nprop_sb99; k++) {
 	  trackdata[i][j][k] = wgt*trackdata_Z[0][i][j][k] +
 	    (1.0-wgt)*trackdata_Z[1][i][j][k];
 	}
