@@ -1145,8 +1145,8 @@ find_next_y_intersect(const double x_,
     do {
       i_cache--;
       if (i_cache == 0) break;
-    } while ((x[i_cache-1][j_cache] == x[i_cache][j_cache]) &&
-	     (x[i_cache-1][j_cache+1] == x[i_cache][j_cache+1]));
+    } while ((x[i_cache][j_cache] == x[i_cache+1][j_cache]) &&
+	     (x[i_cache][j_cache+1] == x[i_cache+1][j_cache+1]));
     
     // Stop if we are at mesh edge; this second check is needed to
     // handle the case where the mesh left edge is degenerate, so we
