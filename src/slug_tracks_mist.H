@@ -15,36 +15,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *********************************************************************/
 
 ////////////////////////////////////////////////////////////////////////
-// class slug_tracks_sb99
+// class slug_tracks_mist
 //
 // This class holds a set of evolutionary tracks structured following
-// the conventions implemented in starburst99. It is a derived class
+// the format used in the MIST database. It is a derived class
 // of slug_tracks, which defines a general interface to evolutionary
 // tracks.
+//
+// Note that this class makes use of FITS capability, and is disabled
+// if FITS is not included
 ////////////////////////////////////////////////////////////////////////
 
-#ifndef _slug_tracks_sb99_H_
-#define _slug_tracks_sb99_H_
+#ifdef ENABLE_FITS
+
+#ifndef _slug_tracks_mist_H_
+#define _slug_tracks_mist_H_
 
 #include <cstdio>
 #include "slug_tracks_2d.H"
 
-class slug_tracks_sb99 : public slug_tracks_2d {
+class slug_tracks_mist : public slug_tracks_2d {
 
 public:
 
-  // Construct a set of tracks from a single file
-  slug_tracks_sb99(const char *fname, slug_ostreams& ostreams_);
+  // Construct a set of tracks from a specified file name
+  slug_tracks_mist(const char *fname, slug_ostreams& ostreams_);
 
   // Construct a set of tracks from a specified track set
-  slug_tracks_sb99(const trackSet tr_set,
+  slug_tracks_mist(const trackSet tr_set,
 		   const double metallicity_,
 		   const char *track_dir,
 		   slug_ostreams& ostreams_,
-		   const ZInterpMethod Z_int_meth = Z_LINEAR);
+		   const ZInterpMethod Z_int_meth = Z_STEFFEN);
 
   // Destructor
-  virtual ~slug_tracks_sb99() { };
+  virtual ~slug_tracks_mist() { };
 
   // Method to decide of a star is a Wolf-Rayet star, and which type
   // of WR star, for these tracks
@@ -58,41 +63,38 @@ public:
 protected:
 
   // Number of properties in these tracks, and indices of variables
-  static const boost::multi_array_types::size_type nprop = 9,
+  static const boost::multi_array_types::size_type nprop = 10,
     idx_h_surf = 4,
     idx_he_surf = 5,
     idx_c_surf = 6,
     idx_n_surf = 7,
-    idx_o_surf = 8;
+    idx_o_surf = 8,
+    idx_phase = 9;
+
+  // Names of columns in the FITS file that go with each property;
+  // initialized in the cpp file
+  static const char* const fits_colnames[];
 
 private:
 
-  // Method to read the header of a track file; this call sets ntrack
-  // and ntime, and returns file's metallicity and minimum WR mass; it
-  // also returns the stream set to a point where the tracks can be
-  // read next, or the file can be closed
+  // Method to read the header of a track file; this just extracts the
+  // list of initial masses and time points in contains, then closes
+  // the file
   void read_trackfile_header(const char *fname,
-			     double& metallicity_,
-			     double& WR_mass_,
-			     boost::multi_array_types::size_type& ntrack,
-			     boost::multi_array_types::size_type& ntime,
-			     std::ifstream& trackfile);
-  
-  // Method to ingest the tracks in a sb99 track file, and store them
-  // in the specified arrays; we implement this as a template function
-  // so that we can pass either plain arrays or array views; S will be
-  // a 2D array object (either a flat 2D array or a 2D view on a
-  // higher D array), and T will be a 3D array object
-  template<typename S, typename T>
-  void read_trackfile_tracks(std::ifstream& trackfile,
 			     array1d& logm,
-			     S& logt, T& trackdata,
-			     boost::multi_array_types::size_type ntrack,
-			     boost::multi_array_types::size_type ntime);
+			     boost::multi_array_types::size_type& ntime);
 
-  // Minimum mass for WR stars
-  double WR_mass;
+  // Method to read a track file; templated so that it can accept
+  // either arrays or array views -- S must be a 2D arraylike object,
+  // and T must be a 3D arraylike object, and both must be the correct
+  // shape at the time they are passed to this routine
+  template<typename S, typename T>
+  void read_trackfile(const char *fname, S& logt, T& trackdata);
+
 };
-  
+
 #endif
-// _slug_tracks_sb99_H_
+// _slug_tracks_mist_H_
+
+#endif
+// _ENABLE_FITS_

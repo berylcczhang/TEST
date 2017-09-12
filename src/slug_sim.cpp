@@ -30,6 +30,7 @@ namespace std
 #include "slug_specsyn_pauldrach.H"
 #include "slug_specsyn_planck.H"
 #include "slug_specsyn_sb99.H"
+#include "slug_tracks_mist.H"
 #include "slug_tracks_sb99.H"
 #include "slug_specsyn_sb99hruv.H"
 #include "slug_yields_multiple.H"
@@ -198,14 +199,49 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
   // Read the tracks
   if (pp.get_verbosity() > 1)
     ostreams.slug_out_one << "reading tracks" << std::endl;
-  if (pp.get_trackSet() == NO_TRACK_SET) {
-    // User has manually specified the file name
-    tracks = (slug_tracks *)
-      new slug_tracks_sb99(pp.get_trackFile(), ostreams);
-  } else {
+  switch (pp.get_trackSet()) {
+  case NO_TRACK_SET: {
+    // User has manually specified the file name; decide if it is a
+    // starburst99 or MIST file based on its extension
+    string fname(pp.get_trackFile());
+    size_t pos = fname.find_last_of(".");
+    bool mist_ext;
+    if (pos == string::npos) {
+      mist_ext = false;
+    } else if (fname.substr(pos).compare(".gz") == 0) {
+      mist_ext = true;
+    } else {
+      mist_ext = false;
+    }
+    if (mist_ext) {
+      tracks = (slug_tracks *)
+	new slug_tracks_mist(pp.get_trackFile(), ostreams);
+    } else {
+      tracks = (slug_tracks *)
+	new slug_tracks_sb99(pp.get_trackFile(), ostreams);
+    }
+    break;
+  }
+  case GENEVA_2013_VVCRIT_00:
+  case GENEVA_2013_VVCRIT_40:
+  case GENEVA_MDOT_STD:
+  case GENEVA_MDOT_ENHANCED:
+  case PADOVA_TPAGB_YES:
+  case PADOVA_TPAGB_NO: {
+    // These are starburst99 track sets
     tracks = (slug_tracks *)
       new slug_tracks_sb99(pp.get_trackSet(), pp.get_metallicity(),
 			   pp.get_track_dir(), ostreams);
+    break;
+  }
+  case MIST_2016_VVCRIT_00:
+  case MIST_2016_VVCRIT_40: {
+    // These are MIST track sets
+    tracks = (slug_tracks *)
+      new slug_tracks_mist(pp.get_trackSet(), pp.get_metallicity(),
+			   pp.get_track_dir(), ostreams);
+    break;
+  }
   }
 
   // If we're computing yields, set up yield tables

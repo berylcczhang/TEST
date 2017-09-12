@@ -92,7 +92,7 @@ public:
   virtual double
   star_mass_at_death(const double mass,
 		     const double Z = tracks::null_metallicity) const {
-    return (*interp)(log(mass), mesh2d_xhi, tracks::log_cur_mass);
+    return (*interp)(log(mass), mesh2d_xhi, idx_log_cur_mass);
   }
 
   // Remnant mass produced by a star of a given mass; if the age

@@ -196,9 +196,9 @@ slug_tracks_2d::get_star(const double m, const double t,
   // Use interpolator to interpolate to requested values
   slug_stardata star;
   star.logM = constants::loge * (*interp)(logt, logm,
-					  tracks::log_cur_mass);
-  star.logL = (*interp)(logt, logm, tracks::log_L);
-  star.logTeff = (*interp)(logt, logm, tracks::log_Teff);
+					  idx_log_cur_mass);
+  star.logL = (*interp)(logt, logm, idx_log_L);
+  star.logTeff = (*interp)(logt, logm, idx_log_Teff);
   star.logR = 0.5*(star.logL+constants::logLsun) 
     - 0.5*log10(4.0*M_PI) 
     - 0.5*constants::logsigmaSB - 2.0*star.logTeff
@@ -270,8 +270,8 @@ get_isochrone(const double t, const vector<double> &m,
     // properties
     slug_stardata star;
     int gsl_errstat =
-      gsl_spline_eval_e(isochrone[ptr/2][tracks::log_L], logm,
-			isochrone_acc[ptr/2][tracks::log_L], &star.logL);
+      gsl_spline_eval_e(isochrone[ptr/2][idx_log_L], logm,
+			isochrone_acc[ptr/2][idx_log_L], &star.logL);
     if (gsl_errstat == GSL_EDOM) {
       ostreams.slug_err
 	<< "slug_tracks_2d::get_isochrone: interpolation error at time " 
@@ -290,8 +290,8 @@ get_isochrone(const double t, const vector<double> &m,
 
     // Teff
     star.logTeff
-      = gsl_spline_eval(isochrone[ptr/2][tracks::log_Teff], logm,
-			isochrone_acc[ptr/2][tracks::log_Teff]);
+      = gsl_spline_eval(isochrone[ptr/2][idx_log_Teff], logm,
+			isochrone_acc[ptr/2][idx_log_Teff]);
 
     // R from L_bol and T
     star.logR = 0.5*(star.logL+constants::logLsun) 
@@ -302,8 +302,8 @@ get_isochrone(const double t, const vector<double> &m,
     // Current mass; safety check to ensure that mass is strictly
     // non-increasing, avoiding mass gain due to roundoff error
     star.logM = constants::loge *
-      gsl_spline_eval(isochrone[ptr/2][tracks::log_cur_mass], logm, 
-		      isochrone_acc[ptr/2][tracks::log_cur_mass]);
+      gsl_spline_eval(isochrone[ptr/2][idx_log_cur_mass], logm, 
+		      isochrone_acc[ptr/2][idx_log_cur_mass]);
     if (pow(10.0, star.logM) > m[i]) {
       star.logM = log10(m[i]);
     }

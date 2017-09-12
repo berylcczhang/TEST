@@ -463,6 +463,10 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  track_set = PADOVA_TPAGB_YES;
 	} else if (!track_val.compare("padova_tpagb_no")) {
 	  track_set = PADOVA_TPAGB_NO;
+	} else if (!track_val.compare("mist_2016_vvcrit_00")) {
+	  track_set = MIST_2016_VVCRIT_00;
+	} else if (!track_val.compare("mist_2016_vvcrit_40")) {
+	  track_set = MIST_2016_VVCRIT_40;
 	} else {
 	  // Track is not a special value, so interpret as a file name
 	  track_set = NO_TRACK_SET;

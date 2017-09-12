@@ -77,16 +77,16 @@ slug_tracks_sb99(const char *fname, slug_ostreams& ostreams_) :
   array3d trackdata;
   logm.resize(boost::extents[ntrack]);
   logt.resize(boost::extents[ntime+1][ntrack]);
-  trackdata.resize(boost::extents[ntime+1][ntrack][tracks::nprop_sb99]);
+  trackdata.resize(boost::extents[ntime+1][ntrack][nprop]);
   
   // Read the rest of the file
   read_trackfile_tracks(trackfile, logm, logt, trackdata, ntrack, ntime);
 
   // Specify that we want linear interpolation for the current mass,
   // and the default interpolation type for all other variables
-  vector<const gsl_interp_type *> interp_type(tracks::nprop_sb99);
-  for (vector<int>::size_type i=0; i<tracks::nprop_sb99; i++) {
-    if (i == tracks::log_cur_mass) interp_type[i] = gsl_interp_linear;
+  vector<const gsl_interp_type *> interp_type(nprop);
+  for (vector<int>::size_type i=0; i<nprop; i++) {
+    if (i == idx_log_cur_mass) interp_type[i] = gsl_interp_linear;
     else interp_type[i] = slug_default_interpolator;
   }
 
@@ -204,9 +204,9 @@ slug_tracks_sb99(const trackSet tr_set,
 
   // Specify that we want linear interpolation for the current mass,
   // and the default interpolation type for all other variables
-  vector<const gsl_interp_type *> interp_type(tracks::nprop_sb99);
-  for (vector<int>::size_type i=0; i<tracks::nprop_sb99; i++) {
-    if (i == tracks::log_cur_mass) interp_type[i] = gsl_interp_linear;
+  vector<const gsl_interp_type *> interp_type(nprop);
+  for (vector<int>::size_type i=0; i<nprop; i++) {
+    if (i == idx_log_cur_mass) interp_type[i] = gsl_interp_linear;
     else interp_type[i] = slug_default_interpolator;
   }
 
@@ -231,6 +231,7 @@ slug_tracks_sb99(const trackSet tr_set,
     double Z_file;
     std::ifstream trackfile;
     path track_path(track_dir);
+    track_path /= path("sb99");
     path file_path(filenames[idx]);
     path track_full_path = track_path / file_path;
     read_trackfile_header(track_full_path.c_str(), Z_file, WR_mass,
@@ -242,7 +243,7 @@ slug_tracks_sb99(const trackSet tr_set,
     array3d trackdata;
     logm.resize(boost::extents[ntrack]);
     logt.resize(boost::extents[ntime+1][ntrack]);
-    trackdata.resize(boost::extents[ntime+1][ntrack][tracks::nprop_sb99]);
+    trackdata.resize(boost::extents[ntime+1][ntrack][nprop]);
   
     // Read the rest of the file
     read_trackfile_tracks(trackfile, logm, logt, trackdata, ntrack, ntime);
@@ -261,6 +262,7 @@ slug_tracks_sb99(const trackSet tr_set,
     double Z_file;
     std::ifstream trackfile1, trackfile2;
     path track_path(track_dir);
+    track_path /= path("sb99");
     path file_path(filenames[idx]);
     path track_full_path = track_path / file_path;
     read_trackfile_header(track_full_path.c_str(), Z_file,
@@ -274,15 +276,15 @@ slug_tracks_sb99(const trackSet tr_set,
     array4d trackdata_Z;
     logm.resize(boost::extents[ntrack]);
     logt_Z.resize(boost::extents[2][ntime+1][ntrack]);
-    trackdata_Z.resize(boost::extents[2][ntime+1][ntrack][tracks::nprop_sb99]);
+    trackdata_Z.resize(boost::extents[2][ntime+1][ntrack][nprop]);
     logt.resize(boost::extents[ntime+1][ntrack]);
-    trackdata.resize(boost::extents[ntime+1][ntrack][tracks::nprop_sb99]);
+    trackdata.resize(boost::extents[ntime+1][ntrack][nprop]);
 
     // Read first file
     view2d logt1 = logt_Z[indices[0][range_t(0,ntime+1)][range_t(0,ntrack)]];
     view3d trackdata1
       = trackdata_Z[indices[0][range_t(0,ntime+1)][range_t(0,ntrack)]
-		    [range_t(0,tracks::nprop_sb99)]];
+		    [range_t(0,nprop)]];
     read_trackfile_tracks(trackfile1, logm, logt1, trackdata1,
 			  ntrack, ntime);
 
@@ -294,7 +296,7 @@ slug_tracks_sb99(const trackSet tr_set,
     view2d logt2 = logt_Z[indices[1][range_t(0,ntime+1)][range_t(0,ntrack)]];
     view3d trackdata2
       = trackdata_Z[indices[1][range_t(0,ntime+1)][range_t(0,ntrack)]
-		    [range_t(0,tracks::nprop_sb99)]];
+		    [range_t(0,nprop)]];
     read_trackfile_tracks(trackfile2, logm, logt2, trackdata2,
 			  ntrack, ntime);
 
@@ -302,7 +304,7 @@ slug_tracks_sb99(const trackSet tr_set,
     for (size_type i=0; i<ntime+1; i++) {
       for (size_type j=0; j<ntrack; j++) {
 	logt[i][j] = wgt*logt_Z[0][i][j] + (1.0-wgt)*logt_Z[1][i][j];
-	for (size_type k=0; k<tracks::nprop_sb99; k++) {
+	for (size_type k=0; k<nprop; k++) {
 	  trackdata[i][j][k] = wgt*trackdata_Z[0][i][j][k] +
 	    (1.0-wgt)*trackdata_Z[1][i][j][k];
 	}
@@ -558,53 +560,53 @@ read_trackfile_tracks(std::ifstream& trackfile, array1d& logm,
 
 	  dummy = line.substr(breaks[2], breaks[3]-breaks[2]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::log_cur_mass]
+	  trackdata[j][idx][idx_log_cur_mass]
 	    = log(lexical_cast<double>(dummy));
 
 	  dummy = line.substr(breaks[3], breaks[4]-breaks[3]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::log_L] = lexical_cast<double>(dummy);
+	  trackdata[j][idx][idx_log_L] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[4], breaks[5]-breaks[4]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::log_Teff] = lexical_cast<double>(dummy);
+	  trackdata[j][idx][idx_log_Teff] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[5], breaks[6]-breaks[5]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::h_surf] = lexical_cast<double>(dummy);
+	  trackdata[j][idx][idx_h_surf] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[6], breaks[7]-breaks[6]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::he_surf] = lexical_cast<double>(dummy);
+	  trackdata[j][idx][idx_he_surf] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[7], breaks[8]-breaks[7]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::c_surf] = lexical_cast<double>(dummy);
+	  trackdata[j][idx][idx_c_surf] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[8], breaks[9]-breaks[8]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::n_surf] = lexical_cast<double>(dummy);
+	  trackdata[j][idx][idx_n_surf] = lexical_cast<double>(dummy);
 
 	  dummy = line.substr(breaks[9], breaks[10]-breaks[9]);
 	  trim(dummy);
-	  trackdata[j][idx][tracks::o_surf] = lexical_cast<double>(dummy);
+	  trackdata[j][idx][idx_o_surf] = lexical_cast<double>(dummy);
 
 	  if ((tracktype.compare("WR") == 0) || 
 	      (tracktype.compare("RO") == 0)) {
 
 	    dummy = line.substr(breaks[11], breaks[12]-breaks[11]);
 	    trim(dummy);
-	    trackdata[j][idx][tracks::log_mDot] = lexical_cast<double>(dummy);
+	    trackdata[j][idx][idx_log_mDot] = lexical_cast<double>(dummy);
 
 	  } else if (tracktype.compare("ML") == 0) {
 
 	    dummy = line.substr(breaks[10], breaks[11]-breaks[10]);
 	    trim(dummy);
-	    trackdata[j][idx][tracks::log_mDot] = lexical_cast<double>(dummy);
+	    trackdata[j][idx][idx_log_mDot] = lexical_cast<double>(dummy);
 
 	  } else {
 	    
-	    trackdata[j][idx][tracks::log_mDot] = -30;
+	    trackdata[j][idx][idx_log_mDot] = -30;
 	    
 	  }
 	} catch (const bad_lexical_cast& ia) {
@@ -644,21 +646,20 @@ read_trackfile_tracks(std::ifstream& trackfile, array1d& logm,
     if (is_sorted(logt_sub.begin(), logt_sub.end())) continue;
 
     auto it = is_sorted_until(logt_sub.begin(), logt_sub.end());
-    cout << "not sorted at " << (*it) << endl;
 
     // Things are not sorted, so first print a warning
     streamsize prec = ostreams.slug_warn_one.precision();
     ostreams.slug_warn_one
       << "slug_tracks_sb99::read_trackfile_tracks: "
       << "detected non-increasing ages on track for mass "
-      << exp(logm[i]) << ", log ages: ";
+      << exp(logm[i]) << ", ages: ";
     bool flag_printed = false;
     for (size_type j=0; j<ntime-1; j++) {
       if (logt_sub[j] > logt_sub[j+1]) {
 	if (flag_printed)
 	  ostreams.slug_warn_one << "; ";
-	ostreams.slug_warn_one << logt_sub[j] << ", "
-			       << logt_sub[j+1];
+	ostreams.slug_warn_one << exp(logt_sub[j]) << ", "
+			       << exp(logt_sub[j+1]);
 	flag_printed = true;
       }
     }
@@ -711,7 +712,7 @@ set_WR_type(const double m, const double t, slug_stardata& star) const {
   // If passes mass and Teff cut, check surface H fraction
   double logm = log(m);
   double logt = log(t);
-  double H_frac = (*interp)(logt, logm, tracks::h_surf);
+  double H_frac = (*interp)(logt, logm, idx_h_surf);
   if (H_frac > 0.4) {
     // H fraction too high to be a WR star
     star.WR = NONE;
@@ -728,8 +729,8 @@ set_WR_type(const double m, const double t, slug_stardata& star) const {
   }
 
   // Check C/N ratio
-  double C_frac = (*interp)(logt, logm, tracks::c_surf);
-  double N_frac = (*interp)(logt, logm, tracks::n_surf);
+  double C_frac = (*interp)(logt, logm, idx_c_surf);
+  double N_frac = (*interp)(logt, logm, idx_n_surf);
   if (C_frac/(N_frac+constants::small) < 10.0) {
     star.WR = WN;
   } else {
@@ -751,9 +752,9 @@ slug_tracks_sb99::set_WR_type(const double m,
 
   // If passes mass and Teff cut, check surface H fraction
   double logm = log(m);
-  double H_frac = gsl_spline_eval(isochrone_[tracks::h_surf],
+  double H_frac = gsl_spline_eval(isochrone_[idx_h_surf],
 				  logm,
-				  isochrone_acc_[tracks::h_surf]);
+				  isochrone_acc_[idx_h_surf]);
   if (H_frac > 0.4) {
     // H fraction too high to be a WR star
     star.WR = NONE;
@@ -770,12 +771,12 @@ slug_tracks_sb99::set_WR_type(const double m,
   }
 
   // Check C/N ratio
-  double C_frac = gsl_spline_eval(isochrone_[tracks::c_surf],
+  double C_frac = gsl_spline_eval(isochrone_[idx_c_surf],
 				  logm,
-				  isochrone_acc_[tracks::c_surf]);
-  double N_frac = gsl_spline_eval(isochrone_[tracks::n_surf],
+				  isochrone_acc_[idx_c_surf]);
+  double N_frac = gsl_spline_eval(isochrone_[idx_n_surf],
 				  logm,
-				  isochrone_acc_[tracks::n_surf]);
+				  isochrone_acc_[idx_n_surf]);
   if (C_frac/(N_frac+constants::small) < 10.0) {
     star.WR = WN;
   } else {

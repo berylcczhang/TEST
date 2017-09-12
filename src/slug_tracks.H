@@ -38,8 +38,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace tracks {
   const double null_metallicity = -999.;
-  const int nprop = 4;
-  enum track_prop_idx { log_cur_mass, log_L, log_Teff, log_mDot };
 }
 
 class slug_tracks {
@@ -114,6 +112,12 @@ protected:
   // IO handler
   slug_ostreams& ostreams;
 
+  // Indices of variables
+  static const
+  boost::multi_array_types::size_type idx_log_cur_mass = 0,
+    idx_log_L = 1,
+    idx_log_Teff = 2,
+    idx_log_mDot = 3;
 };
 
 #endif
