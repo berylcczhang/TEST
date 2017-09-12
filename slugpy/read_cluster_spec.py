@@ -102,7 +102,9 @@ def read_cluster_spec(model_name, output_dir=None, fmt=None,
     trial = []
     wavelength = []
     L_lambda = []
-
+    
+    rectified = False # Default is no rectified spectrum
+    
     # Read ASCII or binary
     if fname.endswith('.txt'):
 
