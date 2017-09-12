@@ -624,6 +624,44 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  bailout(1);
 	}
       }
+  // Spectral lines requested for EW calculation
+  else if (!(tokens[0].compare("spectral_lines")))
+  {
+  
+    // Count tokens
+	  nTokExpected = 1;
+
+	  // For this key, we don't know in advance how many lines to
+	  // expect, so parse them one at a time
+	  for (unsigned int tokPtr = 1; tokPtr < tokens.size(); tokPtr++) 
+	  {
+
+	    // Check if this is a comment; if so, stop iterating; if
+	    // not, increment the number of tokens expected
+	    if ((tokens[tokPtr]).compare(0, 1, "#") == 0) 
+	    {
+	      break;
+	    }
+	    nTokExpected++;
+
+	    // This is not a comment; break up by commas
+	    vector<string> linepicksTmp;
+	    split(linepicksTmp, tokens[tokPtr], is_any_of(", "),
+		  token_compress_on);
+
+	    // Push onto photometric band list
+	    for (unsigned int i = 0; i < linepicksTmp.size(); i++) 
+	    {
+	      if (linepicksTmp[i].length() == 0) 
+	      {
+	        continue;
+	      }
+	      linepicks.push_back(linepicksTmp[i]);
+	    }    
+    }
+  
+  
+  } 
 
       // Unknown token
       else {
