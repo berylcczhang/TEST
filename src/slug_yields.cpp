@@ -27,7 +27,7 @@ namespace std
 #include <cmath>
 #include <gsl/gsl_odeiv2.h>
 #include <gsl/gsl_matrix.h>
-
+#include <algorithm>
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////
@@ -167,7 +167,7 @@ slug_yields::~slug_yields() {
 void slug_yields::isotope_init() {
 
   // Sort the isotopes, and return numbers of stable and unstable
-  sort(isotopes.begin(), isotopes.end(), slug_isotopes::isotope_sort);
+  std::sort(isotopes.begin(), isotopes.end(), slug_isotopes::isotope_sort);
   niso = isotopes.size();
   nstable = 0;
   for (vector<double>::size_type i=0; i<niso; i++)
