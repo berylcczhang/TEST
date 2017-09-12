@@ -592,9 +592,12 @@ slug_cluster::advance(double time) {
 
     // Traverse the list to pop off stars that are more massive than
     // the upper end of the most massive "alive mass" interval; add to
-    // the remnant mass total
+    // the remnant mass total. Be careful to properly handle
+    // pathological case where all stars are dead.
     while (stars.size() > 0) {
-      if (stars.back() > mass_cuts.back()) {
+      double max_alive_mass = 0.0;
+      if (mass_cuts.size() > 0) max_alive_mass = mass_cuts.back();
+      if (stars.back() > max_alive_mass) {
 	stochRemnantMass += tracks->remnant_mass(stars.back());
 	if (yields)
 	  if (yields->produces_sn(stars.back())) stoch_sn++;
