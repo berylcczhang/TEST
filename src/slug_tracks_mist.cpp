@@ -58,7 +58,7 @@ namespace tracks {
 // Column names in FITS files
 ////////////////////////////////////////////////////////////////////////
 const char* const slug_tracks_mist::fits_colnames[] =
-  { "log_m", "log_L", "log_Teff", "log_mdot",
+  { "mass", "log_L", "log_Teff", "mdot",
     "h_surf", "he_surf", "c_surf", "n_surf",
     "o_surf", "phase" };
 
@@ -483,10 +483,10 @@ slug_tracks_mist::read_trackfile(const char *fname, S& logt,
       bailout(1);
     }
 
-    // Read times; note that times stored in the file are log base 10,
-    // but for internal computations we use log base e
+    // Read times; note that times stored in the file are linear, but
+    // for internal purposes we use log
     int anynul, colnum;
-    char colname[] = "log_t";
+    char colname[] = "age";
     fits_get_colnum(fptr, CASEINSEN, colname, &colnum,
 		    &fits_status);
     fits_read_col(fptr, TDOUBLE, colnum, 1, 1, ntime, nullptr, buf, &anynul,
@@ -497,10 +497,11 @@ slug_tracks_mist::read_trackfile(const char *fname, S& logt,
       bailout(1);
     }
     for (size_type j=0; j<ntime; j++)
-      logt[j+1][i] = buf[j] / constants::loge;
+      logt[j+1][i] = log(buf[j]);
 
-    // Read data; again, note that the log m is stored in log base 10
-    // in the file, but we use log base e for internal computations
+    // Read data; again, note that mass and mdot are stored as linear
+    // values in the MIST tracks, but we use log values internally in
+    // slug
     for (size_type n=0; n<nprop; n++) {
       char tmp_colname[10];
       strcpy(tmp_colname, fits_colnames[n]); // Needed to avoid const issues
@@ -513,9 +514,9 @@ slug_tracks_mist::read_trackfile(const char *fname, S& logt,
 			      << fname << endl;
 	bailout(1);
       }
-      if (n == idx_log_cur_mass) {
+      if (n == idx_log_cur_mass || n == idx_log_mDot) {
 	for (size_type j=0; j<ntime; j++)
-	  trackdata[j+1][i][n] = buf[j] / constants::loge;
+	  trackdata[j+1][i][n] = log(buf[j]);
       } else {
 	for (size_type j=0; j<ntime; j++)
 	  trackdata[j+1][i][n] = buf[j];

@@ -589,7 +589,7 @@ init_interpolators(T& f_) {
 	count++;
       }
       if (spl_x[j][n] == nullptr) {
-	// Set intorpolation type for this quantity
+	// Set interpolation type for this quantity
 	const gsl_interp_type *itype;
 	if (interp_type.size() == 0) itype = slug_default_interpolator;
 	else itype = interp_type[n];
