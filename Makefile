@@ -1,5 +1,5 @@
 # Makefile for the slug code, v2
-.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe lib lib-debug libstatic libstatic-debug
+.PHONY: all debug clean bayesphot slug bayesphot-debug slug-debug exe lib lib-debug libstatic libstatic-debug tools tools-debug
 
 MACHINE	=
 FITS ?= ENABLE_FITS
@@ -11,6 +11,10 @@ exe: slug bayesphot
 all: slug bayesphot lib libstatic
 
 debug: slug-debug bayesphot-debug
+
+tools: write_isochrone
+
+tools-debug: write_isochrone-debug
 
 slug:
 	cd src && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION) MPI=$(MPI)
@@ -56,13 +60,31 @@ libstatic:
 libstatic-debug:
 	cd src && $(MAKE) libstatic-debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION) MPI=$(MPI)
 
+write_isochrone:
+	cd tools/c/write_isochrone && $(MAKE) MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+	@(if [ ! -e bin ]; \
+	then \
+		mkdir bin; \
+	fi)
+	@(cp tools/c/write_isochrone/write_isochrone bin)
+
+write_isochrone-debug:
+	cd tools/c/write_isochrone && $(MAKE) debug MACHINE=$(MACHINE) FITS=$(FITS) GSLVERSION=$(GSLVERSION)
+	@(if [ ! -e bin ]; \
+	then \
+		mkdir bin; \
+	fi)
+	@(cp tools/c/write_isochrone/write_isochrone bin)
+
 clean:
 	cd src && $(MAKE) clean
 	@(if [ ! -e bin ]; \
 	then \
 		rm -f bin/slug; \
+		rm -f bin/write_isochrone; \
 	fi)
 	cd slugpy/bayesphot/bayesphot_c && $(MAKE) clean
+	cd tools/c/write_isochrone && $(MAKE) clean
 	@(rm -f slugpy/bayesphot/bayesphot.so)
 	@(rm -f slugpy/bayesphot/bayesphot.dylib)
 	@(rm -f slugpy/bayesphot/bayesphot.dll)
