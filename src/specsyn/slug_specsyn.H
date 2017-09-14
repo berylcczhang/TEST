@@ -35,6 +35,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "../tracks/slug_tracks.H"
 #include "../utils/slug_imf_integrator.H"
 
+// Enum for spectral synthesis modes
+enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH,
+		   SB99, SB99_HRUV };
+
 ////////////////////////////////////////////////////////////////////////
 // Helper class that just holds workspace data for doing numerical
 // integrations

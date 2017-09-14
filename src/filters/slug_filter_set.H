@@ -35,6 +35,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 
+// Enum for type of photometry -- this describes what will be returned
+enum photMode { L_NU, L_LAMBDA, AB, STMAG, VEGA };
+
 class slug_filter_set {
 
 public:

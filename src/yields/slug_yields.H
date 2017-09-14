@@ -35,6 +35,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <utility>
 #include <vector>
 
+// Enum of yield models
+enum yieldMode { SNII_SUKHBOLD16, AGB_KARAKAS16_DOHERTY14,
+		 SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14 };
+
 ////////////////////////////////////////////////////////////////////////
 // A helper class that stores decay trees
 ////////////////////////////////////////////////////////////////////////

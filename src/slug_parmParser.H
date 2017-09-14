@@ -28,6 +28,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug.H"
 #include "slug_IO.H"
 #include "slug_MPI.H"
+#include "filters/slug_filter_set.H"
+#include "specsyn/slug_specsyn.H"
+#include "tracks/slug_tracks.H"
+#include "yields/slug_yields.H"
 
 class slug_parmParser {
 

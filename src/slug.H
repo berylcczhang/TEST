@@ -69,27 +69,6 @@ enum outputMode { ASCII, BINARY
 #endif
 };
 
-// Enum for spectral synthesis modes
-enum specsynMode { PLANCK, KURUCZ, KURUCZ_HILLIER, KURUCZ_PAULDRACH,
-		   SB99, SB99_HRUV };
-
-// Enum for type of photometry -- this describes what will be returned
-enum photMode { L_NU, L_LAMBDA, AB, STMAG, VEGA };
-
-// Enum of yield models
-enum yieldMode { SNII_SUKHBOLD16, AGB_KARAKAS16_DOHERTY14,
-		 SNII_SUKHBOLD16__AGB_KARAKAS16_DOHERTY14 };
-
-// Enum of known track sets
-enum trackSet { NO_TRACK_SET, GENEVA_2013_VVCRIT_00, GENEVA_2013_VVCRIT_40,
-		GENEVA_MDOT_STD, GENEVA_MDOT_ENHANCED,
-		PADOVA_TPAGB_YES, PADOVA_TPAGB_NO, MIST_2016_VVCRIT_00,
-		MIST_2016_VVCRIT_40 };
-
-// Methods to interpolate tracks in metallicity
-enum ZInterpMethod { Z_UNSPECIFIED, Z_NEAR_NEIGHBOR, Z_LINEAR,
-		     Z_AKIMA, Z_STEFFEN };
-
 // Struct to represent basic data on stars
 typedef struct { 
   double mass;       // Mass at birth
