@@ -352,6 +352,8 @@ int main(int argc, char *argv[]) {
       if (mmin < tracks->min_mass()) mmin = tracks->min_mass();
       double mmax = mass_cuts[2*j+1];
       if (m1 > 0.0) mmax = fmin(mmax, m1);
+      // Roundoff saftey
+      if (mmax == mass_cuts.back()) mmax -= 1.0e-6*(mmax-mmin); 
       if (mmin >= mmax) continue;
       std::vector<double> m(nm);
       for (std::vector<double>::size_type k=0; k<nm; k++)
