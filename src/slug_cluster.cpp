@@ -22,8 +22,8 @@ namespace std
 }
 #endif
 #include "constants.H"
-#include "int_tabulated.H"
 #include "slug_cluster.H"
+#include "utils/int_tabulated.H"
 #include <algorithm>
 #include <cassert>
 #include <cmath>

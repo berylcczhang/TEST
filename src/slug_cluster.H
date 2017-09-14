@@ -26,17 +26,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _slug_cluster_H_
 
 #include "slug.H"
-#include "slug_extinction.H"
-#include "slug_filter_set.H"
-#include "slug_line_list.H"
-#include "slug_galaxy.H"
-#include "slug_imf_integrator.H"
-#include "slug_PDF.H"
-#include "slug_nebular.H"
-#include "slug_specsyn.H"
-#include "slug_tracks.H"
-#include "slug_yields.H"
 #include "slug_IO.H"
+#include "slug_extinction.H"
+#include "slug_galaxy.H"
+#include "slug_nebular.H"
+#include "filters/slug_filter_set.H"
+#include "lines/slug_line_list.H"
+#include "pdfs/slug_PDF.H"
+#include "specsyn/slug_specsyn.H"
+#include "tracks/slug_tracks.H"
+#include "utils/slug_imf_integrator.H"
+#include "yields/slug_yields.H"
 #include <iostream>
 #include <fstream>
 #ifdef ENABLE_FITS

@@ -46,11 +46,11 @@ namespace std
 #endif
 #include "slug.H"
 #include "slug_IO.H"
-#include "slug_PDF.H"
-#include "slug_filter_set.H"
-#include "slug_specsyn.H"
-#include "slug_tracks.H"
-#include "slug_yields.H"
+#include "pdfs/slug_PDF.H"
+#include "filters/slug_filter_set.H"
+#include "specsyn/slug_specsyn.H"
+#include "tracks/slug_tracks.H"
+#include "yields/slug_yields.H"
 #include <map>
 #include <string>
 #include <vector>

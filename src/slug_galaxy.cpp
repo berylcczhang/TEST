@@ -26,8 +26,8 @@ namespace std
 #include "slug_cluster.H"
 #include "slug_galaxy.H"
 #include "slug_parmParser.H"
-#include "slug_specsyn.H"
-#include "slug_tracks.H"
+#include "specsyn/slug_specsyn.H"
+#include "tracks/slug_tracks.H"
 #include <cassert>
 #include <cmath>
 #include <iomanip>

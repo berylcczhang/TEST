@@ -23,17 +23,17 @@ namespace std
 #endif
 #include "slug_MPI.H"
 #include "slug_IO.H"
-#include "slug_PDF_powerlaw.H"
 #include "slug_sim.H"
-#include "slug_specsyn_hillier.H"
-#include "slug_specsyn_kurucz.H"
-#include "slug_specsyn_pauldrach.H"
-#include "slug_specsyn_planck.H"
-#include "slug_specsyn_sb99.H"
-#include "slug_tracks_mist.H"
-#include "slug_tracks_sb99.H"
-#include "slug_specsyn_sb99hruv.H"
-#include "slug_yields_multiple.H"
+#include "pdfs/slug_PDF_powerlaw.H"
+#include "specsyn/slug_specsyn_hillier.H"
+#include "specsyn/slug_specsyn_kurucz.H"
+#include "specsyn/slug_specsyn_pauldrach.H"
+#include "specsyn/slug_specsyn_planck.H"
+#include "specsyn/slug_specsyn_sb99.H"
+#include "specsyn/slug_specsyn_sb99hruv.H"
+#include "tracks/slug_tracks_mist.H"
+#include "tracks/slug_tracks_sb99.H"
+#include "yields/slug_yields_multiple.H"
 #include <cmath>
 #include <ctime>
 #include <iomanip>

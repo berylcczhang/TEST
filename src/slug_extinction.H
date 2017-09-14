@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include "slug.H"
 #include "slug_IO.H"
-#include "slug_PDF.H"
+#include "pdfs/slug_PDF.H"
 extern "C" {
 #   include <gsl/gsl_interp.h>
 #   include <gsl/gsl_spline.h>

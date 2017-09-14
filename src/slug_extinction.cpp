@@ -26,11 +26,11 @@ namespace std
 #include <iostream>
 #include <fstream>
 #include "constants.H"
-#include "int_tabulated.H"
 #include "slug_extinction.H"
-#include "slug_filter_set.H"
 #include "slug_parmParser.H"
-#include "slug_PDF_delta.H"
+#include "filters/slug_filter_set.H"
+#include "pdfs/slug_PDF_delta.H"
+#include "utils/int_tabulated.H"
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 

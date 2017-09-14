@@ -31,9 +31,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug_galaxy.H"
 #include "slug_nebular.H"
 #include "slug_parmParser.H"
-#include "slug_PDF.H"
-#include "slug_tracks.H"
-#include "slug_yields.H"
+#include "pdfs/slug_PDF.H"
+#include "tracks/slug_tracks.H"
+#include "yields/slug_yields.H"
 #include <vector>
 #ifdef ENABLE_FITS
 extern "C" {

@@ -29,11 +29,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "slug.H"
 #include "slug_extinction.H"
-#include "slug_filter_set.H"
-#include "slug_nebular.H"
-#include "slug_specsyn.H"
-#include "slug_yields.H"
 #include "slug_IO.H"
+#include "slug_nebular.H"
+#include "filters/slug_filter_set.H"
+#include "specsyn/slug_specsyn.H"
+#include "yields/slug_yields.H"
 #include <list>
 #include <iostream>
 #include <fstream>

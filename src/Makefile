@@ -106,8 +106,12 @@ EXENAME		= slug
 LIBNAME		= lib$(EXENAME)$(LIB_EXTENSION)
 LIBSTATNAME	= lib$(EXENAME)$(LIBSTAT_EXTENSION)
 
-# Pointers to sources
-SOURCES		= $(wildcard *.cpp)
+# List of directories containing source files
+VPATH		= filters interpolators lines pdfs specsyn tracks \
+	utils yields
+
+# Pointers to sources and objects
+SOURCES		= $(wildcard *.cpp) $(wildcard */*.cpp)
 OBJECTS		= $(SOURCES:%.cpp=%.o)
 DEPS		= $(SOURCES:%.cpp=%.d)
 
