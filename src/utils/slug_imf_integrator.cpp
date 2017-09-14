@@ -511,15 +511,6 @@ integrate_gk(const double m_min, const double m_max,
   vector<slug_stardata> stardata;
   if (func != nullptr) stardata = tracks->get_isochrone(age, x_k);
 
-  for (vector<int>::size_type i=0; i<stardata.size(); i++)
-    cout << "star m = " << x_k[i]
-	 << ", l = " << exp(stardata[i].logL / constants::loge)
-	 << ", log(T) = " << stardata[i].logTeff
-	 << ", log(g) = " << stardata[i].logg
-	 << ", WR = " << stardata[i].WR
-	 << endl;
-
-  
   // Now form the Gauss and Kronrod sums
 
   // Central mass point
