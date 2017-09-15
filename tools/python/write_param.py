@@ -60,19 +60,19 @@ class Menu(object):
         self.params = OrderedDict([
             ('file_name', Menu_opt(
                 'Parameter file', 'default.param',
-                'Home', ItemType.Str, help_txt = 
+                'Basic', ItemType.Str, help_txt = 
                 'name of parameter file to be written')),
             ('model_name', Menu_opt(
                 'Model name', 'SLUG_DEF', 'Home', ItemType.Str,
                 help_txt = 
                 'name of model (base name of SLUG output files)')),
             ('out_dir', Menu_opt(
-                'Output directory', '', 'Home', 
+                'Output directory', '', 'Basic', 
                 ItemType.Str, optional = True, help_txt = 
                 'directory in which to place SLUG output files;'
                 ' default = current working directory')),
             ('verbosity', Menu_opt(
-                'Verbosity level', '1', 'Home', ItemType.Vals,
+                'Verbosity level', '1', 'Basic', ItemType.Vals,
                 allowed_vals = ['0', '1', '2'], help_txt = 
                 '0 = SLUG runs silently, 1 = SLUG produces '
                 + 'moderate output, 2 = SLUG produces verbose '
@@ -213,10 +213,10 @@ class Menu(object):
                 'lifetime distribution')),
             ('tracks', Menu_opt(
                 'Stellar evolution tracks', 
-                osp.join('lib', 'tracks', 'Z0140v00.txt'),
+                'geneva_2013_vvcrit_00',
                 'Stellar', ItemType.Str, help_txt =
                 'name of the stellar evolution ' +
-                'tracks file')),
+                'track set or file')),
             ('atmospheres', Menu_opt(
                 'Stellar atmosphere directory',
                 osp.join('lib', 'atmospheres')+osp.sep,
@@ -241,11 +241,6 @@ class Menu(object):
                 'Metallicity [Zsun]', '',
                 'Stellar', ItemType.PosReal, optional=True,
                 help_txt = 'metallicity normalized to Solar')),
-            ('WR_mass', Menu_opt(
-                'Minimum WR mass [Msun]', '',
-                'Stellar', ItemType.PosReal, optional=True,
-                help_txt = 'minimum mass of star that will have a '+
-                'WR phase')),
             ('A_V', Menu_opt(
                 'A_V [mag or file name]',
                 '',
@@ -340,18 +335,51 @@ class Menu(object):
                 'comma-separated list of filters / bands for ' +
                 'which photometry should be computed; see ' +
                 osp.join('lib', 'filters', 'FILTER_LIST') +
-                ' for a full list of available filters'))
+                ' for a full list of available filters')),
+            ('yield_dir', Menu_opt(
+                'Yields directory',
+                osp.join('lib', 'yields')+osp.sep,
+                'Yields', ItemType.Str,
+                help_txt =
+                'directory containing yield tables')),
+            ('yield_mode', Menu_opt(
+                'Yield computation mode',
+                'sukhbold16+karakas16+doherty14',
+                'Yields',
+                ItemType.Vals,
+                allowed_vals = [
+                    'sukhbold16+karakas16+doherty14',
+                    'karakas16+doherty14',
+                    'sukhbold16'],
+                help_txt = 'yield tables to use')),
+            ('no_decay_isotopes', Menu_opt(
+                'Disable isotope decay',
+                False,
+                'Yields', ItemType.Bool,
+                help_txt = 'if true, no radioactive decay is'
+                ' applied to isotope masses')),
+            ('isotopes_included', Menu_opt(
+                'Isotopes included',
+                'intersection',
+                'Yields',
+                ItemType.Vals,
+                allowed_vals = [ 'intersection', 'union' ],
+                help_txt = 'when combining yield tables, include '
+                'only isotopes present in all tables (intersection)'
+                ' or present in any table (union)'))
         ])
 
         # List of menus and names
         self.menus = OrderedDict([
             ('Home', 'Main menu'),
+            ('Basic', 'Basic keywords'),
             ('Control', 'Simulation control keywords'),
             ('Output', 'Output control keywords'),
             ('Stellar', 'Stellar model keywords'),
             ('Extinction', 'Extinction keywords'),
             ('Nebular', 'Nebular emission keywords'),
-            ('Photometry', 'Photometry keywords')
+            ('Photometry', 'Photometry keywords'),
+            ('Yields', 'Yield keywords')
         ])
 
         # Hide the cursor
