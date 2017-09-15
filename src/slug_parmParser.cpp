@@ -849,6 +849,7 @@ slug_parmParser::checkParams() {
   path cmf_path(cmf);
   path clf_path(clf);
   path track_path(track);
+  path track_dir_path(track_dir);
   path atmos_path(atmos_dir);
   path atomic_path(atomic_dir);
   path filter_path(filter_dir);
@@ -865,6 +866,8 @@ slug_parmParser::checkParams() {
     cmf = (slug_path / cmf_path).string();
   if (!clf_path.is_absolute()) 
     clf = (slug_path / clf_path).string();
+  if (!track_dir_path.is_absolute()) 
+    track_dir = (slug_path / track_dir_path).string();
   if (!track_path.is_absolute()) 
     track = (slug_path / track_path).string();
   if (!atmos_path.is_absolute()) 
