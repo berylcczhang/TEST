@@ -325,7 +325,7 @@ requires going between wavelength- and frequency-based systems</dd>
 
 <dl class="function">
 <dt id="slugpy.read_cluster">
-<code class="descclassname">slugpy.</code><code class="descname">read_cluster</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>read_info=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster.html#read_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">slugpy.</code><code class="descname">read_cluster</code><span class="sig-paren">(</span><em>model_name</em>, <em>output_dir=None</em>, <em>fmt=None</em>, <em>nofilterdata=False</em>, <em>photsystem=None</em>, <em>verbose=False</em>, <em>read_filters=None</em>, <em>read_nebular=None</em>, <em>read_extinct=None</em>, <em>read_info=None</em>, <em>read_lines=None</em>, <em>no_stellar_mass=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/read_cluster.html#read_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.read_cluster" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to read all cluster data for a SLUG2 run.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -390,6 +390,9 @@ extinction, and thus there was no output field for it; this
 is detected and handled automatically for ASCII and FITS
 files; for binary outputs, this flag must be set for pre
 2/17 output files to be read correctly</dd>
+<dt>read_lines <span class="classifier-delimiter">:</span> <span class="classifier">None | string | listlike containing strings</span></dt>
+<dd>If this is None, data for all the available lines will be 
+read. Default is to read all data.</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -572,7 +575,7 @@ plus the diffuse light emitted by the HII region); units are as
 indicated in the units field</dd>
 </dl>
 <p>(Present if the run being read contains a cluster_cloudyparams file)</p>
-<dl class="last docutils">
+<dl class="docutils">
 <dt>cloudy_hden <span class="classifier-delimiter">:</span> <span class="classifier">array</span></dt>
 <dd>number density of H nuclei at the inner edge of the ionized
 region simulated by cloudy</dd>
@@ -597,6 +600,16 @@ radiation pressure effects are significant</dd>
 simulated by cloudy; as with U, this value is approximate,
 and the approximation is valid only if radiation pressure
 effects are small</dd>
+</dl>
+<p>(Present if the run being read contains a cluster_ew file)</p>
+<dl class="last docutils">
+<dt>line_names <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the name for each line</dd>
+<dt>line_units <span class="classifier-delimiter">:</span> <span class="classifier">list of string</span></dt>
+<dd>a list giving the units for the equivalent width of each line</dd>
+<dt>ew <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (N_cluster, N_lines)</span></dt>
+<dd>equivalent width value of each line for each cluster; 
+units are as indicated in the units field</dd>
 </dl>
 </dd>
 <dt>Raises</dt>

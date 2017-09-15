@@ -210,14 +210,22 @@ imf   	          lib/imf/chabrier.imf
 # Default: lib/clf/slug_default.clf (dN/dt ~ t^-1.9)
 clf               lib/clf/nodisrupt.clf
 
-# Stellar tracks to use
-# Default: lib/tracks/Z0140v00.txt (Geneva 2013, solar
-# metallicity no rotation)
-tracks	  	  lib/tracks/modp020.dat
+# Stellar tracks to use; allowed values are:
+# -- geneva_2013_vvcrit_00 (Geneva 2013 models, non-rotating)
+# -- geneva_2013_vvcrit_40 (Geneva 2013 models, rotating 40% breakup)
+# -- geneva_mdot_std (Geneva pre-2013 models, standard mass loss rate)
+# -- geneva_mdot_enhanced (Geneva pre-2013 models, x2 mass loss rate)
+# -- padova_tpagb_yes (Padova models, added TP-AGB stars)
+# -- padova_tpagb_no (Padova models, no TP-AGB stars)
+# -- mist_2016_vvcrit_00 (MIST 2016 v1.0 models, non-rotating)
+# -- mist_2013_vvcrit_40 (MIST 2016 v1.0 models, rotating 40% breakup)
+# -- Any file name specifying a track file (generally lib/tracks/...)
+# Default: geneva_2013_vvcrit_00
+#tracks	  	  geneva_2013_vvcrit_00
 
 # Directory containing stellar atmosphere models
 # Default: lib/atmospheres
-atmospheres 	  lib/atmospheres
+#atmospheres 	  lib/atmospheres
 
 # Spectral synthesis mode, describing which models to use for stellar
 # atmospheres; allowed values are 
@@ -241,18 +249,12 @@ specsyn_mode	   sb99
 #min_stoch_mass    0.0
 
 # Metallicity; the metallicity of the stellar track set being used,
-# relative to solar (i.e. solar = 1). If this keyword is omitted, the
-# code will attempt to guess from the track file name; this will work
-# for the files that SLUG ships with, but not if you have added a new
-# track file.
+# relative to solar (i.e. solar = 1). Note that this keyword should be
+# omitted if you specify the tracks by giving a track file name, since
+# in that case the metallicity will be deduced from which file you
+# have chosen.
+# Default: 1.0
 #metallicity       1.0
-
-# Initial stellar mass above which stars have a Wolf-Rayet phase. As
-# with metallicity, if this parameter is omitted, the code will
-# attempt to guess this value from the track file name, which will
-# work for the tracks that SLUG ships with. If you use your own
-# tracks, you will have to set this parameter manually.
-#WR_mass           25.0
 
 
 #####################################################################
@@ -377,7 +379,24 @@ yield_dir	   lib/yields
 # are available:
 # sukhbold16 = Solar metallicity type II SN yields from Sukhbold et
 #              al. (2016, ApJ, 821, 38); no other yields
-# karakas16 = metallicity-dependnet AGB star yields from Karakas &
-#             Lugaro (2016, ApJ, 825, 26)
-# sukhbold16+karakas16 = sukhbold16 used for SNII, karakas16 for AGB
-yield_mode         sukhbold16+karakas16
+# karakas16+doherty14 = metallicity-dependent AGB star yields from
+#                       Karakas & Lugaro (2016, ApJ, 825, 26), and super-
+#                       AGB star yields from Doherty+ (2014, MNRAS, 437, 195)
+# sukhbold16+karakas16+doherty14 = sukhbold16 used for SNII,
+#                                  karakas16+doherty14 for AGB
+yield_mode         sukhbold16+karakas16+doherty14
+
+# Disable decay of radioactive isotopes? Allowed values:
+# -- 0 (decay occurs, outputs are mass still present at output time)
+# -- 1 (decay disabled, outputs are total mss of isotope ever
+#       produced)
+# Default: 0
+# no_decay_isotopes	0
+
+# When using multiple yield tables, which isotopes should be included
+# in the output: only those present in all tables, or any isotopes
+# present in any of the tables? Allowed values:
+# -- intersection (only isotopes present in all yield tables)
+# -- union (all isotopes present in nay of the yield tables)
+# Default: intersection
+#isotopes_included	intersection

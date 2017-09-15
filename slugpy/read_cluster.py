@@ -82,9 +82,10 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           is detected and handled automatically for ASCII and FITS
           files; for binary outputs, this flag must be set for pre
           2/17 output files to be read correctly
-        read_lines : None | string | listlike containing strings
+       read_lines : None | string | listlike containing strings
           If this is None, data for all the available lines will be 
           read. Default is to read all data.
+
     Returns
        A namedtuple containing the following fields:
 
@@ -292,6 +293,7 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           simulated by cloudy; as with U, this value is approximate,
           and the approximation is valid only if radiation pressure
           effects are small
+
        (Present if the run being read contains a cluster_ew file)
        
        line_names : list of string
