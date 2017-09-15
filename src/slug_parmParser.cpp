@@ -844,48 +844,27 @@ slug_parmParser::checkParams() {
 
   // If any of the input file names/directories are relative paths,
   // take them to be relative to the SLUG_DIR
-  path out_path(outDir);
-  path imf_path(imf);
-  path cmf_path(cmf);
-  path clf_path(clf);
-  path track_path(track);
-  path track_dir_path(track_dir);
-  path atmos_path(atmos_dir);
-  path atomic_path(atomic_dir);
-  path filter_path(filter_dir);
-  path line_path(line_dir);
-  path extinct_path(extinct_curve);
-  path AV_path(AV_dist);
-  path out_time_path(out_time_dist);
-  path yield_path(yield_dir);
-  if (!out_path.is_absolute())
-    outDir = (current_path() / out_path).string();
-  if (!imf_path.is_absolute()) 
-    imf = (slug_path / imf_path).string();
-  if (!cmf_path.is_absolute()) 
-    cmf = (slug_path / cmf_path).string();
-  if (!clf_path.is_absolute()) 
-    clf = (slug_path / clf_path).string();
-  if (!track_dir_path.is_absolute()) 
-    track_dir = (slug_path / track_dir_path).string();
-  if (!track_path.is_absolute()) 
-    track = (slug_path / track_path).string();
-  if (!atmos_path.is_absolute()) 
-    atmos_dir = (slug_path / atmos_path).string();
-  if (!filter_path.is_absolute()) 
-    filter_dir = (slug_path / filter_path).string();
-  if (!line_path.is_absolute())
-    line_dir = (slug_path / line_path).string();
-  if (!extinct_path.is_absolute())
-    extinct_curve = (slug_path / extinct_path).string();
-  if (!atomic_path.is_absolute())
-    atomic_dir = (slug_path / atomic_path).string();
-  if (!yield_path.is_absolute())
-    yield_dir = (slug_path / yield_path).string();
-  if (!AV_path.is_absolute())
-    AV_dist = (slug_path / AV_path).string();
-  if (!out_time_path.is_absolute())
-    out_time_dist = (slug_path / out_time_path).string();
+  vector<string *> dirs;
+  dirs.push_back(&outDir);
+  dirs.push_back(&imf);
+  dirs.push_back(&cmf);
+  dirs.push_back(&clf);
+  dirs.push_back(&track);
+  dirs.push_back(&track_dir);
+  dirs.push_back(&atmos_dir);
+  dirs.push_back(&atomic_dir);
+  dirs.push_back(&filter_dir);
+  dirs.push_back(&line_dir);
+  dirs.push_back(&extinct_curve);
+  dirs.push_back(&AV_dist);
+  dirs.push_back(&neb_extinct_fac_dist);
+  dirs.push_back(&yield_dir);
+  dirs.push_back(&out_time_dist);
+  for (vector<string>::size_type i=0; i<dirs.size(); i++) {
+    path dirpath(*(dirs[i]));
+    if (!dirpath.is_absolute())
+      *(dirs[i]) = (slug_path / dirpath).string();
+  }
 }
 
 
@@ -947,7 +926,7 @@ void slug_parmParser::restartSetup() {
       ostringstream ss;
       ss << "_chk" << setfill('0') << setw(4) << checkpointCtr;
       string fname = model + par_str + ss.str() + outtypes[i] + ext;
-      path full_path = outDir / fname;
+      path full_path = path(outDir) / fname;
 
       // Try to open file and read number of trials from it; bail if
       // any of this fails
@@ -1122,7 +1101,7 @@ slug_parmParser::writeParams() const {
   // Write parameters to file
   paramFile << "SLUG WAS RUN WITH THE FOLLOWING PARAMETERS" << endl;
   paramFile << "model_name           " << model << endl;
-  paramFile << "out_dir              " << outDir.string() << endl;
+  paramFile << "out_dir              " << outDir << endl;
   paramFile << "sim_type             ";
   if (run_galaxy_sim)
     paramFile << "galaxy" << endl;
@@ -1307,7 +1286,7 @@ const char *slug_parmParser::get_line_dir() const
 { return line_dir.c_str(); }
 const char *slug_parmParser::get_modelName() const { return model.c_str(); }
 const char *slug_parmParser::get_outDir() 
-const { return outDir.string().c_str(); }
+const { return outDir.c_str(); }
 double slug_parmParser::get_fClust() const { return fClust; }
 vector<string>::size_type slug_parmParser::get_nPhot()
 const { return photBand.size(); }
