@@ -113,8 +113,7 @@ These specify the physical models to be used for stellar evolution, atmospheres,
    * ``SB99``: emulate the behavior of ``starburst99``: use Pauldrach for OB stars, Hillier for WR stars, and Kurucz for all other stars
 * ``clust_frac`` (default: ``1.0``): fraction of stars formed in clusters
 * ``min_stoch_mass`` (default: ``0.0``): minimum stellar mass to be treated stochastically. All stars with masses below this value are assumed to be sampled continuously from the IMF.
-* ``metallicity``: metallicity of the stellar population, relative to solar. This may be omitted if ``tracks`` is set to one of the default sets of tracks that ships with SLUG, as the metallicities for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.
-* ``WR_mass``: minimum starting mass that stars must have in order to pass through a Wolf-Rayet phase. This can be omitted if ``tracks`` is set to one of the default sets of tracks that ships with SLUG, as the WR cutoff masses for these tracks are hardwired in. This keyword is provided to allow users to supply their own tracks.
+* ``metallicity`` (default: ``1.0``): metallicity of the stellar population, relative to Solar. If the tracks are specified by giving a track set, this value must be within the metallicity range covered by the chosen track set. If the tracks are set by specifying a particular track file, this keyword will be ignored in favor of the metallicity used for that track file, and a warning will be issued if it is set.
 
 .. _ssec-extinction-keywords:
 
