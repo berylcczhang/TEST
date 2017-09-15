@@ -222,7 +222,7 @@ private:
   std::string line_dir;                   // Directory w/line list
   std::string iso_dir;                    // Directory w/isotopic data
   std::string model;                      // Name of this model
-  boost::filesystem::path outDir;         // Dir into which to dump output
+  std::string outDir;                     // Dir into which to dump output
   std::vector<std::string> photBand;      // Names of photometric bands
   std::vector<std::string> linepicks;     // Names of lines picked
   std::vector<double> outTimes;           // Exact output times
