@@ -10,7 +10,7 @@ Automated Parameter File Generation
 
 The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience SLUG comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing::
 
-   python tools/write_param.py
+   python tools/python/write_param.py
 
 Once started, the script provides a series of menus that allow the user to set all the keywords specified below. The script can then write a validly-formatted parameter file based on the options chosen.
 
