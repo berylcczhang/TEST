@@ -425,7 +425,12 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         if read_info is not None:
             read_info['line_name'] = read_info['fname']
             del read_info['fname']
-    except IOError, e:
+    except IOError as e:
+        if e.strerror is None:
+            # Deal with errors using deprecated standard issued by astropy
+            e.strerror = e.message
+        if e.errno is None:
+            e.errno = 2
         if str(e.message)[:16] == 'requested line' and \
            str(e.message)[-14:] == 'not available!':
             # If the IO error is that we didn't have the requested

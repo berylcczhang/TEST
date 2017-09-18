@@ -7,7 +7,7 @@ from collections import namedtuple
 from copy import deepcopy
 import struct
 import re
-from slug_open import slug_open
+from .slug_open import slug_open
 
 def read_cluster_ew(model_name, output_dir=None, fmt=None, 
                       verbose=False, read_info=None,
@@ -104,16 +104,17 @@ def read_cluster_ew(model_name, output_dir=None, fmt=None,
         # ASCII mode
         ########################################################
 
-        print "EW only implemented for FITS files - ERROR - ABORTING"
-        exit()
+        raise NotImplementedError("EW only implemented for "
+                                  "FITS files - ERROR - ABORTING")
         
     elif fname.endswith('.bin'):
 
         ########################################################
         # Binary mode
         ########################################################
-        print "EW only implemented for FITS files - ERROR - ABORTING"
-        exit()
+        
+        raise NotImplementedError("EW only implemented for "
+                                  "FITS files - ERROR - ABORTING")
         
 
     elif fname.endswith('.fits'):

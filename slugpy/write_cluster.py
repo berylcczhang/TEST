@@ -843,7 +843,8 @@ def write_cluster(data, model_name, fmt):
             # ASCII mode
             ########################################################
             
-            print "ERROR: EW available for fits format output only"
+            raise NotImplementedError(
+                "ERROR: EW available for fits format output only")
 
 
         elif fmt == 'bin' or fmt == 'binary':
@@ -852,7 +853,8 @@ def write_cluster(data, model_name, fmt):
             # Binary mode
             ########################################################
 
-            print "ERROR: EW available for fits format output only"
+            raise NotImplementedError(
+                "ERROR: EW available for fits format output only")
             
         elif fmt == 'fits':
 
@@ -869,7 +871,7 @@ def write_cluster(data, model_name, fmt):
             cols.append(fits.Column(name="Time", format="1D",
                                     unit="yr", array=data.time))
             for i in range(len(data.line_names)):
-                print data.line_names
+                #print data.line_names
                 cols.append(fits.Column(name=data.line_names[i],
                                         unit=data.line_units[i],
                                         format="1D",
