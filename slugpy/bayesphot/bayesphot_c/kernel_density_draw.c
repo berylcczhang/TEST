@@ -216,15 +216,17 @@ void kd_pdf_draw(const kernel_density *kd, const double *x,
   /* Now traverse the tree */
   while (1) {
 
-    /* Do we have no non-leaf nodes left? If so, we're done. */
-    if (nnode == 0) break;
-
     /* Are we done? There are two conditions for this: first, the
        weight checked must exceed the largest random number we
        have. Second, the assigments of random numbers to specific
        items in the tree must not depend on the unknown weight of the
-       parts of the tree we have not yet checked. */
-    if (leafwgt_sum / (leafwgt_sum + nodewgt_sum) > rnd_max) {
+       parts of the tree we have not yet checked. We also put in a
+       safety to force the loop to exit if there are no nodes left
+       to check; this is needed in case nodewgt_sum doesn't go to
+       zero precisely enough to satisfy the weight condition as a
+       result of finite precision arithmetic. */
+    if (nnode == 0 || 
+	leafwgt_sum / (leafwgt_sum + nodewgt_sum) > rnd_max) {
       if (assign_idx(kd, x, dims, ndim, leaflist, leafwgt, leafwgt_sum, 
 		     leafwgt_sum + nodewgt_sum, nsample, rnd, 
 		     rndsort, pointwgt, idxmap))
