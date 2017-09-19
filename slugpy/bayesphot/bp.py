@@ -459,6 +459,23 @@ class bp(object):
                 POINTER(POINTER(
                     c_double)) ]       # wgts
 
+        self.__clib.kd_pdf_draw.restype = None
+        self.__clib.kd_pdf_draw.argtypes \
+            = [ c_void_p,              # kd
+                POINTER(c_double),     # x
+                POINTER(c_ulong),      # dims
+                c_ulong,               # ndim
+                c_ulong,               # nsample
+                c_int,                 # draw_method
+                c_void_p,              # rng
+                array_1d_double ]      # out
+        self.__clib.rng_init.restype = c_void_p
+        self.__clib.rng_init.argtypes \
+            = [ c_ulong ]              # seed
+        self.__clib.rng_free.restype = None
+        self.__clib.rng_free.argtypes \
+            = [ c_void_p ]             # r
+
         # Record some of the input parameters
         if (ktype == 'gaussian'):
             self.__ktype = 2
@@ -536,6 +553,8 @@ class bp(object):
         if hasattr(self, '__kd_phys'):
             if self.__kd_phys is not None:
                 self.__clib.free_kd(self.__kd_phys)
+        if hasattr(self, '__rng'):
+            self.__clib.rng_free(self.__rng)
 
 
     ##################################################################
@@ -1528,7 +1547,7 @@ class bp(object):
               physical properties to be used; if this is an array of
               nphys elements, these give the physical properties; if
               it is a multidimensional array, the operation is
-              vectoried over the leading dimensions
+              vectorized over the leading dimensions
               physical properties -- the function must take an array
               of (nphys) elements as an input, and return a floating
               point value representing the PDF evaluated at that set
@@ -1572,8 +1591,9 @@ class bp(object):
            (self.__nphot > 1):
             raise ValueError("need " + str(self.__nphys) +
                              " physical properties!")
-        if (np.amax(idx) > self.__nphot) or (np.amin(idx) < 0) or \
-           (not np.array_equal(np.squeeze(np.unique(np.array(idx))), 
+        if (np.amax(np.asarray(idx)) > self.__nphot) or \
+           (np.amin(np.asarray(idx)) < 0) or \
+           (not np.array_equal(np.squeeze(np.unique(np.asarray(idx))), 
                                np.squeeze(np.array([idx])))):
             raise ValueError("need non-repeating indices in " +
                              "the range 0 - {:d}!".
@@ -2937,3 +2957,160 @@ class bp(object):
 
         # Return
         return grid_out, pdf
+
+
+    ##################################################################
+    # Routines to draw from the kernel density PDF, constraining 
+    # dimensions or not
+    ##################################################################
+    def draw_sample(self, photerr=None, nsample=1):
+        """
+        Returns a randomly-drawn sample of physical and photometric
+        properties from the kernel density function
+
+        Parameters:
+           nsample : int
+              number of random samples to draw for each set of
+              physical properties; must be positive
+           photerr : arraylike, shape (nphot)
+              photometric errors to apply to the output photometry;
+              these are added in quadrature with the kernel density
+              estimation bandwidth
+
+        Returns:
+           samples : array, shape (nsample, nphys+nphot)
+              random sample drawn from the kernel density object; for
+              the final dimension in the output, the first nphys
+              elements are the physical quantities, the next nphot are
+              the photometric quantities
+        """
+
+        # Safety check
+        if (nsample < 1):
+            raise ValueError("need to draw at least 1 sample")
+        
+        # Allocate a random number generator from gsl if we do not
+        # already have one
+        if not hasattr(self, '__rng'):
+            self.__rng = self.__clib.rng_init(0)
+
+        # Allocate array to hold outputs
+        samples = np.zeros((nsample, self.__nphys+self.__nphot),
+                           dtype=c_double)
+
+        # Apply photometric errors if requested
+        if photerr is None:
+            kd_tmp = self.__kd
+        else:
+            kd_tmp = self.__change_bw_err(photerr)
+
+        # Call library function
+        self.__clib.kd_pdf_draw(kd_tmp, None, None, 0,
+                                nsample, 1, self.__rng,
+                                np.ravel(samples))
+
+        # Restore kernel density bandwidth
+        if photerr is not None:
+            self.__restore_bw_err(kd_tmp)
+
+        # Return samples
+        return samples
+            
+    
+    def draw_phot(self, physprop, physidx=None, photerr=None,
+                  nsample=1):
+        """
+        Returns a randomly-drawn sample of photometric properties for
+        one or more input sets of physical properties.
+
+        Parameters:
+           physprop : arraylike
+              physical properties to be used; the final dimension of
+              the input must have len(physidx) indices, or nphys
+              indicates if physidx is None; if the input is a
+              multidimensional array, the operation is vectorized over
+              the leading dimensions physical properties
+           physidx : arraylike
+              indices of the physical quantities being constrained; if
+              left as None, all physical properties are set, and
+              physprop must have a trailing dimension of size equal to
+              nphys; otherwise this must be an arraylike of <= nphys
+              positive integers, each unique and in the range [0,
+              nphys), specying which physical dimensions are
+              constrained
+           photerr : arraylike, shape (nphot)
+              photometric errors to apply to the output photometry;
+              these are added in quadrature with the kernel density
+              estimation bandwidth
+           nsample : int
+              number of random samples to draw for each set of
+              physical properties; must be positive
+
+        Returns:
+           samples : arraylike
+              sample of photometric properties; the shape of the
+              output is (..., nsample, nphot), where nphot is the
+              number of photometric properties, and the leading
+              dimension(s) match the leading dimension(s) of physprop
+        """
+
+        # Safety check and sanitization on inputs
+        if (nsample < 1):
+            raise ValueError("need to draw at least 1 sample")
+        if physidx is None:
+            physidx_ = np.arange(self.__nphys, dtype=c_ulong)
+        else:
+            physidx_ = np.flatten(np.array(physidx_))
+            if (len(physidx_) > self.__nphys) or \
+               (len(physidx_) != len(np.unique(physidx))) or \
+               (np.amin(physidx_) < 0) or \
+               (np.amax(physidx_) >= self.__nphys):
+                raise ValueError("physidx must be an array of "
+                                 "unique indices from 0 to {:d}".
+                                 format(self.__nphys-1))
+            
+        physprop_ = np.array(physprop)
+        if physprop_.shape[-1] != physidx_.size:
+            raise ValueError("physidx must have as many elements as "
+                             "trailing dimension of physprop")
+
+        # Set up array to hold outputs
+        if physprop_.ndim == 1:
+            physprop_ = physprop_.reshape((1,)+physprop_.shape)
+        sample_dim = physprop_.shape[:-1]
+        samples = np.zeros(sample_dim + (nsample, self.__nphot))
+
+        # Apply photometric errors if requested
+        if photerr is None:
+            kd_tmp = self.__kd
+        else:
+            kd_tmp = self.__change_bw_err(photerr)
+
+        # Allocate a random number generator from gsl if we do not
+        # already have one
+        if not hasattr(self, '__rng'):
+            self.__rng = self.__clib.rng_init(0)
+
+        # Loop over leading dimensions of input physical properties
+        for i in np.ndindex(*physprop_.shape[:-1]):
+
+            # Call library function
+            self.__clib.kd_pdf_draw(
+                kd_tmp,
+                physprop_[i].ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
+                physidx_.ctypes.data_as(ctypes.POINTER(c_ulong)),
+                physidx_.size,
+                nsample, 0,
+                self.__rng,
+                np.ravel(samples[i]))
+
+        # Restore kernel density bandwidth
+        if photerr is not None:
+            self.__restore_bw_err(kd_tmp)
+
+        # Reshape output if needed
+        if physprop_.ndim == 1:
+            samples = samples[0]
+
+        # Return samples
+        return samples

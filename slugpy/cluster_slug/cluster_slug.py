@@ -90,6 +90,12 @@ class cluster_slug(object):
           given a set of photometric properties, return a set of points
           that can be used for fast approximation of the corresponding
           physical properties
+       draw_sample():
+          draw a random sample of cluster physical and photometric
+          properties
+       draw_phot():
+          given a set of physical properties, return a
+          randomly-selected set of photometric properties
     """
 
     ##################################################################
@@ -1801,3 +1807,129 @@ class cluster_slug(object):
                                   dims_return=dims_return,
                                   ngrid=ngrid, qmin=qmin,
                                   qmax=qmax, grid=grid, norm=norm)
+
+    ##################################################################
+    # Methods to draw samples
+    ##################################################################
+    def draw_sample(self,  photerr=None, nsample=1, filters=None):
+        """
+        Returns a randomly-drawn sample of clusters for a given filter
+        set
+
+        Parameters:
+           photerr : arraylike, shape (nphot)
+              photometric errors to apply to the output photometry;
+              these are added in quadrature with the kernel density
+              estimation bandwidth
+           nsample : int
+              number of random samples to draw for each set of
+              physical properties; must be positive
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns:
+           samples : array, shape (nsample, nphys+nphot)
+              random sample drawn from the kernel density object; for
+              the final dimension in the output, the first nphys
+              elements are the physical quantities, the next nphot are
+              the photometric quantities
+        """
+        
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    draw_sample(photerr=photerr, nsample=nsample)
+
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the method
+            return bp.draw_sample(photerr=photerr, nsample=nsample)
+
+    def draw_phot(self, physprop, physidx=None, photerr=None,
+                  nsample=1, filters=None):
+        """
+        Returns a randomly-drawn sample of clusters for a given filter
+        set
+
+        Parameters:
+           physprop : arraylike
+              physical properties to be used; the final dimension of
+              the input must have len(physidx) indices, or nphys
+              indicates if physidx is None; if the input is a
+              multidimensional array, the operation is vectorized over
+              the leading dimensions physical properties
+           physidx : arraylike
+              indices of the physical quantities being constrained; if
+              left as None, all physical properties are set, and
+              physprop must have a trailing dimension of size equal to
+              nphys; otherwise this must be an arraylike of <= nphys
+              positive integers, each unique and in the range [0,
+              nphys), specying which physical dimensions are
+              constrained
+           photerr : arraylike, shape (nphot)
+              photometric errors to apply to the output photometry;
+              these are added in quadrature with the kernel density
+              estimation bandwidth
+           nsample : int
+              number of random samples to draw for each set of
+              physical properties; must be positive
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns:
+           samples : array, shape (nsample, nphys+nphot)
+              random sample drawn from the kernel density object; for
+              the final dimension in the output, the first nphys
+              elements are the physical quantities, the next nphot are
+              the photometric quantities
+        """
+        
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    draw_phot(physprop, physidx=physidx,
+                              photerr=photerr, nsample=nsample)
+
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Call the method
+            return bp.draw_phot(physprop, physidx=physidx,
+                                photerr=photerr, nsample=nsample)

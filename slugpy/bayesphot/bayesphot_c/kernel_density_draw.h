@@ -25,13 +25,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "kernel_density.h"
 #include "gsl/gsl_rng.h"
 
+typedef enum draw_method_enum
+  { draw_depth_first, draw_breadth_first } draw_method;
+
 /*********************************************************************/
 /* Function definitions                                              */
 /*********************************************************************/
 
 void kd_pdf_draw(const kernel_density *kd, const double *x,
 		 const unsigned long *dims, const unsigned long ndim,
-		 const unsigned long nsample, gsl_rng *r, double *out);
+		 const unsigned long nsample, const draw_method method,
+		 const gsl_rng *r, double *out);
 /* This routine draws from a kernel density PDF, subject to a
    constaint that certain dimensions have fixed values. For example,
    for a kernel density PDF representing the joint distribution of two
@@ -53,6 +57,8 @@ void kd_pdf_draw(const kernel_density *kd, const double *x,
          can be 0
       INPUT nsample
          Number of samples to draw; must be > 0
+      INPUT method
+         Method of drawing -- depth-first or breadth first
       INPUT/OUTPUT r
          The random number generator to use
       OUTPUT out

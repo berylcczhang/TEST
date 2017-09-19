@@ -51,7 +51,7 @@ int assign_idx(const kernel_density *kd,
 	       const double *rnd, 
 	       const size_t* rndsort, 
 	       const double *pointwgt,
-	       unsigned long *idxmap);
+	       size_t *idxmap);
 
 /*********************************************************************/
 /* Helper functions for use with gsl                                 */
@@ -112,47 +112,159 @@ void rng_free(gsl_rng *r) {
 }
 
 /*********************************************************************/
-/* Function to draw from the PDF                                     */
+/* Function to assign indices to random draws using breadth-first    */
+/* traversal of the tree                                             */
 /*********************************************************************/
-void kd_pdf_draw(const kernel_density *kd, const double *x,
-		 const unsigned long *dims, const unsigned long ndim,
-		 const unsigned long nsample, gsl_rng *r, double *out) {
+void kd_pdf_draw_breadth(const kernel_density *kd,
+			 const double *x,
+			 const unsigned long *dims,
+			 const unsigned long ndim,
+			 const unsigned long nsample,
+			 const double *rnd,
+			 const size_t *rndsort,
+			 size_t *idxmap) {
 
-  unsigned long i, j, k, nnodealloc, nleafalloc, nnode, nleaf;
-  unsigned long nleaf_old, nnode_old, ptr, lptr, rptr, ndim_out;
-  unsigned long *leaflist, *nodelist, *idxmap, *dims_out;
-  double rnd_max, maxwgt, leafwgt_sum, nodewgt_sum, lwgt, rwgt, dist, norm;
-  double *rnd, *leafwgt, *nodewgt, *pointwgt, *rndgauss = NULL;
-  size_t *rndsort;
-#if 0
-  const gsl_root_fsolver_type *T;
-  gsl_root_fsolver *s = NULL;
-  struct ep_root_params ep_params;
-  gsl_function_fdf FDF;
-#endif
-
-  /* Epanechnikov not done yet */
-  assert(kd->ktype != epanechnikov);
+  double lastwgt;
+  double *nodewgt, *pointwgt;
+  size_t offset;
+  unsigned long i, j, curnode;
 
   /* Allocate memory for temporary arrays */
-  if (!(rndsort = (size_t *) calloc(nsample, sizeof(size_t)))) {
-    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
+  if (!(nodewgt = (double *) calloc(kd->tree->nodes, sizeof(double)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw_breadth\n");
     exit(1);
   }
-  if (!(rnd = (double *) calloc(nsample, sizeof(double)))) {
-    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
+  if (!(pointwgt = (double *) calloc(kd->tree->tree[ROOT].npt,
+				     sizeof(double)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw_breadth\n");
     exit(1);
   }
-  ndim_out = kd->tree->ndim - ndim;
-  if (!(dims_out = (unsigned long *) 
-	calloc(ndim_out, sizeof(unsigned long)))) {
-    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
-    exit(1);
+
+  /* Go to leftmost leaf */
+  curnode = ROOT;
+  while (kd->tree->tree[curnode].splitdim != -1) 
+    curnode = LEFT(curnode);
+
+  /* Traverse the tree from left to right, starting from leftmost
+     leaf */
+  while (curnode != 0) {
+
+    for (i=curnode; i<2*curnode; i++) {
+
+      /* Is this node a leaf */
+      if (kd->tree->tree[i].splitdim != -1) {
+	
+	/* Non-leaf nodes just have a cumulative weight equal to that
+	   of their right-most child */
+	nodewgt[i] = nodewgt[RIGHT(i)];
+
+      } else {
+
+	/* For leaf nodes, we compute the weights of all points in the
+	   leaf, and of the leaf as a whole, if there are any points */
+
+	/* Get weight at end of previous leaf */
+	if (i == curnode) lastwgt = 0.0;
+	else lastwgt = nodewgt[i-1];
+
+	/* Does this leaf have any points */
+	if (kd->tree->tree[i].npt == 0) {
+
+	  /* No points in this leaf, so just set its cumulative weight
+	     equal to the last cumulative weight and move on */
+	  nodewgt[i] = lastwgt;
+
+	} else {
+
+	  /* This leaf does have points, so get offset to them */
+	  offset = (kd->tree->tree[i].x - kd->tree->tree[ROOT].x) /
+	    kd->tree->ndim;
+
+	  /* Get differential weights of points and of entire node */
+	  nodewgt[i] = get_node_wgt(kd, x, dims, ndim, i,
+				    pointwgt + offset);
+
+	  
+	  /* Change recorded weights in this leaf from differential to
+	     cumulative */
+	  nodewgt[i] += lastwgt;
+	  if (kd->tree->tree[i].npt > 0) pointwgt[offset] += lastwgt;
+	  for (j=1; j<kd->tree->tree[i].npt; j++) {
+	    pointwgt[offset+j] += pointwgt[offset+j-1];
+	  }
+	}
+      }
+    }
+
+    /* Go up one level in tree */
+    curnode = PARENT(curnode);
   }
-  if (!(idxmap = (unsigned long *) calloc(nsample, sizeof(unsigned long)))) {
-    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
-    exit(1);
+
+  /* Now traverse tree to assign indices to reach random number, using
+     depth-first traversal */
+  curnode = ROOT;
+  for (i=0; i<nsample; i++) {
+
+    /* Loop until we find the point we're looking for */
+    while (1) {
+
+      /* Does this node contain the point we are interested in? */
+      if (rnd[rndsort[i]] < nodewgt[curnode]/nodewgt[ROOT]) {
+
+	/* This node does contain point. See if it is a leaf */
+	if (kd->tree->tree[curnode].splitdim != -1) {
+
+	  /* It is not the leaf, so descend one level in the tree */
+	  curnode = LEFT(curnode);
+	  
+	} else {
+
+	  /* This is a leaf, so see which point in the leaf is the one
+	     we want */
+	  offset = (kd->tree->tree[curnode].x - kd->tree->tree[ROOT].x)
+	    / kd->tree->ndim;
+	  j = 0;
+	  while (rnd[rndsort[i]] >= pointwgt[offset+j]/nodewgt[ROOT]) j++;
+
+	  /* Record the point, then go to next random number */
+	  idxmap[i] = offset+j;
+	  break;
+	}
+	
+      } else {
+
+	/* This node does not contain the point we are interested in,
+	   so go to next node */
+	SETNEXT(curnode);
+
+      }
+    }
   }
+
+  /* Free temporary storage */
+  free(nodewgt);
+  free(pointwgt);
+}
+  
+/*********************************************************************/
+/* Function to draw from the PDF using depth-first traversal         */
+/*********************************************************************/
+void kd_pdf_draw_depth(const kernel_density *kd,
+		       const double *x,
+		       const unsigned long *dims,
+		       const unsigned long ndim,
+		       const unsigned long nsample,
+		       const double *rnd,
+		       const size_t *rndsort,
+		       size_t *idxmap) {
+
+  unsigned long i, nnodealloc, nleafalloc, nnode, nleaf;
+  unsigned long nleaf_old, nnode_old, ptr, lptr, rptr;
+  unsigned long *leaflist, *nodelist;
+  double rnd_max, maxwgt, leafwgt_sum, nodewgt_sum, lwgt, rwgt;
+  double *leafwgt, *nodewgt, *pointwgt;
+
+  /* Allocate temporary storage */
   if (!(nodelist = (unsigned long *) 
 	calloc(NODEBLOCKSIZE, sizeof(unsigned long)))) {
     fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
@@ -180,21 +292,8 @@ void kd_pdf_draw(const kernel_density *kd, const double *x,
   }
   nnodealloc = nleafalloc = NODEBLOCKSIZE;
 
-  /* Figure out which dimensions we'll be outputting */
-  for (i=0, j=0; i<kd->tree->ndim; i++) {
-    for (k=0; k<ndim; k++) if (dims[k] == i) break;
-    if (k==ndim) dims_out[j++] = i;
-  }
-
-  /* Generate a random number in [0,1) for each sample; make an
-     indirectly sorted version of the random number list for later
-     convenience */
-  rnd_max = 0.0;
-  for (i=0; i<nsample; i++) {
-    rnd[i] = gsl_rng_uniform(r);
-    if (rnd[i] > rnd_max) rnd_max = rnd[i];
-  }
-  gsl_sort_index(rndsort, rnd, 1, nsample);
+  /* Shorthand to largest of random numbers */
+  rnd_max = rnd[rndsort[nsample-1]];
 
   /* Analyze the root node, and push onto the appropriate list */
   if (kd->tree->tree[ROOT].splitdim == -1) {
@@ -333,8 +432,79 @@ void kd_pdf_draw(const kernel_density *kd, const double *x,
     }
   }
 
-  /* If we're here, our index map has converged, so we know which
-     part of the kernel we're drawing from for each sample. Now draw. */
+  /* Free temporaries */
+  free(nodelist);
+  free(nodewgt);
+  free(leaflist);
+  free(leafwgt);
+  free(pointwgt);
+}
+
+
+/*********************************************************************/
+/* Function to draw from the PDF                                     */
+/*********************************************************************/
+void kd_pdf_draw(const kernel_density *kd, const double *x,
+		 const unsigned long *dims, const unsigned long ndim,
+		 const unsigned long nsample, const draw_method method,
+		 const gsl_rng *r, double *out) {
+
+  size_t *rndsort, *idxmap;
+  double *rnd, *rndgauss = NULL;
+  double norm, dist;
+  unsigned long *dims_out;
+  unsigned long ndim_out, i, j, k;
+#if 0
+  const gsl_root_fsolver_type *T;
+  gsl_root_fsolver *s = NULL;
+  struct ep_root_params ep_params;
+  gsl_function_fdf FDF;
+#endif
+
+  /* Epanechnikov not done yet */
+  assert(kd->ktype != epanechnikov);
+
+  /* Allocate memory for temporary arrays */
+  if (!(rndsort = (size_t *) calloc(nsample, sizeof(size_t)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
+    exit(1);
+  }
+  if (!(rnd = (double *) calloc(nsample, sizeof(double)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
+    exit(1);
+  }
+  ndim_out = kd->tree->ndim - ndim;
+  if (!(dims_out = (unsigned long *) 
+	calloc(ndim_out, sizeof(unsigned long)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
+    exit(1);
+  }
+  if (!(idxmap = (size_t *) calloc(nsample, sizeof(size_t)))) {
+    fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_draw\n");
+    exit(1);
+  }
+
+  /* Figure out which dimensions we'll be outputting */
+  for (i=0, j=0; i<kd->tree->ndim; i++) {
+    for (k=0; k<ndim; k++) if (dims[k] == i) break;
+    if (k==ndim) dims_out[j++] = i;
+  }
+
+  /* Generate a random number in [0,1) for each sample; make an
+     indirectly sorted version of the random number list for later
+     convenience */
+  for (i=0; i<nsample; i++) rnd[i] = gsl_rng_uniform(r);
+  gsl_sort_index(rndsort, rnd, 1, nsample);
+
+  /* Traverse tree to map the random numbers we've just picked into
+     sample indices */
+  if (method == draw_depth_first) {
+    kd_pdf_draw_depth(kd, x, dims, ndim, nsample, rnd, rndsort, idxmap);
+  } else {
+    kd_pdf_draw_breadth(kd, x, dims, ndim, nsample, rnd, rndsort, idxmap);
+  }
+
+  /* Now draw actual values of samples */
   for (i=0; i<nsample; i++) {
     switch (kd->ktype) {
     case gaussian: {
@@ -387,11 +557,6 @@ void kd_pdf_draw(const kernel_density *kd, const double *x,
   if ((kd->ktype == tophat) || (kd->ktype == epanechnikov)) free(rndgauss);
 
   /* Free temporaries */
-  free(nodelist);
-  free(nodewgt);
-  free(leaflist);
-  free(leafwgt);
-  free(pointwgt);
   free(idxmap);
   free(rndsort);
   free(rnd);
@@ -517,7 +682,7 @@ int assign_idx(const kernel_density *kd,
 	       const double *rnd, 
 	       const size_t *rndsort,
 	       const double *pointwgt,
-	       unsigned long *idxmap) {
+	       size_t *idxmap) {
   unsigned long i, j, jsave, k, ksave;
   double wgt, cumwgt = 0, cumwgt1;
 
