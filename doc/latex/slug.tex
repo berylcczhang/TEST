@@ -54,7 +54,7 @@
 
 
 \title{slug Documentation}
-\date{Sep 15, 2017}
+\date{Sep 19, 2017}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -72,7 +72,7 @@ Contents:
 
 
 \chapter{License}
-\label{\detokenize{license::doc}}\label{\detokenize{license:welcome-to-slug-s-documentation}}\label{\detokenize{license:license}}
+\label{\detokenize{license:welcome-to-slug-s-documentation}}\label{\detokenize{license::doc}}\label{\detokenize{license:license}}
 SLUG is distributed under the terms of the \sphinxhref{http://www.gnu.org/copyleft/gpl.html}{GNU General Public License version 3.0}. The text of the license is included in the main directory of the repository as \sphinxcode{GPL-3.0.txt}.
 
 
@@ -88,7 +88,7 @@ In addition to the core SLUG code, the Bayesian inference tools cluster\_slug an
 
 
 \chapter{Introduction to SLUG}
-\label{\detokenize{intro:introduction-to-slug}}\label{\detokenize{intro::doc}}
+\label{\detokenize{intro::doc}}\label{\detokenize{intro:introduction-to-slug}}
 This is a guide for users of the SLUG software package. SLUG is distributed under the terms of the \sphinxhref{http://www.gnu.org/licenses/gpl.html}{GNU General Public License v. 3.0}. A copy of the license notification is included in the main SLUG directory. If you use SLUG in any published work, please cite the SLUG method papers, \sphinxhref{http://adsabs.harvard.edu/abs/2012ApJ...745..145D}{da Silva, R. L., Fumagalli, M., \& Krumholz, M. R., 2012, The Astrophysical Journal, 745, 145} and \sphinxhref{http://adsabs.harvard.edu/abs/2015MNRAS.452.1447K}{Krumholz, M. R., Fumagalli, M., da Silva, R. L., Rendahl, T., \& Parra, J. 2015, Monthly Notices of the Royal Astronomical Society, 452, 1447}.
 
 
@@ -103,7 +103,7 @@ SLUG can simulate either a simple stellar population (i.e., a group of stars all
 
 
 \section{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}
-\label{\detokenize{intro:probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution}}\label{\detokenize{intro:ssec-slugpdfs}}
+\label{\detokenize{intro:ssec-slugpdfs}}\label{\detokenize{intro:probability-distribution-functions-the-imf-sfh-cmf-clf-a-v-distribution}}
 As mentioned above, SLUG regards the IMF, SFH, CMF, CLF, and extinction A\_V as probability distribution functions. These PDFs can be described by a very wide range of possible functional forms; see {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}} for details on the exact functional forms allowed, and on how they can be specified in the code. When SLUG runs a cluster simulation, it draws stars from the specified IMF in an attempt to produce a cluster of a user-specified total mass. There are a number of possible methods for performing such mass-limited sampling, and SLUG gives the user a wide menu of options; see {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}}. SLUG will also, upon user request, randomly draw a visual extinction A\_V to be applied to the light (and either the same or a different visual extinction can be applied to nebular light \textendash{} see {\hyperref[\detokenize{intro:ssec-nebula}]{\sphinxcrossref{\DUrole{std,std-ref}{Nebular Processing}}}}).
 
 For a galaxy simulation, the procedure involves one extra step. In this case, SLUG assumes that some fraction \(f_c\) of the stars in the galaxy are born in star clusters, which, for the purposes of SLUG, means that they all share the same birth time. The remaining fraction \(1-f_c\) of stars are field stars. When a galaxy simulation is run, SLUG determines the total mass of stars \(M_*\) that should have formed since the start of the simulation (or since the last output, if more than one output is requested) from the star formation history, and then draws field stars and star clusters in an attempt to produce masses \((1-f_c)M_*\) and \(f_c M_*\). For the field stars, the stellar masses are drawn from the IMF, in a process completely analogous to the cluster case, and each star is given its own randomly-generated extinction. For star clusters, the masses of the clusters are drawn from the CMF, and each cluster is then populated from the IMF as in the cluster case. Again, each cluster gets its own extinction. For both the field stars and the star clusters, the time of their birth is drawn from the PDF describing the SFH.
@@ -112,7 +112,7 @@ Finally, star clusters can be disrupted independent of the fate of their parent 
 
 
 \section{Spectra and Photometry}
-\label{\detokenize{intro:ssec-spec-phot}}\label{\detokenize{intro:spectra-and-photometry}}
+\label{\detokenize{intro:spectra-and-photometry}}\label{\detokenize{intro:ssec-spec-phot}}
 Once SLUG has drawn a population of stars, its final step is to compute the light they produce. SLUG does this in several steps. First, it computes the physical properties of all the stars present user-specified times using a set of stellar evolutionary tracks. Second, it uses these physical properties to compute the composite spectra produced by the stars, using a user-specified set of stellar atmosphere models. Formally, the quantity computed is the specific luminosity per unit wavelength \(L_\lambda\). Third, if nebular emission is enabled, the code calculates the spectrum \(L_{\lambda,\mathrm{neb}}\) that emerges after the starlight passes through the HII region aruond the star \textendash{} see {\hyperref[\detokenize{intro:ssec-nebula}]{\sphinxcrossref{\DUrole{std,std-ref}{Nebular Processing}}}}. Fourth, if extinction is enabled, SLUG computes the extincted stellar and nebula-processed spectra \(L_{\lambda,\mathrm{ex}}\) and \(L_{\lambda,\mathrm{neb,ex}}\) \textendash{} see {\hyperref[\detokenize{intro:ssec-extinction}]{\sphinxcrossref{\DUrole{std,std-ref}{Extinction}}}}. Fifth and finally, SLUG computes photometry for the stellar population by integrating all computed spectra over a set of specified photometric filters. Depending on the options specified by the user and the filter under consideration, the photometric value output will be one of the following:
 \begin{itemize}
 \item {} 
@@ -280,7 +280,7 @@ where \(L_{\lambda}\) is the unextincted stellar spectrum, and \(f_{\mathrm{neb-
 
 
 \section{Chemical Yields}
-\label{\detokenize{intro:chemical-yields}}\label{\detokenize{intro:ssec-yields}}
+\label{\detokenize{intro:ssec-yields}}\label{\detokenize{intro:chemical-yields}}
 In addition to computing the light output by a stellar population,
 SLUG can also predict the yield of isotopes. SLUG includes yields for
 core collapse supernovale and AGB stars. The core collapse supernova
@@ -372,7 +372,7 @@ tables.
 
 
 \chapter{Compiling and Installing SLUG}
-\label{\detokenize{compiling::doc}}\label{\detokenize{compiling:compiling-and-installing-slug}}
+\label{\detokenize{compiling:compiling-and-installing-slug}}\label{\detokenize{compiling::doc}}
 
 \section{Dependencies}
 \label{\detokenize{compiling:dependencies}}
@@ -422,7 +422,7 @@ This is only required performing cloudy runs, and is not required for any other 
 
 
 \section{Compiling}
-\label{\detokenize{compiling:ssec-compiling}}\label{\detokenize{compiling:compiling}}
+\label{\detokenize{compiling:compiling}}\label{\detokenize{compiling:ssec-compiling}}
 If you have Boost in your \sphinxcode{CXX\_INCLUDE\_PATH}, GSL in your \sphinxcode{C\_INCLUDE\_PATH}, and (if you’re using it) cfitsio in your \sphinxcode{C\_INCLUDE\_PATH}, and the compiled libraries for each of these in your \sphinxcode{LIBRARY\_PATH} environment variables, and your system is running either MacOSX or Linux, you should be able to compile simply by doing:
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
@@ -612,11 +612,11 @@ As with MPI runs, the output checkpoint files run can be combined into a single 
 
 
 \chapter{Parameter Specification}
-\label{\detokenize{parameters:sec-parameters}}\label{\detokenize{parameters::doc}}\label{\detokenize{parameters:parameter-specification}}
+\label{\detokenize{parameters:parameter-specification}}\label{\detokenize{parameters::doc}}\label{\detokenize{parameters:sec-parameters}}
 
 \section{Automated Parameter File Generation}
 \label{\detokenize{parameters:automated-parameter-file-generation}}
-The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience SLUG comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing:
+The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience slug comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing:
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 python tools/python/write\PYGZus{}param.py
@@ -627,7 +627,7 @@ Once started, the script provides a series of menus that allow the user to set a
 
 \section{File Format}
 \label{\detokenize{parameters:file-format}}
-An example parameter file is included as \sphinxcode{param/example.param} in the source tree. Parameter files for SLUG are generically formatted as a series of entries of the form:
+An example parameter file is included as \sphinxcode{param/example.param} in the source tree. Parameter files for slug are generically formatted as a series of entries of the form:
 
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 keyword    value
@@ -639,20 +639,46 @@ Any line starting with \sphinxcode{\#} is considered to be a comment and is igno
 Keywords may appear in any order.
 
 \item {} 
-Some keywords have default values, indicated in parenthesis in the list below. These keywords are optional and need not appear in the parameter file. All others are required.
+Many keywords have default values, indicated in parentheses in the
+list below. These keywords are optional and need not appear in the
+parameter file; missing keywords are set to their default values.
+Keywords that do not have a default are required.
 
 \item {} 
 Keywords and values are case-insensitive.
 
 \item {} 
-Unless explicitly stated otherwise, units for mass are always \(M_\odot\), units for time are always yr.
+Unless explicitly stated otherwise, units for mass are always
+\(M_\odot\), units for time are always yr, and units for
+extinction are always magnitudes.
 
 \item {} 
-Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable \sphinxcode{\$SLUG\_DIR}. If this environment variable is not set, it is assumed to be relative to the current working directory. EXCEPTION: the output directory (if it is specified as a relative rather than absolute path) is always assumed to be relative to the current working directory.
+Any time a file or directory is specified, the path is resolved by
+the following rules:
+\begin{enumerate}
+\item {} 
+Absolute paths are always treated exactly as written.
+
+\item {} 
+For relative paths, the code first checks for a file or directory
+of that name in the directory where slug is running. If no file
+of that name is found, and the environment variable \sphinxcode{\$SLUG\_DIR}
+is set, teh code will search for the file at
+\sphinxcode{\$SLUG\_DIR/user\_specified\_path}. This is to allow users to
+use default options that ship with the code simply by setting
+their \sphinxcode{\$SLUG\_DIR} environment variable to wherever the code is
+installed.
+
+\item {} 
+Notwithstanding rule 2, the output directory (\sphinxcode{out\_dir}) is
+always assumed to be relative to the location where slug is
+running; it will never be prepended with \sphinxcode{\$SLUG\_DIR}.
+
+\end{enumerate}
 
 \end{itemize}
 
-The keywords recognized by SLUG can be categorized as described in the remainder of this section.
+The keywords recognized by slug can be categorized as described in the remainder of this section.
 
 
 \section{Basic Keywords}
@@ -663,7 +689,7 @@ These specify basic data for the run.
 \sphinxcode{model\_name} (default: \sphinxcode{SLUG\_DEF}): name of the model. This will become the base filename for the output files.
 
 \item {} 
-\sphinxcode{out\_dir} (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the SLUG executable is called.
+\sphinxcode{out\_dir} (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the slug executable is called.
 
 \item {} 
 \sphinxcode{verbosity} (default: \sphinxcode{1}): level of verbosity when running, with 0 indicating no output, 1 indicating some output, and 2 indicating a great deal of output.
@@ -753,7 +779,7 @@ These control what quantities are computed and written to disk. Full a full desc
 These specify the physical models to be used for stellar evolution, atmospheres, the IMF, extinction, etc.
 \begin{itemize}
 \item {} \begin{description}
-\item[{\sphinxcode{imf} (default: \sphinxcode{lib/imf/chabrier.imf}): name of the IMF descriptor file; this is a PDF file, formatted as described in {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}}. Note that SLUG ships with the following IMF files pre-defined (in the directory \sphinxcode{lib/imf})}] \leavevmode\begin{itemize}
+\item[{\sphinxcode{imf} (default: \sphinxcode{lib/imf/chabrier.imf}): name of the IMF descriptor file; this is a PDF file, formatted as described in {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}}. Note that slug ships with the following IMF files pre-defined (in the directory \sphinxcode{lib/imf})}] \leavevmode\begin{itemize}
 \item {} 
 \sphinxcode{chabrier.imf} (single-star IMF from \sphinxhref{http://adsabs.harvard.edu/abs/2005ASSL..327...41C}{Chabrier, 2005, in “The Initial Mass Function 50 Years Later”, eds. E. Corbelli, F. Palla, \& H. Zinnecker, Springer: Dordrecht, p. 41})
 
@@ -777,7 +803,7 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 \sphinxcode{cmf} (default: \sphinxcode{lib/cmf/slug\_default.cmf}): name of the CMF descriptor file; this is a PDF file, formatted as described in {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}}. The default selection is a power law \(dN/dM \propto M^{-2}\) from \(M = 10^2 - 10^7\;M_\odot\). This is ignored, and may be omitted, if \sphinxcode{sim\_type} is set to \sphinxcode{cluster} and \sphinxcode{cluster\_mass} is set to a numerical value.
 
 \item {} 
-\sphinxcode{clf} (default: \sphinxcode{lib/clf/slug\_default.clf}): name of the CLF descriptor file; this is a PDF file, formatted as described in {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}}. The default gives a power law distribution of lifetimes \(t\) with \(dN/dt\propto t^{-1.9}\) from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The SLUG source also ships with an alternative CLF file, \sphinxcode{lib/clf/nodisrupt.clf}, which disables cluster disruption entirely (by setting the lifetime distribution to a \(\delta\) function at \(10^{300}\) yr).
+\sphinxcode{clf} (default: \sphinxcode{lib/clf/slug\_default.clf}): name of the CLF descriptor file; this is a PDF file, formatted as described in {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}}. The default gives a power law distribution of lifetimes \(t\) with \(dN/dt\propto t^{-1.9}\) from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The slug source also ships with an alternative CLF file, \sphinxcode{lib/clf/nodisrupt.clf}, which disables cluster disruption entirely (by setting the lifetime distribution to a \(\delta\) function at \(10^{300}\) yr).
 
 \item {} \begin{description}
 \item[{\sphinxcode{tracks} (default: \sphinxcode{geneva\_2013\_vvcrit\_00}): stellar evolution tracks to use. This can be specified either by giving the name of a particular set of tracks (i.e., a set of tracks computed using the same code or group, but at a range of metallicities), or by giving the name of a particular file (a particular set of tracks at a particular metallicity). When specifying a track set, the user can also specify the metallicity (see below), and the tracks will be read for (and if necessary interpolated to) the specified metallicity automatically. The following track sets and indvidual track files are available:}] \leavevmode\begin{itemize}
@@ -855,12 +881,12 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 
 
 \section{Extinction Keywords}
-\label{\detokenize{parameters:extinction-keywords}}\label{\detokenize{parameters:ssec-extinction-keywords}}\begin{itemize}
+\label{\detokenize{parameters:ssec-extinction-keywords}}\label{\detokenize{parameters:extinction-keywords}}\begin{itemize}
 \item {} 
 \sphinxcode{A\_V} (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter \sphinxcode{A\_V} is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value \(A_V\), in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in {\hyperref[\detokenize{pdfs:sec-pdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions}}}}, specifying the probability distribution of \(A_V\) values, in mag.
 
 \item {} \begin{description}
-\item[{\sphinxcode{extinction\_curve} (default: \sphinxcode{lib/extinct/SB\_ATT\_SLUG.dat}) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction \(\kappa_\nu\) at that wavelength / frequency in \(\mathrm{cm}^2\). Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see {\hyperref[\detokenize{intro:ssec-spec-phot}]{\sphinxcrossref{\DUrole{std,std-ref}{Spectra and Photometry}}}}). SLUG ships with the following extinction curves (all in \sphinxcode{lib/extinct}):}] \leavevmode\begin{itemize}
+\item[{\sphinxcode{extinction\_curve} (default: \sphinxcode{lib/extinct/SB\_ATT\_SLUG.dat}) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction \(\kappa_\nu\) at that wavelength / frequency in \(\mathrm{cm}^2\). Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see {\hyperref[\detokenize{intro:ssec-spec-phot}]{\sphinxcrossref{\DUrole{std,std-ref}{Spectra and Photometry}}}}). Slug ships with the following extinction curves (all in \sphinxcode{lib/extinct}):}] \leavevmode\begin{itemize}
 \item {} 
 \sphinxcode{LMC\_EXT\_SLUG.dat} : LMC extinction curve; optical-UV from \sphinxhref{http://adsabs.harvard.edu/abs/1999PASP..111...63F}{Fitzpatrick, E. L., 1999, PASP, 111, 63}, IR from \sphinxhref{http://adsabs.harvard.edu/abs/1984A\%26A...134..284L}{Landini, M., et al., 1984, A\&A, 134, 284}; parts combined by D. Calzetti
 
@@ -887,7 +913,7 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 
 
 \section{Nebular Keywords}
-\label{\detokenize{parameters:ssec-nebular-keywords}}\label{\detokenize{parameters:nebular-keywords}}\begin{itemize}
+\label{\detokenize{parameters:nebular-keywords}}\label{\detokenize{parameters:ssec-nebular-keywords}}\begin{itemize}
 \item {} 
 \sphinxcode{compute\_nebular} (default: \sphinxcode{1}): compute the spectrum that results after starlight is processed through the nebula surrounding each cluster or star? Set to 1 for yes, 0 for no.
 
@@ -917,7 +943,7 @@ These specify the physical models to be used for stellar evolution, atmospheres,
 These describe the photometry to be computed. Note that none of these keywords have any effect unless \sphinxcode{out\_integrated\_phot} or \sphinxcode{out\_cluster\_phot} is set to 1.
 \begin{itemize}
 \item {} \begin{description}
-\item[{\sphinxcode{phot\_bands}: photometric bands for which photometry is to be computed. The values listed here can be comma- or whitespace-separated. For a list of available photometric filters, see the file \sphinxcode{lib/filters/FILTER\_LIST}. In addition to these filters, SLUG always allows four special “bands”:}] \leavevmode\begin{itemize}
+\item[{\sphinxcode{phot\_bands}: photometric bands for which photometry is to be computed. The values listed here can be comma- or whitespace-separated. For a list of available photometric filters, see the file \sphinxcode{lib/filters/FILTER\_LIST}. In addition to these filters, slug always allows four special “bands”:}] \leavevmode\begin{itemize}
 \item {} 
 \sphinxcode{QH0}: the \(\mathrm{H}^0\) ionizing luminosity, in photons/sec
 
@@ -962,7 +988,7 @@ These describe the photometry to be computed. Note that none of these keywords h
 
 
 \section{Yield Keywords}
-\label{\detokenize{parameters:yield-keywords}}\label{\detokenize{parameters:ssec-yield-keywords}}
+\label{\detokenize{parameters:ssec-yield-keywords}}\label{\detokenize{parameters:yield-keywords}}
 These keywords control the calculation of chemical yields. See
 {\hyperref[\detokenize{intro:ssec-yields}]{\sphinxcrossref{\DUrole{std,std-ref}{Chemical Yields}}}} for explanations of the physical models
 corresponding to these choices.
@@ -1014,7 +1040,7 @@ tables
 
 
 \chapter{Probability Distribution Functions}
-\label{\detokenize{pdfs:probability-distribution-functions}}\label{\detokenize{pdfs::doc}}\label{\detokenize{pdfs:sec-pdfs}}
+\label{\detokenize{pdfs:sec-pdfs}}\label{\detokenize{pdfs::doc}}\label{\detokenize{pdfs:probability-distribution-functions}}
 The SLUG code regards the IMF, the CMF, the CLF, the SFH, and the extinction \(A_V\) as probability distribution functions \textendash{} see {\hyperref[\detokenize{intro:ssec-slugpdfs}]{\sphinxcrossref{\DUrole{std,std-ref}{Probability Distribution Functions: the IMF, SFH, CMF, CLF, A\_V distribution}}}}. The code provides a generic file format through which PDFs can be specified. Examples can be found in the \sphinxcode{lib/imf}, \sphinxcode{lib/cmf}, \sphinxcode{lib/clf}, and \sphinxcode{lib/sfh} directories of the SLUG distribution.
 
 PDFs in SLUG are generically written as functions
@@ -1488,7 +1514,7 @@ There is one record of this form for each output time, with different trials ord
 
 
 \section{The \sphinxstyleliteralintitle{integrated\_spec} File}
-\label{\detokenize{output:the-integrated-spec-file}}\label{\detokenize{output:ssec-int-spec-file}}
+\label{\detokenize{output:ssec-int-spec-file}}\label{\detokenize{output:the-integrated-spec-file}}
 This file contains data on the spectra of the entire galaxy, and consists of a series of entries containing the following fields:
 \begin{itemize}
 \item {} 
@@ -1720,7 +1746,7 @@ There is one such record for each output time, with different trials ordered seq
 
 
 \section{The \sphinxstyleliteralintitle{integrated\_yield} File}
-\label{\detokenize{output:the-integrated-yield-file}}\label{\detokenize{output:ssec-int-yield-file}}
+\label{\detokenize{output:ssec-int-yield-file}}\label{\detokenize{output:the-integrated-yield-file}}
 This file contains data on the integrated chemical yield of the entire
 galaxy, and consists of a series of entries containing the following
 fields:
@@ -2001,7 +2027,7 @@ This is followed by \sphinxcode{NCluster} entries of the following form:
 
 
 \section{The \sphinxstyleliteralintitle{cluster\_phot} File}
-\label{\detokenize{output:the-cluster-phot-file}}\label{\detokenize{output:ssec-cluster-phot-file}}
+\label{\detokenize{output:ssec-cluster-phot-file}}\label{\detokenize{output:the-cluster-phot-file}}
 This file contains the photometric values for the individual clusters. Each entry contains the following fields:
 \begin{itemize}
 \item {} 
@@ -2125,7 +2151,7 @@ This is followed by \sphinxcode{NCluster} entries of the following form:
 
 
 \section{The \sphinxstyleliteralintitle{cluster\_yield} File}
-\label{\detokenize{output:ssec-cluster-yield-file}}\label{\detokenize{output:the-cluster-yield-file}}
+\label{\detokenize{output:the-cluster-yield-file}}\label{\detokenize{output:ssec-cluster-yield-file}}
 This file contains data on the chemical yield of individual star
 clusters, and consists of a series of entries containing the following
 fields:
@@ -2211,7 +2237,7 @@ before the first time for the next trial.
 
 
 \section{Checkpoint Files}
-\label{\detokenize{output:ssec-checkpoint-files}}\label{\detokenize{output:checkpoint-files}}
+\label{\detokenize{output:checkpoint-files}}\label{\detokenize{output:ssec-checkpoint-files}}
 Checkpoint files are identical to regular output files, except that
 they begin with a statement of the number of trials they contain. For
 ASCII files, this is indicated by a first line of the form \sphinxcode{N\_Trials =
@@ -2225,7 +2251,7 @@ files (see {\hyperref[\detokenize{slugpy:sec-slugpy}]{\sphinxcrossref{\DUrole{st
 
 
 \chapter{Filters and Filter Data}
-\label{\detokenize{filters:sec-filters}}\label{\detokenize{filters::doc}}\label{\detokenize{filters:filters-and-filter-data}}
+\label{\detokenize{filters:sec-filters}}\label{\detokenize{filters:filters-and-filter-data}}\label{\detokenize{filters::doc}}
 SLUG comes with a fairly extensive list of filters, adapted from the list maintained by Charlie Conroy as part of \sphinxhref{https://code.google.com/p/fsps/}{fsps}. However, users may wish to add additional filters, and so the format of the filter list is documented here for convenience.
 
 Filter data is stored in two ASCII text files, \sphinxcode{FILTER\_LIST} and \sphinxcode{allfilters.dat}, which are stored in the \sphinxcode{lib/filters} directory. The \sphinxcode{FILTER\_LIST} file is an index listing the available filters. In consists of five whitespace-separated columns. The first column is just an numerical index. The second is the name of the filter; this is the name that should be entered in the \sphinxcode{phot\_bands} keyword (see {\hyperref[\detokenize{parameters:ssec-phot-keywords}]{\sphinxcrossref{\DUrole{std,std-ref}{Photometric Filter Keywords}}}}) to request photometry in that filter. The third and fourth columns the value of \(\beta\) and \(\lambda_c\) (the central wavelength) for that filter \textendash{} see {\hyperref[\detokenize{intro:ssec-spec-phot}]{\sphinxcrossref{\DUrole{std,std-ref}{Spectra and Photometry}}}} for definitions. Anything after the fourth column is regarded as a comment, and can be used freely for a description of that filter.
@@ -2234,7 +2260,7 @@ The \sphinxcode{allfilters.dat} file contains the filter responses. The file con
 
 
 \chapter{slugpy \textendash{} The Python Helper Library}
-\label{\detokenize{slugpy:slugpy-the-python-helper-library}}\label{\detokenize{slugpy:sec-slugpy}}\label{\detokenize{slugpy::doc}}
+\label{\detokenize{slugpy:sec-slugpy}}\label{\detokenize{slugpy::doc}}\label{\detokenize{slugpy:slugpy-the-python-helper-library}}
 
 \section{Installing slugpy}
 \label{\detokenize{slugpy:installing-slugpy}}
@@ -4369,7 +4395,7 @@ Nothing
 
 
 \chapter{cloudy\_slug: An Automated Interface to cloudy}
-\label{\detokenize{cloudy:cloudy-slug-an-automated-interface-to-cloudy}}\label{\detokenize{cloudy::doc}}\label{\detokenize{cloudy:sec-cloudy-slug}}
+\label{\detokenize{cloudy:cloudy-slug-an-automated-interface-to-cloudy}}\label{\detokenize{cloudy:sec-cloudy-slug}}\label{\detokenize{cloudy::doc}}
 SLUG stochastically generates stellar spectra, and it includes an
 approximate computation of the nebular lines produced when those
 photons interact with the interstellar medium. However, this
@@ -4456,7 +4482,7 @@ they are reasonable.
 
 
 \section{The cloudy\_slug Physical Model}
-\label{\detokenize{cloudy:ssec-cloudy-model}}\label{\detokenize{cloudy:the-cloudy-slug-physical-model}}
+\label{\detokenize{cloudy:the-cloudy-slug-physical-model}}\label{\detokenize{cloudy:ssec-cloudy-model}}
 The cloudy\_slug code computes emission from a spherical HII region
 surrounding a stellar population. The stellar population comes from
 SLUG, and the emission calculation is performed with cloudy. Combining
@@ -4699,7 +4725,7 @@ a fully sampled IMF at zero age.
 
 
 \subsection{Dynamical Mode}
-\label{\detokenize{cloudy:dynamical-mode}}\label{\detokenize{cloudy:sssec-cloudy-dynamical-cluster-mode}}
+\label{\detokenize{cloudy:sssec-cloudy-dynamical-cluster-mode}}\label{\detokenize{cloudy:dynamical-mode}}
 In cluster mode, cloudy\_slug allows an additional option to derive the
 physical properties of the HII region. They can be computed from a
 dynamical model of HII region expansion, taken from \sphinxhref{http://adsabs.harvard.edu/abs/2009ApJ...703.1352K}{Krumholz \&
@@ -4735,7 +4761,7 @@ ages.
 
 
 \section{The cloudy\_slug Input Template}
-\label{\detokenize{cloudy:the-cloudy-slug-input-template}}\label{\detokenize{cloudy:ssec-cloudy-template}}
+\label{\detokenize{cloudy:ssec-cloudy-template}}\label{\detokenize{cloudy:the-cloudy-slug-input-template}}
 The cloudy\_slug interface operates by reading SLUG output spectra and
 using them as inputs to a cloudy calculation. However, cloudy
 obviously requires many input parameters beyond simply the spectrum of
@@ -5285,7 +5311,7 @@ before the first time for the next trial.
 
 
 \subsection{The \sphinxstyleliteralintitle{integrated\_cloudyspec} File}
-\label{\detokenize{cloudy:the-integrated-cloudyspec-file}}\label{\detokenize{cloudy:sssec-int-cloudyspec-file}}
+\label{\detokenize{cloudy:sssec-int-cloudyspec-file}}\label{\detokenize{cloudy:the-integrated-cloudyspec-file}}
 This file contains data on the spectrum produced by interaction
 between the stellar radiation field and the nebula. Each entry in the
 output file contains the folling fields:
@@ -7095,7 +7121,7 @@ Here \sphinxcode{phot} is the set of photometric properties, which is identical 
 
 
 \section{Support for Parallelism in bayesphot}
-\label{\detokenize{bayesphot:ssec-bayesphot-threading}}\label{\detokenize{bayesphot:support-for-parallelism-in-bayesphot}}
+\label{\detokenize{bayesphot:support-for-parallelism-in-bayesphot}}\label{\detokenize{bayesphot:ssec-bayesphot-threading}}
 The \sphinxcode{bp} class supports parallel calculations of posterior PDFs and
 related quantities, through the python \sphinxhref{https://docs.python.org/2.7/library/multiprocessing.html}{multiprocessing module}. This
 allows efficient use of multiple cores on a shared memory machine,
@@ -7202,7 +7228,7 @@ working in parallel.
 
 
 \section{Full Documentation of slugpy.bayesphot}
-\label{\detokenize{bayesphot:module-slugpy.bayesphot.bp}}\label{\detokenize{bayesphot:ssec-slugpy-bayesphot}}\label{\detokenize{bayesphot:full-documentation-of-slugpy-bayesphot}}\index{slugpy.bayesphot.bp (module)}
+\label{\detokenize{bayesphot:full-documentation-of-slugpy-bayesphot}}\label{\detokenize{bayesphot:module-slugpy.bayesphot.bp}}\label{\detokenize{bayesphot:ssec-slugpy-bayesphot}}\index{slugpy.bayesphot.bp (module)}
 This defines a class that can be used to estimate the PDF of physical
 quantities from a set of input photometry in various bands, together
 with a training data set.
@@ -7466,6 +7492,86 @@ nmatch == 1 then that dimension will be omitted
 \item[{dist}] \leavevmode{[}array, shape (…, nmatch){]}
 distances between the matches and the input physical
 properties
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{draw\_phot() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{bayesphot:slugpy.bayesphot.bp.bp.draw_phot}}\pysiglinewithargsret{\sphinxbfcode{draw\_phot}}{\emph{physprop}, \emph{physidx=None}, \emph{photerr=None}, \emph{nsample=1}}{}
+Returns a randomly-drawn sample of photometric properties for
+one or more input sets of physical properties.
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{physprop}] \leavevmode{[}arraylike{]}
+physical properties to be used; the final dimension of
+the input must have len(physidx) indices, or nphys
+indicates if physidx is None; if the input is a
+multidimensional array, the operation is vectorized over
+the leading dimensions physical properties
+
+\item[{physidx}] \leavevmode{[}arraylike{]}
+indices of the physical quantities being constrained; if
+left as None, all physical properties are set, and
+physprop must have a trailing dimension of size equal to
+nphys; otherwise this must be an arraylike of \textless{}= nphys
+positive integers, each unique and in the range {[}0,
+nphys), specying which physical dimensions are
+constrained
+
+\item[{photerr}] \leavevmode{[}arraylike, shape (nphot){]}
+photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth
+
+\item[{nsample}] \leavevmode{[}int{]}
+number of random samples to draw for each set of
+physical properties; must be positive
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{samples}] \leavevmode{[}arraylike{]}
+sample of photometric properties; the shape of the
+output is (…, nsample, nphot), where nphot is the
+number of photometric properties, and the leading
+dimension(s) match the leading dimension(s) of physprop
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{draw\_sample() (slugpy.bayesphot.bp.bp method)}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{bayesphot:slugpy.bayesphot.bp.bp.draw_sample}}\pysiglinewithargsret{\sphinxbfcode{draw\_sample}}{\emph{photerr=None}, \emph{nsample=1}}{}
+Returns a randomly-drawn sample of physical and photometric
+properties from the kernel density function
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{nsample}] \leavevmode{[}int{]}
+number of random samples to draw for each set of
+physical properties; must be positive
+
+\item[{photerr}] \leavevmode{[}arraylike, shape (nphot){]}
+photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{samples}] \leavevmode{[}array, shape (nsample, nphys+nphot){]}
+random sample drawn from the kernel density object; for
+the final dimension in the output, the first nphys
+elements are the physical quantities, the next nphot are
+the photometric quantities
 
 \end{description}
 
@@ -7908,7 +8014,7 @@ joint distribution of the indicated quantities is returned
 physical properties to be used; if this is an array of
 nphys elements, these give the physical properties; if
 it is a multidimensional array, the operation is
-vectoried over the leading dimensions
+vectorized over the leading dimensions
 physical properties \textendash{} the function must take an array
 of (nphys) elements as an input, and return a floating
 point value representing the PDF evaluated at that set
@@ -8056,7 +8162,7 @@ Nothing
 
 
 \chapter{cluster\_slug: Bayesian Inference of Star Cluster Properties}
-\label{\detokenize{cluster_slug:sec-cluster-slug}}\label{\detokenize{cluster_slug::doc}}\label{\detokenize{cluster_slug:cluster-slug-bayesian-inference-of-star-cluster-properties}}
+\label{\detokenize{cluster_slug:cluster-slug-bayesian-inference-of-star-cluster-properties}}\label{\detokenize{cluster_slug::doc}}\label{\detokenize{cluster_slug:sec-cluster-slug}}
 The slugpy.cluster\_slug module computes posterior probabilities for the mass, age, and extinction of star clusters from a set of input photometry.  It is implemented as a wrapper around {\hyperref[\detokenize{bayesphot:sec-bayesphot}]{\sphinxcrossref{\DUrole{std,std-ref}{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}}, so for details on how the calculation is performed see the bayesphot documentation.
 
 
@@ -8245,6 +8351,14 @@ photometric properties
 given a set of photometric properties, return a set of points
 that can be used for fast approximation of the corresponding
 physical properties
+
+\item[{draw\_sample():}] \leavevmode
+draw a random sample of cluster physical and photometric
+properties
+
+\item[{draw\_phot():}] \leavevmode
+given a set of physical properties, return a
+randomly-selected set of photometric properties
 
 \end{description}
 
@@ -8555,6 +8669,98 @@ Nothing
 
 \item[{Raises}] \leavevmode
 KeyError if the input set of filters is not loaded
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{draw\_phot() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug.draw_phot}}\pysiglinewithargsret{\sphinxbfcode{draw\_phot}}{\emph{physprop}, \emph{physidx=None}, \emph{photerr=None}, \emph{nsample=1}, \emph{filters=None}}{}
+Returns a randomly-drawn sample of clusters for a given filter
+set
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{physprop}] \leavevmode{[}arraylike{]}
+physical properties to be used; the final dimension of
+the input must have len(physidx) indices, or nphys
+indicates if physidx is None; if the input is a
+multidimensional array, the operation is vectorized over
+the leading dimensions physical properties
+
+\item[{physidx}] \leavevmode{[}arraylike{]}
+indices of the physical quantities being constrained; if
+left as None, all physical properties are set, and
+physprop must have a trailing dimension of size equal to
+nphys; otherwise this must be an arraylike of \textless{}= nphys
+positive integers, each unique and in the range {[}0,
+nphys), specying which physical dimensions are
+constrained
+
+\item[{photerr}] \leavevmode{[}arraylike, shape (nphot){]}
+photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth
+
+\item[{nsample}] \leavevmode{[}int{]}
+number of random samples to draw for each set of
+physical properties; must be positive
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{samples}] \leavevmode{[}array, shape (nsample, nphys+nphot){]}
+random sample drawn from the kernel density object; for
+the final dimension in the output, the first nphys
+elements are the physical quantities, the next nphot are
+the photometric quantities
+
+\end{description}
+
+\end{description}
+
+\end{fulllineitems}
+
+\index{draw\_sample() (slugpy.cluster\_slug.cluster\_slug method)}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug.draw_sample}}\pysiglinewithargsret{\sphinxbfcode{draw\_sample}}{\emph{photerr=None}, \emph{nsample=1}, \emph{filters=None}}{}
+Returns a randomly-drawn sample of clusters for a given filter
+set
+\begin{description}
+\item[{Parameters:}] \leavevmode\begin{description}
+\item[{photerr}] \leavevmode{[}arraylike, shape (nphot){]}
+photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth
+
+\item[{nsample}] \leavevmode{[}int{]}
+number of random samples to draw for each set of
+physical properties; must be positive
+
+\item[{filters}] \leavevmode{[}listlike of strings{]}
+list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster\_slug object, that set will be used by
+default
+
+\end{description}
+
+\item[{Returns:}] \leavevmode\begin{description}
+\item[{samples}] \leavevmode{[}array, shape (nsample, nphys+nphot){]}
+random sample drawn from the kernel density object; for
+the final dimension in the output, the first nphys
+elements are the physical quantities, the next nphot are
+the photometric quantities
+
+\end{description}
 
 \end{description}
 
@@ -9233,7 +9439,7 @@ Nothing
 
 
 \chapter{sfr\_slug: Bayesian Inference of Star Formation Rates}
-\label{\detokenize{sfr_slug:sfr-slug-bayesian-inference-of-star-formation-rates}}\label{\detokenize{sfr_slug::doc}}\label{\detokenize{sfr_slug:sec-sfr-slug}}
+\label{\detokenize{sfr_slug:sec-sfr-slug}}\label{\detokenize{sfr_slug::doc}}\label{\detokenize{sfr_slug:sfr-slug-bayesian-inference-of-star-formation-rates}}
 The slugy.sfr\_slug module computes posterior probabilities on star formation rates given a set of star formation rates estimated using the “point mass estimate” (i.e., the estimate you would get for a fully sampled stellar population) for the SFR based on the ionizing, FUV, or bolometric luminosity. It is implemented as a wrapper around {\hyperref[\detokenize{bayesphot:sec-bayesphot}]{\sphinxcrossref{\DUrole{std,std-ref}{bayesphot: Bayesian Inference for Stochastic Stellar Populations}}}}, so for details on how the calculation is performed see the bayesphot documentation.
 
 
@@ -9302,7 +9508,7 @@ The \sphinxcode{sfr\_slug.mpdf} method returns a tuple of two quantities. The fi
 
 
 \section{Full Documentation of slugpy.sfr\_slug}
-\label{\detokenize{sfr_slug:sec-sfr-slug-full}}\label{\detokenize{sfr_slug:full-documentation-of-slugpy-sfr-slug}}\index{sfr\_slug (class in slugpy.sfr\_slug)}
+\label{\detokenize{sfr_slug:full-documentation-of-slugpy-sfr-slug}}\label{\detokenize{sfr_slug:sec-sfr-slug-full}}\index{sfr\_slug (class in slugpy.sfr\_slug)}
 
 \begin{fulllineitems}
 \phantomsection\label{\detokenize{sfr_slug:slugpy.sfr_slug.sfr_slug}}\pysiglinewithargsret{\sphinxbfcode{class }\sphinxcode{slugpy.sfr\_slug.}\sphinxbfcode{sfr\_slug}}{\emph{libname=None}, \emph{detname=None}, \emph{filters=None}, \emph{bandwidth=0.1}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density='read'}, \emph{reltol=0.001}, \emph{abstol=1e-10}, \emph{leafsize=16}}{}
@@ -9959,7 +10165,7 @@ the stochasticity in the optical due to a simple shift of wavelengths.
 
 
 \chapter{Using SLUG as a Library}
-\label{\detokenize{library:sec-library-mode}}\label{\detokenize{library::doc}}\label{\detokenize{library:using-slug-as-a-library}}
+\label{\detokenize{library:using-slug-as-a-library}}\label{\detokenize{library::doc}}\label{\detokenize{library:sec-library-mode}}
 In addition to running as a standalone program, SLUG can be
 compiled as a library that can be called by external programs. This is
 useful for including stellar population synthesis calculations within
@@ -10006,7 +10212,7 @@ See {\hyperref[\detokenize{compiling:ssec-compiling}]{\sphinxcrossref{\DUrole{st
 
 
 \section{Predefined Objects}
-\label{\detokenize{library:ssec-predefined-objects}}\label{\detokenize{library:predefined-objects}}
+\label{\detokenize{library:predefined-objects}}\label{\detokenize{library:ssec-predefined-objects}}
 In order to make it more convenient to use slug as a library, the
 library pre-defines some of the most commonly-used classes, in order
 to save users the need to construct them. These predefined objects can

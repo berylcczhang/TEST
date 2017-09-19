@@ -176,6 +176,12 @@ photometric properties</dd>
 <dd>given a set of photometric properties, return a set of points
 that can be used for fast approximation of the corresponding
 physical properties</dd>
+<dt>draw_sample():</dt>
+<dd>draw a random sample of cluster physical and photometric
+properties</dd>
+<dt>draw_phot():</dt>
+<dd>given a set of physical properties, return a
+randomly-selected set of photometric properties</dd>
 </dl>
 </dd>
 </dl>
@@ -443,6 +449,88 @@ data, just the data for the KD tree used internally.</p>
 <dd>Nothing</dd>
 <dt>Raises</dt>
 <dd>KeyError if the input set of filters is not loaded</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.draw_phot">
+<code class="descname">draw_phot</code><span class="sig-paren">(</span><em>physprop</em>, <em>physidx=None</em>, <em>photerr=None</em>, <em>nsample=1</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.draw_phot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.draw_phot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a randomly-drawn sample of clusters for a given filter
+set</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike</span></dt>
+<dd>physical properties to be used; the final dimension of
+the input must have len(physidx) indices, or nphys
+indicates if physidx is None; if the input is a
+multidimensional array, the operation is vectorized over
+the leading dimensions physical properties</dd>
+<dt>physidx <span class="classifier-delimiter">:</span> <span class="classifier">arraylike</span></dt>
+<dd>indices of the physical quantities being constrained; if
+left as None, all physical properties are set, and
+physprop must have a trailing dimension of size equal to
+nphys; otherwise this must be an arraylike of &lt;= nphys
+positive integers, each unique and in the range [0,
+nphys), specying which physical dimensions are
+constrained</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphot)</span></dt>
+<dd>photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth</dd>
+<dt>nsample <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of random samples to draw for each set of
+physical properties; must be positive</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (nsample, nphys+nphot)</span></dt>
+<dd>random sample drawn from the kernel density object; for
+the final dimension in the output, the first nphys
+elements are the physical quantities, the next nphot are
+the photometric quantities</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.draw_sample">
+<code class="descname">draw_sample</code><span class="sig-paren">(</span><em>photerr=None</em>, <em>nsample=1</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.draw_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.draw_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a randomly-drawn sample of clusters for a given filter
+set</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphot)</span></dt>
+<dd>photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth</dd>
+<dt>nsample <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of random samples to draw for each set of
+physical properties; must be positive</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (nsample, nphys+nphot)</span></dt>
+<dd>random sample drawn from the kernel density object; for
+the final dimension in the output, the first nphys
+elements are the physical quantities, the next nphot are
+the photometric quantities</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 

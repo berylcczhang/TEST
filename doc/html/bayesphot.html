@@ -419,6 +419,78 @@ properties</dd>
 </dd></dl>
 
 <dl class="method">
+<dt id="slugpy.bayesphot.bp.bp.draw_phot">
+<code class="descname">draw_phot</code><span class="sig-paren">(</span><em>physprop</em>, <em>physidx=None</em>, <em>photerr=None</em>, <em>nsample=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.draw_phot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.draw_phot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a randomly-drawn sample of photometric properties for
+one or more input sets of physical properties.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>physprop <span class="classifier-delimiter">:</span> <span class="classifier">arraylike</span></dt>
+<dd>physical properties to be used; the final dimension of
+the input must have len(physidx) indices, or nphys
+indicates if physidx is None; if the input is a
+multidimensional array, the operation is vectorized over
+the leading dimensions physical properties</dd>
+<dt>physidx <span class="classifier-delimiter">:</span> <span class="classifier">arraylike</span></dt>
+<dd>indices of the physical quantities being constrained; if
+left as None, all physical properties are set, and
+physprop must have a trailing dimension of size equal to
+nphys; otherwise this must be an arraylike of &lt;= nphys
+positive integers, each unique and in the range [0,
+nphys), specying which physical dimensions are
+constrained</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphot)</span></dt>
+<dd>photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth</dd>
+<dt>nsample <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of random samples to draw for each set of
+physical properties; must be positive</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">arraylike</span></dt>
+<dd>sample of photometric properties; the shape of the
+output is (…, nsample, nphot), where nphot is the
+number of photometric properties, and the leading
+dimension(s) match the leading dimension(s) of physprop</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.bayesphot.bp.bp.draw_sample">
+<code class="descname">draw_sample</code><span class="sig-paren">(</span><em>photerr=None</em>, <em>nsample=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.draw_sample"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.draw_sample" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a randomly-drawn sample of physical and photometric
+properties from the kernel density function</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>nsample <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd>number of random samples to draw for each set of
+physical properties; must be positive</dd>
+<dt>photerr <span class="classifier-delimiter">:</span> <span class="classifier">arraylike, shape (nphot)</span></dt>
+<dd>photometric errors to apply to the output photometry;
+these are added in quadrature with the kernel density
+estimation bandwidth</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>samples <span class="classifier-delimiter">:</span> <span class="classifier">array, shape (nsample, nphys+nphot)</span></dt>
+<dd>random sample drawn from the kernel density object; for
+the final dimension in the output, the first nphys
+elements are the physical quantities, the next nphot are
+the photometric quantities</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.logL">
 <code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.logL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.logL" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns the natural log of the likelihood
@@ -798,7 +870,7 @@ joint distribution of the indicated quantities is returned</dd>
 <dd>physical properties to be used; if this is an array of
 nphys elements, these give the physical properties; if
 it is a multidimensional array, the operation is
-vectoried over the leading dimensions
+vectorized over the leading dimensions
 physical properties – the function must take an array
 of (nphys) elements as an input, and return a floating
 point value representing the PDF evaluated at that set

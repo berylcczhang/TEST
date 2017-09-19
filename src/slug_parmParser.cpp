@@ -843,9 +843,9 @@ slug_parmParser::checkParams() {
   path slug_path(slug_dir);
 
   // If any of the input file names/directories are relative paths,
-  // take them to be relative to the SLUG_DIR
+  // take them to be relative to the SLUG_DIR unless we find a file of
+  // that name in the current working directory
   vector<string *> dirs;
-  dirs.push_back(&outDir);
   dirs.push_back(&imf);
   dirs.push_back(&cmf);
   dirs.push_back(&clf);
@@ -862,8 +862,11 @@ slug_parmParser::checkParams() {
   dirs.push_back(&out_time_dist);
   for (vector<string>::size_type i=0; i<dirs.size(); i++) {
     path dirpath(*(dirs[i]));
-    if (!dirpath.is_absolute())
-      *(dirs[i]) = (slug_path / dirpath).string();
+    if (!dirpath.is_absolute()) {
+      if (!exists(dirpath)) {
+	*(dirs[i]) = (slug_path / dirpath).string();
+      }
+    }
   }
 }
 

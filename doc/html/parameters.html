@@ -42,7 +42,7 @@
 <span id="sec-parameters"></span><h1>Parameter Specification<a class="headerlink" href="#parameter-specification" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="automated-parameter-file-generation">
 <h2>Automated Parameter File Generation<a class="headerlink" href="#automated-parameter-file-generation" title="Permalink to this headline">¶</a></h2>
-<p>The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience SLUG comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing:</p>
+<p>The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience slug comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>python tools/python/write_param.py
 </pre></div>
 </div>
@@ -50,26 +50,46 @@
 </div>
 <div class="section" id="file-format">
 <h2>File Format<a class="headerlink" href="#file-format" title="Permalink to this headline">¶</a></h2>
-<p>An example parameter file is included as <code class="docutils literal"><span class="pre">param/example.param</span></code> in the source tree. Parameter files for SLUG are generically formatted as a series of entries of the form:</p>
+<p>An example parameter file is included as <code class="docutils literal"><span class="pre">param/example.param</span></code> in the source tree. Parameter files for slug are generically formatted as a series of entries of the form:</p>
 <div class="highlight-rest"><div class="highlight"><pre><span></span>keyword    value
 </pre></div>
 </div>
 <p>Any line starting with <code class="docutils literal"><span class="pre">#</span></code> is considered to be a comment and is ignored, and anything on a line after a <code class="docutils literal"><span class="pre">#</span></code> is similarly treated as a comment and ignored. Some general rules on keywords are:</p>
 <ul class="simple">
 <li>Keywords may appear in any order.</li>
-<li>Some keywords have default values, indicated in parenthesis in the list below. These keywords are optional and need not appear in the parameter file. All others are required.</li>
+<li>Many keywords have default values, indicated in parentheses in the
+list below. These keywords are optional and need not appear in the
+parameter file; missing keywords are set to their default values.
+Keywords that do not have a default are required.</li>
 <li>Keywords and values are case-insensitive.</li>
-<li>Unless explicitly stated otherwise, units for mass are always <span class="math">\(M_\odot\)</span>, units for time are always yr.</li>
-<li>Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable <code class="docutils literal"><span class="pre">$SLUG_DIR</span></code>. If this environment variable is not set, it is assumed to be relative to the current working directory. EXCEPTION: the output directory (if it is specified as a relative rather than absolute path) is always assumed to be relative to the current working directory.</li>
+<li>Unless explicitly stated otherwise, units for mass are always
+<span class="math">\(M_\odot\)</span>, units for time are always yr, and units for
+extinction are always magnitudes.</li>
+<li>Any time a file or directory is specified, the path is resolved by
+the following rules:<ol class="arabic">
+<li>Absolute paths are always treated exactly as written.</li>
+<li>For relative paths, the code first checks for a file or directory
+of that name in the directory where slug is running. If no file
+of that name is found, and the environment variable <code class="docutils literal"><span class="pre">$SLUG_DIR</span></code>
+is set, teh code will search for the file at
+<code class="docutils literal"><span class="pre">$SLUG_DIR/user_specified_path</span></code>. This is to allow users to
+use default options that ship with the code simply by setting
+their <code class="docutils literal"><span class="pre">$SLUG_DIR</span></code> environment variable to wherever the code is
+installed.</li>
+<li>Notwithstanding rule 2, the output directory (<code class="docutils literal"><span class="pre">out_dir</span></code>) is
+always assumed to be relative to the location where slug is
+running; it will never be prepended with <code class="docutils literal"><span class="pre">$SLUG_DIR</span></code>.</li>
+</ol>
+</li>
 </ul>
-<p>The keywords recognized by SLUG can be categorized as described in the remainder of this section.</p>
+<p>The keywords recognized by slug can be categorized as described in the remainder of this section.</p>
 </div>
 <div class="section" id="basic-keywords">
 <span id="ssec-basic-keywords"></span><h2>Basic Keywords<a class="headerlink" href="#basic-keywords" title="Permalink to this headline">¶</a></h2>
 <p>These specify basic data for the run.</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">model_name</span></code> (default: <code class="docutils literal"><span class="pre">SLUG_DEF</span></code>): name of the model. This will become the base filename for the output files.</li>
-<li><code class="docutils literal"><span class="pre">out_dir</span></code> (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the SLUG executable is called.</li>
+<li><code class="docutils literal"><span class="pre">out_dir</span></code> (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the slug executable is called.</li>
 <li><code class="docutils literal"><span class="pre">verbosity</span></code> (default: <code class="docutils literal"><span class="pre">1</span></code>): level of verbosity when running, with 0 indicating no output, 1 indicating some output, and 2 indicating a great deal of output.</li>
 </ul>
 </div>
@@ -111,7 +131,7 @@
 <p>These specify the physical models to be used for stellar evolution, atmospheres, the IMF, extinction, etc.</p>
 <ul class="simple">
 <li><dl class="first docutils">
-<dt><code class="docutils literal"><span class="pre">imf</span></code> (default: <code class="docutils literal"><span class="pre">lib/imf/chabrier.imf</span></code>): name of the IMF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span class="std std-ref">Probability Distribution Functions</span></a>. Note that SLUG ships with the following IMF files pre-defined (in the directory <code class="docutils literal"><span class="pre">lib/imf</span></code>)</dt>
+<dt><code class="docutils literal"><span class="pre">imf</span></code> (default: <code class="docutils literal"><span class="pre">lib/imf/chabrier.imf</span></code>): name of the IMF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span class="std std-ref">Probability Distribution Functions</span></a>. Note that slug ships with the following IMF files pre-defined (in the directory <code class="docutils literal"><span class="pre">lib/imf</span></code>)</dt>
 <dd><ul class="first last">
 <li><code class="docutils literal"><span class="pre">chabrier.imf</span></code> (single-star IMF from <a class="reference external" href="http://adsabs.harvard.edu/abs/2005ASSL..327...41C">Chabrier, 2005, in “The Initial Mass Function 50 Years Later”, eds. E. Corbelli, F. Palla, &amp; H. Zinnecker, Springer: Dordrecht, p. 41</a>)</li>
 <li><code class="docutils literal"><span class="pre">chabrier03.imf</span></code> (single-star IMF from <a class="reference external" href="http://adsabs.harvard.edu/abs/2003PASP..115..763C">Chabrier, 2003, PASP, 115, 763-795</a>)</li>
@@ -123,7 +143,7 @@
 </dl>
 </li>
 <li><code class="docutils literal"><span class="pre">cmf</span></code> (default: <code class="docutils literal"><span class="pre">lib/cmf/slug_default.cmf</span></code>): name of the CMF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span class="std std-ref">Probability Distribution Functions</span></a>. The default selection is a power law <span class="math">\(dN/dM \propto M^{-2}\)</span> from <span class="math">\(M = 10^2 - 10^7\;M_\odot\)</span>. This is ignored, and may be omitted, if <code class="docutils literal"><span class="pre">sim_type</span></code> is set to <code class="docutils literal"><span class="pre">cluster</span></code> and <code class="docutils literal"><span class="pre">cluster_mass</span></code> is set to a numerical value.</li>
-<li><code class="docutils literal"><span class="pre">clf</span></code> (default: <code class="docutils literal"><span class="pre">lib/clf/slug_default.clf</span></code>): name of the CLF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span class="std std-ref">Probability Distribution Functions</span></a>. The default gives a power law distribution of lifetimes <span class="math">\(t\)</span> with <span class="math">\(dN/dt\propto t^{-1.9}\)</span> from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The SLUG source also ships with an alternative CLF file, <code class="docutils literal"><span class="pre">lib/clf/nodisrupt.clf</span></code>, which disables cluster disruption entirely (by setting the lifetime distribution to a <span class="math">\(\delta\)</span> function at <span class="math">\(10^{300}\)</span> yr).</li>
+<li><code class="docutils literal"><span class="pre">clf</span></code> (default: <code class="docutils literal"><span class="pre">lib/clf/slug_default.clf</span></code>): name of the CLF descriptor file; this is a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span class="std std-ref">Probability Distribution Functions</span></a>. The default gives a power law distribution of lifetimes <span class="math">\(t\)</span> with <span class="math">\(dN/dt\propto t^{-1.9}\)</span> from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The slug source also ships with an alternative CLF file, <code class="docutils literal"><span class="pre">lib/clf/nodisrupt.clf</span></code>, which disables cluster disruption entirely (by setting the lifetime distribution to a <span class="math">\(\delta\)</span> function at <span class="math">\(10^{300}\)</span> yr).</li>
 <li><dl class="first docutils">
 <dt><code class="docutils literal"><span class="pre">tracks</span></code> (default: <code class="docutils literal"><span class="pre">geneva_2013_vvcrit_00</span></code>): stellar evolution tracks to use. This can be specified either by giving the name of a particular set of tracks (i.e., a set of tracks computed using the same code or group, but at a range of metallicities), or by giving the name of a particular file (a particular set of tracks at a particular metallicity). When specifying a track set, the user can also specify the metallicity (see below), and the tracks will be read for (and if necessary interpolated to) the specified metallicity automatically. The following track sets and indvidual track files are available:</dt>
 <dd><ul class="first last">
@@ -165,7 +185,7 @@
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">A_V</span></code> (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter <code class="docutils literal"><span class="pre">A_V</span></code> is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value <span class="math">\(A_V\)</span>, in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in <a class="reference internal" href="pdfs.html#sec-pdfs"><span class="std std-ref">Probability Distribution Functions</span></a>, specifying the probability distribution of <span class="math">\(A_V\)</span> values, in mag.</li>
 <li><dl class="first docutils">
-<dt><code class="docutils literal"><span class="pre">extinction_curve</span></code> (default: <code class="docutils literal"><span class="pre">lib/extinct/SB_ATT_SLUG.dat</span></code>) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction <span class="math">\(\kappa_\nu\)</span> at that wavelength / frequency in <span class="math">\(\mathrm{cm}^2\)</span>. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a>). SLUG ships with the following extinction curves (all in <code class="docutils literal"><span class="pre">lib/extinct</span></code>):</dt>
+<dt><code class="docutils literal"><span class="pre">extinction_curve</span></code> (default: <code class="docutils literal"><span class="pre">lib/extinct/SB_ATT_SLUG.dat</span></code>) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction <span class="math">\(\kappa_\nu\)</span> at that wavelength / frequency in <span class="math">\(\mathrm{cm}^2\)</span>. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see <a class="reference internal" href="intro.html#ssec-spec-phot"><span class="std std-ref">Spectra and Photometry</span></a>). Slug ships with the following extinction curves (all in <code class="docutils literal"><span class="pre">lib/extinct</span></code>):</dt>
 <dd><ul class="first last">
 <li><code class="docutils literal"><span class="pre">LMC_EXT_SLUG.dat</span></code> : LMC extinction curve; optical-UV from <a class="reference external" href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick, E. L., 1999, PASP, 111, 63</a>, IR from <a class="reference external" href="http://adsabs.harvard.edu/abs/1984A%26A...134..284L">Landini, M., et al., 1984, A&amp;A, 134, 284</a>; parts combined by D. Calzetti</li>
 <li><code class="docutils literal"><span class="pre">MW_EXT_SLUG.dat</span></code> : MW extinction curve; optical-UV from <a class="reference external" href="http://adsabs.harvard.edu/abs/1999PASP..111...63F">Fitzpatrick, E. L., 1999 PASP, 111, 63</a>, IR from <a class="reference external" href="http://adsabs.harvard.edu/abs/1984A%26A...134..284L">Landini, M., et al., 1984, A&amp;A, 134, 284</a>; parts combined by D. Calzetti</li>
@@ -196,7 +216,7 @@
 <p>These describe the photometry to be computed. Note that none of these keywords have any effect unless <code class="docutils literal"><span class="pre">out_integrated_phot</span></code> or <code class="docutils literal"><span class="pre">out_cluster_phot</span></code> is set to 1.</p>
 <ul class="simple">
 <li><dl class="first docutils">
-<dt><code class="docutils literal"><span class="pre">phot_bands</span></code>: photometric bands for which photometry is to be computed. The values listed here can be comma- or whitespace-separated. For a list of available photometric filters, see the file <code class="docutils literal"><span class="pre">lib/filters/FILTER_LIST</span></code>. In addition to these filters, SLUG always allows four special “bands”:</dt>
+<dt><code class="docutils literal"><span class="pre">phot_bands</span></code>: photometric bands for which photometry is to be computed. The values listed here can be comma- or whitespace-separated. For a list of available photometric filters, see the file <code class="docutils literal"><span class="pre">lib/filters/FILTER_LIST</span></code>. In addition to these filters, slug always allows four special “bands”:</dt>
 <dd><ul class="first last">
 <li><code class="docutils literal"><span class="pre">QH0</span></code>: the <span class="math">\(\mathrm{H}^0\)</span> ionizing luminosity, in photons/sec</li>
 <li><code class="docutils literal"><span class="pre">QHe0</span></code>: the <span class="math">\(\mathrm{He}^0\)</span> ionizing luminosity, in photons/sec</li>

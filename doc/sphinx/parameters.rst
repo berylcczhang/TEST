@@ -8,7 +8,7 @@ Parameter Specification
 Automated Parameter File Generation
 -----------------------------------
 
-The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience SLUG comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing::
+The remainder of this section contains information on how parameter files are formatted, and exactly how parameter choices specify code behavior. However, as a convenience slug comes with a python script that provides a simple menu-driven interface to write parameter files automatically. The script can be started by doing::
 
    python tools/python/write_param.py
 
@@ -18,19 +18,38 @@ Once started, the script provides a series of menus that allow the user to set a
 File Format
 -----------
 
-An example parameter file is included as ``param/example.param`` in the source tree. Parameter files for SLUG are generically formatted as a series of entries of the form::
+An example parameter file is included as ``param/example.param`` in the source tree. Parameter files for slug are generically formatted as a series of entries of the form::
 
    keyword    value
 
 Any line starting with ``#`` is considered to be a comment and is ignored, and anything on a line after a ``#`` is similarly treated as a comment and ignored. Some general rules on keywords are:
 
 * Keywords may appear in any order.
-* Some keywords have default values, indicated in parenthesis in the list below. These keywords are optional and need not appear in the parameter file. All others are required. 
+* Many keywords have default values, indicated in parentheses in the
+  list below. These keywords are optional and need not appear in the
+  parameter file; missing keywords are set to their default values.
+  Keywords that do not have a default are required.
 * Keywords and values are case-insensitive. 
-* Unless explicitly stated otherwise, units for mass are always :math:`M_\odot`, units for time are always yr.
-* Any time a file or directory is specified, if it is given as a relative rather than absolute path, it is assumed to be relative to the environment variable ``$SLUG_DIR``. If this environment variable is not set, it is assumed to be relative to the current working directory. EXCEPTION: the output directory (if it is specified as a relative rather than absolute path) is always assumed to be relative to the current working directory.
+* Unless explicitly stated otherwise, units for mass are always
+  :math:`M_\odot`, units for time are always yr, and units for
+  extinction are always magnitudes.
+* Any time a file or directory is specified, the path is resolved by
+  the following rules:
+  
+  1. Absolute paths are always treated exactly as written.
+  2. For relative paths, the code first checks for a file or directory
+     of that name in the directory where slug is running. If no file
+     of that name is found, and the environment variable ``$SLUG_DIR``
+     is set, teh code will search for the file at
+     ``$SLUG_DIR/user_specified_path``. This is to allow users to
+     use default options that ship with the code simply by setting
+     their ``$SLUG_DIR`` environment variable to wherever the code is
+     installed.
+  3. Notwithstanding rule 2, the output directory (``out_dir``) is
+     always assumed to be relative to the location where slug is
+     running; it will never be prepended with ``$SLUG_DIR``.
 
-The keywords recognized by SLUG can be categorized as described in the remainder of this section.
+The keywords recognized by slug can be categorized as described in the remainder of this section.
 
 .. _ssec-basic-keywords:
 
@@ -40,7 +59,7 @@ Basic Keywords
 These specify basic data for the run.
 
 * ``model_name`` (default: ``SLUG_DEF``): name of the model. This will become the base filename for the output files.
-* ``out_dir`` (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the SLUG executable is called.
+* ``out_dir`` (default: current working direcory): name of the directory into which output should be written. If not specified, output is written into the directory from which the slug executable is called.
 * ``verbosity`` (default: ``1``): level of verbosity when running, with 0 indicating no output, 1 indicating some output, and 2 indicating a great deal of output.
 
 Simulation Control Keywords
@@ -84,14 +103,14 @@ Stellar Model Keywords
 
 These specify the physical models to be used for stellar evolution, atmospheres, the IMF, extinction, etc.
 
-* ``imf`` (default: ``lib/imf/chabrier.imf``): name of the IMF descriptor file; this is a PDF file, formatted as described in :ref:`sec-pdfs`. Note that SLUG ships with the following IMF files pre-defined (in the directory ``lib/imf``)
+* ``imf`` (default: ``lib/imf/chabrier.imf``): name of the IMF descriptor file; this is a PDF file, formatted as described in :ref:`sec-pdfs`. Note that slug ships with the following IMF files pre-defined (in the directory ``lib/imf``)
    * ``chabrier.imf`` (single-star IMF from `Chabrier, 2005, in "The Initial Mass Function 50 Years Later", eds. E. Corbelli, F. Palla, & H. Zinnecker, Springer: Dordrecht, p. 41 <http://adsabs.harvard.edu/abs/2005ASSL..327...41C>`_)
    * ``chabrier03.imf`` (single-star IMF from `Chabrier, 2003, PASP, 115, 763-795 <http://adsabs.harvard.edu/abs/2003PASP..115..763C>`_)
    * ``kroupa.imf`` (IMF from `Kroupa, 2002, Science, 295, 82-91 <http://adsabs.harvard.edu/abs/2002Sci...295...82K>`_)
    * ``kroupa_sb99.imf`` (simplified version of the Kroupa, 2002 IMF used by default by `starburst99 <http://www.stsci.edu/science/starburst99/docs/default.htm>`_)
    * ``salpeter.imf`` (single-component power law IMF from `Salpeter, 1955, ApJ, 121, 161 <http://adsabs.harvard.edu/abs/1955ApJ...121..161S>`_)
 * ``cmf`` (default: ``lib/cmf/slug_default.cmf``): name of the CMF descriptor file; this is a PDF file, formatted as described in :ref:`sec-pdfs`. The default selection is a power law :math:`dN/dM \propto M^{-2}` from :math:`M = 10^2 - 10^7\;M_\odot`. This is ignored, and may be omitted, if ``sim_type`` is set to ``cluster`` and ``cluster_mass`` is set to a numerical value.
-* ``clf`` (default: ``lib/clf/slug_default.clf``): name of the CLF descriptor file; this is a PDF file, formatted as described in :ref:`sec-pdfs`. The default gives a power law distribution of lifetimes :math:`t` with :math:`dN/dt\propto t^{-1.9}` from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The SLUG source also ships with an alternative CLF file, ``lib/clf/nodisrupt.clf``, which disables cluster disruption entirely (by setting the lifetime distribution to a :math:`\delta` function at :math:`10^{300}` yr).
+* ``clf`` (default: ``lib/clf/slug_default.clf``): name of the CLF descriptor file; this is a PDF file, formatted as described in :ref:`sec-pdfs`. The default gives a power law distribution of lifetimes :math:`t` with :math:`dN/dt\propto t^{-1.9}` from 1 Myr to 1 Gyr. Note that this corresponds to a cluster age distribution of slope -0.9. The slug source also ships with an alternative CLF file, ``lib/clf/nodisrupt.clf``, which disables cluster disruption entirely (by setting the lifetime distribution to a :math:`\delta` function at :math:`10^{300}` yr).
 * ``tracks`` (default: ``geneva_2013_vvcrit_00``): stellar evolution tracks to use. This can be specified either by giving the name of a particular set of tracks (i.e., a set of tracks computed using the same code or group, but at a range of metallicities), or by giving the name of a particular file (a particular set of tracks at a particular metallicity). When specifying a track set, the user can also specify the metallicity (see below), and the tracks will be read for (and if necessary interpolated to) the specified metallicity automatically. The following track sets and indvidual track files are available:
    * ``geneva_2013_vvcrit_00`` and ``geneva_2013_vvcrit_00``: Geneva (2013) track set, rotating at 0% and 40% of breakup, respectively. These tracks are available at metallicities of Solar and 1/7 Solar.
    * ``geneva_mdot_std`` and ``geneva_mdot_enhanced``: pre-2013 Geneva track set, no rotation, with standard and 2 times standard mass loss rates, respectively. These models are available in metallicities of (relative to Solar) :math:`Z = 0.05, 0.2, 0.4, 1.0, 2.0`.
@@ -121,7 +140,7 @@ Extinction Keywords
 -------------------
 
 * ``A_V`` (default: no extinction): extinction distribution. This parameter has three possible behaviors. If the parameter ``A_V`` is omitted entirely, then the code will not compute extinction-corrected spectra or photometry at all; only unextincted values will be reported. If this parameter is specified as a real number, it will be interepreted as specifying a uniform extinction value :math:`A_V`, in mag, and this extinction will be applied to all predicted light output. Finally, if this parameter is a string that cannot be converted to a real number, it will be interpreted as the name of a PDF file, formatted as described in :ref:`sec-pdfs`, specifying the probability distribution of :math:`A_V` values, in mag.
-* ``extinction_curve`` (default: ``lib/extinct/SB_ATT_SLUG.dat``) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction :math:`\kappa_\nu` at that wavelength / frequency in :math:`\mathrm{cm}^2`. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see :ref:`ssec-spec-phot`). SLUG ships with the following extinction curves (all in ``lib/extinct``):
+* ``extinction_curve`` (default: ``lib/extinct/SB_ATT_SLUG.dat``) file specifying the extinction curve; the file format is two columns of numbers in ASCII, the first giving the wavelength in Angstrom and the second giving the exintction :math:`\kappa_\nu` at that wavelength / frequency in :math:`\mathrm{cm}^2`. Note that the absolute normalization of the exitnction curve is unimportant; only the wavelength-dependence matters (see :ref:`ssec-spec-phot`). Slug ships with the following extinction curves (all in ``lib/extinct``):
    * ``LMC_EXT_SLUG.dat`` : LMC extinction curve; optical-UV from `Fitzpatrick, E. L., 1999, PASP, 111, 63 <http://adsabs.harvard.edu/abs/1999PASP..111...63F>`_, IR from `Landini, M., et al., 1984, A&A, 134, 284 <http://adsabs.harvard.edu/abs/1984A%26A...134..284L>`_; parts combined by D. Calzetti
    * ``MW_EXT_SLUG.dat`` : MW extinction curve; optical-UV from `Fitzpatrick, E. L., 1999 PASP, 111, 63 <http://adsabs.harvard.edu/abs/1999PASP..111...63F>`_, IR from `Landini, M., et al., 1984, A&A, 134, 284 <http://adsabs.harvard.edu/abs/1984A%26A...134..284L>`_; parts combined by D. Calzetti
    * ``SB_ATT_SLUG.dat`` : "starburst" extinction curve from `Calzetti, D., et al., 2000, ApJ, 533, 682 <http://adsabs.harvard.edu/abs/2000ApJ...533..682C>`_
@@ -150,7 +169,7 @@ Photometric Filter Keywords
 
 These describe the photometry to be computed. Note that none of these keywords have any effect unless ``out_integrated_phot`` or ``out_cluster_phot`` is set to 1.
 
-* ``phot_bands``: photometric bands for which photometry is to be computed. The values listed here can be comma- or whitespace-separated. For a list of available photometric filters, see the file ``lib/filters/FILTER_LIST``. In addition to these filters, SLUG always allows four special "bands":
+* ``phot_bands``: photometric bands for which photometry is to be computed. The values listed here can be comma- or whitespace-separated. For a list of available photometric filters, see the file ``lib/filters/FILTER_LIST``. In addition to these filters, slug always allows four special "bands":
    * ``QH0``: the :math:`\mathrm{H}^0` ionizing luminosity, in photons/sec
    * ``QHe0``: the :math:`\mathrm{He}^0` ionizing luminosity, in photons/sec
    * ``QHe1``: the :math:`\mathrm{He}^+` ionizing luminosity, in photons/sec
