@@ -4,6 +4,7 @@ Helper function to open slug output files.
 
 import os
 import os.path as osp
+import errno
 try:
     import astropy.io.fits as fits
 except ImportError:
@@ -129,7 +130,8 @@ def slug_open(filename, output_dir=None, fmt=None):
     # If we're here and fp is None, all attempt to open the file have
     # failed, so throw an IOError
     if fp is None:
-        raise IOError(1, "unable to open file with base name "+fname)
+        raise IOError(errno.ENOENT,
+                      "unable to open file with base name "+fname)
 
     # Return the handle to the new file
     return fp, fname

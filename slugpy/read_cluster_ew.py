@@ -7,6 +7,7 @@ from collections import namedtuple
 from copy import deepcopy
 import struct
 import re
+import errno
 from .slug_open import slug_open
 
 def read_cluster_ew(model_name, output_dir=None, fmt=None, 
@@ -152,14 +153,14 @@ def read_cluster_ew(model_name, output_dir=None, fmt=None,
                 if hasattr(read_lines, '__iter__'):
                     for f in read_lines:
                         if not cl in lines:
-                            raise IOError(
-                                "requested line {:s} not available!".
-                                format(f))
+                            raise IOError(errno.EIO,
+                                          "requested line {:s} not available!".
+                                          format(f))
                 else:
                     if not read_lines in lines:
-                        raise IOError(
-                            "requested line {:s} not available!".
-                            format(read_lines))
+                        raise IOError(errno.EIO,
+                                      "requested line {:s} not available!".
+                                      format(read_lines))
 
  
             # If only reading lines, skip the rest
@@ -225,14 +226,14 @@ def read_cluster_ew(model_name, output_dir=None, fmt=None,
                 if hasattr(read_lines, '__iter__'):
                     for cl in read_lines:
                         if not cl in lines:
-                            raise IOError(
-                                "requested line {:s} not available!".
-                                format(f))
+                            raise IOError(errno.EIO,
+                                          "requested line {:s} not available!".
+                                          format(f))
                 else:
                     if not read_lines in lines:
-                        raise IOError(
-                            "requested line {:s} not available!".
-                            format(read_lines))
+                        raise IOError(errno.EIO,
+                                      "requested line {:s} not available!".
+                                      format(read_lines))
 
           
             # If only reading lines, skip the rest

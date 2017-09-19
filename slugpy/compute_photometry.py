@@ -11,6 +11,7 @@ from .int_tabulated import int_tabulated
 from .int_tabulated import int_tabulated2
 from .read_filter import read_filter
 import scipy.constants as physcons
+import errno
 
 # Units and constants
 try:
@@ -226,7 +227,8 @@ def compute_photometry(wl, spec, filtername, photsystem='L_nu',
             try:
                 vegadata = ascii.read('A0V_KURUCZ_92.SED', 'r')
             except IOError:
-                raise IOError(1, "could not find Vega spectrum "+
+                raise IOError(errno.ENOENT,
+                              "could not find Vega spectrum "+
                               "file A0V_KURUCZ_92.SED in "+
                               "SLUG_DIR/lib/atmospheres or "+
                               "in current directory")

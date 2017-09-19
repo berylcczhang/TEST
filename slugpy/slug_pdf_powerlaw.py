@@ -59,7 +59,7 @@ class slug_pdf_powerlaw(slug_pdf_segment):
 
                 # Make sure this is a properly formatted slope specified
                 if len(line.split()) != 2 or line.split()[0] != 'slope':
-                    raise IOError(1, 
+                    raise IOError(errno.EIO, 
                         "slug_pdf_powerlaw: expected 'slope SLOPE', "+
                         "found '"+line+"'")
 

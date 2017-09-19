@@ -6,6 +6,7 @@ import os
 import os.path as osp
 import numpy as np
 from collections import namedtuple
+import errno
 
 def read_filter(filtername, filter_dir=None):
     """
@@ -120,7 +121,7 @@ def read_filter(filtername, filter_dir=None):
     # error
     if -2 in filteridx:
         fp2.close()
-        raise IOError(1, "Unable to find filter " +
+        raise IOError(errno.EIO, "Unable to find filter " +
                       filter_names[filteridx.index(-2)] +
                       " in FILTER_LIST")
 
@@ -179,7 +180,7 @@ def read_filter(filtername, filter_dir=None):
     # the special ones
     for i in range(len(wavelength)):
         if wavelength[i] is None and filteridx[i] != -1:
-            raise IOError(1, "Unable to find data for filter " +
+            raise IOError(errno.EIO, "Unable to find data for filter " +
                           filter_names[i] + " in allfilters.dat")
 
     # Compute the effective wavelength for each filter

@@ -62,7 +62,7 @@ class slug_pdf_exponential(slug_pdf_segment):
                 spl = line.split()
                 if spl[0] == 'scale':
                     if len(spl) != 2:
-                        raise IOError(1, 
+                        raise IOError(errno.EIO, 
                             "slug_pdf_exponential: expected "+
                             "'scale SCALE', found "+line)
                     self.scale = float(spl[1])

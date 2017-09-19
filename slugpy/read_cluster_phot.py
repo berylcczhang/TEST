@@ -7,6 +7,7 @@ from collections import namedtuple
 from copy import deepcopy
 import struct
 import re
+import errno
 from .photometry_convert import photometry_convert
 from .read_filter import read_filter
 from .slug_open import slug_open
@@ -215,12 +216,12 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             if type(read_filters) is not str:
                 for f in read_filters:
                     if not f in filters:
-                        raise IOError(1,
+                        raise IOError(errno.EIO,
                                       "requested filter {:s} not available!".
                                       format(f))
             else:
                 if not read_filters in filters:
-                    raise IOError(1, 
+                    raise IOError(errno.EIO, 
                                   "requested filter {:s} not available!".
                                   format(read_filters))
 
@@ -351,12 +352,12 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             if type(read_filters) is not str:
                 for f in read_filters:
                     if not f in filters:
-                        raise IOError(1,
+                        raise IOError(errno.EIO,
                                       "requested filter {:s} not available!".
                                       format(f))
             else:
                 if not read_filters in filters:
-                    raise IOError(1,
+                    raise IOError(errno.EIO,
                                   "requested filter {:s} not available!".
                                   format(read_filters))
 
@@ -552,12 +553,12 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if type(read_filters) is not str:
                     for f in read_filters:
                         if not f in filters:
-                            raise IOError(1,
+                            raise IOError(errno.EIO,
                                           "requested filter {:s} not available!".
                                           format(f))
                 else:
                     if not read_filters in filters:
-                        raise IOError(1, 
+                        raise IOError(errno.EIO, 
                                       "requested filter {:s} not available!".
                                       format(read_filters))
 
@@ -680,12 +681,12 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if type(read_filters) is not str:
                     for f in read_filters:
                         if not f in filters:
-                            raise IOError(1,
+                            raise IOError(errno.EIO,
                                           "requested filter {:s} not available!".
                                           format(f))
                 else:
                     if not read_filters in filters:
-                        raise IOError(1,
+                        raise IOError(errno.EIO,
                                       "requested filter {:s} not available!".
                                       format(read_filters))
 

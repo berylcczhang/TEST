@@ -3,6 +3,7 @@ Function to read all cluster data for a SLUG2 run.
 """
 
 from collections import namedtuple
+import errno
 from .read_cluster_prop import read_cluster_prop
 from .read_cluster_phot import read_cluster_phot
 from .read_cluster_spec import read_cluster_spec
@@ -346,14 +347,17 @@ def read_cluster(model_name, output_dir=None, fmt=None,
             del read_info['fname']
     except IOError as e:
         if e.strerror is None:
-            # Deal with errors using deprecated standard issued by astropy
-            e.strerror = e.message
+            if hasattr(e, 'message'):
+                # Deal with errors using deprecated standard issued by astropy
+                e.strerror = e.message
+            else:
+                e.strerror = ''
         if e.errno is None:
-            e.errno = 2
-        if e.strerror[:16] == 'requested filter' and \
-           e.strerror[-14:] == 'not available!':
+            e.errno = errno.EIO
+        if str(e.strerror)[:16] == 'requested line' and \
+           str(e.strerror)[-14:] == 'not available!':
             # If the IO error is that we didn't have the requested
-            # filter, re-raise the error
+            # line, re-raise the error
             raise IOError(e.errno, e.strerror)
         else:
             phot = None
@@ -427,15 +431,18 @@ def read_cluster(model_name, output_dir=None, fmt=None,
             del read_info['fname']
     except IOError as e:
         if e.strerror is None:
-            # Deal with errors using deprecated standard issued by astropy
-            e.strerror = e.message
+            if hasattr(e, 'message'):
+                # Deal with errors using deprecated standard issued by astropy
+                e.strerror = e.message
+            else:
+                e.strerror = ''
         if e.errno is None:
-            e.errno = 2
-        if str(e.message)[:16] == 'requested line' and \
-           str(e.message)[-14:] == 'not available!':
+            e.errno = errno.EIO
+        if str(e.strerror)[:16] == 'requested line' and \
+           str(e.strerror)[-14:] == 'not available!':
             # If the IO error is that we didn't have the requested
             # line, re-raise the error
-            raise IOError(e.message)
+            raise IOError(e.errno, e.strerror)
         else:
             ew = None
     

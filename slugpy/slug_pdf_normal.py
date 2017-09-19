@@ -75,13 +75,13 @@ class slug_pdf_normal(slug_pdf_segment):
                 spl = line.split()
                 if spl[0] == 'mean':
                     if len(spl) != 2:
-                        raise IOError(1, 
+                        raise IOError(errno.EIO, 
                             "slug_pdf_lognormal: expected "+
                             "'mean MEAN', found "+line)
                     self._mean = float(spl[1])
                 elif spl[0] == 'disp':
                     if len(spl) != 2:
-                        raise IOError(1, 
+                        raise IOError(errno.EIO, 
                             "slug_pdf_lognormal: expected "+
                             "'disp DISP', found "+line)
                     self._disp = float(spl[1])

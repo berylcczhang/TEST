@@ -10,6 +10,7 @@ import os
 import os.path as osp
 import warnings
 from copy import deepcopy
+import errno
 try:
     # Python 3
     from urllib.request import urlopen
@@ -245,7 +246,8 @@ class cluster_slug(object):
             # given a library file name explicitly, just raise an
             # error.
             if libname is not None:
-                raise IOError("unable to open library {}".
+                raise IOError(errno.ENOENT,
+                              "unable to open library {}".
                               format(self.__libname))
 
             # If we've made it to here, we were asked to open the
@@ -256,7 +258,8 @@ class cluster_slug(object):
             try:
                 import astropy.io.fits as fits
             except ImportError:
-                raise IOError("failed to read default cluster_slug " +
+                raise IOError(errno.EIO,
+                              "failed to read default cluster_slug " +
                               "library cluster_slug/clusterslug_mw " +
                               "due to missing " +
                               "astropy.io.fits; install astropy " +
@@ -273,7 +276,7 @@ class cluster_slug(object):
             import __main__ as main
             if hasattr(main, '__file__'):
                 # We're not interactive; just raise an error
-                raise IOError(errstr + " " +
+                raise IOError(errno.EIO, errstr + " " +
                               "Try downloading it from " +
                               "https://sites.google.com/site/runslug/data")
 
@@ -286,7 +289,7 @@ class cluster_slug(object):
                 lower().strip()
             if not usr_response in ['yes', 'y', 'ye']:
                 # User didn't say yes, so raise error
-                raise IOError("Unable to proceeed")
+                raise IOError(errno.EIO, "Unable to proceeed")
 
             # If we're here, download the files
             print("Fetching modp020_chabrier_MW_cluster_prop " +
@@ -315,7 +318,8 @@ class cluster_slug(object):
             try:
                 prop = read_integrated_prop(self.__libname)
             except IOError:
-                raise IOError("still unable to open default library")
+                raise IOError(errno.EIO,
+                              "still unable to open default library")
              
         # Find out how many variable parameters we have and how many
         # we want to use
