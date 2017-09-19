@@ -44,7 +44,7 @@ def read_filter(filtername, filter_dir=None):
 
     # If filter list is not an iterable, make it an iterable of 1
     # element
-    if not hasattr(filtername, '__iter__'):
+    if type(filtername) is str:
         filter_names = [filtername]
     else:
         filter_names = filtername
@@ -205,7 +205,7 @@ def read_filter(filtername, filter_dir=None):
 
     # If we were given a scalar string as input, turn the output back
     # into scalars
-    if not hasattr(filtername, '__iter__'):
+    if type(filtername) is str:
         wavelength = wavelength[0]
         response = response[0]
         wl_eff = wl_eff[0]

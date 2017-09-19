@@ -212,7 +212,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
         # haven't been given ones that are not available; if we have,
         # raise an error now
         if read_filters is not None:
-            if hasattr(read_filters, '__iter__'):
+            if type(read_filters) is not str:
                 for f in read_filters:
                     if not f in filters:
                         raise IOError(1,
@@ -231,7 +231,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # which ones are in our list to read
             if read_filters is not None:
                 fread = []
-                if hasattr(read_filters, '__iter__'):
+                if type(read_filters) is not str:
                     for f in filters:
                         if f in read_filters:
                             fread.append(True)
@@ -348,7 +348,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
         # haven't been given ones that are not available; if we have,
         # raise an error now
         if read_filters is not None:
-            if hasattr(read_filters, '__iter__'):
+            if type(read_filters) is not str:
                 for f in read_filters:
                     if not f in filters:
                         raise IOError(1,
@@ -381,7 +381,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # which ones are in our list to read
             if read_filters is not None:
                 fread = []
-                if hasattr(read_filters, '__iter__'):
+                if type(read_filters) is not str:
                     for f in filters:
                         if f in read_filters:
                             fread.append(True)
@@ -549,7 +549,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # haven't been given ones that are not available; if we have,
             # raise an error now
             if read_filters is not None:
-                if hasattr(read_filters, '__iter__'):
+                if type(read_filters) is not str:
                     for f in read_filters:
                         if not f in filters:
                             raise IOError(1,
@@ -597,7 +597,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if read_filters is not None:
                     fread = []
                     nf_final = 0
-                    if hasattr(read_filters, '__iter__'):
+                    if type(read_filters) is not str:
                         for f in filters:
                             if f in read_filters:
                                 fread.append(True)
@@ -677,7 +677,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # haven't been given ones that are not available; if we have,
             # raise an error now
             if read_filters is not None:
-                if hasattr(read_filters, '__iter__'):
+                if type(read_filters) is not str:
                     for f in read_filters:
                         if not f in filters:
                             raise IOError(1,
@@ -725,7 +725,7 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if read_filters is not None:
                     fread = []
                     nf_final = 0
-                    if hasattr(read_filters, '__iter__'):
+                    if type(read_filters) is not str:
                         for f in filters:
                             if f in read_filters:
                                 fread.append(True)
