@@ -207,6 +207,5 @@ for track, zrel in zip(track_list, zrel_list):
               "--clustermode",
               "--ionparam", "{:e}".format(10.**(logU)),
               "--hden", "{:e}".format(100.0),
-              "--nproc", "8",
               "--save", "--verbose"])
 
