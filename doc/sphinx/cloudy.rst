@@ -220,15 +220,15 @@ show that they are constrained by the following relationships:
 	  & = \left[\frac{81 \alpha_B Q(\mathrm{H}^0)}
 	  {64 \pi c^2 f_e r_S}\right]^{1/2}
 	  \left[\left(1 + \Omega\right)^{4/3} 
-	  - \Omega^{1/3} \left(\frac{4}{3}+\Omega\right)\right]
+	  - \Omega^{1/3} \left(\frac{4}{3}+\Omega\right)\right] \\
 
 	  \mathcal{U}_0 &= \left[
 	  \frac{\alpha_B^2 n_{\mathrm{II}} Q(\mathrm{H}^0)}
-	  {36 \pi c^3 f_e}\right]^{1/3} \frac{1}{\Omega^{2/3}}
+	  {36 \pi c^3 f_e}\right]^{1/3} \frac{1}{\Omega^{2/3}} \\
 
 	  &= \frac{4}{9}\Omega^{-2/3} \left[(1+\Omega)^{4/3} -
 	  \Omega^{1/3}\left(\frac{4}{3}+\Omega\right)\right]^{-1}
-	  \mathcal{U}
+	  \mathcal{U} \\
 
 These relations may be used to compute any four of the quantities
 :math:`n_{\mathrm{II}}`, :math:`r_0`, :math:`r_1`, :math:`\mathcal{U}`,
@@ -297,9 +297,11 @@ where :math:`r_{\mathrm{ch}}` is the
 characteristic radius defined by `Krumholz & Matzner (2009, ApJ,
 703, 1352) <http://adsabs.harvard.edu/abs/2009ApJ...703.1352K>`_ as
 
-.. math:: r_{\mathrm{ch}} & = \frac{\alpha_B}{12\pi\phi}
+.. math:: r_{\mathrm{ch}} & = 
+	  \frac{\alpha_B}{12 \pi \phi}
 	  \left(\frac{\epsilon_0}{2 f_e k_B T_{\mathrm{II}}}\right)^2
 	  f_{\mathrm{trap}}^2 \frac{\psi^2 Q(\mathrm{H}^0)}{c^2}
+	  \\
 
 Here  :math:`\phi = 0.73` is the fraction of ionizing photons absorbed
 by hydrogen atoms rather than dust, :math:`\epsilon_0 =
@@ -339,7 +341,7 @@ density :math:`n_{\mathrm{H}}`, and star cluster age :math:`t` as
 
    t_{\mathrm{ch}} & = \left(\frac{4\pi \mu m_{\mathrm{H}}
    n_{\mathrm{H}} c r_{\mathrm{ch}}^4}{3 f_{\mathrm{trap}}
-   Q(\mathrm{H}^0) \psi \epsilon_0}\right)^{1/2}
+   Q(\mathrm{H}^0) \psi \epsilon_0}\right)^{1/2} \\
 
 Definitions of various quantities appearing in these equations are
 given above. The quantity :math:`\mu = 1.4` is the mean
