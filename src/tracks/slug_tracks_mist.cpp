@@ -78,7 +78,7 @@ slug_tracks_mist(const char *fname, slug_ostreams& ostreams_) :
 		   fname_str.end(),
 		   Z_match, Z_pattern, match_posix)) {
     string Z_str(Z_match[0].first, Z_match[0].second);
-    Z_str = Z_str.substr(3);
+    Z_str = Z_str.substr(4);
     if (Z_str[0] == 'p') Z_str[0] = '+';
     else Z_str[0] = '-';
     metallicity = pow(10.0, lexical_cast<double>(Z_str));
