@@ -206,7 +206,6 @@ def read_integrated_cloudyspec(model_name, output_dir=None, fmt=None,
         ntrial = len(np.unique(trial))
         ntime = len(time)//ntrial
         if ntime > 1:
-            import pdb; pdb.set_trace()
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]
         inc \
