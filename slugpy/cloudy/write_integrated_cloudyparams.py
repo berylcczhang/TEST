@@ -245,7 +245,7 @@ def write_integrated_cloudyparams(data, model_name, fmt):
             cols.append(fits.Column(
                 name="R1_out", format="1D",
                 unit="cm", array=np.transpose(
-                    data.cloudy_r1_out).flattten()))
+                    data.cloudy_r1_out).flatten()))
         if 'cloudy_Omega_out' in data._fields:
             cols.append(fits.Column(
                 name="Omega_out", format="1D",

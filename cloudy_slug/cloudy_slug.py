@@ -267,7 +267,7 @@ for line in tempfile:
         coveringfac_template = float(line.split()[2])
         if args.coveringfac is not None:
             warnings.warn(
-                "cluster_slug: found covering factor "
+                "cloudy_slug: found covering factor "
                 "command in " + cloudytemplate +
                 " but also got command line argument; "
                 "value in template file will be ignored")
@@ -292,28 +292,28 @@ if not args.dynamic:
     # Flag on incorrect number or combination
     if nset != 0 and nset != 2:
         raise ValueError(
-            "cluster_slug: for parameters hden, ionparam, "+
+            "cloudy_slug: for parameters hden, ionparam, "+
             "ionparam0, r0, r1, windparam," +
             "can set either 0 or 2, not any other number")
     if r0_set and U_set:
         raise ValueError(
-            "cluster_slug: cannot use the parameter combination r0, "+
+            "cloudy_slug: cannot use the parameter combination r0, "+
             "ionparam; this combination does not define unique parameters")
     if r1_set and U0_set:
         raise ValueError(
-            "cluster_slug: cannot use the parameter combination r1, "+
+            "cloudy_slug: cannot use the parameter combination r1, "+
             "ionparam0; this combination does not define unique parameters")
 
     # Warn about double-setting
     if hden_template is not None and nset != 0:
         warnings.warn(
-            "cluster_slug: found hden command in " +
+            "cloudy_slug: found hden command in " +
             cloudytemplate + " but also got 2 nebular " +
             "parameters from command line; calculation will " +
             "proceed, but hden command in template will be ignored")
     if radius_template is not None and nset != 0:
         warnings.warn(
-            "cluster_slug: found radius command in " +
+            "cloudy_slug: found radius command in " +
             cloudytemplate + " but also got 2 nebular " +
             "parameters from command line; calculation will " +
             "proceed, but hden command in template will be ignored")
@@ -326,17 +326,17 @@ else:
     # Dynamic mode; make sure we are in cluster mode, and that we have
     # an ambient density and wind paramater
     if not args.clustermode:
-        raise ValueError("cluster_slug: can only use --dynamic in "+
+        raise ValueError("cloudy_slug: can only use --dynamic in "+
                          "conjunction with --clustermode")
     if args.hden is None or args.windparam is None:
-        raise ValueError("cluster_slug: in dynamic mode, need to "
+        raise ValueError("cloudy_slug: in dynamic mode, need to "
                          "set both hden and windparam")
     cmd_complete = True
 
 # Make sure we got what we needed at the command line or in the
 # template; if not, bail out
 if not (cmd_complete or template_complete):
-    raise ValueError("cluster_slug: insufficient input information "+
+    raise ValueError("cloudy_slug: insufficient input information "+
                      "to proceed; either set hden and radius in "+
                      "template, or set command line parameters to "+
                      "specify physical conditions")
@@ -999,7 +999,7 @@ def do_cloudy_run(thread_num, thread_return, q):
                     cloudyspec[time][trial] = cdata.L_lambda
 
             # Read and store the cloudy line luminosity output
-            if lines_file is not None:
+            if lines_file is not None and compute_lines:
                 while os.stat(lines_file).st_size == 0:
                     sleep(2)
                 ldata = read_cloudy_linelist(lines_file)
@@ -1215,13 +1215,17 @@ if compute_continuum:
 ######################################################################
 if compute_continuum:
     if args.clustermode:
-        write_cluster_cloudyspec(cloudyspec_data,
-                                 osp.join(outpath,args.slug_model_name),
-                                 file_info['format'])
+        write_cluster_cloudyspec(
+            cloudyspec_data,
+            osp.join(outpath,
+                     osp.basename(args.slug_model_name)),
+            file_info['format'])
     else:
-        write_integrated_cloudyspec(cloudyspec_data,
-                                    osp.join(outpath,args.slug_model_name),
-                                    file_info['format'])
+        write_integrated_cloudyspec(
+            cloudyspec_data,
+            osp.join(outpath,
+                     osp.basename(args.slug_model_name)),
+            file_info['format'])
 
 ######################################################################
 # Step 11: write the line data to file
@@ -1248,9 +1252,11 @@ if compute_lines:
                                        'cloudy_linelum'])
         cloudylines = cloudylines_type(data.id, data.trial, data.time, 
                                        linelist, linewl, linelum)
-        write_cluster_cloudylines(cloudylines,
-                                  osp.join(outpath,args.slug_model_name),
-                                  file_info['format'])
+        write_cluster_cloudylines(
+            cloudylines,
+            osp.join(outpath,
+                     osp.basename(args.slug_model_name)),
+            file_info['format'])
     else:
         linelum = np.array(linelum)
         cloudylines_type = namedtuple('cluster_cloudylines',
@@ -1260,9 +1266,11 @@ if compute_lines:
         cloudylines = cloudylines_type(data.time, linelist,
                                        linewl, 
                                        np.transpose(linelum, (2,0,1)))
-        write_integrated_cloudylines(cloudylines,
-                                     osp.join(outpath,args.slug_model_name),
-                                     file_info['format'])
+        write_integrated_cloudylines(
+            cloudylines,
+            osp.join(outpath,
+                     osp.basename(args.slug_model_name)),
+            file_info['format'])
 
 ######################################################################
 # Step 12: write photometry to file
@@ -1308,9 +1316,11 @@ if compute_continuum:
                               cloudyphot[:,1,:], cloudyphot[:,2,:])
 
         # Write
-        write_cluster_cloudyphot(cloudyphot_data,
-                                 osp.join(outpath,args.slug_model_name),
-                                 file_info['format'])
+        write_cluster_cloudyphot(
+            cloudyphot_data,
+            osp.join(outpath,
+                     osp.basename(args.slug_model_name)),
+            file_info['format'])
 
     else:
 
@@ -1343,7 +1353,8 @@ if compute_continuum:
         # Write
         write_integrated_cloudyphot(
             cloudyphot_data,
-            osp.join(outpath,args.slug_model_name),
+            osp.join(outpath,
+                     osp.basename(args.slug_model_name)),
             file_info['format'])
 
 
@@ -1409,7 +1420,8 @@ if args.clustermode:
     # Write to file
     write_cluster_cloudyparams(
         cloudyparams_data, 
-        osp.join(outpath,args.slug_model_name),
+        osp.join(outpath,
+                 osp.basename(args.slug_model_name)),
         file_info['format'])
 else:
     # Build namedtuple
@@ -1489,7 +1501,8 @@ else:
     # Write to file
     write_integrated_cloudyparams(
         cloudyparams_data, 
-        osp.join(outpath,args.slug_model_name),
+        osp.join(outpath,
+                 osp.basename(args.slug_model_name)),
         file_info['format'])
 
 ######################################################################
