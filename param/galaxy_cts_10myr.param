@@ -38,7 +38,7 @@
 # Name of the model; this will become the base name for all output
 # files
 # Default: SLUG_DEF
-model_name        SLUG_CTS_M3
+model_name        SLUG_CTS_SFR1
 
 # Directory into which to write output
 # Default: output
@@ -61,7 +61,7 @@ verbosity        2
 #    0)
 # -- galaxy (continuous star formation)
 # Default: galaxy
-sim_type  	  cluster
+sim_type  	  galaxy
 
 # Number of model galaxies to run
 # Default: 1
@@ -90,7 +90,7 @@ end_time	  1.01e7
 # of a numerical value, the string "sfh" appears, this indicates that
 # the star formation history should be read from a star formation
 # history file.
-#sfr    		  0.001
+sfr    		  1.0
 
 # Star formation history file. Can be omitted, and will be ignored, if
 # sim_type = cluster or if sfr is not equal to the special string sfh.
@@ -99,7 +99,7 @@ end_time	  1.01e7
 # Mass of cluster for cluster mode simulation, in Msun; if this set to
 # "cmf", then a new cluster mass will be drawn for each trial from the
 # cmf; can be omitted, and will be ignored, if sim_type = galaxy
-cluster_mass      1e3
+#cluster_mass      1e3
 
 # Read a random number generator seed from a file?
 # -- 0 (no, seed is automatically generated)
@@ -127,19 +127,19 @@ cluster_mass      1e3
 # -- 0 (no)
 # -- 1 (yes)
 # Default: 1
-out_cluster       1
+out_cluster       0
 
 # Write out cluster photometry? Allowed values:
 # -- 0 (no)
 # -- 1 (yes)
 # Default: 1
-out_cluster_phot  1
+out_cluster_phot  0
 
 # Write out cluster spectra? Allowed values:
 # -- 0 (no)
 # -- 1 (yes)
 # Default: 1
-out_cluster_spec  1
+out_cluster_spec  0
 
 out_cluster_yield 0
 
@@ -148,21 +148,23 @@ out_cluster_yield 0
 # -- 0 (no)
 # -- 1 (yes)
 # Default: 1
-#out_integrated     1
+out_integrated     1
 
 # Write out integrated photometry? Can be omitted, and will be ignored,
 # if sim_type = cluster. Allowed values:
 # -- 0 (no)
 # -- 1 (yes)
 # Default: 1
-#out_integrated_phot  1
+out_integrated_phot  1
 
 # Write out integrated spectra? Can be omitted, and will be ignored,
 # if sim_type = cluster. Allowed values:
 # -- 0 (no)
 # -- 1 (yes)
 # Default: 1
-#out_integrated_spec  1
+out_integrated_spec  1
+
+out_integrated_yield 0
 
 # Write output as binary, ASCII, or FITS; allowed values:
 # -- binary
@@ -213,7 +215,7 @@ specsyn_mode	   sb99
 # Fraction of stars born in clusters (must be 0 - 1); can be omitted
 # if sim_type = cluster
 # Default: 1.0
-#clust_frac        1.0
+clust_frac        0.0
 
 # Minimum stellar mass for full stochastic treatment; lower mass stars are 
 # handled assuming that they are continuously-distributed
