@@ -121,7 +121,7 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
         # Figure out how many trials there are and reshape the time
         # array appropriately
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if np.amin(time[:ntime] == time[ntime:2*ntime]):
             time = time[:ntime]
 
@@ -156,7 +156,7 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
         trial = np.array(data_list[::nl+2])
         time = np.array(data_list[1::nl+2])
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if np.amin(time[:ntime] == time[ntime:2*ntime]):
             time = time[:ntime]
 
@@ -186,7 +186,7 @@ def read_integrated_cloudylines(model_name, output_dir=None, fmt=None,
 
         # Re-arrange data into desired shape
         ntrial = len(np.unique(trial))
-        ntime = len(time)/ntrial
+        ntime = len(time)//ntrial
         if ntime > 1:
             if np.amin(time[:ntime] == time[ntime:2*ntime]):
                 time = time[:ntime]

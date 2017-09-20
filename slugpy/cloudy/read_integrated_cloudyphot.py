@@ -241,7 +241,7 @@ def read_integrated_cloudyphot(model_name, output_dir=None, fmt=None,
 
     # Reshape time and photometry arrays
     ntrial = len(np.unique(trial))
-    ntime = len(time)/ntrial
+    ntime = len(time)//ntrial
     if ntime > 1:
         if np.amin(time[:ntime] == time[ntime:2*ntime]):
             time = time[:ntime]
