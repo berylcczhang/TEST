@@ -48,15 +48,18 @@ def read_cloudy_linelist(filename):
         # First 4 characters are descriptor
         labels.append(line[:4])
 
-        # Characters 5-10 are wavelength; last character is unit
-        wlnum = line[5:10]
-        wlunit = line[10]
+        # Characters from 5 to tab are wavelength; last character is unit;
+        # handle special case of exactly 0 wavelength, which occurs for
+        # reasons only Gary can fathom...
+        wlstr = line[5:].split('\t')[0].strip()
+        if (wlstr == '0'):
+            continue
+        wlnum = wlstr[:-1]
+        wlunit = wlstr[-1]
         if wlunit == 'A':
             multiplier = 1.0
         elif wlunit == 'm':
             multiplier = 1e4
-        elif wlunit == ' ':
-            multiplier = 1.0
         else:
             raise ValueError("unknown unit in line "+line)
         wl.append(float(wlnum)*multiplier)
