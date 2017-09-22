@@ -85,7 +85,8 @@ class hiiregparam(object):
     
     ##################################################################
     def __init__(self, qH0, nII=None, r0=None, r1=None, U=None,
-                 U0=None, Omega=None, t=None, n0=None, warn=True):
+                 U0=None, Omega=None, t=None, n0=None, warn=True,
+                 fix_quantity=None, r0safety=True):
         """
         Create an object to derive HII region parameters from inputs
 
@@ -117,6 +118,12 @@ class hiiregparam(object):
               if True, warn and correct if parameter values are set
               outside physically possible range; if False, produce a
               ValueError when this happens
+           fix_quantity : "nII" | "r0" | "r1" | "U" | "U0" | "Omega"
+              if warn is True, this sepcifies which quantity is to be
+              fixed in order to bring parameters into the allowed range
+           r0safety : bool
+              if True, when correcting quantities a margin of safety
+              will be added to ensure that r0 is not identically 0
 
         Notes
            Upon instantiation, the user must set either (1) exactly
@@ -136,6 +143,8 @@ class hiiregparam(object):
         self.U0_ = U0
         self.Omega_ = Omega
         self.warn = warn
+        self.fix_quantity = fix_quantity
+        self.r0safety = r0safety
 
         # If t and n0 are set, determine r1
         if t is not None and n0 is not None:
@@ -177,12 +186,20 @@ class hiiregparam(object):
         if self.r0_ is not None and self.r1_ is not None:
             if self.r0_ >= self.r1_:
                 if self.warn:
-                    r1new = 1.01*self.r0_
-                    warnings.warn(
-                        "hiiregparam: r1 must be >= r0; increasing " +
-                        "r1 from {:e}".format(self.r1_) +
-                        " to {:e}".format(r1new))
-                    self.r1_ = r1new
+                    if self.fix_quantity != 'r0':
+                        r1new = 1.0001*self.r0_
+                        warnings.warn(
+                            "hiiregparam: r1 must be >= r0; increasing " +
+                            "r1 from {:e}".format(self.r1_) +
+                            " to {:e}".format(r1new))
+                        self.r1_ = r1new
+                    else:
+                        r0new = 0.9999*self.r0_
+                        warnings.warn(
+                            "hiiregparam: r1 must be >= r0; decreasing " +
+                            "r0 from {:e}".format(self.r0_) +
+                            " to {:e}".format(r0new))
+                        self.r0_ = r0new
                 else:
                     raise ValueError(
                         "hiiregparam: r1 must be >= r0")
@@ -191,19 +208,38 @@ class hiiregparam(object):
         if self.nII_ is not None and self.U_ is not None:
             fac = self.U_**3*256*np.pi*c**3*fe / \
                   (81*alphaB**2*self.nII_*self.qH0)
-            if fac == 1.0:
+            if fac == 1.0 and not self.r0safety:
                 self.Omega_lim_ = True
-            elif fac > 1:
+            elif fac > 1 or (fac == 1.0 and self.r0safety):
                 Ulim = (81*alphaB**2*self.nII_*self.qH0 /
                            (256*np.pi*c**3*fe))**(1./3.)
                 if self.warn:
-                    warnings.warn(
-                        "hiiregparam: U too large for input "+
-                        "value of nII; lowering from "+
-                        "{:e}".format(self.U_)+" to "+
-                        "{:e}".format(Ulim*(1.0-1.0e-4)))
-                    self.U_ = Ulim*(1.0-1.0e-4)
-                    self.Omega_lim_ = True
+                    if self.fix_quantity != "nII":
+                        if self.r0safety:
+                            Unew = 0.9999*Ulim
+                        else:
+                            Unew = Ulim
+                            self.Omega_lim_ = True
+                        warnings.warn(
+                            "hiiregparam: U too large for input "+
+                            "value of nII; lowering from "+
+                            "{:e}".format(self.U_)+" to "+
+                            "{:e}".format(Unew))
+                        self.U_ = Unew
+                    else:
+                        nIIlim =  self.U_**3*256*np.pi*c**3*fe / \
+                                  (81*alphaB**2*self.qH0)
+                        if self.r0safety:
+                            nIInew = 1.0001*nIIlim
+                        else:
+                            nIInew = nIIlim
+                            self.Omega_lim_ = True
+                        warnings.warn(
+                            "hiiregparam: nII too small for input "+
+                            "value of U; increasing from {:e}".
+                            format(self.nII_)+" to {:e}".
+                            format(nIInew))
+                        self.nII_ = nIInew
                 else:
                     raise ValueError(
                         "hiiregparam: U too large for input "+
@@ -216,19 +252,38 @@ class hiiregparam(object):
         if self.r1_ is not None and self.nII_ is not None:
             rs = (3.*self.qH0/
                   (4.*np.pi*alphaB*fe*self.nII_**2))**(1./3.)
-            if self.r1_ == rs:
+            if self.r1_ == rs and not self.r0safety:
                 self.Omega_lim_ = True
-            elif self.r1_ < rs:
+            elif self.r1_ < rs or (self.r1_ == rs and self.r0safety):
                 nIIlim \
                     = np.sqrt(3.*self.qH0/
                               (4.*np.pi*self.r1_**3*alphaB*fe))
                 if self.warn:
-                    warnings.warn(
-                        "hiiregparam: nII too small for input "+
-                        "value of r1; raising from "+
-                        "{:e}".format(self.nII_)+" to "+
-                        "{:e}".format(nIIlim))
-                    self.nII_ = nIIlim
+                    if self.fix_quantity != 'r1':
+                        if self.r0safety:
+                            nIInew = 1.0001*nIIlim
+                        else:
+                            nIInew = nIIlim
+                            self.Omega_lim_ = True
+                        warnings.warn(
+                            "hiiregparam: nII too small for input "+
+                            "value of r1; raising from "+
+                            "{:e}".format(self.nII_)+" to "+
+                            "{:e}".format(nIInew))
+                        self.nII_ = nIInew
+                    else:
+                        r1lim = rs
+                        if self.r0safety:
+                            r1new = 1.0001*nIIlim
+                        else:
+                            r1new = r1lim
+                            self.Omega_lim_ = True
+                        warnings.warn(
+                            "hiiregparam: r1 too small for input "+
+                            "value of nII; raising from "+
+                            "{:e}".format(self.r1_)+" to "+
+                            "{:e}".format(r1new))
+                        self.r1_ = r1new
                 else:
                     raise ValueError(
                        "hiiregparam: nII too small for input "+
@@ -241,19 +296,40 @@ class hiiregparam(object):
         if self.r1_ is not None and self.U_ is not None:
             fac = 64.0*np.pi*c**2*fe*self.r1_*self.U_**2 / \
                   (81.*alphaB*self.qH0)
-            if fac == 1:
+            if fac == 1 and not self.r0safety:
                 self.Omega_lim_ = True
-            elif fac > 1:
+            elif fac > 1 or (fac == 1 and self.r0safety):
                 Ulim = np.sqrt(81.*alphaB*self.qH0 /
                                (64.*np.pi*c**2*fe*self.r1_))
                 if self.warn:
-                    warnings.warn(
-                        "hiiregparam: U too large for input "+
-                        "value of r1; lowering from "+
-                        "{:e}".format(self.U_) +
-                        " to " +
-                        "{:e}".format(Ulim))
-                    self.U_ = Ulim
+                    if self.fix_quantity != 'r1':
+                        if self.r0safety:
+                            Unew = 0.9999*Ulim
+                        else:
+                            Unew = Ulim
+                            self.Omega_lim_ = True
+                        warnings.warn(
+                            "hiiregparam: U too large for input "+
+                            "value of r1; lowering from "+
+                            "{:e}".format(self.U_) +
+                            " to " +
+                            "{:e}".format(Unew))
+                        self.U_ = Unew
+                    else:
+                        r1lim = 81.*alphaB*self.qH0 / \
+                                (64.0*np.pi*c**2*fe*self.U_**2)
+                        if self.r0safety:
+                            r1new = 0.9999*r1lim
+                        else:
+                            r1new = r1lim
+                            self.Omega_lim_ = True
+                        warnings.warn(
+                            "hiiregparam: r1 too large for input "+
+                            "value of U; lowering from "+
+                            "{:e}".format(self.r1_) +
+                            " to " +
+                            "{:e}".format(r1new))
+                        self.r1_ = r1new
                 else:
                     raise ValueError(
                         "hiiregparam: U too large for input "+
