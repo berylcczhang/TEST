@@ -246,7 +246,7 @@ def read_integrated_cloudyparams(model_name, output_dir=None, fmt=None,
             zeta_out.extend(data_list[ptr::nfield])
             ptr += 1
         
-    elif fmt == 'fits':
+    elif fmt == 'fits' or fname.endswith('fits'):
 
         # FITS mode
         if read_info is not None:

@@ -27,6 +27,7 @@ import sys
 from threading import Thread
 from time import sleep
 import warnings
+import errno
 try:
     from slugpy import *    # If slugpy is already in our path
     from slugpy.cloudy import *
@@ -164,6 +165,12 @@ parser.add_argument('-wr', '--writeparams', default=False,
                     action='store_true',
                     help='write run parameters as text in the cloudy'+
                     'output directory; only applied if --save is set')
+parser.add_argument('-wf', '--warnfail', default=False,
+                    action='store_true',
+                    help='on failure to read the cloudy output '+
+                    '(usually a result of cloudy crashing), '+
+                    'issue a warning and exit normally rather '+
+                    'than raising an error; useful for scripting')
 args = parser.parse_args()
 
 
@@ -990,7 +997,17 @@ def do_cloudy_run(thread_num, thread_return, q):
             if continuum_file is not None:
                 while os.stat(continuum_file).st_size == 0:
                     sleep(2)
-                cdata = read_cloudy_continuum(continuum_file, r0=hp.r0)
+                try:
+                    cdata = read_cloudy_continuum(continuum_file, r0=hp.r0)
+                except:
+                    errstr =  "cloudy_slug: failed to read continuum " \
+                        "file " + continuum_file + "; suspect " \
+                        "cloudy has crashed"
+                    if args.warnfail:
+                        warnings.warn(errstr+ "; cloudy_slug exiting")
+                        sys.exit(0)
+                    else:
+                        raise IOError(errno.EIO, errstr)
                 if args.clustermode:
                     cloudywl[cluster_num] = cdata.wl
                     cloudyspec[cluster_num] = cdata.L_lambda
@@ -1002,7 +1019,17 @@ def do_cloudy_run(thread_num, thread_return, q):
             if lines_file is not None and compute_lines:
                 while os.stat(lines_file).st_size == 0:
                     sleep(2)
-                ldata = read_cloudy_linelist(lines_file)
+                try:
+                    ldata = read_cloudy_linelist(lines_file)
+                except:
+                    errstr =  "cloudy_slug: failed to read lines " \
+                        "file " + lines_file + "; suspect " \
+                        "cloudy has crashed"
+                    if args.warnfail:
+                        warnings.warn(errstr+ "; cloudy_slug exiting")
+                        sys.exit(0)
+                    else:
+                        raise IOError(errno.EIO, errstr)
                 if linelist is None:
                     linelist = ldata.label
                 if linewl is None:
@@ -1016,9 +1043,19 @@ def do_cloudy_run(thread_num, thread_return, q):
             if hcon_file is not None:
                 while os.stat(hcon_file).st_size == 0:
                     sleep(2)
-                r1_out, nII_out, Omega_out \
-                    = read_cloudy_hcon(hcon_file,
-                                       r0 = hp.r0)
+                try:
+                    r1_out, nII_out, Omega_out \
+                        = read_cloudy_hcon(hcon_file,
+                                           r0 = hp.r0)
+                except:
+                    errstr =  "cloudy_slug: failed to read hcon " \
+                        "file " + hcon_file + "; suspect " \
+                        "cloudy has crashed"
+                    if args.warnfail:
+                        warnings.warn(errstr+ "; cloudy_slug exiting")
+                        sys.exit(0)
+                    else:
+                        raise IOError(errno.EIO, errstr)
                 params['r1_out'] = r1_out
                 params['hden_out'] = nII_out
                 params['Omega_out'] = Omega_out
