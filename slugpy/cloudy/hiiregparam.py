@@ -201,8 +201,8 @@ class hiiregparam(object):
                         "hiiregparam: U too large for input "+
                         "value of nII; lowering from "+
                         "{:e}".format(self.U_)+" to "+
-                        "{:e}".format(Ulim))
-                    self.U_ = Ulim
+                        "{:e}".format(Ulim*(1.0-1.0e-4)))
+                    self.U_ = Ulim*(1.0-1.0e-4)
                     self.Omega_lim_ = True
                 else:
                     raise ValueError(
