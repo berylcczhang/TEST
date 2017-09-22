@@ -53,6 +53,7 @@ def read_cloudy_linelist(filename):
         # reasons only Gary can fathom...
         wlstr = line[5:].split('\t')[0].strip()
         if (wlstr == '0'):
+            labels = labels[:-1]
             continue
         wlnum = wlstr[:-1]
         wlunit = wlstr[-1]
