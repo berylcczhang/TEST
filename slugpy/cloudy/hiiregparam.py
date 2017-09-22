@@ -86,7 +86,7 @@ class hiiregparam(object):
     ##################################################################
     def __init__(self, qH0, nII=None, r0=None, r1=None, U=None,
                  U0=None, Omega=None, t=None, n0=None, warn=True,
-                 fix_quantity=None, r0safety=True):
+                 fix_quantity=None, r0safety=0.01):
         """
         Create an object to derive HII region parameters from inputs
 
@@ -121,9 +121,10 @@ class hiiregparam(object):
            fix_quantity : "nII" | "r0" | "r1" | "U" | "U0" | "Omega"
               if warn is True, this sepcifies which quantity is to be
               fixed in order to bring parameters into the allowed range
-           r0safety : bool
-              if True, when correcting quantities a margin of safety
-              will be added to ensure that r0 is not identically 0
+           r0safety : float
+              if non-zero, when correcting quantities a fractional
+              margin of safety of the specified value will be added to
+              avoid having r0 = 0 exactly
 
         Notes
            Upon instantiation, the user must set either (1) exactly
@@ -208,15 +209,15 @@ class hiiregparam(object):
         if self.nII_ is not None and self.U_ is not None:
             fac = self.U_**3*256*np.pi*c**3*fe / \
                   (81*alphaB**2*self.nII_*self.qH0)
-            if fac == 1.0 and not self.r0safety:
+            if fac == 1.0 and self.r0safety == 0.0:
                 self.Omega_lim_ = True
-            elif fac > 1 or (fac == 1.0 and self.r0safety):
+            elif fac > 1 or (fac == 1.0 and self.r0safety > 0.0):
                 Ulim = (81*alphaB**2*self.nII_*self.qH0 /
                            (256*np.pi*c**3*fe))**(1./3.)
                 if self.warn:
                     if self.fix_quantity != "nII":
-                        if self.r0safety:
-                            Unew = 0.9999*Ulim
+                        if self.r0safety > 0.0:
+                            Unew = (1.0 - self.r0safety)*Ulim
                         else:
                             Unew = Ulim
                             self.Omega_lim_ = True
@@ -229,8 +230,8 @@ class hiiregparam(object):
                     else:
                         nIIlim =  self.U_**3*256*np.pi*c**3*fe / \
                                   (81*alphaB**2*self.qH0)
-                        if self.r0safety:
-                            nIInew = 1.0001*nIIlim
+                        if self.r0safety > 0.0:
+                            nIInew = (1.0+self.r0safety)*nIIlim
                         else:
                             nIInew = nIIlim
                             self.Omega_lim_ = True
@@ -252,16 +253,16 @@ class hiiregparam(object):
         if self.r1_ is not None and self.nII_ is not None:
             rs = (3.*self.qH0/
                   (4.*np.pi*alphaB*fe*self.nII_**2))**(1./3.)
-            if self.r1_ == rs and not self.r0safety:
+            if self.r1_ == rs and self.r0safety == 0.0:
                 self.Omega_lim_ = True
-            elif self.r1_ < rs or (self.r1_ == rs and self.r0safety):
+            elif self.r1_ < rs or (self.r1_ == rs and self.r0safety > 0.0):
                 nIIlim \
                     = np.sqrt(3.*self.qH0/
                               (4.*np.pi*self.r1_**3*alphaB*fe))
                 if self.warn:
                     if self.fix_quantity != 'r1':
-                        if self.r0safety:
-                            nIInew = 1.0001*nIIlim
+                        if self.r0safety > 0.0:
+                            nIInew = (1.0+self.r0safety)*nIIlim
                         else:
                             nIInew = nIIlim
                             self.Omega_lim_ = True
@@ -273,8 +274,8 @@ class hiiregparam(object):
                         self.nII_ = nIInew
                     else:
                         r1lim = rs
-                        if self.r0safety:
-                            r1new = 1.0001*nIIlim
+                        if self.r0safety > 0.0:
+                            r1new = (1.0+self.r0safety)*nIIlim
                         else:
                             r1new = r1lim
                             self.Omega_lim_ = True
@@ -296,15 +297,15 @@ class hiiregparam(object):
         if self.r1_ is not None and self.U_ is not None:
             fac = 64.0*np.pi*c**2*fe*self.r1_*self.U_**2 / \
                   (81.*alphaB*self.qH0)
-            if fac == 1 and not self.r0safety:
+            if fac == 1 and self.r0safety == 0.0:
                 self.Omega_lim_ = True
-            elif fac > 1 or (fac == 1 and self.r0safety):
+            elif fac > 1 or (fac == 1 and self.r0safety > 0.0):
                 Ulim = np.sqrt(81.*alphaB*self.qH0 /
                                (64.*np.pi*c**2*fe*self.r1_))
                 if self.warn:
                     if self.fix_quantity != 'r1':
-                        if self.r0safety:
-                            Unew = 0.9999*Ulim
+                        if self.r0safety > 0.0:
+                            Unew = (1.0-self.r0safety)*Ulim
                         else:
                             Unew = Ulim
                             self.Omega_lim_ = True
@@ -318,8 +319,8 @@ class hiiregparam(object):
                     else:
                         r1lim = 81.*alphaB*self.qH0 / \
                                 (64.0*np.pi*c**2*fe*self.U_**2)
-                        if self.r0safety:
-                            r1new = 0.9999*r1lim
+                        if self.r0safety > 0.0:
+                            r1new = (1.0 - self.r0safety)*r1lim
                         else:
                             r1new = r1lim
                             self.Omega_lim_ = True
