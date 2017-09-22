@@ -405,6 +405,7 @@ class hiiregparam(object):
                 return np.sqrt(self.qH0/
                                (4.*np.pi*fe*nII*c*self.U0_))
             elif self.U_ is not None and self.Omega_ is not None:
+                wp = windp()
                 fac = wp.windfac(self.Omega_)
                 rs = (fac/self.U_)**2*81*alphaB*self.qH0 / \
                      (64*np.pi*c**2*fe)
