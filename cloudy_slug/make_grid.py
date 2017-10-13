@@ -4,6 +4,7 @@
 
 import os
 import os.path as osp
+import sys
 from subprocess import call
 import shutil
 import numpy as np
@@ -27,24 +28,26 @@ track_list = [
     'mist/vvcrit000/MIST_v1.0_feh_m1.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
     'mist/vvcrit000/MIST_v1.0_feh_m0.75_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
     'mist/vvcrit000/MIST_v1.0_feh_m0.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m0.25_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
     'mist/vvcrit000/MIST_v1.0_feh_p0.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
     'mist/vvcrit000/MIST_v1.0_feh_p0.25_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
     'mist/vvcrit000/MIST_v1.0_feh_p0.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
     # MIST rotating
-    'mist/vvcrit040/MIST_v1.0_feh_m4.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m3.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m3.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m2.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m2.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m1.75_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m1.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m1.25_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m1.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m0.75_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_m0.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_p0.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_p0.25_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
-    'mist/vvcrit040/MIST_v1.0_feh_p0.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m4.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m3.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m3.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m2.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m2.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.75_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.25_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m0.75_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m0.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m0.25_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_p0.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_p0.25_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_p0.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
     # Geneva 2013 non-rotating models
     'sb99/Z0140v00.txt', 'sb99/Z0020v00.txt', 
     # Padova with TP-AGB models
@@ -64,7 +67,8 @@ track_list = [
 ]
 zrel_list = [
     # MIST non-rotating
-    10.**-4.0, 10.**-3.5, 10.**-3.0, 10.**-2.5, 10.**-2.0, 10.**-1.75, 10.**-1.5, 10.**-1.25, 10.**-1.0, 10.**-0.75, 10.**-0.5,
+    10.**-4.0,
+    10.**-3.5, 10.**-3.0, 10.**-2.5, 10.**-2.0, 10.**-1.75, 10.**-1.5, 10.**-1.25, 10.**-1.0, 10.**-0.75, 10.**-0.5,
     10.**-0.25, 10.**0.0, 10.**0.25, 10.**0.5,
     # MIST rotating
     10.**-4.0, 10.**-3.5, 10.**-3.0, 10.**-2.5, 10.**-2.0, 10.**-1.75, 10.**-1.5, 10.**-1.25, 10.**-1.0, 10.**-0.75, 10.**-0.5,
@@ -87,14 +91,16 @@ zrel_list = [
 logU_list = [-3, -2.5, -2]
 
 # Name of template cloudy file
-cloudy_input = osp.join('cloudy_slug', 'cloudy.in_grid_template')
+cloudy_input = osp.join(os.environ['SLUG_DIR'],
+                        'cloudy_slug', 'cloudy.in_grid_template')
 
 # Name of the SLUG parameter files
-slug_param = osp.join('param', 'cluster_cts_10myr.param')
-slug_param_gal = osp.join('param', 'galaxy_cts_10myr.param')
+slug_param = osp.join(os.environ['SLUG_DIR'], 'param',
+                      'cluster_cts_10myr.param')
+slug_param_gal = osp.join(os.environ['SLUG_DIR'],
+                          'param', 'galaxy_cts_10myr.param')
 
 # Loop over tracks and metallicities
-#for i in range(0):
 for track, zrel in zip(track_list, zrel_list):
 
     # Edit the SLUG parameter files to match the desired track
@@ -154,7 +160,8 @@ for track, zrel in zip(track_list, zrel_list):
     # Run slug on the galaxy case
     if not osp.isfile(osp.join("nebular_grid",
                                modname_gal+"_integrated_spec.fits")):
-        call([osp.join("bin", "slug"), slug_param_tmp_gal])
+        call([osp.join(os.environ['SLUG_DIR'],
+                       "bin", "slug"), slug_param_tmp_gal])
     else:
         print("Found existing model "+modname_gal+
               ", skipping slug run")
@@ -162,7 +169,8 @@ for track, zrel in zip(track_list, zrel_list):
     # Run slug on the cluster case
     if not osp.isfile(osp.join("nebular_grid",
                                modname+"_cluster_spec.fits")):
-        call([osp.join("bin", "slug"), slug_param_tmp])
+        call([osp.join(os.environ['SLUG_DIR'],
+                       "bin", "slug"), slug_param_tmp])
     else:
         print("Found existing model "+modname+
               ", skipping slug run")
@@ -170,8 +178,11 @@ for track, zrel in zip(track_list, zrel_list):
     # Loop over ionization parameters
     for logU in logU_list:
 
-        # Copy the slug files
+        # Make names
         basename = modname+'_{:f}'.format(logU)
+        basename_gal = modname_gal+'_{:f}'.format(logU)
+
+        # Copy the slug files
         shutil.copy(osp.join('nebular_grid', modname+'_cluster_prop.fits'),
                     osp.join('nebular_grid', basename + 
                              '_cluster_prop.fits'))
@@ -181,7 +192,6 @@ for track, zrel in zip(track_list, zrel_list):
         shutil.copy(osp.join('nebular_grid', modname+'_cluster_spec.fits'),
                     osp.join('nebular_grid', basename + 
                              '_cluster_spec.fits'))
-        basename_gal = modname_gal+'_{:f}'.format(logU)
         shutil.copy(osp.join('nebular_grid', modname_gal+'_integrated_prop.fits'),
                     osp.join('nebular_grid', basename_gal + 
                              '_integrated_prop.fits'))
@@ -192,20 +202,41 @@ for track, zrel in zip(track_list, zrel_list):
                     osp.join('nebular_grid', basename_gal + 
                              '_integrated_spec.fits'))
 
-        # Use cloudy_slug to run cloudy on the integrated case
-        call(["python", osp.join("cloudy_slug", "cloudy_slug.py"),
-              osp.join("nebular_grid", basename_gal),
-              "--cloudytemplate", cloudy_input_tmp,
-              "--ionparam", "{:e}".format(10.**(logU)),
-              "--hden", "{:e}".format(100.0),
-              "--save", "--verbose"])
+        # Use cloudy_slug to run cloudy on the integrated case; skip if already done
+        if not osp.isfile(
+                osp.join("nebular_grid",
+                         basename_gal+"_integrated_cloudylines.fits")):
+            cmdstr = sys.executable + " " + \
+                     osp.join(os.environ['SLUG_DIR'], 
+                              "cloudy_slug", "cloudy_slug.py") + " " + \
+                     osp.join("nebular_grid", basename_gal) + " " + \
+                     "--cloudytemplate " + cloudy_input_tmp + " " + \
+                     "--ionparam {:e}".format(10.**(logU)) + " " + \
+                     "--hden {:e}".format(100.0) + " " + \
+                     "--save --warnfail --verbose --fix_quantity nII"
+            print(cmdstr)
+            call(cmdstr, shell=True)
+        else:
+            print("Found cloudy files for "+
+                  basename_gal+"; skipping...")
 
-        # Use cloudy_slug to run cloudy on the cluster case
-        call(["python", osp.join("cloudy_slug", "cloudy_slug.py"),
-              osp.join("nebular_grid", basename),
-              "--cloudytemplate", cloudy_input_tmp,
-              "--clustermode",
-              "--ionparam", "{:e}".format(10.**(logU)),
-              "--hden", "{:e}".format(100.0),
-              "--save", "--verbose"])
+        # Use cloudy_slug to run cloudy on the cluster case; skip if already done
+        if not osp.isfile(
+                osp.join("nebular_grid",
+                         basename+"_cluster_cloudylines.fits")):
+            cmdstr = sys.executable + " " + \
+                     osp.join(os.environ['SLUG_DIR'],
+                              "cloudy_slug", "cloudy_slug.py") + " " + \
+                     osp.join("nebular_grid", basename) + " " + \
+                     "--cloudytemplate " + cloudy_input_tmp + " " + \
+                     "--ionparam {:e}".format(10.**(logU)) + " " + \
+                     "--hden {:e}".format(100.0) + " " + \
+                     "--clustermode --fix_quantity nII " + \
+                     "--save --warnfail --verbose"
+            print(cmdstr)
+            call(cmdstr, shell=True)
+        else:
+            print("Found cloudy files for "+
+                  basename+"; skipping...")
+
 
