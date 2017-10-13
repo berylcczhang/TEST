@@ -41,11 +41,13 @@ public:
   // Here we just pass the ostreams pointer up to our parent, and
   // initialize some default values that the child class can override
   slug_tracks_2d(slug_ostreams& ostreams_,
-		 double metallicity_ = tracks::null_metallicity) :
+		 double metallicity_ = tracks::null_metallicity,
+		 ZInterpMethod Z_int_meth_ = Z_UNSPECIFIED) :
     slug_tracks(ostreams_),
     interp(nullptr),
     metallicity(metallicity_),
     monotonic(false),
+    Z_int_meth(Z_int_meth_),
     isochrone_age(-1.0)
   { }
 
@@ -136,6 +138,18 @@ public:
   // Methods to get the metallicity (normalized to Solar)
   virtual double get_metallicity() const { return metallicity; }
 
+  // Methods to return the list of files and metallicities for the
+  // track set we're using; only non-empty if child class sets these
+  ZInterpMethod trackset_Z_int_meth() const {
+    return Z_int_meth;
+  }
+  const std::vector<std::string>& trackset_filenames() const {
+    return filenames;
+  }
+  const std::vector<double>& trackset_metallicities() const {
+    return Z_files;
+  }
+  
 protected:
   
   // The interpolation machinery; must be set up by derived class
@@ -147,12 +161,18 @@ protected:
   // Flag if tracks are monotonic
   bool monotonic;
 
+  // File names and metallicities, and interpolation method, for track
+  // sets
+  std::vector<std::string> filenames;
+  std::vector<double> Z_files;
+  ZInterpMethod Z_int_meth;
+
 private:
 
   // Machinery to free a cached isochrone; marked as const because it
   // only affects mutable objects
   void free_isochrone() const;
-
+  
   // Storage to cache a copy of the interpolation machinery for an
   // isochrone; marked as mutable so that it can altered even by const
   // routines

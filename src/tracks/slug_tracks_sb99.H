@@ -41,7 +41,7 @@ public:
 		   const double metallicity_,
 		   const char *track_dir,
 		   slug_ostreams& ostreams_,
-		   const ZInterpMethod Z_int_meth = Z_LINEAR);
+		   const ZInterpMethod Z_int_meth_ = Z_LINEAR);
 
   // Destructor
   virtual ~slug_tracks_sb99() { };

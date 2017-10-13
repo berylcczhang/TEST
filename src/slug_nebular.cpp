@@ -36,6 +36,7 @@ namespace std
 
 typedef boost::multi_array<double, 2> array2d;
 typedef boost::multi_array<double, 4> array4d;
+typedef std::vector<double>::size_type st;
 
 using namespace std;
 using namespace boost;
@@ -43,53 +44,158 @@ using namespace boost::algorithm;
 using namespace boost::filesystem;
 
 ////////////////////////////////////////////////////////////////////////
-// The constructor. Mostly this routine reads in all the atomic data
-// we're going to need, then just calls the set_properties routine.
+// The constructor; this version is for a single track
 ////////////////////////////////////////////////////////////////////////
 slug_nebular::
 slug_nebular(const char *atomic_dir,
 	     const std::vector<double>& lambda_in,
 	     const char *trackname,
 	     slug_ostreams &ostreams_,
-	     double n_in, double T_in,
+	     double n_in,
+	     double T_in,
 	     const double logU,
 	     const double phi_in,
 	     const double z,
 	     const bool no_metals) :
-  ostreams(ostreams_), lambda_star(lambda_in) {
+  ostreams(ostreams_),
+  lambda_star(lambda_in),
+  use_metals(!no_metals) {
 
+  // Check and the density and temperature are in the allowed range;
+  // issue warning if not
+  range_safety(n_in, T_in);
+  
   // Set up the filter object we'll use to extract ionizing fluxes
   // from input spectra
   vector<double> lambda_tmp, response;
   lambda_tmp.push_back(constants::lambdaHI);
   ion_filter = new slug_filter(lambda_tmp, response, 0.0, 0.0, true);
 
+  // Read tables for emission processes
+  read_HIbf(atomic_dir);        // HI bound-free
+  read_HeIbf(atomic_dir);       // HeI bound-free
+  read_H2photon(atomic_dir);    // H 2-photon continuum
+  read_Hrecomb(atomic_dir);     // H recombination lines
+  if (use_metals || T_in <= 0)  // Metal lines
+    read_cloudymetals(atomic_dir, trackname, T_in, logU); 
+
+  // Initialize the wavelength grid and compute the specific
+  // luminosity per ionizing photon
+  init_neb_wl(z);
+  set_LperQ(n_in, phi_in);  
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Second version of constructor; this one works for track sets
+////////////////////////////////////////////////////////////////////////
+slug_nebular::
+slug_nebular(const char *atomic_dir,
+	     const std::vector<double>& lambda_in,
+	     const double metallicity,
+	     const std::vector<std::string>& trackset_filenames,
+	     const std::vector<double>& trackset_metallicity,
+	     const ZInterpMethod Z_int_meth,
+	     slug_ostreams &ostreams_,
+	     double n_in,
+	     double T_in,
+	     const double logU,
+	     const double phi_in,
+	     const double z,
+	     const bool no_metals) :
+  ostreams(ostreams_),
+  lambda_star(lambda_in),
+  use_metals(!no_metals) {
+
   // Check and the density and temperature are in the allowed range;
   // issue warning if not
-  if (T_in > 0) {
-    if ((T_in < Tmin) || (T_in > Tmax)) {
-      double Tnew;
-      if (T_in < Tmin) Tnew = Tmin; else Tnew = Tmax;
-      ostreams.slug_warn_one
-	<< "nebular temperature set to " << T_in
-	<< "; allowed range is " << Tmin << " - " << Tmax
-	<< "; setting temperature to " << Tnew << endl;
-      T_in = Tnew;
+  range_safety(n_in, T_in);
+  
+  // Set up the filter object we'll use to extract ionizing fluxes
+  // from input spectra
+  vector<double> lambda_tmp, response;
+  lambda_tmp.push_back(constants::lambdaHI);
+  ion_filter = new slug_filter(lambda_tmp, response, 0.0, 0.0, true);
+
+  // Read tables for H and He emission processes
+  read_HIbf(atomic_dir);        // HI bound-free
+  read_HeIbf(atomic_dir);       // HeI bound-free
+  read_H2photon(atomic_dir);    // H 2-photon continuum
+  read_Hrecomb(atomic_dir);     // H recombination lines
+
+  // Metal lines
+  if (use_metals || T_in <= 0)  {
+    // Check for common special case where the input metallicity
+    // exactly matches one of the track metallicites, so we're just
+    // using a single track file; in this case no interpolation is
+    // needed, and we can just read the data for that track file
+    string trackname;
+    for (vector<double>::size_type i=0; i<trackset_metallicity.size(); i++) {
+      if (metallicity == trackset_metallicity[i]) {
+	path p = path(trackset_filenames[i]);
+	trackname = p.filename().string();
+	break;
+      }
+    }    
+    if (trackname.size() > 0) {
+      // If given only a single file, same as non-track-set case
+      read_cloudymetals(atomic_dir, trackname.c_str(), T_in, logU);
+    } else {
+      // Case for multiple files; this interpolates in metallicity
+      read_cloudymetals_Zinterp(atomic_dir,
+				trackset_filenames,
+				trackset_metallicity,
+				Z_int_meth,
+				metallicity,
+				T_in,
+				logU);
     }
   }
-  if ((den < nMin) || (den >= nMax)) {
+
+  // Initialize the wavelength grid and compute the specific
+  // luminosity per ionizing photon
+  init_neb_wl(z);
+  set_LperQ(n_in, phi_in);  
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// The destructor
+////////////////////////////////////////////////////////////////////////
+slug_nebular::~slug_nebular() {
+  delete ion_filter;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Routine to ensure input density and temperature are in allowed range
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::range_safety(double &n, double &T) {
+  if (T > 0) {
+    if ((T < Tmin) || (T > Tmax)) {
+      double Tnew;
+      if (T < Tmin) Tnew = Tmin; else Tnew = Tmax;
+      ostreams.slug_warn_one
+	<< "nebular temperature set to " << T
+	<< "; allowed range is " << Tmin << " - " << Tmax
+	<< "; setting temperature to " << Tnew << endl;
+      T = Tnew;
+    }
+  }
+  if ((n < nMin) || (n >= nMax)) {
     double nNew;
-    if (den < nMin) nNew = nMin; else nNew = nMax;
+    if (n < nMin) nNew = nMin; else nNew = nMax;
     ostreams.slug_warn_one
       << "nebular density set to " << den
       << "; allowed range is " << nMin << " - " << nMax
       << "; setting density to " << nNew << endl;
-    den = nNew;
+    n = nNew;
   }
+}
 
-  //////////////////////////////////////////////////////////////////////
-  // Read the tabulated emission coefficients for HI bound-free
-  //////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+// Read tabulated data for HI bound-free
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::read_HIbf(const char *atomic_dir) {
 
   string fname = "HIbf.txt";
   std::ifstream HIbf_file;
@@ -136,13 +242,16 @@ slug_nebular(const char *atomic_dir,
 
   // Close the file
   HIbf_file.close();
+}
 
-  //////////////////////////////////////////////////////////////////////
-  // Read the tabulated emission coefficients for HeI bound-free
-  //////////////////////////////////////////////////////////////////////
-
-  fname = "HeIbf.txt";
+////////////////////////////////////////////////////////////////////////
+// Read tabulated data for HeI bound-free
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::read_HeIbf(const char *atomic_dir) {
+  
+  string fname = "HeIbf.txt";
   std::ifstream HeIbf_file;
+  path dirname(atomic_dir);
   path HeIbf_path = dirname / path(fname.c_str());
   HeIbf_file.open(HeIbf_path.c_str());
   if (!HeIbf_file.is_open()) {
@@ -154,6 +263,7 @@ slug_nebular(const char *atomic_dir,
   }
 
   // Read until we find a non-comment, non-blank line
+  string hdr;
   while (getline(HeIbf_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
@@ -163,7 +273,7 @@ slug_nebular(const char *atomic_dir,
 
   // We've found the first line, which contains number of temperatures
   // and energies; extract them
-  ss.str(hdr);
+  stringstream ss(hdr);
   ss.clear();
   ss >> HeIbf_nT >> HeIbf_nE;
 
@@ -173,6 +283,7 @@ slug_nebular(const char *atomic_dir,
 
   // Now read the table of energies, threshold markers, and gamma_m
   // values
+  array2d::extent_gen extent2;
   HeIbf_gammam.resize(extent2[HeIbf_nE][HeIbf_nT]);
   HeIbf_thresh.resize(HeIbf_nE);
   HeIbf_en.resize(HeIbf_nE);
@@ -184,15 +295,18 @@ slug_nebular(const char *atomic_dir,
 
   // Close the file
   HeIbf_file.close();
-  
-  //////////////////////////////////////////////////////////////////////
-  // Read the data for hydrogen 2 photon
-  //////////////////////////////////////////////////////////////////////
+}
+
+////////////////////////////////////////////////////////////////////////
+// Read tabulated data for hydrogen 2-photon continuum
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::read_H2photon(const char *atomic_dir) {
 
   // Read the file containing alpha2s, the effective recombination
   // rate to the 2s state
-  fname = "Halpha2s.txt";
+  string fname = "Halpha2s.txt";
   std::ifstream Halpha2s_file;
+  path dirname(atomic_dir);
   path Halpha2s_path = dirname / path(fname.c_str());
   Halpha2s_file.open(Halpha2s_path.c_str());
   if (!Halpha2s_file.is_open()) {
@@ -204,6 +318,7 @@ slug_nebular(const char *atomic_dir,
   }
 
   // Read until we find a non-comment, non-blank line
+  string hdr;
   while (getline(Halpha2s_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
@@ -212,7 +327,7 @@ slug_nebular(const char *atomic_dir,
   }
 
   // This line contains the grid of densities; parse it
-  ss.str(hdr);
+  stringstream ss(hdr);
   ss.clear();
   double tmp;
   while (ss >> tmp) H2p_den.push_back(tmp);
@@ -224,6 +339,7 @@ slug_nebular(const char *atomic_dir,
   while (ss >> tmp) H2p_T_alpha2s.push_back(tmp);
 
   // Now read the alpha2s data
+  array2d::extent_gen extent2;
   H2p_alpha2s.resize(extent2[H2p_T_alpha2s.size()][H2p_den.size()]);
   for (unsigned int i=0; i<H2p_T_alpha2s.size(); i++) {
     for (unsigned int j=0; j<H2p_den.size(); j++) {
@@ -239,14 +355,17 @@ slug_nebular(const char *atomic_dir,
     log(H2p_T_q2s2p[1]/H2p_T_q2s2p[0]);
   H2p_slope_p = log(H2p_q2s2p_p[1]/H2p_q2s2p_p[0]) /
     log(H2p_T_q2s2p[1]/H2p_T_q2s2p[0]);
+}
 
-  //////////////////////////////////////////////////////////////////////
-  // Read the data for hydrogen recombination lines
-  //////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////////////
+// Read data for hydrogen recombination lines
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::read_Hrecomb(const char *atomic_dir) {
+  
   // Open file
-  fname = "Hlines.txt";
+  string fname = "Hlines.txt";
   std::ifstream Hlines_file;
+  path dirname(atomic_dir);
   path Hlines_path = dirname / path(fname.c_str());
   Hlines_file.open(Hlines_path.c_str());
   if (!Hlines_file.is_open()) {
@@ -258,6 +377,7 @@ slug_nebular(const char *atomic_dir,
   }
 
   // Read until we find a non-comment, non-blank line
+  string hdr;
   while (getline(Hlines_file, hdr)) {
     trim(hdr);
     if (hdr.length() == 0) continue;
@@ -267,7 +387,7 @@ slug_nebular(const char *atomic_dir,
 
   // We've found the first line, which contains number of temperatures
   // and densities; extract them
-  ss.str(hdr);
+  stringstream ss(hdr);
   ss.clear();
   ss >> Hlines_nT >> Hlines_nDen;
 
@@ -310,168 +430,547 @@ slug_nebular(const char *atomic_dir,
 
   // Close file
   Hlines_file.close();
+}
 
-  //////////////////////////////////////////////////////////////////////
-  // Read the cloudy tabulation
-  //////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+// Read metal line data from cloudy table -- single track version
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::read_cloudymetals(const char *atomic_dir,
+				     const char *trackname,
+				     const double T_in,
+				     const double logU) {
+  
+  // Preparation: strip directory information from the track file
+  // we've been given
+  path track_path(trackname);
+  string trackfile = track_path.filename().native();
 
-  use_metals = !no_metals;
-  if (use_metals || (T_in <= 0)) {
+  // Open file
+  string fname = "cloudy_tab.txt";
+  std::ifstream cloudytab_file;
+  path dirname(atomic_dir);
+  path cloudytab_path = dirname / path(fname.c_str());
+  cloudytab_file.open(cloudytab_path.c_str());
+  if (!cloudytab_file.is_open()) {
+    // Couldn't open file, so bail out
+    ostreams.slug_err_one
+      << "unable to open cloudy tabulation data file " 
+      << cloudytab_path.string() << endl;
+    bailout(1);
+  }
 
-    // Preparation: strip directory information from the track file
-    // we've been given
-    path track_path(trackname);
-    string trackfile = track_path.filename().native();
+  // Read until we find a non-comment, non-blank line
+  string hdr;
+  while (getline(cloudytab_file, hdr)) {
+    trim(hdr);
+    if (hdr.length() == 0) continue;
+    if (hdr[0] == '#') continue;
+    break;
+  }
 
-    // Open file
-    fname = "cloudy_tab.txt";
-    std::ifstream cloudytab_file;
-    path cloudytab_path = dirname / path(fname.c_str());
-    cloudytab_file.open(cloudytab_path.c_str());
-    if (!cloudytab_file.is_open()) {
-      // Couldn't open file, so bail out
+  // We've found the first line, which contains number of tracks,
+  // times, and logU values; extract them
+  stringstream ss(hdr);
+  unsigned int cloudy_nTrack, cloudy_nTime, cloudy_nLogU;
+  ss >> cloudy_nTrack >> cloudy_nTime >> cloudy_nLogU;
+
+  // The next line is the list of times; read it
+  cloudy_time.resize(cloudy_nTime);
+  T_ssp.resize(cloudy_nTime);
+  for (unsigned int i=0; i<cloudy_nTime; i++)
+    cloudytab_file >> cloudy_time[i];
+
+  // Next line is list of ionization parameters; read that, and see
+  // which ionization parameter we're going to use
+  double logU_in, logU_match = constants::big, logU_diff = constants::big;
+  for (unsigned int i=0; i<cloudy_nLogU; i++) {
+    cloudytab_file >> logU_in;
+    if (fabs(logU_in - logU) < logU_diff) {
+      logU_diff = fabs(logU_in - logU);
+      logU_match = logU_in;
+    }
+  }
+  if (logU_diff > 0) {
+    ostreams.slug_warn_one
+      << "requested ionization parameter log U = "
+      << logU << ", closest match in cloudy table is log U = "
+      << logU_match << "; calculation will proceed"
+      << endl;
+  }
+
+  // Now loop through the blocks
+  getline(cloudytab_file, hdr); // Burn a newline
+  bool match = false;
+  while (getline(cloudytab_file, hdr)) {
+
+    // Check for EOF; if we reach EOF, we've failed to find the
+    // tracks we were looking for
+    if (cloudytab_file.eof()) {
       ostreams.slug_err_one
-	<< "unable to open cloudy tabulation data file " 
-	<< cloudytab_path.string() << endl;
+	<< "could not find metal line tabulation for track file " 
+	<< trackfile << " in cloudy_tab.txt; try "
+	<< "running with compute_nebular = 0 or "
+	<< "(nebular_metals = 0 and nebular_temp > 0)"
+	<< endl;
       bailout(1);
     }
 
-    // Read until we find a non-comment, non-blank line
-    while (getline(cloudytab_file, hdr)) {
-      trim(hdr);
-      if (hdr.length() == 0) continue;
-      if (hdr[0] == '#') continue;
-      break;
-    }
-
-    // We've found the first line, which contains number of tracks,
-    // times, and logU values; extract them
-    ss.str(hdr);
-    ss.clear();
-    unsigned int cloudy_nTrack, cloudy_nTime, cloudy_nLogU;
-    ss >> cloudy_nTrack >> cloudy_nTime >> cloudy_nLogU;
-
-    // The next line is the list of times; read it
-    cloudy_time.resize(cloudy_nTime);
-    T_ssp.resize(cloudy_nTime);
-    for (unsigned int i=0; i<cloudy_nTime; i++)
-      cloudytab_file >> cloudy_time[i];
-
-    // Next line is list of ionization parameters; read that, and see
-    // which ionization parameter we're going to use
-    double logU_in, logU_match = constants::big, logU_diff = constants::big;
-    for (unsigned int i=0; i<cloudy_nLogU; i++) {
-      cloudytab_file >> logU_in;
-      if (fabs(logU_in - logU) < logU_diff) {
-	logU_diff = fabs(logU_in - logU);
-	logU_match = logU_in;
-      }
-    }
-    if (logU_diff > 0) {
-      ostreams.slug_warn_one
-	<< "requested ionization parameter log U = "
-	<< logU << ", closest match in cloudy table is log U = "
-	<< logU_match << "; calculation will proceed"
-	<< endl;
-    }
-
-    // Now loop through the blocks
-    getline(cloudytab_file, hdr); // Burn a newline
-    while (getline(cloudytab_file, hdr)) {
-
-      // Check for EOF; if we reach EOF, we've failed to find the
-      // tracks we were looking for
-      if (cloudytab_file.eof()) {
-	ostreams.slug_err_one
-	  << "could not find track set " 
-	  << trackfile << " in cloudy_tab.txt; try "
-	  << "running with compute_nebular = 0 or "
-	  << "(nebular_metals = 0 and nebular_temp > 0)"
-	  << endl;
-	bailout(1);
-      }
-
-      // Parse the header for this block
-      vector<string> tokens;
-      trim(hdr);
-      split(tokens, hdr, is_any_of("\t "), token_compress_on);
-      double logU_track = lexical_cast<double>(tokens[1]);
-      unsigned int cloudy_nLine = lexical_cast<unsigned int>(tokens[2]);
+    // Parse the header for this block
+    vector<string> tokens;
+    trim(hdr);
+    split(tokens, hdr, is_any_of("\t "), token_compress_on);
+    double logU_track = lexical_cast<double>(tokens[1]);
+    unsigned int cloudy_nLine = lexical_cast<unsigned int>(tokens[2]);
     
-      // Do the tracks and ionization parameter match what we're
-      // looking for?
-      bool match = (tokens[0].compare(trackfile) == 0) &&
-	(logU_track == logU_match);
+    // Do the tracks and ionization parameter match what we're
+    // looking for?
+    match = (tokens[0].compare(trackfile) == 0) &&
+      (logU_track == logU_match);
 
-      // If we have a match, resize arrays to hold data
-      if (match) {
-	cloudy_lambda.resize(cloudy_nLine);
-	cloudy_lum_cts.resize(cloudy_nLine);
-	cloudy_lum.resize(extent2[cloudy_nTime][cloudy_nLine]);
-	cloudy_labels.resize(cloudy_nLine);
-      }
-
-      // Read the temperatures line; if we've found a match, store the
-      // temperatures
-      string line;
-      getline(cloudytab_file, line);
-      if (match) {
-	ss.str(line);
-	ss.clear();
-	if (T_in <= 0) {
-	  ss >> T_cts;
-	  for (unsigned int i=0; i<cloudy_nTime; i++) ss >> T_ssp[i];
-	} else {
-	  // If given a fixed temperature, override what we read
-	  T_cts = T_in;
-	  for (unsigned int i=0; i<cloudy_nTime; i++) T_ssp[i] = T_in;
-	}
-      }
-
-      // Read through this block
-      for (unsigned int i=0; i<cloudy_nLine; i++) {
-
-	// Read line
-	getline(cloudytab_file, line);
-
-	// If this isn't a match, just continue to next block
-	if (!match) continue;
-
-	// Extract first 11 characters: these are the label
-	cloudy_labels[i] = line.substr(0, 11);
-
-	// Now tokenize the remainder of the string; the first
-	// number is the wavelength of that line, the second is the
-	// luminosity per ionizing photon for continuous star
-	// formation at 10 Myr, and the remainder are the luminosity
-	// per ionizing photon for mono-age populations at the
-	// specified times
-	vector<string> tokens;
-	string line_remainder = line.substr(11);
-	trim(line_remainder);
-	split(tokens, line_remainder, is_any_of("\t "), 
-	      token_compress_on);
-	cloudy_lambda[i] = lexical_cast<double>(tokens[0]);
-	cloudy_lum_cts[i] = lexical_cast<double>(tokens[1]);
-	for (unsigned int j=0; j<cloudy_nTime; j++)
-	  cloudy_lum[j][i] = lexical_cast<double>(tokens[j+2]);
-      }
-
-      // If we found our data, we can stop
-      if (match) break;
-
+    // If we have a match, resize arrays to hold data
+    if (match) {
+      cloudy_lambda.resize(cloudy_nLine);
+      cloudy_lum_cts.resize(cloudy_nLine);
+      array2d::extent_gen extent2;
+      cloudy_lum.resize(extent2[cloudy_nTime][cloudy_nLine]);
+      cloudy_labels.resize(cloudy_nLine);
     }
 
-    // Close the file
-    cloudytab_file.close();
+    // Read the temperatures line; if we've found a match, store the
+    // temperatures
+    string line;
+    getline(cloudytab_file, line);
+    if (match) {
+      ss.str(line);
+      ss.clear();
+      if (T_in <= 0) {
+	ss >> T_cts;
+	for (unsigned int i=0; i<cloudy_nTime; i++) ss >> T_ssp[i];
+      } else {
+	// If given a fixed temperature, override what we read
+	T_cts = T_in;
+	for (unsigned int i=0; i<cloudy_nTime; i++) T_ssp[i] = T_in;
+      }
+    }
+
+    // Read through this block
+    for (unsigned int i=0; i<cloudy_nLine; i++) {
+
+      // Read line
+      getline(cloudytab_file, line);
+
+      // If this isn't a match, just continue to next block
+      if (!match) continue;
+
+      // Extract first 11 characters: these are the label
+      cloudy_labels[i] = line.substr(0, 18);
+
+      // Now tokenize the remainder of the string; the first
+      // number is the wavelength of that line, the second is the
+      // luminosity per ionizing photon for continuous star
+      // formation at 10 Myr, and the remainder are the luminosity
+      // per ionizing photon for mono-age populations at the
+      // specified times
+      vector<string> tokens;
+      string line_remainder = line.substr(18);
+      trim(line_remainder);
+      split(tokens, line_remainder, is_any_of("\t "), 
+	    token_compress_on);
+      cloudy_lambda[i] = lexical_cast<double>(tokens[0]);
+      cloudy_lum_cts[i] = lexical_cast<double>(tokens[1]);
+      for (unsigned int j=0; j<cloudy_nTime; j++)
+	cloudy_lum[j][i] = lexical_cast<double>(tokens[j+2]);
+    }
+
+    // If we found our data, we can stop
+    if (match) break;
+
   }
 
-  //////////////////////////////////////////////////////////////////////
-  // Construct the wavelength grid for nebular spectra; this will be
-  // the stellar grid, with some extra points added around each line
-  // so that we can resolve the line
-  //////////////////////////////////////////////////////////////////////
+  // Close the file
+  cloudytab_file.close();
 
+  // Safety check -- make sure we found a match, bail if not
+  if (!match) {
+    ostreams.slug_err_one
+      << "could not find track set " 
+      << trackfile << " in cloudy_tab.txt; try "
+      << "running with compute_nebular = 0 or "
+      << "(nebular_metals = 0 and nebular_temp > 0)"
+      << endl;
+    bailout(1);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Read metal line data from cloudy table -- multiple track version,
+// which interpolates in Z
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::
+read_cloudymetals_Zinterp(const char *atomic_dir,
+			  const vector<string>& trackset_filenames,
+			  const vector<double>& trackset_metallicity,
+			  const ZInterpMethod Z_int_meth,
+			  const double Z,
+			  const double T_in,
+			  const double logU) {
+
+  // Extract the names of files from the track set; the input,
+  // trackset_filenames, gives the full path, and we just want the
+  // file names
+  vector<string> trackset_files;
+  for (vector<string>::size_type i=0; i<trackset_filenames.size(); i++){
+    path p = path(trackset_filenames[i]);
+    trackset_files.push_back(p.filename().string());
+  }
+
+  // Storage for data to be read at each metallicity
+  st nZ = trackset_files.size();
+  vector<vector<double> > cloudy_lambda_Z(nZ), cloudy_lum_cts_Z(nZ);
+  vector<array2d> cloudy_lum_Z(nZ);
+  vector<vector<string> > cloudy_labels_Z(nZ);
+  vector<double> T_cts_Z(nZ);
+  vector<vector<double> > T_ssp_Z(nZ);
+
+  // Open file
+  string fname = "cloudy_tab.txt";
+  std::ifstream cloudytab_file;
+  path dirname(atomic_dir);
+  path cloudytab_path = dirname / path(fname.c_str());
+  cloudytab_file.open(cloudytab_path.c_str());
+  if (!cloudytab_file.is_open()) {
+    // Couldn't open file, so bail out
+    ostreams.slug_err_one
+      << "unable to open cloudy tabulation data file " 
+      << cloudytab_path.string() << endl;
+    bailout(1);
+  }
+
+  // Read until we find a non-comment, non-blank line
+  string hdr;
+  while (getline(cloudytab_file, hdr)) {
+    trim(hdr);
+    if (hdr.length() == 0) continue;
+    if (hdr[0] == '#') continue;
+    break;
+  }
+
+  // We've found the first line, which contains number of tracks,
+  // times, and logU values; extract them
+  stringstream ss(hdr);
+  unsigned int cloudy_nTrack, cloudy_nTime, cloudy_nLogU;
+  ss >> cloudy_nTrack >> cloudy_nTime >> cloudy_nLogU;
+
+  // The next line is the list of times; read it
+  cloudy_time.resize(cloudy_nTime);
+  T_ssp.resize(cloudy_nTime);
+  for (unsigned int i=0; i<cloudy_nTime; i++)
+    cloudytab_file >> cloudy_time[i];
+
+  // Next line is list of ionization parameters; read that, and see
+  // which ionization parameter we're going to use
+  double logU_in, logU_match = constants::big, logU_diff = constants::big;
+  for (unsigned int i=0; i<cloudy_nLogU; i++) {
+    cloudytab_file >> logU_in;
+    if (fabs(logU_in - logU) < logU_diff) {
+      logU_diff = fabs(logU_in - logU);
+      logU_match = logU_in;
+    }
+  }
+  if (logU_diff > 0) {
+    ostreams.slug_warn_one
+      << "requested ionization parameter log U = "
+      << logU << ", closest match in cloudy table is log U = "
+      << logU_match << "; calculation will proceed"
+      << endl;
+  }
+
+  // Now loop through the blocks
+  vector<bool> found_match(nZ, false);
+  getline(cloudytab_file, hdr); // Burn a newline
+  while (getline(cloudytab_file, hdr)) {
+
+    // Check for EOF; if we reach EOF, we've failed to find the
+    // tracks we were looking for
+    if (cloudytab_file.eof()) {
+      ostreams.slug_err_one
+	<< "could not find metal line tabulation for chosen " 
+	<< "track set in cloudy_tab.txt; try "
+	<< "running with compute_nebular = 0 or "
+	<< "(nebular_metals = 0 and nebular_temp > 0)"
+	<< std::endl;
+      bailout(1);
+    }
+  
+    // Parse the header for this block
+    vector<string> tokens;
+    trim(hdr);
+    split(tokens, hdr, is_any_of("\t "), token_compress_on);
+    double logU_track = lexical_cast<double>(tokens[1]);
+    unsigned int cloudy_nLine = lexical_cast<unsigned int>(tokens[2]);
+    
+    // Check if this is one of the files we want
+    bool match = false;
+    vector<string>::size_type match_idx;
+    if (logU_track == logU_match) {
+      for (vector<string>::size_type i=0; i<nZ; i++) {
+	if (tokens[0].compare(trackset_files[i]) == 0) {
+	  match = true;
+	  match_idx = i;
+	  found_match[match_idx] = true;
+	  break;
+	}
+      }
+    }
+    
+    // If we have a match, resize arrays to hold data
+    if (match) {
+      cloudy_lambda_Z[match_idx].resize(cloudy_nLine);
+      cloudy_lum_cts_Z[match_idx].resize(cloudy_nLine);
+      array2d::extent_gen extent2;
+      cloudy_lum_Z[match_idx].resize(extent2[cloudy_nTime][cloudy_nLine]);
+      cloudy_labels_Z[match_idx].resize(cloudy_nLine);
+      T_ssp_Z[match_idx].resize(cloudy_nTime);
+    }
+
+    // Read the temperatures line; if we've found a match, store the
+    // temperatures
+    string line;
+    getline(cloudytab_file, line);
+    if (match) {
+      ss.str(line);
+      ss.clear();
+      if (T_in <= 0) {
+	ss >> T_cts_Z[match_idx];
+	for (unsigned int i=0; i<cloudy_nTime; i++)
+	  ss >> T_ssp_Z[match_idx][i];
+      } else {
+	// If given a fixed temperature, override what we read
+	T_cts_Z[match_idx] = T_in;
+	for (unsigned int i=0; i<cloudy_nTime; i++)
+	  T_ssp_Z[match_idx][i] = T_in;
+      }
+    }
+
+    // Read through this block
+    for (unsigned int i=0; i<cloudy_nLine; i++) {
+
+      // Read line
+      getline(cloudytab_file, line);
+
+      // If this isn't a match, just continue to next block
+      if (!match) continue;
+
+      // Extract first 18 characters: these are the label
+      cloudy_labels_Z[match_idx][i] = line.substr(0, 18);
+
+      // Now tokenize the remainder of the string; the first
+      // number is the wavelength of that line, the second is the
+      // luminosity per ionizing photon for continuous star
+      // formation at 10 Myr, and the remainder are the luminosity
+      // per ionizing photon for mono-age populations at the
+      // specified times
+      vector<string> tokens;
+      string line_remainder = line.substr(18);
+      trim(line_remainder);
+      split(tokens, line_remainder, is_any_of("\t "), 
+	    token_compress_on);
+      cloudy_lambda_Z[match_idx][i] = lexical_cast<double>(tokens[0]);
+      cloudy_lum_cts_Z[match_idx][i] = lexical_cast<double>(tokens[1]);
+      for (unsigned int j=0; j<cloudy_nTime; j++)
+	cloudy_lum_Z[match_idx][j][i] = lexical_cast<double>(tokens[j+2]);
+    }
+
+    // If we found matches for all files, we can stop
+    bool all_match = true;
+    for (vector<string>::size_type i=0; i<nZ; i++)
+      all_match = all_match && found_match[i];
+    if (all_match) break;
+  }
+
+  // Close the file
+  cloudytab_file.close();
+
+  // Safety check -- make sure we found matches for all files, bail if not
+  bool all_match = true;
+  for (vector<string>::size_type i=0; i<nZ; i++)
+    all_match = all_match && found_match[i];
+  if (!all_match) {
+    ostreams.slug_err_one
+      << "could not find metal line tabulation for chosen " 
+      << "track set in cloudy_tab.txt; try "
+      << "running with compute_nebular = 0 or "
+      << "(nebular_metals = 0 and nebular_temp > 0)"
+      << std::endl;
+    bailout(1);
+  }
+
+  // Go through the lines for all metallicities and construct the
+  // combined line list; for each line in the data for each
+  // metallicity, record which line in the global array line it maps
+  // to
+  vector<vector<st> > idx_map(nZ);
+  for (st i=0; i<nZ; i++) {
+    for (st j=0; j<cloudy_lambda_Z[i].size(); j++) {
+      bool in_list = false;
+      for (st k=0; k<cloudy_lambda.size(); k++) {
+	if (cloudy_lambda_Z[i][j] == cloudy_lambda[k] &&
+	    cloudy_labels_Z[i][j].compare(cloudy_labels[k]) == 0) {
+	  in_list = true;
+	  idx_map[i].push_back(k);
+	  break;
+	}
+      }
+      if (!in_list) {
+	cloudy_lambda.push_back(cloudy_lambda_Z[i][j]);
+	cloudy_labels.push_back(cloudy_labels_Z[i][j]);
+	idx_map[i].push_back(cloudy_lambda.size()-1);
+      }
+    }
+  }
+  st cloudy_nLines = cloudy_lambda.size();
+
+  // Initialize arrays that will hold luminosities of all lines at all
+  // metallicities and times; insert a flag value into every element
+  // to start with
+  array2d lum_cts_Z_all;
+  array3d lum_ssp_Z_all;
+  lum_cts_Z_all.resize(boost::extents[nZ][cloudy_nLines]);
+  lum_ssp_Z_all.
+    resize(boost::extents[nZ][cloudy_nTime][cloudy_nLines]);
+  for (st i=0; i<nZ; i++) {
+    for (st j=0; j<cloudy_nLines; j++) {
+      lum_cts_Z_all[i][j] = -1.0;
+      for (st k=0; k<cloudy_nTime; k++)
+	lum_ssp_Z_all[i][k][j] = -1.0;
+    }
+  }
+
+  // Copy line luminosities from arrays for each Z into global array
+  for (st i=0; i<nZ; i++) {
+    for (st j=0; j<idx_map[i].size(); j++) {
+      lum_cts_Z_all[i][idx_map[i][j]] = cloudy_lum_cts_Z[i][j];
+      for (st k=0; k<cloudy_nTime; k++) {
+	lum_ssp_Z_all[i][k][idx_map[i][j]] = cloudy_lum_Z[i][k][j];
+      }
+    }
+  }
+
+  // Pass through global line array one more time; for any entry that
+  // is still set to the flag value, that line was too dim to be
+  // recorded at that combination of metallicity and time; in this
+  // case set the luminosity of that line to the minimum luminosity of
+  // all lines at that metallicity and time
+  for (st i=0; i<nZ; i++) {
+
+    // Case for continuous SF
+    double lum_min = constants::big;
+    for (st j=0; j<cloudy_nLines; j++) {
+      if (lum_cts_Z_all[i][j] > 0.0 &&
+	  lum_cts_Z_all[i][j] < lum_min) {
+	lum_min = lum_cts_Z_all[i][j]; // Get min luminosity
+      }
+    }
+    for (st j=0; j<cloudy_nLines; j++) {
+      if (lum_cts_Z_all[i][j] < 0.0) lum_cts_Z_all[i][j] = lum_min;
+    }
+
+    // Case for SSPs
+    for (st k=0; k<cloudy_nTime; k++) {
+      lum_min = constants::big;
+      for (st j=0; j<cloudy_nLines; j++) {
+	if (lum_ssp_Z_all[i][k][j] > 0.0 &&
+	    lum_ssp_Z_all[i][k][j] < lum_min) {
+	  lum_min = lum_ssp_Z_all[i][k][j]; // Get min luminosity
+	}
+      }
+      for (st j=0; j<cloudy_nLines; j++) {
+	if (lum_ssp_Z_all[i][k][j] < 0.0) lum_ssp_Z_all[i][k][j] = lum_min;
+      }
+    }
+  }
+      
+  // Set the interpolation type
+  const gsl_interp_type* Z_interp_type;
+  switch (Z_int_meth) {
+  case Z_LINEAR: {
+    Z_interp_type = gsl_interp_linear;
+    break;
+  }
+  case Z_AKIMA: {
+    if (nZ >= gsl_interp_type_min_size(gsl_interp_akima))
+      Z_interp_type = gsl_interp_akima;
+    else
+      Z_interp_type = gsl_interp_linear;
+    break;
+  }
+#if GSLVERSION >= 2
+  case Z_STEFFEN: {
+    if (nZ >= gsl_interp_type_min_size(gsl_interp_steffen))
+      Z_interp_type = gsl_interp_steffen;
+    else
+      Z_interp_type = gsl_interp_linear;
+    break;
+  }
+#endif
+  default: {
+    ostreams.slug_err_one << "slug_nebular constructor invoked with"
+			  << " invalid Z interpolation method" << endl;
+    bailout(1);
+  }
+  }
+
+  // Interpolate HII region temperature for continous SF in metallicity
+  gsl_interp *interp = gsl_interp_alloc(Z_interp_type, nZ);
+  gsl_interp_accel *acc = gsl_interp_accel_alloc();
+  gsl_interp_init(interp, trackset_metallicity.data(),
+		  T_cts_Z.data(), nZ);
+  T_cts = gsl_interp_eval(interp, trackset_metallicity.data(),
+			  T_cts_Z.data(), Z, acc);
+
+  // Interpolate temperatures for SSPs in metallicity
+  vector<double> data_tmp(nZ);
+  for (st i=0; i<cloudy_nTime; i++) {
+    for (st j=0; j<nZ; j++)
+      data_tmp[j] = T_ssp_Z[j][i];
+    gsl_interp_init(interp, trackset_metallicity.data(),
+		    data_tmp.data(), nZ);
+    T_ssp[i] = gsl_interp_eval(interp, trackset_metallicity.data(),
+			       data_tmp.data(), Z, acc);
+  }
+
+  // Interpolate lines for continuous star formation and for SSPs
+  cloudy_lum_cts.resize(cloudy_lambda.size());
+  cloudy_lum.resize(boost::extents[cloudy_nTime][cloudy_lambda.size()]);
+  for (st i=0; i<cloudy_lambda.size(); i++) {
+    for (st j=0; j<nZ; j++)
+      data_tmp[j] = lum_cts_Z_all[j][i];
+    gsl_interp_init(interp, trackset_metallicity.data(),
+		    data_tmp.data(), nZ);
+    cloudy_lum_cts[i] = gsl_interp_eval(interp, trackset_metallicity.data(),
+					data_tmp.data(), Z, acc);
+    for (st k=0; k<cloudy_nTime; k++) {
+      for (st j=0; j<nZ; j++)
+	data_tmp[j] = lum_ssp_Z_all[j][k][i];
+      gsl_interp_init(interp, trackset_metallicity.data(),
+		      data_tmp.data(), nZ);
+      cloudy_lum[k][i]
+	= gsl_interp_eval(interp, trackset_metallicity.data(),
+			  data_tmp.data(), Z, acc);
+    }
+  }
+
+  // Free
+  gsl_interp_free(interp);
+  gsl_interp_accel_free(acc);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Set up the nebular wavelength grid
+////////////////////////////////////////////////////////////////////////
+void slug_nebular::init_neb_wl(const double z) {
+  
   // Start by setting nebular grids to match the stellar grid
   lambda_neb = lambda_star;
 
@@ -549,20 +1048,7 @@ slug_nebular(const char *atomic_dir,
 			  (pow(lambda_neb[i], 3.0) * 
 			   constants::Angstrom));
     }
-  }
-
-  //////////////////////////////////////////////////////////////////////
-  // Compute L_lambda / Q
-  //////////////////////////////////////////////////////////////////////
-  set_properties(n_in, phi_in);
-}
-
-
-////////////////////////////////////////////////////////////////////////
-// The destructor
-////////////////////////////////////////////////////////////////////////
-slug_nebular::~slug_nebular() {
-  delete ion_filter;
+  }  
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -570,9 +1056,9 @@ slug_nebular::~slug_nebular() {
 ////////////////////////////////////////////////////////////////////////
 void
 slug_nebular::
-set_properties(const double n_in, const double phi_in) {
+set_LperQ(const double n_in, const double phi_in) {
 
-  // Store the properties
+  // Store the properties we were passed
   den = n_in;
   phi = phi_in;
 
@@ -694,12 +1180,12 @@ slug_nebular::get_neb_spec(const vector<double>& L_lambda,
 ////////////////////////////////////////////////////////////////////////
 vector<double>
 slug_nebular::interp_stellar(const vector<double> &L_lambda_star,
-			     const vector<double>::size_type offset) 
+			     const st offset) 
   const {
 
   // Find the part of the nebular grid that lies within the range of
   // the input stellar spectrum
-  vector<double>::size_type ptr1, ptr2;
+  st ptr1, ptr2;
   if (L_lambda_star.size() == lambda_star.size()) {
     // Input spectrum covers full stellar wavelength grid
     assert(offset == 0);
@@ -721,7 +1207,7 @@ slug_nebular::interp_stellar(const vector<double> &L_lambda_star,
 
   // Loop over nebular grid
   unsigned int ptr = offset;
-  for (vector<double>::size_type i=ptr1; i<ptr2; i++) {
+  for (st i=ptr1; i<ptr2; i++) {
 
     if (lambda_neb[i] == lambda_star[ptr]) {
 
@@ -768,8 +1254,8 @@ vector<double>
 slug_nebular::
 add_stellar_nebular_spec(const vector<double>& L_lambda_star,
 			 const vector<double>& L_lambda_neb,
-			 const vector<double>::size_type off_star,
-			 const vector<double>::size_type off_neb) const {
+			 const st off_star,
+			 const st off_neb) const {
 
   // Copy nebular spectrum to output holder
   vector<double> tot_spec(L_lambda_neb);
@@ -778,7 +1264,7 @@ add_stellar_nebular_spec(const vector<double>& L_lambda_star,
   vector<double> star_spec = interp_stellar(L_lambda_star, off_star);
 
   // Add stellar contribution at wavelengths longer than 912 Angstrom
-  vector<double>::size_type i=0;
+  st i=0;
   while (lambda_neb[i+off_neb] < constants::lambdaHI) i++;
   for ( ; i<star_spec.size(); i++) tot_spec[i] += star_spec[i];
 

@@ -71,6 +71,11 @@ slug_tracks_sb99(const char *fname, slug_ostreams& ostreams_) :
   read_trackfile_header(fname, metallicity, WR_mass, ntrack, ntime,
                         trackfile);
 
+  // Store file name and metallicity
+  string fname_str(fname);
+  filenames.push_back(fname_str);
+  Z_files.push_back(metallicity);
+
   // Allocate memory to hold track data
   array1d logm;
   array2d logt;
@@ -105,8 +110,8 @@ slug_tracks_sb99(const trackSet tr_set,
 		 const double metallicity_,
 		 const char *track_dir,
 		 slug_ostreams& ostreams_,
-		 const ZInterpMethod Z_int_meth) :
-  slug_tracks_2d(ostreams_, metallicity_) {
+		 const ZInterpMethod Z_int_meth_) :
+  slug_tracks_2d(ostreams_, metallicity_, Z_int_meth_) {
 
   // Make sure the interpolation method is one of the ones allowed for
   // starburst99; higher order methods are not allowed because these
@@ -114,21 +119,19 @@ slug_tracks_sb99(const trackSet tr_set,
   assert(Z_int_meth == Z_NEAR_NEIGHBOR || Z_int_meth == Z_LINEAR);
 
   // Set the file names and metallicities based on the track set
-  vector<string> filenames;
-  vector<double> Z;
   switch (tr_set) {
   case GENEVA_2013_VVCRIT_00: {
     filenames.push_back("Z0020v00.txt");
     filenames.push_back("Z0140v00.txt");
-    Z.push_back(1./7.);
-    Z.push_back(1.0);
+    Z_files.push_back(1./7.);
+    Z_files.push_back(1.0);
     break;
   }
   case GENEVA_2013_VVCRIT_40: {
     filenames.push_back("Z0020v40.txt");
     filenames.push_back("Z0140v40.txt");
-    Z.push_back(1./7.);
-    Z.push_back(1.0);
+    Z_files.push_back(1./7.);
+    Z_files.push_back(1.0);
     break;
   }
   case GENEVA_MDOT_STD: {
@@ -137,11 +140,11 @@ slug_tracks_sb99(const trackSet tr_set,
     filenames.push_back("modc008.dat");
     filenames.push_back("modc020.dat");
     filenames.push_back("modc040.dat");
-    Z.push_back(0.001/0.02);
-    Z.push_back(0.004/0.02);
-    Z.push_back(0.008/0.02);
-    Z.push_back(1.0);
-    Z.push_back(2.0);
+    Z_files.push_back(0.001/0.02);
+    Z_files.push_back(0.004/0.02);
+    Z_files.push_back(0.008/0.02);
+    Z_files.push_back(1.0);
+    Z_files.push_back(2.0);
     break;
   }
   case GENEVA_MDOT_ENHANCED: {
@@ -150,11 +153,11 @@ slug_tracks_sb99(const trackSet tr_set,
     filenames.push_back("mode008.dat");
     filenames.push_back("mode020.dat");
     filenames.push_back("mode040.dat");
-    Z.push_back(0.001/0.02);
-    Z.push_back(0.004/0.02);
-    Z.push_back(0.008/0.02);
-    Z.push_back(1.0);
-    Z.push_back(2.0);
+    Z_files.push_back(0.001/0.02);
+    Z_files.push_back(0.004/0.02);
+    Z_files.push_back(0.008/0.02);
+    Z_files.push_back(1.0);
+    Z_files.push_back(2.0);
     break;
   }
   case PADOVA_TPAGB_YES: {
@@ -163,11 +166,11 @@ slug_tracks_sb99(const trackSet tr_set,
     filenames.push_back("modp008.dat");
     filenames.push_back("modp020.dat");
     filenames.push_back("modp050.dat");
-    Z.push_back(0.0004/0.02);
-    Z.push_back(0.004/0.02);
-    Z.push_back(0.008/0.02);
-    Z.push_back(1.0);
-    Z.push_back(2.5);
+    Z_files.push_back(0.0004/0.02);
+    Z_files.push_back(0.004/0.02);
+    Z_files.push_back(0.008/0.02);
+    Z_files.push_back(1.0);
+    Z_files.push_back(2.5);
     break;
   }
   case PADOVA_TPAGB_NO: {
@@ -176,11 +179,11 @@ slug_tracks_sb99(const trackSet tr_set,
     filenames.push_back("mods008.dat");
     filenames.push_back("mods020.dat");
     filenames.push_back("mods050.dat");
-    Z.push_back(0.0004/0.02);
-    Z.push_back(0.004/0.02);
-    Z.push_back(0.008/0.02);
-    Z.push_back(1.0);
-    Z.push_back(2.5);
+    Z_files.push_back(0.0004/0.02);
+    Z_files.push_back(0.004/0.02);
+    Z_files.push_back(0.008/0.02);
+    Z_files.push_back(1.0);
+    Z_files.push_back(2.5);
     break;
   }
   default: {
@@ -193,11 +196,11 @@ slug_tracks_sb99(const trackSet tr_set,
 
   // Make sure metallicity is in the range covered by the tracks; if
   // not, bail out
-  if (metallicity < Z.front() || metallicity > Z.back()) {
+  if (metallicity < Z_files.front() || metallicity > Z_files.back()) {
     ostreams.slug_err_one
       << "slug_tracks_sb99: requested metallicity " << metallicity
-      << " is outside range of Z = " << Z.front()
-      << " - " << Z.back() << " covered by requested track set"
+      << " is outside range of Z = " << Z_files.front()
+      << " - " << Z_files.back() << " covered by requested track set"
       << endl;
     bailout(1);
   }
@@ -213,11 +216,11 @@ slug_tracks_sb99(const trackSet tr_set,
   // Find the track indices that bound the input metallicity
   double wgt;
   vector<int>::size_type idx = 0;
-  while (metallicity > Z[idx+1]) {
+  while (metallicity > Z_files[idx+1]) {
     idx++;
-    if (idx == Z.size()-1) break;
+    if (idx == Z_files.size()-1) break;
   }
-  wgt = log10(Z[idx+1]/metallicity);
+  wgt = log10(Z_files[idx+1]/metallicity);
 
   // Figure out which file or files we need to read
   if (Z_int_meth == Z_NEAR_NEIGHBOR) {

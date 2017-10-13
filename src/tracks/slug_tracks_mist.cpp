@@ -88,7 +88,9 @@ slug_tracks_mist(const char *fname, slug_ostreams& ostreams_) :
 			  << endl;
     bailout(1);
   }
-	
+  filenames.push_back(fname_str);
+  Z_files.push_back(metallicity);
+
   // Read header information from file so that we can size our data
   // arrays
   array1d logm;
@@ -130,8 +132,8 @@ slug_tracks_mist(const trackSet tr_set,
 		 const double metallicity_,
 		 const char *track_dir,
 		 slug_ostreams& ostreams_,
-		 const ZInterpMethod Z_int_meth) :
-  slug_tracks_2d(ostreams_, metallicity_) {
+		 const ZInterpMethod Z_int_meth_) :
+  slug_tracks_2d(ostreams_, metallicity_, Z_int_meth_) {
 
   // Specify that we want linear interpolation for the current mass
   // and the phase, and the default interpolation type for all other
@@ -175,6 +177,7 @@ slug_tracks_mist(const trackSet tr_set,
       const regex Z_pattern("feh_[pm][0-9].[0-9][0-9]");
       match_results<std::basic_string<char>::iterator> Z_match;
       string fname = dit->path().filename().string();
+      filenames.push_back(fname);
       if (regex_search(fname.begin(),
 		       fname.end(),
 		       Z_match, Z_pattern, match_posix)) {
@@ -183,6 +186,7 @@ slug_tracks_mist(const trackSet tr_set,
 	if (Z_str[0] == 'p') Z_str[0] = '+';
 	else Z_str[0] = '-';
 	log_Z.push_back(lexical_cast<double>(Z_str));
+	Z_files.push_back(pow(10.0, log_Z.back()));
       }
     }
   } catch (const filesystem_error& ex) {
@@ -204,6 +208,8 @@ slug_tracks_mist(const trackSet tr_set,
   for (vector<double>::size_type i=0; i<log_Z.size(); i++) {
     files[i] = file_info[i].fname;
     log_Z[i] = file_info[i].log_Z;
+    filenames[i] = file_info[i].fname.string();
+    Z_files[i] = pow(10.0, log_Z[i]);
   }
 
   // Make sure metallicity is in the covered range; if not, bail out

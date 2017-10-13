@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "slug.H"
 #include "slug_IO.H"
 #include "filters/slug_filter.H"
+#include "tracks/slug_tracks.H"
 #include <iostream>
 
 typedef boost::multi_array<double, 2> array2d;
@@ -48,10 +49,26 @@ class slug_nebular {
 
 public:
 
-  // Constructor
+  // Constructor; we provide two versions to go with the two ways of
+  // constructing tracks. One version takes a single track file name,
+  // and the second takes a metallicity plus a set of track files and
+  // their metallicities, so that data can be interpolated in Z 
   slug_nebular(const char *atomic_dir,
 	       const std::vector<double>& lambda_in,
 	       const char *trackname,
+	       slug_ostreams &ostreams_,
+	       double n_in = 1.0e2,
+	       double T_in = 1.0e4, 
+	       const double logU = -3.0, 
+	       const double phi_in = 0.73,
+	       const double z = 0.0,
+	       const bool no_metals = false);
+  slug_nebular(const char *atomic_dir,
+	       const std::vector<double>& lambda_in,
+	       const double metallicity,
+	       const std::vector<std::string>& trackset_filenames,
+	       const std::vector<double>& trackset_metallicity,
+	       const ZInterpMethod Z_int_meth,
 	       slug_ostreams &ostreams_,
 	       double n_in = 1.0e2,
 	       double T_in = 1.0e4, 
@@ -63,9 +80,9 @@ public:
   // Destructor
   ~slug_nebular();
 
-  // Routines to set the physical parameters for the HII region
-  void set_properties(const double n_in = 1.0e2, 
-		      const double phi_in = 0.73);
+  // Routine to compute L/Q for HII region
+  void set_LperQ(const double n_in = 1.0e2, 
+		 const double phi_in = 0.73);
 
   // Routine to return the nebular wavelength grid
   std::vector<double>::size_type n_lambda() const
@@ -121,6 +138,29 @@ protected:
   slug_ostreams &ostreams;
   
 private:
+
+  // Sanitization of inputs
+  void range_safety(double &n, double &T);
+  
+  // Routines to read tabulated data
+  void read_HIbf(const char *atomic_dir);
+  void read_HeIbf(const char *atomic_dir);
+  void read_H2photon(const char *atomic_dir);
+  void read_Hrecomb(const char *atomic_dir);
+  void read_cloudymetals(const char *atomic_dir,
+			 const char *trackname,
+			 const double T,
+			 const double logU); // 1 track version
+  void read_cloudymetals_Zinterp(const char *atomic_dir,
+    const std::vector<std::string> &trackset_files,
+    const std::vector<double> &trackset_metallicity,
+    const ZInterpMethod Z_int_meth,
+    const double metallicity,
+    const double T,
+    const double logU); // Track set version
+
+  // Initialization routines
+  void init_neb_wl(const double z);  // Set up nebular wavelength grid
 
   // Minimum and maximum allowed temperatures and densities given the
   // formulae and data we're using
@@ -182,13 +222,6 @@ private:
   unsigned int Hlines_nT, Hlines_nDen, Hlines_nMax;
   std::vector<double> Hlines_T, Hlines_den;
   array4d Hlines_emiss;
-
-#if 0
-  // Helium line data
-  unsigned int Helines_nLines, Helines_nDen;
-  std::vector<double> Helines_lambda, Helines_den;
-  array2d Helines_a, Helines_b, Helines_c;
-#endif
 
   // Tabular data from cloudy
   bool use_metals;

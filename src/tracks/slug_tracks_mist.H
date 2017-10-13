@@ -46,7 +46,7 @@ public:
 		   const double metallicity_,
 		   const char *track_dir,
 		   slug_ostreams& ostreams_,
-		   const ZInterpMethod Z_int_meth = Z_STEFFEN);
+		   const ZInterpMethod Z_int_meth_ = Z_STEFFEN);
 
   // Destructor
   virtual ~slug_tracks_mist() { };
@@ -60,6 +60,7 @@ public:
 			   acc_arr_view_1d& isochrone_acc_,
 			   slug_stardata& star) const;
 
+  
 protected:
 
   // Number of properties in these tracks, and indices of variables

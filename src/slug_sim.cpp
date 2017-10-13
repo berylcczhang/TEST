@@ -391,16 +391,35 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
   
   // If using nebular emission, initialize the computation of that
   if (pp.get_use_nebular()) {
-    nebular = new slug_nebular(pp.get_atomic_dir(),
-			       specsyn->lambda(true),
-			       pp.get_trackFile(),
-			       ostreams,
-			       pp.get_nebular_den(),
-			       pp.get_nebular_temp(),
-			       pp.get_nebular_logU(),
-			       pp.get_nebular_phi(),
-			       pp.get_z(),
-			       pp.nebular_no_metals());
+    if (pp.get_trackSet() == NO_TRACK_SET) {
+      // User has manually specified a file name
+      nebular = new slug_nebular(pp.get_atomic_dir(),
+				 specsyn->lambda(true),
+				 pp.get_trackFile(),
+				 ostreams,
+				 pp.get_nebular_den(),
+				 pp.get_nebular_temp(),
+				 pp.get_nebular_logU(),
+				 pp.get_nebular_phi(),
+				 pp.get_z(),
+				 pp.nebular_no_metals());
+    } else {
+      // User has specified a track set
+      nebular
+	= new slug_nebular(pp.get_atomic_dir(),
+			   specsyn->lambda(true),
+			   ((slug_tracks_2d *) tracks)->get_metallicity(),
+			   ((slug_tracks_2d *) tracks)->trackset_filenames(),
+			   ((slug_tracks_2d *) tracks)->trackset_metallicities(),
+			   ((slug_tracks_2d *) tracks)->trackset_Z_int_meth(),
+			   ostreams,
+			   pp.get_nebular_den(),
+			   pp.get_nebular_temp(),
+			   pp.get_nebular_logU(),
+			   pp.get_nebular_phi(),
+			   pp.get_z(),
+			   pp.nebular_no_metals());
+    }
   } else {
     nebular = nullptr;
   }
