@@ -14,33 +14,68 @@ from slugpy.int_tabulated import int_tabulated
 
 # List of tracks and their metallicities relative to solar
 track_list = [
+    # MIST non-rotating
+    'mist/vvcrit000/MIST_v1.0_feh_m4.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m3.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m3.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m2.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m2.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m1.75_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m1.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m1.25_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m1.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m0.75_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m0.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_m0.25_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_p0.00_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_p0.25_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    'mist/vvcrit000/MIST_v1.0_feh_p0.50_afe_p0.0_vvcrit0.0_EEPS.fits.gz',
+    # MIST rotating
+    'mist/vvcrit040/MIST_v1.0_feh_m4.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m3.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m3.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m2.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m2.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.75_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.25_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m1.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m0.75_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m0.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_m0.25_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_p0.00_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_p0.25_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
+    'mist/vvcrit040/MIST_v1.0_feh_p0.50_afe_p0.0_vvcrit0.4_EEPS.fits.gz',
     # Geneva 2013 non-rotating models
-    'Z0140v00.txt', 'Z0020v00.txt', 
+    'sb99/Z0140v00.txt', 'sb99/Z0020v00.txt', 
     # Padova with TP-AGB models
-    'modp0004.dat', 'modp004.dat', 'modp008.dat', 'modp020.dat',
-    'modp050.dat',
+    'sb99/modp0004.dat', 'sb99/modp004.dat', 'sb99/modp008.dat',
+    'sb99/modp020.dat', 'sb99/modp050.dat',
     # Geneva 2014 rotating models
     'Z0020v40.txt', 'Z0140v40.txt',
     # Geneva pre-2013, standard mass loss
-    'modc001.dat', 'modc004.dat', 'modc008.dat', 'modc020.dat', 
-    'modc040.dat',
+    'sb99/modc001.dat', 'sb99/modc004.dat', 'sb99/modc008.dat',
+    'sb99/modc020.dat', 'sb99/modc040.dat',
     # Geneva pre-2013, enhanced mass los
-    'mode001.dat', 'mode004.dat', 'mode008.dat', 'mode020.dat', 
-    'mode040.dat',
+    'sb99/mode001.dat', 'sb99/mode004.dat', 'sb99/mode008.dat',
+    'sb99/mode020.dat', 'sb99/mode040.dat',
     # Padova w/out TP-AGB
-    'mods0004.dat', 'mods004.dat', 'mods008.dat', 'mods020.dat',
-    'mods050.dat'
+    'sb99/mods0004.dat', 'sb99/mods004.dat', 'sb99/mods008.dat',
+    'sb99/mods020.dat', 'sb99/mods050.dat'
 ]
 
 # List of ionization parameters
 logU_list = [-3, -2.5, -2]
 
 # Name of template cloudy file
-cloudy_input = osp.join('cloudy_slug', 'cloudy.in_grid_template')
+cloudy_input = osp.join(os.environ['SLUG_DIR'],
+                        'cloudy_slug', 'cloudy.in_grid_template')
 
 # Name of the SLUG parameter files
-slug_param = osp.join('param', 'cluster_cts_10myr.param')
-slug_param_gal = osp.join('param', 'galaxy_cts_10myr.param')
+slug_param = osp.join(os.environ['SLUG_DIR'], 'param',
+                      'cluster_cts_10myr.param')
+slug_param_gal = osp.join(os.environ['SLUG_DIR'],
+                          'param', 'galaxy_cts_10myr.param')
 
 # Read files
 alldata = []
@@ -48,26 +83,41 @@ for track in track_list:
 
     # Read the input files to get the model name
     slug_param_tmp = '.'.join(slug_param.split('.')[:-1]) + \
-                     '_' + '.'.join(track.split('.')[:-1]) + \
+                     '_' + '.'.join(
+                         osp.basename(track).split('.')[:-1]) + \
                      '.param'
     fpin = open(slug_param, 'r')
+    fpout = open(slug_param_tmp, 'w')
     for line in fpin:
         spl = line.split()
         if len(spl) > 0:
             if spl[0] == 'model_name':
-                line = line[:-1] + '_' + '.'.join(track.split('.')[:-1])
+                line = line[:-1] + '_' + '.'.join(
+                    osp.basename(track).split('.')[:-1])
                 modname = line.split()[-1]
-                break
+            elif spl[0] == 'tracks':
+                line = 'tracks   lib/tracks/' + track
+        fpout.write(line)
     fpin.close()
+    fpout.close()
+    slug_param_tmp_gal = '.'.join(slug_param_gal.split('.')[:-1]) + \
+                     '_' + '.'.join(
+                         osp.basename(track).split('.')[:-1]) + \
+                     '.param'
     fpin = open(slug_param_gal, 'r')
+    fpout = open(slug_param_tmp_gal, 'w')
     for line in fpin:
         spl = line.split()
         if len(spl) > 0:
             if spl[0] == 'model_name':
-                line = line[:-1] + '_' + '.'.join(track.split('.')[:-1])
+                line = line[:-1] + '_' + '.'.join(
+                    osp.basename(track).split('.')[:-1])
                 modname_gal = line.split()[-1]
-                break
+            elif spl[0] == 'tracks':
+                line = 'tracks   lib/tracks/' + track
+        fpout.write(line)
     fpin.close()
+    fpout.close()
 
     # Loop over ionization parameters
     for logU in logU_list:
@@ -75,18 +125,22 @@ for track in track_list:
         # Read the integrated data
         print "Reading {:s}, log U = {:f}...".format(modname_gal, logU)
         basename_gal = modname_gal+'_{:f}'.format(logU)
-        dataphot_gal = read_integrated_phot(basename_gal)
-        datalines_gal = read_integrated_cloudylines(basename_gal)
+        dataphot_gal = read_integrated_phot(osp.join(
+            "nebular_grid", basename_gal))
+        datalines_gal = read_integrated_cloudylines(osp.join(
+            "nebular_grid", basename_gal))
 
         # Read the cluster data
         print "Reading {:s}, log U = {:f}...".format(modname, logU)
         basename = modname+'_{:f}'.format(logU)
-        dataphot = read_cluster_phot(basename)
-        datalines = read_cluster_cloudylines(basename)
+        dataphot = read_cluster_phot(osp.join(
+            "nebular_grid", basename))
+        datalines = read_cluster_cloudylines(osp.join(
+            "nebular_grid", basename))
 
         # Read hydrogen conditions file for the galaxy run, and extract
         # the mean temperature
-        fname = osp.join('cloudy_slug', 'cloudy_tmp_'+basename_gal,
+        fname = osp.join('cloudy_tmp_'+basename_gal,
                          basename_gal+'_tr00000_ti00000.hcon')
         hcon = np.loadtxt(fname)
         r = hcon[:,0]
@@ -99,7 +153,7 @@ for track in track_list:
         ntime = len(dataphot.time)
         tcl = np.zeros(ntime)
         for i in range(ntime):
-            fname = osp.join('cloudy_slug', 'cloudy_tmp_'+basename,
+            fname = osp.join('cloudy_tmp_'+basename,
                              basename+'_n{:09d}.hcon'.format(i))
             hcon = np.loadtxt(fname)
             r = hcon[:,0]
@@ -109,7 +163,7 @@ for track in track_list:
                      int_tabulated(r, 4.0*np.pi*r**2*nhplus**2)
 
         # Read the line array to get the exact wavelengths
-        linearr_name = osp.join('cloudy_slug', 'cloudy_tmp_'+basename,
+        linearr_name = osp.join('cloudy_tmp_'+basename,
                                 basename+'_n000000000.linearr')
         fp = open(linearr_name, 'r')
         allwl = {}
@@ -127,21 +181,24 @@ for track in track_list:
         linelabel = []
         for lab, wl in zip(datalines.cloudy_linelist, 
                            datalines.cloudy_linewl):
-            if wl < 1e3:
+            if wl < 1e2:
                 linelabel.append(lab[0]+lab[1].lower()+lab[2:]
-                                 + ' {:5.1f}A'.format(wl))
+                                 + '      {:6.4f}A'.format(wl))
+            elif wl < 1e3:
+                linelabel.append(lab[0]+lab[1].lower()+lab[2:]
+                                 + '      {:6.3f}A'.format(wl))
             elif wl < 1e4:
                 linelabel.append(lab[0]+lab[1].lower()+lab[2:]
-                                 + '  {:4d}A'.format(int(wl)))
+                                 + '      {:6.2f}A'.format(wl))
             elif wl < 1e5:
                 linelabel.append(lab[0]+lab[1].lower()+lab[2:]
-                                 + ' {:5.3f}m'.format(wl/1e4))
+                                 + '      {:7.5f}m'.format(wl/1e4))
             elif wl < 1e6:
                 linelabel.append(lab[0]+lab[1].lower()+lab[2:]
-                                 + ' {:5.2f}m'.format(wl/1e4))
+                                 + '      {:7.4f}m'.format(wl/1e4))
             else:
                 linelabel.append(lab[0]+lab[1].lower()+lab[2:]
-                                 + ' {:5.1f}m'.format(wl/1e4))
+                                 + '      {:7.3f}m'.format(wl/1e4))
         linelabel = np.array(linelabel)
 
         # Identify entries that are not lines in the line array, and
@@ -152,7 +209,7 @@ for track in track_list:
                 idxkeep.append(i)
         linelabel = linelabel[idxkeep]
         linelum = datalines.cloudy_linelum[:,idxkeep]
-        linelum_gal = np.squeeze(datalines_gal.cloudy_linelum[idxkeep])
+        linelum_gal = np.squeeze(datalines_gal.cloudy_linelum[idxkeep])[:,-1]
 
         # Identify H lines and throw these out
         idxkeep = []
@@ -165,7 +222,7 @@ for track in track_list:
 
         # Normalize all line luminosities to ionizing luminosity
         lumnorm = np.transpose(linelum)/dataphot.phot[:,0]
-        lumnorm_gal = linelum_gal/dataphot_gal.phot[0,0,0]
+        lumnorm_gal = linelum_gal/dataphot_gal.phot[0,-1,0]
 
         # Identify lines that are always below 10^-20 / ionizing
         # photon in luminosity, and throw these out
@@ -190,7 +247,7 @@ for track in track_list:
 
         # Append to master list
         outdict = { 
-            'track' : track,
+            'track' : osp.basename(track),
             'time' : dataphot.time,
             'logU' : logU,
             'wl' : outwl,

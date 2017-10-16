@@ -136,6 +136,11 @@ parser.add_argument('-ps', '--paramsafety', default='warn',
                     "draw again (up to 100 tries), then skip if "+
                     "still unsuccessful; " +
                     "default behavior is 'warn'")
+parser.add_argument('-fix', '--fix_quantity', default=None, type=str,
+                    help="when fixing out of range parameters, "+
+                    "which quantity should be corrected; see help "+
+                    "for hiiregparam class for details; only uses "+
+                    "if paramsafety is set to warn")
 parser.add_argument('-qm', '--qH0min', default=0.0, type=float,
                     help="minimum ionizing luminosity for which to "+
                     "compute nebular emission (default = 0)")
@@ -695,7 +700,8 @@ def do_cloudy_run(thread_num, thread_return, q):
                         hp = hiiregparam(
                             qH0, nII=hden, r0=r0, r1=r1,
                             U=U, U0=U0, Omega=Omega,
-                            warn=(args.paramsafety == 'warn'))
+                            warn=(args.paramsafety == 'warn'),
+                            fix_quantity=args.fix_quantity)
                         if args.ionparammax is not None:
                             if hp.U0 > args.ionparammax:
                                 if args.paramsafety == 'warn':
@@ -711,7 +717,8 @@ def do_cloudy_run(thread_num, thread_return, q):
                                     hp = hiiregparam(
                                         qH0, nII=hden, r0=r0, r1=r1,
                                         U=U, U0=args.ionparamin,
-                                        Omega=Omega)
+                                        Omega=Omega,
+                                        fix_quantity=args.fix_quantity)
                                 else:
                                     raise ValueError
                     except ValueError as ve:
@@ -774,7 +781,8 @@ def do_cloudy_run(thread_num, thread_return, q):
                                     hp = hiiregparam(
                                         qH0, nII=hden, r0=r0, r1=r1,
                                         U=U, Omega=Omega,
-                                        warn=(args.paramsafety == 'warn'))
+                                        warn=(args.paramsafety == 'warn'),
+                                        fix_quantity=args.fix_quantity)
                                     break
                                 except ValueError as ve:
                                     ntries += 1
@@ -1005,9 +1013,7 @@ def do_cloudy_run(thread_num, thread_return, q):
                         "cloudy has crashed"
                     if args.warnfail:
                         warnings.warn(errstr+ "; cloudy_slug exiting")
-                        sys.exit(0)
-                    else:
-                        raise IOError(errno.EIO, errstr)
+                    raise IOError(errno.EIO, errstr)
                 if args.clustermode:
                     cloudywl[cluster_num] = cdata.wl
                     cloudyspec[cluster_num] = cdata.L_lambda
@@ -1027,9 +1033,7 @@ def do_cloudy_run(thread_num, thread_return, q):
                         "cloudy has crashed"
                     if args.warnfail:
                         warnings.warn(errstr+ "; cloudy_slug exiting")
-                        sys.exit(0)
-                    else:
-                        raise IOError(errno.EIO, errstr)
+                    raise IOError(errno.EIO, errstr)
                 if linelist is None:
                     linelist = ldata.label
                 if linewl is None:
@@ -1053,9 +1057,7 @@ def do_cloudy_run(thread_num, thread_return, q):
                         "cloudy has crashed"
                     if args.warnfail:
                         warnings.warn(errstr+ "; cloudy_slug exiting")
-                        sys.exit(0)
-                    else:
-                        raise IOError(errno.EIO, errstr)
+                    raise IOError(errno.EIO, errstr)
                 params['r1_out'] = r1_out
                 params['hden_out'] = nII_out
                 params['Omega_out'] = Omega_out
@@ -1150,7 +1152,10 @@ def do_cloudy_run(thread_num, thread_return, q):
                         params['U'], params['U0'],
                         params['Omega'], params['zeta']))
             thread_return[thread_num] = sys.exc_info()[0](errstr)
-            raise sys.exc_info()[0](errstr)
+            if not args.warnfail: 
+                raise sys.exc_info()[0](errstr)
+            else:
+                warnings.warn(errstr)
 
 
 ######################################################################
@@ -1169,7 +1174,10 @@ if __name__ == '__main__' :
 slug_queue.join()
 for r in thread_return:
     if r is not None:
-        raise r
+        if not args.warnfail:
+            raise r
+        else:
+            sys.exit(0)
 
 ######################################################################
 # Step 9: take the cloudy output spectra and put them into the SLUG

@@ -38,7 +38,7 @@
 # Name of the model; this will become the base name for all output
 # files
 # Default: SLUG_DEF
-model_name        SLUG_CTS_M3
+model_name        SLUG_CTS_M4
 
 # Directory into which to write output
 # Default: output
@@ -99,7 +99,7 @@ end_time	  1.01e7
 # Mass of cluster for cluster mode simulation, in Msun; if this set to
 # "cmf", then a new cluster mass will be drawn for each trial from the
 # cmf; can be omitted, and will be ignored, if sim_type = galaxy
-cluster_mass      1e3
+cluster_mass      1e4
 
 # Read a random number generator seed from a file?
 # -- 0 (no, seed is automatically generated)
