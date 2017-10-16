@@ -538,7 +538,7 @@ slug_tracks_mist::read_trackfile(const char *fname, S& logt,
   // running into problems if we try to interpolate to very young
   // ages.
   for (size_type i=0; i<ntrack; i++) {
-    logt[0][i] = -constants::big;
+    logt[0][i] = -log10(constants::big);
     for (size_type j=0; j<trackdata.shape()[2]; j++) {
       trackdata[0][i][j] = trackdata[1][i][j];
     }
