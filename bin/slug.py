@@ -105,14 +105,14 @@ for i, line in enumerate(pfile):
         try:
             ntrials = int(linesplit[1])
             ntrials_line = i
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
     if linesplit[0].lower() == 'model_name':
         try:
             model_name = linesplit[1]
             model_name_line = i
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
     if linesplit[0].lower() == 'out_dir':
@@ -121,32 +121,32 @@ for i, line in enumerate(pfile):
             if not osp.isabs(out_dir):
                 out_dir = osp.join(cwd, out_dir)
             out_dir_line = i
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
     if linesplit[0].lower() == 'output_mode':
         try:
             output_mode = linesplit[1]
             output_mode = output_mode.lower()
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
     if linesplit[0].lower() == 'rng_offset':
         try:
             rng_offset_line = i
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
     if linesplit[0].lower() == 'verbosity':
         try:
             verbosity = int(linesplit[1])
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
     if linesplit[0].lower() == 'sim_type':
         try:
             sim_type = linesplit[1]
-        except IndexError, ValueError:
+        except (IndexError, ValueError):
             raise IOError("slug: error: couldn't parse the following"
                           " parameter file line:\n"+line)
 
