@@ -168,6 +168,7 @@ else:
 # output; we'll call threads to run this later
 def display_out(out, procnum):
     for line in iter(out.readline, ''):
+        if len(line) == 0: continue
         print("thread {:d}: ".format(int(procnum)+1) +
               line.decode().split('\n')[0])
     out.close()
