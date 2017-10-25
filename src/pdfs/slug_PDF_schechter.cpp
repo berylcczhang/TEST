@@ -33,6 +33,43 @@ using namespace boost::math;
 using namespace boost::random;
 
 ////////////////////////////////////////////////////////////////////////
+// This is a trivial little function to handle the fact that boost's
+// implementation of the upper incomplete gamma function Gamma(a, x)
+// does not allow negative or 0 arguments for a, even in cases when the
+// underlying integral is perfectly well-defined. It uses the fact
+// that Gamma(a,x) can be integrated by parts to give
+//
+// Gamma(a,x) = -x^a e^(-x) / a + 1/a Gamma(a+1, x)
+//
+// and
+//
+// Gamma(0,x) = -Ei(-x) for x > 0
+//
+// to handle the case a < 0 by repeated integration by parts until a
+// >= 0.
+////////////////////////////////////////////////////////////////////////
+static inline double gamma_upper_inc(double a, double x) {
+  // Action depends on a
+  if (a > 0.0) {
+    return tgamma(a, x);
+  } else if (a == 0.0) {
+    return -expint(-x);
+  } else {
+    double res = 0.0, fac = 1.0;
+    while (a < 0.0) {
+      res += -fac * pow(x, a) / a;
+      fac *= a;
+      a += 1.0;
+    }
+    res *= exp(-x);
+    if (a != 0.0) res += fac * tgamma(a, x);
+    else res += -fac * expint(-x);
+    return res;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
 // Constructor
 ////////////////////////////////////////////////////////////////////////
 slug_PDF_schechter::
@@ -79,15 +116,9 @@ slug_PDF_schechter::initialize(const std::vector<double>& tokenVal) {
     new variate_generator<rng_type&, uniform_01<> >(*rng, uni01);
 
   // Set the normalization, min, max, expectation values
-  if (segSlope != -1.0) {
-    norm = 1.0 / 
-      (segStar * (tgamma(1.0+segSlope, segMin/segStar) - 
-		  tgamma(1.0+segSlope, segMax/segStar)));
-  } else {
-    norm = 1.0 / 
-      (segStar * (expint(-segMax/segStar) - 
-		  expint(-segMin/segStar)));
-  }
+  norm = 1.0 / 
+    (segStar * (gamma_upper_inc(1.0+segSlope, segMin/segStar) - 
+		gamma_upper_inc(1.0+segSlope, segMax/segStar)));
   segMinVal = norm * pow( segMin/segStar, segSlope ) * exp(-segMin/segSlope);
   segMaxVal = norm * pow( segMax/segStar, segSlope ) * exp(-segMax/segSlope);
   expectVal = expectationVal(segMin, segMax);
@@ -111,21 +142,10 @@ double
 slug_PDF_schechter::expectationVal(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
-  if ((segSlope != -1.0) && (segSlope != -2.0)) {
-    return segStar * (tgamma(2.0+segSlope, b1/segStar) -
-		      tgamma(2.0+segSlope, a1/segStar)) /
-      (tgamma(1.0+segSlope, b1/segStar) -
-       tgamma(1.0+segSlope, a1/segStar));
-  } else if (segSlope == -1.0) {
-    return segStar * (exp(-b1/segStar) - exp(-a1/segStar)) /
-      ( expint(-b1/segStar) - expint(-a1/segStar) );
-  } else {
-    return segStar * 
-      (expint(-b1/segStar) - expint(-a1/segStar)) /
-      ( expint(-a1/segStar) - expint(-b1/segStar) +
-	segStar/a1 * exp(-a1/segStar) -
-	segStar/b1 * exp(-b1/segStar) );
-  }
+  return segStar * (gamma_upper_inc(2.0+segSlope, b1/segStar) -
+		      gamma_upper_inc(2.0+segSlope, a1/segStar)) /
+      (gamma_upper_inc(1.0+segSlope, b1/segStar) -
+       gamma_upper_inc(1.0+segSlope, a1/segStar));
 }
 
 
@@ -136,13 +156,8 @@ double
 slug_PDF_schechter::integral(double a, double b) {
   double a1 = a < segMin ? segMin : a;
   double b1 = b > segMax ? segMax : b;
-  if (segSlope != -1.0) {
-    return norm * segStar * (tgamma(1.0+segSlope, a1/segStar) - 
-			     tgamma(1.0+segSlope, b1/segStar));
-  } else {
-    return norm * segStar * (expint(-b1/segStar) - 
-			     expint(-a1/segStar));
-  }
+  return norm * segStar * (gamma_upper_inc(1.0+segSlope, a1/segStar) - 
+			   gamma_upper_inc(1.0+segSlope, b1/segStar));
 }
 
 // Draw a mass from a schechter with minimum and maximum. Note that
