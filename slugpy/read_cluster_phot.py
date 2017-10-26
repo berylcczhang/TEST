@@ -213,7 +213,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
         # haven't been given ones that are not available; if we have,
         # raise an error now
         if read_filters is not None:
-            if type(read_filters) is not str:
+            if type(read_filters) is not str and \
+               type(read_filters) is not np.str_:
                 for f in read_filters:
                     if not f in filters:
                         raise IOError(errno.EIO,
@@ -232,7 +233,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # which ones are in our list to read
             if read_filters is not None:
                 fread = []
-                if type(read_filters) is not str:
+                if type(read_filters) is not str and \
+                   type(read_filters) is not np.str_:
                     for f in filters:
                         if f in read_filters:
                             fread.append(True)
@@ -349,7 +351,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
         # haven't been given ones that are not available; if we have,
         # raise an error now
         if read_filters is not None:
-            if type(read_filters) is not str:
+            if type(read_filters) is not str and \
+               type(read_filters) is not np.str_:
                 for f in read_filters:
                     if not f in filters:
                         raise IOError(errno.EIO,
@@ -382,7 +385,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # which ones are in our list to read
             if read_filters is not None:
                 fread = []
-                if type(read_filters) is not str:
+                if type(read_filters) is not str and \
+                   type(read_filters) is not np.str_:
                     for f in filters:
                         if f in read_filters:
                             fread.append(True)
@@ -550,7 +554,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # haven't been given ones that are not available; if we have,
             # raise an error now
             if read_filters is not None:
-                if type(read_filters) is not str:
+                if type(read_filters) is not str and \
+                   type(read_filters) is not np.str_:
                     for f in read_filters:
                         if not f in filters:
                             raise IOError(errno.EIO,
@@ -598,7 +603,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if read_filters is not None:
                     fread = []
                     nf_final = 0
-                    if type(read_filters) is not str:
+                    if type(read_filters) is not str and \
+                       type(read_filters) is not np.str_:
                         for f in filters:
                             if f in read_filters:
                                 fread.append(True)
@@ -678,7 +684,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
             # haven't been given ones that are not available; if we have,
             # raise an error now
             if read_filters is not None:
-                if type(read_filters) is not str:
+                if type(read_filters) is not str and \
+                   type(read_filters) is not np.str_:
                     for f in read_filters:
                         if not f in filters:
                             raise IOError(errno.EIO,
@@ -726,7 +733,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                 if read_filters is not None:
                     fread = []
                     nf_final = 0
-                    if type(read_filters) is not str:
+                    if type(read_filters) is not str and \
+                       type(read_filters) is not np.str_:
                         for f in filters:
                             if f in read_filters:
                                 fread.append(True)
