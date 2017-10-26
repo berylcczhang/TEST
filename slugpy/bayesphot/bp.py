@@ -2653,7 +2653,7 @@ class bp(object):
                 # insufficient precision; if so, issue warning and
                 # return None in place of xpt and wgts
                 if npts == 0:
-                    warn("bp.make_approx_phot: requested precision cannot be reached")
+                    warn("bp.make_approx_phys: requested precision cannot be reached")
                     if kd_tmp is not None:
                         self.__restore_bw_err(kd_tmp)
                     return None
