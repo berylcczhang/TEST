@@ -2545,7 +2545,7 @@ class bp(object):
         return x, wgts
 
     def make_approx_phys(self, phot, photerr=None, squeeze=True,
-                         phys_ignore=None):
+                         phys_ignore=None, tol=None):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of physical properties that corresponds to a set of
@@ -2575,6 +2575,8 @@ class bp(object):
               a value of False indicating that dimension should be
               excluded from the values returned; suppressing
               dimensions can allow for more efficient representations
+           tol : float
+              if set, this tolerance overrides the value of reltol
 
         Returns:
            x : array, shape (M, nphys), or a list of such arrays
@@ -2617,6 +2619,10 @@ class bp(object):
             ndim_return = len(dim_return)
             bw = self.__bandwidth[dim_return]
 
+        # Set tolerance
+        if tol is None:
+            tol = self.reltol
+
         # Loop over input photometric variables
         x = []
         wgts = []
@@ -2644,7 +2650,7 @@ class bp(object):
                 npts = self.__clib.kd_rep(
                     kd_tmp, np.array(ph), 
                     np.arange(self.__nphot, dtype=c_ulong)+self.__nphys,
-                    self.__nphot, self.reltol, 
+                    self.__nphot, tol, 
                     dim_return_ptr, ndim_return,
                     ctypes.byref(xout), 
                     ctypes.byref(wgtsout))

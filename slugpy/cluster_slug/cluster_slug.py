@@ -1571,7 +1571,7 @@ class cluster_slug(object):
 
 
     def make_approx_phys(self, phot, photerr=None, squeeze=True, 
-                         phys_ignore=None, filters=None):
+                         phys_ignore=None, filters=None, tol=None):
         """
         Returns an object that can be used for a fast approximation of
         the PDF of physical properties that corresponds to a set of
@@ -1606,6 +1606,8 @@ class cluster_slug(object):
               only 1 set of photometric filters has been defined for
               the cluster_slug object, that set will be used by
               default
+           tol : float
+              if set, this tolerance overrides the value of reltol
 
         Returns:
            x : array, shape (M, nphys), or a list of such arrays
@@ -1631,7 +1633,8 @@ class cluster_slug(object):
                 return self.__filtersets[0]['bp']. \
                     make_approx_phys(phot, photerr=photerr,
                                      squeeze=squeeze,
-                                     phys_ignore=phys_ignore)
+                                     phys_ignore=phys_ignore,
+                                     tol=tol)
             else:
                 raise ValueError("must specify a filter set")
 
@@ -1649,7 +1652,8 @@ class cluster_slug(object):
             # Call the method
             return bp.make_approx_phys(phot, photerr=photerr,
                                        squeeze=squeeze,
-                                       phys_ignore=phys_ignore)
+                                       phys_ignore=phys_ignore,
+                                       tol=tol)
 
 
     def squeeze_rep(self, x, wgts, dims=None, filters=None):
