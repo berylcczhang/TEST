@@ -1137,14 +1137,14 @@ class bp(object):
 
         # Figure out number of distinct input sets of physical and
         # photometric properties
-        nphys_in = np.array(physprop).size/self.__nphys
-        nphot_in = np.array(photprop).size/self.__nphot
+        nphys_in = np.array(physprop).size // self.__nphys
+        nphot_in = np.array(photprop).size // self.__nphot
 
         # Figure out how many sets of photometric errors we have. We
         # unfortunately have to iterate over these, because each
         # distinct set requires changing the bandwidth of the kernel
         # density estimation.
-        nphot_err = np.array(photerr).size/self.__nphot
+        nphot_err = np.array(photerr).size // self.__nphot
 
         # Allocate an array to hold the results
         if photerr is not None:
@@ -1164,10 +1164,10 @@ class bp(object):
         # Make an array suitable for passing data to c routines
         cdata = np.zeros(pdf.shape + (self.__nphys+self.__nphot,))
         cdata[..., :self.__nphys] \
-            = np.vstack((physprop,) * (pdf.size/nphys_in)). \
+            = np.vstack((physprop,) * (pdf.size//nphys_in)). \
             reshape(cdata[..., :self.__nphys].shape)
         cdata[..., self.__nphys:] \
-            = np.vstack((photprop,) * (pdf.size/nphot_in)). \
+            = np.vstack((photprop,) * (pdf.size//nphot_in)). \
             reshape(cdata[..., self.__nphys:].shape)
 
         # Separate cases with single / no photometric errors from
@@ -1392,8 +1392,8 @@ class bp(object):
 
         # Figure out how many distinct photometric values we've been
         # given, and how many sets of photometric errors
-        nphot = np.array(photprop).size/self.__nphot
-        nphot_err = np.array(photerr).size/self.__nphot
+        nphot = np.array(photprop).size//self.__nphot
+        nphot_err = np.array(photerr).size//self.__nphot
 
         # Set up a grid to hold the outputs
         if photerr is not None:
@@ -1473,7 +1473,7 @@ class bp(object):
                     self.__clib.kd_pdf_int_reggrid(
                         kd_tmp, phot_sub,
                         dims[nidx:], self.__nphot, 
-                        phot_sub.size/self.__nphot,
+                        phot_sub.size//self.__nphot,
                         qmin_tmp, qmax_tmp, ngrid_tmp, 
                         dims[:nidx], nidx,
                         self.reltol, self.abstol, np.ravel(pdf_sub))
@@ -1481,7 +1481,7 @@ class bp(object):
                     self.__clib.kd_pdf_reggrid(
                         kd_tmp, phot_sub,
                         dims[nidx:], self.__nphot, 
-                        phot_sub.size/self.__nphot,
+                        phot_sub.size//self.__nphot,
                         qmin_tmp, qmax_tmp, ngrid_tmp, dims[:nidx], nidx,
                         self.reltol, self.abstol, np.ravel(pdf_sub))
                 pdf[i] = pdf_sub
@@ -1671,7 +1671,7 @@ class bp(object):
                        out_shape)
 
         # Prepare inputs for passing to c
-        nphys = np.array(physprop).size/self.__nphys
+        nphys = np.array(physprop).size//self.__nphys
         phystmp = np.array(physprop, dtype=c_double)
 
         # Call c library; note that we call kd_pdf_int_reggrid if
@@ -1878,7 +1878,7 @@ class bp(object):
                 # call kd_pdf_vec
                 self.__clib.kd_pdf_vec(
                     self.__kd, np.ravel(grid_out),
-                    grid_out.size/self.ndim,
+                    grid_out.size//self.ndim,
                     self.reltol, self.abstol,
                     np.ravel(pdf))
 
@@ -1888,7 +1888,7 @@ class bp(object):
                 # points, so call kd_pdf_int_vec
                 self.__clib.kd_pdf_int_vec(
                     self.__kd, np.ravel(grid_out),
-                    idx, len(idx), grid_out.size/len(idx),
+                    idx, len(idx), grid_out.size//len(idx),
                     self.reltol, self.abstol, np.ravel(pdf))
 
         else:
@@ -1899,7 +1899,7 @@ class bp(object):
                 # dimensions, so call kd_pdf_reggrid
                 self.__clib.kd_pdf_reggrid(
                     self.__kd, np.ravel(xfixed), fixeddim_tmp,
-                    nfixed, xfixed.size/nfixed,
+                    nfixed, xfixed.size//nfixed,
                     qmin_tmp, qmax_tmp, ngrid_tmp, idx,
                     idx.size, self.reltol, self.abstol,
                     np.ravel(pdf))
@@ -1910,7 +1910,7 @@ class bp(object):
                 # dimensions, so call kd_pdf_int_reggrid
                 self.__clib.kd_pdf_int_reggrid(
                     self.__kd, np.ravel(xfixed), fixeddim_tmp,
-                    nfixed, xfixed.size/nfixed, qmin_tmp,
+                    nfixed, xfixed.size//nfixed, qmin_tmp,
                     qmax_tmp, idx, idx.size, self.reltol,
                     self.abstol, np.ravel(pdf))
 
@@ -2253,8 +2253,8 @@ class bp(object):
 
         # Figure out how many distinct photometric values we've been
         # given, and how many sets of photometric errors
-        nphot = np.array(phot).size/self.__nphot
-        nphot_err = np.array(photerr).size/self.__nphot
+        nphot = np.array(phot).size//self.__nphot
+        nphot_err = np.array(photerr).size//self.__nphot
 
         # Figure out what shape the output should have
         if nphot == 1 and nphot_err == 1:
@@ -2288,7 +2288,7 @@ class bp(object):
             self.__clib.kd_neighbors_vec(
                 self.__kd, np.ravel(phot), 
                 dims.ctypes.data_as(POINTER(c_ulong)),
-                self.__nphot, np.array(phot).size/self.__nphot,
+                self.__nphot, np.array(phot).size // self.__nphot,
                 nmatch, bandwidth_units, np.ravel(matches),
                 wgts.ctypes.data_as(POINTER(c_double)), 
                 np.ravel(d2))
@@ -2308,7 +2308,7 @@ class bp(object):
             self.__clib.kd_neighbors_vec(
                 kd_tmp, np.ravel(phot), 
                 dims.ctypes.data_as(POINTER(c_ulong)),
-                self.__nphot, np.array(phot).size/self.__nphot,
+                self.__nphot, np.array(phot).size//self.__nphot,
                 nmatch, True, np.ravel(matches),
                 wgts.ctypes.data_as(POINTER(c_double)), 
                 np.ravel(d2))
@@ -2337,7 +2337,7 @@ class bp(object):
                 self.__clib.kd_neighbors_vec(
                     kd_tmp, np.ravel(phot[i]), 
                     dims.ctypes.data_as(POINTER(c_ulong)),
-                    self.__nphot, np.array(phot[i]).size/self.__nphot,
+                    self.__nphot, np.array(phot[i]).size//self.__nphot,
                     nmatch, True, np.ravel(matches)[offset2:],
                     wgts.ctypes.data_as(POINTER(c_double)), 
                     np.ravel(d2)[offset1:])
@@ -2390,7 +2390,7 @@ class bp(object):
 
         # Figure out how many points we were given
         phys_tmp = np.array(phys)
-        npt = phys_tmp.size / self.__nphys
+        npt = phys_tmp.size // self.__nphys
 
         # Prepare the output arrays
         outshape = list(phys_tmp.shape[:-1]) + \
