@@ -51,7 +51,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
   unsigned long dimptr, npt_final, ndim_ret;
   unsigned long *nodelist;
   size_t *idx;
-  double wgt_in, wgt_out, maxwgt, d2, wgt_save;
+  double wgt_in, wgt_out, maxwgt, d2;
   double *nodewgt;
   double *xtmp, *wgttmp;
 
@@ -98,7 +98,6 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
      we're going to return, and the maximum weight of those we've left
      out */
   wgt_in = 0.0;
-  wgt_out = nodewgt[0];
 
   /* Main loop */
   while (1) {
@@ -106,33 +105,16 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
     /* Find the node that is contributing the most error */
     maxwgt = nodewgt[0];
     ptr = 0;
+    wgt_out = nodewgt[0];
     for (i=1; i<nlist; i++) {
       if (nodewgt[i] > maxwgt) {
 	ptr = i;
 	maxwgt = nodewgt[i];
       }
+      wgt_out += nodewgt[i];
     }
     curnode = nodelist[ptr];
-
-    /* Subtract this node's contribution from the excluded weight;
-       avoid roundoff error */
-    wgt_save = wgt_out;
     wgt_out -= maxwgt;
-    if (wgt_out < 0) wgt_out = 0.0;
-
-    /* Safety check: make sure that the weight of the excluded points
-       has diminished. If not, we lack the numerical precision to
-       proceed, and we will bail out now and return nothing */
-    if (wgt_out == wgt_save) {
-      /* Clean up before terminating */
-      free(nodelist);
-      free(nodewgt);
-      free(xtmp);
-      free(wgttmp);
-      /* Set the output pointers to NULL and return error code */
-      *xpt = *wgts = NULL;
-      return 0;
-    }
 
     /* If this node is a leaf, add its points to the return list, and
        add its tally to the weight we've accounted for */
@@ -230,8 +212,7 @@ unsigned long kd_rep(const kernel_density *kd, const double *x,
 			 ndim, kd->tree->ndim, dims, NULL, kd->h, ndim);
       nodewgt[nlist] = kd->nodewgt[nodelist[nlist]] * exp(-d2/2.0);
 
-      /* Add weight of child nodes to sum, and increment list pointer */
-      wgt_out += nodewgt[ptr] + nodewgt[nlist];
+      /* Increment list pointer */
       nlist++;
     }
 
