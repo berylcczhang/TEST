@@ -11,6 +11,7 @@ import copy
 import glob
 import sys
 import warnings
+import numpy as np
 try:
     from slugpy import read_cluster, combine_cluster, \
         read_integrated, combine_integrated, write_cluster, \
@@ -43,6 +44,9 @@ parser.add_argument("--delete", default=False, action="store_true",
 parser.add_argument("-f", "--fmt", default=None,
                     help="format for consolidated output; valid "+
                     "options are ascii, bin, fits, and fits2")
+parser.add_argument("-cd", "--checkdata", default=False, 
+                    action="store_true",
+	 	    help="check data integrity")
 parser.add_argument("--halt", default=False,
                     action="store_true",
                     help="halt execution on read failure; if this"
@@ -96,6 +100,16 @@ for basename in runs:
         rinfo={}
         try:
             cldata = read_cluster(f, nofilterdata=True, read_info=rinfo) 
+	    if args.checkdata:
+	        if np.sum(cldata.target_mass == 0.0) > 0 or \
+                   np.sum(cldata.time == 0.0) > 0 or \
+                   np.sum(cldata.A_V == 0.0) > 0:
+                    errstr = "data for "+f+" appears to be damaged"
+                    if args.halt:
+                        raise RuntimeError(errstr)
+                    else:
+                        warnings.warn(errstr+"; processing continues",
+                                      RuntimeWarning)
             data.append(cldata)
             for k in rinfo.keys():
                 if k != 'format':
