@@ -110,6 +110,7 @@ for basename in runs:
                     else:
                         warnings.warn(errstr+"; processing continues",
                                       RuntimeWarning)
+                        continue
             data.append(cldata)
             for k in rinfo.keys():
                 if k != 'format':
