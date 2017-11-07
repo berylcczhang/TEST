@@ -60,6 +60,11 @@ parser.add_argument('-v', '--verbose', action='store_true',
 parser.add_argument('-t', '--tmpdir', default=None,
                     help="directory for temporary work files" +
                     " (default is to use mkdtemp)")
+parser.add_argument('-nt', '--notmpdir', action='store_true',
+                    default=False,
+                    help="do not use a temporary directory to "
+                    "store intermediate products; instead write "
+                    "all files in the output directory")
 args = parser.parse_args()
 scrdir = osp.dirname(osp.realpath(__file__))
 cwd = os.getcwd()
@@ -186,7 +191,9 @@ err_threads = [None] * nproc
 out_names = []
 trial_num = []
 ON_POSIX = 'posix' in sys.builtin_module_names
-if args.tmpdir == None:
+if args.notmpdir:
+    tmpdir = out_dir
+elif args.tmpdir == None:
     tmpdir = tempfile.mkdtemp()
 else:
     tmpdir = args.tmpdir
@@ -390,7 +397,7 @@ if args.noconsolidate == False:
         combined_data = combine_cluster(data)
         write_cluster(combined_data, combined_name, fmt=output_mode)
 
-else:
+elif not args.notmpdir:
 
     # Move files
     for f in out_names:
@@ -440,44 +447,46 @@ for i in range(nproc):
             warnings.warn("unable to clean up temporary file "+pfile_name)
 
 # Delete output files
-for f in out_names:
-    try:
-        fname = f+'_summary.txt'
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_integrated_prop'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_integrated_spec'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_integrated_phot'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_integrated_yield'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_cluster_prop'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_cluster_spec'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_cluster_phot'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_cluster_yield'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-        fname = f+'_cluster_ew'+extension
-        if osp.isfile(fname):
-            os.remove(fname)
-    except OSError:
-        warnings.warn("unable to clean up temporary file "+fname)
+if not (args.notmpdir and args.noconsolidate):
+    for f in out_names:
+        try:
+            fname = f+'_summary.txt'
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_integrated_prop'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_integrated_spec'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_integrated_phot'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_integrated_yield'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_cluster_prop'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_cluster_spec'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_cluster_phot'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_cluster_yield'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+            fname = f+'_cluster_ew'+extension
+            if osp.isfile(fname):
+                os.remove(fname)
+        except OSError:
+            warnings.warn("unable to clean up temporary file "+fname)
 
 # Remove temporary directory
-try:
-    os.rmdir(tmpdir)
-except OSError:
-    warnings.warn("unable to clean up temporary directory "+
-                  tmpdir)
+if not args.notmpdir:
+    try:
+        os.rmdir(tmpdir)
+    except OSError:
+        warnings.warn("unable to clean up temporary directory "+
+                      tmpdir)
