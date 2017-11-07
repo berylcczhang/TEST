@@ -126,7 +126,8 @@ init(const char *yield_dir,
     // Only isotopes in common included
     set_intersection(isotopes_k16.begin(), isotopes_k16.end(),
 		     isotopes_d14.begin(), isotopes_d14.end(),
-		     back_inserter(isotopes));
+		     back_inserter(isotopes),
+		     slug_isotopes::isotope_sort);
     
   }    
 
@@ -577,6 +578,8 @@ read_karakas16_tables(const char *yield_dir,
 
   // Build a map from isotrope string to index; we'll use this to fill
   // the table below
+  sort(isotopes_k16.begin(), isotopes_k16.end(),
+       slug_isotopes::isotope_sort);
   map<string, vector<double>::size_type> iso_map_str;
   for (vector<double>::size_type i=0; i<isotopes_k16.size(); i++) {
     stringstream ss;

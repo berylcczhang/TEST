@@ -121,15 +121,17 @@ slug_yields_multiple(const char *yield_dir,
 	<< endl;
     
   } else {
+    
     // Multiple yield types; form their intersection
     isotopes = iso_lists[0];
     for (vector<int>::size_type i = 1; i < iso_lists.size(); i++) {
       vector<const isotope_data *> iso_tmp;
       set_intersection(isotopes.begin(), isotopes.end(),
 		       iso_lists[i].begin(), iso_lists[i].end(),
-		       back_inserter(iso_tmp));
+		       back_inserter(iso_tmp), slug_isotopes::isotope_sort);
       isotopes = iso_tmp;
     }
+
   }
 
   // Finish initializing our isotope list
