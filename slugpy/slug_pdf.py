@@ -238,12 +238,12 @@ class slug_pdf(object):
         if hasattr(x, '__iter__'):
             xarr = np.array(x)
             pdf = np.zeros(xarr.shape)
-            for s in self.segments:
-                pdf += s(xarr)
+            for s, w in zip(self.segments, self.wgts):
+                pdf += w*s(xarr)
         else:
             pdf = 0.0
-            for s in self.segments:
-                pdf += s(x)
+            for s, w in zip(self.segments, self.wgts):
+                pdf += w*s(x)
         return pdf
 
     def draw(self, *d):
