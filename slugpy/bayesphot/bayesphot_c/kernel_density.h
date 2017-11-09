@@ -366,7 +366,7 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
       Nothing
 
    Notes:
-      Grids points for PDF evaluationa are placed so that the jth grid
+      Grids points for PDF evaluations are placed so that the jth grid
       point along dimension dimgrid[i] will be placed at position
       xgridlo[i] + (xgridhi[i] - xgridlo[i]) / (ngrid[i]-1) * j
       for j = 0 ... ngrid[i]-1. Special case: if ngrid[i] = 1,
@@ -409,6 +409,9 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
          Absolute error tolerance in the computation. An approximate
          value pdf_approx will be returned once the estimated error
 	 | pdf_approx - pdf_true | < abstol.
+      OUT pdf
+         an approximation to the output integral, accurate within the
+         specified error tolerances
       OUTPUT nodecheck
          Number of individual nodes examined during the evaluation;
          only if compiled with DIAGNOSTIC set; must point to npt
@@ -423,9 +426,7 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
          must point to npt elements of valid, writeable memory
 
    Returns:
-      OUT pdf_approx
-         an approximation to the output integral, accurate within the
-         specified error tolerances
+      Nothing
 */
 
 
