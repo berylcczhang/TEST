@@ -106,7 +106,8 @@ class cluster_slug(object):
                  lib=None, bw_phys=0.1, bw_phot=None, ktype='gaussian', 
                  priors=None, sample_density=None, pobs=None, reltol=1.0e-2,
                  abstol=1.0e-8, leafsize=16, use_nebular=True,
-                 use_extinction=True, thread_safe=True, vp_list=[]):
+                 use_extinction=True, thread_safe=True,
+                 caching='none', vp_list=[]):
         """
         Initialize a cluster_slug object.
 
@@ -206,6 +207,33 @@ class cluster_slug(object):
               multiprocessing; this incurs a minor performance
               penalty, and can be disabled by setting to False if the
               code will not be run with the multiprocessing module
+           caching : 'aggressive' | 'lazy' | 'none'
+              strategy for caching subsets of the data with some
+              dimensions marginalised out; behavior is as follows:
+                 'agressive'
+                    on construction, store sorted data for fast
+                    calculation of 1D PDFs of variables by themselves,
+                    and 1D PDFs of all physical variables marginalised
+                    over all other physical variables; this
+                    significantly increases the memory footprint and
+                    construction time, but greatly speeds up
+                    subsequent evaluation of any of these quantities,
+                    and is generally the best choice for prudction
+                    work in parallel
+                 'lazy'
+                    sorted data sets for fast computation are created
+                    and cached as needed; this will make the first
+                    computation of any marginal PDF slower, but speed
+                    up all subsequent ones, without imposing any
+                    extra time at initial construction; this mode is
+                    generally best for interactive work, but is not
+                    thread_safe = True; memory cost depends on how
+                    many different marginal PDF combinations are
+                    calculated, but is always less than aggressive
+                 'none'
+                    no caching is performed automatically; the user
+                    may still manually cache data by calling
+                    the make_cache method
            vp_list : list
               A list with an element for each of the variable parameters
               in the data. An element is set to True if we wish to use
@@ -388,6 +416,9 @@ class cluster_slug(object):
 
         # Initialize an empty list of filter sets
         self.__filtersets = []
+
+        # Save caching mode
+        self.__caching = caching
 
         # If we have been given a filter list, create the data set to
         # go with it
@@ -846,7 +877,8 @@ class cluster_slug(object):
                  sample_density = deepcopy(self.__sample_density),
                  reltol = self.__reltol,
                  abstol = self.__abstol,
-                 thread_safe = self.__thread_safe)
+                 thread_safe = self.__thread_safe,
+                 caching = self.__caching)
 
         # Save to the master filter list
         self.__filtersets.append(newfilter)

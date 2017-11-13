@@ -37,8 +37,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Functions to compute PDFs and integrals thereof on single tree nodes */
 static inline
-double kd_pdf_node(const kernel_density *kd, const double *x, 
-		   const unsigned long curnode);
+void kd_pdf_node(const kernel_density *kd, const double *x, 
+		 const unsigned long curnode, double *pdf,
+		 double *pdferr);
 
 static inline
 double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed, 
@@ -52,10 +53,11 @@ double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed,
 			double *pdf);
 
 static inline
-double kd_pdf_node_int(const kernel_density *kd, const double *x, 
-		       const unsigned long *dims, const unsigned long ndim,
-		       const unsigned long ndim_int, const double fac,
-		       const unsigned long curnode);
+void kd_pdf_node_int(const kernel_density *kd, const double *x, 
+		     const unsigned long *dims, const unsigned long ndim,
+		     const unsigned long ndim_int, const double fac,
+		     const unsigned long curnode,
+		     double *pdf, double *pdferr);
 
 static inline
 double kd_pdf_node_int_grid(const kernel_density *kd, const double *xfixed, 
@@ -117,9 +119,9 @@ double kd_pdf(const kernel_density *kd, const double *x,
 	      ) {
   unsigned long i, nnode, nalloc, ptr, lchild, rchild;
   unsigned long *nodelist;
-  double *nodepdf;
-  double maxerr, relerr, abserr;
-  double pdf, leftpdf, rightpdf;
+  double *nodepdf, *nodeerr;
+  double pdf, maxerr, relerr, abserr;
+  double leafpdf, lpdf, lerr, rpdf, rerr;
 
   /* Initialize for diagnostic mode */
 #ifdef DIAGNOSTIC
@@ -127,7 +129,7 @@ double kd_pdf(const kernel_density *kd, const double *x,
 #endif
 
   /* Analyze root node */
-  pdf = kd_pdf_node(kd, x, ROOT);
+  kd_pdf_node(kd, x, ROOT, &pdf, &abserr);
 
   /* Record diagnostic data */
 #ifdef DIAGNOSTIC
@@ -158,16 +160,19 @@ double kd_pdf(const kernel_density *kd, const double *x,
       fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
       exit(1);
     }
+    if (!(nodeerr = (double *) 
+	  calloc(NODEBLOCKSIZE, sizeof(double)))) {
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
+      exit(1);
+    }
     nalloc = NODEBLOCKSIZE;  
-
-    /* Initialize error estimates */
-    abserr = pdf;
-    relerr = abserr / (pdf + DBL_MIN);
 
     /* Push root node onto the node list */
     nodelist[0] = ROOT;
     nodepdf[0] = pdf;
+    nodeerr[0] = abserr;
     nnode = 1;
+    leafpdf = 0.0;
   }
 
   /* Now work recursively through the tree, identifying the node in
@@ -175,43 +180,49 @@ double kd_pdf(const kernel_density *kd, const double *x,
      the error estimate is within our tolerance */
   while (1) {
 
-    /* Find the node that is contributing the most error. */
-    maxerr = nodepdf[0];
+    /* Compute the current estimate and total error, and find the node
+       that is contributing the most to the error budget. Note that in
+       principle we could do fewer arithmetic operations by keeping a
+       running tally of abserr and pdf, and updating these each time
+       we go through the loop, rather than recomputing them from
+       scratch each time. However, in practice this involves a lot of
+       cancelling additions and subtractions that can create problems
+       with roundoff when the error tolerance is tight and a lot of
+       node evaluations are needed to achieve it. Doing the
+       calculation fresh each time through the loop avoids this
+       problem, which is worth the small amount of extra work required. */
+    abserr = maxerr = nodeerr[0];
+    pdf = leafpdf + nodepdf[0];
     ptr = 0;
     for (i=1; i<nnode; i++) {
-      if (nodepdf[i] > maxerr) {
+      pdf += nodepdf[i];
+      abserr += nodeerr[i];
+      if (nodeerr[i] > maxerr) {
 	ptr = i;
-	maxerr = nodepdf[i];
+	maxerr = nodeerr[i];
       }
     }
 
-    /* Subtract this node's contribution to the global
-       estimates. Enforce positivity to avoid spurious negative
-       results coming from roundoff error. */
-    pdf -= nodepdf[ptr];
-    abserr -= nodepdf[ptr];
-    if (pdf < 0) pdf = 0.0;
-    if (abserr < 0) abserr = 0.0;
-
+    /* Check for convergence */
+    relerr = abserr / pdf;
+    if ((abserr <= abstol) || (relerr <= reltol)) break;
+    
     /* Compute estimates for that node's children */
     lchild = LEFT(nodelist[ptr]);
     rchild = RIGHT(nodelist[ptr]);
-    leftpdf = kd_pdf_node(kd, x, lchild);
-    rightpdf = kd_pdf_node(kd, x, rchild);
+    kd_pdf_node(kd, x, lchild, &lpdf, &lerr);
+    kd_pdf_node(kd, x, rchild, &rpdf, &rerr);
 
-    /* Get new PDF and error estimates */
-    pdf += leftpdf + rightpdf;
-    if (kd->tree->tree[lchild].splitdim != -1) abserr += leftpdf;
-    if (kd->tree->tree[rchild].splitdim != -1) abserr += rightpdf;
-    relerr = abserr / (pdf + DBL_MIN);
-
-    /* Check the termination condition */
-    if ((abserr <= abstol) || (relerr <= reltol)) break;
+    /* If children are leaves, add their contribution to the PDF from
+       leaves */
+    if (kd->tree->tree[lchild].splitdim == -1) leafpdf += lpdf;
+    if (kd->tree->tree[rchild].splitdim == -1) leafpdf += rpdf;
 
     /* Remove the node we just analyzed from the list */
     for (i=ptr; i<nnode-1; i++) {
       nodelist[i] = nodelist[i+1];
       nodepdf[i] = nodepdf[i+1];
+      nodeerr[i] = nodeerr[i+1];
     }
     nnode--;
 
@@ -227,29 +238,27 @@ double kd_pdf(const kernel_density *kd, const double *x,
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
 	exit(1);
       }
+      if (!(nodeerr = (double *) 
+	    realloc(nodeerr, 2*nalloc*sizeof(double)))) {
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf\n");
+	exit(1);
+      }
       nalloc *= 2;
     }
 
-    /* If children have non-zero contribution, push them onto the node
-       list */
-    if ((kd->tree->tree[lchild].splitdim != -1) && (leftpdf > 0.0)) {
+    /* If children are not leaves, push them onto the node list */
+    if (kd->tree->tree[lchild].splitdim != -1) {
       nodelist[nnode] = lchild;
-      nodepdf[nnode] = leftpdf;
+      nodepdf[nnode] = lpdf;
+      nodeerr[nnode] = lerr;
       nnode++;
     }
-    if ((kd->tree->tree[rchild].splitdim != -1) && (rightpdf > 0.0)) {
+    if (kd->tree->tree[rchild].splitdim != -1) {
       nodelist[nnode] = rchild;
-      nodepdf[nnode] = rightpdf;
+      nodepdf[nnode] = rpdf;
+      nodeerr[nnode] = rerr;
       nnode++;
     }
-
-    /* Bail out if there are no non-leaf nodes left to be
-       analyzed. This should also give abserr = relerr = 0, and thus
-       we should have exited the loop when we checked the termination
-       condition. However, this can sometimes fail due to roundoff
-       error if abstol and reltol are both very small, so this is a
-       backstop. */
-    if (nnode == 0) break;
 
     /* Record diagnostic data */
 #ifdef DIAGNOSTIC
@@ -259,11 +268,14 @@ double kd_pdf(const kernel_density *kd, const double *x,
     (*termcheck)++;
 #endif
 
+    /* Safety check: bail out if no nodes left */
+    if (nnode == 0) break;
   }
 
   /* Free memory */
   free(nodelist);
   free(nodepdf);
+  free(nodeerr);
 
   /* Return */
   return(pdf);
@@ -438,6 +450,7 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
   if (nodepdf != NULL) free(nodepdf);
 }
 
+
 /*********************************************************************/
 /* Function to evaluate the PDF integrated over certain dimensions   */
 /* approximately using a kernel_density object                       */
@@ -453,10 +466,10 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
   unsigned long i, ndim_int, nnode, nalloc, ptr, lchild, rchild;
   unsigned long *nodelist = NULL;
   double hprod, ds_n, fac;
-  double *nodepdf= NULL;
+  double *nodepdf = NULL, *nodeerr = NULL;
   double maxerr, relerr, abserr;
-  double pdf, leftpdf, rightpdf;
-
+  double pdf, leafpdf, lpdf, rpdf, lerr, rerr;
+  
   /* Pre-compute constant factor in the integrals we're evaluating;
      this is the part that depends only on h and the number of
      dimensions. */
@@ -486,14 +499,14 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
   *nodecheck = *leafcheck = *termcheck = 0;
 #endif
 
-  /* Estimate integral from root node */
-  pdf = kd_pdf_node_int(kd, x, dims, ndim, ndim_int, fac, ROOT);
+  /* Process the root node */
+  kd_pdf_node_int(kd, x, dims, ndim, ndim_int, fac, ROOT,
+		  &pdf, &abserr);
 
-  /* Initialize from root node */
+  /* Initialize node list */
   if (kd->tree->tree[ROOT].splitdim == -1) {
 
-    /* Special case: if root node is a leaf, we just got the exact
-       value, so return it and exit. */
+    /* Special case: root node is a leaf, so just return the exact value */
     return(pdf);
 
   } else {
@@ -511,16 +524,19 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
       fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
       exit(1);
     }
+    if (!(nodeerr = (double *) 
+	  calloc(NODEBLOCKSIZE, sizeof(double)))) {
+      fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
+      exit(1);
+    }
     nalloc = NODEBLOCKSIZE;  
-
-    /* Initialize error estimates */
-    abserr = pdf;
-    relerr = abserr / (pdf + DBL_MIN);
 
     /* Push root node onto the node list */
     nodelist[0] = ROOT;
     nodepdf[0] = pdf;
+    nodeerr[0] = abserr;
     nnode = 1;
+    leafpdf = 0.0;
   }
 
   /* Record diagnostic data */
@@ -535,43 +551,40 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
      the error estimate is within our tolerance */
   while (1) {
 
-    /* Find the node that is contributing the most error. */
-    maxerr = nodepdf[0];
+    /* Compute the current estimate and total error, and find the node
+       that makes the largest contribution to the total error */
+    abserr = maxerr = nodeerr[0];
+    pdf = leafpdf + nodepdf[0];
     ptr = 0;
     for (i=1; i<nnode; i++) {
-      if (nodepdf[i] > maxerr) {
+      pdf += nodepdf[i];
+      abserr += nodeerr[i];
+      if (nodeerr[i] > maxerr) {
 	ptr = i;
-	maxerr = nodepdf[i];
+	maxerr = nodeerr[i];
       }
     }
 
-    /* Subtract this node's contribution to the global
-       estimates. Enforce positivity to avoid spurious negative
-       results coming from roundoff error. */
-    pdf -= nodepdf[ptr];
-    abserr -= nodepdf[ptr];
-    if (pdf < 0) pdf = 0.0;
-    if (abserr < 0) abserr = 0.0;
-
-    /* Compute estimates for that node's children */
-    lchild = LEFT(nodelist[ptr]);
-    rchild = RIGHT(nodelist[ptr]);
-    leftpdf = kd_pdf_node_int(kd, x, dims, ndim, ndim_int, fac, lchild);
-    rightpdf = kd_pdf_node_int(kd, x, dims, ndim, ndim_int, fac, rchild);
-
-    /* Get new PDF and error estimates */
-    pdf += leftpdf + rightpdf;
-    if (kd->tree->tree[lchild].splitdim != -1) abserr += leftpdf;
-    if (kd->tree->tree[rchild].splitdim != -1) abserr += rightpdf;
-    relerr = abserr / (pdf + DBL_MIN);
-
-    /* Check the termination condition */
+    /* Check termination condition */
+    relerr = abserr / pdf;
     if ((abserr <= abstol) || (relerr <= reltol)) break;
 
+    /* Analyze the children of the node contributing the most error */
+    lchild = LEFT(nodelist[ptr]);
+    rchild = RIGHT(nodelist[ptr]);
+    kd_pdf_node_int(kd, x, dims, ndim, ndim_int, fac, lchild, &lpdf, &lerr);
+    kd_pdf_node_int(kd, x, dims, ndim, ndim_int, fac, rchild, &rpdf, &rerr);
+
+    /* If children are leaves, add their contribution to the PDF from
+       leaves */
+    if (kd->tree->tree[lchild].splitdim == -1) leafpdf += lpdf;
+    if (kd->tree->tree[rchild].splitdim == -1) leafpdf += rpdf;
+    
     /* Remove the node we just analyzed from the list */
     for (i=ptr; i<nnode-1; i++) {
       nodelist[i] = nodelist[i+1];
       nodepdf[i] = nodepdf[i+1];
+      nodeerr[i] = nodeerr[i+1];
     }
     nnode--;
 
@@ -587,29 +600,27 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
 	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
 	exit(1);
       }
+      if (!(nodeerr = (double *) 
+	    realloc(nodeerr, 2*nalloc*sizeof(double)))) {
+	fprintf(stderr, "bayesphot: error: unable to allocate memory in kd_pdf_int\n");
+	exit(1);
+      }
       nalloc *= 2;
     }
 
-    /* If children are not leaves, and make a non-zero contribution,
-       push them onto the node list */
-    if ((kd->tree->tree[lchild].splitdim != -1) && (leftpdf > 0.0)) {
+    /* If children are not leaves, push them onto the node list */
+    if (kd->tree->tree[lchild].splitdim != -1) {
       nodelist[nnode] = lchild;
-      nodepdf[nnode] = leftpdf;
+      nodepdf[nnode] = lpdf;
+      nodeerr[nnode] = lerr;
       nnode++;
     }
-    if ((kd->tree->tree[rchild].splitdim != -1) && (rightpdf > 0.0)) {
+    if (kd->tree->tree[rchild].splitdim != -1) {
       nodelist[nnode] = rchild;
-      nodepdf[nnode] = rightpdf;
+      nodepdf[nnode] = rpdf;
+      nodeerr[nnode] = rerr;
       nnode++;
     }
-
-    /* Bail out if there are no non-leaf nodes left to be
-       analyzed. This should also give abserr = relerr = 0, and thus
-       we should have exited the loop when we checked the termination
-       condition. However, this can sometimes fail due to roundoff
-       error if abstol and reltol are both very small, so this is a
-       backstop. */
-    if (nnode == 0) break;
 
     /* Record diagnostic data */
 #ifdef DIAGNOSTIC
@@ -618,12 +629,15 @@ double kd_pdf_int(const kernel_density *kd, const double *x,
     if (kd->tree->tree[rchild].splitdim != -1) (*leafcheck)++;
     (*termcheck)++;
 #endif
-
+    
+    /* Safety check: bail out if no nodes left */
+    if (nnode == 0) break;
   }
 
   /* Free memory */
   free(nodelist);
   free(nodepdf);
+  free(nodeerr);
 
   /* Return */
   return(pdf);
@@ -1316,28 +1330,27 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
 
 
 /*********************************************************************/
-/* Function to estimate the contribution to a PDF from a node; if    */
-/* specified node is a leaf, the result returned is its exact        */
-/* contribution to the PDF. If the node is not a leaf, the value     */
-/* returned is half the upper limit on its contribution. If this is  */
-/* then used as the actual estimate, the value returned serves is    */
-/* both the estimated value and an absolute upper limit on the       */
-/* error in that estimate. More accurate estimates are possible, but */
-/* testing shows that, in high dimensions, they're not worth the     */
-/* extra time that is required to compute them.                      */
+/* Function to estimate the contribution to a PDF from a node, and   */
+/* the error on it; if the input node is a leaf, the routine         */
+/* computes the exact PDF contribution, and sets the error to zero.  */
+/* If it is not a leaf, the routine computes the minimum and maximum */
+/* possible contributions from the node, returns their average as    */
+/* the central estimate, and half their difference as the maximum    */
+/* possible error.                                                   */
 /*********************************************************************/
 inline
-double kd_pdf_node(const kernel_density *kd, const double *x,
-		   const unsigned long curnode) {
+void kd_pdf_node(const kernel_density *kd, const double *x,
+		 const unsigned long curnode, double *pdf,
+		 double *pdferr) {
   unsigned long i;
   unsigned long ndim = kd->tree->ndim;
-  double d2, pdf;
+  double d2, pdfmin, pdfmax;
 
   /* Is this node a leaf? If so, just sum over it and return that */
   if (kd->tree->tree[curnode].splitdim == -1) {
 
     /* Loop over points, summing their contribution */
-    pdf = 0.0;
+    *pdf = 0.0;
     for (i=0; i<kd->tree->tree[curnode].npt; i++) {
 
       /* Get distance in units of the kernel size */
@@ -1350,17 +1363,17 @@ double kd_pdf_node(const kernel_density *kd, const double *x,
 	switch (kd->ktype) {
 	case epanechnikov: {
 	  if (d2 < 1)
-	    pdf += ((double *) kd->tree->tree[curnode].dptr)[i] * 
+	    *pdf += ((double *) kd->tree->tree[curnode].dptr)[i] * 
 	      (1.0 - d2);
 	  break;
 	}
 	case tophat: {
 	  if (d2 < 1)
-	    pdf += ((double *) kd->tree->tree[curnode].dptr)[i];
+	    *pdf += ((double *) kd->tree->tree[curnode].dptr)[i];
 	  break;
 	}
 	case gaussian: {
-	  pdf += ((double *) kd->tree->tree[curnode].dptr)[i] *
+	  *pdf += ((double *) kd->tree->tree[curnode].dptr)[i] *
 	    exp(-d2/2.0);
 	  break;
 	}
@@ -1368,15 +1381,15 @@ double kd_pdf_node(const kernel_density *kd, const double *x,
       } else {
 	switch (kd->ktype) {
 	case epanechnikov: {
-	  if (d2 < 1) pdf += 1.0 - d2;
+	  if (d2 < 1) *pdf += 1.0 - d2;
 	  break;
 	}
 	case tophat: {
-	  if (d2 < 1) pdf += 1.0;
+	  if (d2 < 1) *pdf += 1.0;
 	  break;
 	}
 	case gaussian: {
-	  pdf += exp(-d2/2.0);
+	  *pdf += exp(-d2/2.0);
 	  break;
 	}
 	}
@@ -1384,32 +1397,63 @@ double kd_pdf_node(const kernel_density *kd, const double *x,
 
     }
 
-    /* Normalize and return */
-    return(pdf * kd->norm_tot);
+    /* Normalize pdf, set error to zero */
+    *pdf *= kd->norm_tot;
+    *pdferr = 0.0;
 
   } else {
 
-    /* This node is not a leaf, so return half the maximum possible
-       contribution to the PDF */
+    /* This node is not a leaf, so set the PDF to the average of the
+       minimum and maximum possible contributions, and set the error */
 
     /* Get minimum distance in units of the kernel size */
     d2 = box_min_dist2(x, 
 		       (const double **) kd->tree->tree[curnode].xbnd,
 		       ndim, ndim, NULL, NULL, kd->h, ndim);
 
-    /* Return 0.5 * PDF at minimum distance */
+    /* Get PDF evaluated at minimum distance */
     switch (kd->ktype) {
     case epanechnikov: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot 
-	     * (1.0 - d2) : 0.0);
+      pdfmax = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot 
+	* (1.0 - d2) : 0.0;
+      break;
     }
     case tophat: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot : 0.0);
+      pdfmax = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot : 0.0;
+      break;
     }
     case gaussian: {
-      return(0.5 * kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0));
+      pdfmax = kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0);
+      break;
     }
     }
+
+    /* Get maximum distance in units of the kernel size, and PDF
+       evaluated at that distance */
+    d2 = box_max_dist2(x, 
+		       (const double **) kd->tree->tree[curnode].xbnd,
+		       ndim, ndim, NULL, NULL, kd->h, ndim);
+    switch (kd->ktype) {
+    case epanechnikov: {
+      pdfmin = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot 
+	* (1.0 - d2) : 0.0;
+      break;
+    }
+    case tophat: {
+      pdfmin = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot : 0.0;
+      break;
+    }
+    case gaussian: {
+      pdfmin = kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0);
+      break;
+    }
+    }
+
+    /* Set estimate to average of min and max, and error to half the
+       difference between them. */
+    *pdf = (pdfmin + pdfmax) / 2.0;
+    *pdferr = (pdfmax - pdfmin) / 2.0;
+
   }
 }
 
@@ -1533,19 +1577,20 @@ double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed,
 /* certain dimensions are being integrated out.                      */
 /*********************************************************************/
 inline
-double kd_pdf_node_int(const kernel_density *kd, const double *x,
-		       const unsigned long *dims, const unsigned long ndim,
-		       const unsigned long ndim_int, const double fac,
-		       const unsigned long curnode) {
+void kd_pdf_node_int(const kernel_density *kd, const double *x,
+		     const unsigned long *dims, const unsigned long ndim,
+		     const unsigned long ndim_int, const double fac,
+		     const unsigned long curnode, double *pdf,
+		     double *pdferr) {
   unsigned long i;
   unsigned long ndim_tot = kd->tree->ndim;
-  double d2, pdf;
+  double d2, pdfmin, pdfmax;
 
   /* Is this node a leaf? If so, just sum over it and return that */
   if (kd->tree->tree[curnode].splitdim == -1) {
 
     /* Loop over points, summing their contribution */
-    pdf = 0.0;
+    *pdf = 0.0;
     for (i=0; i<kd->tree->tree[curnode].npt; i++) {
 
       /* Get distance in units of the kernel size */
@@ -1557,18 +1602,18 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
 	switch (kd->ktype) {
 	case epanechnikov: {
 	  if (d2 < 1)
-	    pdf += ((double *) kd->tree->tree[curnode].dptr)[i] * 
+	    *pdf += ((double *) kd->tree->tree[curnode].dptr)[i] * 
 	      pow(1.0-d2, 1.0+0.5*ndim_int);
 	  break;
 	}
 	case tophat: {
 	  if (d2 < 1)
-	    pdf += ((double *) kd->tree->tree[curnode].dptr)[i] *
+	    *pdf += ((double *) kd->tree->tree[curnode].dptr)[i] *
 	      pow(1.0-d2, 0.5*ndim_int);
 	  break;
 	}
 	case gaussian: {
-	  pdf += ((double *) kd->tree->tree[curnode].dptr)[i] *
+	  *pdf += ((double *) kd->tree->tree[curnode].dptr)[i] *
 	    exp(-d2/2.0);
 	  break;
 	}
@@ -1576,15 +1621,15 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
       } else {
 	switch (kd->ktype) {
 	case epanechnikov: {
-	  if (d2 < 1) pdf += pow(1.0-d2, 1.0+0.5*ndim_int);
+	  if (d2 < 1) *pdf += pow(1.0-d2, 1.0+0.5*ndim_int);
 	  break;
 	}
 	case tophat: {
-	  if (d2 < 1) pdf += pow(1.0-d2, 0.5*ndim_int);
+	  if (d2 < 1) *pdf += pow(1.0-d2, 0.5*ndim_int);
 	  break;
 	}
 	case gaussian: {
-	  pdf += exp(-d2/2.0);
+	  *pdf += exp(-d2/2.0);
 	  break;
 	}
 	}
@@ -1593,7 +1638,8 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
     }
 
     /* Normalize and return */
-    return(pdf * fac * kd->norm_tot);
+    *pdf *= fac * kd->norm_tot;
+    *pdferr = 0.0;
 
   } else {
 
@@ -1605,21 +1651,51 @@ double kd_pdf_node_int(const kernel_density *kd, const double *x,
 		       (const double **) kd->tree->tree[curnode].xbnd,
 		       ndim, ndim_tot, dims, NULL, kd->h, ndim_tot);
 
-    /* Return half the integral assuming all points are at the minimum
-       distance. */
+    /* Get PDF evaluated at minimum distance */
     switch (kd->ktype) {
     case epanechnikov: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot * fac * 
-	      pow(1.0-d2, 1.0+0.5*ndim_int) : 0.0);
+      pdfmax = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot * fac * 
+	pow(1.0-d2, 1.0+0.5*ndim_int) : 0.0;
+      break;
     }
     case tophat: {
-      return(d2 < 1.0 ? 0.5 * kd->nodewgt[curnode] * kd->norm_tot * fac * 
-	     pow(1.0-d2, 0.5*ndim_int) : 0.0);
+      pdfmax = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot * fac * 
+	pow(1.0-d2, 0.5*ndim_int) : 0.0;
+      break;
     }
     case gaussian: {
-      return(0.5 * kd->nodewgt[curnode] * kd->norm_tot * fac * exp(-d2/2.0));
+      pdfmax = kd->nodewgt[curnode] * kd->norm_tot * fac * exp(-d2/2.0);
+      break;
     }
     }
+
+      /* Get maximum distance in units of the kernel size */
+    d2 = box_max_dist2(x, 
+		       (const double **) kd->tree->tree[curnode].xbnd,
+		       ndim, ndim_tot, dims, NULL, kd->h, ndim_tot);
+
+    /* Get PDF evaluated at maximum distance */
+    switch (kd->ktype) {
+    case epanechnikov: {
+      pdfmin = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot * fac * 
+	pow(1.0-d2, 1.0+0.5*ndim_int) : 0.0;
+      break;
+    }
+    case tophat: {
+      pdfmin = d2 < 1.0 ? kd->nodewgt[curnode] * kd->norm_tot * fac * 
+	pow(1.0-d2, 0.5*ndim_int) : 0.0;
+      break;
+    }
+    case gaussian: {
+      pdfmin = kd->nodewgt[curnode] * kd->norm_tot * fac * exp(-d2/2.0);
+      break;
+    }
+    }
+
+    /* Set estimate to average of min and max, and error to half the
+       difference between them. */
+    *pdf = (pdfmin + pdfmax) / 2.0;
+    *pdferr = (pdfmax - pdfmin) / 2.0;
   }
 }
 

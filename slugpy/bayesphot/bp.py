@@ -87,7 +87,8 @@ class bp(object):
     def __init__(self, dataset, nphys, filters=None, bandwidth='auto',
                  ktype='gaussian', priors=None, pobs=None,
                  sample_density=None, reltol=1.0e-2, abstol=1.0e-10,
-                 leafsize=16, nosort=None, thread_safe=True):
+                 leafsize=16, nosort=None, thread_safe=True,
+                 caching='none'):
         """
         Initialize a bp object.
 
@@ -165,6 +166,33 @@ class bp(object):
               multiprocessing; this incurs a minor performance
               penalty, and can be disabled by setting to False if the
               code will not be run with the multiprocessing module
+           caching : 'aggressive' | 'lazy' | 'none'
+              strategy for caching subsets of the data with some
+              dimensions marginalised out; behavior is as follows:
+                 'agressive'
+                    on construction, store sorted data for fast
+                    calculation of 1D PDFs of variables by themselves,
+                    and 1D PDFs of all physical variables marginalised
+                    over all other physical variables; this
+                    significantly increases the memory footprint and
+                    construction time, but greatly speeds up
+                    subsequent evaluation of any of these quantities,
+                    and is generally the best choice for prudction
+                    work in parallel
+                 'lazy'
+                    sorted data sets for fast computation are created
+                    and cached as needed; this will make the first
+                    computation of any marginal PDF slower, but speed
+                    up all subsequent ones, without imposing any
+                    extra time at initial construction; this mode is
+                    generally best for interactive work, but is not
+                    thread_safe = True; memory cost depends on how
+                    many different marginal PDF combinations are
+                    calculated, but is always less than aggressive
+                 'none'
+                    no caching is performed automatically; the user
+                    may still manually cache data by calling
+                    the make_cache method
 
         Returns
            Nothing
@@ -181,6 +209,9 @@ class bp(object):
            dataset must not be modified after it is passed. Altering the
            arguments, except through this class's methods, may cause
            incorrect results to be generated.
+
+           Caching with 'aggressive' or 'lazy' does create significant
+           memory overhead.
         """
 
         # Load the c library
@@ -484,8 +515,8 @@ class bp(object):
         elif (ktype == 'tophat'):
             self.__ktype = 1
         self.leafsize = leafsize
-        self.abstol = abstol
-        self.reltol = reltol
+        self.__abstol = abstol
+        self.__reltol = reltol
         self.thread_safe = thread_safe
 
         # Store data set
@@ -505,6 +536,7 @@ class bp(object):
         self.__prior_data = None
         self.__pobs_data = None
         self.__kd_phys = None
+        self.__cache = []
 
         # Build the initial kernel density estimation object, using a
         # dummy bandwidth; record mapping from indices of input data
@@ -512,6 +544,7 @@ class bp(object):
         # sample density, observation probability, or prior
         self.__bandwidth = np.ones(self.__nphys + self.__nphot)
         self.__idxmap = np.zeros(self.__ndata, dtype=c_ulong)
+        self.__idxmap_inv = np.argsort(self.__idxmap)
         if nosort is None:
             self.__kd = self.__clib.build_kd(
                 np.ravel(self.__dataset), self.__dataset.shape[1],
@@ -542,6 +575,30 @@ class bp(object):
         self.priors = priors
         self.pobs = pobs
 
+        # Set the caching policy, and, if aggressive, construct the
+        # data caches
+        self.caching = caching
+        if caching == 'lazy' and thread_safe:
+            warn(
+                "bp: cannot use lazy caching in thread safe"
+                " mode; caching policy changed to 'none'")
+            self.caching == 'none'
+        if self.caching == 'aggressive':
+            # Construct cached data sets for calculation of PDFs over
+            # 1 dimension with all others marginalised out
+            for d in range(self.ndim):
+                margindims = list(range(0,d)) + \
+                             list(range(d+1, self.ndim))
+                self.make_cache(margindims)
+            # Construct cached data sets for calculation of 1d
+            # marginal PDFs of physical variables over photometric
+            # ones
+            if self.__nphys > 1:
+                for d in range(self.__nphys):
+                    margindims = list(range(0,d)) + \
+                                 list(range(d+1, self.__nphys))
+                    self.make_cache(margindims)
+
 
     ##################################################################
     # De-allocation method
@@ -562,8 +619,7 @@ class bp(object):
     ##################################################################
     def filters(self):
         return deepcopy(self.__filters)
-
-
+    
     ##################################################################
     # Property to get the sampling density
     ##################################################################
@@ -574,6 +630,7 @@ class bp(object):
         The density with which the library was sampled, evaluated for
         each simulation in the library
         """
+        
         if self.__sample_density is None:
 
             # Choose computation method
@@ -675,9 +732,8 @@ class bp(object):
                         
         # Return result, sorted back into the order of the original
         # data
-        idxmap_inv = np.argsort(self.__idxmap)
         if self.__sample_density is not None:
-            return self.__sample_density[idxmap_inv]
+            return self.__sample_density[self.__idxmap_inv]
         else:
             return None
     
@@ -716,6 +772,10 @@ class bp(object):
         else:
             self.__sden = sden
         dummy = self.sample_density
+
+        # Update any cached objects as well
+        for c in self.__cache:
+            c['bp'].sample_density = dummy
             
 
     ##################################################################
@@ -732,8 +792,7 @@ class bp(object):
         if self.__priors is None:
             return None
         else:
-            idxmap_inv = np.argsort(self.__idxmap)
-            return self.__prior_data[idxmap_inv]
+            return self.__prior_data[self.__idxmap_inv]
 
     @priors.setter
     def priors(self, prior):
@@ -779,6 +838,8 @@ class bp(object):
             self.__clib.kd_change_wgt(None, self.__kd)
             self.__priors = None
             self.__prior_data = None
+            for c in self.__cache:
+                c['bp'].priors = None
             return
 
         else:
@@ -810,6 +871,10 @@ class bp(object):
             self.__clib.kd_change_wgt(self.__wgt.ctypes.data_as(
                 POINTER(c_double)), self.__kd)
 
+            # Updated cached bp objects
+            for c in self.__cache:
+                c['bp'].priors = self.__prior_data
+
 
     @property
     def pobs(self):
@@ -821,8 +886,7 @@ class bp(object):
         if self.__pobs_data is None:
             return None
         else:
-            idxmap_inv = np.argsort(self.__idxmap)
-            return self.__pobs_data[idxmap_inv]
+            return self.__pobs_data[self.__idxmap_inv]
 
     @pobs.setter
     def pobs(self, p_obs):
@@ -870,6 +934,8 @@ class bp(object):
             self.__clib.kd_change_wgt(None, self.__kd)
             self.__pobs = None
             self.__pobs_data = None
+            for c in self.__cache:
+                c['bp'].pobs = None
             return
 
         else:
@@ -897,6 +963,10 @@ class bp(object):
             self.__wgt = wgt
             self.__clib.kd_change_wgt(self.__wgt.ctypes.data_as(
                 POINTER(c_double)), self.__kd)
+
+            # Update cached objects
+            for c in self.__cache:
+                c['bp'].pobs = None
 
 
     ##################################################################
@@ -993,6 +1063,35 @@ class bp(object):
                 self.priors = None
                 self.priors = pr
 
+        # Update cached objects
+        for c in self.__cache:
+            c['bp'] = bw
+
+    ##################################################################
+    # Utility methods to change the tolerances. We need properties for
+    # these because, if we have cached data sets, we need to update
+    # their tolerances too.
+    ##################################################################
+    @property
+    def abstol(self):
+        return self.__abstol
+
+    @abstol.setter
+    def abstol(self, newtol):
+        self.__abstol = newtol
+        for c in self.__cache:
+            c['bp'].abstol = self.__abstol
+
+    @property
+    def reltol(self):
+        return self.__reltol
+
+    @reltol.setter
+    def reltol(self, newtol):
+        self.__reltol = newtol
+        for c in self.__cache:
+            c['bp'].reltol = self.__reltol
+
     ##################################################################
     # Utitlity methods to return the number of physical and
     # photometric quantities, and the total number of dimensions,
@@ -1019,7 +1118,7 @@ class bp(object):
         """
         return self.__nphot
 
-    @nphys.setter
+    @nphot.setter
     def nphot(self, val):
         raise ValueError("can't set bayesphot.nphot!")
 
@@ -1029,9 +1128,9 @@ class bp(object):
         This is the number of physical plus photometric properties for
         the bayesphot object.
         """
-        return self.__nphys + self.__nphot
+        return (self.__nphys + self.__nphot)
 
-    @nphys.setter
+    @ndim.setter
     def ndim(self, val):
         raise ValueError("can't set bayesphot.ndim!")
 
@@ -1077,6 +1176,98 @@ class bp(object):
                 self.__bandwidth, self.__kd)
         else:
             self.__clib.free_kd_copy(kd_tmp)
+
+    ##################################################################
+    # Methods to create and destroy caches
+    ##################################################################
+    def make_cache(self, margindims):
+        """
+        This method builds a cache to do faster calculation of PDFs
+        where certain dimensions are marginalised out. If such caches
+        exist, they are used automatically by all the computation
+        methods.
+
+        Parameters:
+           margindims : listlike of integers
+              list of dimensions to be marginalised out
+        """
+
+        # Safety check on inputs
+        mdims = np.asarray(margindims, dtype='int')
+        if np.amin(mdims) < 0 or np.amin(mdims) > self.ndim-1 or \
+           len(mdims) != len(np.unique(mdims)):
+            raise ValueError("bp.make_cache: margindims must be "
+                             " unique integers in the range "
+                             " 0, ndim")
+
+        # If we already have a cache for this set of marginalised
+        # dimensions, do nothing
+        for c in self.__cache:
+            if c['margindims'] == list(margindims):
+                return
+
+        # Get list of dimensions that remain
+        keepdims = np.array(list(set(range(self.ndim)) - set(mdims)),
+                            dtype=int)
+        nphys = np.sum(keepdims < self.nphys)
+
+        # Extract the dimensions we're keeping from the data set
+        data_cache = np.copy(self.__dataset[:,keepdims])
+        bw = self.bandwidth[keepdims]
+        if self.__prior_data is not None:
+            prior_cache = np.copy(self.__prior_data)
+        else:
+            prior_cache = None
+        if self.__pobs_data is not None:
+            pobs_cache = np.copy(self.__pobs_data)
+        else:
+            pobs_cache = None
+
+        # Build a new bp object from the dimensionally-reduced data
+        if self.__ktype == 2:
+            ktype = 'gaussian'
+        elif self.__ktype == 1:
+            ktype = 'tophat'
+        elif self.__ktype == 0:
+            ktype = 'epanechnikov'
+        bp_cache = bp(data_cache, nphys, bandwidth=bw, ktype=ktype,
+                      priors=prior_cache, pobs=pobs_cache,
+                      sample_density=self.__sample_density,
+                      reltol=self.reltol,
+                      abstol=self.abstol, leafsize=self.leafsize,
+                      thread_safe=self.thread_safe,
+                      caching='none')
+
+        # Store the new object
+        self.__cache.append(
+            { 'margindims' : list(margindims),
+              'keepdims'   : list(keepdims),
+              'data'       : data_cache,
+              'prior'      : prior_cache,
+              'pobs'       : pobs_cache,
+              'bp'         : bp_cache } )
+
+    def clear_cache(self, margindims=None):
+        """
+        This method deletes from the cache
+
+        Parameters:
+           margindims : listlike of integers
+              list of marginalised dimensions that should be removed
+              from the cache; if left as None, the cache is completely
+              emptied
+        """
+        if margindims is None:
+            self.__cache = []
+        else:
+            for i in range(len(cache)):
+                if cache[i]['margindims'] == list(margindims):
+                    del cache[i]
+                    return
+            raise ValueError(
+                "bp.clear_cache: no cached data found for "+
+                repr(margindims))
+
 
     ##################################################################
     # Method to compute the log likelihood function for a particular
@@ -1793,6 +1984,35 @@ class bp(object):
               photerr together, while the trailing dimensions match
               the dimensions of the output grid
         """
+
+        # If we're marginalising out some dimensions, and we have
+        # cached data for that setup or are going to make it, call our
+        # cached bp object to do this work for us
+        if margindim is not None:
+
+            # If we're in lazy mode, add a cache for this set of
+            # marginalised dimensions
+            if self.caching == 'lazy':
+                self.make_cache(margindim)
+
+            # Look for this set of dimensions in our existing cache
+            for c in self.__cache:
+                if list(margindim) == c['margindims']:
+
+                    # Found a match; update the dimensional indexing
+                    # on fixeddim, then call
+                    if fixeddim is None:
+                        fixeddim_ = None
+                    else:
+                        fixeddim_ = np.array(deepcopy(fixeddim))
+                        diff = np.zeros(fixeddim_.size)
+                        for d in margindim:
+                            diff[fixeddim_ < d] += 1
+                        fixeddim_ -= diff
+                    return c['bp'].mpdf_gen(fixeddim_, fixedprop,
+                                            None, ngrid=ngrid,
+                                            qmin=qmin, qmax=qmax,
+                                            grid=grid, norm=norm)
 
         # Safety check: make sure the dimensions all match up
         if fixeddim is None:

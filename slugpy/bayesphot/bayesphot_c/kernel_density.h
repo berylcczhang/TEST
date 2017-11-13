@@ -484,13 +484,18 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
          dimension in the kernel density object must appear in either
          dimfixed or dimgrid
       INPUT reltol
-         Relative error tolerance in the computation. An approximate
-         value pdf_approx will be returned once the estimated error
-	 | pdf_approx - pdf_true | / max(pdf_true) < reltol.
+         Relative error tolerance in the computation. The returned
+         value pdf[i] for the PDF at gridpoint x[i] is considered
+         converged if | pdf[i] - pdf_true(x[i]) | / max(pdf[i]) <
+         reltol, where pdf_true(x[i]) is the true PDF evaluated at
+         x[i]. Note that this means that relative tolerances are
+         expressed as error relative to the maximum of the PDF, not
+         with respect to each point.
       INPUT abstol
-         Absolute error tolerance in the computation. An approximate
-         value pdf_approx will be returned once the estimated error
-	 | pdf_approx - pdf_true | < abstol.
+         Absolute error tolerance in the computation. The return value
+         pdf[i] for the PDF at gridpoint x[i] is considered converged
+         if | pdf[i] - pdf_true(x[i]) | < abstol, where pdf_true(x[i])
+         is the true PDF evaluated at x[i].
       OUT pdf
          an ngrid[0] * ngrid[1] * ... ngrid[ndimgrid-1] * nfixed
          element array giving an approximation to the PDF, satisfying
