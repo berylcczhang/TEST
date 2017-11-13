@@ -1187,9 +1187,14 @@ class bp(object):
         exist, they are used automatically by all the computation
         methods.
 
-        Parameters:
+        Parameters
            margindims : listlike of integers
-              list of dimensions to be marginalised out
+              list of dimensions to be marginalised out; physical
+              dimensions go from 0 - nphys-1, photometric dimensions
+              from nphys to nphys + nphot - 1
+
+        Returns
+           Nothing
         """
 
         # Safety check on inputs
@@ -1251,11 +1256,14 @@ class bp(object):
         """
         This method deletes from the cache
 
-        Parameters:
+        Parameters
            margindims : listlike of integers
               list of marginalised dimensions that should be removed
-              from the cache; if left as None, the cache is completely
-              emptied
+              from the cache, in the same format as make_cache; if
+              left as None, the cache is completely emptied
+
+        Returns
+           Nothing
         """
         if margindims is None:
             self.__cache = []
@@ -1505,6 +1513,32 @@ class bp(object):
               the dimensions of the output grid
         """
 
+        # Check if we're marginalising over any dimensions, and if so
+        # whether we have or should create a cache for those
+        # dimensions
+        if len(np.atleast_1d(idx)) < self.nphys:
+
+            # Figure out which dimensions we're marginalising over
+            keepdim = list(np.atleast_1d(idx))
+            margindim = list(set(range(self.nphys)) - set(keepdim))
+
+            # If we're in lazy mode, add a cache for this set of
+            # marginalised dimensions
+            if self.caching == 'lazy':
+                self.make_cache(margindim)
+            
+            # Look for this set of dimensions in our existing cache
+            for c in self.__cache:
+                if list(margindim) == c['margindims']:
+
+                    # Found a match; call the bp object that matches
+                    # and return its output
+                    return c['bp'].mpdf(keepdim, photprop,
+                                        photerr=photerr,
+                                        ngrid=ngrid,
+                                        qmin=qmin, qmax=qmax,
+                                        grid=grid, norm=norm)
+                
         # Safety check
         if (np.array(photprop).shape[-1] != self.__nphot) and \
            (self.__nphot > 1):
@@ -1777,6 +1811,34 @@ class bp(object):
               the dimensions of the output grid
         """
 
+        # Check if we're marginalising over any dimensions, and if so
+        # whether we have or should create a cache for those
+        # dimensions
+        if len(np.atleast_1d(idx)) < self.nphot:
+            
+            # Figure out which dimensions we're marginalising over
+            keepdim = list(np.atleast_1d(idx)+self.nphys)
+            margindim = list(set(range(self.nphys,self.ndim))
+                             - set(keepdim))
+            
+            # If we're in lazy mode, add a cache for this set of
+            # marginalised dimensions
+            if self.caching == 'lazy':
+                self.make_cache(margindim)
+            
+            # Look for this set of dimensions in our existing cache
+            for c in self.__cache:
+                if list(margindim) == c['margindims']:
+
+                    # Found a match; call the bp object that matches
+                    # and return its output
+                    return c['bp'].mpdf_phot(
+                        np.array(keepdim)-self.nphys,
+                        physprop,
+                        ngrid=ngrid,
+                        qmin=qmin, qmax=qmax,
+                        grid=grid, norm=norm)
+                
         # Safety check
         if (np.array(physprop).shape[-1] != self.__nphys) and \
            (self.__nphot > 1):
@@ -1874,7 +1936,7 @@ class bp(object):
         if nidx < self.__nphot:
             self.__clib.kd_pdf_int_reggrid(
                 self.__kd, np.ravel(phystmp), dims[nidx:],
-                self.__nphys, nphys, qmin_tmp, qmax_ntmp,
+                self.__nphys, nphys, qmin_tmp, qmax_tmp,
                 ngrid_tmp, dims[:nidx], nidx, self.reltol,
                 self.abstol, np.ravel(pdf))
         else:

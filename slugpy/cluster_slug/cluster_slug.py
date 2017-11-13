@@ -995,6 +995,101 @@ class cluster_slug(object):
             f['bp'].thread_safe = self.__thread_safe
 
     ##################################################################
+    # Methods to make and destroy caches
+    ##################################################################
+    def make_cache(self, margindims, filters=None):
+        """
+        This method builds a cache to do faster calculation of PDFs
+        where certain dimensions are marginalised out. If such caches
+        exist, they are used automatically by all the computation
+        methods.
+
+        Parameters
+           margindims : listlike of integers
+              list of dimensions to be marginalised out; physical
+              dimensions go from 0 - nphys-1, photometric dimensions
+              from nphys to nphys + nphot - 1; note that the indexing
+              depends on the filter set specified by filters
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns
+           Nothing
+        """
+
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    make_cache(margindims)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Make cache
+            bp.make_cache(margindims)
+
+    def clear_cache(self, margindims=None):
+        """
+        This method deletes from the cache
+
+        Parameters
+           margindims : listlike of integers
+              list of marginalised dimensions that should be removed
+              from the cache, in the same format as make_cache; if
+              left as None, the cache is completely emptied
+           filters : listlike of strings
+              list of photometric filters to use; if left as None, and
+              only 1 set of photometric filters has been defined for
+              the cluster_slug object, that set will be used by
+              default
+
+        Returns
+           Nothing
+        """
+        # Were we given a set of filters?
+        if filters is None:
+
+            # No filters given; if we have only a single filter set
+            # stored, just use it
+            if len(self.__filtersets) == 1:
+                return self.__filtersets[0]['bp']. \
+                    clear_cache(margindims)
+            else:
+                raise ValueError("must specify a filter set")
+
+        else:
+
+            # We were given a filter set; add it if it doesn't exist
+            self.add_filters(filters)
+
+            # Find the bp object we should use
+            for f in self.__filtersets:
+                if f['filters'] == filters:
+                    bp = f['bp']
+                    break
+
+            # Make cache
+            bp.clear_cache(margindims)
+            
+
+    ##################################################################
     # The functions below just wrap around the bayesphot functions of
     # the same name. They all have in common that they accept an
     # additional keyword argument, filters, which specifies the filter
