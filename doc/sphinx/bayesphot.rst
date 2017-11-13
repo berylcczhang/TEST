@@ -84,10 +84,60 @@ The ``bp.bestmatch`` method searches through the model library and finds the N l
 
 Here ``phot`` is the set of photometric properties, which is identical to the ``photprop`` parameter used by ``logL``, ``mpdf``, and ``mcmc``. The argument ``nmatch`` specifies how many matches to return, and the argument ``bandwidth_units`` specifies whether distances are to be measured using an ordinary Euclidean metric, or in units of the kernel bandwidth in a given direction. The function returns, for each input set of photometry, the physical and photometric properties of the ``nmatch`` models in the library that are closest to the input photometric values. This can be used to judge if a good match to the input photometry is present in the library.
 
+
+Caching
+-------
+
+The ``bp`` class is built to compute posterior PDFs of some
+quantities, marginalising over others. To speed this process, it uses
+an internal KD tree representation of the data. By default the KD tree
+spans all physical and photometric dimensions of the underlying data
+set. When marginalising over some dimensions, however, it can be much
+more efficient to have a KD tree that only spans the dimensions that
+are not being marginalised, particularly if there are many of
+them. For example, suppose that we have a library of sample star
+clusters with a range of masses, ages, extinctions, metallicities, and
+photometric measurements. We are interested in the posterior PDF of
+mass given a set of photometry, marginalising over age, extinction,
+and metallicity. In this case it is more efficient to have a KD tree
+that does not split in the age, extinction, or metallicity
+dimensions. Since evaluating the marginal posterior PDF of mass using
+such a tree is much faster, if we are going to compute marginal
+posterior PDFs of mass many times (for example for many photometric
+measurements) it is advantageous to pay the one-time cost of
+constructing the better-optimised KD tree and then use it for all
+subsequent calculations.
+
+To handle this, ``bp`` has an optional caching capability that will
+cache KD tree representations of the data that are optimal for
+computing posterior PDFs marginalised over certain dimensions. One can
+construct such a cached tree by invoking the ``bp.make_cache``
+method. The syntax is simple::
+
+  bp.make_cache(margindims)
+
+where ``margindims`` is a listlike containing the dimensions that will
+be marginalized out. Once created, the cache will be used for all
+subsequent evaluations using ``bp.mpdf`` and related methods
+(``mpdf_phot`` and ``mpdf_gen``) that marginalise over those
+dimensions.
+
+Caching can also be done automatically. The ``bp`` constructor accepts
+the keyword ``caching`` which specifies the type of caching to
+use. The default value, ``none``, uses no caching. The value ``lazy``
+causes a cached KD tree to be build whenever one of the marginal PDF
+methods is invoked, and is stored for future use. (Warning: ``lazy``
+mode is not thread-safe -- see :ref:`ssec-bayesphot-threading`.)
+Finally, ``aggressive`` mode constructs caches for all possible
+one-dimensional marginalisations of physical variables given observed
+photometry, and all possible one-dimensional marginalisations of
+variables by themselves, when the ``bp`` object is first constructed.
+
+
 .. _ssec-bayesphot-threading:
 
-Support for Parallelism in bayesphot
-------------------------------------
+Parallelism in bayesphot
+------------------------
 
 The ``bp`` class supports parallel calculations of posterior PDFs and
 related quantities, through the python `multiprocessing module

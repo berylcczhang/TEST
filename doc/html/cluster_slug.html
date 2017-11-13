@@ -92,7 +92,7 @@ cs.priors = prorfunc
 </div>
 <div class="section" id="using-cluster-slug-in-parallel">
 <h2>Using cluster_slug in Parallel<a class="headerlink" href="#using-cluster-slug-in-parallel" title="Permalink to this headline">¶</a></h2>
-<p>The <code class="docutils literal"><span class="pre">cluster_slug</span></code> module has full support for threaded computation using the python <a class="reference external" href="https://docs.python.org/2.7/library/multiprocessing.html">multiprocessing module</a>. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See <a class="reference internal" href="bayesphot.html#ssec-bayesphot-threading"><span class="std std-ref">Support for Parallelism in bayesphot</span></a> for full details on the recommended paradigm for parallel computing. The full list of thread-safe <code class="docutils literal"><span class="pre">cluster_slug</span></code> methods is:</p>
+<p>The <code class="docutils literal"><span class="pre">cluster_slug</span></code> module has full support for threaded computation using the python <a class="reference external" href="https://docs.python.org/2.7/library/multiprocessing.html">multiprocessing module</a>. This allows efficient use of multiple cores on a shared memory machine, without the need for every project to read a large simulation library or store it in memory. See <a class="reference internal" href="bayesphot.html#ssec-bayesphot-threading"><span class="std std-ref">Parallelism in bayesphot</span></a> for full details on the recommended paradigm for parallel computing. The full list of thread-safe <code class="docutils literal"><span class="pre">cluster_slug</span></code> methods is:</p>
 <ul class="simple">
 <li><code class="docutils literal"><span class="pre">cluster_slug.logL</span></code></li>
 <li><code class="docutils literal"><span class="pre">cluster_slug.mpdf</span></code></li>
@@ -121,7 +121,7 @@ For example, for a library with four variable parameters you could have:</p>
 <span id="ssec-cluster-slug-full"></span><h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>caching='none'</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -187,7 +187,7 @@ randomly-selected set of photometric properties</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>caching='none'</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -287,6 +287,38 @@ make_approx_phys, mpdf_approx) are used with
 multiprocessing; this incurs a minor performance
 penalty, and can be disabled by setting to False if the
 code will not be run with the multiprocessing module</dd>
+<dt>caching <span class="classifier-delimiter">:</span> <span class="classifier">‘aggressive’ | ‘lazy’ | ‘none’</span></dt>
+<dd><p class="first">strategy for caching subsets of the data with some
+dimensions marginalised out; behavior is as follows:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>‘agressive’</dt>
+<dd>on construction, store sorted data for fast
+calculation of 1D PDFs of variables by themselves,
+and 1D PDFs of all physical variables marginalised
+over all other physical variables; this
+significantly increases the memory footprint and
+construction time, but greatly speeds up
+subsequent evaluation of any of these quantities,
+and is generally the best choice for prudction
+work in parallel</dd>
+<dt>‘lazy’</dt>
+<dd>sorted data sets for fast computation are created
+and cached as needed; this will make the first
+computation of any marginal PDF slower, but speed
+up all subsequent ones, without imposing any
+extra time at initial construction; this mode is
+generally best for interactive work, but is not
+thread_safe = True; memory cost depends on how
+many different marginal PDF combinations are
+calculated, but is always less than aggressive</dd>
+<dt>‘none’</dt>
+<dd>no caching is performed automatically; the user
+may still manually cache data by calling
+the make_cache method</dd>
+</dl>
+</div></blockquote>
+</dd>
 <dt>vp_list <span class="classifier-delimiter">:</span> <span class="classifier">list</span></dt>
 <dd>A list with an element for each of the variable parameters
 in the data. An element is set to True if we wish to use
@@ -429,6 +461,29 @@ nmatch == 1 then that dimension will be omitted</dd>
 properties</dd>
 </dl>
 </dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.clear_cache">
+<code class="descname">clear_cache</code><span class="sig-paren">(</span><em>margindims=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.clear_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method deletes from the cache</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>margindims <span class="classifier-delimiter">:</span> <span class="classifier">listlike of integers</span></dt>
+<dd>list of marginalised dimensions that should be removed
+from the cache, in the same format as make_cache; if
+left as None, the cache is completely emptied</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
 </dl>
 </dd></dl>
 
@@ -699,7 +754,7 @@ wgts will be return as None, and a warning will be issued</dd>
 
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.make_approx_phys">
-<code class="descname">make_approx_phys</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>squeeze=True</em>, <em>phys_ignore=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.make_approx_phys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.make_approx_phys" title="Permalink to this definition">¶</a></dt>
+<code class="descname">make_approx_phys</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>squeeze=True</em>, <em>phys_ignore=None</em>, <em>filters=None</em>, <em>tol=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.make_approx_phys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.make_approx_phys" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an object that can be used for a fast approximation of
 the PDF of physical properties that corresponds to a set of
 photometric properties. The PDF produced by summing over the
@@ -734,6 +789,8 @@ dimensions can allow for more efficient representations</dd>
 only 1 set of photometric filters has been defined for
 the cluster_slug object, that set will be used by
 default</dd>
+<dt>tol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>if set, this tolerance overrides the value of reltol</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
@@ -751,6 +808,33 @@ physical dimensions being returned</dd>
 numerical reasons (usually because the input point is too
 far from the library to allow accurate computation), x and
 wgts will be return as None, and a warning will be issued</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.cluster_slug.cluster_slug.make_cache">
+<code class="descname">make_cache</code><span class="sig-paren">(</span><em>margindims</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.make_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.make_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method builds a cache to do faster calculation of PDFs
+where certain dimensions are marginalised out. If such caches
+exist, they are used automatically by all the computation
+methods.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>margindims <span class="classifier-delimiter">:</span> <span class="classifier">listlike of integers</span></dt>
+<dd>list of dimensions to be marginalised out; physical
+dimensions go from 0 - nphys-1, photometric dimensions
+from nphys to nphys + nphot - 1; note that the indexing
+depends on the filter set specified by filters</dd>
+<dt>filters <span class="classifier-delimiter">:</span> <span class="classifier">listlike of strings</span></dt>
+<dd>list of photometric filters to use; if left as None, and
+only 1 set of photometric filters has been defined for
+the cluster_slug object, that set will be used by
+default</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
 </dl>
 </dd></dl>
 

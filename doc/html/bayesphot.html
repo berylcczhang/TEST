@@ -102,8 +102,53 @@
 </div>
 <p>Here <code class="docutils literal"><span class="pre">phot</span></code> is the set of photometric properties, which is identical to the <code class="docutils literal"><span class="pre">photprop</span></code> parameter used by <code class="docutils literal"><span class="pre">logL</span></code>, <code class="docutils literal"><span class="pre">mpdf</span></code>, and <code class="docutils literal"><span class="pre">mcmc</span></code>. The argument <code class="docutils literal"><span class="pre">nmatch</span></code> specifies how many matches to return, and the argument <code class="docutils literal"><span class="pre">bandwidth_units</span></code> specifies whether distances are to be measured using an ordinary Euclidean metric, or in units of the kernel bandwidth in a given direction. The function returns, for each input set of photometry, the physical and photometric properties of the <code class="docutils literal"><span class="pre">nmatch</span></code> models in the library that are closest to the input photometric values. This can be used to judge if a good match to the input photometry is present in the library.</p>
 </div>
-<div class="section" id="support-for-parallelism-in-bayesphot">
-<span id="ssec-bayesphot-threading"></span><h2>Support for Parallelism in bayesphot<a class="headerlink" href="#support-for-parallelism-in-bayesphot" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="caching">
+<h2>Caching<a class="headerlink" href="#caching" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal"><span class="pre">bp</span></code> class is built to compute posterior PDFs of some
+quantities, marginalising over others. To speed this process, it uses
+an internal KD tree representation of the data. By default the KD tree
+spans all physical and photometric dimensions of the underlying data
+set. When marginalising over some dimensions, however, it can be much
+more efficient to have a KD tree that only spans the dimensions that
+are not being marginalised, particularly if there are many of
+them. For example, suppose that we have a library of sample star
+clusters with a range of masses, ages, extinctions, metallicities, and
+photometric measurements. We are interested in the posterior PDF of
+mass given a set of photometry, marginalising over age, extinction,
+and metallicity. In this case it is more efficient to have a KD tree
+that does not split in the age, extinction, or metallicity
+dimensions. Since evaluating the marginal posterior PDF of mass using
+such a tree is much faster, if we are going to compute marginal
+posterior PDFs of mass many times (for example for many photometric
+measurements) it is advantageous to pay the one-time cost of
+constructing the better-optimised KD tree and then use it for all
+subsequent calculations.</p>
+<p>To handle this, <code class="docutils literal"><span class="pre">bp</span></code> has an optional caching capability that will
+cache KD tree representations of the data that are optimal for
+computing posterior PDFs marginalised over certain dimensions. One can
+construct such a cached tree by invoking the <code class="docutils literal"><span class="pre">bp.make_cache</span></code>
+method. The syntax is simple:</p>
+<div class="highlight-rest"><div class="highlight"><pre><span></span>bp.make_cache(margindims)
+</pre></div>
+</div>
+<p>where <code class="docutils literal"><span class="pre">margindims</span></code> is a listlike containing the dimensions that will
+be marginalized out. Once created, the cache will be used for all
+subsequent evaluations using <code class="docutils literal"><span class="pre">bp.mpdf</span></code> and related methods
+(<code class="docutils literal"><span class="pre">mpdf_phot</span></code> and <code class="docutils literal"><span class="pre">mpdf_gen</span></code>) that marginalise over those
+dimensions.</p>
+<p>Caching can also be done automatically. The <code class="docutils literal"><span class="pre">bp</span></code> constructor accepts
+the keyword <code class="docutils literal"><span class="pre">caching</span></code> which specifies the type of caching to
+use. The default value, <code class="docutils literal"><span class="pre">none</span></code>, uses no caching. The value <code class="docutils literal"><span class="pre">lazy</span></code>
+causes a cached KD tree to be build whenever one of the marginal PDF
+methods is invoked, and is stored for future use. (Warning: <code class="docutils literal"><span class="pre">lazy</span></code>
+mode is not thread-safe – see <a class="reference internal" href="#ssec-bayesphot-threading"><span class="std std-ref">Parallelism in bayesphot</span></a>.)
+Finally, <code class="docutils literal"><span class="pre">aggressive</span></code> mode constructs caches for all possible
+one-dimensional marginalisations of physical variables given observed
+photometry, and all possible one-dimensional marginalisations of
+variables by themselves, when the <code class="docutils literal"><span class="pre">bp</span></code> object is first constructed.</p>
+</div>
+<div class="section" id="parallelism-in-bayesphot">
+<span id="ssec-bayesphot-threading"></span><h2>Parallelism in bayesphot<a class="headerlink" href="#parallelism-in-bayesphot" title="Permalink to this headline">¶</a></h2>
 <p>The <code class="docutils literal"><span class="pre">bp</span></code> class supports parallel calculations of posterior PDFs and
 related quantities, through the python <a class="reference external" href="https://docs.python.org/2.7/library/multiprocessing.html">multiprocessing module</a>. This
 allows efficient use of multiple cores on a shared memory machine,
@@ -191,7 +236,7 @@ quantities from a set of input photometry in various bands, together
 with a training data set.</p>
 <dl class="class">
 <dt id="slugpy.bayesphot.bp.bp">
-<em class="property">class </em><code class="descclassname">slugpy.bayesphot.bp.</code><code class="descname">bp</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.bayesphot.bp.</code><code class="descname">bp</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em>, <em>caching='none'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of the physical
 properties of stellar population from a training set plus a set of
 measured photometric values.</p>
@@ -234,7 +279,7 @@ dimensions</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>dataset</em>, <em>nphys</em>, <em>filters=None</em>, <em>bandwidth='auto'</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>pobs=None</em>, <em>sample_density=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-10</em>, <em>leafsize=16</em>, <em>nosort=None</em>, <em>thread_safe=True</em>, <em>caching='none'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a bp object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -312,6 +357,38 @@ make_approx_phys, mpdf_approx) are used with
 multiprocessing; this incurs a minor performance
 penalty, and can be disabled by setting to False if the
 code will not be run with the multiprocessing module</dd>
+<dt>caching <span class="classifier-delimiter">:</span> <span class="classifier">‘aggressive’ | ‘lazy’ | ‘none’</span></dt>
+<dd><p class="first">strategy for caching subsets of the data with some
+dimensions marginalised out; behavior is as follows:</p>
+<blockquote class="last">
+<div><dl class="docutils">
+<dt>‘agressive’</dt>
+<dd>on construction, store sorted data for fast
+calculation of 1D PDFs of variables by themselves,
+and 1D PDFs of all physical variables marginalised
+over all other physical variables; this
+significantly increases the memory footprint and
+construction time, but greatly speeds up
+subsequent evaluation of any of these quantities,
+and is generally the best choice for prudction
+work in parallel</dd>
+<dt>‘lazy’</dt>
+<dd>sorted data sets for fast computation are created
+and cached as needed; this will make the first
+computation of any marginal PDF slower, but speed
+up all subsequent ones, without imposing any
+extra time at initial construction; this mode is
+generally best for interactive work, but is not
+thread_safe = True; memory cost depends on how
+many different marginal PDF combinations are
+calculated, but is always less than aggressive</dd>
+<dt>‘none’</dt>
+<dd>no caching is performed automatically; the user
+may still manually cache data by calling
+the make_cache method</dd>
+</dl>
+</div></blockquote>
+</dd>
 </dl>
 </dd>
 <dt>Returns</dt>
@@ -319,14 +396,17 @@ code will not be run with the multiprocessing module</dd>
 <dt>Raises</dt>
 <dd>IOError, if the bayesphot c library cannot be found</dd>
 <dt>Notes</dt>
-<dd>Because the data sets passed in may be large, this class
+<dd><p class="first">Because the data sets passed in may be large, this class
 does not make copies of any of its arguments, and instead
 modifies them in place. However, this means it is the
 responsibility of the user not to alter the any of the
 arguments once they are passed to this class; for example,
 dataset must not be modified after it is passed. Altering the
 arguments, except through this class’s methods, may cause
-incorrect results to be generated.</dd>
+incorrect results to be generated.</p>
+<p class="last">Caching with ‘aggressive’ or ‘lazy’ does create significant
+memory overhead.</p>
+</dd>
 </dl>
 </dd></dl>
 
@@ -415,6 +495,24 @@ nmatch == 1 then that dimension will be omitted</dd>
 properties</dd>
 </dl>
 </dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.bayesphot.bp.bp.clear_cache">
+<code class="descname">clear_cache</code><span class="sig-paren">(</span><em>margindims=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.clear_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.clear_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method deletes from the cache</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>margindims <span class="classifier-delimiter">:</span> <span class="classifier">listlike of integers</span></dt>
+<dd>list of marginalised dimensions that should be removed
+from the cache, in the same format as make_cache; if
+left as None, the cache is completely emptied</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
 </dl>
 </dd></dl>
 
@@ -571,7 +669,7 @@ wgts will be return as None, and a warning will be issued</dd>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.make_approx_phys">
-<code class="descname">make_approx_phys</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>squeeze=True</em>, <em>phys_ignore=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.make_approx_phys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.make_approx_phys" title="Permalink to this definition">¶</a></dt>
+<code class="descname">make_approx_phys</code><span class="sig-paren">(</span><em>phot</em>, <em>photerr=None</em>, <em>squeeze=True</em>, <em>phys_ignore=None</em>, <em>tol=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.make_approx_phys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.make_approx_phys" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an object that can be used for a fast approximation of
 the PDF of physical properties that corresponds to a set of
 photometric properties. The PDF produced by summing over the
@@ -601,6 +699,8 @@ listlike of bool, one entry per physical dimension, with
 a value of False indicating that dimension should be
 excluded from the values returned; suppressing
 dimensions can allow for more efficient representations</dd>
+<dt>tol <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd>if set, this tolerance overrides the value of reltol</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>
@@ -618,6 +718,27 @@ physical dimensions being returned</dd>
 numerical reasons (usually because the input point is too
 far from the library to allow accurate computation), x and
 wgts will be return as None, and a warning will be issued</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="slugpy.bayesphot.bp.bp.make_cache">
+<code class="descname">make_cache</code><span class="sig-paren">(</span><em>margindims</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.make_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.make_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method builds a cache to do faster calculation of PDFs
+where certain dimensions are marginalised out. If such caches
+exist, they are used automatically by all the computation
+methods.</p>
+<dl class="docutils">
+<dt>Parameters</dt>
+<dd><dl class="first last docutils">
+<dt>margindims <span class="classifier-delimiter">:</span> <span class="classifier">listlike of integers</span></dt>
+<dd>list of dimensions to be marginalised out; physical
+dimensions go from 0 - nphys-1, photometric dimensions
+from nphys to nphys + nphot - 1</dd>
+</dl>
+</dd>
+<dt>Returns</dt>
+<dd>Nothing</dd>
 </dl>
 </dd></dl>
 
@@ -917,14 +1038,14 @@ the dimensions of the output grid</dd>
 <dl class="attribute">
 <dt id="slugpy.bayesphot.bp.bp.ndim">
 <code class="descname">ndim</code><a class="headerlink" href="#slugpy.bayesphot.bp.bp.ndim" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the number of physical properties for the bayesphot
-object.</p>
+<dd><p>This is the number of physical plus photometric properties for
+the bayesphot object.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="slugpy.bayesphot.bp.bp.nphot">
 <code class="descname">nphot</code><a class="headerlink" href="#slugpy.bayesphot.bp.bp.nphot" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is the number of physical properties for the bayesphot
+<dd><p>This is the number of photometric properties for the bayesphot
 object.</p>
 </dd></dl>
 
@@ -1004,7 +1125,8 @@ first ndim dimensions in the data set</dd>
 <li><a class="reference internal" href="#what-does-bayesphot-do">What Does bayesphot Do?</a></li>
 <li><a class="reference internal" href="#creating-bp-objects">Creating <code class="docutils literal"><span class="pre">bp</span></code> Objects</a></li>
 <li><a class="reference internal" href="#using-bp-objects">Using <code class="docutils literal"><span class="pre">bp</span></code> Objects</a></li>
-<li><a class="reference internal" href="#support-for-parallelism-in-bayesphot">Support for Parallelism in bayesphot</a></li>
+<li><a class="reference internal" href="#caching">Caching</a></li>
+<li><a class="reference internal" href="#parallelism-in-bayesphot">Parallelism in bayesphot</a></li>
 <li><a class="reference internal" href="#module-slugpy.bayesphot.bp">Full Documentation of slugpy.bayesphot</a></li>
 </ul>
 </li>

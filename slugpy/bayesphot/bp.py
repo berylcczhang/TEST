@@ -169,6 +169,7 @@ class bp(object):
            caching : 'aggressive' | 'lazy' | 'none'
               strategy for caching subsets of the data with some
               dimensions marginalised out; behavior is as follows:
+
                  'agressive'
                     on construction, store sorted data for fast
                     calculation of 1D PDFs of variables by themselves,
