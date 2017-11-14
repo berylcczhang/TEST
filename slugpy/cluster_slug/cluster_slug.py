@@ -107,7 +107,7 @@ class cluster_slug(object):
                  priors=None, sample_density=None, pobs=None, reltol=1.0e-2,
                  abstol=1.0e-8, leafsize=16, use_nebular=True,
                  use_extinction=True, thread_safe=True,
-                 caching='none', vp_list=[]):
+                 pruning=False, caching='none', vp_list=[]):
         """
         Initialize a cluster_slug object.
 
@@ -207,6 +207,14 @@ class cluster_slug(object):
               multiprocessing; this incurs a minor performance
               penalty, and can be disabled by setting to False if the
               code will not be run with the multiprocessing module
+           pruning : bool
+              if True, the underlying bayesphot objects will be pruned
+              of clusters for which pobs or priors are zero, speeding
+              up evaluations; the current implementation is limited in
+              that pruning for priors is only done when the
+              cluster_slug object is instantiated, and pruning for
+              pobs is only done when each filter set is added, so the
+              list of pruned clusters cannot be modified later
            caching : 'aggressive' | 'lazy' | 'none'
               strategy for caching subsets of the data with some
               dimensions marginalised out; behavior is as follows:
@@ -407,6 +415,20 @@ class cluster_slug(object):
         self.__abstol = abstol
         self.__bw_phot_default = bw_phot
         self.__thread_safe = thread_safe
+        self.__pruning = pruning
+
+        # If we are pruning, use the priors object to figure out which
+        # clusters should be pruned
+        if self.__pruning:
+            if self.__priors is not None:
+                if hasattr(self.__priors, '__call__'):
+                    pr = self.__priors(self.__ds_phys)
+                    self.__prior_nonzero = pr > 0.0
+                else:
+                    self.__prior_nonzero = priors > 0.0
+            else:
+                self.__prior_nonzero = np.ones(len(self.__ds_phys),
+                                               dtype=np.bool)
 
         # Set the physical bandwidth
         self.__bw_phys = copy.deepcopy(bw_phys)
@@ -825,8 +847,11 @@ class cluster_slug(object):
                 if pobs is not None:
                     if pobs is 'equal':
                         self.__filtersets[i]['bp'].pobs = None
-                    else:
+                    elif not self.__pruning or hasattr(pobs, '__call__'):
                         self.__filtersets[i]['bp'].pobs = pobs
+                    else:
+                        pobs_tmp = pobs[f['keep']]
+                        self.__filtersets[i]['bp'].pobs = pobs_tmp
                 return
 
         # We're adding a new filter set, so save its name
@@ -834,10 +859,10 @@ class cluster_slug(object):
 
         # Construct data set to use with this filter combination, and
         # add the physical property data
-        newfilter['dataset'] = np.zeros((self.__ds_phys.shape[0], 
+        dataset = np.zeros((self.__ds_phys.shape[0], 
                                          self.__nphys+len(filters)))
-        newfilter['dataset'][:,:self.__nphys] = self.__ds_phys
-
+        dataset[:,:self.__nphys] = self.__ds_phys
+        
         # Loop over filters
         for i, f in enumerate(filters):
 
@@ -852,9 +877,58 @@ class cluster_slug(object):
                         self.load_data(f, bandwidth=bandwidth)
 
             # Add data for this filter
-            newfilter['dataset'][:,self.__nphys+i] \
-                = self.__photdata[f]
+            dataset[:,self.__nphys+i] = self.__photdata[f]
 
+        # Make copies of the priors and sample_density for use by the
+        # derived bayesphot class; we make copies because bp needs to
+        # be able to sort these
+        priors = deepcopy(self.__priors)
+        sample_density = deepcopy(self.__sample_density)
+        
+        # Are we pruning?
+        if self.__pruning:
+
+            # Get pruning based on p_obs
+            if hasattr(pobs, '__call__'):
+                po = pobs(dataset[:,self.__nphys:])
+                pobs_nonzero = po > 0.0
+            elif pobs is not None:
+                pobs_nonzero = pobs > 0.0
+            else:
+                pobs_nonzero = np.ones(len(self.__dataset),
+                                       dtype=np.bool)
+
+            # Get list of clusters with p_obs > 0 and prior > 0; store
+            # this because we will need it to change p_obs or prior
+            # later
+            newfilter['keep'] = np.logical_and(self.__prior_nonzero, 
+                                               pobs_nonzero)
+
+            # Prune the data set
+            dataset = dataset[newfilter['keep']]
+
+            # Make pruned versions of sample_density, priors, and pobs
+            # if they are not callables; if they are callables, they
+            # will be computed on the fly by the bp object, and we
+            # don't have to worry about it
+            if not hasattr(sample_density, '__call__') and \
+               sample_density is not None:
+                sample_density = sample_density[newfilter['keep']]
+            if not hasattr(priors, '__call__') and priors is not None:
+                priors = priors[newfilter['keep']]
+            if not hasattr(pobs, '__call__') and pobs is not None:
+                pobs_tmp = pobs[newfilter['keep']]
+            else:
+                pobs_tmp = pobs
+
+        else:
+            
+            # Just set pointer to pobs if we're not doing any pruning
+            pobs_tmp = pobs
+
+        # Store the new data set
+        newfilter['dataset'] = dataset
+        
         # Set bandwidth
         if self.__bw_phys == 'auto' or bandwidth == 'auto':
             bw = 'auto'
@@ -869,13 +943,14 @@ class cluster_slug(object):
 
         # Build the bp object
         newfilter['bp'] \
-            = bp(newfilter['dataset'], self.__nphys,
-                 filters=filters,
+            = bp(newfilter['dataset'],
+                 self.__nphys,
+                 filters = filters,
                  bandwidth = bw,
                  ktype = self.__ktype,
-                 priors = deepcopy(self.__priors),
-                 pobs = pobs,
-                 sample_density = deepcopy(self.__sample_density),
+                 priors = priors,
+                 pobs = pobs_tmp,
+                 sample_density = sample_density,
                  reltol = self.__reltol,
                  abstol = self.__abstol,
                  thread_safe = self.__thread_safe,
@@ -923,7 +998,8 @@ class cluster_slug(object):
 
     ##################################################################
     # Define the priors property. This just wraps around the
-    # corresponding property defined for bp objects.
+    # corresponding property defined for bp objects, but we do have to
+    # be careful about pruning if it is turned on
     ##################################################################
     @property
     def priors(self):
@@ -932,13 +1008,23 @@ class cluster_slug(object):
     @priors.setter
     def priors(self, pr):
         self.__priors = pr
-        for f in self.__filtersets:
-            f['bp'].priors = deepcopy(self.__priors)
+        if not self.__pruning or hasattr(pr, '__call__') or \
+           pr is None:
+            for f in self.__filtersets:
+                f['bp'].priors = deepcopy(self.__priors)
+        else:
+            # If the data have been pruned before passing to the bp
+            # object, we need to apply the same pruning to the new
+            # priors
+            for f in self.__filtersets:
+                pr_tmp = pr[f['keep']]
+                f['bp'].priors = pr_tmp
 
     ##################################################################
     # Define the pobs property. This wraps around the corresponding
     # property for bp objects, with the complication that if there's
-    # more than one filter set is has to accept or return a list
+    # more than one filter set is has to accept or return a list, and
+    # that we have to handle pruning
     ##################################################################
     @property
     def pobs(self):
@@ -950,17 +1036,28 @@ class cluster_slug(object):
     @pobs.setter
     def pobs(self, po):
         # If po is an iterable and matches the number of filter sets,
-        # we assume that this is an observation probably to be
+        # we assume that this is an observation probability to be
         # assigned to each filter set. If not, we try assigning it to
         # each filter set
         if hasattr(po, '__iter__'):
             if len(po) == len(self.__filtersets):
                 for f, p in zip(self.__filtersets, po):
-                    f['bp'].pobs = p
+                    if not self.__pruning or hasattr(p, '__call__'):
+                        f['bp'].pobs = p
+                    else:
+                        p_tmp = p[f['keep']]
+                        f['bp'].pobs = p_tmp
                 return
-        for f in self.__filtersets:
-            f['bp'].pobs = deepcopy(po)                
-    
+        else:
+            if not self.__pruning or hasattr(po, '__call__') \
+               or po is None:
+                for f in self.__filtersets:
+                    f['bp'].pobs = deepcopy(po)
+            else:
+                for f in self.__filtersets:
+                    po_tmp = deepcopy(po)[f['keep']]
+                    f['bp'].pobs = po_tmp
+                        
     ##################################################################
     # Define properties that update the current values for the
     # cluster_slug object, and also update all the child bp objects.
