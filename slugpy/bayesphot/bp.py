@@ -2068,7 +2068,7 @@ class bp(object):
                         fixeddim_ = None
                     else:
                         fixeddim_ = np.array(deepcopy(fixeddim))
-                        diff = np.zeros(fixeddim_.size)
+                        diff = np.zeros(fixeddim_.size, dtype=np.int)
                         for d in margindim:
                             diff[fixeddim_ < d] += 1
                         fixeddim_ -= diff
