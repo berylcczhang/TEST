@@ -2070,8 +2070,9 @@ class bp(object):
                         fixeddim_ = np.array(deepcopy(fixeddim))
                         diff = np.zeros(fixeddim_.size, dtype=np.int)
                         for d in margindim:
-                            diff[fixeddim_ < d] += 1
+                            diff[fixeddim_ > d] += 1
                         fixeddim_ -= diff
+                    import pdb; pdb.set_trace()
                     return c['bp'].mpdf_gen(fixeddim_, fixedprop,
                                             None, ngrid=ngrid,
                                             qmin=qmin, qmax=qmax,
