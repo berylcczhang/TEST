@@ -372,6 +372,7 @@ class bp(object):
             self.__clib.kd_pdf_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
+                    POINTER(c_double), # bandwidth
                     c_ulong,           # npt
                     c_double,          # reltol
                     c_double,          # abstol
@@ -383,6 +384,7 @@ class bp(object):
             self.__clib.kd_pdf_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
+                    POINTER(c_double), # bandwidth
                     c_ulong,           # npt
                     c_double,          # reltol
                     c_double,          # abstol
@@ -392,18 +394,18 @@ class bp(object):
             self.__clib.kd_pdf_int.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_ulong,     # dims
+                    array_1d_ulong,    # dims
                     c_ulong,           # ndim
                     c_double,          # reltol
                     c_double,          # abstol
-                    array_1d_ulong,     # nodecheck
-                    array_1d_ulong,     # leafcheck
-                    array_1d_ulong ]    # termcheck
+                    array_1d_ulong,    # nodecheck
+                    array_1d_ulong,    # leafcheck
+                    array_1d_ulong ]   # termcheck
         else:
             self.__clib.kd_pdf_int.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_ulong,     # dims
+                    array_1d_ulong,    # dims
                     c_ulong,           # ndim
                     c_double,          # reltol
                     c_double ]         # abstol
@@ -412,20 +414,22 @@ class bp(object):
             self.__clib.kd_pdf_int_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_ulong,     # dims
+                    POINTER(c_double), # bandwidth
+                    array_1d_ulong,    # dims
                     c_ulong,           # ndim
                     c_ulong,           # npt
                     c_double,          # reltol
                     c_double,          # abstol
                     array_1d_double,   # pdf
-                    array_1d_ulong,     # nodecheck
-                    array_1d_ulong,     # leafcheck
-                    array_1d_ulong ]    # termcheck
+                    array_1d_ulong,    # nodecheck
+                    array_1d_ulong,    # leafcheck
+                    array_1d_ulong ]   # termcheck
         else:
             self.__clib.kd_pdf_int_vec.argtypes \
                 = [ c_void_p,          # kd
                     array_1d_double,   # x
-                    array_1d_ulong,     # dims
+                    POINTER(c_double), # bandwidth
+                    array_1d_ulong,    # dims
                     c_ulong,           # ndim
                     c_ulong,           # npt
                     c_double,          # reltol
@@ -435,11 +439,11 @@ class bp(object):
         self.__clib.kd_pdf_int_grid.argtypes \
             = [ c_void_p,              # kd
                 array_1d_double,       # xfixed
-                array_1d_ulong,         # dimfixed
+                array_1d_ulong,        # dimfixed
                 c_ulong,               # ndimfixed
                 c_ulong,               # nfixed
                 array_1d_double,       # xgrid
-                array_1d_ulong,         # dimgrid
+                array_1d_ulong,        # dimgrid
                 c_ulong,               # ndimgrid
                 c_ulong,               # ngrid
                 c_double,              # reltol
@@ -449,13 +453,13 @@ class bp(object):
         self.__clib.kd_pdf_int_reggrid.argtypes \
             = [ c_void_p,              # kd
                 array_1d_double,       # xfixed
-                array_1d_ulong,         # dimfixed
+                array_1d_ulong,        # dimfixed
                 c_ulong,               # ndimfixed
                 c_ulong,               # nfixed
                 array_1d_double,       # xgridlo
                 array_1d_double,       # xgridhi
-                array_1d_ulong,         # ngrid
-                array_1d_ulong,         # dimgrid
+                array_1d_ulong,        # ngrid
+                array_1d_ulong,        # dimgrid
                 c_ulong,               # ndimgrid
                 c_double,              # reltol
                 c_double,              # abstol
@@ -679,7 +683,7 @@ class bp(object):
                         pts = np.ravel(self.__dataset[:,:self.__nphys])
                         if not self.__diag_mode:
                             self.__clib.kd_pdf_vec(
-                                self.__kd_phys, pts,
+                                self.__kd_phys, pts, None,
                                 self.__ndata, self.reltol, self.abstol,
                                 self.__sample_density)
                         else:
@@ -687,7 +691,7 @@ class bp(object):
                             leafcheck = np.zeros(self.__ndata, dtype=c_ulong)
                             termcheck = np.zeros(self.__ndata, dtype=c_ulong)
                             self.__clib.kd_pdf_vec(
-                                self.__kd_phys, pts,
+                                self.__kd_phys, pts, None,
                                 self.__ndata, self.reltol, self.abstol,
                                 self.__sample_density_sorted, nodecheck, 
                                 leafcheck, termcheck)
@@ -709,7 +713,7 @@ class bp(object):
                         sample_density = np.zeros(nsamp+2)
                         if not self.__diag_mode:
                             self.__clib.kd_pdf_vec(
-                                self.__kd_phys, np.ravel(pos), 
+                                self.__kd_phys, np.ravel(pos), None,
                                 nsamp+2, self.reltol, self.abstol,
                                 sample_density)
                         else:
@@ -717,7 +721,7 @@ class bp(object):
                             leafcheck = np.zeros(nsamp+2, dtype=c_ulong)
                             termcheck = np.zeros(nsamp+2, dtype=c_ulong)
                             self.__clib.kd_pdf_vec(
-                                self.__kd_phys, np.ravel(pos), 
+                                self.__kd_phys, np.ravel(pos), None,
                                 nsamp+2, self.reltol, self.abstol,
                                 sample_density, nodecheck, 
                                 leafcheck, termcheck)
@@ -1276,14 +1280,15 @@ class bp(object):
             raise ValueError(
                 "bp.clear_cache: no cached data found for "+
                 repr(margindims))
-
+        
 
     ##################################################################
     # Method to compute the log likelihood function for a particular
     # set of physical properties given a particular set of photometric
-    # properties
+    # properties; some dimensions can be marginalised over if desired
     ##################################################################
-    def logL(self, physprop, photprop, photerr=None):
+    def logL(self, physprop, photprop, photerr=None,
+             margindim=None):
         """
         This function returns the natural log of the likelihood
         function evaluated at a particular log mass, log age,
@@ -1302,157 +1307,180 @@ class bp(object):
               array giving photometric errors; for a multidimensional
               array, the operation is vectorized over the leading
               dimensions
+           margindim : int | arraylike of ints | None
+              The index or indices of the physical or photometric
+              properties to be maginalized over, numbered from 0 -
+              nphys-1 for physical properties and from nphys - nfilter +
+              nfilter - 1 for photometric properties. If this keyword is
+              set, then physprop and/or photprop should have fewer
+              than nphys or nphot elements due to the omission of
+              marginalised dimensions. If all physical or photometric
+              dimensions are marginalised out, that corresponding
+              argument for physprop or photprop should be set to None
 
         Returns
            logL : float or arraylike
               natural log of the likelihood function
         """
 
-        # Safety check
-        if (np.array(physprop).shape[-1] != self.__nphys) and \
-           (self.__nphys > 1):
-            raise ValueError("need " + str(self.__nphys) + 
-                             " physical properties!")
-        if (np.array(photprop).shape[-1] != self.__nphot) and \
-           (self.__nphot > 1):
-            raise ValueError("need " + str(self.__nphot) +
-                             " photometric properties!")
-        if photerr is not None:
-            if (np.array(photerr).shape[-1] != self.__nphot) and \
-               (self.__nphot > 1):
-                raise ValueError("need " + str(self.__nphot) +
-                                 " photometric errors!")
+        # If we're marginalising, see if we should use a cached data
+        # set
+        if margindim is not None:
 
-        # Reshape arrays if necessary
-        if (np.array(physprop).shape[-1] != self.__nphys) and \
-           (self.__nphys == 1):
-            physprop = physprop.reshape(physprop.shape+(1,))
-        if (np.array(photprop).shape[-1] != self.__nphot) and \
-           (self.__nphot == 1):
-            photprop = photprop.reshape(photprop.shape+(1,))
-        if photerr is not None:
-            if (np.array(photerr).shape[-1] != self.__nphot) and \
-               (self.__nphot == 1):
-                photerr = photerr.reshape(photerr.shape+(1,))
+            # If we're in lazy mode, add a cache for this set of
+            # marginalised dimensions if it doesn't exist
+            if self.caching == 'lazy':
+                self.make_cache(margindim)
+
+            # Look for this set of dimensions in our existing cache;
+            # if we find a match, use it
+            for c in self.__cache:
+                if list(margindim) == c['margindims']:
+                    return c['bp'].logL(physprop, photprop,
+                                        photerr=photerr)
+
+        # Safety check: make sure all the dimensions of the input
+        # arrays match what we expect
+        if margindim is not None:
+            nphys_margin = np.sum(np.asarray(margindim) <
+                                  self.__nphys)
+            nphot_margin = len(margindim) - nphys_margin
+            nphys = self.__nphys - nphys_margin
+            nphot = self.__nphot - nphot_margin
+            keepdims = np.array(
+                list(set(range(self.ndim)) - set(margindim)),
+                dtype=c_ulong)
+        else:
+            nphys = self.__nphys
+            nphot = self.__nphot
+        if nphys > 1:
+            if (np.asarray(physprop).shape[-1] != nphys):
+                raise ValueError("need " + str(nphys) + 
+                                 " physical properties!")
+            else:
+                if physprop is not None:
+                    raise ValueError(
+                        "input includes physical properties, but "
+                        "all physical properties are marginalised "
+                        "out!")
+                
+        if nphot > 1:
+            if (np.asarray(photprop).shape[-1] != nphot):
+                raise ValueError("need " + str(nphot) +
+                                 " photometric properties!")
+            if photerr is not None:
+                if (np.asarray(photerr).shape[-1] != nphot):
+                    raise ValueError("need " + str(nphot) +
+                                     " photometric errors!")
+        else:
+            if photprop is not None:
+                raise ValueError(
+                    "input includes photometric properties, but "
+                    "all photometric properties are marginalised "
+                    "out!")
+            if photerr is not None:
+                raise ValueError(
+                    "input includes photometric errors, but "
+                    "all photometric properties are marginalised "
+                    "out!")
 
         # Figure out number of distinct input sets of physical and
-        # photometric properties
-        nphys_in = np.array(physprop).size // self.__nphys
-        nphot_in = np.array(photprop).size // self.__nphot
-
-        # Figure out how many sets of photometric errors we have. We
-        # unfortunately have to iterate over these, because each
-        # distinct set requires changing the bandwidth of the kernel
-        # density estimation.
-        nphot_err = np.array(photerr).size // self.__nphot
-
-        # Allocate an array to hold the results
-        if photerr is not None:
-            pdf = np.zeros(
-                np.broadcast(np.array(physprop)[..., 0],
-                             np.array(photprop)[..., 0],
-                             np.array(photerr)[..., 0]).shape)
+        # photometric properties in the input data
+        if nphys > 0:
+            nphys_in = np.asarray(physprop).size // nphys
         else:
+            nphys_in = 0
+        if nphot > 0:
+            nphot_in = np.asarray(photprop).size // nphot
+        else:
+            nphot_in = 0
+
+        # Allocate an array to hold the results. The shape is a bit
+        # tricky to figure out, since one or more of the inputs
+        # (physprop, photprop, and photerr) can be None. We therefore
+        # need to consider several possible cases.
+        if physprop is not None and photprop is not None and \
+           photerr is not None:
             pdf = np.zeros(
-                np.broadcast(np.array(physprop)[..., 0],
-                             np.array(photprop)[..., 0]).shape)
+                np.broadcast(np.atleast_2d(physprop)[..., 0],
+                             np.atleast_2d(photprop)[..., 0],
+                             np.atleast_2d(photerr)[..., 0]).shape,
+                dtype=c_double)
+        elif physprop is not None and photprop is not None:
+            pdf = np.zeros(
+                np.broadcast(np.atleast_2d(physprop)[..., 0],
+                             np.atleast_2d(photprop)[..., 0]).shape,
+                dtype=c_double)
+        elif physprop is not None:
+            pdf = np.zeros(np.atleast_2d(physprop)[..., 0].shape,
+                           dtype=c_double)
+        elif photprop is not None and photerr is not None:
+            pdf = np.zeros(
+                np.broadcast(np.atleast_2d(photprop)[..., 0],
+                             np.atleast_2d(photerr)[..., 0]).shape,
+                dtype=c_double)
+        elif photprop is not None:
+            pdf = np.zeros(np.atleast_2d(photprop)[..., 0].shape,
+                           dtype=c_double)            
         if self.__diag_mode:
             nodecheck = np.zeros(pdf.shape, dtype=c_ulong)
             leafcheck = np.zeros(pdf.shape, dtype=c_ulong)
             termcheck = np.zeros(pdf.shape, dtype=c_ulong)
 
         # Make an array suitable for passing data to c routines
-        cdata = np.zeros(pdf.shape + (self.__nphys+self.__nphot,))
-        cdata[..., :self.__nphys] \
-            = np.vstack((physprop,) * (pdf.size//nphys_in)). \
-            reshape(cdata[..., :self.__nphys].shape)
-        cdata[..., self.__nphys:] \
-            = np.vstack((photprop,) * (pdf.size//nphot_in)). \
-            reshape(cdata[..., self.__nphys:].shape)
+        cdata = np.zeros(pdf.shape + (nphys+nphot,),
+                         dtype=c_double)
+        if nphys > 0:
+            cdata[..., :nphys] \
+                = np.vstack((physprop,) * (pdf.size//nphys_in)). \
+                reshape(cdata[..., :nphys].shape)
+        if nphot > 0:
+            cdata[..., nphys:] \
+                = np.vstack((photprop,) * (pdf.size//nphot_in)). \
+                reshape(cdata[..., nphys:].shape)
+        if photerr is not None:
+            cbandwidth = np.zeros(pdf.shape + (nphot,),
+                                  dtype=c_double)
+            cbandwidth[...] = np.sqrt(self.__bandwidth**2 +
+                                      photerr**2)
+            cbw_ptr = cbandwidth.ctypes.data_as(POINTER(c_double))
+        else:
+            cbw_ptr = None
+            
+        # Call the PDF computation routine
+        if margindim is None:
+            # No marginalization, so call kd_pdf
 
-        # Separate cases with single / no photometric errors from
-        # cases with multiple sets of photometric errors
-        if nphot_err <= 1:
-
-            # Case with at most one set of photometric errors
-
-            # Set the bandwidth based on the photometric errors if we
-            # were given some
-            if photerr is None:
-                kd_tmp = self.__kd
-            else:
-                kd_tmp = self.__change_bw_err(photerr)
-
-            # Call the PDF computation routine
             if not self.__diag_mode:
                 self.__clib.kd_pdf_vec(
-                    kd_tmp, np.ravel(cdata), pdf.size, 
+                    self.__kd, np.ravel(cdata), cbw_ptr, pdf.size, 
                     self.reltol, self.abstol, np.ravel(pdf))
             else:
                 self.__clib.kd_pdf_vec(
-                    kd_tmp, np.ravel(cdata), pdf.size, 
+                    self.__kd, np.ravel(cdata), cbw_ptr, pdf.size, 
                     self.reltol, self.abstol, np.ravel(pdf),
                     np.ravel(nodecheck), np.ravel(leafcheck),
                     np.ravel(termcheck))
-
-            # Set the bandwidth back to its default if necessary
-            if photerr is not None:
-                self.__restore_bw_err(kd_tmp)
-
-            # Return
-            if not self.__diag_mode:
-                return np.log(pdf)
-            else:
-                return np.log(pdf), nodecheck, leafcheck, termcheck
-
         else:
-
-            # Case with multiple sets of photometric errors
-
-            # Loop over photometric errors
-            kd_tmp = None
-            for i in np.ndindex(*photerr.shape[:-1]):
-
-                # Set bandwidth based on photometric error for this
-                # iteration
-                kd_tmp = self.__change_bw_err(photerr[i], kd_cur=kd_tmp)
-
-                # Grab the corresponding portions of the arrays going
-                # to and from the c code
-                cdata_sub = cdata[i]
-                pdf_sub = np.zeros(np.array(pdf[i]).shape)
-                if self.__diag_mode:
-                    nodecheck_sub = np.zeros(np.array(nodecheck[i]).shape)
-                    leafcheck_sub = np.zeros(np.array(leafcheck[i]).shape)
-                    termcheck_sub = np.zeros(np.array(termcheck[i]).shape)
-
-                # Call kernel density estimate with this bandwidth
-                if not self.__diag_mode:
-                    self.__clib.kd_pdf_vec(
-                        kd_tmp, np.ravel(cdata_sub), pdf_sub.size, 
-                        self.reltol, self.abstol, np.ravel(pdf_sub))
-                else:
-                    self.__clib.kd_pdf_vec(
-                        kd_tmp, np.ravel(cdata_sub), pdf_sub.size, 
-                        self.reltol, self.abstol, np.ravel(pdf_sub),
-                        np.ravel(nodecheck_sub), np.ravel(leafcheck_sub),
-                        np.ravel(termcheck_sub))
-                pdf[i] = pdf_sub
-                if self.__diag_mode:
-                    nodecheck[i] = nodecheck_sub
-                    leafcheck[i] = leafcheck_sub
-                    termcheck[i] = termcheck_sub
-
-            # Restore the bandwidth if we changed it
-            if photerr is not None:
-                self.__restore_bw_err(kd_tmp)
-
-            # Return
+            # We are marginalizing, so call kd_pdf_int
             if not self.__diag_mode:
-                return np.log(pdf)
+                self.__clib.kd_pdf_int_vec(
+                    kd_tmp, np.ravel(cdata), keepdims,
+                    keepdims.size, pdf.size, self.reltol,
+                    self.abstol, np.ravel(pdf))
             else:
-                return np.log(pdf), nodecheck, leafcheck, termcheck
+                self.__clib.kd_pdf_int_vec(
+                    kd_tmp, np.ravel(cdata), keepdims,
+                    keepdims.size, pdf.size, self.reltol,
+                    self.abstol, np.ravel(pdf),
+                    np.ravel(nodecheck), np.ravel(leafcheck),
+                    np.ravel(termcheck))
 
+        # Return
+        if not self.__diag_mode:
+            return np.log(pdf)
+        else:
+            return np.log(pdf), nodecheck, leafcheck, termcheck
 
     ##################################################################
     # Function to return the marginal distribution of one or more of
@@ -1550,12 +1578,12 @@ class bp(object):
                (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
-        if (np.amax(idx) > self.__nphys) or (np.amin(idx) < 0) or \
+        if (np.amax(idx) > nphys) or (np.amin(idx) < 0) or \
            (not np.array_equal(np.squeeze(np.unique(np.array(idx))), 
                                np.squeeze(np.array([idx])))):
             raise ValueError("need non-repeating indices in " +
                              "the range 0 - {:d}!".
-                             format(self.__nphys-1))
+                             format(nphys-1))
 
         # Reshape arrays if necessary
         if (np.array(photprop).shape[-1] != self.__nphot) and \
@@ -2072,7 +2100,6 @@ class bp(object):
                         for d in margindim:
                             diff[fixeddim_ > d] += 1
                         fixeddim_ -= diff
-                    import pdb; pdb.set_trace()
                     return c['bp'].mpdf_gen(fixeddim_, fixedprop,
                                             None, ngrid=ngrid,
                                             qmin=qmin, qmax=qmax,
@@ -2171,7 +2198,7 @@ class bp(object):
                 # Marginalizing over some dimensions, but no fixed
                 # points, so call kd_pdf_int_vec
                 self.__clib.kd_pdf_int_vec(
-                    self.__kd, np.ravel(grid_out),
+                    self.__kd, np.ravel(grid_out), None,
                     idx, len(idx), grid_out.size//len(idx),
                     self.reltol, self.abstol, np.ravel(pdf))
 

@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <gsl/gsl_sf_gamma.h>
 #include "geometry.h"
 #include "kernel_density.h"
+#include "kernel_density_util.h"
 
 /*********************************************************************/
 /* Useful macros                                                     */
@@ -303,7 +304,7 @@ void kd_pdf_grid(const kernel_density *kd, const double *xfixed,
   unsigned long fixedptr, outptr;
   unsigned long *nodelist = NULL;
   double *nodepdf = NULL;
-  double relerr, maxerr;
+  double relerr = 0.0, maxerr;
   double pdfmax, leftpdf, rightpdf;
 
   /* Loop over the input fixed points */
@@ -667,7 +668,7 @@ void kd_pdf_int_grid(const kernel_density *kd, const double *xfixed,
   unsigned long *nodelist = NULL;
   double *nodepdf = NULL;
   double hprod, ds_n, fac;
-  double maxerr, relerr, pdfmax, leftpdf, rightpdf;
+  double maxerr, relerr = 0.0, pdfmax, leftpdf, rightpdf;
 
   /* Pre-compute constant factor in the integrals we're evaluating;
      this is the part that depends only on h and the number of
@@ -863,7 +864,7 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
   double *dxgrid;
   double *nodepdf = NULL;
   double hprod, ds_n, fac;
-  double maxerr, relerr, pdfmax, leftpdf, rightpdf;
+  double maxerr, relerr = 0.0, pdfmax, leftpdf, rightpdf;
 
   /* Pre-compute constant factor in the integrals we're evaluating;
      this is the part that depends only on h and the number of
@@ -1122,7 +1123,7 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
   unsigned long *nodelist = NULL, *nstencil;
   double *dxgrid;
   double *nodepdf = NULL;
-  double relerr, maxerr;
+  double relerr = 0.0, maxerr;
   double pdfmax, leftpdf, rightpdf;
 
   /* Figure out the total number of points in the grid */
@@ -1344,7 +1345,7 @@ void kd_pdf_node(const kernel_density *kd, const double *x,
 		 double *pdferr) {
   unsigned long i;
   unsigned long ndim = kd->tree->ndim;
-  double d2, pdfmin, pdfmax;
+  double d2, pdfmin = 0.0, pdfmax = 0.0;
 
   /* Is this node a leaf? If so, just sum over it and return that */
   if (kd->tree->tree[curnode].splitdim == -1) {
@@ -1567,6 +1568,9 @@ double kd_pdf_node_grid(const kernel_density *kd, const double *xfixed,
       return(kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0));
     }
     }
+    
+    /*  Never get here -- exists to suppress compiler warning */
+    return(0.0);
   }
 }
 
@@ -1584,7 +1588,7 @@ void kd_pdf_node_int(const kernel_density *kd, const double *x,
 		     double *pdferr) {
   unsigned long i;
   unsigned long ndim_tot = kd->tree->ndim;
-  double d2, pdfmin, pdfmax;
+  double d2, pdfmin = 0.0, pdfmax = 0.0;
 
   /* Is this node a leaf? If so, just sum over it and return that */
   if (kd->tree->tree[curnode].splitdim == -1) {
@@ -1817,6 +1821,9 @@ double kd_pdf_node_int_grid(const kernel_density *kd,
       return(kd->nodewgt[curnode] * kd->norm_tot * fac * exp(-d2/2.0));
     }
     }
+    
+    /*  Never get here -- exists to suppress compiler warning */
+    return(0.0);
   }
 }
 
@@ -2015,6 +2022,9 @@ double kd_pdf_node_int_reggrid(const kernel_density *kd,
       return(kd->nodewgt[curnode] * kd->norm_tot * fac * exp(-d2/2.0));
     }
     }
+    
+    /*  Never get here -- exists to suppress compiler warning */
+    return(0.0);
   }
 }
 
@@ -2208,32 +2218,93 @@ double kd_pdf_node_reggrid(const kernel_density *kd,
       return(kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0));
     }
     }
+    
+    /*  Never get here -- exists to suppress compiler warning */
+    return(0.0);
   }
 }
 
 /*********************************************************************/
 /* Vectorized version of kd_pdf_int                                  */
 /*********************************************************************/
-void kd_pdf_int_vec(const kernel_density *kd, const double *x, 
-		    const unsigned long *dims, const unsigned long ndim,
-		    const unsigned long npt, const double reltol, 
-		    const double abstol, double *pdf
+void kd_pdf_int_vec(const kernel_density *kd,
+		    const double *x,
+		    const double *bandwidth,
+		    const unsigned long *dims,
+		    const unsigned long ndim,
+		    const unsigned long npt,
+		    const double reltol, 
+		    const double abstol,
+		    double *pdf
 #ifdef DIAGNOSTIC
-		    , unsigned long *nodecheck, unsigned long *leafcheck,
+		    , unsigned long *nodecheck,
+		    unsigned long *leafcheck,
 		    unsigned long *termcheck
 #endif
 		    ) {
 
-  unsigned long i;
+  unsigned long i, j;
+  kernel_density kd_tmp;
+  double *bw_tmp;
+  
+  if (!bandwidth) {
+
+    /* Case with constant bandwidth */
 #pragma omp parallel private(i)
-  {
-    #pragma omp for
-    for (i=0; i<npt; i++) {
-      pdf[i] = kd_pdf_int(kd, x+i*ndim, dims, ndim, reltol, abstol
+    {
+#pragma omp for
+      for (i=0; i<npt; i++) {
+	pdf[i] = kd_pdf_int(kd, x+i*ndim, dims, ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-			  , nodecheck+i, leafcheck+i, termcheck+i
+			    , nodecheck+i, leafcheck+i, termcheck+i
 #endif
-			  );
+			    );
+      }
+    }
+
+  } else {
+    
+    /* Case with varying bandwidth. The only part that is tricky here
+       is that, in parallel, each thread needs to have a version of
+       the kernel_density object that is identical to the original
+       except for the values of kd->h, kd->norm, and kd->norm_tot. To
+       accomplish this, we first copy kd to a temporary variable
+       kd_tmp outside the loop; we declare that this variable is
+       private inside the loop. Then each time we go through the loop
+       we point kd_tmp.h to a newly-allocated array, whose value we
+       are free to change without interfering with the other threads. */
+#pragma omp parallel private(i, j, kd_tmp, bw_tmp)
+    {
+
+      /* Make our private copy of kd, and allocate memory for its
+	 bandwidth array; also allocate memory for a temporary
+	 bandwidth array, and initialize it. */
+      kd_tmp = *kd;
+      kd_tmp.h = calloc(kd->tree->ndim, sizeof(double));
+      bw_tmp = calloc(kd->tree->ndim, sizeof(double));
+      for (j=0; j<ndim; j++) bw_tmp[j] = kd->h[j];
+      
+#pragma omp for
+      for (i=0; i<npt; i++) {
+	
+	/* Change bandwidth in our private copy of kd; note that we
+	   have to properly map the input bandwidth, which is missing
+	   certain dimensions, to the dimensions that remain */
+	for (j=0; j<ndim; j++) bw_tmp[dims[j]] = bandwidth[i*ndim+j];
+	kd_change_bandwidth(bw_tmp, &kd_tmp);
+
+	/* Evauluate the PDF with the modified bandwidth */
+	pdf[i] = kd_pdf_int(&kd_tmp, x+i*ndim, dims, ndim, reltol, abstol
+#ifdef DIAGNOSTIC
+			    , nodecheck+i, leafcheck+i, termcheck+i
+#endif
+			    );
+
+      }
+
+      /* Free the local storage we allocated */
+      free(kd_tmp.h);
+      free(bw_tmp);
     }
   }
 }
@@ -2243,25 +2314,73 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
 /* Function to evaluate the PDF using a kernel_density object for a  */
 /* vector of inputs positions                                        */
 /*********************************************************************/
-void kd_pdf_vec(const kernel_density *kd, const double *x, 
-		const unsigned long npt, const double reltol, 
-		const double abstol, double *pdf
+void kd_pdf_vec(const kernel_density *kd,
+		const double *x,
+		const double *bandwidth,
+		const unsigned long npt,
+		const double reltol,
+		const double abstol,
+		double *pdf
 #ifdef DIAGNOSTIC
-		, unsigned long *nodecheck, unsigned long *leafcheck,
+		, unsigned long *nodecheck,
+		unsigned long *leafcheck,
 		unsigned long *termcheck
 #endif
 		) {
 
-  unsigned long i;
-#pragma omp parallel private(i)
-  {
-  #pragma omp for
-    for (i=0; i<npt; i++) {
-      pdf[i] = kd_pdf(kd, x+i*kd->tree->ndim, reltol, abstol
+  kernel_density kd_tmp;
+
+  if (!bandwidth) {
+
+    /* Case with constant bandwidth */
+    /*#pragma omp parallel private(i)*/
+    {
+#pragma omp parallel for
+      for (unsigned long i=0; i<npt; i++) {
+	pdf[i] = kd_pdf(kd, x+i*kd->tree->ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-		      , nodecheck+i, leafcheck+i, termcheck+i
+			, nodecheck+i, leafcheck+i, termcheck+i
 #endif
-		      );
+			);
+      }
+    }
+
+  } else {
+
+    /* Case with varying bandwidth. The only part that is tricky here
+       is that, in parallel, each thread needs to have a version of
+       the kernel_density object that is identical to the original
+       except for the values of kd->h, kd->norm, and kd->norm_tot. To
+       accomplish this, we first copy kd to a temporary variable
+       kd_tmp outside the loop; we declare that this variable is
+       private inside the loop. Then each time we go through the loop
+       we point kd_tmp.h to a newly-allocated array, whose value we
+       are free to change without interfering with the other threads. */
+    /*#pragma omp parallel private(i, kd_tmp)*/
+#pragma omp parallel private(kd_tmp)
+    {
+
+      /* Make our private copy of kd, and allocate memory for its
+	 bandwidth array */
+      kd_tmp = *kd;
+      kd_tmp.h = calloc(kd->tree->ndim, sizeof(double));
+      
+#pragma omp parallel for
+      for (unsigned long i=0; i<npt; i++) {
+	
+	/* Change bandwidth in our private copy of kd  */
+	kd_change_bandwidth(bandwidth+i*kd->tree->ndim, &kd_tmp);
+
+	/* Evauluate the PDF with the modified bandwidth */
+	pdf[i] = kd_pdf(&kd_tmp, x+i*kd->tree->ndim, reltol, abstol
+#ifdef DIAGNOSTIC
+			, nodecheck+i, leafcheck+i, termcheck+i
+#endif
+			);
+      }
+
+      /* Free the local storage we allocated */
+      free(kd_tmp.h);
     }
   }
 }

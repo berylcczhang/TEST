@@ -375,12 +375,18 @@ void kd_pdf_int_reggrid(const kernel_density *kd, const double *xfixed,
 */
 
 
-void kd_pdf_int_vec(const kernel_density *kd, const double *x, 
-		    const unsigned long *dims, const unsigned long ndim,
-		    const unsigned long npt, const double reltol, 
-		    const double abstol, double *pdf
+void kd_pdf_int_vec(const kernel_density *kd,
+		    const double *x, 
+		    const double *bandwidth,
+		    const unsigned long *dims,
+		    const unsigned long ndim,
+		    const unsigned long npt,
+		    const double reltol, 
+		    const double abstol,
+		    double *pdf
 #ifdef DIAGNOSTIC
-		    , unsigned long *nodecheck, unsigned long *leafcheck,
+		    , unsigned long *nodecheck,
+		    unsigned long *leafcheck,
 		    unsigned long *termcheck
 #endif
 		    );
@@ -394,6 +400,13 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
          an ndim*npt element array giving the position at which the PDF is
          to be evaluated; element x[i*ndim+j] is the jth element of
          the ith point
+      INPUT bandwidth
+         if this is not NULL, it must be an ndim*npt element array
+         giving the bandwidths to be used in evaluating the PDF for
+         each input point; bandwidth[i*ndim+j] is the bandwidth
+         that will be used for the jth dimension and the ith point;
+         if this is NULL, then the evaluation will use the bandwidth
+         stored in the kernel_density object for all points
       INPUT dims
          an ndim element array specifying the dimensions included in x
       INPUT ndim
@@ -427,6 +440,13 @@ void kd_pdf_int_vec(const kernel_density *kd, const double *x,
 
    Returns:
       Nothing
+
+   Notes:
+      Setting the argument bandwidth to a value other than NULL has
+      the same effect as calling kd_change_bandwidth followed by kd_pdf_int
+      npt times, then calling change bandwidth to set the bandwidth
+      back to its original value. However, this routine executes this
+      procedure in a manner that is thread-safe.
 */
 
 
@@ -519,11 +539,16 @@ void kd_pdf_reggrid(const kernel_density *kd, const double *xfixed,
       xgridhi[i] is ignored.
 */
 
-void kd_pdf_vec(const kernel_density *kd, const double *x, 
-		const unsigned long npt, const double reltol, 
-		const double abstol, double *pdf
+void kd_pdf_vec(const kernel_density *kd,
+		const double *x,
+		const double *bandwidth,
+		const unsigned long npt,
+		const double reltol,
+		const double abstol,
+		double *pdf
 #ifdef DIAGNOSTIC
-		, unsigned long *nodecheck, unsigned long *leafcheck,
+		, unsigned long *nodecheck,
+		unsigned long *leafcheck,
 		unsigned long *termcheck
 #endif
 		);
@@ -540,6 +565,13 @@ void kd_pdf_vec(const kernel_density *kd, const double *x,
          an ndim*npt element array giving the positions at which the
          PDF is to be evaluated; element x[i*ndim+j] is the jth
          coordinate of the ith input data point
+      INPUT bandwidth
+         if this is not NULL, it must be an ndim*npt element array
+         giving the bandwidths to be used in evaluating the PDF for
+         each input point; bandwidth[i*ndim+j] is the bandwidth
+         that will be used for the jth dimension and the ith point;
+         if this is NULL, then the evaluation will use the bandwidth
+         stored in the kernel_density object for all points
       INPUT npt
          number of input positions
       INPUT reltol
@@ -564,6 +596,13 @@ void kd_pdf_vec(const kernel_density *kd, const double *x,
 
    Returns:
       Nothing
+
+   Notes:
+      Setting the argument bandwidth to a value other than NULL has
+      the same effect as calling kd_change_bandwidth followed by kd_pdf
+      npt times, then calling change bandwidth to set the bandwidth
+      back to its original value. However, this routine executes this
+      procedure in a manner that is thread-safe.
 */
 
 

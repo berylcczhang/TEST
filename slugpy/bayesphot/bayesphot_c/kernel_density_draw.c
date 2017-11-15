@@ -662,6 +662,9 @@ double get_node_wgt(const kernel_density *kd, const double *x,
       return(kd->nodewgt[curnode] * kd->norm_tot * exp(-d2/2.0));
     }
     }
+
+    /* Dummy return statement to suppress compiler warning; never executed */
+    return 0.0;
   }
 }
 
@@ -683,8 +686,8 @@ int assign_idx(const kernel_density *kd,
 	       const size_t *rndsort,
 	       const double *pointwgt,
 	       size_t *idxmap) {
-  unsigned long i, j, jsave, k, ksave;
-  double wgt, cumwgt = 0, cumwgt1;
+  unsigned long i, j, jsave, k, ksave = 0;
+  double wgt, cumwgt = 0, cumwgt1 = 0;
 
   /* Loop over the random numbers, in sorted order */
   for (i=0, jsave=-1, j=0; i<nsample; i++) {

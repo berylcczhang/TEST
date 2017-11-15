@@ -1192,9 +1192,9 @@ class cluster_slug(object):
     # the same name. They all have in common that they accept an
     # additional keyword argument, filters, which specifies the filter
     # set to use.
-    ##################################################################
-
-    def logL(self, physprop, photprop, photerr=None, filters=None):
+    ##################################################################    
+    def logL(self, physprop, photprop, photerr=None, filters=None,
+             margindim=None):
         """
         This function returns the natural log of the likelihood
         function evaluated at a particular log mass, log age,
@@ -1221,6 +1221,16 @@ class cluster_slug(object):
               only 1 set of photometric filters has been defined for
               the cluster_slug object, that set will be used by
               default
+           margindim : int | arraylike of ints | None
+              The index or indices of the physical or photometric
+              properties to be maginalized over, numbered from 0 -
+              nphys-1 for physical properties and from nphys - nfilter +
+              nfilter - 1 for photometric properties. If this keyword is
+              set, then physprop and/or photprop should have fewer
+              than nphys or nphot elements due to the omission of
+              marginalised dimensions. If all physical or photometric
+              dimensions are marginalised out, that corresponding
+              argument for physprop or photprop should be set to None
 
         Returns:
            logL : float or arraylike
@@ -1234,7 +1244,8 @@ class cluster_slug(object):
             # stored, just use it
             if len(self.__filtersets) == 1:
                 return self.__filtersets[0]['bp']. \
-                    logL(physprop, photprop, photerr)
+                    logL(physprop, photprop, photerr=photerr,
+                         margindim=margindim)
             else:
                 raise ValueError("must specify a filter set")
 
@@ -1250,7 +1261,8 @@ class cluster_slug(object):
                     break
 
             # Call the logL method
-            return bp.logL(physprop, photprop, photerr)
+            return bp.logL(physprop, photprop, photerr=photerr,
+                           margindim=margindim)
 
 
     def mpdf(self, idx, photprop, photerr=None, ngrid=128,
