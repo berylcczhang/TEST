@@ -895,7 +895,7 @@ class cluster_slug(object):
             elif pobs is not None:
                 pobs_nonzero = pobs > 0.0
             else:
-                pobs_nonzero = np.ones(len(self.__dataset),
+                pobs_nonzero = np.ones(len(dataset),
                                        dtype=np.bool)
 
             # Get list of clusters with p_obs > 0 and prior > 0; store
