@@ -2273,9 +2273,9 @@ void kd_pdf_int_vec(const kernel_density *kd,
        private inside the loop. Then each time we go through the loop
        we point kd_tmp.h to a newly-allocated array, whose value we
        are free to change without interfering with the other threads. */
-#pragma omp parallel private(i, j, kd_tmp, bw_tmp)
-    {
-
+#pragma omp parallel for private(i, j, kd_tmp, bw_tmp)
+    for (i=0; i<npt; i++) {
+	
       /* Make our private copy of kd, and allocate memory for its
 	 bandwidth array; also allocate memory for a temporary
 	 bandwidth array, and initialize it. */
@@ -2283,24 +2283,19 @@ void kd_pdf_int_vec(const kernel_density *kd,
       kd_tmp.h = calloc(kd->tree->ndim, sizeof(double));
       bw_tmp = calloc(kd->tree->ndim, sizeof(double));
       for (j=0; j<ndim; j++) bw_tmp[j] = kd->h[j];
-      
-#pragma omp for
-      for (i=0; i<npt; i++) {
-	
-	/* Change bandwidth in our private copy of kd; note that we
-	   have to properly map the input bandwidth, which is missing
-	   certain dimensions, to the dimensions that remain */
-	for (j=0; j<ndim; j++) bw_tmp[dims[j]] = bandwidth[i*ndim+j];
-	kd_change_bandwidth(bw_tmp, &kd_tmp);
 
-	/* Evauluate the PDF with the modified bandwidth */
-	pdf[i] = kd_pdf_int(&kd_tmp, x+i*ndim, dims, ndim, reltol, abstol
+      /* Change bandwidth in our private copy of kd; note that we
+	 have to properly map the input bandwidth, which is missing
+	 certain dimensions, to the dimensions that remain */
+      for (j=0; j<ndim; j++) bw_tmp[dims[j]] = bandwidth[i*ndim+j];
+      kd_change_bandwidth(bw_tmp, &kd_tmp);
+
+      /* Evauluate the PDF with the modified bandwidth */
+      pdf[i] = kd_pdf_int(&kd_tmp, x+i*ndim, dims, ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-			    , nodecheck+i, leafcheck+i, termcheck+i
+			  , nodecheck+i, leafcheck+i, termcheck+i
 #endif
-			    );
-
-      }
+			  );
 
       /* Free the local storage we allocated */
       free(kd_tmp.h);
@@ -2357,28 +2352,23 @@ void kd_pdf_vec(const kernel_density *kd,
        we point kd_tmp.h to a newly-allocated array, whose value we
        are free to change without interfering with the other threads. */
     /*#pragma omp parallel private(i, kd_tmp)*/
-#pragma omp parallel private(kd_tmp)
-    {
-
+#pragma omp parallel for private(kd_tmp)
+    for (unsigned long i=0; i<npt; i++) {
+	
       /* Make our private copy of kd, and allocate memory for its
 	 bandwidth array */
       kd_tmp = *kd;
       kd_tmp.h = calloc(kd->tree->ndim, sizeof(double));
-      
-#pragma omp parallel for
-      for (unsigned long i=0; i<npt; i++) {
-	
-	/* Change bandwidth in our private copy of kd  */
-	kd_change_bandwidth(bandwidth+i*kd->tree->ndim, &kd_tmp);
 
-	/* Evauluate the PDF with the modified bandwidth */
-	pdf[i] = kd_pdf(&kd_tmp, x+i*kd->tree->ndim, reltol, abstol
+      /* Change bandwidth in our private copy of kd  */
+      kd_change_bandwidth(bandwidth+i*kd->tree->ndim, &kd_tmp);
+
+      /* Evauluate the PDF with the modified bandwidth */
+      pdf[i] = kd_pdf(&kd_tmp, x+i*kd->tree->ndim, reltol, abstol
 #ifdef DIAGNOSTIC
-			, nodecheck+i, leafcheck+i, termcheck+i
+		      , nodecheck+i, leafcheck+i, termcheck+i
 #endif
-			);
-      }
-
+		      );
       /* Free the local storage we allocated */
       free(kd_tmp.h);
     }
