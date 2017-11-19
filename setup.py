@@ -25,8 +25,8 @@ try:  # Python 3.x
 except ImportError:  # Python 2.x
     from distutils.command.build_py import build_py
 
-from despotic import __version__ as version
-tagname = "despotic_%s" % (version)
+from slugpy import __version__ as version
+tagname = "slugpy_%s" % (version)
 
 download_url = "https://bitbucket.org/krumholz/slug2/"
 
