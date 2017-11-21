@@ -2313,8 +2313,8 @@ class bp(object):
                     griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
                                     float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
                 grid_out = np.squeeze(
-                    np.array(np.meshgrid(*griddims,
-                                         indexing='ij'), dtype=c_double))
+                    np.stack(np.meshgrid(*griddims,
+                                         indexing='ij'), axis=-1))
                 out_shape = grid_out[0, ...].shape
                 qmin_tmp \
                     = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
