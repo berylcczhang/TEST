@@ -1357,12 +1357,11 @@ class bp(object):
             if (np.asarray(physprop).shape[-1] != nphys):
                 raise ValueError("need " + str(nphys) + 
                                  " physical properties!")
-            else:
-                if physprop is not None:
-                    raise ValueError(
-                        "input includes physical properties, but "
-                        "all physical properties are marginalised "
-                        "out!")
+        if nphys == 0 and physprop is not None:
+            raise ValueError(
+                "input includes physical properties, but "
+                "all physical properties are marginalised "
+                "out!")
                 
         if nphot > 1:
             if (np.asarray(photprop).shape[-1] != nphot):
@@ -1372,26 +1371,49 @@ class bp(object):
                 if (np.asarray(photerr).shape[-1] != nphot):
                     raise ValueError("need " + str(nphot) +
                                      " photometric errors!")
+        if nphot == 0 and photprop is not None:
+            raise ValueError(
+                "input includes photometric properties, but "
+                "all photometric properties are marginalised "
+                "out!")
+        if nphot == 0 and photerr is not None:
+            raise ValueError(
+                "input includes photometric errors, but "
+                "all photometric properties are marginalised "
+                "out!")
+
+        # Handle special case of a single photometric or physical
+        # quantity; in this case make sure we have a trailing
+        # dimension of 1 so that all the fancy array manipulation
+        # below works correctly
+        if nphys == 1 and (np.asarray(physprop).shape[-1] != 1
+                           or np.asarray(physprop).ndim == 1):
+            physprop_ = np.array(physprop).\
+                        reshape(np.asarray(physprop).shape+(1,))
         else:
-            if photprop is not None:
-                raise ValueError(
-                    "input includes photometric properties, but "
-                    "all photometric properties are marginalised "
-                    "out!")
-            if photerr is not None:
-                raise ValueError(
-                    "input includes photometric errors, but "
-                    "all photometric properties are marginalised "
-                    "out!")
+            physprop_ = physprop
+        if nphot == 1 and (np.asarray(photprop).shape[-1] != 1
+                           or np.asarray(photprop).ndim == 1):
+            photprop_ = np.array(photprop).\
+                        reshape(np.asarray(photprop).shape+(1,))
+        else:
+            photprop_ = photprop
+        if nphot == 1 and photerr is not None:
+            if np.asarray(photerr).shape[-1] != 1 \
+               or np.asarray(photerr).ndim == 1:
+                photerr_ = np.array(photerr).\
+                        reshape(np.asarray(photerr).shape+(1,))
+        else:
+            photerr_ = photerr
 
         # Figure out number of distinct input sets of physical and
         # photometric properties in the input data
         if nphys > 0:
-            nphys_in = np.asarray(physprop).size // nphys
+            nphys_in = np.asarray(physprop_).size // nphys
         else:
             nphys_in = 0
         if nphot > 0:
-            nphot_in = np.asarray(photprop).size // nphot
+            nphot_in = np.asarray(photprop_).size // nphot
         else:
             nphot_in = 0
 
@@ -1399,28 +1421,28 @@ class bp(object):
         # tricky to figure out, since one or more of the inputs
         # (physprop, photprop, and photerr) can be None. We therefore
         # need to consider several possible cases.
-        if physprop is not None and photprop is not None and \
-           photerr is not None:
+        if physprop_ is not None and photprop_ is not None and \
+           photerr_ is not None:
             pdf = np.zeros(
-                np.broadcast(np.atleast_2d(physprop)[..., 0],
-                             np.atleast_2d(photprop)[..., 0],
-                             np.atleast_2d(photerr)[..., 0]).shape,
+                np.broadcast(np.atleast_2d(physprop_)[..., 0],
+                             np.atleast_2d(photprop_)[..., 0],
+                             np.atleast_2d(photerr_)[..., 0]).shape,
                 dtype=c_double)
-        elif physprop is not None and photprop is not None:
+        elif physprop_ is not None and photprop_ is not None:
             pdf = np.zeros(
-                np.broadcast(np.atleast_2d(physprop)[..., 0],
-                             np.atleast_2d(photprop)[..., 0]).shape,
+                np.broadcast(np.atleast_2d(physprop_)[..., 0],
+                             np.atleast_2d(photprop_)[..., 0]).shape,
                 dtype=c_double)
-        elif physprop is not None:
-            pdf = np.zeros(np.atleast_2d(physprop)[..., 0].shape,
+        elif physprop_ is not None:
+            pdf = np.zeros(np.atleast_2d(physprop_)[..., 0].shape,
                            dtype=c_double)
-        elif photprop is not None and photerr is not None:
+        elif photprop_ is not None and photerr_ is not None:
             pdf = np.zeros(
-                np.broadcast(np.atleast_2d(photprop)[..., 0],
-                             np.atleast_2d(photerr)[..., 0]).shape,
+                np.broadcast(np.atleast_2d(photprop_)[..., 0],
+                             np.atleast_2d(photerr_)[..., 0]).shape,
                 dtype=c_double)
-        elif photprop is not None:
-            pdf = np.zeros(np.atleast_2d(photprop)[..., 0].shape,
+        elif photprop_ is not None:
+            pdf = np.zeros(np.atleast_2d(photprop_)[..., 0].shape,
                            dtype=c_double)            
         if self.__diag_mode:
             nodecheck = np.zeros(pdf.shape, dtype=c_ulong)
@@ -1430,19 +1452,19 @@ class bp(object):
         # Make an array suitable for passing data to c routines
         cdata = np.zeros(pdf.shape + (nphys+nphot,),
                          dtype=c_double)
-        if nphys > 0:
+        if nphys != 0:
             cdata[..., :nphys] \
-                = np.vstack((physprop,) * (pdf.size//nphys_in)). \
+                = np.vstack((physprop_,) * (pdf.size//nphys_in)). \
                 reshape(cdata[..., :nphys].shape)
-        if nphot > 0:
+        if nphot != 0:
             cdata[..., nphys:] \
-                = np.vstack((photprop,) * (pdf.size//nphot_in)). \
+                = np.vstack((photprop_,) * (pdf.size//nphot_in)). \
                 reshape(cdata[..., nphys:].shape)
-        if photerr is not None:
+        if photerr_ is not None:
             cbandwidth = np.zeros(pdf.shape + (nphot,),
                                   dtype=c_double)
             cbandwidth[...] = np.sqrt(self.__bandwidth**2 +
-                                      photerr**2)
+                                      photerr_**2)
             cbw_ptr = cbandwidth.ctypes.data_as(POINTER(c_double))
         else:
             cbw_ptr = None
@@ -2188,7 +2210,7 @@ class bp(object):
                 # No fixed points, no marginalized dimensions, so just
                 # call kd_pdf_vec
                 self.__clib.kd_pdf_vec(
-                    self.__kd, np.ravel(grid_out),
+                    self.__kd, np.ravel(grid_out), None,
                     grid_out.size//self.ndim,
                     self.reltol, self.abstol,
                     np.ravel(pdf))
