@@ -1340,7 +1340,8 @@ class bp(object):
                                         photerr=photerr)
 
         # Safety check: make sure all the dimensions of the input
-        # arrays match what we expect
+        # arrays match what we expect. If we are marginalizing over
+        # some dimensions, extract the dimensions we want to keep
         if margindim is not None:
             nphys_margin = np.sum(np.asarray(margindim) <
                                   self.__nphys)
@@ -1350,9 +1351,11 @@ class bp(object):
             keepdims = np.array(
                 list(set(range(self.ndim)) - set(margindim)),
                 dtype=c_ulong)
+            bw = self.__bandwidth[keepdims]
         else:
             nphys = self.__nphys
             nphot = self.__nphot
+            bw = self.__bandwidth
         if nphys > 1:
             if (np.asarray(physprop).shape[-1] != nphys):
                 raise ValueError("need " + str(nphys) + 
@@ -1462,9 +1465,8 @@ class bp(object):
                 reshape(cdata[..., nphys:].shape)
         if photerr_ is not None:
             cbandwidth = np.zeros(pdf.shape + (nphot,),
-                                  dtype=c_double)
-            cbandwidth[...] = np.sqrt(self.__bandwidth**2 +
-                                      photerr_**2)
+                                  dtype=c_double)                
+            cbandwidth[...] = np.sqrt(bw**2 + photerr_**2)
             cbw_ptr = cbandwidth.ctypes.data_as(POINTER(c_double))
         else:
             cbw_ptr = None
@@ -1487,12 +1489,12 @@ class bp(object):
             # We are marginalizing, so call kd_pdf_int
             if not self.__diag_mode:
                 self.__clib.kd_pdf_int_vec(
-                    kd_tmp, np.ravel(cdata), keepdims,
+                    self.__kd, np.ravel(cdata), cbw_ptr, keepdims,
                     keepdims.size, pdf.size, self.reltol,
                     self.abstol, np.ravel(pdf))
             else:
                 self.__clib.kd_pdf_int_vec(
-                    kd_tmp, np.ravel(cdata), keepdims,
+                    self.__kd, np.ravel(cdata), cbw_ptr, keepdims,
                     keepdims.size, pdf.size, self.reltol,
                     self.abstol, np.ravel(pdf),
                     np.ravel(nodecheck), np.ravel(leafcheck),
