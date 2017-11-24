@@ -214,16 +214,6 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
     exit(1);
   }
 
-#if 0
-  /* Allocate swap space */
-  if (dsize > 0) {
-    if (!(dswap = malloc(dsize))) {
-      fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
-      exit(1);
-    }
-  }
-#endif
-
   /* Figure out the dimensions of the tree */
   tree->ndim = ndim;
   for (n=npt, tree->nodes=1, tree->leaves=1, tree->levels=1; 
@@ -266,14 +256,6 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
   }
 
 
-  /* As a safety measure, initialize all nodes to have no points;
-     this is important for breadth-first traversals of the tree,
-     where we may encounter nodes with no points */
-#if 0
-  for (unsigned long i=1; i<=tree->nodes; i++)
-    tree->tree[i].npt = 0;
-#endif
-
   /* Initialize the sort map */
   if (sortmap) {
 #pragma omp parallel for
@@ -302,7 +284,6 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
     tree->tree[curnode].xbnd[1][i] = tree->tree[curnode].xlim[1][i];
   }
 
-#if 1
     /* Now build the tree using a breadth-first traversal, starting at
        the root level, so that construction can be parallelized */
   for (n=1; n<tree->levels; n++, curnode *= 2) {
@@ -414,120 +395,6 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
       }
     }
   }
-  
-#else
-  /* Now build the rest of the tree */
-  while (1) {
-
-    /* See if we should be a leaf or a parent */
-    if (tree->tree[curnode].npt <= leafsize) {
-
-      /* We are a leaf; mark us as having no split, then move to next node */
-      tree->tree[curnode].splitdim = -1;
-      SETNEXT(curnode);
-
-    } else {
-
-      /* We are a parent */
-
-      /* Figure out which dimension to split along */
-      if (curnode != ROOT) {
-	tree->tree[curnode].splitdim = 
-	  minsplit + 
-	  (tree->tree[PARENT(curnode)].splitdim + 1) % 
-	  (tree->ndim - minsplit);
-      } else {
-	tree->tree[curnode].splitdim = minsplit;
-      }
-
-      /* Partition the points along the split dimension */
-      partition_node(&(tree->tree[curnode]), tree->ndim, dswap, dsize,
-		     sortmap +
-		     (tree->tree[curnode].x - tree->tree[ROOT].x)/ndim);
-
-      /* Set the bounding box on the child nodes */
-      for (i=0; i<tree->ndim; i++) {
-	if (i==tree->tree[curnode].splitdim) {
-	  /* In splitting dimension, split at middle index */
-	  idx = ndim*((tree->tree[curnode].npt-1)/2) + 
-	    tree->tree[curnode].splitdim;
-	  tree->tree[LEFT(curnode)].xlim[0][i] = 
-	    tree->tree[curnode].xlim[0][i];
-	  tree->tree[LEFT(curnode)].xlim[1][i] = 
-	    tree->tree[curnode].x[idx];
-	  tree->tree[RIGHT(curnode)].xlim[0][i] = 
-	    tree->tree[curnode].x[idx];
-	  tree->tree[RIGHT(curnode)].xlim[1][i] =
-	    tree->tree[curnode].xlim[1][i];
-	} else {
-	  /* Every other dimension just copies values */
-	  tree->tree[LEFT(curnode)].xlim[0][i] = 
-	    tree->tree[curnode].xlim[0][i];
-	  tree->tree[LEFT(curnode)].xlim[1][i] = 
-	    tree->tree[curnode].xlim[1][i];
-	  tree->tree[RIGHT(curnode)].xlim[0][i] = 
-	    tree->tree[curnode].xlim[0][i];
-	  tree->tree[RIGHT(curnode)].xlim[1][i] = 
-	    tree->tree[curnode].xlim[1][i];
-	}
-      }
-
-      /* Set counters and pointers for child nodes */
-      tree->tree[LEFT(curnode)].npt = (tree->tree[curnode].npt+1) / 2;
-      tree->tree[RIGHT(curnode)].npt = tree->tree[curnode].npt / 2;
-      tree->tree[LEFT(curnode)].x = tree->tree[curnode].x;
-      tree->tree[RIGHT(curnode)].x = tree->tree[curnode].x + 
-	tree->tree[LEFT(curnode)].npt*tree->ndim;
-      tree->tree[LEFT(curnode)].dptr = tree->tree[curnode].dptr;
-      tree->tree[RIGHT(curnode)].dptr = 
-	((char *) tree->tree[curnode].dptr) +
-	dsize*tree->tree[LEFT(curnode)].npt;
-
-      /* Get actual data limits on child nodes */
-      if (tree->tree[LEFT(curnode)].npt > 0) {
-	for (i=0; i<tree->ndim; i++) 
-	  tree->tree[LEFT(curnode)].xbnd[0][i] =
-	    tree->tree[LEFT(curnode)].xbnd[1][i] = 
-	    tree->tree[LEFT(curnode)].x[i];
-	for (n=1; n<tree->tree[LEFT(curnode)].npt; n++) {
-	  for (i=0; i<ndim; i++) {
-	    tree->tree[LEFT(curnode)].xbnd[0][i] 
-	      = fmin(tree->tree[LEFT(curnode)].xbnd[0][i], 
-		     tree->tree[LEFT(curnode)].x[n*tree->ndim+i]);
-	    tree->tree[LEFT(curnode)].xbnd[1][i] 
-	      = fmax(tree->tree[LEFT(curnode)].xbnd[1][i], 
-		     tree->tree[LEFT(curnode)].x[n*tree->ndim+i]);
-	  }
-	}
-      }
-      if (tree->tree[RIGHT(curnode)].npt > 0) {
-	for (i=0; i<tree->ndim; i++) 
-	  tree->tree[RIGHT(curnode)].xbnd[0][i] =
-	    tree->tree[RIGHT(curnode)].xbnd[1][i] = 
-	    tree->tree[RIGHT(curnode)].x[i];
-	for (n=1; n<tree->tree[RIGHT(curnode)].npt; n++) {
-	  for (i=0; i<ndim; i++) {
-	    tree->tree[RIGHT(curnode)].xbnd[0][i] 
-	      = fmin(tree->tree[RIGHT(curnode)].xbnd[0][i], 
-		     tree->tree[RIGHT(curnode)].x[n*tree->ndim+i]);
-	    tree->tree[RIGHT(curnode)].xbnd[1][i] 
-	      = fmax(tree->tree[RIGHT(curnode)].xbnd[1][i], 
-		     tree->tree[RIGHT(curnode)].x[n*tree->ndim+i]);
-	  }
-	}
-      }
-
-      /* Continue to next node */
-      curnode = LEFT(curnode);
-    }
-
-    /* Check if we're done */
-    if (curnode == ROOT) break;
-  }
-
-  /* Free memory */
-  if (dswap != NULL) free(dswap);
-#endif
   
   /* Return */
   return tree;
