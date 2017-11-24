@@ -2346,12 +2346,10 @@ void kd_pdf_vec(const kernel_density *kd,
        is that, in parallel, each thread needs to have a version of
        the kernel_density object that is identical to the original
        except for the values of kd->h, kd->norm, and kd->norm_tot. To
-       accomplish this, we first copy kd to a temporary variable
-       kd_tmp outside the loop; we declare that this variable is
-       private inside the loop. Then each time we go through the loop
-       we point kd_tmp.h to a newly-allocated array, whose value we
-       are free to change without interfering with the other threads. */
-    /*#pragma omp parallel private(i, kd_tmp)*/
+       accomplish this, we maintain a privde kd_tmp variable, which we
+       populate by copying from the global one, allocating memory for
+       a private bandwidth copy, and then changing that private copy
+       to have whatever bandwidth we need. */
 #pragma omp parallel for private(kd_tmp)
     for (unsigned long i=0; i<npt; i++) {
 	
@@ -2369,6 +2367,12 @@ void kd_pdf_vec(const kernel_density *kd,
 		      , nodecheck+i, leafcheck+i, termcheck+i
 #endif
 		      );
+      /*
+      printf("x =");
+      for (unsigned long j=0; j<kd->tree->ndim; j++)
+	printf(" %f", x[i*kd->tree->ndim+j]);
+      printf(", pdf = %f\n", pdf[i]);
+      */      
       /* Free the local storage we allocated */
       free(kd_tmp.h);
     }

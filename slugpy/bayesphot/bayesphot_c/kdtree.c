@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "geometry.h"
 #include "kdtree.h"
 
-
 /*********************************************************************/
 /* Routine to exchange a pair of points                              */
 /*********************************************************************/
@@ -202,7 +201,7 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
 		   unsigned long minsplit, unsigned long *sortmap) {
 
   unsigned long n, idx;
-  unsigned long i, curnode;
+  unsigned long curnode;
   KDtree *tree;
   void *dswap = NULL;
 
@@ -215,6 +214,7 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
     exit(1);
   }
 
+#if 0
   /* Allocate swap space */
   if (dsize > 0) {
     if (!(dswap = malloc(dsize))) {
@@ -222,6 +222,7 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
       exit(1);
     }
   }
+#endif
 
   /* Figure out the dimensions of the tree */
   tree->ndim = ndim;
@@ -240,36 +241,44 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
     exit(1);
   }
   tree->tree--; /* Offset by 1 so tree->tree[1] is the root node */
-  for (n=1; n<=tree->nodes; n++) {
-    if (!(tree->tree[n].xlim[0] = 
+#pragma omp parallel for
+  for (unsigned long i=1; i<=tree->nodes; i++) {
+    if (!(tree->tree[i].xlim[0] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
       fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
-    if (!(tree->tree[n].xlim[1] = 
+    if (!(tree->tree[i].xlim[1] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
       fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
-    if (!(tree->tree[n].xbnd[0] = 
+    if (!(tree->tree[i].xbnd[0] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
       fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
-    if (!(tree->tree[n].xbnd[1] = 
+    if (!(tree->tree[i].xbnd[1] = 
 	  (double *) calloc(tree->ndim, sizeof(double)))) {
       fprintf(stderr, "bayesphot: error: unable to allocate memory in build_tree\n");
       exit(1);
     }
   }
 
+
   /* As a safety measure, initialize all nodes to have no points;
      this is important for breadth-first traversals of the tree,
      where we may encounter nodes with no points */
-  for (i=1; i<=tree->nodes; i++) tree->tree[i].npt = 0;
+#if 0
+  for (unsigned long i=1; i<=tree->nodes; i++)
+    tree->tree[i].npt = 0;
+#endif
 
   /* Initialize the sort map */
-  if (sortmap) for (i=0; i<npt; i++) sortmap[i] = i;
+  if (sortmap) {
+#pragma omp parallel for
+    for (unsigned long i=0; i<npt; i++) sortmap[i] = i;
+  }
 
   /* Initialize data in the root node */
   curnode = ROOT;
@@ -278,21 +287,135 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
   tree->tree[curnode].dptr = dptr;
 
   /* Set bounding box for root node */
-  for (i=0; i<ndim; i++)
+  for (unsigned long i=0; i<ndim; i++)
     tree->tree[curnode].xlim[0][i] = tree->tree[curnode].xlim[1][i] = x[i];
   for (n=1; n<npt; n++) {
-    for (i=0; i<ndim; i++) {
+    for (unsigned long i=0; i<ndim; i++) {
       tree->tree[curnode].xlim[0][i] 
 	= fmin(tree->tree[curnode].xlim[0][i], x[n*tree->ndim+i]);
       tree->tree[curnode].xlim[1][i] 
 	= fmax(tree->tree[curnode].xlim[1][i], x[n*tree->ndim+i]);
     }
   }
-  for (i=0; i<ndim; i++) {
+  for (unsigned long i=0; i<ndim; i++) {
     tree->tree[curnode].xbnd[0][i] = tree->tree[curnode].xlim[0][i];
     tree->tree[curnode].xbnd[1][i] = tree->tree[curnode].xlim[1][i];
   }
 
+#if 1
+    /* Now build the tree using a breadth-first traversal, starting at
+       the root level, so that construction can be parallelized */
+  for (n=1; n<tree->levels; n++, curnode *= 2) {
+
+    /* Construction is parallel over nodes at this level */
+#pragma omp parallel for private(dswap)
+    for (unsigned long i=curnode; i<2*curnode; i++) {
+
+      /* See if we should be a leaf or a parent */
+      if (tree->tree[i].npt <= leafsize) {
+
+	/* We are a leaf; mark us as having no split, and mark our
+	   children as containing zero points */
+	tree->tree[i].splitdim = -1;
+	tree->tree[LEFT(i)].npt = 0;
+	tree->tree[RIGHT(i)].npt = 0;
+	
+      } else {
+
+	/* We are a parent */
+	  
+	/* Figure out which dimension to split along */
+	if (i != ROOT) {
+	  tree->tree[i].splitdim = 
+	    minsplit + 
+	    (tree->tree[PARENT(i)].splitdim + 1) % 
+	    (tree->ndim - minsplit);
+	} else {
+	  tree->tree[i].splitdim = minsplit;
+	}
+
+	/* Partition the points along the split dimension; provide
+	   swap space if needed */
+	if (dsize > 0) dswap = malloc(dsize); else dswap = NULL;
+	partition_node(&(tree->tree[i]), tree->ndim, dswap, dsize,
+		       sortmap +
+		       (tree->tree[i].x - tree->tree[ROOT].x)/ndim);
+	if (dsize > 0) free(dswap);	  
+	  
+	/* Set the bounding box on the child nodes */
+	for (unsigned long j=0; j<tree->ndim; j++) {
+	  if (j==tree->tree[i].splitdim) {
+	    /* In splitting dimension, split at middle index */
+	    idx = ndim*((tree->tree[i].npt-1)/2) + tree->tree[i].splitdim;
+	    tree->tree[LEFT(i)].xlim[0][j] = tree->tree[i].xlim[0][j];
+	    tree->tree[LEFT(i)].xlim[1][j] = tree->tree[i].x[idx];
+	    tree->tree[RIGHT(i)].xlim[0][j] = tree->tree[i].x[idx];
+	    tree->tree[RIGHT(i)].xlim[1][j] = tree->tree[i].xlim[1][j];
+	  } else {
+	    /* Every other dimension just copies values */
+	    tree->tree[LEFT(i)].xlim[0][j] = tree->tree[i].xlim[0][j];
+	    tree->tree[LEFT(i)].xlim[1][j] = tree->tree[i].xlim[1][j];
+	    tree->tree[RIGHT(i)].xlim[0][j] = tree->tree[i].xlim[0][j];
+	    tree->tree[RIGHT(i)].xlim[1][j] = tree->tree[i].xlim[1][j];
+	  }
+	}
+	  
+	/* Set counters and pointers for child nodes */
+	tree->tree[LEFT(i)].npt = (tree->tree[i].npt+1) / 2;
+	tree->tree[RIGHT(i)].npt = tree->tree[i].npt / 2;
+	tree->tree[LEFT(i)].x = tree->tree[i].x;
+	tree->tree[RIGHT(i)].x = tree->tree[i].x + 
+	  tree->tree[LEFT(i)].npt*tree->ndim;
+	tree->tree[LEFT(i)].dptr = tree->tree[i].dptr;
+	tree->tree[RIGHT(i)].dptr = 
+	  ((char *) tree->tree[i].dptr) +
+	  dsize*tree->tree[LEFT(i)].npt;
+
+	/* Get actual data limits on child nodes */
+	if (tree->tree[LEFT(i)].npt > 0) {
+	  for (unsigned long j=0; j<tree->ndim; j++) 
+	    tree->tree[LEFT(i)].xbnd[0][j] =
+	      tree->tree[LEFT(i)].xbnd[1][j] = 
+	      tree->tree[LEFT(i)].x[j];
+	  for (unsigned long k=1; k<tree->tree[LEFT(i)].npt; k++) {
+	    for (unsigned long j=0; j<ndim; j++) {
+	      tree->tree[LEFT(i)].xbnd[0][j] 
+		= fmin(tree->tree[LEFT(i)].xbnd[0][j], 
+		       tree->tree[LEFT(i)].x[k*tree->ndim+j]);
+	      tree->tree[LEFT(i)].xbnd[1][j] 
+		= fmax(tree->tree[LEFT(i)].xbnd[1][j], 
+		       tree->tree[LEFT(i)].x[k*tree->ndim+j]);
+	    }
+	  }
+	}
+	if (tree->tree[RIGHT(i)].npt > 0) {
+	  for (unsigned long j=0; j<tree->ndim; j++) 
+	    tree->tree[RIGHT(i)].xbnd[0][j] =
+	      tree->tree[RIGHT(i)].xbnd[1][j] = 
+	      tree->tree[RIGHT(i)].x[j];
+	  for (unsigned long k=1; k<tree->tree[RIGHT(i)].npt; k++) {
+	    for (unsigned long j=0; j<ndim; j++) {
+	      tree->tree[RIGHT(i)].xbnd[0][j] 
+		= fmin(tree->tree[RIGHT(i)].xbnd[0][j], 
+		       tree->tree[RIGHT(i)].x[k*tree->ndim+j]);
+	      tree->tree[RIGHT(i)].xbnd[1][j] 
+		= fmax(tree->tree[RIGHT(i)].xbnd[1][j], 
+		       tree->tree[RIGHT(i)].x[k*tree->ndim+j]);
+	    }
+	  }
+	}
+
+	/* If we are on the second to last level of the tree, mark
+	   that all children are leaves */
+	if (n == tree->levels-1) {
+	  tree->tree[LEFT(i)].splitdim = -1;
+	  tree->tree[RIGHT(i)].splitdim = -1;
+	}
+      }
+    }
+  }
+  
+#else
   /* Now build the rest of the tree */
   while (1) {
 
@@ -404,7 +527,8 @@ KDtree* build_tree(double *x, unsigned long ndim, unsigned long npt,
 
   /* Free memory */
   if (dswap != NULL) free(dswap);
-
+#endif
+  
   /* Return */
   return tree;
 }

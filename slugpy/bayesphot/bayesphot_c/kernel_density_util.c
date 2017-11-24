@@ -31,7 +31,7 @@ kernel_density* build_kd(double *x, unsigned long ndim,
 			 unsigned long leafsize, double *bandwidth, 
 			 kernel_type ktype, unsigned long minsplit,
 			 unsigned long *sortmap) {
-  unsigned long i, j, curnode;
+  unsigned long curnode;
   double ds_n, hprod, wgttot=0.0;
   kernel_density *kd;
 
@@ -46,7 +46,7 @@ kernel_density* build_kd(double *x, unsigned long ndim,
   }
 
   /* Record data describing kernel */
-  for (i=0; i<ndim; i++) kd->h[i] = bandwidth[i];
+  for (unsigned long i=0; i<ndim; i++) kd->h[i] = bandwidth[i];
   kd->ktype = ktype;
 
   /* Surface element factor for an n-sphere */
@@ -55,7 +55,7 @@ kernel_density* build_kd(double *x, unsigned long ndim,
   /* Compute the normalization factor for the kernel around each
      point; this is defined as norm = 1/ \int K(z,h) dV */
   hprod = 1.0;
-  for (i=0; i<ndim; i++) hprod *= bandwidth[i];
+  for (unsigned long i=0; i<ndim; i++) hprod *= bandwidth[i];
   switch (ktype) {
   case epanechnikov: {
     /* K(z, h) = 1 - z^2/h^2, z < h */
@@ -78,7 +78,8 @@ kernel_density* build_kd(double *x, unsigned long ndim,
   if (wgt == NULL) {
     kd->norm_tot = kd->norm / npt;
   } else {
-    for (i=0; i<npt; i++) wgttot += wgt[i];
+#pragma omp parallel for reduction(+:wgttot)
+    for (unsigned long i=0; i<npt; i++) wgttot += wgt[i];
     kd->norm_tot = kd->norm / wgttot;
   }
 
@@ -106,10 +107,11 @@ kernel_density* build_kd(double *x, unsigned long ndim,
     curnode = LEFT(curnode);
 
   /* Traverse the leaves of the tree, adding up the weight in each */
-  for (i=curnode; i<2*curnode; i++) {
+#pragma omp parallel for
+  for (unsigned long i=curnode; i<2*curnode; i++) {
     if (wgt != NULL) {
       kd->nodewgt[i] = 0.0;  
-      for (j=0; j<kd->tree->tree[i].npt; j++)
+      for (unsigned long j=0; j<kd->tree->tree[i].npt; j++)
 	kd->nodewgt[i] += 
 	  ((double *) kd->tree->tree[i].dptr)[j];
     } else {
@@ -121,12 +123,13 @@ kernel_density* build_kd(double *x, unsigned long ndim,
      children */
   curnode = PARENT(curnode);
   while (curnode != 0) {
-    for (i=curnode; i<2*curnode; i++) {
+#pragma omp parallel for
+    for (unsigned long i=curnode; i<2*curnode; i++) {
       if (kd->tree->tree[i].splitdim != -1) {
 	kd->nodewgt[i] = kd->nodewgt[LEFT(i)] + kd->nodewgt[RIGHT(i)];
       } else {
 	if (wgt != NULL)
-	  for (j=0; j<kd->tree->tree[i].npt; j++)
+	  for (unsigned long j=0; j<kd->tree->tree[i].npt; j++)
 	    kd->nodewgt[i] += 
 	      ((double *) kd->tree->tree[i].dptr)[j];
 	else
@@ -313,7 +316,7 @@ void free_kd_copy(kernel_density *kd) {
 /* Function to change the weights in a kernel_density object         */
 /*********************************************************************/
 void kd_change_wgt(const double *wgt, kernel_density *kd) {
-  unsigned long i, j, curnode;
+  unsigned long curnode;
   double wgttot;
 
   /* Change the weights */
@@ -324,7 +327,9 @@ void kd_change_wgt(const double *wgt, kernel_density *kd) {
     kd->norm_tot = kd->norm / kd->tree->tree[1].npt;
   } else {
     wgttot = 0;
-    for (i=0; i<kd->tree->tree[1].npt; i++) wgttot += wgt[i];
+#pragma omp parallel for shared(wgt) reduction (+:wgttot)
+    for (unsigned long i=0; i<kd->tree->tree[1].npt; i++)
+      wgttot += wgt[i];
     kd->norm_tot = kd->norm / wgttot;
   }
 
@@ -339,7 +344,8 @@ void kd_change_wgt(const double *wgt, kernel_density *kd) {
   /* Traverse the leaves of the tree; at each leaf, set the offset in
      the weight array to match that in the data array, and adding up
      the weight of each point to get a node weight */
-  for (i=curnode; i<2*curnode; i++) {
+#pragma omp parallel for
+  for (unsigned long i=curnode; i<2*curnode; i++) {
     if (wgt != NULL) {
 
       /* Set pointer to weight for this node */
@@ -350,7 +356,7 @@ void kd_change_wgt(const double *wgt, kernel_density *kd) {
 
       /* Get weight */
       kd->nodewgt[i] = 0.0;  
-      for (j=0; j<kd->tree->tree[i].npt; j++)
+      for (unsigned long j=0; j<kd->tree->tree[i].npt; j++)
 	kd->nodewgt[i] += 
 	  ((double *) kd->tree->tree[i].dptr)[j];
 
@@ -369,7 +375,8 @@ void kd_change_wgt(const double *wgt, kernel_density *kd) {
      from the children to get the summed weight */
   curnode = PARENT(curnode);
   while (curnode != 0) {
-    for (i=curnode; i<2*curnode; i++) {
+#pragma omp parallel for
+    for (unsigned long i=curnode; i<2*curnode; i++) {
 
       /* Set pointer to weight for this node */
       if (wgt != NULL) {
@@ -386,7 +393,7 @@ void kd_change_wgt(const double *wgt, kernel_density *kd) {
 	kd->nodewgt[i] = kd->nodewgt[LEFT(i)] + kd->nodewgt[RIGHT(i)];
       } else {
 	if (wgt != NULL)
-	  for (j=0; j<kd->tree->tree[i].npt; j++)
+	  for (unsigned long j=0; j<kd->tree->tree[i].npt; j++)
 	    kd->nodewgt[i] += 
 	      ((double *) kd->tree->tree[i].dptr)[j];
 	else
