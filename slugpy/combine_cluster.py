@@ -38,7 +38,7 @@ def combine_cluster(data):
 
     # List of fields for which we need only one copy, because they're
     # the same for every cluster
-    single_fields = ['wl', 'wl_neb', 'wl_ex', 'wl_neb_ex', 
+    single_fields = ['wl', 'wl_neb', 'wl_ex', 'wl_neb_ex', 'wl_r',
                      'filter_names', 'filter_units', 'filter_wl',
                      'filter_wl_eff', 'filter_response', 'filter_beta', 
                      'filter_wl_c', 'isotope_name', 'isotope_Z', 'isotope_A',
