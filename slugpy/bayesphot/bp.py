@@ -1602,7 +1602,7 @@ class bp(object):
                (self.__nphot > 1):
                 raise ValueError("need " + str(self.__nphot) +
                                  " photometric errors!")
-        if (np.amax(idx) > nphys) or (np.amin(idx) < 0) or \
+        if (np.amax(idx) > self.nphys) or (np.amin(idx) < 0) or \
            (not np.array_equal(np.squeeze(np.unique(np.array(idx))), 
                                np.squeeze(np.array([idx])))):
             raise ValueError("need non-repeating indices in " +
@@ -2192,9 +2192,12 @@ class bp(object):
             idx = idx - set(fixeddim)
         idx = np.array(list(idx), dtype=c_ulong)
             
-        # Set up output grid
+        # Set up output grid; make a version to pass to the c code
+        # that has the axes tranposed, since the c code needs a
+        # different data ordering
         nidx, qmin_tmp, qmax_tmp, grid_out, out_shape \
             = self.__make_outgrid(idx, ngrid, qmin, qmax, grid)
+        grid_out_c = np.transpose(grid_out)
 
         # Set up array to hold the final pdf
         if fixedprop is not None:
@@ -2212,8 +2215,8 @@ class bp(object):
                 # No fixed points, no marginalized dimensions, so just
                 # call kd_pdf_vec
                 self.__clib.kd_pdf_vec(
-                    self.__kd, np.ravel(grid_out), None,
-                    grid_out.size//self.ndim,
+                    self.__kd, np.ravel(grid_out_c), None,
+                    grid_out_c.size//self.ndim,
                     self.reltol, self.abstol,
                     np.ravel(pdf))
 
@@ -2222,8 +2225,8 @@ class bp(object):
                 # Marginalizing over some dimensions, but no fixed
                 # points, so call kd_pdf_int_vec
                 self.__clib.kd_pdf_int_vec(
-                    self.__kd, np.ravel(grid_out), None,
-                    idx, len(idx), grid_out.size//len(idx),
+                    self.__kd, np.ravel(grid_out_c), None,
+                    idx, len(idx), grid_out_c.size//len(idx),
                     self.reltol, self.abstol, np.ravel(pdf))
 
         else:
@@ -2313,8 +2316,8 @@ class bp(object):
                     griddims.append(qmin[i] + np.arange(ngrid_tmp[i]) * 
                                     float(qmax[i]-qmin[i])/(ngrid_tmp[i]-1))
                 grid_out = np.squeeze(
-                    np.stack(np.meshgrid(*griddims,
-                                         indexing='ij'), axis=-1))
+                    np.array(np.meshgrid(*griddims,
+                                         indexing='ij'), dtype=c_double))
                 out_shape = grid_out[0, ...].shape
                 qmin_tmp \
                     = np.copy(grid_out[(Ellipsis,)+(0,)*(grid_out.ndim-1)])
