@@ -37,7 +37,7 @@ The basic steps (described in greater detail below) are as follows:
 
 3. If you desire, edit the cloudy input template
    ``cloudy_slug/cloudy.in_template`` and the line list
-   ``cloudy_slug/LineList_HII.dat``. There are the template input files
+   ``cloudy_slug/LineList_HII.dat``. These are the template input files
    that will be used for all the cloudy runs, and their syntax follows
    the standard cloudy syntax. They control things like the density and
    element abundances in the nebula -- see :ref:`ssec-cloudy-template`
@@ -136,20 +136,25 @@ described by an inner radius :math:`r_0` and a number density
 cloudy_slug is that these parameters can be set in the cloudy inputs
 as they would be for a normal cloudy run. However, these parameters
 are not necessarily the most convenient or descriptive ones with which
-to describe HII regions. For this reason, cloudy_slug allows users to
-specify HII region properties in a number of other more convneient
+to characterize HII regions. For this reason, cloudy_slug allows users
+to specify HII region properties in a number of other more convenient
 ways.
 
 The basic assumptions made in cloudy_slug's parameterization is
 that the HII region is isobaric and isothermal, at all points hydrogen
 is fully ionized and helium is singly ionized, and that radiation
-pressure is negligible. The HII region occupies a spherical shell
-bounded by an inner radius :math:`r_0` and an outer radius
-:math:`r_1`. The inner radius is set by the presence of a bubble of
-shocked stellar wind material at a temperature :math:`\sim 10^6` K,
-which is assumed to be optically thick to ionizing photons. The
-outer radius is set by the location where all the ionizing photons
-have been absorbed.
+pressure is negligible. (Important note: these are the assumptions
+used in cloudy_slug's way of writing out the parameters, and they are
+approximately true for most HII regions. However, they are *not*
+exactly true for the final cloudy calculation, where in general the
+temperature is not constant, the ionization states of hydrogen and
+helium vary through the nebula, and radiation pressure may or may not
+be important.) The HII region occupies a spherical shell bounded by an
+inner radius :math:`r_0` and an outer radius :math:`r_1`. The inner
+radius is set by the presence of a bubble of shocked stellar wind
+material at a temperature :math:`\sim 10^6` K, which is assumed to be
+optically thin to ionizing photons. The outer radius is set by the
+location where all the ionizing photons have been absorbed.
 
 Under these assumptions, the inner density :math:`n_0` is simply the
 (uniform) density :math:`n_{\mathrm{II}}` throughout the ionized
@@ -262,8 +267,8 @@ A few caveats are in order at this point.
    wind parameter :math:`\Omega` can allow arbitrarily small values of
    :math:`\mathcal{U}`, but not arbitrarily large ones. If the user
    requests a physically impossible combination of parameters,
-   cloudy_slug will correct the parameters to the allowed range and
-   run, while issuing a warning.
+   cloudy_slug will note the problem and react as specified by the
+   options given to the cloudy_slug script.
 #. Even for parameters that are not physically impossible, the results
    may not be sensible, and may cause cloudy to crash in extreme
    cases. For example, if one sets :math:`\Omega = 0` and
@@ -275,7 +280,7 @@ A few caveats are in order at this point.
    extragalactic background, and it makes no sense to think of it as
    an HII region. Caution is required.
 #. The parameter combinations :math:`(r_0,\mathcal{U})` and
-   :math:`(r_1,\mathcal{U}_0)` not allowed
+   :math:`(r_1,\mathcal{U}_0)` are not allowed
    because they do not define a unique solution for the other
    parameters (the resulting equations have multiple physically-valid
    solutions).
@@ -389,7 +394,7 @@ input file, subject to the following restrictions:
    :ref:`sssec-cloudy-dynamical-cluster-mode`. If the user does
    set these quantities, any radius command in the template file will be
    ignored, and a warning message will be issued if one is
-   found. Finally, note that cluster_slug will only compute derived
+   found. Finally, note that cloudy_slug will only compute derived
    parameters correctly from a radius in the template file if the
    radius is specified in cloudy's default format, by giving a log of
    the radius in cm; the keywords "linear" and "parsecs" are not
@@ -804,7 +809,9 @@ and then contains a series of records of the form
 * ``Transmitted_plus_emitted`` (``NWavelength`` entries of numpy
   ``float64``)
 
-There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
 
 The ``integrated_cloudyphot`` File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -954,11 +961,11 @@ This is followed by ``NCluster`` entries of the following form:
 * ``Omega`` (numpy ``float64``)
 * ``zeta`` (numpy ``float64``)
 * ``Hden_out`` (numpy ``float64``; optional, only if the relevant byte
-  in the header is set to )
+  in the header is set to 1)
 * ``R1_out`` (numpy ``float64``; optional, only if the relevant byte
-  in the header is set to )
+  in the header is set to 1)
 * ``Omega_out`` (numpy ``float64``; optional, only if the relevant byte
-  in the header is set to )
+  in the header is set to 1)
 * ``zeta_out`` (numpy ``float64``; optional, only if the relevant byte
   in the header is set to 1)
 
@@ -1104,7 +1111,7 @@ following fields:
 
 For distinctions between the *Transmitted*, *Emitted*, and
 *Transmitted_plus_emitted* radiation fields, see
-:ref:`sssec-int-cloudyspec-file`, or the `cloudy documentaiton
+:ref:`sssec-int-cloudyspec-file`, or the `cloudy documentation
 <http://nublado.org>`_. Note that we do not record photometry for the
 incident spectrum, since that would be, up to the accuracy of the
 numerical integration, identical to the photometry already recorded in

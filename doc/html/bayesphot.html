@@ -590,7 +590,7 @@ the photometric quantities</dd>
 
 <dl class="method">
 <dt id="slugpy.bayesphot.bp.bp.logL">
-<code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.logL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.logL" title="Permalink to this definition">¶</a></dt>
+<code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em>, <em>margindim=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/bayesphot/bp.html#bp.logL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.bayesphot.bp.bp.logL" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns the natural log of the likelihood
 function evaluated at a particular log mass, log age,
 extinction, and set of log luminosities</p>
@@ -609,6 +609,16 @@ the leading dimensions</dd>
 <dd>array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions</dd>
+<dt>margindim <span class="classifier-delimiter">:</span> <span class="classifier">int | arraylike of ints | None</span></dt>
+<dd>The index or indices of the physical or photometric
+properties to be maginalized over, numbered from 0 -
+nphys-1 for physical properties and from nphys - nfilter +
+nfilter - 1 for photometric properties. If this keyword is
+set, then physprop and/or photprop should have fewer
+than nphys or nphot elements due to the omission of
+marginalised dimensions. If all physical or photometric
+dimensions are marginalised out, that corresponding
+argument for physprop or photprop should be set to None</dd>
 </dl>
 </dd>
 <dt>Returns</dt>

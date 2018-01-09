@@ -121,7 +121,7 @@ For example, for a library with four variable parameters you could have:</p>
 <span id="ssec-cluster-slug-full"></span><h2>Full Documentation of slugpy.cluster_slug<a class="headerlink" href="#full-documentation-of-slugpy-cluster-slug" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="slugpy.cluster_slug.cluster_slug">
-<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>caching='none'</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">slugpy.cluster_slug.</code><code class="descname">cluster_slug</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>pruning=False</em>, <em>caching='none'</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.</p>
@@ -187,7 +187,7 @@ randomly-selected set of photometric properties</dd>
 </dl>
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>caching='none'</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>libname=None</em>, <em>filters=None</em>, <em>photsystem=None</em>, <em>lib=None</em>, <em>bw_phys=0.1</em>, <em>bw_phot=None</em>, <em>ktype='gaussian'</em>, <em>priors=None</em>, <em>sample_density=None</em>, <em>pobs=None</em>, <em>reltol=0.01</em>, <em>abstol=1e-08</em>, <em>leafsize=16</em>, <em>use_nebular=True</em>, <em>use_extinction=True</em>, <em>thread_safe=True</em>, <em>pruning=False</em>, <em>caching='none'</em>, <em>vp_list=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a cluster_slug object.</p>
 <dl class="docutils">
 <dt>Parameters</dt>
@@ -287,6 +287,14 @@ make_approx_phys, mpdf_approx) are used with
 multiprocessing; this incurs a minor performance
 penalty, and can be disabled by setting to False if the
 code will not be run with the multiprocessing module</dd>
+<dt>pruning <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd>if True, the underlying bayesphot objects will be pruned
+of clusters for which pobs or priors are zero, speeding
+up evaluations; the current implementation is limited in
+that pruning for priors is only done when the
+cluster_slug object is instantiated, and pruning for
+pobs is only done when each filter set is added, so the
+list of pruned clusters cannot be modified later</dd>
 <dt>caching <span class="classifier-delimiter">:</span> <span class="classifier">‘aggressive’ | ‘lazy’ | ‘none’</span></dt>
 <dd><p class="first">strategy for caching subsets of the data with some
 dimensions marginalised out; behavior is as follows:</p>
@@ -663,7 +671,7 @@ filters</dd>
 
 <dl class="method">
 <dt id="slugpy.cluster_slug.cluster_slug.logL">
-<code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em>, <em>filters=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.logL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.logL" title="Permalink to this definition">¶</a></dt>
+<code class="descname">logL</code><span class="sig-paren">(</span><em>physprop</em>, <em>photprop</em>, <em>photerr=None</em>, <em>filters=None</em>, <em>margindim=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/slugpy/cluster_slug/cluster_slug.html#cluster_slug.logL"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#slugpy.cluster_slug.cluster_slug.logL" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function returns the natural log of the likelihood
 function evaluated at a particular log mass, log age,
 extinction, and set of log luminosities</p>
@@ -690,6 +698,16 @@ dimensions</dd>
 only 1 set of photometric filters has been defined for
 the cluster_slug object, that set will be used by
 default</dd>
+<dt>margindim <span class="classifier-delimiter">:</span> <span class="classifier">int | arraylike of ints | None</span></dt>
+<dd>The index or indices of the physical or photometric
+properties to be maginalized over, numbered from 0 -
+nphys-1 for physical properties and from nphys - nfilter +
+nfilter - 1 for photometric properties. If this keyword is
+set, then physprop and/or photprop should have fewer
+than nphys or nphot elements due to the omission of
+marginalised dimensions. If all physical or photometric
+dimensions are marginalised out, that corresponding
+argument for physprop or photprop should be set to None</dd>
 </dl>
 </dd>
 <dt>Returns:</dt>

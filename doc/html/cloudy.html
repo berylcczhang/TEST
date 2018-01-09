@@ -70,7 +70,7 @@ a <code class="docutils literal"><span class="pre">bash</span></code>-like shell
 </li>
 <li><p class="first">If you desire, edit the cloudy input template
 <code class="docutils literal"><span class="pre">cloudy_slug/cloudy.in_template</span></code> and the line list
-<code class="docutils literal"><span class="pre">cloudy_slug/LineList_HII.dat</span></code>. There are the template input files
+<code class="docutils literal"><span class="pre">cloudy_slug/LineList_HII.dat</span></code>. These are the template input files
 that will be used for all the cloudy runs, and their syntax follows
 the standard cloudy syntax. They control things like the density and
 element abundances in the nebula – see <a class="reference internal" href="#ssec-cloudy-template"><span class="std std-ref">The cloudy_slug Input Template</span></a>
@@ -157,19 +157,24 @@ described by an inner radius <span class="math">\(r_0\)</span> and a number dens
 cloudy_slug is that these parameters can be set in the cloudy inputs
 as they would be for a normal cloudy run. However, these parameters
 are not necessarily the most convenient or descriptive ones with which
-to describe HII regions. For this reason, cloudy_slug allows users to
-specify HII region properties in a number of other more convneient
+to characterize HII regions. For this reason, cloudy_slug allows users
+to specify HII region properties in a number of other more convenient
 ways.</p>
 <p>The basic assumptions made in cloudy_slug’s parameterization is
 that the HII region is isobaric and isothermal, at all points hydrogen
 is fully ionized and helium is singly ionized, and that radiation
-pressure is negligible. The HII region occupies a spherical shell
-bounded by an inner radius <span class="math">\(r_0\)</span> and an outer radius
-<span class="math">\(r_1\)</span>. The inner radius is set by the presence of a bubble of
-shocked stellar wind material at a temperature <span class="math">\(\sim 10^6\)</span> K,
-which is assumed to be optically thick to ionizing photons. The
-outer radius is set by the location where all the ionizing photons
-have been absorbed.</p>
+pressure is negligible. (Important note: these are the assumptions
+used in cloudy_slug’s way of writing out the parameters, and they are
+approximately true for most HII regions. However, they are <em>not</em>
+exactly true for the final cloudy calculation, where in general the
+temperature is not constant, the ionization states of hydrogen and
+helium vary through the nebula, and radiation pressure may or may not
+be important.) The HII region occupies a spherical shell bounded by an
+inner radius <span class="math">\(r_0\)</span> and an outer radius <span class="math">\(r_1\)</span>. The inner
+radius is set by the presence of a bubble of shocked stellar wind
+material at a temperature <span class="math">\(\sim 10^6\)</span> K, which is assumed to be
+optically thin to ionizing photons. The outer radius is set by the
+location where all the ionizing photons have been absorbed.</p>
 <p>Under these assumptions, the inner density <span class="math">\(n_0\)</span> is simply the
 (uniform) density <span class="math">\(n_{\mathrm{II}}\)</span> throughout the ionized
 region, and the ionizing photon luminosity passing through a shell of
@@ -261,8 +266,8 @@ value of <span class="math">\(\mathcal{U}\)</span> is bounded from above. Increa
 wind parameter <span class="math">\(\Omega\)</span> can allow arbitrarily small values of
 <span class="math">\(\mathcal{U}\)</span>, but not arbitrarily large ones. If the user
 requests a physically impossible combination of parameters,
-cloudy_slug will correct the parameters to the allowed range and
-run, while issuing a warning.</li>
+cloudy_slug will note the problem and react as specified by the
+options given to the cloudy_slug script.</li>
 <li>Even for parameters that are not physically impossible, the results
 may not be sensible, and may cause cloudy to crash in extreme
 cases. For example, if one sets <span class="math">\(\Omega = 0\)</span> and
@@ -274,7 +279,7 @@ density the gas will be fully ionized by cosmic rays and the
 extragalactic background, and it makes no sense to think of it as
 an HII region. Caution is required.</li>
 <li>The parameter combinations <span class="math">\((r_0,\mathcal{U})\)</span> and
-<span class="math">\((r_1,\mathcal{U}_0)\)</span> not allowed
+<span class="math">\((r_1,\mathcal{U}_0)\)</span> are not allowed
 because they do not define a unique solution for the other
 parameters (the resulting equations have multiple physically-valid
 solutions).</li>
@@ -365,7 +370,7 @@ density and wind parameters in
 <a class="reference internal" href="#sssec-cloudy-dynamical-cluster-mode"><span class="std std-ref">Dynamical Mode</span></a>. If the user does
 set these quantities, any radius command in the template file will be
 ignored, and a warning message will be issued if one is
-found. Finally, note that cluster_slug will only compute derived
+found. Finally, note that cloudy_slug will only compute derived
 parameters correctly from a radius in the template file if the
 radius is specified in cloudy’s default format, by giving a log of
 the radius in cm; the keywords “linear” and “parsecs” are not
@@ -760,7 +765,9 @@ follows. The file begins with a header consisting of</p>
 <li><code class="docutils literal"><span class="pre">Transmitted_plus_emitted</span></code> (<code class="docutils literal"><span class="pre">NWavelength</span></code> entries of numpy
 <code class="docutils literal"><span class="pre">float64</span></code>)</li>
 </ul>
-<p>There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.</p>
+<p>There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.</p>
 </div>
 <div class="section" id="the-integrated-cloudyphot-file">
 <h3>The <code class="docutils literal"><span class="pre">integrated_cloudyphot</span></code> File<a class="headerlink" href="#the-integrated-cloudyphot-file" title="Permalink to this headline">¶</a></h3>
@@ -901,11 +908,11 @@ consists of a header containing</p>
 <li><code class="docutils literal"><span class="pre">Omega</span></code> (numpy <code class="docutils literal"><span class="pre">float64</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">zeta</span></code> (numpy <code class="docutils literal"><span class="pre">float64</span></code>)</li>
 <li><code class="docutils literal"><span class="pre">Hden_out</span></code> (numpy <code class="docutils literal"><span class="pre">float64</span></code>; optional, only if the relevant byte
-in the header is set to )</li>
+in the header is set to 1)</li>
 <li><code class="docutils literal"><span class="pre">R1_out</span></code> (numpy <code class="docutils literal"><span class="pre">float64</span></code>; optional, only if the relevant byte
-in the header is set to )</li>
+in the header is set to 1)</li>
 <li><code class="docutils literal"><span class="pre">Omega_out</span></code> (numpy <code class="docutils literal"><span class="pre">float64</span></code>; optional, only if the relevant byte
-in the header is set to )</li>
+in the header is set to 1)</li>
 <li><code class="docutils literal"><span class="pre">zeta_out</span></code> (numpy <code class="docutils literal"><span class="pre">float64</span></code>; optional, only if the relevant byte
 in the header is set to 1)</li>
 </ul>
@@ -1045,7 +1052,7 @@ radiation field through filter 1</li>
 </ul>
 <p>For distinctions between the <em>Transmitted</em>, <em>Emitted</em>, and
 <em>Transmitted_plus_emitted</em> radiation fields, see
-<a class="reference internal" href="#sssec-int-cloudyspec-file"><span class="std std-ref">The integrated_cloudyspec File</span></a>, or the <a class="reference external" href="http://nublado.org">cloudy documentaiton</a>. Note that we do not record photometry for the
+<a class="reference internal" href="#sssec-int-cloudyspec-file"><span class="std std-ref">The integrated_cloudyspec File</span></a>, or the <a class="reference external" href="http://nublado.org">cloudy documentation</a>. Note that we do not record photometry for the
 incident spectrum, since that would be, up to the accuracy of the
 numerical integration, identical to the photometry already recorded in
 the <a class="reference internal" href="output.html#ssec-cluster-phot-file"><span class="std std-ref">The cluster_phot File</span></a>.</p>

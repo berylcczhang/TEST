@@ -54,7 +54,7 @@
 
 
 \title{slug Documentation}
-\date{Nov 13, 2017}
+\date{Jan 09, 2018}
 \release{2.0}
 \author{Mark Krumholz, Michele Fumagalli, et al.}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -4434,7 +4434,7 @@ setenv CLOUDY\PYGZus{}DIR /path/to/cloudy
 \item {} 
 If you desire, edit the cloudy input template
 \sphinxcode{cloudy\_slug/cloudy.in\_template} and the line list
-\sphinxcode{cloudy\_slug/LineList\_HII.dat}. There are the template input files
+\sphinxcode{cloudy\_slug/LineList\_HII.dat}. These are the template input files
 that will be used for all the cloudy runs, and their syntax follows
 the standard cloudy syntax. They control things like the density and
 element abundances in the nebula \textendash{} see {\hyperref[\detokenize{cloudy:ssec-cloudy-template}]{\sphinxcrossref{\DUrole{std,std-ref}{The cloudy\_slug Input Template}}}}
@@ -4533,20 +4533,25 @@ described by an inner radius \(r_0\) and a number density
 cloudy\_slug is that these parameters can be set in the cloudy inputs
 as they would be for a normal cloudy run. However, these parameters
 are not necessarily the most convenient or descriptive ones with which
-to describe HII regions. For this reason, cloudy\_slug allows users to
-specify HII region properties in a number of other more convneient
+to characterize HII regions. For this reason, cloudy\_slug allows users
+to specify HII region properties in a number of other more convenient
 ways.
 
 The basic assumptions made in cloudy\_slug’s parameterization is
 that the HII region is isobaric and isothermal, at all points hydrogen
 is fully ionized and helium is singly ionized, and that radiation
-pressure is negligible. The HII region occupies a spherical shell
-bounded by an inner radius \(r_0\) and an outer radius
-\(r_1\). The inner radius is set by the presence of a bubble of
-shocked stellar wind material at a temperature \(\sim 10^6\) K,
-which is assumed to be optically thick to ionizing photons. The
-outer radius is set by the location where all the ionizing photons
-have been absorbed.
+pressure is negligible. (Important note: these are the assumptions
+used in cloudy\_slug’s way of writing out the parameters, and they are
+approximately true for most HII regions. However, they are \sphinxstyleemphasis{not}
+exactly true for the final cloudy calculation, where in general the
+temperature is not constant, the ionization states of hydrogen and
+helium vary through the nebula, and radiation pressure may or may not
+be important.) The HII region occupies a spherical shell bounded by an
+inner radius \(r_0\) and an outer radius \(r_1\). The inner
+radius is set by the presence of a bubble of shocked stellar wind
+material at a temperature \(\sim 10^6\) K, which is assumed to be
+optically thin to ionizing photons. The outer radius is set by the
+location where all the ionizing photons have been absorbed.
 
 Under these assumptions, the inner density \(n_0\) is simply the
 (uniform) density \(n_{\mathrm{II}}\) throughout the ionized
@@ -4667,8 +4672,8 @@ value of \(\mathcal{U}\) is bounded from above. Increasing the
 wind parameter \(\Omega\) can allow arbitrarily small values of
 \(\mathcal{U}\), but not arbitrarily large ones. If the user
 requests a physically impossible combination of parameters,
-cloudy\_slug will correct the parameters to the allowed range and
-run, while issuing a warning.
+cloudy\_slug will note the problem and react as specified by the
+options given to the cloudy\_slug script.
 
 \item {} 
 Even for parameters that are not physically impossible, the results
@@ -4684,7 +4689,7 @@ an HII region. Caution is required.
 
 \item {} 
 The parameter combinations \((r_0,\mathcal{U})\) and
-\((r_1,\mathcal{U}_0)\) not allowed
+\((r_1,\mathcal{U}_0)\) are not allowed
 because they do not define a unique solution for the other
 parameters (the resulting equations have multiple physically-valid
 solutions).
@@ -4791,7 +4796,7 @@ density and wind parameters in
 {\hyperref[\detokenize{cloudy:sssec-cloudy-dynamical-cluster-mode}]{\sphinxcrossref{\DUrole{std,std-ref}{Dynamical Mode}}}}. If the user does
 set these quantities, any radius command in the template file will be
 ignored, and a warning message will be issued if one is
-found. Finally, note that cluster\_slug will only compute derived
+found. Finally, note that cloudy\_slug will only compute derived
 parameters correctly from a radius in the template file if the
 radius is specified in cloudy’s default format, by giving a log of
 the radius in cm; the keywords “linear” and “parsecs” are not
@@ -5410,7 +5415,9 @@ and then contains a series of records of the form
 
 \end{itemize}
 
-There is one such record for each output time, with different trials ordered sequentially, so that all the times for one trial are output before the first time for the next trial.
+There is one such record for each output time, with different trials
+ordered sequentially, so that all the times for one trial are output
+before the first time for the next trial.
 
 
 \subsection{The \sphinxstyleliteralintitle{integrated\_cloudyphot} File}
@@ -5658,15 +5665,15 @@ This is followed by \sphinxcode{NCluster} entries of the following form:
 
 \item {} 
 \sphinxcode{Hden\_out} (numpy \sphinxcode{float64}; optional, only if the relevant byte
-in the header is set to )
+in the header is set to 1)
 
 \item {} 
 \sphinxcode{R1\_out} (numpy \sphinxcode{float64}; optional, only if the relevant byte
-in the header is set to )
+in the header is set to 1)
 
 \item {} 
 \sphinxcode{Omega\_out} (numpy \sphinxcode{float64}; optional, only if the relevant byte
-in the header is set to )
+in the header is set to 1)
 
 \item {} 
 \sphinxcode{zeta\_out} (numpy \sphinxcode{float64}; optional, only if the relevant byte
@@ -5896,7 +5903,7 @@ radiation field through filter 1
 
 For distinctions between the \sphinxstyleemphasis{Transmitted}, \sphinxstyleemphasis{Emitted}, and
 \sphinxstyleemphasis{Transmitted\_plus\_emitted} radiation fields, see
-{\hyperref[\detokenize{cloudy:sssec-int-cloudyspec-file}]{\sphinxcrossref{\DUrole{std,std-ref}{The integrated\_cloudyspec File}}}}, or the \sphinxhref{http://nublado.org}{cloudy documentaiton}. Note that we do not record photometry for the
+{\hyperref[\detokenize{cloudy:sssec-int-cloudyspec-file}]{\sphinxcrossref{\DUrole{std,std-ref}{The integrated\_cloudyspec File}}}}, or the \sphinxhref{http://nublado.org}{cloudy documentation}. Note that we do not record photometry for the
 incident spectrum, since that would be, up to the accuracy of the
 numerical integration, identical to the photometry already recorded in
 the {\hyperref[\detokenize{output:ssec-cluster-phot-file}]{\sphinxcrossref{\DUrole{std,std-ref}{The cluster\_phot File}}}}.
@@ -7693,7 +7700,7 @@ the photometric quantities
 \index{logL() (slugpy.bayesphot.bp.bp method)}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{bayesphot:slugpy.bayesphot.bp.bp.logL}}\pysiglinewithargsret{\sphinxbfcode{logL}}{\emph{physprop}, \emph{photprop}, \emph{photerr=None}}{}
+\phantomsection\label{\detokenize{bayesphot:slugpy.bayesphot.bp.bp.logL}}\pysiglinewithargsret{\sphinxbfcode{logL}}{\emph{physprop}, \emph{photprop}, \emph{photerr=None}, \emph{margindim=None}}{}
 This function returns the natural log of the likelihood
 function evaluated at a particular log mass, log age,
 extinction, and set of log luminosities
@@ -7713,6 +7720,17 @@ the leading dimensions
 array giving photometric errors; for a multidimensional
 array, the operation is vectorized over the leading
 dimensions
+
+\item[{margindim}] \leavevmode{[}int \textbar{} arraylike of ints \textbar{} None{]}
+The index or indices of the physical or photometric
+properties to be maginalized over, numbered from 0 -
+nphys-1 for physical properties and from nphys - nfilter +
+nfilter - 1 for photometric properties. If this keyword is
+set, then physprop and/or photprop should have fewer
+than nphys or nphot elements due to the omission of
+marginalised dimensions. If all physical or photometric
+dimensions are marginalised out, that corresponding
+argument for physprop or photprop should be set to None
 
 \end{description}
 
@@ -8423,7 +8441,7 @@ vp\PYGZus{}list=[True,False,True,True]
 \label{\detokenize{cluster_slug:ssec-cluster-slug-full}}\label{\detokenize{cluster_slug:full-documentation-of-slugpy-cluster-slug}}\index{cluster\_slug (class in slugpy.cluster\_slug)}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug}}\pysiglinewithargsret{\sphinxbfcode{class }\sphinxcode{slugpy.cluster\_slug.}\sphinxbfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{lib=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{pobs=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{caching='none'}, \emph{vp\_list={[}{]}}}{}
+\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug}}\pysiglinewithargsret{\sphinxbfcode{class }\sphinxcode{slugpy.cluster\_slug.}\sphinxbfcode{cluster\_slug}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{lib=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{pobs=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{pruning=False}, \emph{caching='none'}, \emph{vp\_list={[}{]}}}{}
 A class that can be used to estimate the PDF of star cluster
 properties (mass, age, extinction) from a set of input photometry
 in various bands.
@@ -8504,7 +8522,7 @@ randomly-selected set of photometric properties
 \index{\_\_init\_\_() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}}\pysiglinewithargsret{\sphinxbfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{lib=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{pobs=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{caching='none'}, \emph{vp\_list={[}{]}}}{}
+\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug.__init__}}\pysiglinewithargsret{\sphinxbfcode{\_\_init\_\_}}{\emph{libname=None}, \emph{filters=None}, \emph{photsystem=None}, \emph{lib=None}, \emph{bw\_phys=0.1}, \emph{bw\_phot=None}, \emph{ktype='gaussian'}, \emph{priors=None}, \emph{sample\_density=None}, \emph{pobs=None}, \emph{reltol=0.01}, \emph{abstol=1e-08}, \emph{leafsize=16}, \emph{use\_nebular=True}, \emph{use\_extinction=True}, \emph{thread\_safe=True}, \emph{pruning=False}, \emph{caching='none'}, \emph{vp\_list={[}{]}}}{}
 Initialize a cluster\_slug object.
 \begin{description}
 \item[{Parameters}] \leavevmode\begin{description}
@@ -8618,6 +8636,15 @@ make\_approx\_phys, mpdf\_approx) are used with
 multiprocessing; this incurs a minor performance
 penalty, and can be disabled by setting to False if the
 code will not be run with the multiprocessing module
+
+\item[{pruning}] \leavevmode{[}bool{]}
+if True, the underlying bayesphot objects will be pruned
+of clusters for which pobs or priors are zero, speeding
+up evaluations; the current implementation is limited in
+that pruning for priors is only done when the
+cluster\_slug object is instantiated, and pruning for
+pobs is only done when each filter set is added, so the
+list of pruned clusters cannot be modified later
 
 \item[{caching}] \leavevmode{[}‘aggressive’ \textbar{} ‘lazy’ \textbar{} ‘none’{]}
 strategy for caching subsets of the data with some
@@ -9056,7 +9083,7 @@ filters
 \index{logL() (slugpy.cluster\_slug.cluster\_slug method)}
 
 \begin{fulllineitems}
-\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug.logL}}\pysiglinewithargsret{\sphinxbfcode{logL}}{\emph{physprop}, \emph{photprop}, \emph{photerr=None}, \emph{filters=None}}{}
+\phantomsection\label{\detokenize{cluster_slug:slugpy.cluster_slug.cluster_slug.logL}}\pysiglinewithargsret{\sphinxbfcode{logL}}{\emph{physprop}, \emph{photprop}, \emph{photerr=None}, \emph{filters=None}, \emph{margindim=None}}{}
 This function returns the natural log of the likelihood
 function evaluated at a particular log mass, log age,
 extinction, and set of log luminosities
@@ -9085,6 +9112,17 @@ list of photometric filters to use; if left as None, and
 only 1 set of photometric filters has been defined for
 the cluster\_slug object, that set will be used by
 default
+
+\item[{margindim}] \leavevmode{[}int \textbar{} arraylike of ints \textbar{} None{]}
+The index or indices of the physical or photometric
+properties to be maginalized over, numbered from 0 -
+nphys-1 for physical properties and from nphys - nfilter +
+nfilter - 1 for photometric properties. If this keyword is
+set, then physprop and/or photprop should have fewer
+than nphys or nphot elements due to the omission of
+marginalised dimensions. If all physical or photometric
+dimensions are marginalised out, that corresponding
+argument for physprop or photprop should be set to None
 
 \end{description}
 
