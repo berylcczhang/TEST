@@ -77,7 +77,7 @@ slug_PDF_exponential::initialize(const std::vector<double>& tokenVal) {
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_exponential::operator() (double x) {
-  if ((x < segMin) || (x > segMax)) return 0.0;
+  if ((x < segMin) || (x >= segMax)) return 0.0;
   return norm * exp(-x/segScale);
 }
 

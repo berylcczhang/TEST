@@ -31,6 +31,7 @@ namespace std
 #include <cassert>
 #include <cmath>
 #include <iomanip>
+#include <boost/bind.hpp>
 
 using namespace std;
 
@@ -60,6 +61,17 @@ namespace galaxy {
       return yld;
     } else {
       return yields->yield(m);
+    }
+  }
+
+  // This function returns int_0^{t-t_life(m)} SFR(t') dt'
+  double dnSN_dm(const double m, const double t,
+		 const slug_PDF* sfh, const slug_tracks* tracks) {
+    double t_life = tracks->star_lifetime(m);
+    if (t > t_life) {
+      return sfh->integral(0, t-t_life);
+    } else {
+      return 0.0;
     }
   }
 }
@@ -102,6 +114,8 @@ slug_galaxy::slug_galaxy(const slug_parmParser& pp,
     = clusterAliveMass = clusterStellarMass = fieldRemnantMass = 0.0;
   clusterMass = 0.0;
   nonStochFieldMass = 0.0;
+  field_tot_sn = 0.0;
+  field_stoch_sn = 0;
 
   // Initialize yields
   if (yields) {
@@ -154,6 +168,8 @@ slug_galaxy::reset(bool reset_cluster_id) {
     = fieldRemnantMass = 0.0;
   Lbol_set = spec_set = field_data_set = phot_set = yield_set = false;
   field_stars.resize(0);
+  field_tot_sn = 0.0;
+  field_stoch_sn = 0;
   while (disrupted_clusters.size() > 0) {
     if (disrupted_clusters.back() != nullptr)
       delete disrupted_clusters.back();
@@ -225,13 +241,13 @@ slug_galaxy::advance(double time) {
     // Create new field stars
     if (fc != 1) {
 
-      // Figure out what fraction of the mass is to be treated
-      // stochastically
-      double fstoch = imf->mass_frac_restrict();
-
       // Get masses of new field stars
       vector<double> new_star_masses;
-      imf->drawPopulation((1.0-fc)*fstoch*mass_to_draw, new_star_masses);
+      imf->drawPopulation((1.0-fc)*mass_to_draw, new_star_masses);
+      int count=0;
+      double mtot=0.0;
+      for (vector<double>::size_type i=0; i<new_star_masses.size(); i++)
+	if (new_star_masses[i] > 5.0) { count++; mtot += new_star_masses[i]; }
 
       // Get extinctions to field stars
       vector<double> AV, AVneb;
@@ -265,6 +281,7 @@ slug_galaxy::advance(double time) {
       // Increase the non-stochastic field star mass and the total
       // mass by the mass of field stars that should have formed below
       // the stochastic limit 
+      double fstoch = imf->mass_frac_restrict();
       mass += (1.0-fc)*(1.0-fstoch)*mass_to_draw;
       nonStochFieldMass += (1.0-fc)*(1.0-fstoch)*mass_to_draw;
     }
@@ -309,6 +326,9 @@ slug_galaxy::advance(double time) {
   while (field_stars.size() > 0) {
     if (field_stars.back().death_time < time) {
       fieldRemnantMass += tracks->remnant_mass(field_stars.back().mass);
+      if (yields->produces_sn(field_stars.back().mass)) {
+	field_stoch_sn++;
+      }
       dead_field_stars.push_back(field_stars.back());
       field_stars.pop_back();
       if (extinct != NULL) {
@@ -370,8 +390,75 @@ slug_galaxy::advance(double time) {
   // Recompute the alive mass and stellar mass
   aliveMass = nonStochAliveMass + clusterAliveMass + fieldAliveMass;
   stellarMass = aliveMass + nonStochRemnantMass + fieldRemnantMass;
+
+  // Update the total number of supernovae in the field; this is the
+  // sum of the stochastic field supernovae plus the non-stochastic
+  // contribution, which is obtained by integrating over the field
+  // star population. The number of supernovae that have occurred
+  // is given by
+  //
+  // N_SN = 1 / <m> int (dn/dm) Theta_SN(m)
+  //     int_0^{t-t_life(m)} SFR(t') dt' dm,
+  //
+  // where t_life(m) is the lifetime of a star of mass m and
+  // Theta_SN(m) is 0 if a particular initial mass does not end its
+  // life as a supernova, and 1 if it does. Note that, because we can
+  // evaluate the integral over the SFR analytically, we evaluate this
+  // integral using the functionality for integration over the IMF
+  // rather than that for integration over IMF and star formation
+  // history.
+  field_tot_sn = field_stoch_sn;
+  if (imf->get_xStochMin() > imf->get_xMin()) {
+    vector<double> sn_mass_range = yields->sn_mass_range();
+    for (vector<double>::size_type i=0; i<=sn_mass_range.size(); i+=2) {
+      double mlo = min(sn_mass_range[i], imf->get_xStochMin());
+      double mhi = min(sn_mass_range[i+1], imf->get_xMax());
+      if (mhi > mlo) {
+	field_tot_sn +=
+	  integ.integrate_nt_lim(1.0, time, mlo, mhi,
+				 boost::bind(galaxy::dnSN_dm, _1, _2,
+					     sfh, tracks));
+      }
+    }
+  }
 }
 
+
+////////////////////////////////////////////////////////////////////////
+// Return supernova counts
+////////////////////////////////////////////////////////////////////////
+double
+slug_galaxy::get_sn() const {
+  double sn = field_tot_sn;
+  list<slug_cluster *>::const_iterator it;
+  for (it = clusters.begin(); it != clusters.end(); it++) {
+    sn += (*it)->get_sn();
+  }
+  for (it = disrupted_clusters.begin();
+       it != disrupted_clusters.end(); it++) {
+    sn += (*it)->get_sn();
+  }
+  return sn;
+}
+
+int
+slug_galaxy::get_stoch_sn() const {
+  int sn = field_stoch_sn;
+  list<slug_cluster *>::const_iterator it;
+  for (it = clusters.begin(); it != clusters.end(); it++) {
+    sn += (*it)->get_stoch_sn();
+  }
+  for (it = disrupted_clusters.begin();
+       it != disrupted_clusters.end(); it++) {
+    sn += (*it)->get_stoch_sn();
+  }
+  return sn;
+}
+
+double
+slug_galaxy::get_non_stoch_sn() const {
+  return get_sn() - get_stoch_sn();
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Get stellar data on all field stars
@@ -1239,6 +1326,99 @@ slug_galaxy::write_integrated_phot(fitsfile* int_phot_fits,
       }
     }
   }
+}
+#endif
+
+
+////////////////////////////////////////////////////////////////////////
+// Output integrated supernova count
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_integrated_sn(ofstream& int_sn_file, 
+				 const outputMode out_mode, 
+				 const unsigned long trial) {
+
+  if (out_mode == ASCII) {
+  
+    //ASCII Output
+    int_sn_file << setprecision(5) << scientific 
+		<< setw(11) << right << curTime << "   "
+		<< setw(11) << right << get_sn() << "   "
+		<< setw(11) << right << get_stoch_sn() << endl;
+
+  } else {
+  
+    // Binary Output
+    int_sn_file.write((char *) &trial, sizeof trial);
+    int_sn_file.write((char *) &curTime, sizeof curTime);
+    double tot_sn = get_sn();
+    int_sn_file.write((char *) &tot_sn, sizeof tot_sn);
+    unsigned long stoch_sn = get_stoch_sn();
+    int_sn_file.write((char *) &stoch_sn, sizeof stoch_sn);
+    
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Output integrated supernova count to fits file
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_integrated_sn(fitsfile* int_sn_fits, 
+				 unsigned long trial) {
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(int_sn_fits, &nrows, &fits_status);
+
+  // Write a new entry
+  fits_write_col(int_sn_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(int_sn_fits, TDOUBLE, 2, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  double totSN = get_sn();
+  fits_write_col(int_sn_fits, TDOUBLE, 3, nrows+1, 1, 1, &totSN, 
+		 &fits_status);
+  unsigned long stochSN = get_stoch_sn();
+  fits_write_col(int_sn_fits, TULONG, 4, nrows+1, 1, 1, &stochSN, 
+		 &fits_status);
+}
+#endif
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster supernova counts
+////////////////////////////////////////////////////////////////////////
+void
+slug_galaxy::write_cluster_sn(ofstream& cluster_sn_file, 
+			      const outputMode out_mode,
+			      const unsigned long trial) {
+
+  // In binary mode, write out the time and the number of clusters
+  // first, because individual clusters won't write this data  
+  if (out_mode == BINARY) {
+    cluster_sn_file.write((char *) &trial, sizeof trial);
+    cluster_sn_file.write((char *) &curTime, sizeof curTime);
+    vector<double>::size_type n = clusters.size();
+    cluster_sn_file.write((char *) &n, sizeof n);
+  }
+
+  // Now write out each cluster
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_sn(cluster_sn_file, out_mode, trial, false);
+}
+
+////////////////////////////////////////////////////////////////////////
+// Output cluster supernova counts in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_galaxy::write_cluster_sn(fitsfile* cluster_sn_fits, 
+			      unsigned long trial) {
+  for (list<slug_cluster *>::iterator it = clusters.begin();
+       it != clusters.end(); ++it)
+    (*it)->write_sn(cluster_sn_fits, trial);
 }
 #endif
 

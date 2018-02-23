@@ -226,7 +226,9 @@ public:
   void write_yield(std::ofstream& outfile, const outputMode out_mode,
 		   const unsigned long trial,
 		   const bool cluster_only = false);
-  
+  void write_sn(std::ofstream& outfile, const outputMode out_mode,
+		const unsigned long trial,
+		const bool cluster_only = false);
 
 #ifdef ENABLE_FITS
   // These are identical to the previous three routines, but they
@@ -237,6 +239,7 @@ public:
   void write_photometry(fitsfile *out_fits, unsigned long trial);
   void write_yield(fitsfile *out_fits, unsigned long trial);
   void write_ew(fitsfile *out_fits, unsigned long trial);
+  void write_sn(fitsfile *out_fits, unsigned long trial);
 #endif
 
 protected:

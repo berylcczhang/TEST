@@ -47,7 +47,8 @@ slug_tracks_2d::~slug_tracks_2d() {
 
 
 ////////////////////////////////////////////////////////////////////////
-// Age of star dying at a particular time
+// Mass of star dying at a particular time; this form of the function
+// only works with monotonic tracks
 ////////////////////////////////////////////////////////////////////////
 double slug_tracks_2d::death_mass(const double time,
 				  const double Z) const {
@@ -80,6 +81,58 @@ double slug_tracks_2d::death_mass(const double time,
   vector<double> logm_lim = interp->y_lim(logt);
   return exp(logm_lim[0]);
 }
+
+
+////////////////////////////////////////////////////////////////////////
+// Masses of stars dying at a particular time; this form of the
+// function works with both monotonic and non-monotonic tracks
+////////////////////////////////////////////////////////////////////////
+void slug_tracks_2d::death_mass(const double time,
+				vector<double>& m_death,
+				const double Z) const {
+
+  // Safety assertion: input metallicity should always be the null
+  // value for the 2d case
+  assert(Z == tracks::null_metallicity);
+
+  // Get log of time
+  double logt;
+  if (time > exp(interp->x_min())) logt = log(time);
+  else logt = interp->x_min();
+  
+  // Is this time less than the smallest death time we have? If so,
+  // set the death mass vector to be empty, then return.
+  if (logt < interp->x_max(interp->y_max())) {
+    m_death.resize(0);
+    return;
+  }
+ 
+  // Is this time bigger than the biggest death time we have? If so,
+  // set the death mass vector to be empty, then return.
+  if (logt > interp->x_max(interp->y_min())) {
+    m_death.resize(0);
+    return;
+  }
+
+  // If the time is between the largest and smallest death times, get
+  // it from the tracks
+  vector<double> logm_lim = interp->y_lim(logt);
+
+  // The limits returned by the tracks may include the minimum and
+  // maximum mass in the tracks; if so, eliminate these
+  if (logm_lim.size() > 0) {
+    if (logm_lim[0] == interp->y_min()) logm_lim.erase(logm_lim.begin());
+  }
+  if (logm_lim.size() > 0) {
+    if (logm_lim.back() == interp->y_max()) logm_lim.pop_back();
+  }
+
+  // Convert from log mass to mass
+  m_death.resize(logm_lim.size());
+  for (vector<double>::size_type i=0; i<logm_lim.size(); i++)
+    m_death[i] = exp(logm_lim[i]);
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 // Calculate what range of stellar masses are alive at the specified

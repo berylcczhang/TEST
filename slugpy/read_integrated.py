@@ -6,6 +6,7 @@ from collections import namedtuple
 from .read_integrated_prop import read_integrated_prop
 from .read_integrated_phot import read_integrated_phot
 from .read_integrated_spec import read_integrated_spec
+from .read_integrated_sn import read_integrated_sn
 from .read_integrated_yield import read_integrated_yield
 from .cloudy.read_integrated_cloudyparams import read_integrated_cloudyparams
 from .cloudy.read_integrated_cloudyphot import read_integrated_cloudyphot
@@ -149,11 +150,29 @@ def read_integrated(model_name, output_dir=None, fmt=None,
        phot : array, shape (N_filter, N_times, N_trials)
           photometric value in each filter at each time in each trial;
           units are as indicated in the units field
+       phot_ex : array, shape (N_filter, N_times, N_trials)
+          photometry of the stars after extinction is applied (only
+          present if SLUG was run with extinction enabled)
+       phot_neb : array, shape (N_filter, N_times, N_trials)
+          photometry of the stars plus nebular emission (only
+          present if SLUG was run with nebular emission enabled)
+       phot_neb_ex : array, shape (N_filter, N_times, N_trials)
+          photometry of the stars plus nebular emission after
+          extinction is applied (only present if SLUG was run with
+          both nebular emission and extinction enabled)
 
-       If extinction is enabled, phot_ex will contain photometry  
-       after extinction has been applied.     
+       (Only present if an integrated_sn file is found)
 
-       (Only present if an integrate_yield file is found)
+       tot_sn : array, shape (N_times, N_trials)
+          total number of type II supernovae that have occurred up to
+          the given time
+       stoch_sn : array of int, shape (N_times, N_trials)
+          total number of type II supernovae that have occurred up to
+          the given time among stars being treated stochastically;
+          only differs from tot_sn if SLUG was run with min_stoch_mass
+          > 0
+
+       (Only present if an integrated_yield file is found)
 
        isotope_name : array of strings
           Atomic symbols of the isotopes included in the yield table
@@ -360,6 +379,17 @@ def read_integrated(model_name, output_dir=None, fmt=None,
             del read_info['fname']
     except IOError:
         yld = None
+        
+    # Read supernova data
+    try:
+        sn = read_integrated_sn(model_name, output_dir=output_dir,
+                                fmt=fmt, verbose=verbose,
+                                read_info=read_info)
+        if read_info is not None:
+            read_info['yield_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        sn = None
 
     # Build the output
     out_fields = ['time']
@@ -371,6 +401,8 @@ def read_integrated(model_name, output_dir=None, fmt=None,
         out_data = [phot.time]
     elif yld is not None:
         out_data = [yld.time]
+    elif sn is not None:
+        out_data = [sn.time]
     elif cloudyspec is not None:
         out_data = [cloudyspec.time]
     elif cloudylines is not None:
@@ -395,6 +427,9 @@ def read_integrated(model_name, output_dir=None, fmt=None,
     if yld is not None:
         out_fields = out_fields + list(yld._fields[1:])
         out_data = out_data + list(yld[1:])
+    if sn is not None:
+        out_fields = out_fields + list(sn._fields[1:])
+        out_data = out_data + list(sn[1:])
     if cloudyspec is not None:
         out_fields = out_fields + list(cloudyspec._fields[1:])
         out_data = out_data + list(cloudyspec[1:])

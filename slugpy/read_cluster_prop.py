@@ -188,7 +188,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
                 trialptr = trialptr + 1
                 continue
             data = entry.split()
-            cluster_id.append(long(data[0]))
+            cluster_id.append(int(data[0]))
             trial.append(trialptr)
             time.append(float(data[1]))
             form_time.append(float(data[2]))
@@ -198,7 +198,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
             live_mass.append(float(data[6]))
             if has_st_mass:
                 stellar_mass.append(float(data[7]))
-                num_star.append(long(data[8]))
+                num_star.append(int(data[8]))
                 max_star_mass.append(float(data[9]))
                 if extinct:
                     A_V.append(float(data[10]))
@@ -219,7 +219,7 @@ def read_cluster_prop(model_name, output_dir=None, fmt=None,
 
             else:
                 stellar_mass.append(np.nan)
-                num_star.append(long(data[7]))
+                num_star.append(int(data[7]))
                 max_star_mass.append(float(data[8]))
                 if extinct:
                     A_V.append(float(data[9]))

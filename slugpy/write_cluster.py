@@ -8,6 +8,7 @@ fits), or to consolidate multiple runs into a single output file.
 import numpy as np
 import struct
 import os
+import sys
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if not on_rtd:
     from scipy.interpolate import interp1d
@@ -151,13 +152,25 @@ def write_cluster(data, model_name, fmt):
             # extinction, and nebular extinction or no nebular
             # extinction
             if 'A_V' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
             if 'A_Vneb' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
 
             # Write out number of variable parameters
             nvp = 0
@@ -399,13 +412,25 @@ def write_cluster(data, model_name, fmt):
             # Write out bytes indicating nebular or no nebular, and
             # extinction or no extinction
             if 'spec_neb' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
             if 'spec_ex' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
 
             # Write out wavelength data
             fp.write(np.int64(len(data.wl)))
@@ -653,13 +678,25 @@ def write_cluster(data, model_name, fmt):
             # Write out bytes indicating nebular or no nebular, and
             # extinction or no extinction
             if 'phot_neb' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
             if 'phot_ex' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
 
             # Break data into blocks of clusters with the same time
             # and trial number
@@ -830,8 +867,6 @@ def write_cluster(data, model_name, fmt):
                             clobber=True)
 
 
-
-
     ################################################################
     # Write equivalent width file if we have the data for it
     ################################################################
@@ -931,16 +966,118 @@ def write_cluster(data, model_name, fmt):
                 # Add to master HDU list
                 hdulist.append(hdu)
 
-           
-
             # Create final HDU list and write to file
             hdulist = fits.HDUList(hdulist)
             hdulist.writeto(model_name+'_cluster_ew.fits',
                             clobber=True)
 
 
+    ################################################################
+    # Write the supernova file if we have the data for it
+    ################################################################
+    if 'tot_sn' in data._fields:
 
+        if fmt == 'ascii' or fmt == 'txt':
 
+            ########################################################
+            # ASCII mode
+            ########################################################
+
+            fp = open(model_name+'_cluster_sn.txt', 'w')
+            
+            # Write header
+            fp.write(("{:<14s}"*4+"\n").\
+                     format('UniqueID', 'Time', 'TotSN',
+                            'StochSN'))
+            fp.write(("{:<14s}"*4+"\n").\
+                     format('', '(yr)', '', '', '', '(Msun)'))
+            fp.write(("{:<14s}"*4+"\n").\
+                     format('-----------', '-----------', 
+                            '-----------', '-----------'))
+            sep_length = 4*14-3
+            out_line = "{:>11d}   {:11.5e}   {:>11.5e}   " + \
+                       "{:>11d}\n"
+
+            # Write data
+            for i in range(len(data.id)):
+                fp.write(out_line.
+                         format(data.id[i], data.time[i],
+                                data.tot_sn[i], data.stoch_sn[i]))
+
+            # Close file
+            fp.close()
+
+        elif fmt == 'bin' or fmt == 'binary':
+            
+            ########################################################
+            # Binary mode
+            ########################################################
+            
+            fp = open(model_name+'_cluster_sn.bin', 'wb')
+
+            # Break data into blocks of clusters with the same time
+            # and trial number
+            ptr = 0
+            while ptr < data.trial.size:
+
+                # Find the next cluster that differs from this one in
+                # either time or trial number
+                diff = np.where(
+                    np.logical_or(data.trial[ptr+1:] != data.trial[ptr],
+                                  data.time[ptr+1:] != data.time[ptr]))[0]
+                if diff.size == 0:
+                    block_end = data.trial.size
+                else:
+                    block_end = ptr + diff[0] + 1
+
+                # Write out time and number of clusters
+                ncluster = block_end - ptr
+                fp.write(np.uint(data.trial[ptr]))
+                fp.write(data.time[ptr])
+                fp.write(ncluster)
+
+                # Loop over clusters and write them
+                for k in range(ptr, block_end):
+                    fp.write(data.id[k])
+                    fp.write(data.tot_sn[k])
+                    fp.write(data.stoch_sn[k])
+                   
+                # Move pointer
+                ptr = block_end
+
+            # Close file
+            fp.close()
+
+        elif fmt == 'fits':
+
+            ########################################################
+            # FITS mode
+            ########################################################
+            
+            # Create a HDU containing SN information
+            sncols = []
+            sncols.append(fits.Column(name="Trial", format="1K",
+                                      unit="", array=data.trial))
+            sncols.append(fits.Column(name="UniqueID", format="1K",
+                                      unit="", array=data.id))
+            sncols.append(fits.Column(name="Time", format="1D",
+                                      unit="yr", array=data.time))
+            sncols.append(fits.Column(name="TotSN", format="1D",
+                                      unit="", array=data.tot_sn))
+            sncols.append(fits.Column(name="StochSN", format="1K",
+                                      unit="", array=data.stoch_sn))
+            snfits = fits.ColDefs(sncols)
+            snhdu = fits.BinTableHDU.from_columns(snfits)
+
+            # Create dummy primary HDU
+            prihdu = fits.PrimaryHDU()
+
+            # Create HDU list and write to file
+            hdulist = fits.HDUList([prihdu, snhdu])
+            hdulist.writeto(model_name+'_cluster_sn.fits', 
+                            clobber=True)
+            
+            
     ################################################################
     # Write the yield file if we have the data for it
     ################################################################

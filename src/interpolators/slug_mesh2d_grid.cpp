@@ -471,6 +471,43 @@ vector<double> slug_mesh2d_grid::y_lim(const double x_) const {
   }
 }
 
+////////////////////////////////////////////////////////////////////////
+// Return slopes along the mesh edge
+////////////////////////////////////////////////////////////////////////
+
+// Slope along the low x edge
+double slug_mesh2d_grid::dydx_lo(const double y_) const {
+  if (y_ > ymin && y_ < ymax) {
+    // Inside the mesh; find the two tracks that bound this y
+    size_type j = j_index(y_);
+    // Return the slope
+    return m[0][j];
+  } else {
+    // Missed the mesh -- throw an error
+    stringstream ss;
+    ss << "slug_mesh2d_grid::dydx_lo: input y value "
+       << y_ << " is outside the mesh, which runs from y = "
+       << ymin << " - " << ymax;
+    throw runtime_error(ss.str());
+  }
+}
+
+// Slope along the high x edge
+double slug_mesh2d_grid::dydx_hi(const double y_) const {
+  if (y_ > ymin && y_ < ymax) {
+    // Inside the mesh; find the two tracks that bound this y
+    size_type j = j_index(y_);
+    // Return the slope
+    return m[nx-1][j];
+  } else {
+    // Missed the mesh -- throw an error
+    stringstream ss;
+    ss << "slug_mesh2d_grid::dydx_hi: input y value "
+       << y_ << " is outside the mesh, which runs from y = "
+       << ymin << " - " << ymax;
+    throw runtime_error(ss.str());
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Indexing methods: these find the indices of cells that contain

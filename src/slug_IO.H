@@ -63,6 +63,7 @@ public:
     , int_prop_fits(nullptr), cluster_prop_fits(nullptr)
     , int_spec_fits(nullptr), cluster_spec_fits(nullptr)
     , int_phot_fits(nullptr), cluster_phot_fits(nullptr)
+    , int_sn_fits(nullptr), cluster_sn_fits(nullptr)
     , int_yield_fits(nullptr), cluster_yield_fits(nullptr)
                              , cluster_ew_fits(nullptr)
 #endif
@@ -75,6 +76,8 @@ public:
   std::ofstream cluster_spec_file;  // Cluster spectra file
   std::ofstream int_phot_file;      // Integrated photometry file
   std::ofstream cluster_phot_file;  // Cluster photometry file
+  std::ofstream int_sn_file;        // Integrated supernovae file
+  std::ofstream cluster_sn_file;    // Cluster supernovae file
   std::ofstream int_yield_file;     // Integrated yield file
   std::ofstream cluster_yield_file; // Cluster yield file
 #ifdef ENABLE_FITS
@@ -85,6 +88,8 @@ public:
   fitsfile *cluster_spec_fits;
   fitsfile *int_phot_fits;
   fitsfile *cluster_phot_fits;
+  fitsfile *int_sn_fits;
+  fitsfile *cluster_sn_fits;
   fitsfile *int_yield_fits;
   fitsfile *cluster_yield_fits;
   fitsfile *cluster_ew_fits;

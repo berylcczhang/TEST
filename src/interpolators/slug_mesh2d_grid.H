@@ -201,6 +201,12 @@ public:
   double y_max() const { return ymax; };
   std::vector<double> y_lim(const double x_ = constants::big) const;
 
+  // Method to return the slopes of the mesh edges at a particular y;
+  // formally, these functions return the slopes dy/dx on the low and
+  // high x edges of the mesh
+  double dydx_lo(const double x_) const;
+  double dydx_hi(const double x_) const;
+
   // Method to ask of the mesh is convex
   bool convex() const { return convex_; }
 

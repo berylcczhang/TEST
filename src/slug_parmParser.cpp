@@ -189,6 +189,7 @@ slug_parmParser::setDefaults() {
   use_extinct = false;
   use_nebular = true;
   use_neb_extinct = false;
+  lamers_loss = false;
   neb_no_metals = false;
 
   // Data paths
@@ -222,6 +223,8 @@ slug_parmParser::setDefaults() {
   nebular_temp = -1.0;
   nebular_phi = 0.73;
   nebular_logU = -3.0;
+  lamers_t4 = 1.9e8;
+  lamers_gamma = 0.65;
 
   // Photometric parameters
   path filter_path("filters");
@@ -237,7 +240,7 @@ slug_parmParser::setDefaults() {
   writeClusterProp = writeClusterPhot = 
     writeIntegratedProp = writeIntegratedPhot = 
     writeClusterSpec = writeIntegratedSpec = writeClusterYield =
-    writeIntegratedYield = true;
+    writeIntegratedYield = writeIntegratedSN = writeClusterSN = true;
   writeClusterEW = false;
   out_mode = ASCII;
 
@@ -299,7 +302,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	if (tokens[1].compare("cluster") == 0) {
 	  run_galaxy_sim = false;
 	  writeIntegratedProp = writeIntegratedSpec =
-	    writeIntegratedPhot = writeIntegratedYield = false;
+	    writeIntegratedPhot = writeIntegratedYield =
+	    writeIntegratedSN = false;
 	}
 	else if (tokens[1].compare("galaxy") == 0)
 	  run_galaxy_sim = true;
@@ -382,6 +386,12 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	  cluster_mass = lexical_cast<double>(tokens[1]);
       } else if (!(tokens[0].compare("redshift"))) {
 	z = lexical_cast<double>(tokens[1]);	
+      } else if (!(tokens[0].compare("lamers_evaporation"))) {
+	lamers_loss = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("lamers_t4"))) {
+	lamers_t4 = lexical_cast<double>(tokens[1]);
+      } else if (!(tokens[0].compare("lamers_gamma"))) {
+	lamers_gamma = lexical_cast<double>(tokens[1]);
       }
 
       // Random number generator control
@@ -409,6 +419,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	writeClusterPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_spec"))) {
 	writeClusterSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_cluster_sn"))) {
+	writeClusterSN = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_cluster_yield"))) {
 	writeClusterYield = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated"))) {
@@ -417,6 +429,8 @@ slug_parmParser::parseFile(std::ifstream &paramFile) {
 	writeIntegratedPhot = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_spec"))) {
 	writeIntegratedSpec = lexical_cast<int>(tokens[1]) != 0;
+      } else if (!(tokens[0].compare("out_integrated_sn"))) {
+	writeIntegratedSN = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("out_integrated_yield"))) {
 	writeIntegratedYield = lexical_cast<int>(tokens[1]) != 0;
       } else if (!(tokens[0].compare("save_rng_seed"))) {
@@ -772,12 +786,21 @@ slug_parmParser::checkParams() {
   if (nebular_phi < 0 || nebular_phi > 1) {
     valueError("nebular_phi must be in the range [0,1]");
   }
+  if (lamers_loss && (!randomClusterMass || !randomOutputTime)) {
+    valueError("Lamers (2005) cluster evaporation model only avaialable with random cluster masses and output times");
+  }
+  if (lamers_loss && lamers_t4 <= 0.0) {
+    valueError("Lamers (2005) t4 parameter must be > 0");
+  }
+  if (lamers_loss && lamers_gamma <= 0.0) {
+    valueError("Lamers (2005) gamma parameter must be > 0");
+  }
   if (!writeClusterProp && !writeClusterPhot 
       && !writeClusterSpec && !writeClusterYield
       && !writeIntegratedPhot && !writeIntegratedSpec
       && !writeIntegratedProp && !writeIntegratedYield
       && !writeClusterEW) {
-    valueError("nothing to be written!");
+    valueError("no output requested");
   }
   if ((writeClusterPhot || writeIntegratedPhot) && 
       (photBand.size() == 0)) {
@@ -886,12 +909,16 @@ void slug_parmParser::restartSetup() {
     outtypes.push_back("_integrated_phot");
   if (writeIntegratedYield && run_galaxy_sim)
     outtypes.push_back("_integrated_yield");
+  if (writeIntegratedSN && run_galaxy_sim)
+    outtypes.push_back("_integrated_sn");
   if (writeClusterProp)
     outtypes.push_back("_cluster_prop");
   if (writeClusterSpec)
     outtypes.push_back("_cluster_spec");
   if (writeClusterPhot)
     outtypes.push_back("_cluster_phot");
+  if (writeClusterSN)
+    outtypes.push_back("_cluster_sn");
   if (writeClusterYield)
     outtypes.push_back("_cluster_yield");
   if (writeClusterEW)
@@ -1179,6 +1206,11 @@ slug_parmParser::writeParams() const {
   } else {
     paramFile << "nebular_emission     " << "no" << endl;
   }
+  if (lamers_loss) {
+    paramFile << "lamers_evaporation  " << "yes" << endl;
+    paramFile << "lamers_t4           " << lamers_t4 << endl;
+    paramFile << "lamers_gamma        " << lamers_gamma << endl;
+  }
   if (run_galaxy_sim)
     paramFile << "clust_frac           " << fClust << endl;
   if (writeClusterPhot || writeIntegratedPhot) {
@@ -1198,11 +1230,15 @@ slug_parmParser::writeParams() const {
   paramFile << "out_cluster          " << writeClusterProp << endl;
   paramFile << "out_cluster_phot     " << writeClusterPhot << endl;
   paramFile << "out_cluster_spec     " << writeClusterSpec << endl;
+  paramFile << "out_cluster_sn       " << writeClusterSN << endl;
+  paramFile << "out_cluster_yield    " << writeClusterYield << endl;
   paramFile << "out_cluster_ew       " << writeClusterEW   << endl;
   if (run_galaxy_sim) {
     paramFile << "out_integrated       " << writeIntegratedProp << endl;
     paramFile << "out_integrated_phot  " << writeIntegratedPhot << endl;
     paramFile << "out_integrated_spec  " << writeIntegratedSpec << endl;
+    paramFile << "out_integrated_sn    " << writeIntegratedSN << endl;
+    paramFile << "out_integrated_yield " << writeIntegratedYield << endl;
   }
   if (photBand.size() > 0) {
     paramFile << "phot_bands           ";
@@ -1307,6 +1343,8 @@ bool slug_parmParser::get_writeClusterPhot()
 const { return writeClusterPhot; }
 bool slug_parmParser::get_writeClusterSpec()
 const { return writeClusterSpec; }
+bool slug_parmParser::get_writeClusterSN()
+const { return writeClusterSN; }
 bool slug_parmParser::get_writeClusterYield()
 const { return writeClusterYield; }
 bool slug_parmParser::get_writeIntegratedProp()
@@ -1315,6 +1353,8 @@ bool slug_parmParser::get_writeIntegratedPhot()
 const { return writeIntegratedPhot; }
 bool slug_parmParser::get_writeIntegratedSpec()
 const { return writeIntegratedSpec; }
+bool slug_parmParser::get_writeIntegratedSN()
+const { return writeIntegratedSN; }
 bool slug_parmParser::get_writeIntegratedYield()
 const { return writeIntegratedYield; }
 bool slug_parmParser::get_writeClusterEW()
@@ -1348,3 +1388,6 @@ bool slug_parmParser::get_outTimesList() const { return outTimesList; }
 const vector<double>& slug_parmParser::get_outTimes() const { return outTimes; }
 bool slug_parmParser::output_all_isotopes() const { return all_isotopes; }
 bool slug_parmParser::no_decay_isotopes() const { return no_decay; }
+bool slug_parmParser::use_lamers_loss() const { return lamers_loss; }
+double slug_parmParser::get_lamers_t4() const { return lamers_t4; }
+double slug_parmParser::get_lamers_gamma() const { return lamers_gamma; }

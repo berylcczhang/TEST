@@ -145,10 +145,6 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
                 else:
                   checking_for_var = False
 
-
-
-
-
         # Burn two header lines
         fp.readline()
         fp.readline()
@@ -217,12 +213,9 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         else:
             datstr = 'LdddddQQQ'
             nfield = 9
-
         if imf_is_var:
             datstr = datstr + nvps*'d'        
-            nfield = len(datstr)
-        
-            
+            nfield = len(datstr)           
         nentry = len(data)//struct.calcsize(datstr)
         data_list = struct.unpack(datstr*nentry, data)
 
@@ -247,15 +240,12 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             stellar_mass = np.copy(np.array(cluster_mass))
             stellar_mass[...] = np.nan
             lastindex=8
-
         if imf_is_var:                  
             currentvp = 0
             while currentvp < nvps:  
-                          
-                vp_dict['VP'+repr(currentvp)].extend(data_list[lastindex+currentvp+1::nfield])
-                currentvp += 1            
-        
-
+                vp_dict['VP'+repr(currentvp)].extend(
+                    data_list[lastindex+currentvp+1::nfield])
+                currentvp += 1
 
     elif fname.endswith('fits'):
 
@@ -277,8 +267,6 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
         num_dis_clusters = fp[1].data.field('NumDisClust')
         num_fld_stars = fp[1].data.field('NumFldStar')
 
-
-
         # Check for variable imf parameters
         imf_is_var = True
         if 'VP0' not in fp[1].data.columns.names:
@@ -290,15 +278,12 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             p = 0
             vp_dict = defaultdict(list)
             while (checking_for_var == True):
-                if 'VP'+repr(p) in fp[1].data.columns.names:
-                    
-                    vp_dict['VP'+repr(p)].append(fp[1].data.field('VP'+repr(p)))         
-
+                if 'VP'+repr(p) in fp[1].data.columns.names:                    
+                    vp_dict['VP'+repr(p)].append(
+                        fp[1].data.field('VP'+repr(p)))
                     p=p+1
-
                 else:
                     checking_for_var = False
-
 
 
     # Close file
@@ -320,7 +305,6 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
             vp_dict[VPn]=np.array(vp_dict[VPn])
             if fname.endswith('.fits'):
                 vp_dict[VPn]=vp_dict[VPn][0]
-                
 
 
     # Figure out if we have a number of trials with identical times,
@@ -341,14 +325,9 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     num_clusters = np.transpose(num_clusters.reshape(ntrial, ntime))
     num_dis_clusters = np.transpose(num_dis_clusters.reshape(ntrial, ntime))
     num_fld_stars = np.transpose(num_fld_stars.reshape(ntrial, ntime))
-
-
     if imf_is_var:               
         for VPn in vp_dict:         
             vp_dict[VPn]=np.transpose(vp_dict[VPn].reshape(ntrial,ntime))
-
-
-
 
     # Build the namedtuple to hold output
     out_type = namedtuple('integrated_prop',
@@ -359,18 +338,15 @@ def read_integrated_prop(model_name, output_dir=None, fmt=None,
     out = out_type(time, target_mass, actual_mass, live_mass,
                    stellar_mass, cluster_mass, num_clusters, 
                    num_dis_clusters, num_fld_stars)
-                   
     if imf_is_var:
-        vpn_tuple = ()
-        
-        for VPn in vp_dict:         
-
+        vpn_tuple = ()  
+        for VPn in vp_dict:
             out_type = namedtuple('cluster_prop',out_type._fields+(VPn,))
             vpn_tuple = vpn_tuple + (vp_dict[VPn],)
                                 
             out = out_type(time, target_mass, actual_mass, live_mass,
                    stellar_mass, cluster_mass, num_clusters, 
-                   num_dis_clusters, num_fld_stars,*vpn_tuple)                     
+                   num_dis_clusters, num_fld_stars,*vpn_tuple)
 
     # Return
     return out

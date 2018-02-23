@@ -1802,6 +1802,7 @@ write_ew(fitsfile *out_fits, unsigned long trial)
  
 }
 #endif
+
 ////////////////////////////////////////////////////////////////////////
 // Output photometry
 ////////////////////////////////////////////////////////////////////////
@@ -1916,6 +1917,64 @@ write_photometry(fitsfile *out_fits, unsigned long trial) {
   }
 }
 #endif
+
+////////////////////////////////////////////////////////////////////////
+// Output supernovae
+////////////////////////////////////////////////////////////////////////
+void
+slug_cluster::
+write_sn(ofstream& outfile, const outputMode out_mode,
+	 const unsigned long trial,
+	 bool cluster_only) {
+
+  if (out_mode == ASCII) {
+    outfile << setprecision(5) << scientific 
+	    << setw(11) << right << id << "   "
+	    << setw(11) << right << curTime << "   "
+	    << setw(11) << right << tot_sn << "   "
+	    << setw(11) << right << stoch_sn << endl;
+  } else {
+    if (cluster_only) {
+      outfile.write((char *) &trial, sizeof trial);
+      outfile.write((char *) &curTime, sizeof curTime);
+      vector<double>::size_type n = 1;
+      outfile.write((char *) &n, sizeof n);
+    }
+    outfile.write((char *) &id, sizeof id);
+    outfile.write((char *) &tot_sn, sizeof tot_sn);
+    outfile.write((char *) &stoch_sn, sizeof stoch_sn);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Output supernova count in FITS mode
+////////////////////////////////////////////////////////////////////////
+#ifdef ENABLE_FITS
+void
+slug_cluster::
+write_sn(fitsfile *out_fits, unsigned long trial) {
+
+  // Get current number of entries
+  int fits_status = 0;
+  long nrows = 0;
+  fits_get_num_rows(out_fits, &nrows, &fits_status);
+
+  // Write data
+  fits_write_col(out_fits, TULONG, 1, nrows+1, 1, 1, &trial, 
+		 &fits_status);
+  fits_write_col(out_fits, TULONG, 2, nrows+1, 1, 1, &id, 
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 3, nrows+1, 1, 1, &curTime, 
+		 &fits_status);
+  fits_write_col(out_fits, TDOUBLE, 4, nrows+1, 1, 1, &tot_sn, 
+		 &fits_status);
+  unsigned long tmp = stoch_sn;
+  fits_write_col(out_fits, TULONG, 5, nrows+1, 1, 1, &tmp, 
+		 &fits_status);
+}
+#endif
+
 
 ////////////////////////////////////////////////////////////////////////
 // Output yields

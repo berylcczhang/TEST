@@ -67,6 +67,9 @@ public:
   bool nebular_no_metals() const;         // No metals in nebular emission
   bool output_all_isotopes() const;       // Output all isotopes?
   bool no_decay_isotopes() const;         // Disable radioactive decay?
+  bool use_lamers_loss() const;           // Lamers (2005) cluster mass loss?
+  double get_lamers_t4() const;           // Lamers's t_4 constant
+  double get_lamers_gamma() const;        // Lamers's gamma constant
   double get_SFR() const;                 // SFR value for constant SFR
   double get_AV() const;                  // A_V value for constant A_V
   double get_neb_extinct_fac() const;     // Ratio of nebular to stellar A_V
@@ -112,11 +115,13 @@ public:
   bool get_writeClusterProp() const;      // Write cluster phys properties?
   bool get_writeClusterPhot() const;      // Write cluster photometry?
   bool get_writeClusterSpec() const;      // Write cluster spectra?
+  bool get_writeClusterSN() const;        // Write cluster supernova counts?
   bool get_writeClusterYield() const;     // Write cluster yields?
   bool get_writeClusterEW() const;        // Write cluster EW?
   bool get_writeIntegratedProp() const;   // Write integrated phys properties?
   bool get_writeIntegratedPhot() const;   // Write integrated photometry?
   bool get_writeIntegratedSpec() const;   // Write integrated spectra?
+  bool get_writeIntegratedSN() const;     // Write integrated SN count?
   bool get_writeIntegratedYield() const;  // Write integrated yields?
   bool get_use_extinct() const;           // Apply extinction?
   photMode get_photMode() const;          // Photometry mode
@@ -179,6 +184,8 @@ private:
   double nebular_temp;                    // Temp for nebular calculation
   double nebular_phi;                     // phi for nebular calc
   double nebular_logU;                    // log U for nebular calculation
+  double lamers_t4;                       // t4 for Lamers mass loss model
+  double lamers_gamma;                    // gamma for Lamers mass loss model
   bool restart;                           // Is this run a restart?
   bool constantSFR;                       // Is SFR constant?
   bool randomSFR;                         // Is SFR drawn randomly?
@@ -192,11 +199,13 @@ private:
   bool writeClusterPhot;                  // Write out cluster photometry?
   bool writeClusterSpec;                  // Write out cluster spectra?
   bool writeClusterYield;                 // Write out cluster yields?
+  bool writeClusterSN;                    // Write out cluster SN counts?
   bool writeClusterEW;                    // Write out cluster EW?
   bool writeIntegratedProp;               // Write out integrated properties?
   bool writeIntegratedPhot;               // Write out integrated photometry?
   bool writeIntegratedSpec;               // Write out integrated spectra?
   bool writeIntegratedYield;              // Write out integrated yields?
+  bool writeIntegratedSN;                 // Write out integrated SN counts?
   bool use_extinct;                       // Apply extinction?
   bool use_neb_extinct;                   // Apply nebular excess extinction?
   bool run_galaxy_sim;                    // Galaxy sim or cluster sim?
@@ -204,6 +213,7 @@ private:
   bool read_seed;                         // Read the rng seed?
   bool all_isotopes;                      // Include all isotopes?
   bool no_decay;                          // Disable isotopic decay?
+  bool lamers_loss;                       // Use Lamers (2005) mass loss model
   std::string sfr_file;                   // SFR file for random SFRs
   std::string sfh;                        // SF history file name
   std::string imf;                        // IMF file name

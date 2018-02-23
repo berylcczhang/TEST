@@ -1055,7 +1055,9 @@ build_interp_const_x(const double x,
         acc = acc_x[idx[i]][n];
       }
       gsl_errstat = gsl_spline_eval_e(spl, pos[i], acc, f_tmp.data()+i);
-      if (gsl_errstat) {
+      if (gsl_errstat
+	  || fabs(f_tmp.data()[i]) > 1e100
+	  ) {
         stringstream ss;
         ss << "slug_mesh2d_interpolator_vec::build_interp_const_x: "
            << "bad interpolation evaluation at x = "

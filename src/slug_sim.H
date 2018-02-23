@@ -79,8 +79,10 @@ private:
   void open_cluster_phot(slug_output_files &outfiles, int chknum = -1);
   void open_integrated_yield(slug_output_files &outfiles, int chknum = -1);
   void open_cluster_yield(slug_output_files &outfiles, int chknum = -1);
-
+  void open_integrated_sn(slug_output_files &outfiles, int chknum = -1);
+  void open_cluster_sn(slug_output_files &outfiles, int chknum = -1);
   void open_cluster_ew(slug_output_files &outfiles, int chknum = -1);
+  
   // Function to write separators between trials to files
   void write_separator(std::ofstream& file, 
 		       const unsigned int width = 80);

@@ -86,7 +86,7 @@ slug_PDF_normal::initialize(const std::vector<double>& tokenVals) {
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_normal::operator() (double x) {
-  if ((x < segMin) || (x > segMax)) return 0.0;
+  if ((x < segMin) || (x >= segMax)) return 0.0;
   return norm * exp( -(x-segMean)*(x-segMean) /
 		     (2.0*segDisp*segDisp) );
 }

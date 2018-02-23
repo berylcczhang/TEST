@@ -8,6 +8,7 @@ from .read_cluster_prop import read_cluster_prop
 from .read_cluster_phot import read_cluster_phot
 from .read_cluster_spec import read_cluster_spec
 from .read_cluster_yield import read_cluster_yield
+from .read_cluster_sn import read_cluster_sn
 from .read_cluster_ew import read_cluster_ew
 from .cloudy.read_cluster_cloudyparams import read_cluster_cloudyparams
 from .cloudy.read_cluster_cloudyphot import read_cluster_cloudyphot
@@ -183,10 +184,29 @@ def read_cluster(model_name, output_dir=None, fmt=None,
           if nofilterdata is True 
        phot : array, shape (N_cluster, N_filter)
           photometric value in each filter for each cluster; units are as
-          indicated in the units field
+          indicated in the units field; this is the true photometric
+          output of the stars alone
+       phot_ex : array, shape (N_cluster, N_filter)
+          photometry of the stars after extinction is applied (only
+          present if SLUG was run with extinction enabled)
+       phot_neb : array, shape (N_cluster, N_filter)
+          photometry of the stars plus nebular emission (only
+          present if SLUG was run with nebular emission enabled)
+       phot_neb_ex : array, shape (N_cluster, N_filter)
+          photometry of the stars plus nebular emission after
+          extinction is applied (only present if SLUG was run with
+          both nebular emission and extinction enabled)
 
-       If extinction is enabled, phot_ex will contain photometry  
-       after extinction has been applied.     
+       (Present is the run being read contains a cluster_sn file)
+
+       tot_sn : array, shape (N_cluster)
+          cumulative number of type II supernovae that have occurred
+          in that cluster up to the present time
+       stoch_sn : array of int, shape (N_cluster)
+          cumulative number of stochastically-treated supernovae that
+          have occurred in that cluster up to the present time; this
+          differs from tot_sn only if SLUG was run with min_stoch_mass
+          > 0
 
        (Present if the run being read contains a cluster_yield file)
 
@@ -362,6 +382,17 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         else:
             phot = None
 
+    # Read supernovae
+    try:
+        sn = read_cluster_sn(model_name, output_dir=output_dir,
+                             fmt=fmt, verbose=verbose,
+                             read_info=read_info)
+        if read_info is not None:
+            read_info['yield_name'] = read_info['fname']
+            del read_info['fname']
+    except IOError:
+        sn = None
+
     # Read yields
     try:
         yld = read_cluster_yield(model_name, output_dir=output_dir,
@@ -454,6 +485,8 @@ def read_cluster(model_name, output_dir=None, fmt=None,
         out_data = [spec.id, spec.trial, spec.time]
     elif phot is not None:
         out_data = [phot.id, phot.trial, phot.time]
+    elif sn is not None:
+        out_data = [sn.id, sn.trial, sn.time]
     elif yld is not None:
         out_data = [yld.id, yld.trial, yld.time]
     elif cloudyspec is not None:
@@ -479,6 +512,9 @@ def read_cluster(model_name, output_dir=None, fmt=None,
     if phot is not None:
         out_fields = out_fields + list(phot._fields[3:])
         out_data = out_data + list(phot[3:])
+    if sn is not None:
+        out_fields = out_fields + list(sn._fields[3:])
+        out_data = out_data + list(sn[3:])
     if yld is not None:
         out_fields = out_fields + list(yld._fields[3:])
         out_data = out_data + list(yld[3:])

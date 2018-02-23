@@ -130,7 +130,7 @@ slug_PDF_schechter::initialize(const std::vector<double>& tokenVal) {
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_schechter::operator() (double x) {
-  if ((x < segMin) || (x > segMax)) return 0.0;
+  if ((x < segMin) || (x >= segMax)) return 0.0;
   return norm * pow( x/segStar, segSlope ) * exp(-x/segSlope);
 }
 

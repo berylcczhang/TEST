@@ -80,7 +80,7 @@ slug_PDF_powerlaw::initialize(const std::vector<double> &tokenVals) {
 ////////////////////////////////////////////////////////////////////////
 double
 slug_PDF_powerlaw::operator() (double x) {
-  if ((x < segMin) || (x > segMax)) return 0.0;
+  if ((x < segMin) || (x >= segMax)) return 0.0;
   return norm * pow(x, segSlope);
 }
 

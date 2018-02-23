@@ -245,7 +245,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
   }
 
   // If we're computing yields, set up yield tables
-  if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield()) {
+  if (pp.get_writeClusterYield() || pp.get_writeIntegratedYield() ||
+      pp.get_writeClusterSN() || pp.get_writeIntegratedSN()) {
     if (pp.get_verbosity() > 1)
       ostreams.slug_out_one << "reading yield tables" << std::endl;
     yields = (slug_yields *)
@@ -505,10 +506,13 @@ void slug_sim::open_output(slug_output_files &outfiles, int chknum) {
     open_integrated_phot(outfiles, chknum);
   if (pp.galaxy_sim() && pp.get_writeIntegratedYield())
     open_integrated_yield(outfiles, chknum);
+  if (pp.galaxy_sim() && pp.get_writeIntegratedSN())
+    open_integrated_sn(outfiles, chknum);
   if (pp.get_writeClusterProp()) open_cluster_prop(outfiles, chknum);
   if (pp.get_writeClusterPhot()) open_cluster_phot(outfiles, chknum);
   if (pp.get_writeClusterSpec()) open_cluster_spec(outfiles, chknum);
   if (pp.get_writeClusterYield()) open_cluster_yield(outfiles, chknum);
+  if (pp.get_writeClusterSN()) open_cluster_sn(outfiles, chknum);
   if (pp.get_writeClusterEW()) open_cluster_ew(outfiles, chknum);
   outfiles.is_open = true;
 }
@@ -530,6 +534,8 @@ void slug_sim::close_output(slug_output_files &outfiles,
       open_files.push_back(&(outfiles.int_phot_file));
     if (outfiles.int_yield_file.is_open())
       open_files.push_back(&(outfiles.int_yield_file));
+    if (outfiles.int_sn_file.is_open())
+      open_files.push_back(&(outfiles.int_sn_file));
     if (outfiles.cluster_prop_file.is_open())
       open_files.push_back(&(outfiles.cluster_prop_file));
     if (outfiles.cluster_spec_file.is_open())
@@ -538,6 +544,8 @@ void slug_sim::close_output(slug_output_files &outfiles,
       open_files.push_back(&(outfiles.cluster_phot_file));
     if (outfiles.cluster_yield_file.is_open())
       open_files.push_back(&(outfiles.cluster_yield_file));
+    if (outfiles.cluster_sn_file.is_open())
+      open_files.push_back(&(outfiles.cluster_sn_file));
 
     // Fix number of trials in file
     for (vector<std::ifstream>::size_type i=0; i<open_files.size(); i++) {
@@ -570,6 +578,10 @@ void slug_sim::close_output(slug_output_files &outfiles,
     outfiles.int_yield_file.close();
   if (outfiles.cluster_yield_file.is_open())
     outfiles.cluster_yield_file.close();
+  if (outfiles.int_sn_file.is_open())
+    outfiles.int_sn_file.close();
+  if (outfiles.cluster_sn_file.is_open())
+    outfiles.cluster_sn_file.close();
 
 #ifdef ENABLE_FITS
   // Reset number of trials for FITS files
@@ -625,11 +637,16 @@ void slug_sim::close_output(slug_output_files &outfiles,
       fits_close_file(outfiles.int_yield_fits, &fits_status);
     if (outfiles.cluster_yield_fits != nullptr)
       fits_close_file(outfiles.cluster_yield_fits, &fits_status);
+    if (outfiles.int_sn_fits != nullptr)
+      fits_close_file(outfiles.int_sn_fits, &fits_status);
+    if (outfiles.cluster_sn_fits != nullptr)
+      fits_close_file(outfiles.cluster_sn_fits, &fits_status);
     if (outfiles.cluster_ew_fits != nullptr)
       fits_close_file(outfiles.cluster_ew_fits, &fits_status);
     outfiles.int_prop_fits = outfiles.cluster_prop_fits
       = outfiles.int_spec_fits = outfiles.cluster_spec_fits
       = outfiles.int_phot_fits = outfiles.cluster_phot_fits
+      = outfiles.int_sn_fits = outfiles.cluster_sn_fits 
       = outfiles.int_yield_fits = outfiles.cluster_yield_fits 
       = outfiles.cluster_ew_fits = nullptr;
   }
@@ -783,6 +800,8 @@ void slug_sim::galaxy_sim() {
       if (pp.get_writeIntegratedPhot())
 	write_separator(outfiles.int_phot_file,
 			(1+nfield*pp.get_nPhot())*21-3);
+      if (pp.get_writeIntegratedSN())
+	write_separator(outfiles.int_sn_file, 14*3-3);
       if (pp.get_writeIntegratedYield())
 	write_separator(outfiles.int_yield_file, 14*5-3);
       if (pp.get_writeClusterProp())
@@ -792,6 +811,8 @@ void slug_sim::galaxy_sim() {
       if (pp.get_writeClusterPhot())
 	write_separator(outfiles.cluster_phot_file,
 			(2+nfield*pp.get_nPhot())*21-3);
+      if (pp.get_writeClusterSN())
+	write_separator(outfiles.cluster_sn_file, 14*4-3);
       if (pp.get_writeClusterYield())
 	write_separator(outfiles.cluster_yield_file, 14*6-3);
     }
@@ -879,7 +900,35 @@ void slug_sim::galaxy_sim() {
 				      trial_ctr_loc);
 	}
 #endif
-      }	
+      }
+
+      // Write supernova count if requested
+      if (pp.get_writeIntegratedSN()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_integrated_sn(outfiles.int_sn_file, out_mode,
+					 trial_ctr_loc);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_integrated_sn(outfiles.int_sn_fits,
+					 trial_ctr_loc);
+	}
+#endif
+      }
+      if (pp.get_writeClusterSN()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  galaxy->write_cluster_sn(outfiles.cluster_sn_file, out_mode,
+				   trial_ctr_loc);
+#ifdef ENABLE_FITS
+	} else {
+	  galaxy->write_cluster_sn(outfiles.cluster_sn_fits,
+				   trial_ctr_loc);
+	}
+#endif
+      }
 
       // Write spectra if requested
       if (pp.get_writeIntegratedSpec()) {
@@ -996,6 +1045,7 @@ void slug_sim::cluster_sim() {
 #endif
   
   // Loop over trials
+  unsigned long id = 0;
   while (true) {
 
     // Increment the global trial counter
@@ -1077,9 +1127,27 @@ void slug_sim::cluster_sim() {
     // Reset the cluster if the mass is constant, destroy it and build
     // a new one if not
     if (pp.get_random_cluster_mass()) {
-      unsigned long id = cluster->get_id();
-      delete cluster;
-      cluster = new slug_cluster(id+1, cmf->draw(), 0.0, imf,
+      if (cluster) {
+	id = cluster->get_id();
+	delete cluster;
+	cluster = nullptr;
+      }
+      double m_cl = cmf->draw();
+      if (pp.use_lamers_loss()) {
+	double lgamma = pp.get_lamers_gamma();
+	double t4 = pp.get_lamers_t4();
+	double fac = lgamma*pow(1.0e4/m_cl, lgamma)*outTimes.back()/t4;
+	if (fac > 1.0) {
+	  // Cluster gone completely, end trial
+	  if (pp.get_verbosity() > 1) {
+	    ostreams.slug_out << "  Lamers evaporation removed cluster"
+			      << ", ending trial" << endl;
+	  }
+	  continue;
+	}  
+	m_cl *= pow(1.0 - fac, 1.0/lgamma);
+      }
+      cluster = new slug_cluster(id+1, m_cl, 0.0, imf,
 				 tracks, specsyn, filters,
 				 extinct, nebular, yields, lines, ostreams, clf);
     } else {
@@ -1102,6 +1170,8 @@ void slug_sim::cluster_sim() {
 	write_separator(outfiles.cluster_phot_file, (2+pp.get_nPhot())*18-3);
       if (pp.get_writeClusterYield())
 	write_separator(outfiles.cluster_yield_file, 5*14-3);
+      if (pp.get_writeClusterSN())
+	write_separator(outfiles.cluster_sn_file, 4*14-3);
     }
     
     // Loop over time steps
@@ -1184,6 +1254,20 @@ void slug_sim::cluster_sim() {
 #ifdef ENABLE_FITS
 	} else {
 	  cluster->write_yield(outfiles.cluster_yield_fits, trial_ctr_loc);
+	}
+#endif
+      }
+
+      // Write supernova counts if requested
+      if (pp.get_writeClusterSN()) {
+#ifdef ENABLE_FITS
+	if (out_mode != FITS) {
+#endif
+	  cluster->write_sn(outfiles.cluster_sn_file, out_mode,
+			    trial_ctr_loc, true);
+#ifdef ENABLE_FITS
+	} else {
+	  cluster->write_sn(outfiles.cluster_sn_fits, trial_ctr_loc);
 	}
 #endif
       }
@@ -2773,6 +2857,282 @@ void slug_sim::open_cluster_ew(slug_output_files &outfiles,
     if (chknum >= 0) {
       unsigned int ntrials = 0;
       fits_write_key(outfiles.cluster_phot_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
+  }
+#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open integrated supernovae file and write its header
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_integrated_sn(slug_output_files &outfiles,
+				  int chknum) {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
+  fname += "_integrated_sn";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    outfiles.int_sn_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+    full_path /= fname;
+    outfiles.int_sn_file.open(full_path.c_str(), ios::out | ios::binary);
+  } 
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&outfiles.int_sn_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      ostreams.slug_err
+	<< "unable to open integrated supernovae file "
+	<< full_path.string()
+	<< "; cfitsio says: " << err_txt << endl;
+      exit(1);
+    }
+  }
+#endif
+
+  // Make sure file is open
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!outfiles.int_sn_file.is_open()) {
+      ostreams.slug_err << "unable to open intergrated supernovae file " 
+			<< full_path.string() << endl;
+      exit(1);
+    }
+#ifdef ENABLE_FITS
+  }
+#endif 
+
+  // Write header
+  if (out_mode == ASCII) {
+    if (chknum >= 0)
+      outfiles.int_sn_file << "N_Trials = " << setfill('0')
+			   << setw(14) << 0 << setfill(' ') << endl;
+    outfiles.int_sn_file << setw(14) << left << "Time"
+			 << setw(14) << left << "TotSN"
+			 << setw(14) << left << "StochSN"
+			 << endl;
+
+    // Write unit line
+    outfiles.int_sn_file << setw(14) << left << "(yr)"
+			 << setw(14) << left << ""
+			 << setw(14) << left << ""
+			 << endl;
+		  		  		  
+    // Line of underscores
+    outfiles.int_sn_file << setw(14) << left << "-----------"
+			 << setw(14) << left << "-----------"
+			 << setw(14) << left << "-----------"
+			 << endl;
+  
+  } else if (out_mode == BINARY) {
+
+    // State number of trials expected to be in this file
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      outfiles.int_sn_file.write((char *) &ntrial, sizeof ntrial);
+    }
+
+  }
+  
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    // Note: this is pretty awkward -- we have to declare a vector of
+    // string, then cast them to arrays of char *, because the cfitsio
+    // library wants that. Unfortunately this awkwardness is the only
+    // way to avoid lots of compiler warnings.
+    int ncol = 4;
+    vector<string> ttype_str = 
+      { "Trial", "Time", "TotSN", "StochSN" };
+    vector<string> tform_str = 
+      { "1K", "1D", "1D", "1K" };
+    vector<string> tunit_str = 
+      { "", "yr", "", "" };
+    
+    // Make things we can pass to c
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
+
+    // Create FITS table
+    int fits_status = 0;
+    fits_create_tbl(outfiles.int_sn_fits, BINARY_TBL, 0, ncol,
+		    ttype, tform, tunit, nullptr, &fits_status);
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
+
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(outfiles.int_sn_fits, TUINT, "N_Trials", 
+		     &ntrials, "Number of trials in file",
+		     &fits_status);
+    }
+  }
+#endif
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// Open cluster supernova file and write its header
+////////////////////////////////////////////////////////////////////////
+void slug_sim::open_cluster_sn(slug_output_files &outfiles,
+			       int chknum) {
+
+  // Construct file name and path
+  string fname(pp.get_modelName());
+#if defined(ENABLE_MPI) && !(MPI_VERSION == 1 || MPI_VERSION == 2)
+  if (comm != MPI_COMM_NULL) {
+    ostringstream ss;
+    ss << "_" << setfill('0') << setw(4) << rank;
+    fname += ss.str();
+  }
+#endif
+  if (chknum >= 0) {
+    ostringstream ss;
+    ss << "_chk" << setfill('0') << setw(4) << chknum;
+    fname += ss.str();
+  }
+  fname += "_cluster_sn";
+  path full_path(pp.get_outDir());
+  if (out_mode == ASCII) {
+    fname += ".txt";
+    full_path /= fname;
+    outfiles.cluster_sn_file.open(full_path.c_str(), ios::out);
+  } else if (out_mode == BINARY) {
+    fname += ".bin";
+    full_path /= fname;
+    outfiles.cluster_sn_file.open(full_path.c_str(), ios::out | ios::binary);
+  }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    fname += ".fits";
+    full_path /= fname;
+    string fname_tmp = "!" + full_path.string();
+    int fits_status = 0;
+    fits_create_file(&outfiles.cluster_sn_fits, fname_tmp.c_str(), &fits_status);
+    if (fits_status) {
+      char err_txt[80] = "";
+      fits_read_errmsg(err_txt);
+      ostreams.slug_err
+	<< "unable to open cluster supernovae file "
+	<< full_path.string()
+	<< "; cfitsio says: " << err_txt << endl;
+      bailout(1);
+    }
+  }
+#endif
+
+  // Make sure file is open
+#ifdef ENABLE_FITS
+  if (out_mode != FITS) {
+#endif
+    if (!outfiles.cluster_sn_file.is_open()) {
+      ostreams.slug_err << "unable to open cluster supernovae file " 
+			<< full_path.string() << endl;
+      bailout(1);
+    }
+#ifdef ENABLE_FITS
+  }
+#endif
+
+  // Write header
+  if (out_mode == ASCII) {
+    if (chknum >= 0)
+      outfiles.cluster_sn_file << "N_Trials = " << setfill('0')
+			       << setw(14) << 0 << setfill(' ') << endl;
+    outfiles.cluster_sn_file << setw(14) << left << "UniqueID"
+			     << setw(14) << left << "Time"
+			     << setw(14) << left << "TotSN"
+			     << setw(14) << left << "StochSN"
+			     << endl;
+    outfiles.cluster_sn_file << setw(14) << left << ""
+			     << setw(14) << left << "(yr)"
+			     << setw(14) << left << ""
+			     << setw(14) << left << ""
+			     << endl;
+    outfiles.cluster_sn_file << setw(14) << left << "-----------"
+			     << setw(14) << left << "-----------"
+			     << setw(14) << left << "-----------"
+			     << setw(14) << left << "-----------"
+			     << endl;
+
+  } else if (out_mode == BINARY) {
+
+    // State number of trials in this file
+    if (chknum >= 0) {
+      unsigned int ntrial = 0;
+      outfiles.cluster_sn_file.write((char *) &ntrial, sizeof ntrial);
+    }
+
+  }
+#ifdef ENABLE_FITS
+  else if (out_mode == FITS) {
+    // Note: this is pretty awkward -- we have to declare a vector of
+    // string, then cast them to arrays of char *, because the cfitsio
+    // library wants that. Unfortunately this awkwardness is the only
+    // way to avoid lots of compiler warnings.
+    int ncol = 5;
+    vector<string> ttype_str = 
+      { "Trial", "UniqueID", "Time", "TotSN", "StochSN" };
+    vector<string> tform_str = 
+      { "1K", "1K", "1D", "1D", "1K" };
+    vector<string> tunit_str = 
+      { "", "", "yr", "", "" };
+    char **ttype = new char *[ncol];
+    char **tform = new char *[ncol];
+    char **tunit = new char *[ncol];
+    for (int i=0; i<ncol; i++) {
+      ttype[i] = const_cast<char*>(ttype_str[i].c_str());
+      tform[i] = const_cast<char*>(tform_str[i].c_str());
+      tunit[i] = const_cast<char*>(tunit_str[i].c_str());
+    }
+
+    // Create the table
+    int fits_status = 0;
+    fits_create_tbl(outfiles.cluster_sn_fits, BINARY_TBL, 0, ncol,
+		    ttype, tform, tunit, nullptr, &fits_status);
+    delete [] ttype;
+    delete [] tform;
+    delete [] tunit;
+
+    // Add a keyword stating the expected number of trials if this is
+    // a checkpoint file
+    if (chknum >= 0) {
+      unsigned int ntrials = 0;
+      fits_write_key(outfiles.cluster_sn_fits, TUINT, "N_Trials", 
 		     &ntrials, "Number of trials in file",
 		     &fits_status);
     }

@@ -9,6 +9,7 @@ single output file.
 import numpy as np
 import struct
 import os
+import sys
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if not on_rtd:
     from scipy.interpolate import interp1d
@@ -180,11 +181,8 @@ def write_integrated(data, model_name, fmt):
             nvp = 0
             for field in data._fields:
                 if field.startswith("VP"):
-#                    print "FOUND VP",nvp
                     nvp+=1
-
             fp.write( struct.pack('i', nvp) )
-
 
             # Write data
             ntime = data.actual_mass.shape[-2]
@@ -211,11 +209,7 @@ def write_integrated(data, model_name, fmt):
                     fp.write(data.num_fld_stars[j,i])
                     for field in sorted(data._fields):
                         if field.startswith("VP"):
-#                           print "WRITING",field," with ",getattr(data, field)[k]
-                            fp.write(getattr(data, field)[j,i])                     
-
-
-
+                            fp.write(getattr(data, field)[j,i])
 
             # Close
             fp.close()
@@ -441,13 +435,25 @@ def write_integrated(data, model_name, fmt):
             # Write out bytes indicating nebular or no nebular, and
             # extinction or no extinction
             if 'spec_neb' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
             if 'spec_ex' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
 
             # Write out wavelength data
             fp.write(np.int64(len(data.wl)))
@@ -694,13 +700,25 @@ def write_integrated(data, model_name, fmt):
             # Write out bytes indicating nebular or no nebular, and
             # extinction or no extinction
             if 'phot_neb' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
             if 'phot_ex' in data._fields:
-                fp.write(str(bytearray([1])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([1])))
+                else:
+                    fp.write(b'\x01')
             else:
-                fp.write(str(bytearray([0])))
+                if sys.version_info < (3,):
+                    fp.write(str(bytearray([0])))
+                else:
+                    fp.write(b'\x00')
 
             # Write data
             ntime = data.phot.shape[1]
@@ -801,6 +819,117 @@ def write_integrated(data, model_name, fmt):
             hdulist.writeto(model_name+'_integrated_phot.fits',
                             clobber=True)
 
+    ################################################################
+    # Write the supernova file if we have the data for it
+    ################################################################
+    if 'tot_sn' in data._fields:
+
+        if fmt == 'ascii' or fmt == 'txt':
+
+            ########################################################
+            # ASCII mode
+            ########################################################
+
+             fp = open(model_name+'_integrated_sn.txt', 'w')
+
+            # Write header
+            fp.write(("{:<14s}"*3+"\n").
+                     format('Time', 'TotSN', 'StochSN'))
+            fp.write(("{:<14s}"*3+"\n").format('(yr)', '', ''))
+            fp.write(("{:<14s}"*3+"\n").format('-----------', '-----------', 
+                                               '-----------'))
+            sep_length = 3*14-3
+            out_line = "{:11.5e}   {:>11.5e}   {:>11d}\n"
+             
+            # Write data
+            ntime = data.tot_sn.shape[0]
+            ntrial = data.tot_sn.shape[1]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
+            for i in range(ntrial):
+                # Write separator between trials
+                if i != 0:
+                    fp.write('-'*sep_length+'\n')
+                # Write data for this time
+                for j in range(ntime):
+                    if random_time:
+                        t_out = data.time[i]
+                    else:
+                        t_out = data.time[j]
+                    fp.write(out_line.format(
+                        t_out, data.tot_sn[j,i], data.stoch_sn[j,i]))
+
+            # Close file
+            fp.close()
+
+        elif fmt == 'bin' or fmt == 'binary':
+
+            ########################################################
+            # Binary mode
+            ########################################################
+
+            fp = open(model_name+'_integrated_sn.bin', 'wb')
+            
+            # Write data
+            ntime = data.tot_sn.shape[-2]
+            ntrial = data.tot_sn.shape[-1]
+            if len(data.time) > ntime:
+                random_time = True
+            else:
+                random_time = False
+            for i in range(ntrial):
+                for j in range(ntime):
+                    if random_time:
+                        t_out = data.time[i]
+                    else:
+                        t_out = data.time[j]
+                    fp.write(np.uint(i))
+                    fp.write(t_out)
+                    fp.write(data.tot_sn[j,i])
+                    fp.write(data.stoch_sn[j,i])
+
+            # Close file
+            fp.close()
+                    
+            ########################################################
+            # FITS mode
+            ########################################################
+           
+            # Figure out number of times and trials, and tile the
+            # arrays
+            ntimes = data.tot_sn.shape[0]
+            ntrial = data.tot_sn.shape[1]
+            trial = np.transpose(np.tile(
+                np.arange(ntrial, dtype='int64'), (ntimes,1))).\
+                flatten()
+            if len(data.time) > ntimes:
+                times = data.time
+            else:
+                times = np.tile(data.time, ntrial)
+
+            # Convert yield data to FITS columns
+            cols = []
+            cols.append(fits.Column(name="Trial", format="1K",
+                                    unit="", array=trial))
+            cols.append(fits.Column(name="Time", format="1D",
+                                    unit="yr", array=times))
+            cols.append(fits.Column(name="TotSN", format="1D",
+                                    unit="",
+                                    array=np.transpose(data.tot_sn).flatten()))
+            cols.append(fits.Column(name="StochSN", format="1K",
+                                    unit="",
+                                    array=np.transpose(data.tot_sn).flatten()))
+            snfits = fits.ColDefs(cols)
+            snhdu = fits.BinTableHDU.from_columns(snfits)
+
+            # Create HDU list and write file
+            prihdu = fits.PrimaryHDU()
+            hdulist = fits.HDUList([prihdu, sn_hdu])
+            hdulist.writeto(model_name+'_integrated_sn.fits',
+                            clobber=True)
+            
     ################################################################
     # Write yield file if we have the data for it
     ################################################################

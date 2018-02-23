@@ -89,13 +89,20 @@ public:
   get_yield(const bool del_cluster = false)
   { set_yield(del_cluster); return all_yields; }
   
+  // Routines to report the number of type II SN events
+  double get_sn() const;
+  int get_stoch_sn() const;
+  double get_non_stoch_sn() const;
+  
   // Output functions
   void write_integrated_prop(std::ofstream& int_prop_file, 
 			     const outputMode out_mode, 
-			     const unsigned long trial, const std::vector<double>& imfvp = {});
+			     const unsigned long trial,
+			     const std::vector<double>& imfvp = {});
   void write_cluster_prop(std::ofstream& cluster_prop_file, 
 			  const outputMode out_mode,
-			  const unsigned long trial, const std::vector<double>& imfvp = {});
+			  const unsigned long trial,
+			  const std::vector<double>& imfvp = {});
   void write_integrated_spec(std::ofstream& int_spec_file,
 			     const outputMode out_mode,
 			     const unsigned long trial,
@@ -110,6 +117,12 @@ public:
   void write_cluster_phot(std::ofstream& outfile,
 			  const outputMode out_mode,
 			  const unsigned long trial);
+  void write_integrated_sn(std::ofstream& outfile,
+			   const outputMode out_mode,
+			   const unsigned long trial);
+  void write_cluster_sn(std::ofstream& outfile,
+			const outputMode out_mode,
+			const unsigned long trial);
   void write_integrated_yield(std::ofstream& outfile,
 			      const outputMode out_mode,
 			      const unsigned long trial,
@@ -120,14 +133,18 @@ public:
 
 #ifdef ENABLE_FITS
   // FITS output functions
-  void write_integrated_prop(fitsfile* int_prop_fits, unsigned long trial, const std::vector<double>& imfvp = {});
-  void write_cluster_prop(fitsfile* cluster_prop_fits, unsigned long trial, const std::vector<double>& imfvp = {});
+  void write_integrated_prop(fitsfile* int_prop_fits, unsigned long trial,
+			     const std::vector<double>& imfvp = {});
+  void write_cluster_prop(fitsfile* cluster_prop_fits, unsigned long trial,
+			  const std::vector<double>& imfvp = {});
   void write_integrated_spec(fitsfile* int_spec_fits, unsigned long trial,
 			     const bool del_cluster = false);
   void write_cluster_spec(fitsfile* cluster_spec_fits, unsigned long trial);
   void write_integrated_phot(fitsfile* int_phot_fits, unsigned long trial,
 			     const bool del_cluster = false);
   void write_cluster_phot(fitsfile* cluster_phot_fits, unsigned long trial);
+  void write_integrated_sn(fitsfile* int_sn_fits, unsigned long trial);
+  void write_cluster_sn(fitsfile* cluster_sn_fits, unsigned long trial);
   void write_integrated_yield(fitsfile* int_yield_fits, unsigned long trial,
 			      const bool del_cluster = false);
   void write_cluster_yield(fitsfile* cluster_yield_fits, unsigned long trial);
@@ -183,7 +200,9 @@ private:
   double Lbol;                        // Bolometric luminosity of galaxy
   double Lbol_ext;                    // Bolometric luminsoity w/extinction
   double last_yield_time;             // Last time yields were computed
+  double field_tot_sn;                // Total field supernovae
   unsigned long cluster_id;           // Cluster ID counter
+  unsigned long field_stoch_sn;       // Field stochastic supernovae
   std::vector<slug_star> field_stars; // Field stars
   std::vector<slug_star> dead_field_stars; // Field stars that died this time step
   std::vector<slug_stardata> field_data; // Field star data

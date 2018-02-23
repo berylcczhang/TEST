@@ -199,6 +199,8 @@ public:
   { return grid.x_lim(y); }
   std::vector<double> y_lim(const double x = constants::big) const
   { return grid.y_lim(x); }
+  double dydx_lo(const double x) const { return grid.dydx_lo(x); }
+  double dydx_hi(const double x) const { return grid.dydx_hi(x); }
   bool convex() const { return grid.convex(); }
   const boost::multi_array_types::size_type* shape() const
   { return f.shape(); }
@@ -297,6 +299,8 @@ public:
   { return grid.x_lim(y); }
   std::vector<double> y_lim(const double x = constants::big) const
   { return grid.y_lim(x); }
+  double dydx_lo(const double x) const { return grid.dydx_lo(x); }
+  double dydx_hi(const double x) const { return grid.dydx_hi(x); }
   bool convex() const { return grid.convex(); }
   const boost::multi_array_types::size_type* shape() const
   { return f.shape(); }

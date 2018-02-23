@@ -58,13 +58,16 @@ public:
   virtual double min_mass() const { return exp(interp->y_min()); }
   virtual double max_mass() const { return exp(interp->y_max()); }
 
-  // Age of star dying at a particular time; calling this causes an
-  // error if the tracks are non-monotonic, so a single death mass
-  // cannot be defined; in that case call death_mass_non_monotonic
+  // Mass(es) of star(s) dying at a particular time; see slug_tracks.H
+  // for an explanation of the polymorphism here.
   virtual double
   death_mass(const double time,
 	     const double Z = tracks::null_metallicity) const;
-
+  virtual void
+  death_mass(const double time,
+	     std::vector<double>& m_death,
+	     const double Z = tracks::null_metallicity) const;
+  
   // Live mass range
   virtual std::vector<double>
   live_mass_range(const double time,
@@ -87,9 +90,18 @@ public:
     else if (logm > interp->y_max())
       return exp(interp->x_max(interp->y_max()));
     else					   
-      return exp(interp->x_max(log(mass)));
+      return exp(interp->x_max(logm));
   };
 
+  // Derivative of stellar lifetime with respect to stellar mass
+  virtual double
+  star_lifetime_deriv(const double mass,
+		      const double Z = tracks::null_metallicity) const {
+    double t = star_lifetime(mass, Z);
+    double dlogm_dlogt = interp->dydx_hi(log(mass));
+    return t / (mass * dlogm_dlogt);
+  };
+  
   // Mass at death of a star of a specified starting mass
   virtual double
   star_mass_at_death(const double mass,

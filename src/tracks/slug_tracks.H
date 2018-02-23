@@ -64,11 +64,22 @@ public:
   virtual double min_mass() const = 0;
   virtual double max_mass() const = 0;
 
-  // Age of star dying at a particular time; calling this causes an
-  // error if the tracks are non-monotonic, so a single death mass
-  // cannot be defined; in that case call death_mass_non_monotonic
+  // Return the mass(es) of star(s) dying at a particular time; this
+  // is a polymorphic function with two forms. The first just takes a
+  // time (and optionally a metallicity) as an argument, and returns a
+  // single mass of star dying. This form is only suitable for tracks
+  // that are monotonic, for which a unique death mass exists, and it
+  // is an error to use this form for non-monotonic tracks. The second
+  // form takes as an argument a vector of death masses, which on
+  // return will contain the masses of all stars dying at a particular
+  // time (of which there can be an arbitrary number). This form may
+  // be called for either monotonic or non-monotonic tracks.
   virtual double
   death_mass(const double time,
+	     const double Z = tracks::null_metallicity) const = 0;
+  virtual void
+  death_mass(const double time,
+	     std::vector<double>& m_death,
 	     const double Z = tracks::null_metallicity) const = 0;
 
   // Live mass range
@@ -85,6 +96,11 @@ public:
   star_lifetime(const double mass,
 		const double Z = tracks::null_metallicity) const = 0;
 
+  // Derivative of stellar lifetime with respect to stellar mass
+  virtual double
+  star_lifetime_deriv(const double mass,
+		      const double Z = tracks::null_metallicity) const = 0;
+  
   // Mass at death of a star of a specified starting mass
   virtual double
   star_mass_at_death(const double mass,
