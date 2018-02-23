@@ -830,7 +830,7 @@ def write_integrated(data, model_name, fmt):
             # ASCII mode
             ########################################################
 
-             fp = open(model_name+'_integrated_sn.txt', 'w')
+            fp = open(model_name+'_integrated_sn.txt', 'w')
 
             # Write header
             fp.write(("{:<14s}"*3+"\n").
