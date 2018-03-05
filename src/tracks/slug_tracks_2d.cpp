@@ -256,6 +256,9 @@ slug_tracks_2d::get_star(const double m, const double t,
     - 0.5*log10(4.0*M_PI) 
     - 0.5*constants::logsigmaSB - 2.0*star.logTeff
     - constants::logRsun;
+  star.logg = constants::logG + star.logM +
+    constants::logMsun - 2.0*star.logR - 
+    2.0*constants::logRsun;
   set_WR_type(m, t, star);
   return star;
 }
