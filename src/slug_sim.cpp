@@ -1167,7 +1167,7 @@ void slug_sim::cluster_sim() {
       if (pp.get_writeClusterSpec())
 	write_separator(outfiles.cluster_spec_file, 4*14-3);
       if (pp.get_writeClusterPhot())
-	write_separator(outfiles.cluster_phot_file, (2+pp.get_nPhot())*18-3);
+	write_separator(outfiles.cluster_phot_file, (2+pp.get_nPhot())*21-3);
       if (pp.get_writeClusterYield())
 	write_separator(outfiles.cluster_yield_file, 5*14-3);
       if (pp.get_writeClusterSN())
