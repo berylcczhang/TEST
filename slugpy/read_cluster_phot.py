@@ -318,8 +318,8 @@ def read_cluster_phot(model_name, output_dir=None, fmt=None,
                                 else:
                                     tmp_neb_ex.append(float(substr))
                     phot_neb_ex.append(np.array(tmp_neb_ex, dtype='float'))
-            if not phot_only:
-                trial.append(trialptr)
+                if not phot_only:
+                    trial.append(trialptr)
 
     elif fname.endswith('.bin'):
 
