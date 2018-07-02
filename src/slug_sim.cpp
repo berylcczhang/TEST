@@ -202,7 +202,8 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
   switch (pp.get_trackSet()) {
   case NO_TRACK_SET: {
     // User has manually specified the file name; decide if it is a
-    // starburst99 or MIST file based on its extension
+    // starburst99 or MIST file based on its extension; note that
+    // MIST files are only usable if we have FITS capability
     string fname(pp.get_trackFile());
     size_t pos = fname.find_last_of(".");
     bool mist_ext;
@@ -214,8 +215,16 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
       mist_ext = false;
     }
     if (mist_ext) {
+#ifdef ENABLE_FITS
       tracks = (slug_tracks *)
 	new slug_tracks_mist(pp.get_trackFile(), ostreams);
+#else
+      ostreams.slug_err_one
+        << "MIST gzip'ed track files only available if "
+        << "SLUG was compiled with ENABLE_FITS option"
+        << endl;
+      exit(1);
+#endif
     } else {
       tracks = (slug_tracks *)
 	new slug_tracks_sb99(pp.get_trackFile(), ostreams);
@@ -234,6 +243,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
 			   pp.get_track_dir(), ostreams);
     break;
   }
+#ifdef ENABLE_FITS
   case MIST_2016_VVCRIT_00:
   case MIST_2016_VVCRIT_40: {
     // These are MIST track sets
@@ -242,6 +252,7 @@ slug_sim::slug_sim(const slug_parmParser& pp_, slug_ostreams &ostreams_
 			   pp.get_track_dir(), ostreams);
     break;
   }
+#endif
   }
 
   // If we're computing yields, set up yield tables
