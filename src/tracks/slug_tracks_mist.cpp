@@ -216,7 +216,7 @@ slug_tracks_mist(const trackSet tr_set,
   double log_Z_in = log10(metallicity);
   if (log_Z_in < log_Z.front() || log_Z_in > log_Z.back()) {
     ostreams.slug_err_one
-      << "slug_tracks_sb99: requested metallicity " << metallicity
+      << "slug_tracks_mist: requested metallicity " << metallicity
       << " is outside range of Z = " << pow(10.0, log_Z.front())
       << " - " << pow(10.0, log_Z.back())
       << " covered by requested track set"

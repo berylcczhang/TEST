@@ -220,7 +220,8 @@ slug_tracks_sb99(const trackSet tr_set,
     idx++;
     if (idx == Z_files.size()-1) break;
   }
-  wgt = log10(Z_files[idx+1]/metallicity);
+  wgt = log10(Z_files[idx+1]/metallicity) /
+    log10(Z_files[idx+1]/Z_files[idx]);
 
   // Figure out which file or files we need to read
   if (Z_int_meth == Z_NEAR_NEIGHBOR ||
@@ -228,7 +229,7 @@ slug_tracks_sb99(const trackSet tr_set,
 
     // Nearest neighbor, so just figure out which file has a
     // metallicity closest to the requested one
-    if (wgt > 0.5) idx = idx+1;
+    if (wgt < 0.5) idx = idx+1;
     
     // Read file header
     size_type ntrack, ntime;
